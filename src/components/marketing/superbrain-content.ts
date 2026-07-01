@@ -22,8 +22,8 @@ export const copy = {
   de: {
     hero: {
       eyebrow: "Das Subsumio SuperBrain",
-      title: "Nicht nur KI. Ein lernendes Nervensystem für deine Kanzlei.",
-      sub: "Andere KI-Tools beantworten einen Prompt und vergessen. Subsumio baut jede Nacht eine Wissensbasis auf — mit Fakten, Takes, Widerspruchsprüfung und juristischer Qualitätskontrolle in fünf Ebenen. Jede Antwort stammt aus deinen Dokumenten. Mit Fundstellen. Ohne Halluzinationen.",
+      title: "Nicht nur KI. Ein künstliches Gehirn für deine Kanzlei — das jede Nacht regeneriert.",
+      sub: "Andere KI-Tools beantworten einen Prompt und vergessen. Subsumio baut jede Nacht ein lebendiges juristisches Gedächtnis auf — mit Fakten, Takes, Widerspruchsprüfung und fünf Qualitäts-Ebenen. Wie der menschliche Hippocampus Erinnerungen konsolidiert, konsolidiert das SuperBrain deine Akten zu verlässlichem Wissen. Mit Fundstellen. Ohne Halluzinationen.",
       cta: "14 Tage kostenlos testen",
       ctaSecondary: "Features ansehen",
     },
@@ -31,8 +31,8 @@ export const copy = {
       {
         value: 25,
         suffix: "",
-        label: "Dream-Cycle-Phasen",
-        sub: "Wartung & Konsolidierung nächtlich",
+        label: "Nächtliche Gehirn-Phasen",
+        sub: "Konsolidierung, Widerspruchsprüfung, Regeneration",
       },
       {
         value: 5,
@@ -49,9 +49,9 @@ export const copy = {
       },
     ],
     // ── NARRATIVE SECTION 1: "Wie andere arbeiten" ──
-    othersTitle: "Wie andere KI arbeitet",
+    othersTitle: "Prompt-KI: fragt, antwortet, vergisst",
     othersSub:
-      "Du stellst eine Frage. Das Modell antwortet. Dann vergisst es alles. Jeder Prompt ist isoliert — kein Gedächtnis, kein Lernen, keine Qualitätskontrolle. Halluzinationen werden auf Prompt-Ebene bekämpft: mit Hoffnung. Das Modell ist Richter und Angeklagter zugleich.",
+      "Du stellst eine Frage. Das Modell antwortet. Dann vergisst es alles. Jeder Prompt ist isoliert — kein Gedächtnis, kein Lernen, kein Verstehen. Halluzinationen werden auf Prompt-Ebene bekämpft: mit Hoffnung. Das Modell ist Richter und Angeklagter zugleich.",
     othersSteps: [
       { label: "Prompt", desc: "Du fragst GPT-5 oder Claude", icon: FileSearch },
       { label: "Antwort", desc: "Modell generiert — ohne Gedächtnis", icon: Sparkles },
@@ -69,9 +69,9 @@ export const copy = {
       "Keine juristische Qualitätskontrolle — das Modell ist Richter und Angeklagter",
     ],
     // ── NARRATIVE SECTION 2: "Wie unser Gehirn arbeitet" ──
-    oursTitle: "Wie das SuperBrain arbeitet",
+    oursTitle: "SuperBrain: lernt, konsolidiert, versteht",
     oursSub:
-      "Subsumio baut jeden Nacht einen Wissensgraph aus deinen Dokumenten. Fakten werden extrahiert, synthetisiert, bewertet, auf Widersprüche geprüft und mit einem Ensemble-Judge abgesichert — der menschliche Juristen übertrifft. Was herauskommt, ist kein Chat. Es ist ein lebendiges Gedächtnis deiner Kanzlei.",
+      "Subsumio baut jede Nacht einen Wissensgraphen aus deinen Dokumenten. Fakten werden extrahiert, synthetisiert, auf Widersprüche geprüft und mit einem Ensemble-Judge abgesichert — der menschliche Juristen übertrifft. Was herauskommt, ist kein Chat. Es ist ein juristisches Langzeitgedächtnis, das jede Nacht schärfer wird.",
     oursSteps: [
       { label: "Sammeln", desc: "Dokumente, E-Mails, Akten, Konversationen", icon: FileSearch },
       {
@@ -134,9 +134,9 @@ export const copy = {
     ],
     costNote: "5 Ebenen. 25 Phasen. Ein Wissensgraph, der jede Nacht wächst — und nie vergisst.",
     // ── DREAM CYCLE ──
-    cycleTitle: "Der Dream Cycle",
+    cycleTitle: "Nächtliche Gehirnregeneration",
     cycleSub:
-      "Jede Nacht, wenn niemand arbeitet, durchläuft das SuperBrain 25 Phasen — von der Faktenextraktion über Embedding bis zur Widerspruchsprüfung. Alles automatisch, alles überwacht, alles protokolliert.",
+      "Während du schläfst, durchläuft das SuperBrain 25 Phasen — wie das menschliche Gehirn im Schlaf Erinnerungen wiederholt, verstärkt und neu verknüpft. Fakten werden zu Wissen, Takes zu Verständnis, Widersprüche zu klaren Signalen. Alles automatisch, alles überwacht, alles protokolliert.",
     cycleSteps: [
       {
         phase: "extract_facts",
@@ -351,11 +351,11 @@ export const copy = {
     faq: [
       {
         q: "Was ist das Subsumio SuperBrain?",
-        a: "Das SuperBrain ist die KI-Engine hinter Subsumio. Es baut jede Nacht einen Wissensgraph aus deinen Dokumenten, mit 25 automatisierten Phasen und 5 Qualitäts-Ebenen. Jede Antwort stammt aus deinen Akten — mit Fundstellen, nicht aus einem generischen Modell.",
+        a: "Das SuperBrain ist die KI-Engine hinter Subsumio — ein künstliches juristisches Gehirn, das jede Nacht regeneriert. Es baut aus deinen Dokumenten einen Wissensgraphen mit 25 automatisierten Phasen und 5 Qualitäts-Ebenen. Jede Antwort stammt aus deinen Akten — mit Fundstellen, nicht aus einem generischen Modell.",
       },
       {
-        q: "Wie funktioniert der Dream Cycle?",
-        a: "Der Dream Cycle läuft nächtlich automatisch: Fakten werden extrahiert, synthetisiert, konsolidiert, als Embeddings gespeichert, auf Muster und Widersprüche geprüft, bewertet und kalibriert. 25 Phasen, vollautomatisch, alles protokolliert.",
+        q: "Was ist die nächtliche Gehirnregeneration?",
+        a: "Der Dream Cycle ist die nächtliche Konsolidierungsschleife des SuperBrain. Sie entspricht dem, was im menschlichen Gehirn im Schlaf passiert: Informationen werden wiederholt, verstärkt, mit bestehendem Wissen verknüpft und widersprüchliche oder vergessene Fragmente aussortiert. 25 Phasen, vollautomatisch, alles protokolliert.",
       },
       {
         q: "Was ist der LEXam-Benchmark?",
@@ -392,17 +392,17 @@ export const copy = {
     ],
     // ── STICKY CTA ──
     stickyCtaText: "14 Tage kostenlos testen",
-    stickyCtaHint: "Keine Kreditkarte · Jede Nacht baut sich dein Brain auf",
+    stickyCtaHint: "Keine Kreditkarte · Dein Brain wird jede Nacht schlauer — wie ein Mensch, der schläft",
     ctaTitle: "Erlebe das SuperBrain",
     ctaSub:
-      "Starte heute. Dein Brain baut sich ab der ersten Akte auf — jede Nacht, automatisch. 14 Tage kostenlos, keine Kreditkarte.",
+      "Starte heute. Dein juristisches Gehirn wächst ab der ersten Akte — jede Nacht, automatisch, und gewinnt an Verständnis. 14 Tage kostenlos, keine Kreditkarte.",
     ctaButton: "14 Tage kostenlos starten",
   },
   en: {
     hero: {
       eyebrow: "The Subsumio SuperBrain",
-      title: "Not just AI. A learning nervous system for your firm.",
-      sub: "Other AI tools answer one prompt and forget. Subsumio builds a knowledge base every night — with facts, takes, contradiction probing and five-layer legal quality control. Every answer comes from your documents. With citations. Zero hallucinations.",
+      title: "Not just AI. An artificial brain for your firm — regenerating every night.",
+      sub: "Other AI tools answer one prompt and forget. Subsumio builds a living legal memory every night — with facts, takes, contradiction probing and five-layer legal quality control. Just as the human hippocampus consolidates memories during sleep, the SuperBrain consolidates your cases into reliable knowledge. With citations. Zero hallucinations.",
       cta: "Start 14-day free trial",
       ctaSecondary: "Explore features",
     },
@@ -410,8 +410,8 @@ export const copy = {
       {
         value: 25,
         suffix: "",
-        label: "Dream Cycle phases",
-        sub: "Nightly maintenance & consolidation",
+        label: "Nightly brain phases",
+        sub: "Consolidation, contradiction probing, regeneration",
       },
       {
         value: 5,
@@ -422,9 +422,9 @@ export const copy = {
       { value: 57.4, suffix: "", label: "LEXam score", sub: "DeepSeek V3.2 — better than GPT-4o" },
       { value: 99.9, suffix: "%", label: "Cited answers", sub: "Zero hallucinations" },
     ],
-    othersTitle: "How other AI works",
+    othersTitle: "Prompt AI: asks, answers, forgets",
     othersSub:
-      "You ask a question. The model answers. Then it forgets everything. Every prompt is isolated — no memory, no learning, no quality control. Hallucinations are fought at the prompt level: with hope. The model is judge and defendant at once.",
+      "You ask a question. The model answers. Then it forgets everything. Every prompt is isolated — no memory, no learning, no understanding. Hallucinations are fought at the prompt level: with hope. The model is judge and defendant at once.",
     othersSteps: [
       { label: "Prompt", desc: "You ask GPT-5 or Claude", icon: FileSearch },
       { label: "Answer", desc: "Model generates — without memory", icon: Sparkles },
@@ -441,9 +441,9 @@ export const copy = {
       "Premium pricing for a single front-end model with no memory",
       "No legal quality control — the model is judge and defendant",
     ],
-    oursTitle: "How the SuperBrain works",
+    oursTitle: "SuperBrain: learns, consolidates, understands",
     oursSub:
-      "Subsumio builds a knowledge graph from your documents every night. Facts are extracted, synthesized, evaluated, probed for contradictions, and validated by an ensemble judge that surpasses human lawyers. The result is not a chat. It's a living memory of your firm.",
+      "Subsumio builds a knowledge graph from your documents every night. Facts are extracted, synthesized, probed for contradictions, and validated by an ensemble judge that surpasses human lawyers. The result is not a chat. It's a long-term legal memory that gets sharper every night.",
     oursSteps: [
       { label: "Ingest", desc: "Documents, emails, matters, conversations", icon: FileSearch },
       {
@@ -500,9 +500,9 @@ export const copy = {
       },
     ],
     costNote: "5 layers. 25 phases. A knowledge graph that grows every night — and never forgets.",
-    cycleTitle: "The Dream Cycle",
+    cycleTitle: "Nightly brain regeneration",
     cycleSub:
-      "Every night, when nobody is working, the SuperBrain runs 25 phases — from fact extraction to embedding to contradiction probing. All automatic, all monitored, all logged.",
+      "While you sleep, the SuperBrain runs 25 phases — just like the human brain repeats, strengthens, and rewires memories during sleep. Facts become knowledge, takes become understanding, contradictions become clear signals. All automatic, all monitored, all logged.",
     cycleSteps: [
       {
         phase: "extract_facts",
@@ -714,11 +714,11 @@ export const copy = {
     faq: [
       {
         q: "What is the Subsumio SuperBrain?",
-        a: "The SuperBrain is the AI engine behind Subsumio. It builds a knowledge graph from your documents every night, with 25 automated phases and 5 quality layers. Every answer comes from your matters — with citations, not from a generic model.",
+        a: "The SuperBrain is the AI engine behind Subsumio — an artificial legal brain that regenerates every night. It builds a knowledge graph from your documents with 25 automated phases and 5 quality layers. Every answer comes from your matters — with citations, not from a generic model.",
       },
       {
-        q: "How does the Dream Cycle work?",
-        a: "The Dream Cycle runs automatically at night: facts are extracted, synthesized, consolidated, stored as embeddings, checked for patterns and contradictions, graded, and calibrated. 25 phases, fully automatic, everything logged.",
+        q: "What is nightly brain regeneration?",
+        a: "The Dream Cycle is the SuperBrain's nightly consolidation loop. It mirrors what happens in the human brain during sleep: information is replayed, strengthened, connected to existing knowledge, and conflicting or stale fragments are pruned. 25 phases, fully automatic, everything logged.",
       },
       {
         q: "What is the LEXam benchmark?",
@@ -755,10 +755,10 @@ export const copy = {
     ],
     // ── STICKY CTA ──
     stickyCtaText: "Start 14-day free trial",
-    stickyCtaHint: "No credit card · Your brain builds every night",
+    stickyCtaHint: "No credit card · Your brain gets smarter every night — like a person sleeping",
     ctaTitle: "Experience the SuperBrain",
     ctaSub:
-      "Start today. Your brain builds from the first matter — every night, automatically. 14 days free, no credit card.",
+      "Start today. Your legal brain grows from the first matter — every night, automatically, gaining understanding. 14 days free, no credit card.",
     ctaButton: "Start 14-day free trial",
   },
 };
