@@ -1214,6 +1214,31 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
   );
 }
 
+// --- Gradient transition band between light/dark sections ------------------
+// Renders a thin gradient strip that smoothly blends from one tone background
+// to another, eliminating hard-cut section boundaries. Agency-standard pattern
+// used by Stripe, Linear, Vercel for premium section flow.
+export function SectionTransition({
+  from = "var(--mk-bg)",
+  to = "var(--mk-surface)",
+  height = 80,
+}: {
+  from?: string;
+  to?: string;
+  height?: number;
+}) {
+  return (
+    <div
+      aria-hidden
+      className="relative z-10 w-full"
+      style={{
+        height,
+        background: `linear-gradient(to bottom, ${from}, ${to})`,
+      }}
+    />
+  );
+}
+
 // --- Shared section primitives -------------------------------------------
 
 export function SectionHeading({

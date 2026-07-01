@@ -94,9 +94,17 @@ function MarqueeRow({
   const loop = [...items, ...items];
 
   return (
-    <div className="relative flex overflow-hidden">
+    <div
+      className="relative flex overflow-hidden"
+      style={{
+        maskImage:
+          "linear-gradient(to right, transparent, black 6%, black 94%, transparent)",
+        WebkitMaskImage:
+          "linear-gradient(to right, transparent, black 6%, black 94%, transparent)",
+      }}
+    >
       <motion.div
-        className="flex shrink-0 items-center gap-5 pr-5"
+        className="flex shrink-0 items-center gap-6 pr-6"
         animate={
           reduce
             ? undefined
@@ -119,13 +127,13 @@ function MarqueeRow({
             <div
               key={`${item.label}-${i}`}
               aria-hidden={isDuplicate || undefined}
-              className="group flex shrink-0 items-center gap-3 rounded-full border [border-color:var(--mk-border)] bg-[color:var(--mk-bg)] px-5 py-3 opacity-50 transition-all duration-300 hover:border-[color:var(--brand-text)] hover:opacity-100 hover:shadow-md"
+              className="group flex shrink-0 items-center gap-2.5 rounded-full border [border-color:var(--mk-border)] bg-[color:var(--mk-bg)] px-4 py-2 opacity-45 transition-all duration-300 hover:border-[color:var(--brand-text)] hover:opacity-100 hover:shadow-lg hover:shadow-[color:var(--brand-text)]/10"
             >
               <Icon
-                size={22}
+                size={20}
                 className="text-[color:var(--brand-text)] transition-transform duration-300 group-hover:scale-110"
               />
-              <span className="whitespace-nowrap text-base font-semibold [color:var(--mk-text)]">
+              <span className="whitespace-nowrap text-sm font-semibold [color:var(--mk-text)]">
                 {item.label}
               </span>
             </div>
@@ -151,15 +159,9 @@ export default function LogoMarquee({ lang }: { lang: Lang }) {
   return (
     <section
       aria-label={eyebrow}
-      className="relative overflow-hidden border-y [border-color:var(--mk-border)] [background:var(--mk-surface)] py-16"
+      className="relative overflow-hidden border-y [border-color:var(--mk-border)] [background:var(--mk-surface)] py-14"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
-      style={{
-        maskImage:
-          "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
-        WebkitMaskImage:
-          "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
-      }}
     >
       {/* Section heading */}
       <div className="mb-12 text-center">
@@ -191,7 +193,7 @@ export default function LogoMarquee({ lang }: { lang: Lang }) {
       />
 
       {/* Row 2 — scrolls left to right (opposite direction, slower) */}
-      <div className="mt-6">
+      <div className="mt-8">
         <MarqueeRow
           items={bottomItems}
           direction={-1}

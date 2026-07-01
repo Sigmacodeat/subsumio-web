@@ -20,7 +20,7 @@ import SuperbrainAdvantage from "./superbrain-advantage";
 import TrustBand from "./trust-band";
 import { TestimonialsSection } from "./testimonials";
 import AudienceTabs from "./audience-tabs";
-import { Section, SectionHeading, ICONS, accentTile } from "./chrome";
+import { Section, SectionHeading, SectionTransition, ICONS, accentTile } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import {
   GlowCard,
@@ -41,10 +41,10 @@ import LogoMarquee from "./logo-marquee";
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
 
-// Section/card scroll-reveal preset.
+// Section/card scroll-reveal preset — subtle scale + Y for depth.
 const reveal = {
-  initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0 },
+  initial: { opacity: 0, y: 24, scale: 0.98 },
+  whileInView: { opacity: 1, y: 0, scale: 1 },
   viewport,
   transition: { duration: 0.5, ease: EASE.out },
 };
@@ -470,6 +470,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </motion.div>
         </Section>
 
+        {/* Gradient transition: light FAQ → dark CTA */}
+        <SectionTransition from="var(--mk-bg)" to="#06060f" height={80} />
+
         {/* Final CTA — clean, serious close with gradient depth */}
         <Section
           tone="dark"
@@ -519,6 +522,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             )}
           </motion.div>
         </Section>
+
+        {/* Gradient transition: dark CTA → footer */}
+        <SectionTransition from="#06060f" to="var(--mk-surface)" height={60} />
 
         {/* Sticky CTA bar — appears after hero scroll (legal SaaS best practice) */}
         <motion.div
