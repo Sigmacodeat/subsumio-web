@@ -164,12 +164,14 @@ export function Section({
   tone = "light",
   id,
   className = "",
+  noTopEdge = false,
   children,
   ...rest
 }: {
   tone?: Tone;
   id?: string;
   className?: string;
+  noTopEdge?: boolean;
   children: React.ReactNode;
 } & React.HTMLAttributes<HTMLElement>) {
   // `...rest` forwards native section attributes (notably `aria-label`, which
@@ -183,7 +185,7 @@ export function Section({
       style={{ background: "var(--mk-bg)" }}
       {...rest}
     >
-      {(tone === "dark" || tone === "slate") && (
+      {(tone === "dark" || tone === "slate") && !noTopEdge && (
         <>
           {/* Premium top edge — 1px hairline + subtle brand glow.
               Replaces cheap gradient strips with a clean, intentional

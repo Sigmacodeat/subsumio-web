@@ -90,6 +90,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         {/* Hero — clean dark slate editorial surface with subtle motif */}
         <Section
           tone="slate"
+          noTopEdge
           className="relative overflow-hidden px-6 pt-28 pb-28 md:pt-36 md:pb-32"
         >
           <div className="relative mx-auto max-w-7xl text-center">

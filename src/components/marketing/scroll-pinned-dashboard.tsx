@@ -193,9 +193,11 @@ export default function ScrollPinnedDashboard({
             <DashboardReel lang={lang} controlledView={currentView} />
           </div>
 
-          {/* Spring-smoothed guided cursor */}
+          {/* Spring-smoothed guided cursor — pinned to dashboard tone so
+              --mk-text resolves white (not inherited light-tone dark) */}
           <motion.div
             aria-hidden
+            data-tone="dashboard"
             className="pointer-events-none absolute z-30 flex items-start gap-2"
             style={{
               left: cursorX as MotionValue<string>,

@@ -458,6 +458,7 @@ export function GuidedCursor({ x, y, label, className = "", duration = 6.5 }: Gu
   return (
     <motion.div
       aria-hidden
+      data-tone="dashboard"
       className={`pointer-events-none absolute z-30 flex items-start gap-2 ${className}`}
       style={{
         left: Array.isArray(x) ? x[0] : x,
