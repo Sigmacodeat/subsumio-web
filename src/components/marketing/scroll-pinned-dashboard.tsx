@@ -2,15 +2,15 @@
 
 // Scroll-pinned dashboard showcase — agency-level 2026 pattern.
 // As the user scrolls through a 200vh container, the dashboard stays pinned
-// (position: sticky) and gently zooms from 0.88→1 scale while a spring-smoothed
+// (position: sticky) and gently zooms from 0.92→1 scale while a spring-smoothed
 // guided cursor glides to key interaction points. At scroll milestones (35%, 70%)
 // the dashboard view transitions (Matters → Brain → Deadlines).
 //
 // Research-based tuning:
 // - useSpring on ALL scroll-linked values (Motion.dev official pattern):
 //   stiffness: 100, damping: 30, restDelta: 0.001
-// - Scale range 0.88→1 (Apple/Linear standard — 0.72 was too aggressive)
-// - Blur max 4px (8px was too blurry, felt broken)
+// - Scale range 0.92→1 (Linear/Arc sweet spot — 0.88 was too aggressive)
+// - No blur filter (useSpring on string values is unreliable — caused stuck blur)
 // - Container 200vh (220vh was too long = boring middle section)
 // - Ease-out cubic interpolation via intermediate keyframes
 // - Cursor positions spring-smoothed for buttery glide
@@ -33,7 +33,7 @@ import {
 // Note: MotionValue<string> type import retained for cursor position values
 import DashboardReel from "./dashboard-reel";
 import { SectionHeading } from "./chrome";
-import type { Lang } from "@/content/site";
+import { UI_STRINGS, type Lang } from "@/content/site";
 
 // ─── Spring configs (Motion.dev official for scroll-linked) ──────────────
 const SPRING_SMOOTH = { stiffness: 100, damping: 30, restDelta: 0.001 };
@@ -53,6 +53,9 @@ const CURSOR_POSITIONS = [
   { x: "74%", y: "87%" },
   { x: "70%", y: "52%" },
 ];
+
+// Contextual cursor labels per view — reuses the same UI_STRINGS as DashboardReel
+const CURSOR_LABEL_KEYS = ["openMatter", "sendQuestion", "checkDeadline"] as const;
 
 export default function ScrollPinnedDashboard({
   lang,
@@ -205,7 +208,7 @@ export default function ScrollPinnedDashboard({
               className="relative mt-0.5 block h-5 w-4"
               style={{
                 background:
-                  "linear-gradient(145deg, #fff, color-mix(in srgb, var(--brand-text) 40%, #fff))",
+                  "linear-gradient(145deg, var(--mk-text), color-mix(in srgb, var(--brand-text) 40%, var(--mk-text)))",
                 clipPath: "polygon(0 0, 100% 48%, 58% 58%, 78% 100%, 55% 100%, 38% 64%, 0 84%)",
               }}
             >
@@ -215,7 +218,7 @@ export default function ScrollPinnedDashboard({
               style={{ opacity: cursorLabelOpacity }}
               className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-white backdrop-blur-md [background:color-mix(in_srgb,var(--mk-surface)_85%,transparent)]"
             >
-              {lang === "en" ? "Scroll to explore" : "Scrollen zum Erkunden"}
+              {UI_STRINGS[lang][CURSOR_LABEL_KEYS[currentView]]}
             </motion.span>
           </motion.div>
         </motion.div>

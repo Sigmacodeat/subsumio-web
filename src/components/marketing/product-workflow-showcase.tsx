@@ -261,31 +261,31 @@ export default function ProductWorkflowShowcase({
                 <motion.div
                   initial={{ opacity: 0, y: 14 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  animate={reduced ? undefined : { scale: [1, 1.014, 1] }}
                   viewport={{ once: true, amount: 0.35 }}
-                  transition={{
-                    opacity: { duration: 0.45, delay: 0.25 },
-                    y: { duration: 0.45, delay: 0.25 },
-                    scale: { duration: 4.2, repeat: Infinity, ease: "easeInOut" },
-                  }}
+                  transition={{ duration: 0.45, delay: 0.25 }}
                   className="brand-border mt-4 rounded-xl border p-4 [background:var(--mk-surface)]"
                 >
-                  <div className="flex items-start gap-3">
-                    <Brain size={18} className="brand-text mt-0.5" />
-                    <div>
-                      <p className="mb-1 text-sm font-semibold [color:var(--mk-text)]">
-                        {c.answer}
-                      </p>
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        <span className="brand-soft brand-text rounded-full px-2 py-1">
-                          {c.risk}
-                        </span>
-                        <span className="rounded-full px-2 py-1 [color:var(--mk-text-muted)] [background:var(--mk-border)]">
-                          {c.route}
-                        </span>
+                  <motion.div
+                    animate={reduced ? undefined : { scale: [1, 1.014, 1] }}
+                    transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Brain size={18} className="brand-text mt-0.5" />
+                      <div>
+                        <p className="mb-1 text-sm font-semibold [color:var(--mk-text)]">
+                          {c.answer}
+                        </p>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <span className="brand-soft brand-text rounded-full px-2 py-1">
+                            {c.risk}
+                          </span>
+                          <span className="rounded-full px-2 py-1 [color:var(--mk-text-muted)] [background:var(--mk-border)]">
+                            {c.route}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 </motion.div>
               </div>
             </div>

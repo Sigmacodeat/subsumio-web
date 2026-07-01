@@ -374,7 +374,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <TrustBand lang={lang} />
 
         {/* Testimonials — social proof from real lawyers */}
-        <TestimonialsSection />
+        <TestimonialsSection lang={lang} />
 
         {/* Gradient transition: light Trust → dark Comparison spotlight */}
         <SectionTransition from="var(--tone-light-bg)" to="var(--tone-dark-bg)" height={72} />
