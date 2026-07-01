@@ -37,6 +37,7 @@ import {
 import IndustryHeroMotif from "./industry-hero-motif";
 import { WhatsAppSpotlight } from "./subsumio-showcase";
 import ProductWorkflowShowcase from "./product-workflow-showcase";
+import LogoMarquee from "./logo-marquee";
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
 
@@ -185,6 +186,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             </div>
           </div>
         </Section>
+
+        {/* Logo Marquee — certifications & integrations sliding from right to left */}
+        <LogoMarquee lang={lang} />
 
         {/* Stats — subtle surface band on the light page */}
         <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8" aria-label="Key metrics">
