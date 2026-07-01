@@ -51,7 +51,7 @@ export const copy = {
     // ── NARRATIVE SECTION 1: "Wie andere arbeiten" ──
     othersTitle: "Prompt-KI: fragt, antwortet, vergisst",
     othersSub:
-      "Du stellst eine Frage. Das Modell antwortet. Dann vergisst es alles. Andere Tools kündigen 'Memory' an — wir haben es gebaut. Nicht als Chat-Verlauf-Speicherung, sondern als lebendigen Wissensgraphen. Jeder Prompt bei anderen ist isoliert — kein Gedächtnis, kein Lernen, kein Verstehen. Halluzinationen werden auf Prompt-Ebene bekämpft: mit Hoffnung. Das Modell ist Richter und Angeklagter zugleich.",
+      "Du stellst eine Frage. Das Modell antwortet. Dann vergisst es alles. Andere Tools speichern Chat-Verläufe und nennen es 'Memory'. Subsumio baut einen Wissensgraphen — nicht Chat-Speicherung, sondern Verständnis. Jeder Prompt bei anderen ist isoliert — kein Gedächtnis, kein Lernen, kein Verstehen. Halluzinationen werden auf Prompt-Ebene bekämpft: mit Hoffnung. Das Modell ist Richter und Angeklagter zugleich.",
     othersSteps: [
       { label: "Prompt", desc: "Du fragst GPT-5 oder Claude", icon: FileSearch },
       { label: "Antwort", desc: "Modell generiert — ohne Gedächtnis", icon: Sparkles },
@@ -62,8 +62,8 @@ export const copy = {
       },
     ],
     othersPain: [
-      "'Memory' als Roadmap-Ankündigung — nicht als Architektur",
-      "Thread-Retention statt Wissensgraph — Chats werden gespeichert, nicht verstanden",
+      "Chat-Verlauf-Speicherung statt Wissensgraph — Chats werden gespeichert, nicht verstanden",
+      "Keine nächtliche Konsolidierung — Wissen accumuliert sich nicht",
       "Halluzinationen werden im Prompt-Level bekämpft (hoffnungsbasiert)",
       "Keine Widerspruchserkennung zwischen Antworten",
       "Premium-Preise für ein einzelnes Front-End-Modell ohne Gedächtnis",
@@ -191,7 +191,7 @@ export const copy = {
     // ── COMPARISON ──
     compareTitle: "Andere Kanzlei-KI vs. SuperBrain",
     compareSub:
-      "Harvey AI kündigt 'Memory' an — Thread-Retention als Roadmap. Wir haben seit Tag 1 einen Wissensgraphen mit nächtlicher Konsolidierung. Das ist kein Feature-Unterschied. Das ist ein architektonischer Paradigmenwechsel.",
+      "Andere Kanzlei-KI nutzt Multi-Model-Routing pro Task. Wir nutzen Multi-Model-Quality-Layer pro Take — mit einem Wissensgraphen, der jede Nacht konsolidiert. Das ist kein Feature-Unterschied. Das ist ein architektonischer Paradigmenwechsel.",
     compareRows: [
       {
         feature: "Architektur",
@@ -205,8 +205,8 @@ export const copy = {
       },
       {
         feature: "Gedächtnis / Memory",
-        others: "Roadmap-Ankündigung — Thread-Retention (noch nicht live)",
-        subsumio: "Seit Tag 1: Wissensgraph mit nächtlicher Konsolidierung",
+        others: "Chat-Verlauf-Speicherung oder angekündigt",
+        subsumio: "Wissensgraph mit nächtlicher Konsolidierung — seit Tag 1",
       },
       {
         feature: "Wissensgraph",
@@ -215,7 +215,7 @@ export const copy = {
       },
       {
         feature: "Nächtliche Konsolidierung",
-        others: "Nicht vorhanden — Memory ist geplante Thread-Speicherung",
+        others: "Nicht vorhanden",
         subsumio: "25 Phasen: Konsolidierung, Widerspruchsprüfung, Regeneration",
       },
       {
@@ -377,7 +377,7 @@ export const copy = {
       },
       {
         q: "Was ist der Unterschied zu Harvey AI?",
-        a: "Harvey nutzt Multi-Model-Routing pro Task (welches Modell für welche Aufgabe). Subsumio nutzt Multi-Model-Quality-Layer pro Take (5 Ebenen Qualitätskontrolle pro Antwort). Harvey hat 'Memory' angekündigt — aber als Thread-Retention innerhalb einer Retention-Window, nicht als Wissensgraph. Subsumio hat seit Tag 1 einen persistenten Wissensgraphen mit nächtlicher Konsolidierung, Widerspruchserkennung und Fine-Tuning auf DACH-Recht. Subsumio ist EU-Cloud oder Self-Hosted — Harvey läuft in der US-Cloud.",
+        a: "Harvey nutzt Multi-Model-Routing pro Task (welches Modell für welche Aufgabe). Subsumio nutzt Multi-Model-Quality-Layer pro Take (5 Ebenen Qualitätskontrolle pro Antwort). Subsumio hat einen persistenten Wissensgraphen mit nächtlicher Konsolidierung, Widerspruchserkennung und Fine-Tuning auf DACH-Recht. Subsumio ist EU-Cloud oder Self-Hosted — Harvey läuft in der US-Cloud.",
       },
       {
         q: "Wie unterscheidet sich das SuperBrain von ChatGPT Memory oder Claude Memory?",
@@ -434,7 +434,7 @@ export const copy = {
     ],
     othersTitle: "Prompt AI: asks, answers, forgets",
     othersSub:
-      "You ask a question. The model answers. Then it forgets everything. Other tools announce 'Memory' — we built it. Not as chat-history storage, but as a living knowledge graph. Every prompt in other tools is isolated — no memory, no learning, no understanding. Hallucinations are fought at the prompt level: with hope. The model is judge and defendant at once.",
+      "You ask a question. The model answers. Then it forgets everything. Other tools store chat histories and call it 'Memory'. Subsumio builds a knowledge graph — not chat storage, but understanding. Every prompt in other tools is isolated — no memory, no learning, no understanding. Hallucinations are fought at the prompt level: with hope. The model is judge and defendant at once.",
     othersSteps: [
       { label: "Prompt", desc: "You ask GPT-5 or Claude", icon: FileSearch },
       { label: "Answer", desc: "Model generates — without memory", icon: Sparkles },
@@ -445,8 +445,8 @@ export const copy = {
       },
     ],
     othersPain: [
-      "'Memory' as a roadmap announcement — not as architecture",
-      "Thread retention instead of a knowledge graph — chats are stored, not understood",
+      "Chat-history storage instead of a knowledge graph — chats are stored, not understood",
+      "No nightly consolidation — knowledge doesn't accumulate",
       "Hallucinations fought at prompt-level (hope-based)",
       "No contradiction detection between answers",
       "Premium pricing for a single front-end model with no memory",
@@ -566,7 +566,7 @@ export const copy = {
     ],
     compareTitle: "Other legal AI vs. SuperBrain",
     compareSub:
-      "Harvey AI announces 'Memory' — thread retention as a roadmap. We've had a knowledge graph with nightly consolidation since day one. That's not a feature difference. That's an architectural paradigm shift.",
+      "Other legal AI uses multi-model routing per task. We use multi-model quality layers per take — with a knowledge graph that consolidates every night. That's not a feature difference. That's an architectural paradigm shift.",
     compareRows: [
       {
         feature: "Architecture",
@@ -580,8 +580,8 @@ export const copy = {
       },
       {
         feature: "Memory / Recall",
-        others: "Roadmap announcement — thread retention (not yet live)",
-        subsumio: "Since day 1: knowledge graph with nightly consolidation",
+        others: "Chat-history storage or announced",
+        subsumio: "Knowledge graph with nightly consolidation — since day 1",
       },
       {
         feature: "Knowledge graph",
@@ -590,7 +590,7 @@ export const copy = {
       },
       {
         feature: "Nightly consolidation",
-        others: "Not present — Memory is planned thread storage",
+        others: "Not present",
         subsumio: "25 phases: consolidation, contradiction probing, regeneration",
       },
       {
@@ -750,7 +750,7 @@ export const copy = {
       },
       {
         q: "What's the difference from Harvey AI?",
-        a: "Harvey uses multi-model routing per task (which model for which job). Subsumio uses multi-model quality layers per take (5 quality control layers per answer). Harvey has announced 'Memory' — but as thread retention within a retention window, not as a knowledge graph. Subsumio has had a persistent knowledge graph with nightly consolidation, contradiction detection, and fine-tuning on DACH law since day one. Subsumio is EU cloud or self-hosted — Harvey runs on US cloud.",
+        a: "Harvey uses multi-model routing per task (which model for which job). Subsumio uses multi-model quality layers per take (5 quality control layers per answer). Subsumio has a persistent knowledge graph with nightly consolidation, contradiction detection, and fine-tuning on DACH law. Subsumio is EU cloud or self-hosted — Harvey runs on US cloud.",
       },
       {
         q: "How is the SuperBrain different from ChatGPT Memory or Claude Memory?",
