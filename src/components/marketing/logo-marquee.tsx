@@ -1,9 +1,9 @@
 "use client";
 
-// Premium dual-row logo marquee — agency-standard pattern (Stripe, Linear,
-// Vercel, Aceternity UI, shadcn.io). Two rows scroll in opposite directions
-// with Framer Motion, pause on hover, monochrome items that brighten on hover,
-// and gradient edge fades. Respects prefers-reduced-motion.
+// Premium dual-row logo marquee — agency-standard 2026 pattern.
+// Pill-card items with borders, large icons, CSS mask-image edge fades,
+// pause on hover, monochrome-to-color on hover. Respects prefers-reduced-motion.
+// Research: Aceternity UI, shadcn.io, Vercel Geist, Ryan Mulligan CSS Marquee.
 
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
@@ -96,7 +96,7 @@ function MarqueeRow({
   return (
     <div className="relative flex overflow-hidden">
       <motion.div
-        className="flex shrink-0 items-center gap-12 pr-12"
+        className="flex shrink-0 items-center gap-5 pr-5"
         animate={
           reduce
             ? undefined
@@ -108,22 +108,26 @@ function MarqueeRow({
           reduce
             ? { duration: 0 }
             : paused
-              ? { duration: 0.4, ease: [0.22, 1, 0.36, 1] }
+              ? { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
               : { duration, ease: "linear", repeat: Infinity }
         }
       >
         {loop.map((item, i) => {
           const Icon = item.icon;
+          const isDuplicate = i >= items.length;
           return (
             <div
               key={`${item.label}-${i}`}
-              className="flex shrink-0 items-center gap-2.5 text-sm font-semibold [color:var(--mk-text-muted)] opacity-40 transition-opacity duration-300 hover:opacity-100"
+              aria-hidden={isDuplicate || undefined}
+              className="group flex shrink-0 items-center gap-3 rounded-full border [border-color:var(--mk-border)] bg-[color:var(--mk-bg)] px-5 py-3 opacity-50 transition-all duration-300 hover:border-[color:var(--brand-text)] hover:opacity-100 hover:shadow-md"
             >
               <Icon
-                size={18}
-                className="text-[color:var(--brand-text)]"
+                size={22}
+                className="text-[color:var(--brand-text)] transition-transform duration-300 group-hover:scale-110"
               />
-              <span className="whitespace-nowrap">{item.label}</span>
+              <span className="whitespace-nowrap text-base font-semibold [color:var(--mk-text)]">
+                {item.label}
+              </span>
             </div>
           );
         })}
@@ -147,12 +151,18 @@ export default function LogoMarquee({ lang }: { lang: Lang }) {
   return (
     <section
       aria-label={eyebrow}
-      className="relative overflow-hidden border-y [border-color:var(--mk-border)] [background:var(--mk-surface)] py-14"
+      className="relative overflow-hidden border-y [border-color:var(--mk-border)] [background:var(--mk-surface)] py-16"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      style={{
+        maskImage:
+          "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+        WebkitMaskImage:
+          "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+      }}
     >
       {/* Section heading */}
-      <div className="mb-10 text-center">
+      <div className="mb-12 text-center">
         <span
           className="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
           style={{
@@ -171,22 +181,6 @@ export default function LogoMarquee({ lang }: { lang: Lang }) {
         </h3>
       </div>
 
-      {/* Edge gradient fades */}
-      <div
-        className="pointer-events-none absolute left-0 top-0 z-10 h-full w-32"
-        style={{
-          background:
-            "linear-gradient(to right, var(--mk-surface), transparent)",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute right-0 top-0 z-10 h-full w-32"
-        style={{
-          background:
-            "linear-gradient(to left, var(--mk-surface), transparent)",
-        }}
-      />
-
       {/* Row 1 — scrolls right to left */}
       <MarqueeRow
         items={topItems}
@@ -196,7 +190,7 @@ export default function LogoMarquee({ lang }: { lang: Lang }) {
         reduce={reduce}
       />
 
-      {/* Row 2 — scrolls left to right (opposite direction) */}
+      {/* Row 2 — scrolls left to right (opposite direction, slower) */}
       <div className="mt-6">
         <MarqueeRow
           items={bottomItems}
