@@ -1,20 +1,43 @@
 "use client";
 
 // Scroll-pinned dashboard showcase — agency-level 2026 pattern.
-// As the user scrolls through a tall (200vh) container, the dashboard
-// stays pinned (position: sticky) and zooms from 0.7→1 scale while a
-// guided cursor moves to key interaction points. At scroll milestones
-// (33%, 66%) the dashboard view transitions (Matters → Brain → Deadlines).
+// As the user scrolls through a 200vh container, the dashboard stays pinned
+// (position: sticky) and gently zooms from 0.88→1 scale while a spring-smoothed
+// guided cursor glides to key interaction points. At scroll milestones (35%, 70%)
+// the dashboard view transitions (Matters → Brain → Deadlines).
 //
-// Research: Motion.dev Scroll Zoom Hero, Froiden UI Zoom Scroll,
-// Olivier Larose Zoom Parallax, SaaSFrame 2026 "Immersive Product Previews".
+// Research-based tuning:
+// - useSpring on ALL scroll-linked values (Motion.dev official pattern):
+//   stiffness: 100, damping: 30, restDelta: 0.001
+// - Scale range 0.88→1 (Apple/Linear standard — 0.72 was too aggressive)
+// - Blur max 4px (8px was too blurry, felt broken)
+// - Container 200vh (220vh was too long = boring middle section)
+// - Ease-out cubic interpolation via intermediate keyframes
+// - Cursor positions spring-smoothed for buttery glide
+//
+// Sources: Motion.dev Scroll Zoom Hero, Motion.dev useSpring docs,
+// Froiden UI Zoom Scroll, Maxime Heckel spring physics,
+// SaaSFrame 2026 "Immersive Product Previews".
 // Respects prefers-reduced-motion (falls back to static auto-cycling reel).
 
 import { useRef, useState } from "react";
-import { motion, useScroll, useTransform, useReducedMotion, useMotionValueEvent, type MotionValue } from "framer-motion";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useSpring,
+  useReducedMotion,
+  useMotionValueEvent,
+  type MotionValue,
+} from "framer-motion";
 import DashboardReel from "./dashboard-reel";
 import { SectionHeading } from "./chrome";
 import type { Lang } from "@/content/site";
+
+// ─── Spring configs (Motion.dev official for scroll-linked) ──────────────
+const SPRING_SMOOTH = { stiffness: 100, damping: 30, restDelta: 0.001 };
+// Gentler spring for cursor position (slightly more float)
+const SPRING_CURSOR = { stiffness: 80, damping: 26, restDelta: 0.001 };
 
 interface ScrollPinnedDashboardProps {
   lang: Lang;
@@ -25,9 +48,9 @@ interface ScrollPinnedDashboardProps {
 
 // Cursor positions per view (percentages of dashboard area)
 const CURSOR_POSITIONS = [
-  { x: "72%", y: "42%", label: "" },
-  { x: "74%", y: "87%", label: "" },
-  { x: "70%", y: "52%", label: "" },
+  { x: "72%", y: "42%" },
+  { x: "74%", y: "87%" },
+  { x: "70%", y: "52%" },
 ];
 
 export default function ScrollPinnedDashboard({
@@ -44,47 +67,76 @@ export default function ScrollPinnedDashboard({
     offset: ["start start", "end end"],
   });
 
-  // Scale: dashboard grows from 0.7 to 1 as you scroll
-  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.72, 1, 1]);
-  // Opacity: fade in during first half
-  const opacity = useTransform(scrollYProgress, [0, 0.15, 0.5, 1], [0.3, 0.8, 1, 1]);
-  // Y offset: slide up slightly
-  const y = useTransform(scrollYProgress, [0, 0.5, 1], [40, 0, 0]);
-  // Blur: clear up as it zooms in
-  const blur = useTransform(scrollYProgress, [0, 0.3, 0.5], ["blur(8px)", "blur(0px)", "blur(0px)"]);
+  // ─── Raw scroll-linked transforms ────────────────────────────────────
+  // Scale: 0.88→1 with ease-out via intermediate keyframe at 0.4
+  const scaleRaw = useTransform(scrollYProgress, [0, 0.4, 1], [0.88, 1, 1]);
+  // Opacity: gentle fade-in
+  const opacityRaw = useTransform(scrollYProgress, [0, 0.12, 0.4, 1], [0.4, 0.85, 1, 1]);
+  // Y offset: subtle slide-up (24px max — 40 was too much)
+  const yRaw = useTransform(scrollYProgress, [0, 0.4, 1], [24, 0, 0]);
+  // Blur: 4px→0 (max 4px — 8px was too aggressive)
+  const blurRaw = useTransform(scrollYProgress, [0, 0.25, 0.45], ["blur(4px)", "blur(0px)", "blur(0px)"]);
 
-  // Cursor X/Y: scroll-linked position changes at milestones
-  const cursorX = useTransform(
-    scrollYProgress,
-    [0.05, 0.25, 0.33, 0.55, 0.66, 0.88],
-    [CURSOR_POSITIONS[0].x, CURSOR_POSITIONS[0].x, CURSOR_POSITIONS[1].x, CURSOR_POSITIONS[1].x, CURSOR_POSITIONS[2].x, CURSOR_POSITIONS[2].x],
-  );
-  const cursorY = useTransform(
-    scrollYProgress,
-    [0.05, 0.25, 0.33, 0.55, 0.66, 0.88],
-    [CURSOR_POSITIONS[0].y, CURSOR_POSITIONS[0].y, CURSOR_POSITIONS[1].y, CURSOR_POSITIONS[1].y, CURSOR_POSITIONS[2].y, CURSOR_POSITIONS[2].y],
-  );
+  // ─── Spring-smoothed values (buttery scroll-follow) ──────────────────
+  const scale = useSpring(scaleRaw, SPRING_SMOOTH);
+  const opacity = useSpring(opacityRaw, SPRING_SMOOTH);
+  const y = useSpring(yRaw, SPRING_SMOOTH);
+  const blur = useSpring(blurRaw, SPRING_SMOOTH);
 
-  // Cursor scale: pulse at each milestone
-  const cursorScale = useTransform(
+  // ─── Cursor position (spring-smoothed for glide effect) ──────────────
+  const cursorXRaw = useTransform(
     scrollYProgress,
-    [0.05, 0.22, 0.28, 0.33, 0.50, 0.56, 0.66, 0.83, 0.89],
-    [1, 1, 0.88, 1.08, 1, 0.88, 1.08, 1, 0.88],
+    [0.05, 0.3, 0.35, 0.6, 0.65, 0.9],
+    [
+      CURSOR_POSITIONS[0].x, CURSOR_POSITIONS[0].x,
+      CURSOR_POSITIONS[1].x, CURSOR_POSITIONS[1].x,
+      CURSOR_POSITIONS[2].x, CURSOR_POSITIONS[2].x,
+    ],
   );
+  const cursorYRaw = useTransform(
+    scrollYProgress,
+    [0.05, 0.3, 0.35, 0.6, 0.65, 0.9],
+    [
+      CURSOR_POSITIONS[0].y, CURSOR_POSITIONS[0].y,
+      CURSOR_POSITIONS[1].y, CURSOR_POSITIONS[1].y,
+      CURSOR_POSITIONS[2].y, CURSOR_POSITIONS[2].y,
+    ],
+  );
+  const cursorX = useSpring(cursorXRaw, SPRING_CURSOR);
+  const cursorY = useSpring(cursorYRaw, SPRING_CURSOR);
+
+  // Cursor scale: subtle pulse at each milestone (less aggressive)
+  const cursorScaleRaw = useTransform(
+    scrollYProgress,
+    [0.05, 0.28, 0.35, 0.58, 0.65, 0.88],
+    [1, 1, 0.92, 1, 0.92, 1],
+  );
+  const cursorScale = useSpring(cursorScaleRaw, SPRING_CURSOR);
 
   // Cursor label opacity: show label briefly at each milestone
-  const cursorLabelOpacity = useTransform(
+  const cursorLabelOpacityRaw = useTransform(
     scrollYProgress,
-    [0.05, 0.15, 0.22, 0.33, 0.43, 0.50, 0.66, 0.76, 0.83],
+    [0.08, 0.18, 0.25, 0.38, 0.48, 0.55, 0.68, 0.78, 0.85],
     [0, 1, 0, 0, 1, 0, 0, 1, 0],
   );
+  const cursorLabelOpacity = useSpring(cursorLabelOpacityRaw, SPRING_SMOOTH);
 
-  // View index: 0 → 1 → 2 at scroll milestones
-  const viewIndexMV = useTransform(scrollYProgress, [0, 0.33, 0.66, 1], [0, 0, 1, 2]);
+  // ─── View index: 0 → 1 → 2 at scroll milestones ──────────────────────
+  const viewIndexMV = useTransform(scrollYProgress, [0, 0.35, 0.7, 1], [0, 0, 1, 2]);
   const [currentView, setCurrentView] = useState(0);
   useMotionValueEvent(viewIndexMV, "change", (v) => {
     setCurrentView(Math.round(v));
   });
+
+  // ─── Heading fade (spring-smoothed) ──────────────────────────────────
+  const headingOpacityRaw = useTransform(scrollYProgress, [0, 0.12, 0.22], [1, 1, 0]);
+  const headingYRaw = useTransform(scrollYProgress, [0, 0.22], [0, -20]);
+  const headingOpacity = useSpring(headingOpacityRaw, SPRING_SMOOTH);
+  const headingY = useSpring(headingYRaw, SPRING_SMOOTH);
+
+  // Scroll hint
+  const hintOpacityRaw = useTransform(scrollYProgress, [0, 0.04, 0.08], [0.5, 0.5, 0]);
+  const hintOpacity = useSpring(hintOpacityRaw, SPRING_SMOOTH);
 
   // Reduced motion: render static auto-cycling reel
   if (reduce) {
@@ -101,15 +153,12 @@ export default function ScrollPinnedDashboard({
   }
 
   return (
-    <div ref={containerRef} style={{ height: "220vh" }} className="relative">
-      {/* Sticky inner — stays pinned while scrolling through 220vh */}
+    <div ref={containerRef} style={{ height: "200vh" }} className="relative">
+      {/* Sticky inner — stays pinned while scrolling through 200vh */}
       <div className="sticky top-0 flex h-screen flex-col items-center justify-center overflow-hidden">
-        {/* Heading — fades out as you scroll */}
+        {/* Heading — fades out smoothly as you scroll */}
         <motion.div
-          style={{
-            opacity: useTransform(scrollYProgress, [0, 0.15, 0.25], [1, 1, 0]),
-            y: useTransform(scrollYProgress, [0, 0.25], [0, -30]),
-          }}
+          style={{ opacity: headingOpacity, y: headingY }}
           className="mb-8 px-4 text-center"
         >
           <SectionHeading badge={badge} title={title} sub={sub} />
@@ -131,7 +180,7 @@ export default function ScrollPinnedDashboard({
             <DashboardReel lang={lang} controlledView={currentView} />
           </div>
 
-          {/* Scroll-linked guided cursor */}
+          {/* Spring-smoothed guided cursor */}
           <motion.div
             aria-hidden
             className="pointer-events-none absolute z-30 flex items-start gap-2"
@@ -139,7 +188,7 @@ export default function ScrollPinnedDashboard({
               left: cursorX as MotionValue<string>,
               top: cursorY as MotionValue<string>,
               scale: cursorScale,
-              filter: "drop-shadow(0 8px 18px rgba(0,0,0,0.22))",
+              filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.18))",
             }}
           >
             <span
@@ -162,18 +211,16 @@ export default function ScrollPinnedDashboard({
           </motion.div>
         </motion.div>
 
-        {/* Scroll hint — disappears after first scroll */}
+        {/* Scroll hint — disappears smoothly after first scroll */}
         <motion.div
-          style={{
-            opacity: useTransform(scrollYProgress, [0, 0.05, 0.1], [0.6, 0.6, 0]),
-          }}
+          style={{ opacity: hintOpacity }}
           className="absolute bottom-8 left-1/2 -translate-x-1/2 text-xs [color:var(--mk-text-subtle)]"
         >
           <span className="flex items-center gap-1.5">
             {lang === "en" ? "Scroll to explore" : "Scrollen zum Erkunden"}
             <motion.span
               animate={{ y: [0, 4, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
             >
               ↓
             </motion.span>
