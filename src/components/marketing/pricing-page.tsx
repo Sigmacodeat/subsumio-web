@@ -7,7 +7,7 @@
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { PRICING, PRICING_FAQ, VALUE_PROPS, UI_STRINGS, p, type Lang } from "@/content/site";
-import { SectionHeading, CTASection, BadgePill } from "./chrome";
+import { SectionHeading, CTASection, BadgePill, H1_CLASS, Section } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { PricingGrid } from "./pricing-grid";
 import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal } from "./motion-system";
@@ -26,7 +26,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
       lang={lang}
     >
       {/* Hero */}
-      <section className="relative z-10 px-6 pt-20 pb-16">
+      <Section tone="light" className="px-6 pt-20 pb-16">
         <div className="mx-auto max-w-4xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
@@ -38,28 +38,26 @@ export default function PricingPage({ lang }: { lang: Lang }) {
               {ui.transparentFair}
             </BadgePill>
             <ClipReveal delay={0.1} duration={0.7} direction="up">
-              <h1 className="mb-5 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)]">
-                {pricing.title}
-              </h1>
+              <h1 className={`${H1_CLASS} mb-5`}>{pricing.title}</h1>
             </ClipReveal>
             <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
               {pricing.sub}
             </p>
           </motion.div>
         </div>
-      </section>
+      </Section>
 
       {/* Pricing Grid */}
-      <section className="relative z-10 px-4 pb-24 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <Reveal variant="up">
             <PricingGrid lang={lang} />
           </Reveal>
         </div>
-      </section>
+      </Section>
 
       {/* Value props — signal-colored tiles */}
-      <section className="relative z-10 px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading title={ui.noGamesTitle} sub={ui.noGamesSub} />
@@ -85,17 +83,17 @@ export default function PricingPage({ lang }: { lang: Lang }) {
             ))}
           </StaggerContainer>
         </div>
-      </section>
+      </Section>
 
       {/* FAQ */}
-      <section className="relative z-10 px-4 py-24 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading title={faqTitle} />
           </Reveal>
           <AnimatedFaqList items={faq} tone="light" />
         </div>
-      </section>
+      </Section>
 
       {/* CTA */}
       <CTASection

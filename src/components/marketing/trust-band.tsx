@@ -19,6 +19,7 @@ import {
 import type { Lang } from "@/content/site";
 import { profileForIndustry } from "@/lib/industry-pack";
 import { GlowCard, EASE } from "./motion-system";
+import { H2_CTA_CLASS } from "./chrome";
 
 const _deTrustCopy = {
   eyebrow: "Gebaut für vertrauliche Arbeit",
@@ -158,9 +159,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
             />
             {c.eyebrow}
           </span>
-          <h2 className="mb-4 [font-family:var(--font-display)] text-2xl leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-            {c.title}
-          </h2>
+          <h2 className={`${H2_CTA_CLASS} mb-4`}>{c.title}</h2>
           <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
             {sub}
           </p>

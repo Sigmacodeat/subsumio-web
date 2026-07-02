@@ -16,6 +16,7 @@ import { type Lang, UI_STRINGS } from "@/content/site";
 import { profileForIndustry } from "@/lib/industry-pack";
 import { styleForIndustry } from "@/lib/industry-theme";
 import { GuidedCursor } from "./motion-system";
+import { H2_CTA_CLASS } from "./chrome";
 
 const copy = {
   en: {
@@ -89,7 +90,7 @@ export default function ProductWorkflowShowcase({
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <p className="brand-text mb-4 font-mono text-xs tracking-wider uppercase">{c.eyebrow}</p>
-          <h2 className="mb-5 [font-family:var(--font-display)] text-2xl leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
+          <h2 className={`${H2_CTA_CLASS} mb-5`}>
             {brand}
             <br />
             <span className="gradient-text glow-text">{signature}</span>

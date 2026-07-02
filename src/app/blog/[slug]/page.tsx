@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JsonLd, breadcrumbLd, organizationLd } from "@/components/seo/jsonld";
 import { getAllPosts, getPostBySlug } from "@/content/blog";
-import { BadgePill, CTASection } from "@/components/marketing/chrome";
+import { BadgePill, CTASection, H2_CTA_CLASS } from "@/components/marketing/chrome";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu";
 
@@ -122,11 +122,7 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
             <div className="space-y-8">
               {post.content.map((section, i) => (
                 <section key={i}>
-                  {section.heading && (
-                    <h2 className="mb-3 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)]">
-                      {section.heading}
-                    </h2>
-                  )}
+                  {section.heading && <h2 className={`mb-3 ${H2_CTA_CLASS}`}>{section.heading}</h2>}
                   {section.paragraphs.map((para, j) => (
                     <p key={j} className="mb-4 leading-relaxed text-[color:var(--mk-text-muted)]">
                       {para}

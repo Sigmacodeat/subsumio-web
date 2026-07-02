@@ -16,7 +16,15 @@ import { Button } from "@/components/ui/button";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { FEATURES_PAGE } from "@/content/features";
 import SubsumioShowcase from "./subsumio-showcase";
-import { ICONS, useSiteBrand, BadgePill, H1_CLASS, CTASection } from "./chrome";
+import {
+  ICONS,
+  useSiteBrand,
+  BadgePill,
+  H1_CLASS,
+  H2_CTA_CLASS,
+  CTASection,
+  Section,
+} from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { GuidedCursor, GlowCard, ClipReveal } from "./motion-system";
 
@@ -251,7 +259,7 @@ const HOW = {
 function HowItWorks({ lang }: { lang: Lang }) {
   const h = (HOW as unknown as Record<string, typeof HOW.de>)[lang] ?? HOW.de;
   return (
-    <section className="relative z-10 mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
+    <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -259,9 +267,7 @@ function HowItWorks({ lang }: { lang: Lang }) {
         transition={{ duration: 0.4 }}
         className="mb-14 text-center"
       >
-        <h2 className="mb-3 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-          {h.title}
-        </h2>
+        <h2 className={`${H2_CTA_CLASS} mb-3`}>{h.title}</h2>
         <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
           {h.sub}
         </p>
@@ -310,7 +316,7 @@ function HowItWorks({ lang }: { lang: Lang }) {
           );
         })}
       </div>
-    </section>
+    </Section>
   );
 }
 
@@ -398,7 +404,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
   ];
 
   return (
-    <section className="relative z-10 mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
+    <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
       <div className="grid items-center gap-9 lg:grid-cols-[0.85fr_1.15fr]">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -409,7 +415,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
           <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
             {UI_STRINGS[lang].inDashboard}
           </p>
-          <h2 className="mb-4 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
+          <h2 className={`${H2_CTA_CLASS} mb-4`}>
             {lang !== "en"
               ? "Jede Funktion läuft als Kanzlei-Workflow."
               : "Features run as a legal workflow."}
@@ -540,7 +546,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
           </div>
         </motion.div>
       </div>
-    </section>
+    </Section>
   );
 }
 
@@ -574,7 +580,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
       lang={lang}
     >
       {/* Hero — copy left, animated graph right */}
-      <section className="relative z-10 mx-auto max-w-7xl px-4 pt-20 pb-16 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
@@ -620,10 +626,10 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             </div>
           </motion.div>
         </div>
-      </section>
+      </Section>
 
       {/* Stats band */}
-      <section className="relative z-10 mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 pb-20 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {stats.map((s, i) => (
             <motion.div
@@ -643,7 +649,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             </motion.div>
           ))}
         </div>
-      </section>
+      </Section>
 
       {/* How it works — sequential pipeline */}
       <HowItWorks lang={lang} />
@@ -655,7 +661,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
       {isSubsumio && <SubsumioShowcase lang={lang} />}
 
       {/* Category explorer */}
-      <section className="relative z-10 mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
         <div
           role="tablist"
           aria-label="Feature categories"
@@ -708,9 +714,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                 <div className="brand-soft brand-border flex h-12 w-12 items-center justify-center rounded-xl border">
                   {CatIcon && <CatIcon size={22} className="brand-text" />}
                 </div>
-                <h2 className="text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-                  {cat.title}
-                </h2>
+                <h2 className={H2_CTA_CLASS}>{cat.title}</h2>
               </div>
               <p className="mb-8 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
                 {cat.intro}
@@ -787,10 +791,10 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             )}
           </motion.div>
         </AnimatePresence>
-      </section>
+      </Section>
 
       {/* Security cross-link — replaces former Security & Teams category */}
-      <section className="relative z-10 mx-auto max-w-5xl px-4 pb-24 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -803,7 +807,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             <div className="brand-soft brand-border mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border">
               <Shield size={24} className="brand-text" />
             </div>
-            <h2 className="mb-3 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
+            <h2 className={`${H2_CTA_CLASS} mb-3`}>
               {lang === "en"
                 ? "Built for confidentiality-first work"
                 : "Gebaut für vertrauliche Arbeit"}
@@ -820,11 +824,11 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             </Link>
           </div>
         </motion.div>
-      </section>
+      </Section>
 
       {/* Everything at a glance */}
-      <section className="relative z-10 mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
-        <h2 className="mb-12 text-center text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
+      <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
+        <h2 className={`${H2_CTA_CLASS} mb-12 text-center`}>
           {lang === "en"
             ? "Five capability areas, one engine"
             : "Fünf Funktionsbereiche, eine Engine"}
@@ -864,10 +868,10 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             );
           })}
         </div>
-      </section>
+      </Section>
 
       {/* FAQ */}
-      <section className="relative z-10 px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -876,13 +880,11 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             transition={{ duration: 0.4 }}
             className="mb-10 text-center"
           >
-            <h2 className="text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-              {t.faqTitle}
-            </h2>
+            <h2 className={H2_CTA_CLASS}>{t.faqTitle}</h2>
           </motion.div>
           <AnimatedFaqList items={t.faq} tone="light" />
         </div>
-      </section>
+      </Section>
 
       {/* CTA */}
       <CTASection title={t.ctaTitle} sub={t.ctaSub} href={p(lang, "/signup")} label={t.ctaButton} />

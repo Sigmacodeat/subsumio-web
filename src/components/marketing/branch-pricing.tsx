@@ -10,6 +10,7 @@ import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PRICING, p, UI_STRINGS, type Lang } from "@/content/site";
 import { pricingForIndustry } from "@/content/vertical-pricing";
+import { H2_CTA_CLASS } from "./chrome";
 
 export default function BranchPricing({ lang, industry }: { lang: Lang; industry: string }) {
   const vp = pricingForIndustry(lang, industry);
@@ -40,7 +41,7 @@ export default function BranchPricing({ lang, industry }: { lang: Lang; industry
         <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium">
           {UI_STRINGS[lang].pricingBadge}
         </span>
-        <h2 className="mb-4 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">{title}</h2>
+        <h2 className={`${H2_CTA_CLASS} mb-4`}>{title}</h2>
         <p className="mx-auto max-w-2xl text-lg text-pretty [color:var(--mk-text-muted)]">{sub}</p>
       </div>
 

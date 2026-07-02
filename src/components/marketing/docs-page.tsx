@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { getDocs } from "@/content/docs";
 import { type Lang } from "@/content/site";
 import { p, UI_STRINGS } from "@/content/site";
-import { ICONS, H1_CLASS, BadgePill, CTASection } from "./chrome";
+import { ICONS, H1_CLASS, H2_CTA_CLASS, BadgePill, CTASection, Section } from "./chrome";
 import DashboardReel from "./dashboard-reel";
 import { GlowCard, ClipReveal, EASE } from "./motion-system";
 
@@ -91,15 +91,13 @@ function DocsProof({ lang }: { lang: Lang }) {
         ];
 
   return (
-    <section className="relative z-10 px-6 pb-24">
+    <Section tone="light" className="px-6 pb-24">
       <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
         <motion.div {...reveal}>
           <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
             {UI_STRINGS[lang].dashboardNotDatasheet}
           </p>
-          <h2 className="mb-4 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-            {UI_STRINGS[lang].docsTitle}
-          </h2>
+          <h2 className={`${H2_CTA_CLASS} mb-4`}>{UI_STRINGS[lang].docsTitle}</h2>
           <p className="mb-7 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
             {UI_STRINGS[lang].docsSub}
           </p>
@@ -129,7 +127,7 @@ function DocsProof({ lang }: { lang: Lang }) {
           <DashboardReel lang={lang} />
         </motion.div>
       </div>
-    </section>
+    </Section>
   );
 }
 
@@ -143,7 +141,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
       lang={lang}
     >
       {/* Hero */}
-      <section className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-16 text-center">
+      <Section tone="light" className="px-6 pt-20 pb-16 text-center">
         <motion.div
           className="relative z-10"
           initial={{ opacity: 0, y: 18 }}
@@ -166,19 +164,17 @@ export default function DocsPage({ lang }: { lang: Lang }) {
             {d.intro}
           </p>
         </motion.div>
-      </section>
+      </Section>
 
       <DocsProof lang={lang} />
 
       {/* Categories */}
-      <section className="relative z-10 px-6 pb-28">
+      <Section tone="light" className="px-6 pb-28">
         <div className="mx-auto max-w-7xl space-y-20">
           {d.categories.map((cat, _ci) => (
             <motion.div key={cat.id} {...reveal}>
               <div className="mb-8">
-                <h2 className="mb-2 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-                  {cat.title}
-                </h2>
+                <h2 className={`${H2_CTA_CLASS} mb-2`}>{cat.title}</h2>
                 <p className="text-sm [color:var(--mk-text-muted)]">{cat.sub}</p>
               </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -195,15 +191,13 @@ export default function DocsPage({ lang }: { lang: Lang }) {
             </motion.div>
           ))}
         </div>
-      </section>
+      </Section>
 
       {/* Architecture */}
-      <section className="relative z-10 px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <motion.div {...reveal} className="mb-12 text-center">
-            <h2 className="mb-3 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-              {d.arch.title}
-            </h2>
+            <h2 className={`${H2_CTA_CLASS} mb-3`}>{d.arch.title}</h2>
             <p className="text-sm text-pretty [color:var(--mk-text-muted)]">{d.arch.sub}</p>
           </motion.div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -218,7 +212,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
             ))}
           </div>
         </div>
-      </section>
+      </Section>
 
       {/* CTA */}
       <CTASection

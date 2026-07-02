@@ -26,7 +26,7 @@ import SuperbrainAdvantage from "./superbrain-advantage";
 import TrustBand from "./trust-band";
 import { TestimonialsSection } from "./testimonials";
 import AudienceTabs from "./audience-tabs";
-import { Section, SectionHeading, ICONS, accentTile } from "./chrome";
+import { Section, SectionHeading, ICONS, accentTile, H2_CTA_CLASS } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import {
   GlowCard,
@@ -389,7 +389,14 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           <motion.div {...reveal} className="mx-auto max-w-5xl">
             <SectionHeading title={t.comparisonTitle} sub={t.comparisonSub} />
             <div className="overflow-x-auto">
-              <table className="mt-10 w-full border-collapse text-sm" aria-label={lang !== "en" ? "Vergleich: Subsumio vs. andere KI-Tools" : "Comparison: Subsumio vs. other AI tools"}>
+              <table
+                className="mt-10 w-full border-collapse text-sm"
+                aria-label={
+                  lang !== "en"
+                    ? "Vergleich: Subsumio vs. andere KI-Tools"
+                    : "Comparison: Subsumio vs. other AI tools"
+                }
+              >
                 <thead>
                   <tr className="border-b border-[color:var(--mk-border)]">
                     <th className="py-3 pr-4 text-left font-semibold text-[color:var(--mk-text)]">
@@ -481,10 +488,10 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           <GradientMesh className="z-0" />
           <motion.div {...reveal} className="relative z-10 mx-auto max-w-3xl text-center">
             <SubsumioMark size={48} className="mx-auto mb-7" />
-            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-              {t.ctaTitle}
-            </h2>
-            <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
+            <h2 className={`${H2_CTA_CLASS} mb-4`}>{t.ctaTitle}</h2>
+            <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
+              {t.ctaSub}
+            </p>
             <MagneticButton strength={0.2}>
               <Link href={p(lang, "/signup")}>
                 <Button size="xl" variant="primary">

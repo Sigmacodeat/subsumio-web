@@ -25,7 +25,15 @@ import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { DOWNLOAD } from "@/content/download";
-import { SectionHeading, BadgePill, H1_CLASS, CTASection } from "./chrome";
+import {
+  Section,
+  SectionHeading,
+  BadgePill,
+  H1_CLASS,
+  H2_CTA_CLASS,
+  CTASection,
+  IconTile,
+} from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { GlowCard, ClipReveal } from "./motion-system";
 
@@ -81,7 +89,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
             transition={{ delay: 0.6, duration: 0.4 }}
             className="mx-4 flex items-center gap-2 rounded-xl border [border-color:var(--mk-border)] px-3 py-2 [background:var(--mk-bg)]"
           >
-            <Search size={12} className="text-[var(--signal-blue)]" />
+            <Search size={12} className="brand-text" />
             <span className="text-xs [color:var(--mk-text-muted)]">
               {UI_STRINGS[lang].askYourBrain}
             </span>
@@ -118,7 +126,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.9, duration: 0.4 }}
-              className="mt-2 text-xs [color:var(--signal-amber)] opacity-80"
+              className="mt-2 text-xs [color:var(--signal-amber)]"
             >
               {UI_STRINGS[lang].gapWarning}
             </motion.p>
@@ -163,7 +171,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
       lang={lang}
     >
       {/* Hero — copy left, phone mockup right */}
-      <section className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-16">
+      <Section tone="light" className="px-6 pt-20 pb-16">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
@@ -211,10 +219,10 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
 
           <PhoneMockup lang={lang} />
         </div>
-      </section>
+      </Section>
 
       {/* Platform cards */}
-      <section className="relative z-10 mx-auto max-w-6xl px-6 pb-20">
+      <Section tone="light" className="px-6 pb-20">
         <div className="grid gap-5 md:grid-cols-3">
           {t.platforms.map((platform, idx) => {
             const Icon = PLATFORM_ICONS[platform.icon] ?? Monitor;
@@ -227,24 +235,20 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                 transition={{ delay: idx * 0.08, duration: 0.3 }}
               >
                 <GlowCard
-                  glowColor="var(--signal-blue)"
+                  glowColor="var(--brand-primary)"
                   intensity={0.12}
                   className="flex h-full flex-col rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)]"
                 >
-                  <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--signal-blue)]/20 bg-[var(--signal-blue)]/10 transition-transform duration-300 hover:scale-110">
-                    <Icon size={22} className="text-[var(--signal-blue)]" />
-                  </div>
+                  <IconTile icon={Icon} size={22} className="mb-5" />
                   <h2 className="mb-1 text-lg font-bold [color:var(--mk-text)]">{platform.name}</h2>
-                  <p className="mb-5 text-sm font-medium text-[var(--signal-blue)]">
-                    {platform.tagline}
-                  </p>
+                  <p className="brand-text mb-5 text-sm font-medium">{platform.tagline}</p>
                   <ol className="flex-1 space-y-3">
                     {platform.steps.map((step, i) => (
                       <li
                         key={step}
                         className="flex gap-3 text-sm leading-relaxed [color:var(--mk-text-muted)]"
                       >
-                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--signal-blue)]/30 bg-[var(--signal-blue)]/20 text-xs font-bold text-[var(--signal-blue)]">
+                        <span className="brand-text mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_30%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] text-xs font-bold">
                           {i + 1}
                         </span>
                         {step}
@@ -261,14 +265,12 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
             );
           })}
         </div>
-      </section>
+      </Section>
 
       {/* Store preview */}
-      <section className="relative z-10 px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="mb-4 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-            {t.storesTitle}
-          </h2>
+          <h2 className={`${H2_CTA_CLASS} mb-4`}>{t.storesTitle}</h2>
           <p className="mb-8 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
             {t.storesSub}
           </p>
@@ -294,7 +296,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                   key={f.label}
                   className="inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 text-xs [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
                 >
-                  <Icon size={13} className="text-[var(--signal-blue)]" /> {f.label}
+                  <Icon size={13} className="brand-text" /> {f.label}
                 </span>
               );
             })}
@@ -322,15 +324,15 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
             {t.storesNote}
           </p>
         </div>
-      </section>
+      </Section>
 
       {/* FAQ */}
-      <section className="relative z-10 px-4 py-24 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={t.faqTitle} />
           <AnimatedFaqList items={t.faq} tone="light" />
         </div>
-      </section>
+      </Section>
 
       {/* CTA */}
       <CTASection title={t.ctaTitle} sub={t.ctaSub} href={p(lang, "/signup")} label={t.ctaButton} />

@@ -36,7 +36,7 @@ function SignatureBand({ industry, lang }: { industry: string; lang: Lang }) {
   const locale = lang !== "en" ? "de" : "en";
 
   return (
-    <section className="relative z-10 px-6 pb-20">
+    <Section tone="light" className="px-6 pb-20">
       <div className="brand-border relative mx-auto max-w-5xl overflow-hidden rounded-2xl border p-6 [background:var(--mk-surface)] md:p-8">
         <div className="brand-glow-bg absolute inset-y-0 left-0 w-1/2 blur-3xl" />
         <div className="relative grid gap-6 md:grid-cols-[1.1fr_1fr] md:items-center">
@@ -44,9 +44,7 @@ function SignatureBand({ industry, lang }: { industry: string; lang: Lang }) {
             <p className="brand-text mb-3 font-mono text-xs tracking-wider uppercase">
               {profile.brand} {UI_STRINGS[lang].signatureLabel}
             </p>
-            <h2 className="text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-              {signature.title[locale]}
-            </h2>
+            <h2 className={H2_CTA_CLASS}>{signature.title[locale]}</h2>
             <p className="mt-4 text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-base">
               {signature.proof[locale]}
             </p>
@@ -64,7 +62,7 @@ function SignatureBand({ industry, lang }: { industry: string; lang: Lang }) {
           </div>
         </div>
       </div>
-    </section>
+    </Section>
   );
 }
 
@@ -202,7 +200,7 @@ export default function VerticalPage({
                 className="rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]"
                 style={{ boxShadow: "var(--mk-card-shadow)" }}
               >
-                <AlertCircle size={18} className="mb-4 [color:var(--signal-amber)]" />
+                <AlertCircle size={18} className="brand-text mb-4" />
                 <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
                   {pain.title}
                 </h3>
@@ -309,14 +307,12 @@ export default function VerticalPage({
             transition={{ duration: 0.5 }}
           >
             <span
-              className="mb-2 block font-serif text-8xl leading-none select-none"
-              style={{ color: "var(--signal-blue)", opacity: 0.12 }}
+              className="brand-text mb-2 block font-serif text-8xl leading-none select-none"
+              style={{ opacity: 0.12 }}
             >
               &ldquo;
             </span>
-            <h2 className="-mt-6 mb-5 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-              {t.proofTitle}
-            </h2>
+            <h2 className={`-mt-6 mb-5 ${H2_CTA_CLASS}`}>{t.proofTitle}</h2>
             <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
               {t.proof}
             </p>
@@ -357,7 +353,9 @@ export default function VerticalPage({
         <div className="mx-auto max-w-3xl">
           <SubsumioMark size={56} className="mx-auto mb-7" />
           <h2 className={`${H2_CTA_CLASS} mb-4`}>{t.ctaTitle}</h2>
-          <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
+          <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
+            {t.ctaSub}
+          </p>
           <Link href={signupHref}>
             <Button size="xl" variant="primary">
               {t.ctaButton} <ArrowRight size={18} />

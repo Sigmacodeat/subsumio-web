@@ -190,7 +190,7 @@ export default function LiveDemo({
       {/* sources / note */}
       <div className="flex min-h-[40px] flex-wrap items-center gap-2 border-t [border-color:var(--mk-border)] px-5 py-3 [background:var(--mk-bg)]">
         {note ? (
-          <span className="text-xs [color:var(--signal-amber)] opacity-80">{note}</span>
+          <span className="text-xs [color:var(--signal-amber)]">{note}</span>
         ) : !live ? (
           <>
             <span className="text-xs [color:var(--mk-text)] opacity-60">{sourcesLabel}</span>

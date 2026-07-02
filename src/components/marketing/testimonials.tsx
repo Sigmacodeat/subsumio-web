@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Star, Quote } from "lucide-react";
 import type { Lang } from "@/content/site";
 import { EASE } from "./motion-system";
+import { H2_CTA_CLASS } from "./chrome";
 import { TESTIMONIALS } from "./testimonials-data";
 
 export function TestimonialsSection({ lang }: { lang?: Lang } = {}) {
@@ -34,7 +35,7 @@ export function TestimonialsSection({ lang }: { lang?: Lang } = {}) {
               />
             ))}
           </div>
-          <h2 className="mb-4 [font-family:var(--font-display)] text-2xl leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
+          <h2 className={`${H2_CTA_CLASS} mb-4`}>
             {isDE ? "Was Anwälte über Subsumio sagen" : "What lawyers say about Subsumio"}
           </h2>
           <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">

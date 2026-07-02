@@ -23,7 +23,7 @@ import {
   Smile,
   Send,
 } from "lucide-react";
-import { ICONS, Section, accentTile } from "./chrome";
+import { ICONS, Section, accentTile, H2_CTA_CLASS } from "./chrome";
 import { VERTICALS } from "@/content/verticals";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import type { Lang } from "@/content/site";
@@ -669,9 +669,7 @@ export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: R
             </span>
           </motion.div>
           <motion.div {...reveal(1, reduce)}>
-            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl leading-[1.1] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl lg:text-4xl">
-              {c.waTitle}
-            </h2>
+            <h2 className={`${H2_CTA_CLASS} mb-4`}>{c.waTitle}</h2>
           </motion.div>
           <motion.div {...reveal(2, reduce)}>
             <p className="mb-10 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
@@ -720,10 +718,10 @@ export function FeatureBento({ lang }: { lang: Lang }) {
         <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium">
           {c.bentoEyebrow}
         </span>
-        <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-          {c.bentoTitle}
-        </h2>
-        <p className="mx-auto max-w-2xl text-lg text-pretty [color:var(--mk-text-muted)]">{c.bentoSub}</p>
+        <h2 className={`${H2_CTA_CLASS} mb-4`}>{c.bentoTitle}</h2>
+        <p className="mx-auto max-w-2xl text-lg text-pretty [color:var(--mk-text-muted)]">
+          {c.bentoSub}
+        </p>
       </motion.div>
       <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {features.map((f, i) => {

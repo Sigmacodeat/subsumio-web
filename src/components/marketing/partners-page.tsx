@@ -11,7 +11,15 @@ import { Button } from "@/components/ui/button";
 import type { Lang } from "@/content/site";
 import { UI_STRINGS } from "@/content/site";
 import { PARTNERS } from "@/content/partners";
-import { SectionHeading, ICONS, CTASection, BadgePill, H1_CLASS } from "./chrome";
+import {
+  SectionHeading,
+  ICONS,
+  CTASection,
+  BadgePill,
+  H1_CLASS,
+  H2_CTA_CLASS,
+  Section,
+} from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal } from "./motion-system";
 
@@ -25,7 +33,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
       lang={lang}
     >
       {/* Hero — animate on mount */}
-      <section className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-20 text-center">
+      <Section tone="light" className="mx-auto max-w-7xl px-6 pt-20 pb-20 text-center">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
@@ -44,10 +52,10 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
             {t.sub}
           </p>
         </motion.div>
-      </section>
+      </Section>
 
       {/* Tiers — staggered reveal + GlowCard */}
-      <section id="affiliate" className="relative z-10 mx-auto max-w-6xl px-6 pb-24">
+      <Section id="affiliate" tone="light" className="mx-auto max-w-6xl px-6 pb-24">
         <StaggerContainer className="grid gap-5 md:grid-cols-3" stagger={0.1}>
           {t.tiers.map((tier) => {
             const Icon = ICONS[tier.icon];
@@ -129,24 +137,24 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
             );
           })}
         </StaggerContainer>
-      </section>
+      </Section>
 
       {/* Earnings illustration */}
-      <section className="relative z-10 px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <Reveal variant="up" className="mx-auto max-w-3xl text-center">
-          <TrendingUp size={28} className="mx-auto mb-6 [color:var(--signal-amber)]" />
-          <h2 className="mb-5 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-            {t.calcTitle}
-          </h2>
-          <p className="mb-6 text-lg leading-relaxed text-pretty [color:var(--mk-text)]">{t.calcSub}</p>
+          <TrendingUp size={28} className="brand-text mx-auto mb-6" />
+          <h2 className={`${H2_CTA_CLASS} mb-5`}>{t.calcTitle}</h2>
+          <p className="mb-6 text-lg leading-relaxed text-pretty [color:var(--mk-text)]">
+            {t.calcSub}
+          </p>
           <p className="mx-auto max-w-xl text-xs leading-relaxed [color:var(--mk-text-subtle)]">
             {t.calcNote}
           </p>
         </Reveal>
-      </section>
+      </Section>
 
       {/* How it works */}
-      <section className="relative z-10 mx-auto max-w-5xl px-4 py-24 sm:px-6 lg:px-8">
+      <Section tone="light" className="mx-auto max-w-5xl px-4 py-24 sm:px-6 lg:px-8">
         <Reveal variant="up">
           <SectionHeading title={t.howTitle} />
         </Reveal>
@@ -165,10 +173,10 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
             </StaggerItem>
           ))}
         </StaggerContainer>
-      </section>
+      </Section>
 
       {/* FAQ */}
-      <section className="relative z-10 px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading title={t.faqTitle} />
@@ -177,7 +185,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
             <AnimatedFaqList items={t.faq} tone="light" />
           </Reveal>
         </div>
-      </section>
+      </Section>
 
       {/* CTA */}
       <CTASection

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { p, type Lang } from "@/content/site";
 import { Button } from "@/components/ui/button";
+import { H2_CTA_CLASS } from "./chrome";
 
 const copy = {
   en: {
@@ -153,9 +154,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <p className="brand-text mb-4 font-mono text-xs tracking-wider uppercase">{t.eyebrow}</p>
-          <h2 className="mb-5 [font-family:var(--font-display)] text-2xl leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-            {t.title}
-          </h2>
+          <h2 className={`${H2_CTA_CLASS} mb-5`}>{t.title}</h2>
           <p className="mb-8 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
             {t.sub}
           </p>

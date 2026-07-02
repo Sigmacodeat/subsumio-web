@@ -7,7 +7,7 @@
 import { Check, Shield, Layers, Lock, Eye, type LucideIcon } from "lucide-react";
 import { p, type Lang } from "@/content/site";
 import { SECURITY } from "@/content/security";
-import { SectionHeading, CTASection, BadgePill, H1_CLASS } from "./chrome";
+import { SectionHeading, CTASection, BadgePill, H1_CLASS, Section } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal } from "./motion-system";
 
@@ -23,7 +23,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       lang={lang}
     >
       {/* Hero */}
-      <section className="relative z-10 px-4 pt-20 pb-16 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
         <Reveal variant="up" className="mx-auto max-w-4xl text-center">
           <BadgePill>{t.badge}</BadgePill>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
@@ -38,10 +38,10 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
             {t.sub}
           </p>
         </Reveal>
-      </section>
+      </Section>
 
       {/* Pillars */}
-      <section className="relative z-10 px-4 py-16 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
         <StaggerContainer className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2" stagger={0.1}>
           {t.pillars.map((pillar) => {
             const Icon = PILLAR_ICONS[pillar.icon] ?? Shield;
@@ -63,10 +63,10 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
             );
           })}
         </StaggerContainer>
-      </section>
+      </Section>
 
       {/* Hosting options */}
-      <section className="relative z-10 px-4 py-16 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-16 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading title={t.hostingTitle} sub={t.hostingSub} />
@@ -93,10 +93,10 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
             ))}
           </StaggerContainer>
         </div>
-      </section>
+      </Section>
 
       {/* Compliance today */}
-      <section className="relative z-10 px-4 py-16 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
           <Reveal variant="up">
             <SectionHeading title={t.complianceTitle} />
@@ -108,10 +108,10 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
             />
           </Reveal>
         </div>
-      </section>
+      </Section>
 
       {/* EU AI Act */}
-      <section className="relative z-10 px-4 py-12 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-12 sm:px-6 lg:px-8">
         <Reveal
           variant="up"
           className="mx-auto max-w-4xl rounded-2xl border border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/[0.04] p-7"
@@ -132,10 +132,10 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
             ))}
           </StaggerContainer>
         </Reveal>
-      </section>
+      </Section>
 
       {/* Enterprise readiness */}
-      <section className="relative z-10 px-4 py-12 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-12 sm:px-6 lg:px-8">
         <Reveal
           variant="up"
           className="mx-auto max-w-4xl rounded-2xl border [border-color:var(--signal-green-border)] p-7 [background:var(--signal-green-bg)]"
@@ -158,10 +158,10 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
             ))}
           </StaggerContainer>
         </Reveal>
-      </section>
+      </Section>
 
       {/* FAQ */}
-      <section className="relative z-10 px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading title={t.faqTitle} />
@@ -170,10 +170,10 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
             <AnimatedFaqList items={t.faq} tone="light" />
           </Reveal>
         </div>
-      </section>
+      </Section>
 
       {/* Responsible disclosure */}
-      <section className="relative z-10 px-4 py-16 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
         <Reveal
           variant="up"
           className="mx-auto max-w-4xl rounded-2xl border [border-color:var(--mk-border)] p-7 [background:var(--mk-surface)]"
@@ -181,7 +181,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
           <h2 className="mb-2 text-sm font-bold [color:var(--mk-text)]">{t.disclosureTitle}</h2>
           <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{t.disclosureText}</p>
         </Reveal>
-      </section>
+      </Section>
 
       {/* CTA */}
       <CTASection
