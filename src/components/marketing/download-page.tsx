@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { DOWNLOAD } from "@/content/download";
-import { SectionHeading } from "./chrome";
+import { SectionHeading, BadgePill, H1_CLASS, CTASection } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { GlowCard, ClipReveal } from "./motion-system";
 
@@ -171,12 +171,9 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="text-center lg:text-left"
           >
-            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[var(--signal-blue)]/30 bg-[var(--signal-blue)]/10 px-3 py-1.5 text-xs font-medium text-[var(--signal-blue)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--signal-blue)]" />
-              {t.badge}
-            </div>
+            <BadgePill className="mb-8">{t.badge}</BadgePill>
             <ClipReveal delay={0.1} duration={0.7} direction="up">
-              <h1 className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)]">
+              <h1 className={`${H1_CLASS} mb-6`}>
                 {t.h1a}
                 <br />
                 <span className="gradient-text glow-text">{t.h1b}</span>
@@ -336,21 +333,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* CTA */}
-      <section
-        data-tone="dark"
-        className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
-      >
-        <SubsumioMark size={56} className="mx-auto mb-7" />
-        <h2 className="mb-4 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-          {t.ctaTitle}
-        </h2>
-        <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
-        <Link href={p(lang, "/signup")}>
-          <Button size="xl" variant="primary">
-            {t.ctaButton} <ArrowRight size={18} />
-          </Button>
-        </Link>
-      </section>
+      <CTASection title={t.ctaTitle} sub={t.ctaSub} href={p(lang, "/signup")} label={t.ctaButton} />
     </div>
   );
 }

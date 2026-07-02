@@ -1,14 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { getDocs } from "@/content/docs";
 import { type Lang } from "@/content/site";
 import { p, UI_STRINGS } from "@/content/site";
-import { ICONS, H1_CLASS, H2_CTA_CLASS } from "./chrome";
+import { ICONS, H1_CLASS, BadgePill, CTASection } from "./chrome";
 import DashboardReel from "./dashboard-reel";
 import { GlowCard, ClipReveal, EASE } from "./motion-system";
 
@@ -154,19 +150,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, ease: "easeOut" }}
         >
-          <div
-            className="mb-8 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
-            style={{
-              color: "var(--brand-text)",
-              background: "color-mix(in srgb, var(--brand-text) 10%, transparent)",
-            }}
-          >
-            <span
-              className="h-1.5 w-1.5 rounded-full"
-              style={{ background: "var(--brand-text)" }}
-            />
-            {d.hero.badge}
-          </div>
+          <BadgePill className="mb-8">{d.hero.badge}</BadgePill>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
             <h1 className={`${H1_CLASS} mb-5`}>
               {d.hero.title}
@@ -237,20 +221,12 @@ export default function DocsPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* CTA */}
-      <motion.section
-        {...reveal}
-        data-tone="dark"
-        className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
-      >
-        <SubsumioMark size={56} className="mx-auto mb-7" />
-        <h2 className={`${H2_CTA_CLASS} mb-4`}>{d.cta.title}</h2>
-        <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">{d.cta.sub}</p>
-        <Link href={p(lang, "/login")}>
-          <Button size="lg" variant="primary">
-            {d.cta.button} <ArrowRight size={16} />
-          </Button>
-        </Link>
-      </motion.section>
+      <CTASection
+        title={d.cta.title}
+        sub={d.cta.sub}
+        href={p(lang, "/login")}
+        label={d.cta.button}
+      />
     </div>
   );
 }

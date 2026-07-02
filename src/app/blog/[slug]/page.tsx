@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JsonLd, breadcrumbLd, organizationLd } from "@/components/seo/jsonld";
 import { getAllPosts, getPostBySlug } from "@/content/blog";
+import { BadgePill, CTASection } from "@/components/marketing/chrome";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu";
 
@@ -78,88 +79,70 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
             { name: post.title.slice(0, 50), url: `/blog/${post.slug}` },
           ])}
         />
-        <article className="mx-auto max-w-3xl px-4 py-24 sm:px-6 lg:px-8">
-          <Link
-            href="/blog"
-            className="mb-8 inline-flex items-center gap-2 text-sm text-[color:var(--mk-text-subtle)] hover:text-[color:var(--mk-text)]"
-          >
-            ← Alle Artikel
-          </Link>
-
-          <div className="mb-8">
-            <div className="mb-3 flex flex-wrap gap-2">
-              {post.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full border border-[color:var(--mk-border)] px-3 py-1 text-xs text-[color:var(--mk-text-subtle)]"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-            <h1 className="mb-4 text-[clamp(1.75rem,4vw,2.5rem)] leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)]">
-              {post.title}
-            </h1>
-            <p className="text-lg text-pretty [color:var(--mk-text-muted)]">{post.description}</p>
-            <div className="mt-4 flex items-center gap-3 text-sm text-[color:var(--mk-text-subtle)]">
-              <span>{post.author}</span>
-              <span>·</span>
-              <time>
-                {new Date(post.date).toLocaleDateString("de-DE", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </time>
-              <span>·</span>
-              <span>{post.readMinutes} Min. Lesezeit</span>
-            </div>
-          </div>
-
-          <div className="space-y-8">
-            {post.content.map((section, i) => (
-              <section key={i}>
-                {section.heading && (
-                  <h2 className="mb-3 text-2xl font-bold [color:var(--mk-text)]">
-                    {section.heading}
-                  </h2>
-                )}
-                {section.paragraphs.map((para, j) => (
-                  <p key={j} className="mb-4 leading-relaxed text-[color:var(--mk-text-muted)]">
-                    {para}
-                  </p>
-                ))}
-              </section>
-            ))}
-          </div>
-
-          <div className="mt-12 flex flex-wrap gap-4 border-t border-[color:var(--mk-border)] pt-8">
+        <article data-tone="light" className="min-h-screen [background:var(--mk-bg)]">
+          <div className="mx-auto max-w-3xl px-4 py-24 sm:px-6 lg:px-8">
             <Link
               href="/blog"
-              className="text-[color:var(--brand-text)] underline underline-offset-4 hover:text-[color:var(--mk-text)]"
+              className="mb-8 inline-flex items-center gap-2 text-sm text-[color:var(--mk-text-subtle)] hover:text-[color:var(--mk-text)]"
             >
-              Alle Artikel
+              ← Alle Artikel
             </Link>
-            <Link
-              href="/features"
-              className="text-[color:var(--brand-text)] underline underline-offset-4 hover:text-[color:var(--mk-text)]"
-            >
-              Features
-            </Link>
-            <Link
-              href="/pricing"
-              className="text-[color:var(--brand-text)] underline underline-offset-4 hover:text-[color:var(--mk-text)]"
-            >
-              Preise
-            </Link>
-            <Link
-              href="/security"
-              className="text-[color:var(--brand-text)] underline underline-offset-4 hover:text-[color:var(--mk-text)]"
-            >
-              Sicherheit
-            </Link>
+
+            <div className="mb-8">
+              <BadgePill>Blog</BadgePill>
+              <div className="mb-3 flex flex-wrap gap-2">
+                {post.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-[color:var(--mk-border)] px-3 py-1 text-xs text-[color:var(--mk-text-subtle)]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <h1 className="mb-4 text-[clamp(1.75rem,4vw,2.5rem)] leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)]">
+                {post.title}
+              </h1>
+              <p className="text-lg text-pretty [color:var(--mk-text-muted)]">{post.description}</p>
+              <div className="mt-4 flex items-center gap-3 text-sm text-[color:var(--mk-text-subtle)]">
+                <span>{post.author}</span>
+                <span>·</span>
+                <time>
+                  {new Date(post.date).toLocaleDateString("de-DE", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </time>
+                <span>·</span>
+                <span>{post.readMinutes} Min. Lesezeit</span>
+              </div>
+            </div>
+
+            <div className="space-y-8">
+              {post.content.map((section, i) => (
+                <section key={i}>
+                  {section.heading && (
+                    <h2 className="mb-3 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)]">
+                      {section.heading}
+                    </h2>
+                  )}
+                  {section.paragraphs.map((para, j) => (
+                    <p key={j} className="mb-4 leading-relaxed text-[color:var(--mk-text-muted)]">
+                      {para}
+                    </p>
+                  ))}
+                </section>
+              ))}
+            </div>
           </div>
         </article>
+        <CTASection
+          title="Bereit für belegte KI-Antworten?"
+          sub="Starte deine 14-tägige Testphase — keine Kreditkarte nötig."
+          href="/signup"
+          label="14 Tage testen"
+        />
       </>
     );
   });

@@ -14,7 +14,7 @@ import {
   StaggerContainer,
   StaggerItem,
 } from "./motion-system";
-import { Section, accentTile } from "./chrome";
+import { Section, accentTile, BadgePill, H1_CLASS, H2_CTA_CLASS } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { copy, getCopy, type SuperbrainCopyDe } from "./superbrain-content";
 
@@ -40,23 +40,16 @@ function HeroSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
         className="brand-glow-bg absolute top-1/4 left-1/2 h-[500px] w-[800px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
       />
       <div className="relative z-10 mx-auto max-w-5xl text-center">
-        <motion.div
-          initial={reduce ? false : { scale: 0.85, opacity: 0, y: 10 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 200, damping: 22 }}
-          className="mb-8 inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 [background:var(--mk-surface-2)]"
-        >
+        <BadgePill className="mb-8">
           <Brain size={16} className="brand-text" />
-          <span className="font-mono text-xs tracking-wider [color:var(--mk-text-muted)] uppercase">
-            {t.hero.eyebrow}
-          </span>
-        </motion.div>
+          {t.hero.eyebrow}
+        </BadgePill>
 
         <motion.h1
           initial={reduce ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={reduce ? { duration: 0 } : { duration: 0.6, ease: EASE.dramatic, delay: 0.1 }}
-          className="mb-6 [font-family:var(--font-display)] text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black text-balance [color:var(--mk-text)]"
+          className={`${H1_CLASS} mb-6`}
         >
           {t.hero.title}
         </motion.h1>
@@ -653,7 +646,14 @@ function CompareSection({ t }: { t: SuperbrainCopyDe }) {
           transition={{ duration: 0.6, ease: EASE.out }}
           className="overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] shadow-xl"
         >
-          <table className="w-full text-left text-sm" aria-label={copy.de === t ? "Vergleich: Subsumio SuperBrain vs. andere Kanzlei-KI" : "Comparison: Subsumio SuperBrain vs. other legal AI"}>
+          <table
+            className="w-full text-left text-sm"
+            aria-label={
+              copy.de === t
+                ? "Vergleich: Subsumio SuperBrain vs. andere Kanzlei-KI"
+                : "Comparison: Subsumio SuperBrain vs. other legal AI"
+            }
+          >
             <thead>
               <tr className="border-b [border-color:var(--mk-border)] [background:var(--mk-surface-2)]">
                 <th className="px-5 py-4 font-semibold [color:var(--mk-text)]">
@@ -1051,9 +1051,7 @@ function CTASection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
           </div>
         </motion.div>
         <ClipReveal>
-          <h2 className="mb-5 [font-family:var(--font-display)] text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-            {t.ctaTitle}
-          </h2>
+          <h2 className={`${H2_CTA_CLASS} mb-5`}>{t.ctaTitle}</h2>
         </ClipReveal>
         <motion.p
           {...reveal}

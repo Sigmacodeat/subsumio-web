@@ -13,11 +13,10 @@ import Link from "next/link";
 import { motion, AnimatePresence, useInView, useReducedMotion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { FEATURES_PAGE } from "@/content/features";
 import SubsumioShowcase from "./subsumio-showcase";
-import { ICONS, useSiteBrand } from "./chrome";
+import { ICONS, useSiteBrand, BadgePill, H1_CLASS, CTASection } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { GuidedCursor, GlowCard, ClipReveal } from "./motion-system";
 
@@ -260,7 +259,9 @@ function HowItWorks({ lang }: { lang: Lang }) {
         transition={{ duration: 0.4 }}
         className="mb-14 text-center"
       >
-        <h2 className="mb-3 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">{h.title}</h2>
+        <h2 className="mb-3 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
+          {h.title}
+        </h2>
         <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
           {h.sub}
         </p>
@@ -581,12 +582,9 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="text-center lg:text-left"
           >
-            <div className="brand-border brand-soft brand-text mb-8 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium">
-              <span className="brand-bg h-1.5 w-1.5 rounded-full" />
-              {t.badge}
-            </div>
+            <BadgePill className="mb-8">{t.badge}</BadgePill>
             <ClipReveal delay={0.1} duration={0.7} direction="up">
-              <h1 className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)]">
+              <h1 className={`${H1_CLASS} mb-6`}>
                 {t.h1a}
                 <span className="sr-only"> </span>
                 <br />
@@ -878,28 +876,16 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             transition={{ duration: 0.4 }}
             className="mb-10 text-center"
           >
-            <h2 className="text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">{t.faqTitle}</h2>
+            <h2 className="text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
+              {t.faqTitle}
+            </h2>
           </motion.div>
           <AnimatedFaqList items={t.faq} tone="light" />
         </div>
       </section>
 
       {/* CTA */}
-      <section
-        data-tone="dark"
-        className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
-      >
-        <SubsumioMark size={56} className="mx-auto mb-7 rounded-[15px]" />
-        <h2 className="mb-4 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
-          {t.ctaTitle}
-        </h2>
-        <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
-        <Link href={p(lang, "/signup")}>
-          <Button size="xl" variant="primary">
-            {t.ctaButton} <ArrowRight size={18} />
-          </Button>
-        </Link>
-      </section>
+      <CTASection title={t.ctaTitle} sub={t.ctaSub} href={p(lang, "/signup")} label={t.ctaButton} />
     </div>
   );
 }
