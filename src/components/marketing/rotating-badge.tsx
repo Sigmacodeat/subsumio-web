@@ -4,7 +4,7 @@
 // Pauses on hover. Respects prefers-reduced-motion (shows first item statically).
 
 import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { EASE } from "./motion-system";
 
 export default function RotatingBadge({
@@ -35,15 +35,20 @@ export default function RotatingBadge({
       onMouseLeave={() => setPaused(false)}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
-      <motion.span
-        key={index}
-        initial={reduce ? false : { opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: EASE.out }}
-        className="inline-block"
-      >
-        {items[index]}
-      </motion.span>
+      <div className="relative inline-block h-4 overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={index}
+            initial={reduce ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduce ? undefined : { opacity: 0, y: -8 }}
+            transition={{ duration: 0.35, ease: EASE.out }}
+            className="inline-block whitespace-nowrap"
+          >
+            {items[index]}
+          </motion.span>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

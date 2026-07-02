@@ -5,7 +5,7 @@
 // floating card with typewriter answer and staggered source citations.
 // Respects prefers-reduced-motion (static full answer, no float, no typewriter).
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { CheckCircle2, FileText } from "lucide-react";
@@ -32,6 +32,8 @@ export default function HeroQACard({
   const [displayed, setDisplayed] = useState("");
   const [showSources, setShowSources] = useState(false);
   const [showConfidence, setShowConfidence] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const youLabel = lang === "en" ? "You" : "Du";
   const sourcesLabel = lang === "en" ? "Sources:" : "Quellen:";
@@ -46,12 +48,13 @@ export default function HeroQACard({
 
     const startDelay = setTimeout(() => {
       let i = 0;
-      const interval = setInterval(() => {
+      intervalRef.current = setInterval(() => {
         i++;
         setDisplayed(answer.slice(0, i));
         if (i >= answer.length) {
-          clearInterval(interval);
-          setTimeout(() => setShowSources(true), 300);
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          intervalRef.current = null;
+          timeoutRef.current = setTimeout(() => setShowSources(true), 300);
           setTimeout(() => setShowConfidence(true), 700);
         }
       }, 18);
@@ -59,6 +62,8 @@ export default function HeroQACard({
 
     return () => {
       clearTimeout(startDelay);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, [answer, reduce]);
 
@@ -68,6 +73,8 @@ export default function HeroQACard({
       animate={{ opacity: 1, y: 0, rotate: 0 }}
       transition={{ duration: 0.7, ease: EASE.dramatic, delay: 0.3 }}
       className="relative mx-auto w-full max-w-md"
+      role="img"
+      aria-label={`${question} — ${answer}`}
     >
       {/* glow */}
       <div className="absolute -inset-4 rounded-3xl bg-[var(--brand-primary)]/15 blur-3xl" />
@@ -105,7 +112,10 @@ export default function HeroQACard({
         <div className="px-5 pb-4">
           <div className="flex items-start gap-3">
             <SubsumioMark size={28} className="mt-0.5 shrink-0" />
-            <div className="flex-1 text-sm leading-relaxed [color:var(--mk-text-muted)]">
+            <div
+              className="flex-1 text-sm leading-relaxed [color:var(--mk-text-muted)]"
+              style={{ minHeight: reduce ? undefined : "4.5rem" }}
+            >
               {displayed}
               {!reduce && displayed.length < answer.length && displayed.length > 0 && (
                 <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-[var(--brand-text)] align-text-bottom" />

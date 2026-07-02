@@ -285,8 +285,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </motion.div>
         </Section>
 
-        {/* Live demo — below the fold, interactive second step */}
-        <Section tone="slate" className="relative px-6 pt-8 pb-20">
+        {/* Live demo — below the fold, interactive second step.
+            tone="dark" (not slate) to create a visual boundary from the hero. */}
+        <Section tone="dark" className="relative px-6 pt-8 pb-20">
           <motion.div
             initial={reduce ? false : { opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
