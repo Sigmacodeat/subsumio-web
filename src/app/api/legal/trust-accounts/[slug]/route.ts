@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { computeBalance, type TrustTransaction } from "@/lib/trust-accounting";
 
 export const dynamic = "force-dynamic";
@@ -110,12 +110,15 @@ export const PATCH = createHandler(
       updated_at: now,
     };
 
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(decoded)}`, {
-      method: "PATCH",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ frontmatter: updatedFm, content: existing.content ?? "" }),
-      signal: AbortSignal.timeout(15_000),
-    });
+    const res = await enginePatchPage(
+      ctx.headers,
+      {
+        slug: decoded,
+        frontmatter: updatedFm,
+        content: existing.content ?? "",
+      },
+      { timeoutMs: 15_000 }
+    );
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
@@ -140,15 +143,23 @@ export const DELETE = createHandler(
     const { slug } = await (req as unknown as { params: Promise<{ slug: string }> }).params;
     const decoded = decodeURIComponent(slug);
 
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(decoded)}`, {
-      method: "DELETE",
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
+    const existing = await getAccount(decoded, ctx.headers);
+    if (!existing) return Response.json({ success: true });
 
-    if (!res.ok && res.status !== 404) {
-      return apiError("engine_error", "Delete failed", 502);
-    }
+    const res = await enginePatchPage(
+      ctx.headers,
+      {
+        slug: decoded,
+        frontmatter: {
+          status: "tombstoned",
+          tombstoned_at: new Date().toISOString(),
+          tombstone_reason: "manual_delete",
+        },
+      },
+      { timeoutMs: 10_000 }
+    );
+
+    if (!res.ok) return apiError("engine_error", "Delete failed", 502);
     return Response.json({ success: true });
   }
 );
@@ -199,12 +210,15 @@ export const POST = createHandler(
       updated_at: now,
     };
 
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(decoded)}`, {
-      method: "PATCH",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ frontmatter: updatedFm, content: existing.content ?? "" }),
-      signal: AbortSignal.timeout(15_000),
-    });
+    const res = await enginePatchPage(
+      ctx.headers,
+      {
+        slug: decoded,
+        frontmatter: updatedFm,
+        content: existing.content ?? "",
+      },
+      { timeoutMs: 15_000 }
+    );
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");

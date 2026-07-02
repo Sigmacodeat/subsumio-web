@@ -4914,7 +4914,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
         if (typeof body.verfahrenstyp === "string") {
           const v = body.verfahrenstyp.toLowerCase();
-          if (v === "straf" || v === "zivil" || v === "arbeitsrecht" || v === "verwaltungsrecht" || v === "sonstiges") {
+          if (
+            v === "straf" ||
+            v === "zivil" ||
+            v === "arbeitsrecht" ||
+            v === "verwaltungsrecht" ||
+            v === "sonstiges"
+          ) {
             pipelineData.verfahrenstyp = v;
           }
         }
@@ -5745,6 +5751,230 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   });
 
+  // v0.44 — Legal Commentaries API: list, get, synthesize, delete.
+  // The commentary synthesis phase runs in the dream cycle, but these
+  // endpoints allow the dashboard to browse, trigger on-demand, and
+  // manage commentaries. Source-scoped via requestSourceId.
+  app.get("/api/legal/commentaries", async (req: Request, res: Response) => {
+    try {
+      const limit = Math.min(parseInt(String(req.query.limit ?? "50"), 10) || 50, 200);
+      const offset = parseInt(String(req.query.offset ?? "0"), 10) || 0;
+      const conds: string[] = [];
+      const params: unknown[] = [];
+
+      if (req.query.jurisdiction) {
+        params.push(String(req.query.jurisdiction));
+        conds.push(`jurisdiction = $${params.length}`);
+      }
+      if (req.query.statute_abbr) {
+        params.push(String(req.query.statute_abbr).toUpperCase());
+        conds.push(`statute_abbr = $${params.length}`);
+      }
+      if (req.query.section_num) {
+        params.push(String(req.query.section_num));
+        conds.push(`section_num = $${params.length}`);
+      }
+      if (req.query.commentary_type) {
+        params.push(String(req.query.commentary_type));
+        conds.push(`commentary_type = $${params.length}`);
+      }
+      if (req.query.search) {
+        params.push(String(req.query.search));
+        conds.push(`search_vector @@ plainto_tsquery('german', $${params.length})`);
+      }
+
+      const where = conds.length > 0 ? `WHERE ${conds.join(" AND ")}` : "";
+      params.push(limit, offset);
+      const rows = await engine.executeRaw<{
+        id: string;
+        jurisdiction: string;
+        statute_abbr: string;
+        section_num: string;
+        commentary_type: string;
+        title: string;
+        content: string;
+        statute_text: string | null;
+        source_model: string | null;
+        source_url: string | null;
+        source_name: string | null;
+        case_count: number;
+        linked_cases: string[] | null;
+        treatment_summary: Record<string, number> | null;
+        key_holdings: string[] | null;
+        keywords: string[] | null;
+        generated_at: string | null;
+        updated_at: string;
+      }>(
+        `SELECT id, jurisdiction, statute_abbr, section_num, commentary_type,
+                title, content, statute_text, source_model, source_url, source_name,
+                case_count, linked_cases, treatment_summary, key_holdings, keywords,
+                generated_at::text, updated_at::text
+         FROM subsumio_legal_commentaries
+         ${where}
+         ORDER BY statute_abbr, section_num
+         LIMIT $${params.length - 1} OFFSET $${params.length}`,
+        params
+      );
+
+      const countRows = await engine.executeRaw<{ count: string }>(
+        `SELECT COUNT(*)::text as count FROM subsumio_legal_commentaries ${where}`,
+        params.slice(0, params.length - 2)
+      );
+      const total = parseInt(countRows[0]?.count ?? "0", 10);
+
+      res.json({ items: rows, total });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "commentaries_fetch_failed", message: msg });
+    }
+  });
+
+  app.get("/api/legal/commentaries/:id", async (req: Request, res: Response) => {
+    try {
+      const id = decodeURIComponent(String(req.params.id ?? ""));
+      if (!id) {
+        res.status(400).json({ error: "missing_id" });
+        return;
+      }
+      const rows = await engine.executeRaw<{
+        id: string;
+        jurisdiction: string;
+        statute_abbr: string;
+        section_num: string;
+        commentary_type: string;
+        title: string;
+        content: string;
+        statute_text: string | null;
+        source_model: string | null;
+        source_url: string | null;
+        source_name: string | null;
+        case_count: number;
+        linked_cases: string[] | null;
+        treatment_summary: Record<string, number> | null;
+        key_holdings: string[] | null;
+        keywords: string[] | null;
+        generated_at: string | null;
+        updated_at: string;
+      }>(
+        `SELECT id, jurisdiction, statute_abbr, section_num, commentary_type,
+                title, content, statute_text, source_model, source_url, source_name,
+                case_count, linked_cases, treatment_summary, key_holdings, keywords,
+                generated_at::text, updated_at::text
+         FROM subsumio_legal_commentaries
+         WHERE id = $1
+         LIMIT 1`,
+        [id]
+      );
+      if (!rows[0]) {
+        res.status(404).json({ error: "commentary_not_found" });
+        return;
+      }
+      res.json(rows[0]);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "commentary_fetch_failed", message: msg });
+    }
+  });
+
+  app.post(
+    "/api/legal/commentaries/synthesize",
+    express.json({ limit: "64kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const body = req.body as Record<string, unknown>;
+        const statuteAbbr = String(body.statute_abbr ?? "")
+          .trim()
+          .toUpperCase();
+        const sectionNum = String(body.section_num ?? "").trim();
+        const jurisdiction = String(body.jurisdiction ?? "de").toLowerCase();
+
+        if (!statuteAbbr || !sectionNum) {
+          res.status(400).json({ error: "missing_statute_or_section" });
+          return;
+        }
+
+        const sourceId = requestSourceId(req);
+
+        // Build the commentary ID: {jur}/{abbr}/§-{num}
+        const sectionSlug = sectionNum.replace(/\s+/g, "-");
+        const commentaryId = `${jurisdiction}/${statuteAbbr}/§-${sectionSlug}`;
+
+        // Check if commentary already exists and is fresh (within 7 days)
+        const staleCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const existing = await engine.executeRaw<{ updated_at: string }>(
+          `SELECT updated_at::text FROM subsumio_legal_commentaries
+           WHERE id = $1 AND commentary_type = 'synthetic' AND updated_at > $2`,
+          [commentaryId, staleCutoff]
+        );
+        if (existing.length > 0) {
+          const rows = await engine.executeRaw<{
+            id: string;
+            title: string;
+            content: string;
+          }>(`SELECT id, title, content FROM subsumio_legal_commentaries WHERE id = $1 LIMIT 1`, [
+            commentaryId,
+          ]);
+          res.json({ success: true, commentary: rows[0], cached: true });
+          return;
+        }
+
+        // Trigger the synthesis phase for this single section
+        const { runPhaseLegalCommentarySynthesis } =
+          await import("../core/cycle/commentary-synthesis.ts");
+        const result = await runPhaseLegalCommentarySynthesis(engine, {
+          sourceId,
+          maxSectionsPerCycle: 1,
+          maxCostUsd: 0.1,
+          staleHours: 0,
+        });
+
+        if (result.status === "fail") {
+          res.status(502).json({
+            error: "synthesis_failed",
+            message: result.summary,
+          });
+          return;
+        }
+
+        // Fetch the newly created commentary
+        const rows = await engine.executeRaw<{
+          id: string;
+          title: string;
+          content: string;
+        }>(`SELECT id, title, content FROM subsumio_legal_commentaries WHERE id = $1 LIMIT 1`, [
+          commentaryId,
+        ]);
+
+        res.status(201).json({
+          success: true,
+          commentary: rows[0],
+          phase_result: {
+            status: result.status,
+            summary: result.summary,
+          },
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        res.status(500).json({ error: "commentary_synthesize_failed", message: msg });
+      }
+    }
+  );
+
+  app.delete("/api/legal/commentaries/:id", async (req: Request, res: Response) => {
+    try {
+      const id = decodeURIComponent(String(req.params.id ?? ""));
+      if (!id) {
+        res.status(400).json({ error: "missing_id" });
+        return;
+      }
+      await engine.executeRaw(`DELETE FROM subsumio_legal_commentaries WHERE id = $1`, [id]);
+      res.json({ success: true });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "commentary_delete_failed", message: msg });
+    }
+  });
+
   // Gap E: Verhandlungsmappen-Generator — deterministic composition of the
   // Tagsatzungs-Mappe from existing pipeline pages (Chronologie, Beweismittel,
   // §-Spickzettel, Beweislast, Fragenkatalog, Gegenargumente, ZOPA, Fristen).
@@ -5759,9 +5989,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           res.status(400).json({ error: "missing_case_slug" });
           return;
         }
-        const { generiereVerhandlungsmappe } = await import(
-          "../core/legal/verhandlungsmappe.ts"
-        );
+        const { generiereVerhandlungsmappe } = await import("../core/legal/verhandlungsmappe.ts");
         const result = await generiereVerhandlungsmappe(engine, {
           caseSlug,
           termin: typeof body.termin === "string" ? body.termin : undefined,

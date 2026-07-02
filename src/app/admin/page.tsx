@@ -2,7 +2,16 @@
 // Server component; layout.tsx already gates this to role=admin.
 
 import Link from "next/link";
-import { Users, CreditCard, Gift, MessageSquare, ClipboardList, ArrowRight } from "lucide-react";
+import {
+  Users,
+  CreditCard,
+  Gift,
+  MessageSquare,
+  ClipboardList,
+  ArrowRight,
+  Scale,
+  Calculator,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getStore } from "@/lib/auth/store";
 import { listMarketingLeads } from "@/lib/marketing/leads";
@@ -58,6 +67,13 @@ export default async function AdminPage({
     enterprise: users.filter((u) => u.plan === "enterprise").length,
   };
 
+  const industryBreakdown = {
+    legal: users.filter((u) => u.industry === "legal").length,
+    tax: users.filter((u) => u.industry === "tax").length,
+    other: users.filter((u) => u.industry === "other").length,
+    none: users.filter((u) => !u.industry).length,
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -85,7 +101,7 @@ export default async function AdminPage({
         />
       </div>
 
-      {/* Plan distribution + Quick links */}
+      {/* Plan distribution + Industry breakdown + Quick links */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-xl border [border-color:var(--mk-border)] p-5 [background:var(--mk-surface)] lg:col-span-1">
           <h2 className="mb-4 text-sm font-semibold [color:var(--mk-text)]">Plan-Verteilung</h2>
@@ -101,7 +117,45 @@ export default async function AdminPage({
           </div>
         </div>
 
-        <div className="rounded-xl border [border-color:var(--mk-border)] p-5 [background:var(--mk-surface)] lg:col-span-2">
+        <div className="rounded-xl border [border-color:var(--mk-border)] p-5 [background:var(--mk-surface)] lg:col-span-1">
+          <h2 className="mb-4 text-sm font-semibold [color:var(--mk-text)]">Produkte</h2>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-2 text-xs font-medium text-blue-400">
+                <Scale size={14} /> Subsumio Legal
+              </span>
+              <span className="text-sm font-medium [color:var(--mk-text)]">
+                {industryBreakdown.legal}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-2 text-xs font-medium text-emerald-400">
+                <Calculator size={14} /> Subsumio Tax
+              </span>
+              <span className="text-sm font-medium [color:var(--mk-text)]">
+                {industryBreakdown.tax}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-2 text-xs font-medium text-violet-400">
+                <Users size={14} /> Other
+              </span>
+              <span className="text-sm font-medium [color:var(--mk-text)]">
+                {industryBreakdown.other}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-2 text-xs font-medium [color:var(--mk-text-subtle)]">
+                <Users size={14} /> Ohne Branche
+              </span>
+              <span className="text-sm font-medium [color:var(--mk-text)]">
+                {industryBreakdown.none}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border [border-color:var(--mk-border)] p-5 [background:var(--mk-surface)] lg:col-span-1">
           <h2 className="mb-4 text-sm font-semibold [color:var(--mk-text)]">Schnellzugriff</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <QuickLink href="/admin/users" icon={Users} label="Kunden verwalten" />

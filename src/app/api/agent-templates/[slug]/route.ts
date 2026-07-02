@@ -146,6 +146,11 @@ export const DELETE = createHandler(
   {
     action: "brain.delete",
     rateTier: "standard",
+    audit: (ctx) => ({
+      action: "case.delete" as const,
+      entityType: "agent_template",
+      details: { by: ctx.user.email },
+    }),
   },
   async (ctx, _body, _query, req) => {
     const slug = buildSlug(

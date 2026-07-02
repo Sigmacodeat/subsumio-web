@@ -93,7 +93,7 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body, _query, _req) => {
-    const slug = `litigation/${body.caseSlug}/${Date.now()}`;
+    const slug = `litigation/${body.caseSlug}/${crypto.randomUUID()}`;
     const now = new Date().toISOString();
 
     const res = await fetch(`${ENGINE_URL}/api/pages`, {

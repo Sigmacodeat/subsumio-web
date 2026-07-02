@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "framer-motion";
 import {
   FileText,
   CalendarClock,
@@ -11,6 +12,22 @@ import {
   Calculator,
   Landmark,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { styleForIndustry } from "@/lib/industry-theme";
+import {
+  Section,
+  SectionHeading,
+  BadgePill,
+  H1_CLASS,
+  ContentCard,
+  CTASection,
+} from "@/components/marketing/chrome";
+import {
+  ClipReveal,
+  StaggerContainer,
+  StaggerItem,
+  EASE,
+} from "@/components/marketing/motion-system";
 
 const FEATURES = [
   {
@@ -53,102 +70,105 @@ const SIGNATURE_ITEMS = [
 
 export default function TaxMarketingPage() {
   return (
-    <div className="min-h-screen bg-[color:var(--ds-background)]">
+    <div
+      data-tone="light"
+      data-industry="tax"
+      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
+      style={styleForIndustry("tax")}
+    >
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-[color:var(--ds-border)]">
-        <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent" />
-        <div className="relative mx-auto max-w-5xl px-6 py-20 text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-4 py-1.5 text-sm font-medium text-emerald-600">
-            <Calculator size={14} />
-            Subsumio Tax
-          </div>
-          <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-[color:var(--ds-text)] sm:text-5xl">
-            Mandantengedächtnis mit
-            <span className="text-emerald-500"> Steuerfristen-Disziplin</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-[color:var(--ds-text-muted)]">
+      <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, ease: EASE.out }}
+          >
+            <BadgePill>
+              <Calculator size={12} /> Subsumio Tax
+            </BadgePill>
+          </motion.div>
+          <ClipReveal delay={0.1} duration={0.7} direction="up">
+            <h1 className={H1_CLASS}>
+              Mandantengedächtnis mit
+              <br />
+              <span className="brand-text">Steuerfristen-Disziplin</span>
+            </h1>
+          </ClipReveal>
+          <motion.p
+            className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.1, ease: EASE.out }}
+          >
             Die KI-Wissensbasis für Steuerberatung und Buchhaltung. Steuererklärungen, Bescheide,
             Fristen und Dokumente bleiben als Finanz-Graph verbunden.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition-[background-color,transform] hover:bg-emerald-700 active:scale-[0.98]"
-            >
-              Kostenlos starten <ArrowRight size={16} />
+          </motion.p>
+          <motion.div
+            className="mt-8 flex flex-col justify-center gap-3 sm:flex-row"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.2, ease: EASE.out }}
+          >
+            <Link href="/signup">
+              <Button size="xl" variant="primary" className="group min-w-[220px]">
+                Kostenlos starten
+                <ArrowRight
+                  size={18}
+                  className="transition-transform duration-200 group-hover:translate-x-0.5"
+                />
+              </Button>
             </Link>
-            <Link
-              href="/pricing"
-              className="inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-6 py-3 text-sm font-semibold text-[color:var(--ds-text)] transition-[background-color] hover:bg-[color:var(--ds-hover)]"
-            >
-              Preise ansehen
+            <Link href="/pricing">
+              <Button size="xl" variant="secondary" className="min-w-[180px]">
+                Preise ansehen
+              </Button>
             </Link>
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </Section>
 
       {/* Signature Items */}
-      <section className="border-b border-[color:var(--ds-border)] py-12">
-        <div className="mx-auto max-w-4xl px-6">
-          <div className="grid gap-6 sm:grid-cols-3">
+      <Section tone="light" className="px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl">
+          <StaggerContainer className="grid gap-6 sm:grid-cols-3">
             {SIGNATURE_ITEMS.map((item) => (
-              <div
-                key={item}
-                className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
-              >
-                <CheckCircle2 size={20} className="shrink-0 text-emerald-500" />
-                <span className="text-sm font-medium text-[color:var(--ds-text)]">{item}</span>
-              </div>
+              <StaggerItem key={item}>
+                <div className="flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+                  <CheckCircle2 size={20} className="brand-text shrink-0" />
+                  <span className="text-sm font-medium [color:var(--mk-text)]">{item}</span>
+                </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
-      </section>
+      </Section>
 
       {/* Features */}
-      <section className="py-20">
-        <div className="mx-auto max-w-5xl px-6">
-          <h2 className="mb-12 text-center text-3xl font-bold text-[color:var(--ds-text)]">
-            Alles für den Steuerberater-Workflow
-          </h2>
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => {
-              const Icon = f.icon;
-              return (
-                <div
-                  key={f.title}
-                  className="rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 transition-[border-color,box-shadow] hover:border-emerald-500/30"
-                >
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
-                    <Icon size={24} className="text-emerald-500" />
-                  </div>
-                  <h3 className="mb-2 text-lg font-semibold text-[color:var(--ds-text)]">
-                    {f.title}
-                  </h3>
-                  <p className="text-sm text-[color:var(--ds-text-muted)]">{f.desc}</p>
-                </div>
-              );
-            })}
-          </div>
+      <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <SectionHeading
+            badge="Features"
+            title="Alles für den Steuerberater-Workflow"
+            sub="Von der Erklärung bis zum Bescheid — vollständig vernetzt im GBrain Mandantengedächtnis."
+          />
+          <StaggerContainer className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((f) => (
+              <StaggerItem key={f.title}>
+                <ContentCard icon={f.icon} title={f.title} desc={f.desc} />
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
         </div>
-      </section>
+      </Section>
 
       {/* CTA */}
-      <section className="border-t border-[color:var(--ds-border)] py-20">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <h2 className="text-3xl font-bold text-[color:var(--ds-text)]">
-            Bereit für steuerliche Präzision?
-          </h2>
-          <p className="mt-4 text-lg text-[color:var(--ds-text-muted)]">
-            Starte heute mit Subsumio Tax — kein Seat-Minimum, DSGVO-konform, EU-Cloud.
-          </p>
-          <Link
-            href="/signup"
-            className="mt-8 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-8 py-3.5 text-sm font-semibold text-white transition-[background-color,transform] hover:bg-emerald-700 active:scale-[0.98]"
-          >
-            Jetzt registrieren <ArrowRight size={16} />
-          </Link>
-        </div>
-      </section>
+      <CTASection
+        title="Bereit für steuerliche Präzision?"
+        sub="Starte heute mit Subsumio Tax — kein Seat-Minimum, DSGVO-konform, EU-Cloud."
+        href="/signup"
+        label="Jetzt registrieren"
+      />
     </div>
   );
 }
