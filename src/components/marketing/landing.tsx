@@ -112,106 +112,192 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           `clip` clips the horizontal marquee/parallax overflow without
           establishing a scroll container, so sticky works. */}
       <div data-tone="light" className="min-h-screen overflow-x-clip" lang={lang}>
-        {/* Hero — clean dark slate editorial surface with subtle motif */}
+        {/* Hero — split layout: messaging left, animated Q→A card right.
+            Product-led storytelling: the visitor sees the product in action
+            within 3 seconds, without scrolling. */}
         <Section
           tone="slate"
           noTopEdge
-          className="relative overflow-hidden px-6 pt-28 pb-28 md:pt-36 md:pb-32"
+          className="relative overflow-hidden px-6 pt-28 pb-20 md:pt-32 md:pb-24"
         >
-          <div className="relative mx-auto max-w-7xl text-center">
-            {/* Legal icon constellation — subtle parallax background motif */}
-            <motion.div
-              style={{ y: motifY, opacity: motifOpacity }}
-              className="absolute inset-0 z-0 hidden md:block"
-            >
-              <IndustryHeroMotif industry="legal" className="h-full w-full opacity-[1]" />
-            </motion.div>
-            <div className="relative z-10">
-              <motion.div
-                initial={reduce ? false : { opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0 }}
-                className="mb-6"
-              >
-                <SubsumioMark size={56} className="mx-auto" />
-              </motion.div>
+          {/* Legal icon constellation — subtle parallax background motif */}
+          <motion.div
+            style={{ y: motifY, opacity: motifOpacity }}
+            className="absolute inset-0 z-0 hidden md:block"
+          >
+            <IndustryHeroMotif industry="legal" className="h-full w-full opacity-[1]" />
+          </motion.div>
+
+          {/* Split grid — 55/45 on lg+, stacked on mobile */}
+          <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[55fr_45fr]">
+            {/* ─── Left column: messaging + CTAs ─── */}
+            <div className="text-center lg:text-left">
+              {/* Rotating badge — crossfades through 3 differentiators */}
               <motion.div
                 initial={reduce ? false : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.15 }
+                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.1 }
                 }
-                className="mb-8 inline-flex items-center gap-2 rounded-full border [border-color:var(--brand-border)] px-3 py-1.5 text-xs font-medium [color:var(--brand-text)] [background:var(--brand-soft)]"
+                className="flex justify-center lg:justify-start"
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
-                {t.badge}
+                <RotatingBadge items={t.heroBadges} />
               </motion.div>
+
+              {/* H1 — bold (not black — Space Grotesk loads max 700) */}
               <h1
-                className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)]"
+                className="mb-4 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-bold tracking-tight text-balance [color:var(--mk-text)]"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                <SplitTextReveal as="span" delay={0.2} stagger={0.08} useAnimate className="block">
+                <SplitTextReveal as="span" delay={0.2} stagger={0.06} useAnimate className="block">
                   {`${t.h1a}\n${t.h1b}`}
                 </SplitTextReveal>
               </h1>
+
+              {/* Hero tagline — the outcome promise (already in content, was unused) */}
               <motion.p
-                initial={reduce ? false : { opacity: 0, y: 16 }}
+                initial={reduce ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.4 }
+                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.35 }
                 }
-                className="mx-auto mb-12 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
+                className="mb-4 text-lg font-semibold [color:var(--brand-text)] md:text-xl"
               >
-                {t.sub}
+                {t.heroTagline}
               </motion.p>
+
+              {/* Sub-paragraph — 1 sentence, ≤160 chars */}
+              <motion.div
+                initial={reduce ? false : { opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={
+                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.45 }
+                }
+              >
+                <p className="mx-auto mb-10 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg lg:mx-0">
+                  {t.sub}
+                </p>
+              </motion.div>
+
+              {/* CTAs — primary dominant, secondary ghost, tertiary text link */}
               <motion.div
                 initial={reduce ? false : { opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={
                   reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.out, delay: 0.55 }
                 }
-                className="mb-4 flex flex-col justify-center gap-4 sm:flex-row"
+                className="mb-6 flex flex-col items-center gap-3 sm:flex-row lg:items-start"
               >
-                <MagneticButton strength={0.25}>
+                <MagneticButton strength={0.35}>
                   <Link href={p(lang, "/signup")}>
                     <Button size="xl" variant="primary" className="min-w-[220px]">
                       {t.ctaPrimary} <ArrowRight size={18} />
                     </Button>
                   </Link>
                 </MagneticButton>
-                <Link href="#pricing">
-                  <Button size="xl" variant="secondary" className="min-w-[200px]">
-                    {lang !== "en" ? "Preise ansehen" : "See pricing"}
+                <Link href="#pricing" className="inline-flex">
+                  <Button size="lg" variant="ghost">
+                    {lang !== "en" ? "Pläne ansehen" : "See plans"} <ArrowRight size={16} />
                   </Button>
                 </Link>
               </motion.div>
-              <motion.p
+
+              {/* Tertiary — scroll to demo */}
+              <motion.div
+                initial={reduce ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={
+                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.out, delay: 0.65 }
+                }
+                className="mb-8 flex justify-center lg:justify-start"
+              >
+                <a
+                  href="#demo"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-muted)] transition-colors hover:text-[var(--brand-text)]"
+                >
+                  <Play size={14} />
+                  {lang !== "en" ? "Demo ansehen" : "Watch demo"}
+                </a>
+              </motion.div>
+
+              {/* Trust pills — icon + text, staggered */}
+              <motion.div
                 initial={reduce ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={
                   reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.dramatic, delay: 0.75 }
                 }
-                className="mb-4 text-xs [color:var(--mk-text-muted)]"
+                className="flex flex-wrap justify-center gap-3 lg:justify-start"
               >
-                {lang !== "en"
-                  ? "14 Tage Reverse Trial · Geld-zurück-Garantie · Keine Kreditkarte"
-                  : "14-day reverse trial · Money-back guarantee · No credit card"}
-              </motion.p>
-              {/* The live demo — dark spotlight with clear visual separation from hero */}
-              <motion.div
-                initial={reduce ? false : { opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={
-                  reduce ? { duration: 0 } : { duration: 0.55, ease: EASE.dramatic, delay: 0.85 }
-                }
-                id="demo"
-                data-tone="dashboard"
-                className="mx-auto mt-6 max-w-3xl scroll-mt-24 rounded-2xl shadow-[0_16px_48px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.08]"
-              >
-                <LiveDemo lang={lang} {...t.demo} />
+                {t.heroTrustItems.map((item, i) => {
+                  const Icon = TRUST_ICONS[item.icon] ?? Check;
+                  return (
+                    <motion.span
+                      key={item.label}
+                      initial={reduce ? false : { opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={
+                        reduce
+                          ? { duration: 0 }
+                          : { delay: 0.8 + i * 0.08, duration: 0.3, ease: EASE.out }
+                      }
+                      className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 text-xs [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
+                    >
+                      <Icon size={12} className="text-[var(--brand-secondary)]" />
+                      {item.label}
+                    </motion.span>
+                  );
+                })}
               </motion.div>
             </div>
+
+            {/* ─── Right column: animated Q→A card ─── */}
+            <div className="relative">
+              <HeroQACard
+                question={t.heroQACard.question}
+                answer={t.heroQACard.answer}
+                sources={t.heroQACard.sources}
+                confidenceLabel={t.heroQACard.confidenceLabel}
+                lang={lang}
+              />
+            </div>
           </div>
+
+          {/* Trust strip — 5 badges, hero closing → marquee transition */}
+          <motion.div
+            initial={reduce ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 1 }}
+            className="relative z-10 mx-auto mt-16 flex max-w-4xl flex-wrap items-center justify-center gap-x-6 gap-y-3 border-t [border-color:var(--mk-border)] pt-8"
+          >
+            {t.trustStripItems.map((item) => {
+              const Icon = TRUST_ICONS[item.icon] ?? ShieldCheck;
+              return (
+                <span
+                  key={item.label}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium [color:var(--mk-text-muted)]"
+                >
+                  <Icon size={14} className="text-[var(--brand-secondary)]" />
+                  {item.label}
+                </span>
+              );
+            })}
+          </motion.div>
+        </Section>
+
+        {/* Live demo — below the fold, interactive second step */}
+        <Section tone="slate" className="relative px-6 pt-8 pb-20">
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={reduce ? { duration: 0 } : { duration: 0.55, ease: EASE.dramatic }}
+            id="demo"
+            data-tone="dashboard"
+            className="mx-auto max-w-3xl scroll-mt-24 rounded-2xl shadow-[0_16px_48px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.08]"
+          >
+            <LiveDemo lang={lang} {...t.demo} />
+          </motion.div>
         </Section>
 
         {/* Logo Marquee — certifications & integrations sliding from right to left */}

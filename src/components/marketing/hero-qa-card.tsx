@@ -10,6 +10,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { CheckCircle2, FileText } from "lucide-react";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
+import type { Lang } from "@/content/site";
 import { EASE } from "./motion-system";
 
 export interface HeroQAProps {
@@ -17,7 +18,7 @@ export interface HeroQAProps {
   answer: string;
   sources: { label: string; href: string }[];
   confidenceLabel: string;
-  lang: "de" | "en" | "at" | "ch" | "it";
+  lang: Lang;
 }
 
 export default function HeroQACard({
