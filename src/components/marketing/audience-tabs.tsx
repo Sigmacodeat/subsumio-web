@@ -69,7 +69,7 @@ export default function AudienceTabs({ lang }: { lang: Lang }) {
             <h3 className="mb-3 [font-family:var(--font-display)] text-2xl font-black tracking-tight [color:var(--mk-text)] md:text-3xl">
               {content.h1a} <span className="brand-text">{content.h1b}</span>
             </h3>
-            <p className="mb-6 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)]">
+            <p className="mb-6 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
               {content.sub}
             </p>
             <Link

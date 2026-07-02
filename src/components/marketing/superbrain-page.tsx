@@ -240,7 +240,7 @@ function OthersSection({ t }: { t: SuperbrainCopyDe }) {
           </ClipReveal>
           <motion.p
             {...reveal}
-            className="mx-auto max-w-3xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+            className="mx-auto max-w-3xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
           >
             {t.othersSub}
           </motion.p>
@@ -347,7 +347,7 @@ function OursSection({ t }: { t: SuperbrainCopyDe }) {
           </ClipReveal>
           <motion.p
             {...reveal}
-            className="mx-auto max-w-3xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+            className="mx-auto max-w-3xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
           >
             {t.oursSub}
           </motion.p>
@@ -467,7 +467,7 @@ function ArchitectureSection({ t }: { t: SuperbrainCopyDe }) {
           </ClipReveal>
           <motion.p
             {...reveal}
-            className="mx-auto max-w-3xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+            className="mx-auto max-w-3xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
           >
             {t.architectureSub}
           </motion.p>
@@ -555,7 +555,7 @@ function DreamCycleSection({ t }: { t: SuperbrainCopyDe }) {
           </ClipReveal>
           <motion.p
             {...reveal}
-            className="mx-auto max-w-3xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+            className="mx-auto max-w-3xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
           >
             {t.cycleSub}
           </motion.p>
@@ -640,7 +640,7 @@ function CompareSection({ t }: { t: SuperbrainCopyDe }) {
           </ClipReveal>
           <motion.p
             {...reveal}
-            className="mx-auto max-w-3xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+            className="mx-auto max-w-3xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
           >
             {t.compareSub}
           </motion.p>
@@ -653,7 +653,7 @@ function CompareSection({ t }: { t: SuperbrainCopyDe }) {
           transition={{ duration: 0.6, ease: EASE.out }}
           className="overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] shadow-xl"
         >
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm" aria-label={copy.de === t ? "Vergleich: Subsumio SuperBrain vs. andere Kanzlei-KI" : "Comparison: Subsumio SuperBrain vs. other legal AI"}>
             <thead>
               <tr className="border-b [border-color:var(--mk-border)] [background:var(--mk-surface-2)]">
                 <th className="px-5 py-4 font-semibold [color:var(--mk-text)]">
@@ -723,7 +723,7 @@ function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
           </ClipReveal>
           <motion.p
             {...reveal}
-            className="mx-auto max-w-3xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+            className="mx-auto max-w-3xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
           >
             {t.finetuneSub}
           </motion.p>
@@ -791,7 +791,7 @@ function PrivacySection({ t }: { t: SuperbrainCopyDe }) {
           </ClipReveal>
           <motion.p
             {...reveal}
-            className="mx-auto max-w-3xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+            className="mx-auto max-w-3xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
           >
             {t.privacySub}
           </motion.p>
@@ -836,7 +836,7 @@ function UseCasesSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
           </ClipReveal>
           <motion.p
             {...reveal}
-            className="mx-auto max-w-3xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+            className="mx-auto max-w-3xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
           >
             {t.useCasesSub}
           </motion.p>
@@ -895,7 +895,7 @@ function TrustSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
           </ClipReveal>
           <motion.p
             {...reveal}
-            className="mx-auto max-w-3xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+            className="mx-auto max-w-3xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
           >
             {t.trustSub}
           </motion.p>
@@ -975,7 +975,7 @@ function FAQSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
           </ClipReveal>
           <motion.p
             {...reveal}
-            className="mx-auto max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+            className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
           >
             {lang === "en"
               ? "Everything you need to know about the SuperBrain, the Dream Cycle and the 5-layer architecture."
@@ -1057,7 +1057,7 @@ function CTASection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
         </ClipReveal>
         <motion.p
           {...reveal}
-          className="mb-10 text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+          className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
         >
           {t.ctaSub}
         </motion.p>

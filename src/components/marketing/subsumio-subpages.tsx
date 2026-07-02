@@ -105,7 +105,7 @@ function CtaClose({
       <Reveal variant="upLg" className="mx-auto max-w-3xl">
         <SubsumioMark size={56} className="mx-auto mb-7" />
         <h2 className={`${H2_CTA_CLASS} mb-4`}>{title}</h2>
-        <p className="mb-9 text-base [color:var(--mk-text-muted)] md:text-lg">{sub}</p>
+        <p className="mb-9 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">{sub}</p>
         <Link href={href}>
           <Button size="xl" variant="primary">
             {label} <ArrowRight size={18} />

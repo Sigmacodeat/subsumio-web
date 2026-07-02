@@ -28,9 +28,9 @@ export default function Error({
       data-tone="dark"
       className="flex min-h-screen items-center justify-center px-4 [background:var(--mk-bg)] sm:px-6 lg:px-8"
     >
-      <div className="max-w-md text-center">
+      <div className="max-w-md text-center" role="alert">
         <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-600/20">
-          <AlertCircle size={26} className="text-rose-400" />
+          <AlertCircle size={26} className="text-rose-400" aria-hidden />
         </div>
         <p className="mb-3 font-mono text-xs text-rose-400">Error</p>
         <h1 className="mb-3 text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)]">

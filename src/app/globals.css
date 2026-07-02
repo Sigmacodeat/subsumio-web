@@ -1234,7 +1234,7 @@ body {
   -webkit-text-size-adjust: 100%;
   overscroll-behavior: none;
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Scrollbar — tone-aware */
@@ -2057,4 +2057,65 @@ pre {
 .email-content font[color] {
   /* Preserve font color from legacy email markup but ensure readability on dark bg */
   filter: brightness(1.1);
+}
+
+/* ── Print styles ──
+   Lawyers frequently print legal pages (imprint, privacy, terms).
+   Strip dark backgrounds, nav, footer, and decorative elements for clean output. */
+@media print {
+  /* Force light color scheme for print */
+  [data-tone="dark"],
+  [data-tone="slate"] {
+    --mk-bg: #ffffff !important;
+    --mk-text: #0f0f1a !important;
+    --mk-text-muted: #333333 !important;
+    --mk-border: #cccccc !important;
+    --mk-surface: #ffffff !important;
+    --mk-surface-2: #f5f5f5 !important;
+    color-scheme: light !important;
+  }
+
+  /* Hide non-essential UI elements */
+  nav,
+  footer,
+  [aria-label="Call to action"],
+  .back-to-top,
+  .scroll-progress,
+  .noise::after,
+  [data-tone="dark"] .brand-glow-bg,
+  [data-tone="slate"] .brand-glow-bg {
+    display: none !important;
+  }
+
+  /* Reset backgrounds and shadows */
+  * {
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Ensure text is black on white */
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Links: show URL for external links */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+    color: #666666;
+    word-break: break-all;
+  }
+
+  /* Page breaks: avoid breaking inside legal sections */
+  h1, h2, h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* Legal page body text: ensure readable serif/sans for print */
+  .max-w-2xl {
+    max-width: 100% !important;
+  }
 }

@@ -1,8 +1,13 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { getSessionUser } from "@/lib/auth/server";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const me = await getSessionUser();
@@ -15,7 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <aside className="sticky top-0 h-screen w-56 shrink-0 border-r [border-color:var(--mk-border)] [background:var(--mk-surface)]/50">
           <AdminSidebar />
         </aside>
-        <main className="flex-1 overflow-x-hidden px-6 py-8 md:px-10 md:py-10">{children}</main>
+        <main className="flex-1 overflow-x-clip px-6 py-8 md:px-10 md:py-10">{children}</main>
       </div>
     </div>
   );

@@ -158,10 +158,10 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
             />
             {c.eyebrow}
           </span>
-          <h2 className="mb-4 [font-family:var(--font-display)] text-[1.75rem] leading-[1.12] font-black tracking-[-0.02em] text-balance [color:var(--mk-text)] md:text-4xl">
+          <h2 className="mb-4 [font-family:var(--font-display)] text-2xl leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
             {c.title}
           </h2>
-          <p className="mx-auto max-w-2xl text-base [color:var(--mk-text-muted)] md:text-lg">
+          <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
             {sub}
           </p>
         </motion.div>

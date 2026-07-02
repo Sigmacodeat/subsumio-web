@@ -26,6 +26,7 @@ import { JiraConnector } from "./jira.ts";
 import { LegalJudgementsConnector } from "./legal-judgements.ts";
 import { SwissJudgementsConnector } from "./swiss-judgements.ts";
 import { BeaImportConnector } from "./bea-import.ts";
+import { ErvImportConnector } from "./erv-import.ts";
 import { AdvokatImportConnector } from "./advokat-import.ts";
 import { OpenAccessCommentaryConnector } from "./open-access-commentaries.ts";
 import {
@@ -55,6 +56,7 @@ export const CONNECTOR_REGISTRY: Record<string, new (cfg: ConnectorConfig) => Ba
   "legal-judgements": LegalJudgementsConnector,
   "swiss-judgements": SwissJudgementsConnector,
   "bea-import": BeaImportConnector,
+  "erv-import": ErvImportConnector,
   "advokat-import": AdvokatImportConnector,
   "open-access-commentaries": OpenAccessCommentaryConnector,
   "ms365-outlook": MicrosoftOutlookConnector,

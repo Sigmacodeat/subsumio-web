@@ -153,12 +153,16 @@ export default function ContactPage({ lang }: { lang: Lang }) {
               <input
                 type="text"
                 placeholder={c.formName}
+                aria-label={c.formName}
+                autoComplete="name"
                 required
                 className="w-full rounded-xl border [border-color:var(--mk-border)] px-4 py-3 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
               />
               <input
                 type="email"
                 placeholder={c.formEmail}
+                aria-label={c.formEmail}
+                autoComplete="email"
                 required
                 className="w-full rounded-xl border [border-color:var(--mk-border)] px-4 py-3 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
               />
@@ -166,10 +170,13 @@ export default function ContactPage({ lang }: { lang: Lang }) {
             <input
               type="text"
               placeholder={c.formFirm}
+              aria-label={c.formFirm}
+              autoComplete="organization"
               className="w-full rounded-xl border [border-color:var(--mk-border)] px-4 py-3 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
             />
             <textarea
               placeholder={c.formMessage}
+              aria-label={c.formMessage}
               required
               rows={5}
               className="w-full rounded-xl border [border-color:var(--mk-border)] px-4 py-3 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"

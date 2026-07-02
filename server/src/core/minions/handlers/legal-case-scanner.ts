@@ -214,12 +214,38 @@ export async function legalCaseScannerHandler(
     }
   }
 
+  // ── 5. Judikatur-Wächter (Gap J): RIS-Monitoring pro Akte ──
+  // Beobachtet die §§ aus den Grounding-Maps offener Akten und schreibt
+  // Alert-Notizen bei neuen Entscheidungen. Non-blocking: RIS-Ausfall
+  // bricht den Scan nicht ab.
+  let judikatur: Record<string, unknown> = { skipped: true };
+  try {
+    const { runJudikaturWatch } = await import("../../legal/judikatur-watch.ts");
+    const watch = await runJudikaturWatch(engine, {
+      fetchImpl: fetch,
+      sourceId: sourceStamp,
+      maxAkten: maxCases,
+    });
+    judikatur = {
+      akten: watch.akten,
+      normen: watch.normen,
+      neue_entscheidungen: watch.neueEntscheidungen,
+      alert_slugs: watch.alertSlugs,
+      fehler: watch.fehler.length,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn(`[legal-case-scanner] Judikatur-Wächter failed (non-blocking): ${msg}`);
+    judikatur = { error: msg };
+  }
+
   return {
     scanned: caseRows.length,
     triggered: launchedJobs.length,
     cases: launchedJobs,
     look_ahead_days: lookAhead,
     evidence_threshold: evidenceThreshold,
+    judikatur_watch: judikatur,
   };
 }
 

@@ -764,6 +764,79 @@ export async function splitAndImportLargeDocument(
 }
 
 /**
+ * Detect jurisdiction from frontmatter or document text.
+ * Priority: explicit frontmatter > text heuristics > default "at".
+ */
+function detectJurisdiction(
+  frontmatter: Record<string, unknown>,
+  text: string
+): "at" | "de" | "ch" | "eu" {
+  const explicit = frontmatter.jurisdiction;
+  if (typeof explicit === "string") {
+    const j = explicit.toLowerCase();
+    if (j === "at" || j === "de" || j === "ch" || j === "eu") return j;
+  }
+
+  const lower = text.toLowerCase();
+  const sample = lower.slice(0, 5000);
+
+  // AT indicators: ABGB, StPO, AHG, GVgo, ON-Nummern, RIS, österreichische Gerichte
+  const atScore =
+    (sample.match(/\bABGB\b/g)?.length ?? 0) +
+    (sample.match(/\bStPO\b/g)?.length ?? 0) +
+    (sample.match(/\bAHG\b/g)?.length ?? 0) +
+    (sample.match(/\bGVgo\b/g)?.length ?? 0) +
+    (sample.match(/\bEKV\b/g)?.length ?? 0) +
+    (sample.match(/\bON\s?\d/i)?.length ?? 0) +
+    (sample.match(/\bRIS\b/g)?.length ?? 0) +
+    (sample.match(/\bLandesgericht\b/g)?.length ?? 0) +
+    (sample.match(/\bBezirksgericht\b/g)?.length ?? 0) +
+    (sample.match(/\bÖGK\b/g)?.length ?? 0) +
+    (sample.match(/\bAmtshaftung\b/g)?.length ?? 0);
+
+  // DE indicators: BGB, ZPO, StGB, BRAO, RVG, BVerfG
+  const deScore =
+    (sample.match(/\bBGB\b/g)?.length ?? 0) +
+    (sample.match(/\bZPO\b/g)?.length ?? 0) +
+    (sample.match(/\bStGB\b/g)?.length ?? 0) +
+    (sample.match(/\bBRAO\b/g)?.length ?? 0) +
+    (sample.match(/\bRVG\b/g)?.length ?? 0) +
+    (sample.match(/\bBVerfG\b/g)?.length ?? 0) +
+    (sample.match(/\bAmtsgericht\b/g)?.length ?? 0) +
+    (sample.match(/\bLandgericht\b/g)?.length ?? 0) +
+    (sample.match(/\bOberlandesgericht\b/g)?.length ?? 0) +
+    (sample.match(/\bSchmerzensgeld\b/g)?.length ?? 0) +
+    (sample.match(/\b§\s?\d+\s?(?:Abs\.?\s?\d+\s?)?BGB/g)?.length ?? 0);
+
+  // CH indicators: OR, ZGB, BV, VwVG, BGer, Bundesgericht
+  const chScore =
+    (sample.match(/\bOR\b/g)?.length ?? 0) +
+    (sample.match(/\bZGB\b/g)?.length ?? 0) +
+    (sample.match(/\bBV\b/g)?.length ?? 0) +
+    (sample.match(/\bVwVG\b/g)?.length ?? 0) +
+    (sample.match(/\bBGer\b/g)?.length ?? 0) +
+    (sample.match(/\bBundesgericht\b/g)?.length ?? 0) +
+    (sample.match(/\bKantonsgericht\b/g)?.length ?? 0) +
+    (sample.match(/\bObergericht\b/g)?.length ?? 0) +
+    (sample.match(/\bArt\.\s?\d+\s?(?:Abs\.?\s?\d+\s?)?OR/g)?.length ?? 0);
+
+  // EU indicators: AEUV, EUV, DSGVO (shared with DE/AT, but EU-specific regs)
+  const euScore =
+    (sample.match(/\bAEUV\b/g)?.length ?? 0) +
+    (sample.match(/\bEUV\b/g)?.length ?? 0) +
+    (sample.match(/\bEuGH\b/g)?.length ?? 0) +
+    (sample.match(/\bGeneralanwalt\b/g)?.length ?? 0) +
+    (sample.match(/\bVerordnung\s?\(EU\)/g)?.length ?? 0);
+
+  const max = Math.max(atScore, deScore, chScore, euScore);
+  if (max === 0) return "at";
+  if (euScore === max) return "eu";
+  if (chScore === max) return "ch";
+  if (deScore === max) return "de";
+  return "at";
+}
+
+/**
  * Shared extraction + import orchestrator. Turns an uploaded file into
  * searchable brain pages: extract → markdown → split/import → stamp case_slug →
  * tag → auto-trigger legal-pipeline for split docs.
@@ -893,6 +966,7 @@ export async function runExtractionAndImport(
     const { MinionQueue } = await import("../core/minions/queue.ts");
     const queue = new MinionQueue(engine);
     const pipelineSlugs = partSlugs.length > 0 ? partSlugs : [slug];
+    const jurisdiction = detectJurisdiction(uploadFrontmatter, markdown);
     await queue.add(
       "legal-pipeline",
       {
@@ -900,6 +974,7 @@ export async function runExtractionAndImport(
         part_slugs: pipelineSlugs,
         ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
         trigger: "post_upload",
+        ...(jurisdiction !== "at" ? { jurisdiction } : {}),
       },
       { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
       { allowProtectedSubmit: true }
@@ -4830,6 +4905,20 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           pipelineData.manual_overrides = body.manual_overrides;
         }
 
+        if (typeof body.jurisdiction === "string") {
+          const j = body.jurisdiction.toLowerCase();
+          if (j === "at" || j === "de" || j === "ch" || j === "eu") {
+            pipelineData.jurisdiction = j;
+          }
+        }
+
+        if (typeof body.verfahrenstyp === "string") {
+          const v = body.verfahrenstyp.toLowerCase();
+          if (v === "straf" || v === "zivil" || v === "arbeitsrecht" || v === "verwaltungsrecht" || v === "sonstiges") {
+            pipelineData.verfahrenstyp = v;
+          }
+        }
+
         const queue = new MinionQueue(engine);
         const job = await queue.add("legal-pipeline", pipelineData);
 
@@ -5583,12 +5672,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   );
 
-  // Kollisionsprüfung (§ 43a BRAO): scans EVERY legal_case AND legal_contact
-  // page of the tenant server-side — no client-side 200-row cap, no frontmatter
-  // round-trip. Matching uses case-insensitive substring PLUS umlaut-normalized
-  // fuzzy matching (catches "Müller GmbH" vs "Mueller GmbH" vs "Müller GmbH &
-  // Co. KG"). Exact matches are flagged separately; fuzzy matches get a
-  // similarity score.
+  // Kollisionsprüfung (§ 10 RAO / § 43a BRAO): delegates to the entity-graph-
+  // aware checker in core/legal/conflict-check.ts (Gap H): legal_case +
+  // legal_contact frontmatter PLUS pipeline entity pages (people/*) with
+  // roles, aliases and case_refs — the Geschäftsführer of the opposing GmbH
+  // or the witness who is a client elsewhere now shows up. Umlaut-normalized
+  // fuzzy matching included.
   app.post(
     "/api/legal/conflict-check",
     express.json({ limit: "64kb" }),
@@ -5599,162 +5688,168 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           res.status(400).json({ error: "missing_name" });
           return;
         }
-
-        // Normalize umlauts for fuzzy matching: ü→ue, ö→oe, ä→ae, ß→ss
-        const normalizeForMatch = (s: string): string =>
-          s
-            .toLowerCase()
-            .replace(/ä/g, "ae")
-            .replace(/ö/g, "oe")
-            .replace(/ü/g, "ue")
-            .replace(/ß/g, "ss")
-            .replace(/[^a-z0-9\s]/g, " ")
-            .replace(/\s+/g, " ")
-            .trim();
-
-        // Token-based Jaccard similarity (0–1) on normalized names
-        const nameSimilarity = (a: string, b: string): number => {
-          const na = normalizeForMatch(a);
-          const nb = normalizeForMatch(b);
-          if (na === nb) return 1.0;
-          const ta = new Set(na.split(" ").filter((t) => t.length > 1));
-          const tb = new Set(nb.split(" ").filter((t) => t.length > 1));
-          if (ta.size === 0 || tb.size === 0) return 0;
-          let common = 0;
-          for (const t of ta) if (tb.has(t)) common++;
-          return common / (ta.size + tb.size - common);
-        };
-
-        const normName = normalizeForMatch(name);
-        const sourceId = requestSourceId(req);
-        const sourceClause = sourceId === "default" ? "" : `AND source_id = $3`;
-        const params: string[] =
-          sourceId === "default"
-            ? [`%${name}%`, `%${normName}%`]
-            : [`%${name}%`, `%${normName}%`, sourceId];
-
-        const rows = await engine.executeRaw<{
-          slug: string;
-          title: string;
-          client_name: string | null;
-          opponent_name: string | null;
-          contact_name: string | null;
-          status: string | null;
-          page_type: string | null;
-        }>(
-          `SELECT slug, title,
-                frontmatter->>'client_name' as client_name,
-                frontmatter->>'opponent_name' as opponent_name,
-                frontmatter->>'name' as contact_name,
-                frontmatter->>'status' as status,
-                type as page_type
-           FROM pages
-           WHERE deleted_at IS NULL ${sourceClause}
-             AND (
-               (type = 'legal_case' AND (
-                 frontmatter->>'client_name' ILIKE $1 OR frontmatter->>'opponent_name' ILIKE $1
-                 OR frontmatter->>'client_name' ILIKE $2 OR frontmatter->>'opponent_name' ILIKE $2
-               ))
-               OR
-               (type = 'legal_contact' AND (
-                 frontmatter->>'name' ILIKE $1 OR frontmatter->>'name' ILIKE $2
-                 OR frontmatter->>'company' ILIKE $1 OR frontmatter->>'company' ILIKE $2
-               ))
-             )
-           ORDER BY updated_at DESC`,
-          params
-        );
-
-        const lowerName = name.toLowerCase();
-        const normLower = normName.toLowerCase();
-        const matches = rows.map((r) => {
-          // Determine role and matched name from either legal_case or legal_contact
-          let role: "client" | "opponent" | "contact";
-          let matchedName: string;
-          if (r.page_type === "legal_contact") {
-            role = "contact";
-            matchedName = r.contact_name ?? r.title ?? "";
-          } else {
-            const clientMatch =
-              (r.client_name ?? "").toLowerCase().includes(lowerName) ||
-              normalizeForMatch(r.client_name ?? "").includes(normLower);
-            const opponentMatch =
-              (r.opponent_name ?? "").toLowerCase().includes(lowerName) ||
-              normalizeForMatch(r.opponent_name ?? "").includes(normLower);
-            if (clientMatch) {
-              role = "client";
-              matchedName = r.client_name ?? "";
-            } else if (opponentMatch) {
-              role = "opponent";
-              matchedName = r.opponent_name ?? "";
-            } else {
-              // Fallback: normalized match only
-              role = "client";
-              matchedName = r.client_name ?? r.opponent_name ?? "";
-            }
-          }
-
-          const sim = nameSimilarity(name, matchedName);
-          const exact = matchedName.toLowerCase() === lowerName;
-          const matchType = exact ? "exact" : sim >= 0.8 ? "fuzzy" : "substring";
-
-          return {
-            slug: r.slug,
-            title: r.title,
-            role,
-            status: r.status ?? "open",
-            matched_name: matchedName,
-            exact,
-            similarity: Math.round(sim * 100) / 100,
-            match_type: matchType,
-          };
-        });
-
-        // Deduplicate by slug (a case might match on both client and opponent)
-        const seenSlugs = new Set<string>();
-        const deduped = matches.filter((m) => {
-          if (seenSlugs.has(m.slug)) return false;
-          seenSlugs.add(m.slug);
-          return true;
-        });
-
-        const asClient = deduped.filter((m) => m.role === "client");
-        const asOpponent = deduped.filter((m) => m.role === "opponent");
-
-        let severity: "critical" | "low" | "none";
-        let explanation: string;
-        if (asClient.length > 0 && asOpponent.length > 0) {
-          severity = "critical";
-          explanation = `"${name}" erscheint sowohl als Mandant als auch als Gegner in verschiedenen Akten. Direkter Interessenkonflikt gemäß § 43a Abs. 4 BRAO — anwaltlich prüfen.`;
-        } else if (asClient.length > 1 || asOpponent.length > 1) {
-          severity = "low";
-          explanation =
-            asClient.length > 1
-              ? `"${name}" ist Mandant in ${asClient.length} Akten. Kein direkter Konflikt, aber auf gegensätzliche Interessen prüfen.`
-              : `"${name}" ist Gegner in ${asOpponent.length} Akten. Kein direkter Konflikt, aber Wissensnutzung zwischen den Akten beachten.`;
-        } else if (deduped.length === 1) {
-          severity = "none";
-          explanation = `"${name}" ist in einer Akte bekannt (${deduped[0]!.role === "client" ? "Mandant" : deduped[0]!.role === "opponent" ? "Gegner" : "Kontakt"}). Kein Konflikt erkennbar.`;
-        } else {
-          severity = "none";
-          explanation = `"${name}" ist in keiner Akte bekannt. Kein Konflikt im Brain erkennbar.`;
-        }
-
-        res.json({
+        const { conflictCheck } = await import("../core/legal/conflict-check.ts");
+        const result = await conflictCheck(engine, {
           name,
-          severity,
-          explanation,
-          matches: deduped,
-          checked_cases: rows.length,
-          disclaimer:
-            "Diese Prüfung ersetzt nicht die anwaltliche Pflicht zur Kollisionsprüfung nach § 43a BRAO.",
+          sourceId: requestSourceId(req),
         });
+        res.json(result);
       } catch (e) {
         const msg = e instanceof Error ? e.message : "unknown";
         res.status(500).json({ error: "conflict_check_failed", message: msg });
       }
     }
   );
+
+  // Gap D: Kanzlei-Fristenbuch — deterministic classification (frist-engine)
+  // over all deadline-calendar pages. JSON view for the dashboard; the
+  // eskalation flag drives the Vier-Augen-Kontrolle (kritisch/überfällig).
+  app.get("/api/legal/fristenbuch", async (req: Request, res: Response) => {
+    try {
+      const { ladeFristenbuch } = await import("../core/legal/fristenbuch.ts");
+      const heute =
+        typeof req.query.heute === "string" && /^\d{4}-\d{2}-\d{2}$/.test(req.query.heute)
+          ? req.query.heute
+          : new Date().toISOString().slice(0, 10);
+      const buch = await ladeFristenbuch(engine, {
+        heute,
+        sourceId: requestSourceId(req),
+        caseSlug: typeof req.query.case === "string" ? req.query.case : undefined,
+      });
+      res.json(buch);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "fristenbuch_failed", message: msg });
+    }
+  });
+
+  // Gap D: ICS feed — Outlook/Google/Apple Calendar subscribe here. One
+  // all-day VEVENT per Frist (VALARM -P2D) plus a Vorfrist VEVENT, so both
+  // Kanzlei control dates land in the calendar.
+  app.get("/api/legal/deadlines.ics", async (req: Request, res: Response) => {
+    try {
+      const { ladeFristenbuch, baueIcs } = await import("../core/legal/fristenbuch.ts");
+      const heute = new Date().toISOString().slice(0, 10);
+      const buch = await ladeFristenbuch(engine, {
+        heute,
+        sourceId: requestSourceId(req),
+        caseSlug: typeof req.query.case === "string" ? req.query.case : undefined,
+      });
+      const ics = baueIcs(buch);
+      res.setHeader("Content-Type", "text/calendar; charset=utf-8");
+      res.setHeader("Content-Disposition", 'attachment; filename="fristenbuch.ics"');
+      res.send(ics);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "deadlines_ics_failed", message: msg });
+    }
+  });
+
+  // Gap E: Verhandlungsmappen-Generator — deterministic composition of the
+  // Tagsatzungs-Mappe from existing pipeline pages (Chronologie, Beweismittel,
+  // §-Spickzettel, Beweislast, Fragenkatalog, Gegenargumente, ZOPA, Fristen).
+  app.post(
+    "/api/legal/verhandlungsmappe",
+    express.json({ limit: "64kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const body = req.body as Record<string, unknown>;
+        const caseSlug = String(body.case_slug ?? "").trim();
+        if (!caseSlug) {
+          res.status(400).json({ error: "missing_case_slug" });
+          return;
+        }
+        const { generiereVerhandlungsmappe } = await import(
+          "../core/legal/verhandlungsmappe.ts"
+        );
+        const result = await generiereVerhandlungsmappe(engine, {
+          caseSlug,
+          termin: typeof body.termin === "string" ? body.termin : undefined,
+          sourceId: requestSourceId(req),
+        });
+        res.json({
+          slug: result.slug,
+          quellen: result.quellen,
+          fehlend: result.fehlend,
+          markdown_length: result.markdown.length,
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        res.status(500).json({ error: "verhandlungsmappe_failed", message: msg });
+      }
+    }
+  );
+
+  // Gap F: DOCX export for legal drafts — Kanzlei-Briefkopf + Rubrum +
+  // markdown body, ERV-ready note block. Query params configure the Rubrum;
+  // Kanzlei data comes from the request body-less GET via headers-free
+  // defaults (frontend passes them as query params).
+  app.get("/api/legal/drafts/{*slug}/docx", async (req: Request, res: Response) => {
+    try {
+      const slugParam = (req.params as Record<string, unknown>).slug;
+      const slug = Array.isArray(slugParam) ? slugParam.join("/") : String(slugParam ?? "");
+      if (!slug) {
+        res.status(400).json({ error: "missing_slug" });
+        return;
+      }
+      const sourceId = requestSourceId(req);
+      const conds = ["deleted_at IS NULL", "slug = $1"];
+      const params: string[] = [slug];
+      if (sourceId !== "default") {
+        params.push(sourceId);
+        conds.push(`source_id = $${params.length}`);
+      }
+      const rows = await engine.executeRaw<{
+        slug: string;
+        title: string;
+        compiled_truth: string | null;
+      }>(
+        `SELECT slug, title, compiled_truth FROM pages WHERE ${conds.join(" AND ")} LIMIT 1`,
+        params
+      );
+      const page = rows[0];
+      if (!page) {
+        res.status(404).json({ error: "draft_not_found" });
+        return;
+      }
+      const { draftToDocx, stripFrontmatter } = await import("../core/legal/docx-export.ts");
+      const q = req.query as Record<string, string | undefined>;
+      const buf = await draftToDocx({
+        titel: page.title,
+        markdown: stripFrontmatter(page.compiled_truth ?? ""),
+        kanzlei: q.kanzlei_name
+          ? {
+              name: q.kanzlei_name,
+              adresse: q.kanzlei_adresse,
+              telefon: q.kanzlei_telefon,
+              email: q.kanzlei_email,
+              ervTeilnehmerkennung: q.erv_kennung,
+            }
+          : undefined,
+        rubrum: {
+          gericht: q.gericht,
+          geschaeftszahl: q.gz,
+          klaeger: q.klaeger,
+          klaegerVertreter: q.klaeger_vertreter,
+          beklagter: q.beklagter,
+          beklagterVertreter: q.beklagter_vertreter,
+          streitwert: q.streitwert,
+          betreff: q.betreff ?? page.title,
+          schriftsatzart: q.schriftsatzart,
+        },
+      });
+      const filename = slug.split("/").pop() ?? "draft";
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      );
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}.docx"`);
+      res.send(buf);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "docx_export_failed", message: msg });
+    }
+  });
 
   // Rechtsprechungs-Sync: runs the legal-judgements connector inline and
   // writes the results into the caller's source. The cursor is persisted

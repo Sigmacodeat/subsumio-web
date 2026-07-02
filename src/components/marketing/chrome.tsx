@@ -1303,7 +1303,7 @@ export function SectionHeading({
           {badge}
         </motion.span>
       )}
-      <h2 className="mx-auto mb-4 max-w-3xl [font-family:var(--font-display)] text-[1.75rem] leading-[1.12] font-black tracking-[-0.02em] text-balance [color:var(--mk-text)] md:text-4xl">
+      <h2 className="mx-auto mb-4 max-w-3xl [font-family:var(--font-display)] text-2xl leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
         {title}
       </h2>
       {sub && (
@@ -1570,7 +1570,7 @@ export function CTASection({
       <Reveal variant="upLg" className="mx-auto max-w-3xl">
         {showLogo && <SubsumioMark size={56} className="mx-auto mb-7" />}
         <h2 className={H2_CTA_CLASS}>{title}</h2>
-        <p className="mx-auto mb-8 max-w-xl text-base [color:var(--mk-text-muted)] md:text-lg">
+        <p className="mx-auto mb-8 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
           {sub}
         </p>
         <Link href={href}>

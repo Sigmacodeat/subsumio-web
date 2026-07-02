@@ -669,12 +669,12 @@ export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: R
             </span>
           </motion.div>
           <motion.div {...reveal(1, reduce)}>
-            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl leading-[1.1] font-black tracking-[-0.02em] text-balance [color:var(--mk-text)] md:text-4xl lg:text-5xl">
+            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl leading-[1.1] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl lg:text-4xl">
               {c.waTitle}
             </h2>
           </motion.div>
           <motion.div {...reveal(2, reduce)}>
-            <p className="mb-10 max-w-xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
+            <p className="mb-10 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
               {c.waSub}
             </p>
           </motion.div>
@@ -720,10 +720,10 @@ export function FeatureBento({ lang }: { lang: Lang }) {
         <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium">
           {c.bentoEyebrow}
         </span>
-        <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+        <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
           {c.bentoTitle}
         </h2>
-        <p className="mx-auto max-w-2xl text-lg [color:var(--mk-text-muted)]">{c.bentoSub}</p>
+        <p className="mx-auto max-w-2xl text-lg text-pretty [color:var(--mk-text-muted)]">{c.bentoSub}</p>
       </motion.div>
       <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {features.map((f, i) => {

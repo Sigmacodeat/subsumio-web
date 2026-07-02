@@ -260,8 +260,8 @@ function HowItWorks({ lang }: { lang: Lang }) {
         transition={{ duration: 0.4 }}
         className="mb-14 text-center"
       >
-        <h2 className="mb-3 text-2xl font-black [color:var(--mk-text)] md:text-3xl">{h.title}</h2>
-        <p className="mx-auto max-w-2xl text-base [color:var(--mk-text-muted)] md:text-lg">
+        <h2 className="mb-3 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">{h.title}</h2>
+        <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
           {h.sub}
         </p>
       </motion.div>
@@ -408,12 +408,12 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
           <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
             {UI_STRINGS[lang].inDashboard}
           </p>
-          <h2 className="mb-4 text-2xl leading-tight font-black text-balance [color:var(--mk-text)] md:text-3xl">
+          <h2 className="mb-4 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
             {lang !== "en"
               ? "Jede Funktion läuft als Kanzlei-Workflow."
               : "Features run as a legal workflow."}
           </h2>
-          <p className="max-w-xl text-base leading-relaxed [color:var(--mk-text-muted)]">
+          <p className="max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
             {lang !== "en"
               ? "Akte, Copilot, Frist, Quelle und Freigabe greifen ineinander. Deshalb beschreibt Subsumio jede Funktion im Kontext der Oberfläche, in der Anwälte sie wirklich benutzen."
               : "Matter, copilot, deadline, source and approval work together. That is why Subsumio describes every capability in the dashboard context lawyers actually use."}
@@ -710,11 +710,11 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                 <div className="brand-soft brand-border flex h-12 w-12 items-center justify-center rounded-xl border">
                   {CatIcon && <CatIcon size={22} className="brand-text" />}
                 </div>
-                <h2 className="text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+                <h2 className="text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
                   {cat.title}
                 </h2>
               </div>
-              <p className="mb-8 text-base leading-relaxed [color:var(--mk-text-muted)]">
+              <p className="mb-8 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
                 {cat.intro}
               </p>
               <div className="space-y-4">
@@ -805,12 +805,12 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             <div className="brand-soft brand-border mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border">
               <Shield size={24} className="brand-text" />
             </div>
-            <h2 className="mb-3 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+            <h2 className="mb-3 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
               {lang === "en"
                 ? "Built for confidentiality-first work"
                 : "Gebaut für vertrauliche Arbeit"}
             </h2>
-            <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)]">
+            <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
               {lang === "en"
                 ? "Self-hosting, tested isolation, EU AI Act compliance, and an honest roadmap. The full security and data-protection story lives on its own page."
                 : "On-Premise-Betrieb, getestete Isolation, EU-AI-Act-Compliance und eine ehrliche Roadmap. Die vollständige Sicherheits- und Datenschutzdarstellung hat eine eigene Seite."}
@@ -826,7 +826,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
 
       {/* Everything at a glance */}
       <section className="relative z-10 mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
-        <h2 className="mb-12 text-center text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+        <h2 className="mb-12 text-center text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
           {lang === "en"
             ? "Five capability areas, one engine"
             : "Fünf Funktionsbereiche, eine Engine"}
@@ -878,7 +878,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             transition={{ duration: 0.4 }}
             className="mb-10 text-center"
           >
-            <h2 className="text-2xl font-black [color:var(--mk-text)] md:text-3xl">{t.faqTitle}</h2>
+            <h2 className="text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">{t.faqTitle}</h2>
           </motion.div>
           <AnimatedFaqList items={t.faq} tone="light" />
         </div>
@@ -890,10 +890,10 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
         className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
       >
         <SubsumioMark size={56} className="mx-auto mb-7 rounded-[15px]" />
-        <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+        <h2 className="mb-4 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
           {t.ctaTitle}
         </h2>
-        <p className="mb-10 text-base [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
+        <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
         <Link href={p(lang, "/signup")}>
           <Button size="xl" variant="primary">
             {t.ctaButton} <ArrowRight size={18} />

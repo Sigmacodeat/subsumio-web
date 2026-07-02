@@ -170,7 +170,7 @@ export default async function RootLayout({
     !pathname.startsWith("/en/forgot") &&
     !pathname.startsWith("/api");
 
-  const pageContent = hasOwnMain ? children : <main role="main">{children}</main>;
+  const pageContent = hasOwnMain ? children : <main id="main-content" role="main">{children}</main>;
 
   return (
     <html
@@ -199,7 +199,16 @@ export default async function RootLayout({
             <ToastProvider>
               <ConfirmProvider>
                 {isMarketingPage ? (
-                  <MarketingShell lang={lang}>{pageContent}</MarketingShell>
+                  <>
+                    {/* Skip-to-content link for keyboard users */}
+                    <a
+                      href="#main-content"
+                      className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:rounded-lg focus:bg-[color:var(--brand-primary)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg"
+                    >
+                      {lang === "en" ? "Skip to content" : "Zum Inhalt springen"}
+                    </a>
+                    <MarketingShell lang={lang}>{pageContent}</MarketingShell>
+                  </>
                 ) : (
                   pageContent
                 )}
@@ -210,6 +219,13 @@ export default async function RootLayout({
         {isMarketingPage && <RefConsentBanner />}
         {isMarketingPage && <AnalyticsConsentBanner />}
         <ServiceWorkerRegister />
+        <noscript>
+          <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "12px 16px", background: "#1e40af", color: "#fff", fontSize: "14px", textAlign: "center", zIndex: 9999 }}>
+            {lang === "en"
+              ? "JavaScript is disabled — some features may be unavailable. Content is still readable."
+              : "JavaScript ist deaktiviert — einige Funktionen sind möglicherweise nicht verfügbar. Der Inhalt ist weiterhin lesbar."}
+          </div>
+        </noscript>
       </body>
     </html>
   );

@@ -66,8 +66,8 @@ function Shell({
         <h1 className="mt-8 mb-2 text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)]">
           {title}
         </h1>
-        <p className="mb-6 text-xs [color:var(--mk-text-subtle)]">{subtitle}</p>
-        <div className="space-y-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
+        <p className="mb-6 text-xs text-pretty [color:var(--mk-text-subtle)]">{subtitle}</p>
+        <div className="space-y-3 text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)]">
           {children}
         </div>
       </div>

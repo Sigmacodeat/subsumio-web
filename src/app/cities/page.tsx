@@ -38,10 +38,10 @@ export default function CitiesPage() {
             <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--brand-text)]" />
             Local SEO
           </span>
-          <h1 className="mb-4 text-4xl font-black [color:var(--mk-text)]">
+          <h1 className="mb-4 text-[clamp(2rem,5vw,3rem)] leading-[1.1] font-black tracking-tight text-balance [color:var(--mk-text)]">
             KI-Kanzleisoftware für DACH-Städte
           </h1>
-          <p className="text-lg [color:var(--mk-text-muted)]">
+          <p className="text-lg text-pretty [color:var(--mk-text-muted)]">
             Subsumio arbeitet mit dem jeweiligen nationalen Recht — ABGB in Wien, BGB in Berlin, ZGB
             in Zürich. Wähle deine Stadt:
           </p>

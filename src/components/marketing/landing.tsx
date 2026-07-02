@@ -273,7 +273,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <Section
           tone="light"
           id="features"
-          className="px-4 py-24 sm:px-6 lg:px-8"
+          className="scroll-mt-24 px-4 py-24 sm:px-6 lg:px-8"
           aria-label="Features"
         >
           <div className="mx-auto max-w-7xl">
@@ -389,7 +389,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           <motion.div {...reveal} className="mx-auto max-w-5xl">
             <SectionHeading title={t.comparisonTitle} sub={t.comparisonSub} />
             <div className="overflow-x-auto">
-              <table className="mt-10 w-full border-collapse text-sm">
+              <table className="mt-10 w-full border-collapse text-sm" aria-label={lang !== "en" ? "Vergleich: Subsumio vs. andere KI-Tools" : "Comparison: Subsumio vs. other AI tools"}>
                 <thead>
                   <tr className="border-b border-[color:var(--mk-border)]">
                     <th className="py-3 pr-4 text-left font-semibold text-[color:var(--mk-text)]">
@@ -481,10 +481,10 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           <GradientMesh className="z-0" />
           <motion.div {...reveal} className="relative z-10 mx-auto max-w-3xl text-center">
             <SubsumioMark size={48} className="mx-auto mb-7" />
-            <h2 className="mb-4 [font-family:var(--font-display)] text-[1.75rem] leading-[1.12] font-black tracking-[-0.02em] text-balance [color:var(--mk-text)] md:text-4xl">
+            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
               {t.ctaTitle}
             </h2>
-            <p className="mb-10 text-base [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
+            <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
             <MagneticButton strength={0.2}>
               <Link href={p(lang, "/signup")}>
                 <Button size="xl" variant="primary">

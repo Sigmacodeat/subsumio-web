@@ -269,10 +269,10 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
       {/* Store preview */}
       <section className="relative z-10 px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+          <h2 className="mb-4 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
             {t.storesTitle}
           </h2>
-          <p className="mb-8 text-base leading-relaxed [color:var(--mk-text-muted)]">
+          <p className="mb-8 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
             {t.storesSub}
           </p>
 
@@ -341,10 +341,10 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
         className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
       >
         <SubsumioMark size={56} className="mx-auto mb-7" />
-        <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+        <h2 className="mb-4 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
           {t.ctaTitle}
         </h2>
-        <p className="mb-10 text-base [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
+        <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
         <Link href={p(lang, "/signup")}>
           <Button size="xl" variant="primary">
             {t.ctaButton} <ArrowRight size={18} />

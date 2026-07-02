@@ -44,10 +44,10 @@ function SignatureBand({ industry, lang }: { industry: string; lang: Lang }) {
             <p className="brand-text mb-3 font-mono text-xs tracking-wider uppercase">
               {profile.brand} {UI_STRINGS[lang].signatureLabel}
             </p>
-            <h2 className="text-2xl leading-tight font-black text-balance [color:var(--mk-text)] md:text-3xl">
+            <h2 className="text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
               {signature.title[locale]}
             </h2>
-            <p className="mt-4 text-sm leading-relaxed [color:var(--mk-text-muted)] md:text-base">
+            <p className="mt-4 text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-base">
               {signature.proof[locale]}
             </p>
           </div>
@@ -314,7 +314,7 @@ export default function VerticalPage({
             >
               &ldquo;
             </span>
-            <h2 className="-mt-6 mb-5 text-2xl font-black text-balance [color:var(--mk-text)] md:text-3xl">
+            <h2 className="-mt-6 mb-5 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
               {t.proofTitle}
             </h2>
             <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
@@ -337,7 +337,7 @@ export default function VerticalPage({
       )}
 
       {/* Pricing — this branch's own tiers (or global fallback) */}
-      <Section tone="light" id="pricing" className="scroll-mt-20 px-4 py-24 sm:px-6 lg:px-8">
+      <Section tone="light" id="pricing" className="scroll-mt-24 px-4 py-24 sm:px-6 lg:px-8">
         <BranchPricing lang={lang} industry={product?.industry ?? slug} />
       </Section>
 
@@ -357,7 +357,7 @@ export default function VerticalPage({
         <div className="mx-auto max-w-3xl">
           <SubsumioMark size={56} className="mx-auto mb-7" />
           <h2 className={`${H2_CTA_CLASS} mb-4`}>{t.ctaTitle}</h2>
-          <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
+          <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
           <Link href={signupHref}>
             <Button size="xl" variant="primary">
               {t.ctaButton} <ArrowRight size={18} />

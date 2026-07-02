@@ -352,6 +352,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       // server(light)/client(stored) attribute mismatch warning on this node.
       suppressHydrationWarning
     >
+      {/* Prevent search engines from indexing authenticated dashboard pages.
+          Defense-in-depth: robots.txt already blocks /dashboard, but this
+          meta tag ensures noindex even if robots.txt is bypassed or removed. */}
+      <meta name="robots" content="noindex, nofollow" />
       <Script src="/theme-init.js" strategy="beforeInteractive" />
       {/* Skip-to-content link for keyboard users */}
       <a
@@ -407,7 +411,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         <main
           id="main-content"
           role="main"
-          className="dashboard-main-scroll flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0"
+          className="dashboard-main-scroll flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-auto pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0"
         >
           <div key={pathname} className="widget-fade-in flex min-h-0 flex-1 flex-col">
             {children}

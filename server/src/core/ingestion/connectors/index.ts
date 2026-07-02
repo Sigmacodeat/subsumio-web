@@ -40,6 +40,7 @@ export { AsanaConnector } from "./asana.ts";
 export { JiraConnector } from "./jira.ts";
 export { LegalJudgementsConnector } from "./legal-judgements.ts";
 export { BeaImportConnector } from "./bea-import.ts";
+export { ErvImportConnector } from "./erv-import.ts";
 export { AdvokatImportConnector } from "./advokat-import.ts";
 export { OpenAccessCommentaryConnector } from "./open-access-commentaries.ts";
 

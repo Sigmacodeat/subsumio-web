@@ -987,7 +987,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           </Link>
         </div>
 
-        <div className="dashboard-scroll-shadow flex-1 overflow-x-hidden overflow-y-auto pt-[env(safe-area-inset-top)] pb-3">
+        <div className="dashboard-scroll-shadow flex-1 overflow-x-clip overflow-y-auto pt-[env(safe-area-inset-top)] pb-3">
           {/* Brain status — expanded version */}
           <div
             className={cn(

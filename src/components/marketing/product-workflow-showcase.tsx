@@ -89,12 +89,12 @@ export default function ProductWorkflowShowcase({
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <p className="brand-text mb-4 font-mono text-xs tracking-wider uppercase">{c.eyebrow}</p>
-          <h2 className="mb-5 [font-family:var(--font-display)] text-[1.75rem] leading-[1.12] font-black tracking-[-0.02em] [color:var(--mk-text)] md:text-4xl">
+          <h2 className="mb-5 [font-family:var(--font-display)] text-2xl leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
             {brand}
             <br />
             <span className="gradient-text glow-text">{signature}</span>
           </h2>
-          <p className="mb-8 text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
+          <p className="mb-8 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
             {c.sub.replace("{brand}", brand)}
           </p>
           <div className="grid gap-3">

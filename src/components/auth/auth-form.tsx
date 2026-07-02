@@ -187,10 +187,10 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
 
         <div className="glass rounded-2xl p-8 shadow-2xl shadow-black/50">
           <ClipReveal delay={0.1} duration={0.6} direction="up">
-            <h1 className="mb-1 text-2xl font-black [color:var(--mk-text)]">{m.title}</h1>
+            <h1 className="mb-1 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)]">{m.title}</h1>
           </ClipReveal>
           <ClipReveal delay={0.2} duration={0.6} direction="up">
-            <p className="mb-7 text-sm [color:var(--mk-text-muted)]">{m.sub}</p>
+            <p className="mb-7 text-sm text-pretty [color:var(--mk-text-muted)]">{m.sub}</p>
           </ClipReveal>
 
           <form onSubmit={submit} className="space-y-4" noValidate>

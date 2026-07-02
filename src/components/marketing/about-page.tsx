@@ -109,7 +109,7 @@ export default function AboutPage({ lang }: { lang: Lang }) {
         <div className="mx-auto max-w-4xl">
           <SectionHeading title={c.missionTitle} tone="light" />
           <motion.p
-            className="mx-auto max-w-3xl text-center text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+            className="mx-auto max-w-3xl text-center text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}

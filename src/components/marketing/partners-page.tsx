@@ -135,10 +135,10 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
       <section className="relative z-10 px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <Reveal variant="up" className="mx-auto max-w-3xl text-center">
           <TrendingUp size={28} className="mx-auto mb-6 [color:var(--signal-amber)]" />
-          <h2 className="mb-5 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+          <h2 className="mb-5 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
             {t.calcTitle}
           </h2>
-          <p className="mb-6 text-lg leading-relaxed [color:var(--mk-text)]">{t.calcSub}</p>
+          <p className="mb-6 text-lg leading-relaxed text-pretty [color:var(--mk-text)]">{t.calcSub}</p>
           <p className="mx-auto max-w-xl text-xs leading-relaxed [color:var(--mk-text-subtle)]">
             {t.calcNote}
           </p>

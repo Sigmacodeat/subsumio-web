@@ -10,7 +10,7 @@ export default function NotFound() {
     >
       <div className="max-w-md text-center">
         <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/20">
-          <Search size={26} className="text-[var(--brand-primary)]" />
+          <Search size={26} className="text-[var(--brand-primary)]" aria-hidden />
         </div>
         <p className="mb-3 font-mono text-xs text-[var(--brand-primary)]">404</p>
         <h1 className="mb-3 text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)]">

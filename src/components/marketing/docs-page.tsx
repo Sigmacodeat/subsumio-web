@@ -101,10 +101,10 @@ function DocsProof({ lang }: { lang: Lang }) {
           <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
             {UI_STRINGS[lang].dashboardNotDatasheet}
           </p>
-          <h2 className="mb-4 text-3xl leading-tight font-black text-balance [color:var(--mk-text)] md:text-4xl">
+          <h2 className="mb-4 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
             {UI_STRINGS[lang].docsTitle}
           </h2>
-          <p className="mb-7 max-w-xl text-base leading-relaxed [color:var(--mk-text-muted)]">
+          <p className="mb-7 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
             {UI_STRINGS[lang].docsSub}
           </p>
           <div className="grid gap-3">
@@ -192,7 +192,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
           {d.categories.map((cat, _ci) => (
             <motion.div key={cat.id} {...reveal}>
               <div className="mb-8">
-                <h2 className="mb-2 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+                <h2 className="mb-2 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
                   {cat.title}
                 </h2>
                 <p className="text-sm [color:var(--mk-text-muted)]">{cat.sub}</p>
@@ -217,10 +217,10 @@ export default function DocsPage({ lang }: { lang: Lang }) {
       <section className="relative z-10 px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <motion.div {...reveal} className="mb-12 text-center">
-            <h2 className="mb-3 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+            <h2 className="mb-3 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl">
               {d.arch.title}
             </h2>
-            <p className="text-sm [color:var(--mk-text-muted)]">{d.arch.sub}</p>
+            <p className="text-sm text-pretty [color:var(--mk-text-muted)]">{d.arch.sub}</p>
           </motion.div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {d.arch.items.map((item, i) => (
@@ -244,7 +244,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
       >
         <SubsumioMark size={56} className="mx-auto mb-7" />
         <h2 className={`${H2_CTA_CLASS} mb-4`}>{d.cta.title}</h2>
-        <p className="mb-10 text-base [color:var(--mk-text-muted)] md:text-lg">{d.cta.sub}</p>
+        <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">{d.cta.sub}</p>
         <Link href={p(lang, "/login")}>
           <Button size="lg" variant="primary">
             {d.cta.button} <ArrowRight size={16} />

@@ -314,6 +314,8 @@ export default function PortalPage() {
 
   return (
     <div data-tone="dark" className="min-h-screen [color:var(--mk-text)] [background:var(--mk-bg)]">
+      {/* Prevent indexing of client portal pages (sensitive case data) */}
+      <meta name="robots" content="noindex, nofollow" />
       {/* Header */}
       <header className="border-b [border-color:var(--mk-border)] [background:var(--mk-surface)]">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-4">
