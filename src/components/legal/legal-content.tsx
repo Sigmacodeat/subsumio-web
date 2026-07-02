@@ -79,14 +79,6 @@ function H2({ children }: { children: React.ReactNode }) {
   return <h2 className="mt-8 mb-2 text-lg font-semibold [color:var(--mk-text)]">{children}</h2>;
 }
 
-function DraftBanner({ lang: _lang, children }: { lang: Lang; children: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-xs text-amber-300">
-      {children}
-    </div>
-  );
-}
-
 function LegalLinks({
   home,
   exclude,
@@ -122,27 +114,26 @@ export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lan
   if (lang === "en") {
     return (
       <Shell home={home} lang={lang} title={t.imprintTitle} subtitle={t.imprintSubtitle}>
-        <DraftBanner lang={lang}>{t.draftNotice}</DraftBanner>
         <H2>Operator</H2>
         <p>
-          [Company name]
+          RCIID — Rocket Chain Investigation &amp; Intelligence Division
           <br />
-          [Street, number]
+          Hauslabgasse 42/3/21
           <br />
-          [ZIP, city, country]
+          1050 Vienna, Austria
         </p>
         <H2>Contact</H2>
         <p>
-          Email: hello@subsum.eu
+          Email: help@rciid.at
           <br />
-          [Phone]
+          Website: www.rciid.at
         </p>
         <H2>Authorized representatives</H2>
-        <p>[Name of authorized representative]</p>
+        <p>Ismet Mesic — Founder &amp; President</p>
         <H2>Commercial register</H2>
-        <p>[Commercial register, registration number, registry court — if applicable]</p>
+        <p>Registered association (Verein) — registration details available on request.</p>
         <H2>VAT identification number</H2>
-        <p>[VAT ID per § 27a UStG (DE) / § 48 UStG (AT) / MWSTG (CH) — if applicable]</p>
+        <p>ATU-Nummer gemäß § 48 UStG — available on request.</p>
         <H2>Consumer dispute resolution</H2>
         <p>
           We are not willing or obliged to participate in dispute resolution proceedings before a
@@ -160,27 +151,26 @@ export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lan
   }
   return (
     <Shell home={home} lang={lang} title={t.imprintTitle} subtitle={t.imprintSubtitle}>
-      <DraftBanner lang={lang}>{t.draftNotice}</DraftBanner>
       <H2>Betreiber</H2>
       <p>
-        [Firmenname]
+        RCIID — Rocket Chain Investigation &amp; Intelligence Division
         <br />
-        [Straße, Hausnummer]
+        Hauslabgasse 42/3/21
         <br />
-        [PLZ, Ort, Land]
+        1050 Wien, Österreich
       </p>
       <H2>Kontakt</H2>
       <p>
-        E-Mail: hello@subsum.eu
+        E-Mail: help@rciid.at
         <br />
-        [Telefon]
+        Website: www.rciid.at
       </p>
       <H2>Vertretungsberechtigt</H2>
-      <p>[Name der vertretungsberechtigten Person]</p>
+      <p>Ismet Mesic — Gründer &amp; Präsident</p>
       <H2>Registereintrag</H2>
-      <p>[Handelsregister, Registernummer, Registergericht — falls vorhanden]</p>
+      <p>Eingetragener Verein (Verein) — Registrierungsdaten auf Anfrage.</p>
       <H2>Umsatzsteuer-ID</H2>
-      <p>[USt-IdNr. gemäß § 27a UStG (DE) / § 48 UStG (AT) / MWSTG (CH) — falls vorhanden]</p>
+      <p>ATU-Nummer gemäß § 48 UStG — auf Anfrage.</p>
       <H2>Verbraucherstreitbeilegung</H2>
       <p>
         Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer
@@ -203,21 +193,19 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
   if (lang === "en") {
     return (
       <Shell home={home} lang={lang} title={t.privacyTitle} subtitle={t.privacySubtitle}>
-        <DraftBanner lang={lang}>{t.draftNotice}</DraftBanner>
-
         <H2>1. Controller</H2>
         <p>
           Responsible for data processing on this website and the hosted Subsumio service
           (hereinafter &ldquo;Service&rdquo;) is:
         </p>
         <p className="mt-2">
-          [Company name]
+          RCIID — Rocket Chain Investigation &amp; Intelligence Division
           <br />
-          [Street, number]
+          Hauslabgasse 42/3/21
           <br />
-          [ZIP, city, country]
+          1050 Vienna, Austria
           <br />
-          Email: hello@subsum.eu
+          Email: help@rciid.at
         </p>
         <p className="mt-2">
           Data Protection Officer (if appointed): [Name, contact]. Appointment is required e.g. when
@@ -320,21 +308,19 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
   }
   return (
     <Shell home={home} lang={lang} title={t.privacyTitle} subtitle={t.privacySubtitle}>
-      <DraftBanner lang={lang}>{t.draftNotice}</DraftBanner>
-
       <H2>1. Verantwortlicher</H2>
       <p>
         Verantwortlich für die Datenverarbeitung auf dieser Website und im gehosteten
         Subsumio-Dienst (im Folgenden &bdquo;Dienst&ldquo;) ist:
       </p>
       <p className="mt-2">
-        [Firmenname]
+        RCIID — Rocket Chain Investigation &amp; Intelligence Division
         <br />
-        [Straße, Hausnummer]
+        Hauslabgasse 42/3/21
         <br />
-        [PLZ, Ort, Land]
+        1050 Wien, Österreich
         <br />
-        E-Mail: hello@subsum.eu
+        E-Mail: help@rciid.at
       </p>
       <p className="mt-2">
         Datenschutzbeauftragte/r (sofern bestellt): [Name, Kontakt]. Eine Bestellpflicht besteht u.
@@ -442,15 +428,14 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
   if (lang === "en") {
     return (
       <Shell home={home} lang={lang} title={t.termsTitle} subtitle={t.termsSubtitle}>
-        <DraftBanner lang={lang}>{t.draftNotice}</DraftBanner>
-
         <H2>§ 1 Scope, contracting parties</H2>
         <p>
           (1) These Terms apply to the use of the hosted Subsumio service (&ldquo;Service&rdquo;)
-          between [Company name] (&ldquo;Provider&rdquo;) and the Customer. (2) The offering is
-          directed exclusively at businesses within the meaning of § 14 BGB (DE) / § 1 UGB (AT) / OR
-          944 (CH), legal entities under public law and public-law special funds (B2B). (3)
-          Deviating terms of the Customer apply only with express written consent.
+          between RCIID — Rocket Chain Investigation &amp; Intelligence Division
+          (&ldquo;Provider&rdquo;) and the Customer. (2) The offering is directed exclusively at
+          businesses within the meaning of § 14 BGB (DE) / § 1 UGB (AT) / OR 944 (CH), legal
+          entities under public law and public-law special funds (B2B). (3) Deviating terms of the
+          Customer apply only with express written consent.
         </p>
 
         <H2>§ 2 Contract formation</H2>
@@ -533,16 +518,14 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
   }
   return (
     <Shell home={home} lang={lang} title={t.termsTitle} subtitle={t.termsSubtitle}>
-      <DraftBanner lang={lang}>{t.draftNotice}</DraftBanner>
-
       <H2>§ 1 Geltungsbereich, Vertragspartner</H2>
       <p>
         (1) Diese AGB gelten für die Nutzung des gehosteten Subsumio-Dienstes (&bdquo;Dienst&ldquo;)
-        zwischen [Firmenname] (&bdquo;Anbieter&ldquo;) und dem Kunden. (2) Das Angebot richtet sich
-        ausschließlich an Unternehmer i. S. d. § 14 BGB (DE) / § 1 UGB (AT) / OR 944 (CH),
-        juristische Personen des öffentlichen Rechts und öffentlich-rechtliche Sondervermögen (B2B).
-        (3) Abweichende Bedingungen des Kunden gelten nur bei ausdrücklicher schriftlicher
-        Zustimmung.
+        zwischen RCIID — Rocket Chain Investigation &amp; Intelligence Division
+        (&bdquo;Anbieter&ldquo;) und dem Kunden. (2) Das Angebot richtet sich ausschließlich an
+        Unternehmer i. S. d. § 14 BGB (DE) / § 1 UGB (AT) / OR 944 (CH), juristische Personen des
+        öffentlichen Rechts und öffentlich-rechtliche Sondervermögen (B2B). (3) Abweichende
+        Bedingungen des Kunden gelten nur bei ausdrücklicher schriftlicher Zustimmung.
       </p>
 
       <H2>§ 2 Vertragsschluss</H2>
