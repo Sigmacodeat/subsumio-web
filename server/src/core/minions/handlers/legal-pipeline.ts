@@ -211,6 +211,10 @@ interface PipelineState {
   retry_count?: number;
   /** Counter-arguments from Layer 6.5 (Opponent-Simulator) */
   counter_arguments?: CounterArgument[];
+  /** Jurisdiction persisted in state for resume operations */
+  jurisdiction?: "at" | "de" | "ch" | "eu";
+  /** Verfahrenstyp persisted in state for resume operations */
+  verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
 }
 
 /** A counter-argument found by the opponent-simulator. */
@@ -346,6 +350,8 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         cost_cap_usd: costCap,
+        jurisdiction: data.jurisdiction ?? "at",
+        verfahrenstyp: data.verfahrenstyp ?? "sonstiges",
       };
     }
 
@@ -464,7 +470,11 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
           allTexts,
           batchSize: HAIKU_BATCH_SIZE,
           sourceStamp,
-          contextJson: JSON.stringify({ on_table: onTable }),
+          contextJson: JSON.stringify({
+            on_table: onTable,
+            jurisdiction: data.jurisdiction ?? "at",
+            verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+          }),
         });
         entities = extractEntityEntries(entityResult);
         let errors = await validateEntityEntries(entities, allText);
@@ -480,7 +490,11 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             allTexts,
             batchSize: HAIKU_BATCH_SIZE,
             sourceStamp,
-            contextJson: JSON.stringify({ on_table: onTable }),
+            contextJson: JSON.stringify({
+              on_table: onTable,
+              jurisdiction: data.jurisdiction ?? "at",
+              verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+            }),
             retryFeedback: "KORREKTUR ERFORDERLICH:\n" + errors.join("\n"),
           });
           entities = extractEntityEntries(retryResult);
@@ -614,6 +628,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
           onTable,
           entities,
           jurisdiction: data.jurisdiction ?? "at",
+          verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
           sourceStamp,
         });
         let errors = await validateLegalGroundingMap(legalGroundingMap, onTable);
@@ -765,6 +780,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
           engine,
           caseSlug: data.case_slug,
           jurisdiction: data.jurisdiction ?? "at",
+          verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
           sourceStamp,
         });
         if (evidenceQualitySlug) {
@@ -789,6 +805,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
           engine,
           caseSlug: data.case_slug,
           jurisdiction: data.jurisdiction ?? "at",
+          verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
           sourceStamp,
         });
         if (witnessSlug) {
@@ -948,6 +965,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             caseSlug: data.case_slug,
             forensicReport,
             jurisdiction: data.jurisdiction ?? "at",
+            verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
           });
           if (enforcementSlug) outputSlugs.push(enforcementSlug);
@@ -967,6 +985,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             engine,
             caseSlug: data.case_slug,
             jurisdiction: data.jurisdiction ?? "at",
+            verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
           });
           if (appealRiskSlug) outputSlugs.push(appealRiskSlug);
@@ -985,6 +1004,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             engine,
             caseSlug: data.case_slug,
             jurisdiction: data.jurisdiction ?? "at",
+            verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
           });
           if (strategySlug) outputSlugs.push(strategySlug);
@@ -1006,6 +1026,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             caseSlug: data.case_slug,
             forensicReport,
             jurisdiction: data.jurisdiction ?? "at",
+            verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
           });
           if (insuranceSlug) outputSlugs.push(insuranceSlug);
@@ -1025,6 +1046,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             engine,
             caseSlug: data.case_slug,
             jurisdiction: data.jurisdiction ?? "at",
+            verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
           });
           if (taxSlug) outputSlugs.push(taxSlug);
@@ -1044,6 +1066,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             engine,
             caseSlug: data.case_slug,
             jurisdiction: data.jurisdiction ?? "at",
+            verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
           });
           if (counterclaimSlug) outputSlugs.push(counterclaimSlug);
@@ -1063,6 +1086,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             engine,
             caseSlug: data.case_slug,
             jurisdiction: data.jurisdiction ?? "at",
+            verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
           });
           if (adrSlug) outputSlugs.push(adrSlug);
@@ -1082,9 +1106,31 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             engine,
             caseSlug: data.case_slug,
             jurisdiction: data.jurisdiction ?? "at",
+            verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
           });
-          if (limitationSlug) outputSlugs.push(limitationSlug);
+          if (limitationSlug) {
+            outputSlugs.push(limitationSlug);
+            // Auto-Trigger Wiedervorlage bei hohem Verjährungsrisiko
+            try {
+              const limPage = await engine.getPage(limitationSlug, { sourceId: sourceStamp });
+              const limFm = (limPage?.frontmatter ?? {}) as Record<string, unknown>;
+              const limScore = typeof limFm.verjaehrung_risiko_score === "number" ? limFm.verjaehrung_risiko_score : 0;
+              if (limScore >= 75) {
+                const rawUrgent = limFm.urgent_ansprueche;
+                const urgentAnsprueche = Array.isArray(rawUrgent)
+                  ? rawUrgent
+                  : typeof rawUrgent === "string" ? ((tryParseJSON(rawUrgent) as unknown) as unknown[]) ?? [] : [];
+                if (urgentAnsprueche.length > 0) {
+                  await autoCreateWiedervorlage(engine, data.case_slug, limScore, urgentAnsprueche, sourceStamp);
+                  state.warnings = [...(state.warnings ?? []), `Auto-Wiedervorlage erstellt: ${urgentAnsprueche.length} dringende Ansprüche (Score: ${limScore})`];
+                }
+              }
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : String(err);
+              console.warn(`[legal-pipeline] Auto-Wiedervorlage failed: ${msg}`);
+            }
+          }
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           state.warnings = [...(state.warnings ?? []), `Limitation scan failed: ${msg}`];
@@ -1101,6 +1147,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             engine,
             caseSlug: data.case_slug,
             jurisdiction: data.jurisdiction ?? "at",
+            verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
           });
           if (costAwardSlug) outputSlugs.push(costAwardSlug);
@@ -1563,9 +1610,10 @@ async function runLawMatcherLayer(opts: {
   onTable: OnEntry[];
   entities: EntityEntry[];
   jurisdiction?: "at" | "de" | "ch" | "eu";
+  verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   sourceStamp?: string;
 }): Promise<LegalGroundingEntry[]> {
-  const { ctx, queue, engine, caseSlug, forensicReport, onTable, entities, jurisdiction = "at", sourceStamp } = opts;
+  const { ctx, queue, engine, caseSlug, forensicReport, onTable, entities, jurisdiction = "at", verfahrenstyp = "sonstiges", sourceStamp } = opts;
   const def = resolveSpecialist("law-matcher");
   if (!def) throw new Error("legal-pipeline: law-matcher specialist not found");
 
@@ -1574,6 +1622,7 @@ async function runLawMatcherLayer(opts: {
     entities,
     forensic_report: forensicReport,
     jurisdiction,
+    verfahrenstyp,
   });
 
   const prompt = [
@@ -1581,6 +1630,7 @@ async function runLawMatcherLayer(opts: {
     "",
     `Akte: ${caseSlug}`,
     `Jurisdiktion: ${jurisdiction.toUpperCase()}`,
+    `Verfahrenstyp: ${verfahrenstyp}`,
     "",
     "Du erhältst den forensischen Bericht, die ON-Tabelle und die Entity-Liste.",
     "Für JEDEN Amtshaftungspunkt und Jede unterlassene Maßnahme:",
@@ -2291,8 +2341,7 @@ async function runSubsumptionCheck(opts: {
 
   // Return a formatted summary for the ensemble critic prompt
   const checks = Array.isArray(json.subsumption_checks) ? json.subsumption_checks : [];
-  const score =
-    typeof json.overall_subsumption_score === "number" ? json.overall_subsumption_score : 0;
+  const score = clampScore(json.overall_subsumption_score);
   const criticalErrors = Array.isArray(json.critical_errors) ? json.critical_errors : [];
 
   const summary = [
@@ -2373,11 +2422,14 @@ async function runPrecedentMatchLayer(opts: {
   sourceStamp?: string;
 }): Promise<string | null> {
   const { ctx, queue, engine, caseSlug, legalGroundingMap, forensicReport, jurisdiction, verfahrenstyp = "sonstiges", sourceStamp } = opts;
-  const def = resolveSpecialist("precedent-matcher");
-  if (!def) throw new Error("legal-pipeline: precedent-matcher specialist not found");
+  const safeSlug = sanitizeSlug(caseSlug);
+  if (!safeSlug) {
+    console.warn(`[legal-pipeline] Precedent match: invalid caseSlug "${caseSlug}"`);
+    return null;
+  }
 
-  const groundingSlug = `legal-grounding-maps/${caseSlug}`;
-  const forensicSlug = `forensic-reports/${caseSlug}`;
+  const groundingSlug = `legal-grounding-maps/${safeSlug}`;
+  const forensicSlug = `forensic-reports/${safeSlug}`;
 
   const gerichtHint =
     verfahrenstyp === "straf"
@@ -2390,15 +2442,25 @@ async function runPrecedentMatchLayer(opts: {
             ? "Verwaltungsrecht: VwGH, BVerfG, BVG"
             : "Alle Senate";
 
+  // Build context JSON with verfahrenstyp for the specialist
+  const contextJson = JSON.stringify({
+    jurisdiction,
+    verfahrenstyp,
+    gericht_hint: gerichtHint,
+    legal_grounding_count: legalGroundingMap.length,
+    has_forensic_report: !!forensicReport,
+  });
+
   const prompt = [
     "Suche nach relevanter Rechtsprechung für diesen Fall.",
     "",
-    `Akte: ${caseSlug}`,
+    `Akte: ${safeSlug}`,
     `Jurisdiktion: ${jurisdiction}`,
     `Verfahrenstyp: ${verfahrenstyp}`,
     `Relevante Senate: ${gerichtHint}`,
     `Legal Grounding Map: ${groundingSlug}`,
     `Forensischer Bericht: ${forensicSlug}`,
+    `Kontext: ${contextJson}`,
     "",
     "Lade die Legal Grounding Map und den forensischen Bericht mit get_page.",
     `Suche im Brain nach Judikaten: search('OGH' + §-Nummer), search('BGH' + Thema).`,
@@ -2407,35 +2469,11 @@ async function runPrecedentMatchLayer(opts: {
     'Gib JSON zurück: { precedent_matches: [...], precedent_gaps: [...], overall_precedent_score: 0-100, strategy_note: "..." }',
   ].join("\n");
 
-  const childData: Record<string, unknown> = {
-    prompt,
-    subagent_def: "precedent-matcher",
-    max_turns: def.maxTurns ?? MAX_TURNS_DEFAULT,
-  };
-  if (def.model) childData.model = def.model;
-  if (sourceStamp) childData._source_id = sourceStamp;
-
-  const child = await queue.add(
-    "subagent",
-    childData,
-    {
-      parent_job_id: ctx.id,
-      on_child_fail: "continue",
-      max_stalled: 3,
-    },
-    { allowProtectedSubmit: true }
-  );
-
-  const result = await waitForChild(ctx, child.id);
-  const text =
-    typeof result === "string"
-      ? result
-      : ((result as { text?: string })?.text ?? JSON.stringify(result));
-  const json = tryParseJSON(text) as Record<string, unknown> | null;
+  const json = await runSpecialistLayer({ ctx, queue, specialistName: "precedent-matcher", prompt, sourceStamp });
   if (!json) return null;
 
-  const slug = `precedent-matches/${caseSlug}`;
-  await writePrecedentMatchPage(engine, slug, caseSlug, json, sourceStamp);
+  const slug = `precedent-matches/${safeSlug}`;
+  await writePrecedentMatchPage(engine, slug, safeSlug, json, sourceStamp);
   return slug;
 }
 
@@ -2449,7 +2487,7 @@ async function writePrecedentMatchPage(
 ): Promise<void> {
   const matches = Array.isArray(data.precedent_matches) ? data.precedent_matches : [];
   const gaps = Array.isArray(data.precedent_gaps) ? data.precedent_gaps : [];
-  const score = typeof data.overall_precedent_score === "number" ? data.overall_precedent_score : 0;
+  const score = clampScore(data.overall_precedent_score);
   const strategy = String(data.strategy_note ?? "");
 
   const lines: string[] = [];
@@ -2512,16 +2550,12 @@ async function writePrecedentMatchPage(
 
   const md = lines.join("\n");
   const parsed = parseMarkdown(md);
-  await engine.putPage(
-    slug,
-    {
-      type: "precedent_match",
-      title: parsed.title ?? `Rechtsprechungs-Analyse — ${caseSlug}`,
-      compiled_truth: md,
-      frontmatter: { ...(parsed.frontmatter ?? {}) },
-    },
-    { sourceId }
-  );
+  await safePutPage(engine, slug, {
+    type: "precedent_match",
+    title: parsed.title ?? `Rechtsprechungs-Analyse — ${caseSlug}`,
+    compiled_truth: md,
+    frontmatter: { ...(parsed.frontmatter ?? {}) },
+  }, sourceId);
 }
 
 // ── Burden of Proof Layer (Layer 4c) ────────────────────────
@@ -2610,7 +2644,7 @@ async function writeBurdenOfProofPage(
 ): Promise<void> {
   const analysis = Array.isArray(data.burden_analysis) ? data.burden_analysis : [];
   const missing = Array.isArray(data.missing_evidence) ? data.missing_evidence : [];
-  const score = typeof data.overall_beweis_score === "number" ? data.overall_beweis_score : 0;
+  const score = clampScore(data.overall_beweis_score);
   const strategie = String(data.beweis_strategie ?? "");
 
   const lines: string[] = [];
@@ -2937,7 +2971,7 @@ async function writeAdmissibilityCheckPage(
   sourceId?: string
 ): Promise<void> {
   const checks = Array.isArray(data.admissibility_checks) ? data.admissibility_checks : [];
-  const score = typeof data.overall_zulaessigkeit_score === "number" ? data.overall_zulaessigkeit_score : 0;
+  const score = clampScore(data.overall_zulaessigkeit_score);
   const blockers = Array.isArray(data.critical_blockers) ? data.critical_blockers : [];
   const empfehlung = String(data.empfehlung ?? "");
 
@@ -3286,7 +3320,7 @@ async function writeFactGapPage(
 ): Promise<void> {
   const gaps = Array.isArray(data.fact_gaps) ? data.fact_gaps : [];
   const fragen = Array.isArray(data.mandanten_fragen) ? data.mandanten_fragen : [];
-  const score = typeof data.overall_vollstaendigkeit_score === "number" ? data.overall_vollstaendigkeit_score : 0;
+  const score = clampScore(data.overall_vollstaendigkeit_score);
   const kritische = Array.isArray(data.kritische_luecken) ? data.kritische_luecken : [];
   const empfehlung = String(data.empfehlung ?? "");
 
@@ -3385,9 +3419,10 @@ async function runEnforcementAnalysisLayer(opts: {
   caseSlug: string;
   forensicReport: ForensicReport | null;
   jurisdiction: "at" | "de" | "ch" | "eu";
+  verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   sourceStamp?: string;
 }): Promise<string | null> {
-  const { ctx, queue, engine, caseSlug, forensicReport, jurisdiction, sourceStamp } = opts;
+  const { ctx, queue, engine, caseSlug, forensicReport, jurisdiction, verfahrenstyp = "sonstiges", sourceStamp } = opts;
   const def = resolveSpecialist("enforcement-analyzer");
   if (!def) throw new Error("legal-pipeline: enforcement-analyzer specialist not found");
 
@@ -3396,6 +3431,7 @@ async function runEnforcementAnalysisLayer(opts: {
     "",
     `Akte: ${caseSlug}`,
     `Jurisdiktion: ${jurisdiction}`,
+    `Verfahrenstyp: ${verfahrenstyp}`,
     `Forensischer Bericht: forensic-reports/${caseSlug}`,
     `Cost-Benefit-Analyse: cost-benefit/${caseSlug}`,
     `ON-Tabelle: on-index/${caseSlug}`,
@@ -3457,7 +3493,7 @@ async function writeEnforcementAnalysisPage(
   const arrest = data.arrestgruende as Record<string, unknown> | undefined;
   const kosten = data.vollstreckungskosten as Record<string, unknown> | undefined;
   const risiko = data.vollstreckungsrisiko as Record<string, unknown> | undefined;
-  const score = typeof data.overall_vollstreckbarkeit_score === "number" ? data.overall_vollstreckbarkeit_score : 0;
+  const score = clampScore(data.overall_vollstreckbarkeit_score);
   const empfehlung = String(data.empfehlung ?? "");
 
   const lines: string[] = [];
@@ -3588,9 +3624,10 @@ async function runAppealRiskLayer(opts: {
   engine: BrainEngine;
   caseSlug: string;
   jurisdiction: "at" | "de" | "ch" | "eu";
+  verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   sourceStamp?: string;
 }): Promise<string | null> {
-  const { ctx, queue, engine, caseSlug, jurisdiction, sourceStamp } = opts;
+  const { ctx, queue, engine, caseSlug, jurisdiction, verfahrenstyp = "sonstiges", sourceStamp } = opts;
   const def = resolveSpecialist("appeal-risk-analyzer");
   if (!def) throw new Error("legal-pipeline: appeal-risk-analyzer specialist not found");
 
@@ -3599,6 +3636,7 @@ async function runAppealRiskLayer(opts: {
     "",
     `Akte: ${caseSlug}`,
     `Jurisdiktion: ${jurisdiction}`,
+    `Verfahrenstyp: ${verfahrenstyp}`,
     `Forensischer Bericht: forensic-reports/${caseSlug}`,
     `Legal Grounding Map: legal-grounding-maps/${caseSlug}`,
     `Subsumtions-Prüfung: subsumption-checks/${caseSlug}`,
@@ -3661,7 +3699,7 @@ async function writeAppealRiskPage(
   const europa = data.europa_recht as Record<string, unknown> | undefined;
   const emrk = data.emrk_beschwerde as Record<string, unknown> | undefined;
   const kosten = data.kostenrisiko_berufung as Record<string, unknown> | undefined;
-  const score = typeof data.overall_berufungsrisiko_score === "number" ? data.overall_berufungsrisiko_score : 0;
+  const score = clampScore(data.overall_berufungsrisiko_score);
   const empfehlung = String(data.empfehlung ?? "");
 
   const lines: string[] = [];
@@ -3766,9 +3804,10 @@ async function runProceduralStrategyLayer(opts: {
   engine: BrainEngine;
   caseSlug: string;
   jurisdiction: "at" | "de" | "ch" | "eu";
+  verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   sourceStamp?: string;
 }): Promise<string | null> {
-  const { ctx, queue, engine, caseSlug, jurisdiction, sourceStamp } = opts;
+  const { ctx, queue, engine, caseSlug, jurisdiction, verfahrenstyp = "sonstiges", sourceStamp } = opts;
   const def = resolveSpecialist("procedural-strategist");
   if (!def) throw new Error("legal-pipeline: procedural-strategist specialist not found");
 
@@ -3777,6 +3816,7 @@ async function runProceduralStrategyLayer(opts: {
     "",
     `Akte: ${caseSlug}`,
     `Jurisdiktion: ${jurisdiction}`,
+    `Verfahrenstyp: ${verfahrenstyp}`,
     `Forensischer Bericht: forensic-reports/${caseSlug}`,
     `Legal Grounding Map: legal-grounding-maps/${caseSlug}`,
     `Cost-Benefit-Analyse: cost-benefit/${caseSlug}`,
@@ -3845,7 +3885,7 @@ async function writeProceduralStrategyPage(
   const gesamtStrategie = String(data.gesamt_strategie ?? "");
   const gesamtdauer = String(data.geschaetzte_gesamtdauer ?? "");
   const gesamtKosten = typeof data.geschaetzte_gesamtkosten === "number" ? data.geschaetzte_gesamtkosten : 0;
-  const score = typeof data.overall_strategie_score === "number" ? data.overall_strategie_score : 0;
+  const score = clampScore(data.overall_strategie_score);
   const empfehlung = String(data.empfehlung ?? "");
 
   const lines: string[] = [];
@@ -3954,6 +3994,109 @@ async function writeProceduralStrategyPage(
   );
 }
 
+// ── Hardening Utilities ─────────────────────────────────────
+
+/** Validate and sanitize a case slug. Returns null if invalid. */
+function sanitizeSlug(slug: string): string | null {
+  if (!slug || typeof slug !== "string") return null;
+  const trimmed = slug.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > 200) return null;
+  if (!/^[a-zA-Z0-9._-]+$/.test(trimmed)) return null;
+  return trimmed;
+}
+
+/** Clamp a numeric score to 0-100 range. Returns 0 for non-numbers. */
+function clampScore(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+/** Safe JSON.stringify that won't throw on circular references. */
+function safeStringify(obj: unknown): string {
+  try {
+    return JSON.stringify(obj);
+  } catch {
+    try {
+      return JSON.stringify(String(obj));
+    } catch {
+      return "[unserializable]";
+    }
+  }
+}
+
+/** Extract text from a child result safely. */
+function extractChildText(result: unknown): string {
+  if (typeof result === "string") return result;
+  const obj = result as { text?: string } | null;
+  if (obj && typeof obj.text === "string") return obj.text;
+  return safeStringify(result);
+}
+
+/**
+ * Generic specialist layer runner — eliminates boilerplate duplication.
+ * Resolves specialist, builds prompt, spawns child, waits, parses JSON.
+ * Returns parsed JSON or null on any failure.
+ */
+async function runSpecialistLayer(opts: {
+  ctx: MinionJobContext;
+  queue: MinionQueue;
+  specialistName: string;
+  prompt: string;
+  sourceStamp?: string;
+}): Promise<Record<string, unknown> | null> {
+  const { ctx, queue, specialistName, prompt, sourceStamp } = opts;
+  const def = resolveSpecialist(specialistName);
+  if (!def) throw new Error(`legal-pipeline: ${specialistName} specialist not found`);
+
+  const childData: Record<string, unknown> = {
+    prompt,
+    subagent_def: specialistName,
+    max_turns: def.maxTurns ?? MAX_TURNS_DEFAULT,
+  };
+  if (def.model) childData.model = def.model;
+  if (sourceStamp) childData._source_id = sourceStamp;
+
+  const child = await queue.add(
+    "subagent",
+    childData,
+    {
+      parent_job_id: ctx.id,
+      on_child_fail: "continue",
+      max_stalled: 3,
+    },
+    { allowProtectedSubmit: true }
+  );
+
+  const result = await waitForChild(ctx, child.id);
+  const text = extractChildText(result);
+  const json = tryParseJSON(text) as Record<string, unknown> | null;
+  return json;
+}
+
+/** Safe wrapper for engine.putPage with error logging. */
+async function safePutPage(
+  engine: BrainEngine,
+  slug: string,
+  page: {
+    type: string;
+    title: string;
+    compiled_truth: string;
+    frontmatter?: Record<string, unknown>;
+  },
+  sourceId?: string
+): Promise<boolean> {
+  try {
+    await engine.putPage(slug, page, { sourceId });
+    return true;
+  } catch (err) {
+    console.warn(
+      `[legal-pipeline] putPage failed for "${slug}": ${err instanceof Error ? err.message : String(err)}`
+    );
+    return false;
+  }
+}
+
 // ── Insurance Coverage Layer (Layer 5h) ─────────────────────
 
 /**
@@ -3968,9 +4111,10 @@ async function runInsuranceCoverageLayer(opts: {
   caseSlug: string;
   forensicReport: ForensicReport | null;
   jurisdiction: "at" | "de" | "ch" | "eu";
+  verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   sourceStamp?: string;
 }): Promise<string | null> {
-  const { ctx, queue, engine, caseSlug, forensicReport, jurisdiction, sourceStamp } = opts;
+  const { ctx, queue, engine, caseSlug, forensicReport, jurisdiction, verfahrenstyp = "sonstiges", sourceStamp } = opts;
   const def = resolveSpecialist("insurance-coverage-analyzer");
   if (!def) throw new Error("legal-pipeline: insurance-coverage-analyzer specialist not found");
 
@@ -3979,6 +4123,7 @@ async function runInsuranceCoverageLayer(opts: {
     "",
     `Akte: ${caseSlug}`,
     `Jurisdiktion: ${jurisdiction}`,
+    `Verfahrenstyp: ${verfahrenstyp}`,
     `Forensischer Bericht: forensic-reports/${caseSlug}`,
     `Cost-Benefit-Analyse: cost-benefit/${caseSlug}`,
     `Vollstreckungsanalyse: enforcement-analysis/${caseSlug}`,
@@ -4038,7 +4183,7 @@ async function writeInsuranceCoveragePage(
   const direktklage = data.direktklage_moeglich as Record<string, unknown> | undefined;
   const regress = data.regressrisiko as Record<string, unknown> | undefined;
   const status = data.versicherungsstatus as Record<string, unknown> | undefined;
-  const score = typeof data.overall_versicherungsscore === "number" ? data.overall_versicherungsscore : 0;
+  const score = clampScore(data.overall_versicherungsscore);
   const empfehlung = String(data.empfehlung ?? "");
 
   const lines: string[] = [];
@@ -4143,9 +4288,10 @@ async function runTaxImpactLayer(opts: {
   engine: BrainEngine;
   caseSlug: string;
   jurisdiction: "at" | "de" | "ch" | "eu";
+  verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   sourceStamp?: string;
 }): Promise<string | null> {
-  const { ctx, queue, engine, caseSlug, jurisdiction, sourceStamp } = opts;
+  const { ctx, queue, engine, caseSlug, jurisdiction, verfahrenstyp = "sonstiges", sourceStamp } = opts;
   const def = resolveSpecialist("tax-impact-analyzer");
   if (!def) throw new Error("legal-pipeline: tax-impact-analyzer specialist not found");
 
@@ -4154,6 +4300,7 @@ async function runTaxImpactLayer(opts: {
     "",
     `Akte: ${caseSlug}`,
     `Jurisdiktion: ${jurisdiction}`,
+    `Verfahrenstyp: ${verfahrenstyp}`,
     `Cost-Benefit-Analyse: cost-benefit/${caseSlug}`,
     `Damage Table: damage-tables/${caseSlug}`,
     `Settlement-Analyse: settlement-analysis/${caseSlug}`,
@@ -4213,7 +4360,7 @@ async function writeTaxImpactPage(
   const nettoVergleich = data.netto_ev_vergleich as Record<string, unknown> | undefined;
   const vergleich = data.vergleich_vs_urteil as Record<string, unknown> | undefined;
   const gestaltung = data.gestaltungsempfehlung as Record<string, unknown> | undefined;
-  const score = typeof data.overall_steuer_score === "number" ? data.overall_steuer_score : 0;
+  const score = clampScore(data.overall_steuer_score);
   const empfehlung = String(data.empfehlung ?? "");
 
   const lines: string[] = [];
@@ -4324,9 +4471,10 @@ async function runWitnessExpertLayer(opts: {
   engine: BrainEngine;
   caseSlug: string;
   jurisdiction: "at" | "de" | "ch" | "eu";
+  verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   sourceStamp?: string;
 }): Promise<string | null> {
-  const { ctx, queue, engine, caseSlug, jurisdiction, sourceStamp } = opts;
+  const { ctx, queue, engine, caseSlug, jurisdiction, verfahrenstyp = "sonstiges", sourceStamp } = opts;
   const def = resolveSpecialist("witness-expert-analyzer");
   if (!def) throw new Error("legal-pipeline: witness-expert-analyzer specialist not found");
 
@@ -4335,6 +4483,7 @@ async function runWitnessExpertLayer(opts: {
     "",
     `Akte: ${caseSlug}`,
     `Jurisdiktion: ${jurisdiction}`,
+    `Verfahrenstyp: ${verfahrenstyp}`,
     `ON-Tabelle: on-index/${caseSlug}`,
     `Forensischer Bericht: forensic-reports/${caseSlug}`,
     `Beweislast-Analyse: burden-of-proof/${caseSlug}`,
@@ -4393,7 +4542,7 @@ async function writeWitnessExpertPage(
   const zeugenluecken = Array.isArray(data.zeugenluecken) ? data.zeugenluecken : [];
   const gutachtenBedarf = Array.isArray(data.gutachten_bedarf) ? data.gutachten_bedarf : [];
   const gutachterKosten = typeof data.gutachter_kosten_gesamt === "number" ? data.gutachter_kosten_gesamt : 0;
-  const score = typeof data.zeugen_score === "number" ? data.zeugen_score : 0;
+  const score = clampScore(data.zeugen_score);
   const empfehlung = String(data.empfehlung ?? "");
 
   const lines: string[] = [];
@@ -4495,9 +4644,10 @@ async function runCounterclaimLayer(opts: {
   engine: BrainEngine;
   caseSlug: string;
   jurisdiction: "at" | "de" | "ch" | "eu";
+  verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   sourceStamp?: string;
 }): Promise<string | null> {
-  const { ctx, queue, engine, caseSlug, jurisdiction, sourceStamp } = opts;
+  const { ctx, queue, engine, caseSlug, jurisdiction, verfahrenstyp = "sonstiges", sourceStamp } = opts;
   const def = resolveSpecialist("counterclaim-analyzer");
   if (!def) throw new Error("legal-pipeline: counterclaim-analyzer specialist not found");
 
@@ -4506,6 +4656,7 @@ async function runCounterclaimLayer(opts: {
     "",
     `Akte: ${caseSlug}`,
     `Jurisdiktion: ${jurisdiction}`,
+    `Verfahrenstyp: ${verfahrenstyp}`,
     `Forensischer Bericht: forensic-reports/${caseSlug}`,
     `Cost-Benefit-Analyse: cost-benefit/${caseSlug}`,
     `Legal Grounding Map: legal-grounding-maps/${caseSlug}`,
@@ -4566,7 +4717,7 @@ async function writeCounterclaimPage(
   const aufrechnung = data.aufrechnung as Record<string, unknown> | undefined;
   const einwendungen = Array.isArray(data.prozessuale_einwendungen) ? data.prozessuale_einwendungen : [];
   const nettoEV = data.netto_ev_nach_widerklage as Record<string, unknown> | undefined;
-  const score = typeof data.overall_widerklage_risiko_score === "number" ? data.overall_widerklage_risiko_score : 0;
+  const score = clampScore(data.overall_widerklage_risiko_score);
   const empfehlung = String(data.empfehlung ?? "");
 
   const lines: string[] = [];
@@ -4686,9 +4837,10 @@ async function runEvidenceQualityLayer(opts: {
   engine: BrainEngine;
   caseSlug: string;
   jurisdiction: "at" | "de" | "ch" | "eu";
+  verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   sourceStamp?: string;
 }): Promise<string | null> {
-  const { ctx, queue, engine, caseSlug, jurisdiction, sourceStamp } = opts;
+  const { ctx, queue, engine, caseSlug, jurisdiction, verfahrenstyp = "sonstiges", sourceStamp } = opts;
   const def = resolveSpecialist("evidence-quality-assessor");
   if (!def) throw new Error("legal-pipeline: evidence-quality-assessor specialist not found");
 
@@ -4697,6 +4849,7 @@ async function runEvidenceQualityLayer(opts: {
     "",
     `Akte: ${caseSlug}`,
     `Jurisdiktion: ${jurisdiction}`,
+    `Verfahrenstyp: ${verfahrenstyp}`,
     `ON-Tabelle: on-index/${caseSlug}`,
     `Forensischer Bericht: forensic-reports/${caseSlug}`,
     `Beweislast-Analyse: burden-of-proof/${caseSlug}`,
@@ -4754,7 +4907,7 @@ async function writeEvidenceQualityPage(
   const beweise = Array.isArray(data.beweise) ? data.beweise : [];
   const schwachstellen = Array.isArray(data.schwachstellen) ? data.schwachstellen : [];
   const beweisluecken = Array.isArray(data.beweisluecken) ? data.beweisluecken : [];
-  const score = typeof data.beweisqualitaet_score === "number" ? data.beweisqualitaet_score : 0;
+  const score = clampScore(data.beweisqualitaet_score);
   const empfehlung = String(data.empfehlung ?? "");
 
   const lines: string[] = [];
@@ -4853,21 +5006,26 @@ async function runMediationADRLayer(opts: {
   engine: BrainEngine;
   caseSlug: string;
   jurisdiction: "at" | "de" | "ch" | "eu";
+  verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   sourceStamp?: string;
 }): Promise<string | null> {
-  const { ctx, queue, engine, caseSlug, jurisdiction, sourceStamp } = opts;
-  const def = resolveSpecialist("mediation-adr-analyzer");
-  if (!def) throw new Error("legal-pipeline: mediation-adr-analyzer specialist not found");
+  const { ctx, queue, engine, caseSlug, jurisdiction, verfahrenstyp = "sonstiges", sourceStamp } = opts;
+  const safeSlug = sanitizeSlug(caseSlug);
+  if (!safeSlug) {
+    console.warn(`[legal-pipeline] Mediation/ADR: invalid caseSlug "${caseSlug}"`);
+    return null;
+  }
 
   const prompt = [
     "Empfiehl alternative Streitbeilegung (ADR) für diesen Fall.",
     "",
-    `Akte: ${caseSlug}`,
+    `Akte: ${safeSlug}`,
     `Jurisdiktion: ${jurisdiction}`,
-    `Settlement-Analyse: settlement-analysis/${caseSlug}`,
-    `Cost-Benefit-Analyse: cost-benefit/${caseSlug}`,
-    `Legal Grounding Map: legal-grounding-maps/${caseSlug}`,
-    `Forensischer Bericht: forensic-reports/${caseSlug}`,
+    `Verfahrenstyp: ${verfahrenstyp}`,
+    `Settlement-Analyse: settlement-analysis/${safeSlug}`,
+    `Cost-Benefit-Analyse: cost-benefit/${safeSlug}`,
+    `Legal Grounding Map: legal-grounding-maps/${safeSlug}`,
+    `Forensischer Bericht: forensic-reports/${safeSlug}`,
     "",
     "Lade alle Pages mit get_page und bewerte:",
     "1. Mediation (§ 227 ZPO AT, § 278a ZPO DE, Art 138 ZPO CH)",
@@ -4879,27 +5037,11 @@ async function runMediationADRLayer(opts: {
     'Gib JSON zurück: { adr_optionen: [...], empfohlener_weg: "...", vergleich_gerichtlich: {...}, obligatorische_schlichtung: {...}, overall_adr_score: 0-100, empfehlung: "..." }',
   ].join("\n");
 
-  const childData: Record<string, unknown> = {
-    prompt,
-    subagent_def: "mediation-adr-analyzer",
-    max_turns: def.maxTurns ?? MAX_TURNS_DEFAULT,
-  };
-  if (def.model) childData.model = def.model;
-  if (sourceStamp) childData._source_id = sourceStamp;
-
-  const child = await queue.add("subagent", childData, {
-    parent_job_id: ctx.id,
-    on_child_fail: "continue",
-    max_stalled: 3,
-  }, { allowProtectedSubmit: true });
-
-  const result = await waitForChild(ctx, child.id);
-  const text = typeof result === "string" ? result : ((result as { text?: string })?.text ?? JSON.stringify(result));
-  const json = tryParseJSON(text) as Record<string, unknown> | null;
+  const json = await runSpecialistLayer({ ctx, queue, specialistName: "mediation-adr-analyzer", prompt, sourceStamp });
   if (!json) return null;
 
-  const slug = `mediation-adr/${caseSlug}`;
-  await writeMediationADRPage(engine, slug, caseSlug, json, sourceStamp);
+  const slug = `mediation-adr/${safeSlug}`;
+  await writeMediationADRPage(engine, slug, safeSlug, json, sourceStamp);
   return slug;
 }
 
@@ -4915,7 +5057,7 @@ async function writeMediationADRPage(
   const empfohlenGruend = String(data.empfohlener_weg_begruendung ?? "");
   const vergleich = data.vergleich_gerichtlich as Record<string, unknown> | undefined;
   const oblSchlichtung = data.obligatorische_schlichtung as Record<string, unknown> | undefined;
-  const score = typeof data.overall_adr_score === "number" ? data.overall_adr_score : 0;
+  const score = clampScore(data.overall_adr_score);
   const empfehlung = String(data.empfehlung ?? "");
 
   const lines: string[] = [];
@@ -4990,12 +5132,12 @@ async function writeMediationADRPage(
 
   const md = lines.join("\n");
   const parsed = parseMarkdown(md);
-  await engine.putPage(slug, {
+  await safePutPage(engine, slug, {
     type: "mediation_adr_analysis",
     title: parsed.title ?? `Mediation/ADR — ${caseSlug}`,
     compiled_truth: md,
     frontmatter: { ...(parsed.frontmatter ?? {}) },
-  }, { sourceId });
+  }, sourceId);
 }
 
 // ── Limitation Scanner Layer (Layer 5l) ─────────────────────
@@ -5006,21 +5148,26 @@ async function runLimitationScannerLayer(opts: {
   engine: BrainEngine;
   caseSlug: string;
   jurisdiction: "at" | "de" | "ch" | "eu";
+  verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   sourceStamp?: string;
 }): Promise<string | null> {
-  const { ctx, queue, engine, caseSlug, jurisdiction, sourceStamp } = opts;
-  const def = resolveSpecialist("limitation-scanner");
-  if (!def) throw new Error("legal-pipeline: limitation-scanner specialist not found");
+  const { ctx, queue, engine, caseSlug, jurisdiction, verfahrenstyp = "sonstiges", sourceStamp } = opts;
+  const safeSlug = sanitizeSlug(caseSlug);
+  if (!safeSlug) {
+    console.warn(`[legal-pipeline] Limitation scan: invalid caseSlug "${caseSlug}"`);
+    return null;
+  }
 
   const prompt = [
     "Prüfe jeden Anspruch auf Verjährung für diesen Fall.",
     "",
-    `Akte: ${caseSlug}`,
+    `Akte: ${safeSlug}`,
     `Jurisdiktion: ${jurisdiction}`,
-    `Schadentabelle: damage-tables/${caseSlug}`,
-    `Legal Grounding Map: legal-grounding-maps/${caseSlug}`,
-    `Forensischer Bericht: forensic-reports/${caseSlug}`,
-    `Fristen-Validierung: deadline-validations/${caseSlug}`,
+    `Verfahrenstyp: ${verfahrenstyp}`,
+    `Schadentabelle: damage-tables/${safeSlug}`,
+    `Legal Grounding Map: legal-grounding-maps/${safeSlug}`,
+    `Forensischer Bericht: forensic-reports/${safeSlug}`,
+    `Fristen-Validierung: deadline-validations/${safeSlug}`,
     "",
     "Lade alle Pages mit get_page und prüfe pro Anspruch:",
     "1. Verjährungsfrist (3J, 5J, 10J, 30J) mit §",
@@ -5033,28 +5180,113 @@ async function runLimitationScannerLayer(opts: {
     'Gib JSON zurück: { ansprueche: [...], urgent_ansprueche: [...], verjaehrte_ansprueche: [...], hemmungen_aktiv: [...], overall_verjaehrung_risiko_score: 0-100, empfehlung: "..." }',
   ].join("\n");
 
-  const childData: Record<string, unknown> = {
-    prompt,
-    subagent_def: "limitation-scanner",
-    max_turns: def.maxTurns ?? MAX_TURNS_DEFAULT,
-  };
-  if (def.model) childData.model = def.model;
-  if (sourceStamp) childData._source_id = sourceStamp;
-
-  const child = await queue.add("subagent", childData, {
-    parent_job_id: ctx.id,
-    on_child_fail: "continue",
-    max_stalled: 3,
-  }, { allowProtectedSubmit: true });
-
-  const result = await waitForChild(ctx, child.id);
-  const text = typeof result === "string" ? result : ((result as { text?: string })?.text ?? JSON.stringify(result));
-  const json = tryParseJSON(text) as Record<string, unknown> | null;
+  const json = await runSpecialistLayer({ ctx, queue, specialistName: "limitation-scanner", prompt, sourceStamp });
   if (!json) return null;
 
-  const slug = `limitation-scan/${caseSlug}`;
-  await writeLimitationScannerPage(engine, slug, caseSlug, json, sourceStamp);
+  const slug = `limitation-scan/${safeSlug}`;
+  await writeLimitationScannerPage(engine, slug, safeSlug, json, sourceStamp);
   return slug;
+}
+
+// ── Auto-Wiedervorlage (auto-triggered after Layer 5l when score >= 75) ──
+
+async function autoCreateWiedervorlage(
+  engine: BrainEngine,
+  caseSlug: string,
+  verjaehrungScore: number,
+  urgentAnsprueche: unknown[],
+  sourceId?: string
+): Promise<string[]> {
+  const now = new Date();
+  const createdSlugs: string[] = [];
+
+  for (const entry of urgentAnsprueche) {
+    const r = entry as Record<string, unknown>;
+    const anspruch = String(r.anspruch ?? "Unbekannter Anspruch");
+    const restzeitTage = typeof r.restzeit_tage === "number" ? r.restzeit_tage : 30;
+    const paragraph = String(r.paragraph ?? "");
+    const handlungsbedarf = String(r.handlungsbedarf ?? "Sofortige Prüfung erforderlich");
+
+    const days = Math.max(1, Math.ceil(restzeitTage));
+    const dueDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+    const dueIso = dueDate.toISOString().split("T")[0]!;
+
+    const safeName = anspruch.replace(/[^a-z0-9]/gi, "-").toLowerCase().slice(0, 40);
+    const slug = `deadlines/wiedervorlage-${caseSlug}-${safeName}`;
+
+    const fmLines = [
+      "---",
+      `title: "Wiedervorlage: ${anspruch} — ${caseSlug}"`,
+      `type: deadline`,
+      `case_ref: ${caseSlug}`,
+      `deadline_type: wiedervorlage`,
+      `due_date: ${dueIso}`,
+      `status: ${days <= 7 ? "critical" : days <= 30 ? "warning" : "pending"}`,
+      `priority: high`,
+      `verjaehrung_score: ${verjaehrungScore}`,
+      `auto_generated: true`,
+      `created_at: ${now.toISOString()}`,
+      "---",
+    ];
+
+    const body = [
+      "## Wiedervorlage (auto-generiert)",
+      "",
+      `**Akte:** ${caseSlug}`,
+      `**Anspruch:** ${anspruch}`,
+      `**Restzeit:** ${days} Tage`,
+      `**§:** ${paragraph}`,
+      `**Handlungsbedarf:** ${handlungsbedarf}`,
+      `**Verjährungs-Score:** ${verjaehrungScore}/100`,
+      "",
+      "> ⚠️ Verjährung droht — sofortige Maßnahme erforderlich!",
+    ].join("\n");
+
+    const md = `${fmLines.join("\n")}\n\n${body}`;
+    const parsed = parseMarkdown(md);
+
+    try {
+      await engine.putPage(
+        slug,
+        {
+          type: "deadline",
+          title: parsed.title ?? `Wiedervorlage: ${anspruch} — ${caseSlug}`,
+          compiled_truth: md,
+          frontmatter: { ...(parsed.frontmatter ?? {}) },
+        },
+        { sourceId }
+      );
+      createdSlugs.push(slug);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn(`[legal-pipeline] Auto-Wiedervorlage create failed for "${anspruch}": ${msg}`);
+    }
+  }
+
+  // Update case frontmatter to flag wiedervorlage
+  try {
+    const casePage = await engine.getPage(caseSlug, { sourceId });
+    if (casePage) {
+      const caseFm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
+      await engine.putPage(
+        caseSlug,
+        {
+          ...casePage,
+          frontmatter: {
+            ...caseFm,
+            wiedervorlage_urgent: true,
+            wiedervorlage_count: createdSlugs.length,
+            wiedervorlage_created_at: now.toISOString(),
+          },
+        },
+        { sourceId }
+      );
+    }
+  } catch {
+    // best effort — don't fail the pipeline for this
+  }
+
+  return createdSlugs;
 }
 
 async function writeLimitationScannerPage(
@@ -5068,7 +5300,7 @@ async function writeLimitationScannerPage(
   const urgent = Array.isArray(data.urgent_ansprueche) ? data.urgent_ansprueche : [];
   const verjaehrte = Array.isArray(data.verjaehrte_ansprueche) ? data.verjaehrte_ansprueche : [];
   const hemmungen = Array.isArray(data.hemmungen_aktiv) ? data.hemmungen_aktiv : [];
-  const score = typeof data.overall_verjaehrung_risiko_score === "number" ? data.overall_verjaehrung_risiko_score : 0;
+  const score = clampScore(data.overall_verjaehrung_risiko_score);
   const empfehlung = String(data.empfehlung ?? "");
 
   const lines: string[] = [];
@@ -5077,6 +5309,14 @@ async function writeLimitationScannerPage(
   lines.push(`type: limitation_scan_analysis`);
   lines.push(`case_ref: ${caseSlug}`);
   lines.push(`verjaehrung_risiko_score: ${score}`);
+  lines.push(`urgent_count: ${urgent.length}`);
+  lines.push(`verjaehrte_count: ${verjaehrte.length}`);
+  if (urgent.length > 0) {
+    lines.push(`urgent_ansprueche: ${safeStringify(urgent)}`);
+  }
+  if (verjaehrte.length > 0) {
+    lines.push(`verjaehrte_ansprueche: ${safeStringify(verjaehrte)}`);
+  }
   lines.push("---");
   lines.push("");
   lines.push("## Verjährungs-Scan");
@@ -5142,12 +5382,12 @@ async function writeLimitationScannerPage(
 
   const md = lines.join("\n");
   const parsed = parseMarkdown(md);
-  await engine.putPage(slug, {
+  await safePutPage(engine, slug, {
     type: "limitation_scan_analysis",
     title: parsed.title ?? `Verjährungs-Scan — ${caseSlug}`,
     compiled_truth: md,
     frontmatter: { ...(parsed.frontmatter ?? {}) },
-  }, { sourceId });
+  }, sourceId);
 }
 
 // ── Cost Award Layer (Layer 5m) ─────────────────────────────
@@ -5158,21 +5398,26 @@ async function runCostAwardLayer(opts: {
   engine: BrainEngine;
   caseSlug: string;
   jurisdiction: "at" | "de" | "ch" | "eu";
+  verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   sourceStamp?: string;
 }): Promise<string | null> {
-  const { ctx, queue, engine, caseSlug, jurisdiction, sourceStamp } = opts;
-  const def = resolveSpecialist("cost-award-predictor");
-  if (!def) throw new Error("legal-pipeline: cost-award-predictor specialist not found");
+  const { ctx, queue, engine, caseSlug, jurisdiction, verfahrenstyp = "sonstiges", sourceStamp } = opts;
+  const safeSlug = sanitizeSlug(caseSlug);
+  if (!safeSlug) {
+    console.warn(`[legal-pipeline] Cost award: invalid caseSlug "${caseSlug}"`);
+    return null;
+  }
 
   const prompt = [
     "Sage voraus, wer die Prozesskosten trägt für diesen Fall.",
     "",
-    `Akte: ${caseSlug}`,
+    `Akte: ${safeSlug}`,
     `Jurisdiktion: ${jurisdiction}`,
-    `Cost-Benefit-Analyse: cost-benefit/${caseSlug}`,
-    `Legal Grounding Map: legal-grounding-maps/${caseSlug}`,
-    `Settlement-Analyse: settlement-analysis/${caseSlug}`,
-    `Schadentabelle: damage-tables/${caseSlug}`,
+    `Verfahrenstyp: ${verfahrenstyp}`,
+    `Cost-Benefit-Analyse: cost-benefit/${safeSlug}`,
+    `Legal Grounding Map: legal-grounding-maps/${safeSlug}`,
+    `Settlement-Analyse: settlement-analysis/${safeSlug}`,
+    `Schadentabelle: damage-tables/${safeSlug}`,
     "",
     "Lade alle Pages mit get_page und analysiere:",
     "1. Vollgewinn (100%): Gegner trägt alle Kosten (§ 78 ZPO / § 91 ZPO / Art 106 ZPO)",
@@ -5184,27 +5429,11 @@ async function runCostAwardLayer(opts: {
     'Gib JSON zurück: { szenarien: [...], wahrscheinlichstes_szenario: "...", erwartete_netto_kosten: 0, erwartete_erstattung: 0, kostenrisiko_score: 0-100, vergleich_kosten_vorteil: {...}, empfehlung: "..." }',
   ].join("\n");
 
-  const childData: Record<string, unknown> = {
-    prompt,
-    subagent_def: "cost-award-predictor",
-    max_turns: def.maxTurns ?? MAX_TURNS_DEFAULT,
-  };
-  if (def.model) childData.model = def.model;
-  if (sourceStamp) childData._source_id = sourceStamp;
-
-  const child = await queue.add("subagent", childData, {
-    parent_job_id: ctx.id,
-    on_child_fail: "continue",
-    max_stalled: 3,
-  }, { allowProtectedSubmit: true });
-
-  const result = await waitForChild(ctx, child.id);
-  const text = typeof result === "string" ? result : ((result as { text?: string })?.text ?? JSON.stringify(result));
-  const json = tryParseJSON(text) as Record<string, unknown> | null;
+  const json = await runSpecialistLayer({ ctx, queue, specialistName: "cost-award-predictor", prompt, sourceStamp });
   if (!json) return null;
 
-  const slug = `cost-award/${caseSlug}`;
-  await writeCostAwardPage(engine, slug, caseSlug, json, sourceStamp);
+  const slug = `cost-award/${safeSlug}`;
+  await writeCostAwardPage(engine, slug, safeSlug, json, sourceStamp);
   return slug;
 }
 
@@ -5220,7 +5449,7 @@ async function writeCostAwardPage(
   const erwarteteNetto = typeof data.erwartete_netto_kosten === "number" ? data.erwartete_netto_kosten : 0;
   const erwarteteErstattung = typeof data.erwartete_erstattung === "number" ? data.erwartete_erstattung : 0;
   const vergleichVorteil = data.vergleich_kosten_vorteil as Record<string, unknown> | undefined;
-  const score = typeof data.kostenrisiko_score === "number" ? data.kostenrisiko_score : 0;
+  const score = clampScore(data.kostenrisiko_score);
   const empfehlung = String(data.empfehlung ?? "");
 
   const lines: string[] = [];
@@ -5289,12 +5518,12 @@ async function writeCostAwardPage(
 
   const md = lines.join("\n");
   const parsed = parseMarkdown(md);
-  await engine.putPage(slug, {
+  await safePutPage(engine, slug, {
     type: "cost_award_analysis",
     title: parsed.title ?? `Kostenentscheidung — ${caseSlug}`,
     compiled_truth: md,
     frontmatter: { ...(parsed.frontmatter ?? {}) },
-  }, { sourceId });
+  }, sourceId);
 }
 
 /**
@@ -5373,11 +5602,23 @@ async function runEnsembleCriticLayer(opts: {
     console.warn(`[legal-pipeline] Subsumption check failed (non-blocking): ${msg}`);
   }
 
+  const criticVerfahrenstypHint =
+    verfahrenstyp === "straf"
+      ? "STRAF: Prüfe strafrechtliche Subsumtion (Tatbestand → Rechtswidrigkeit → Schuld), in dubio pro reo, StPO-Verfahrensregeln."
+      : verfahrenstyp === "zivil"
+        ? "ZIVIL: Prüfe zivilrechtliche Anspruchsvoraussetzungen (Kausalität, Schadenshöhe, Mitverschulden), ABGB/BGB/OR."
+        : verfahrenstyp === "arbeitsrecht"
+          ? "ARBEITSRECHT: Prüfe Kündigungsschutz, Mitbestimmung, Sozialplan nach ArbVG/KSchG/ArbGG."
+          : verfahrenstyp === "verwaltungsrecht"
+            ? "VERWALTUNGSRECHT: Prüfe Ermessensspielraum, Verhältnismäßigkeit, Bescheidmängel nach AVG/VwVfG/VwGO."
+            : "Allgemeine juristische Prüfung.";
+
   const prompt = [
     "Überprüfe alle Pipeline-Outputs für diese Akte auf Halluzinationen, Citation-Accuracy, Vollständigkeit und juristische Logik.",
     "",
     `Akte: ${caseSlug}`,
     `Jurisdiktion: ${jurisdiction}`,
+    `Verfahrenstyp: ${verfahrenstyp}`,
     `Output-Pages: ${outputSlugs.join(", ")}`,
     `Original-Akt Sub-Pages: ${partSlugs.join(", ")}`,
     "",
@@ -5387,6 +5628,8 @@ async function runEnsembleCriticLayer(opts: {
     "- CH: OR, ZGB, BV, StBVV (admin.ch)",
     "- EU: AEUV, DSGVO, Verordnungen (eur-lex.europa.eu)",
     "Markiere §-Angaben der falschen Rechtsordnung als Issue mit severity 'critical'.",
+    "",
+    `Verfahrenstyp-spezifische Prüfung: ${criticVerfahrenstypHint}`,
     "",
     "Lade jede Page mit get_page und prüfe:",
     "1. Jede Behauptung hat ein wörtliches Zitat, das im Originalakt vorkommt",
@@ -5492,7 +5735,7 @@ function parseCriticVerdict(result: unknown): {
       layer_scores: {},
     };
   }
-  const totalScore = typeof json.total_score === "number" ? json.total_score : 50;
+  const totalScore = clampScore(json.total_score) || 50;
   const rec = json.recommendation;
   const recommendation = rec === "publish" || rec === "revise" || rec === "reject" ? rec : "revise";
   const issues = Array.isArray(json.issues) ? json.issues.filter((i) => typeof i === "string") : [];
@@ -5649,7 +5892,11 @@ async function rerunSpecificLayer(
         allTexts,
         batchSize: HAIKU_BATCH_SIZE,
         sourceStamp,
-        contextJson: JSON.stringify({ on_table: onTable }),
+        contextJson: JSON.stringify({
+          on_table: onTable,
+          jurisdiction: data.jurisdiction ?? "at",
+          verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+        }),
         retryFeedback,
       });
       const newEntities = extractEntityEntries(result);
@@ -5701,6 +5948,7 @@ async function rerunSpecificLayer(
         onTable,
         entities,
         jurisdiction: data.jurisdiction ?? "at",
+        verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
         sourceStamp,
       });
       const groundingSlug = `legal-grounding-maps/${data.case_slug}`;
@@ -5951,6 +6199,7 @@ async function rerunSpecificLayer(
             counterArguments,
             jurisdiction: data.jurisdiction ?? "at",
             verfahrenstyp: data.verfahrenstyp ?? (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+            parteirolle: data.parteirolle ?? detectParteirolle(entities, { client: data.manual_overrides?.client }),
             sourceStamp,
           });
           state.layers[6]!.output_slugs = revisedSlugs;
@@ -6046,9 +6295,11 @@ async function runCriticLayer(opts: {
   partSlugs: string[];
   state: PipelineState;
   legalGroundingMap?: LegalGroundingEntry[];
+  jurisdiction?: "at" | "de" | "ch" | "eu";
+  verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   sourceStamp?: string;
 }): Promise<string> {
-  const { ctx, queue, engine, caseSlug, partSlugs, state, legalGroundingMap, sourceStamp } = opts;
+  const { ctx, queue, engine, caseSlug, partSlugs, state, legalGroundingMap, jurisdiction = "at", verfahrenstyp = "sonstiges", sourceStamp } = opts;
   const def = resolveSpecialist("legal-critic");
   if (!def) throw new Error("legal-pipeline: legal-critic specialist not found");
 
@@ -6062,6 +6313,8 @@ async function runCriticLayer(opts: {
     "Überprüfe alle Pipeline-Outputs für diese Akte auf Halluzinationen, Citation-Accuracy und Vollständigkeit.",
     "",
     `Akte: ${caseSlug}`,
+    `Jurisdiktion: ${jurisdiction}`,
+    `Verfahrenstyp: ${verfahrenstyp}`,
     `Output-Pages: ${outputSlugs.join(", ")}`,
     `Original-Akt Sub-Pages: ${partSlugs.join(", ")}`,
     "",
@@ -7228,7 +7481,7 @@ async function writeQualityAuditPage(
 ): Promise<void> {
   const text = typeof result === "string" ? result : JSON.stringify(result, null, 2);
   const parsed = tryParseJSON(text);
-  const score = parsed && typeof parsed.total_score === "number" ? parsed.total_score : 0;
+  const score = parsed ? clampScore(parsed.total_score) : 0;
   const recommendation =
     parsed && typeof parsed.recommendation === "string" ? parsed.recommendation : "revise";
   const md = `---\ntitle: "Qualitäts-Audit — ${caseSlug}"\ntype: quality_audit\ncase_ref: ${caseSlug}\ntotal_score: ${score}\nrecommendation: ${recommendation}\n---\n\n${text}`;
@@ -7287,7 +7540,26 @@ async function persistPipelineState(
   state: PipelineState,
   sourceId?: string
 ): Promise<void> {
-  const md = `---\ntitle: "Pipeline-State — ${state.case_slug}"\ntype: pipeline_state\ncase_ref: ${state.case_slug}\nstatus: ${state.status}\ncurrent_layer: ${state.current_layer}\n---\n\n${JSON.stringify(state, null, 2)}`;
+  const totalScore = state.ensemble_verdict?.consensus?.total_score;
+  const recommendation = state.ensemble_verdict?.consensus?.recommendation;
+  const fmLines = [
+    "---",
+    `title: "Pipeline-State — ${state.case_slug}"`,
+    `type: pipeline_state`,
+    `case_ref: ${state.case_slug}`,
+    `status: ${state.status}`,
+    `current_layer: ${state.current_layer}`,
+  ];
+  if (typeof totalScore === "number") fmLines.push(`total_score: ${totalScore}`);
+  if (recommendation) fmLines.push(`ensemble_recommendation: ${recommendation}`);
+  if (typeof state.retry_count === "number") fmLines.push(`retry_count: ${state.retry_count}`);
+  if (typeof state.cost_spent_usd === "number") fmLines.push(`cost_spent_usd: ${state.cost_spent_usd.toFixed(4)}`);
+  if (state.jurisdiction) fmLines.push(`jurisdiction: ${state.jurisdiction}`);
+  if (state.verfahrenstyp) fmLines.push(`verfahrenstyp: ${state.verfahrenstyp}`);
+  if (typeof state.contradiction_findings === "number") fmLines.push(`contradiction_findings: ${state.contradiction_findings}`);
+  fmLines.push("---");
+
+  const md = `${fmLines.join("\n")}\n\n${JSON.stringify(state, null, 2)}`;
   const parsed = parseMarkdown(md);
   try {
     await engine.putPage(

@@ -58,6 +58,7 @@ import {
   Share2,
   TrendingUp,
   Send,
+  Archive,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -201,6 +202,7 @@ export const BOTTOM_ITEMS: NavItem[] = [
 const PRIMARY_ITEMS: NavItem[] = [
   { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.overview" },
   { href: "/dashboard/cases", icon: Briefcase, labelKey: "nav.cases" },
+  { href: "/dashboard/altlasten", icon: Archive, labelKey: "nav.altlasten" },
   { href: "/dashboard/deadlines", icon: CalendarClock, labelKey: "nav.deadlines" },
   { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
   { href: "/dashboard/chat", icon: MessageSquareText, labelKey: "nav.chat" },
@@ -338,6 +340,7 @@ export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: Dashboard
   { href: "/dashboard/kollisionspruefung", section: "nav.section.cases_clients" },
   { href: "/dashboard/process-strategy", section: "nav.section.cases_clients" },
   { href: "/dashboard/cases", section: "nav.section.cases_clients" },
+  { href: "/dashboard/altlasten", section: "nav.section.cases_clients" },
   { href: "/dashboard/case-scanner", section: "nav.section.cases_clients" },
   { href: "/dashboard/bea", section: "nav.section.communication" },
   { href: "/dashboard/whatsapp", section: "nav.section.communication" },

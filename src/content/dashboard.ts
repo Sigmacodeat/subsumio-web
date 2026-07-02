@@ -56,6 +56,7 @@ export const D = {
 
   // ── Sidebar: nav items (cases & deadlines) ──
   "nav.cases": { de: "Akten", en: "Cases" },
+  "nav.altlasten": { de: "Altlasten", en: "Backlog" },
   "nav.contacts": { de: "Kontakte", en: "Contacts" },
   "nav.contracts": { de: "Verträge", en: "Contracts" },
   "nav.vault": { de: "Dokumente", en: "Documents" },
