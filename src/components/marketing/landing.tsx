@@ -15,7 +15,20 @@ import {
   useTransform,
   useMotionValueEvent,
 } from "framer-motion";
-import { ArrowRight, Check, X } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  X,
+  CreditCard,
+  Scale,
+  Globe,
+  ShieldCheck,
+  BadgeCheck,
+  FileCheck,
+  Server,
+  Play,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { LANDING, PRICING, UI_STRINGS, p, type Lang } from "@/content/site";
@@ -43,6 +56,18 @@ import IndustryHeroMotif from "./industry-hero-motif";
 import { WhatsAppSpotlight } from "./subsumio-showcase";
 import ProductWorkflowShowcase from "./product-workflow-showcase";
 import LogoMarquee from "./logo-marquee";
+import HeroQACard from "./hero-qa-card";
+import RotatingBadge from "./rotating-badge";
+
+const TRUST_ICONS: Record<string, LucideIcon> = {
+  CreditCard,
+  Scale,
+  Globe,
+  ShieldCheck,
+  BadgeCheck,
+  FileCheck,
+  Server,
+};
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
 
@@ -65,7 +90,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
     offset: ["start start", "end start"],
   });
   const motifY = useTransform(heroScrollProgress, [0, 1], [0, reduce ? 0 : 120]);
-  const motifOpacity = useTransform(heroScrollProgress, [0, 0.8], [0.06, 0]);
+  const motifOpacity = useTransform(heroScrollProgress, [0, 0.8], [0.13, 0]);
 
   // Sticky CTA visibility — appears after hero scrolls past. Driven by
   // useMotionValueEvent (fires only on scroll change) with a threshold-crossing

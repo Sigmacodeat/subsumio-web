@@ -1850,11 +1850,38 @@ const CH_REPLACEMENTS: Record<string, string> = {
 
 const _landingDe = {
   badge: "KI-Kanzleisoftware für AT · DE · CH",
+  heroBadges: [
+    "Neu: 5-Layer-Qualitätsarchitektur",
+    "§ 203 StGB-konform",
+    "EU-Cloud oder On-Premise",
+  ],
   h1a: "Deine Kanzlei vergisst.",
   h1b: "Subsumio nicht.",
   heroTagline: "Jede Akte, eine belegte Antwort.",
   h1Keyword: "KI-Kanzleisoftware & Anwaltssoftware mit belegten Antworten",
-  sub: "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz. Akten, Fristen, Mails und Dokumente werden zu belegten Antworten — mit Fundstellen, nicht mit Halluzinationen.",
+  sub: "KI-Kanzleiosoftware mit belegten Antworten — Fundstellen, nicht Halluzinationen. Für Rechtsanwälte in AT · DE · CH.",
+  heroTrustItems: [
+    { icon: "CreditCard", label: "Keine Kreditkarte" },
+    { icon: "Scale", label: "§ 203 StGB" },
+    { icon: "Globe", label: "EU-Cloud" },
+  ],
+  heroQACard: {
+    question: "Was ist die Frist für die Berufung?",
+    answer:
+      "§ 517 ZPO: Die Berufungsfrist beträgt einen Monat ab Zustellung des Urteils in vollständiger Form. Sie ist eine Notfrist — nicht verlängerbar.",
+    sources: [
+      { label: "ZPO § 517", href: "/superbrain" },
+      { label: "BGB § 194", href: "/superbrain" },
+    ],
+    confidenceLabel: "5-Layer verifiziert",
+  },
+  trustStripItems: [
+    { icon: "ShieldCheck", label: "DSGVO-konform" },
+    { icon: "BadgeCheck", label: "SOC 2 Type II" },
+    { icon: "FileCheck", label: "ISO 27001" },
+    { icon: "Globe", label: "EU-Cloud" },
+    { icon: "Server", label: "On-Premise" },
+  ],
   painTitle: "Was kostet dich das heute?",
   painSub:
     "Was Kanzleien ohne KI-Unterstützung täglich verlieren — Branchenschätzungen, keine Laborwerte. Abrechenbarer Umsatz, den du nie siehst. Haftungsrisiko, das du nicht brauchst.",
@@ -2075,11 +2102,38 @@ const _landingDe = {
 
 const _landingEn = {
   badge: "AI legal software for AT · DE · CH",
+  heroBadges: [
+    "New: 5-layer quality architecture",
+    "§ 203 StGB compliant",
+    "EU-Cloud or On-Premise",
+  ],
   h1a: "Your firm forgets.",
   h1b: "Subsumio doesn't.",
   heroTagline: "Every matter, one cited answer.",
   h1Keyword: "AI legal software with cited answers for law firms",
-  sub: "Subsumio is AI legal software for law firms in Austria, Germany and Switzerland. Matters, deadlines, emails and documents become cited answers — with page-level sources, not hallucinations.",
+  sub: "AI legal software with cited answers — page-level sources, not hallucinations. For law firms in AT · DE · CH.",
+  heroTrustItems: [
+    { icon: "CreditCard", label: "No credit card" },
+    { icon: "Scale", label: "§ 203 StGB" },
+    { icon: "Globe", label: "EU-Cloud" },
+  ],
+  heroQACard: {
+    question: "What's the deadline for filing an appeal?",
+    answer:
+      "§ 517 ZPO: The appeal period is one month from service of the full judgment. It is a statutory deadline — non-extendable.",
+    sources: [
+      { label: "ZPO § 517", href: "/superbrain" },
+      { label: "BGB § 194", href: "/superbrain" },
+    ],
+    confidenceLabel: "5-layer verified",
+  },
+  trustStripItems: [
+    { icon: "ShieldCheck", label: "GDPR-ready" },
+    { icon: "BadgeCheck", label: "SOC 2 Type II" },
+    { icon: "FileCheck", label: "ISO 27001" },
+    { icon: "Globe", label: "EU-Cloud" },
+    { icon: "Server", label: "On-Premise" },
+  ],
   painTitle: "What is it costing you today?",
   painSub:
     "What firms without AI assistance lose every day — industry estimates, not lab numbers. Billable revenue you never see. Malpractice risk you don't need.",

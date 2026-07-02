@@ -612,7 +612,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
-    setOpenSection(idx);
+    hoverTimeoutRef.current = setTimeout(() => setOpenSection(idx), 50);
   };
 
   const handleSectionLeave = () => {
@@ -673,6 +673,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                         aria-expanded={isOpen}
                         aria-haspopup="true"
                         aria-controls={`mega-menu-${sIdx}`}
+                        id={`mega-trigger-${sIdx}`}
                       >
                         {section.label}
                         <ChevronDown
@@ -717,7 +718,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                   "color-mix(in srgb, var(--mk-surface) 96%, transparent)",
                               }}
                               role="menu"
-                              aria-label={section.label}
+                              aria-labelledby={`mega-trigger-${sIdx}`}
                             >
                               <div
                                 className={`flex ${section.featuredContent ? "flex-row" : "flex-col"}`}
@@ -726,41 +727,59 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                 <div
                                   className={`flex-1 ${section.items.length > 4 ? "grid grid-cols-2 gap-1 p-3" : "p-3"}`}
                                 >
-                                  {section.items.map((item) => {
+                                  {section.items.map((item, iIdx) => {
                                     const active = isActive(item.href);
                                     const Icon = ICONS[item.icon] ?? Layers;
                                     return (
-                                      <Link
+                                      <motion.div
                                         key={item.href + item.label}
-                                        href={p(lang, item.href)}
-                                        onClick={() => setOpenSection(null)}
-                                        role="menuitem"
-                                        className={`group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-all duration-150 ${NAV_LINK_FOCUS} ${
-                                          active
-                                            ? "[background:color-mix(in_srgb,var(--brand-primary)_8%,var(--mk-hover))]"
-                                            : "hover:[background:var(--mk-hover)]"
-                                        } ${item.featured ? "ring-1 ring-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]" : ""}`}
+                                        initial={
+                                          reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }
+                                        }
+                                        animate={
+                                          reduceMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }
+                                        }
+                                        transition={
+                                          reduceMotion
+                                            ? { duration: 0 }
+                                            : {
+                                                duration: 0.2,
+                                                delay: iIdx * 0.03,
+                                                ease: [0.22, 1, 0.36, 1],
+                                              }
+                                        }
                                       >
-                                        <div
-                                          className={`group-hover:brand-soft group-hover:brand-border flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border [border-color:var(--mk-border)] transition-colors [background:var(--mk-bg)] ${item.featured ? "brand-soft brand-border" : ""}`}
+                                        <Link
+                                          href={p(lang, item.href)}
+                                          onClick={() => setOpenSection(null)}
+                                          role="menuitem"
+                                          className={`group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-all duration-150 ${NAV_LINK_FOCUS} ${
+                                            active
+                                              ? "[background:color-mix(in_srgb,var(--brand-primary)_8%,var(--mk-hover))]"
+                                              : "hover:[background:var(--mk-hover)]"
+                                          } ${item.featured ? "ring-1 ring-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]" : ""}`}
                                         >
-                                          <Icon
-                                            size={16}
-                                            className={`group-hover:brand-text [color:var(--mk-text-muted)] ${item.featured ? "brand-text" : ""}`}
-                                          />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
                                           <div
-                                            className={`flex items-center gap-1.5 text-sm font-medium ${active ? "brand-text" : "[color:var(--mk-text)]"}`}
+                                            className={`group-hover:brand-soft group-hover:brand-border flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border [border-color:var(--mk-border)] transition-colors [background:var(--mk-bg)] ${item.featured ? "brand-soft brand-border" : ""}`}
                                           >
-                                            {item.label}
-                                            {item.badge && <NavBadge label={item.badge} />}
+                                            <Icon
+                                              size={16}
+                                              className={`group-hover:brand-text [color:var(--mk-text-muted)] ${item.featured ? "brand-text" : ""}`}
+                                            />
                                           </div>
-                                          <div className="mt-0.5 text-xs leading-snug [color:var(--mk-text-subtle)]">
-                                            {item.description}
+                                          <div className="min-w-0 flex-1">
+                                            <div
+                                              className={`flex items-center gap-1.5 text-sm font-medium ${active ? "brand-text" : "[color:var(--mk-text)]"}`}
+                                            >
+                                              {item.label}
+                                              {item.badge && <NavBadge label={item.badge} />}
+                                            </div>
+                                            <div className="mt-0.5 text-xs leading-snug [color:var(--mk-text-subtle)]">
+                                              {item.description}
+                                            </div>
                                           </div>
-                                        </div>
-                                      </Link>
+                                        </Link>
+                                      </motion.div>
                                     );
                                   })}
                                 </div>
@@ -903,6 +922,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                   aria-label={UI_STRINGS[lang].menuAria}
                   aria-expanded={mobileOpen}
                   aria-controls="mobile-nav-menu"
+                  id="mobile-nav-trigger"
                 >
                   {mobileOpen ? <X size={20} /> : <Menu size={20} />}
                 </button>
@@ -927,6 +947,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                     ref={mobileMenuRef}
                     id="mobile-nav-menu"
                     aria-label="Mobile navigation"
+                    aria-labelledby="mobile-nav-trigger"
                     role="dialog"
                     aria-modal="true"
                     initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: "100%" }}
@@ -935,7 +956,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                     transition={
                       reduceMotion ? { duration: 0 } : { duration: 0.25, ease: [0.22, 1, 0.36, 1] }
                     }
-                    className="fixed top-0 right-0 bottom-0 z-50 flex w-full max-w-sm flex-col overflow-y-auto border-l [border-color:var(--mk-border)] [background:var(--mk-bg)] lg:hidden"
+                    className="fixed top-0 right-0 bottom-0 z-50 flex w-full max-w-[420px] flex-col overflow-y-auto border-l [border-color:var(--mk-border)] [background:var(--mk-bg)] lg:hidden"
                   >
                     {/* Drawer header */}
                     <div className="flex items-center justify-between border-b [border-color:var(--mk-border)] px-4 py-3">
@@ -996,11 +1017,14 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                               ref={sIdx === 0 ? firstMobileLinkRef : undefined}
                               className={`flex min-h-[48px] w-full items-center justify-between rounded-lg px-3 py-3 text-base font-medium transition-colors ${NAV_LINK_FOCUS} ${
                                 sectionActive ? "brand-text" : "[color:var(--mk-text)]"
-                              } hover:[background:var(--mk-hover)]`}
+                              } hover:[background:var(--mk-hover)] ${expanded ? "brand-text [background:color-mix(in_srgb,var(--brand-primary)_6%,var(--mk-hover))]" : ""}`}
                               onClick={() => setMobileExpanded(expanded ? null : sIdx)}
                               aria-expanded={expanded}
                             >
-                              {section.label}
+                              <span className="flex items-center gap-2">
+                                {expanded && <span className="brand-bg h-1.5 w-1.5 rounded-full" />}
+                                {section.label}
+                              </span>
                               <ChevronDown
                                 size={18}
                                 className={`shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""} [color:var(--mk-text-subtle)]`}
@@ -1019,33 +1043,92 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                   transition={
                                     reduceMotion
                                       ? { duration: 0 }
-                                      : { duration: 0.15, ease: "easeInOut" }
+                                      : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
                                   }
                                   className="overflow-hidden"
                                 >
-                                  <div className="ml-3 space-y-0.5 border-l [border-color:var(--mk-border)] pl-3">
-                                    {section.items.map((item) => {
+                                  <div className="mt-1 ml-3 space-y-0.5 border-l-2 [border-color:color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))] pl-3">
+                                    {/* Featured content card */}
+                                    {section.featuredContent && (
+                                      <Link
+                                        href={p(lang, section.featuredContent.href)}
+                                        onClick={() => setMobileOpen(false)}
+                                        className="group mb-1 flex items-start gap-3 rounded-xl border [border-color:color-mix(in_srgb,var(--brand-primary)_15%,var(--mk-border))] p-3 transition-colors hover:[background:color-mix(in_srgb,var(--brand-primary)_4%,var(--mk-hover))]"
+                                      >
+                                        <div className="brand-soft brand-border flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
+                                          {(() => {
+                                            const FIcon =
+                                              ICONS[section.featuredContent.icon ?? "Sparkles"] ??
+                                              Sparkles;
+                                            return <FIcon size={16} className="brand-text" />;
+                                          })()}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-center gap-1.5 text-sm font-semibold [color:var(--mk-text)]">
+                                            {section.featuredContent.title}
+                                            {section.featuredContent.badge && (
+                                              <NavBadge label={section.featuredContent.badge} />
+                                            )}
+                                          </div>
+                                          <div className="mt-0.5 text-xs leading-snug [color:var(--mk-text-subtle)]">
+                                            {section.featuredContent.description}
+                                          </div>
+                                        </div>
+                                        <ChevronRight
+                                          size={14}
+                                          className="brand-text mt-1 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
+                                        />
+                                      </Link>
+                                    )}
+                                    {section.items.map((item, iIdx) => {
                                       const active = isActive(item.href);
                                       const Icon = ICONS[item.icon] ?? Layers;
                                       return (
-                                        <Link
+                                        <motion.div
                                           key={item.href + item.label}
-                                          href={p(lang, item.href)}
-                                          className={mobileLinkCls(active)}
-                                          aria-current={active ? "page" : undefined}
-                                          onClick={() => setMobileOpen(false)}
+                                          initial={
+                                            reduceMotion
+                                              ? { opacity: 1, x: 0 }
+                                              : { opacity: 0, x: -8 }
+                                          }
+                                          animate={
+                                            reduceMotion
+                                              ? { opacity: 1, x: 0 }
+                                              : { opacity: 1, x: 0 }
+                                          }
+                                          transition={
+                                            reduceMotion
+                                              ? { duration: 0 }
+                                              : {
+                                                  duration: 0.2,
+                                                  delay: iIdx * 0.03,
+                                                  ease: [0.22, 1, 0.36, 1],
+                                                }
+                                          }
                                         >
-                                          <span className="flex items-center gap-2">
-                                            <Icon
-                                              size={16}
-                                              className="shrink-0 [color:var(--mk-text-subtle)]"
-                                            />
-                                            <span className="flex flex-1 items-center gap-1.5">
-                                              <span>{item.label}</span>
-                                              {item.badge && <NavBadge label={item.badge} />}
+                                          <Link
+                                            href={p(lang, item.href)}
+                                            className={mobileLinkCls(active)}
+                                            aria-current={active ? "page" : undefined}
+                                            onClick={() => setMobileOpen(false)}
+                                          >
+                                            <span className="flex w-full items-start gap-2.5">
+                                              <Icon
+                                                size={16}
+                                                className={`mt-0.5 shrink-0 ${active ? "brand-text" : "[color:var(--mk-text-subtle)]"}`}
+                                              />
+                                              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                                <span className="flex items-center gap-1.5">
+                                                  <span>{item.label}</span>
+                                                  {item.badge && <NavBadge label={item.badge} />}
+                                                </span>
+                                                <span className="text-xs leading-snug font-normal [color:var(--mk-text-subtle)]">
+                                                  {item.description}
+                                                </span>
+                                              </span>
                                             </span>
-                                          </span>
-                                        </Link>
+                                          </Link>
+                                        </motion.div>
                                       );
                                     })}
                                     {/* Mobile footer CTA */}
