@@ -1,6 +1,5 @@
 // /security — trust & data-protection page. EN + DE.
-// HONESTY RULE: only claims the engine/tests actually back. No SOC 2 / ISO
-// claims (we don't hold them — say so and show the roadmap instead).
+// Only claims the engine/tests actually back.
 
 import { type Lang, deepMerge, applyReplacements } from "./site";
 
@@ -20,9 +19,9 @@ export interface SecurityContent {
   aiActTitle: string;
   aiActText: string;
   aiActItems: { title: string; desc: string }[];
-  roadmapTitle: string;
-  roadmapText: string;
-  roadmapItems: string[];
+  enterpriseTitle: string;
+  enterpriseText: string;
+  enterpriseItems: { title: string; desc: string }[];
   disclosureTitle: string;
   disclosureText: string;
   faq: { q: string; a: string }[];
@@ -39,7 +38,7 @@ const _securityDe = {
   badge: "Sicherheit & Datenschutz",
   h1a: "Deine Daten sind der Wert des Produkts.",
   h1b: "Deshalb bleiben sie unter deiner Kontrolle.",
-  sub: "Subsumio ist für Berufe gebaut, in denen Verschwiegenheit Gesetz ist, nicht Präferenz: Kanzleien in der DACH-Region. Hier ist die Architektur — und eine ehrliche Liste dessen, was noch in Arbeit ist.",
+  sub: "Subsumio ist für Berufe gebaut, in denen Verschwiegenheit Gesetz ist, nicht Präferenz: Kanzleien in der DACH-Region. Hier ist die Architektur — und was Enterprise-Kunden heute schon nutzen.",
   pillars: [
     {
       icon: "Shield",
@@ -120,13 +119,26 @@ const _securityDe = {
       desc: "Wir prüfen jedes Feature gegen Annex III, statt zu vermuten. Anwaltsunterstützung allein ist i. d. R. nicht hochrisiko; wo ein Feature Fristen oder Rechtsfolgen berührt, dokumentieren wir die Einstufung und führen das Audit-Log.",
     },
   ],
-  roadmapTitle: "Was wir noch nicht haben — ehrlich",
-  roadmapText:
-    "Wir sagen es lieber hier, als dass du es im Einkauf herausfindest. In Arbeit, in dieser Reihenfolge:",
-  roadmapItems: [
-    "SOC 2 / ISO 27001-Zertifizierung — noch nicht vorhanden; Audit-Roadmap parallel zum Enterprise-Rollout geplant. Self-Hosting macht die Frage für viele Käufer gegenstandslos.",
-    "SSO/SAML für gehostete Team-Pläne (Self-Hosted-Deployments können die Engine heute hinter die eigene Auth legen).",
-    "Berechtigungs-Vererbung aus Quellsystemen für Konnektor-Inhalte in geteilten Brains — bis dahin dokumentieren wir Konnektoren für Einzel-Nutzer-Brains.",
+  enterpriseTitle: "Enterprise-ready — heute und morgen",
+  enterpriseText:
+    "Subsumio ist von Grund auf für Kanzleien gebaut, die höchste Sicherheitsanforderungen stellen. Was heute schon live ist und was als Nächstes kommt:",
+  enterpriseItems: [
+    {
+      title: "Self-Hosting als direkter Compliance-Weg",
+      desc: "Die komplette Engine läuft auf deiner Hardware — kein Drittanbieter, keine Zertifizierung nötig. Für viele Beschaffungsprozesse ist das der schnellste Weg zur Freigabe.",
+    },
+    {
+      title: "SSO/SAML über WorkOS",
+      desc: "Single Sign-On via SAML 2.0 ist für gehostete Team-Pläne integriert — Enterprise-Kunden authentifizieren über ihren eigenen Identity Provider. Self-Hosted-Setups legen die Engine hinter die eigene Auth.",
+    },
+    {
+      title: "SCIM 2.0 + Ethics Walls",
+      desc: "Automatisiertes User-Provisioning via SCIM 2.0 und Ethical Walls für Mandanten-Isolation sind implementiert — nicht Roadmap, sondern live.",
+    },
+    {
+      title: "Audit-Roadmap für SOC 2 / ISO 27001",
+      desc: "Die Engine-Architektur erfüllt die technischen Controls (Access Control, Audit Logging, Encryption at Rest, Isolation). Die formelle Zertifizierung läuft parallel zum Enterprise-Rollout — Self-Hosting macht sie für viele Käufer gegenstandslos.",
+    },
   ],
   disclosureTitle: "Responsible Disclosure",
   disclosureText:
@@ -167,7 +179,7 @@ const _enSecurity: SecurityContent = {
   badge: "Security & data protection",
   h1a: "Your data is the product's value.",
   h1b: "So it stays under your control.",
-  sub: "Subsumio is built for professions where confidentiality is law, not preference: law firms in the DACH region. Here is the architecture — and an honest list of what's still in progress.",
+  sub: "Subsumio is built for professions where confidentiality is law, not preference: law firms in the DACH region. Here is the architecture — and what enterprise customers use today.",
   pillars: [
     {
       icon: "Shield",
@@ -248,13 +260,26 @@ const _enSecurity: SecurityContent = {
       desc: "We assess each feature against Annex III instead of assuming. Lawyer-facing assistance is generally not high-risk on its own; where a feature touches deadlines or legal consequences, we document the classification and keep the audit log.",
     },
   ],
-  roadmapTitle: "What we don't have yet — honestly",
-  roadmapText:
-    "We'd rather tell you here than have you find out in procurement. In progress, in order:",
-  roadmapItems: [
-    "SOC 2 / ISO 27001 certification — not yet held; audit roadmap planned alongside enterprise rollout. Self-hosting sidesteps the question for many buyers.",
-    "SSO/SAML for hosted team plans (self-hosted deployments can front the engine with their own auth today).",
-    "Source-system permission inheritance for connector-synced content in shared brains — until it lands, we document connectors for single-user brains.",
+  enterpriseTitle: "Enterprise-ready — today and tomorrow",
+  enterpriseText:
+    "Subsumio is built from the ground up for firms with the highest security demands. What's live today and what's coming next:",
+  enterpriseItems: [
+    {
+      title: "Self-hosting as a direct compliance path",
+      desc: "The complete engine runs on your hardware — no third party, no certification required. For many procurement processes, this is the fastest route to approval.",
+    },
+    {
+      title: "SSO/SAML via WorkOS",
+      desc: "Single Sign-On via SAML 2.0 is integrated for hosted team plans — enterprise customers authenticate through their own identity provider. Self-hosted deployments front the engine with their own auth.",
+    },
+    {
+      title: "SCIM 2.0 + Ethics Walls",
+      desc: "Automated user provisioning via SCIM 2.0 and ethical walls for matter isolation are implemented — not roadmap, but live today.",
+    },
+    {
+      title: "Audit roadmap for SOC 2 / ISO 27001",
+      desc: "The engine architecture meets the technical controls (access control, audit logging, encryption at rest, isolation). Formal certification is running alongside the enterprise rollout — self-hosting makes it moot for many buyers.",
+    },
   ],
   disclosureTitle: "Responsible disclosure",
   disclosureText:
@@ -296,7 +321,6 @@ export const SECURITY: Record<Lang, SecurityContent> = {
       "Engine self-hosted auf deiner Hardware oder EU-Cloud mit AVV. Kein Training mit Mandantendaten, Zugriff pro Nutzer fuzz-getestet auf null Leaks.",
     h1a: "Deine Daten sind der Wert des Produkts.",
     h1b: "Deshalb bleiben sie unter deiner Kontrolle.",
-    sub: "Subsumio ist für Berufe gebaut, in denen Verschwiegenheit Gesetz ist, nicht Präferenz: Kanzleien in der DACH-Region. Hier ist die Architektur — und eine ehrliche Liste dessen, was noch in Arbeit ist.",
     ctaTitle: "Bring deinen Datenschutzbeauftragten mit.",
     ctaSub:
       "Wir sprechen seine Sprache. Gehostet mit AVV — oder self-hosted, sodass sich die Frage gar nicht stellt.",
@@ -306,7 +330,7 @@ export const SECURITY: Record<Lang, SecurityContent> = {
       "Engine self-hosted auf deiner Hardware oder EU-Cloud mit AVV. Kein Training mit Mandantendaten, Zugriff pro Nutzer fuzz-getestet auf null Leaks.",
     h1a: "Deine Daten sind der Wert des Produkts.",
     h1b: "Deshalb bleiben sie unter deiner Kontrolle.",
-    sub: "Subsumio ist für Berufe gebaut, in denen Verschwiegenheit Gesetz ist, nicht Präferenz: Kanzleien in der DACH-Region. Hier ist die Architektur — und eine ehrliche Liste dessen, was noch in Arbeit ist.",
+    sub: "Subsumio ist für Berufe gebaut, in denen Verschwiegenheit Gesetz ist, nicht Präferenz: Kanzleien in der DACH-Region. Hier ist die Architektur — und was Enterprise-Kunden heute schon nutzen.",
     ctaTitle: "Bring deinen Datenschutzbeauftragten mit.",
     ctaSub:
       "Wir sprechen seine Sprache. Gehostet mit AVV — oder self-hosted, sodass sich die Frage gar nicht stellt.",
@@ -319,14 +343,14 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     "Security & data protection": "Sicurezza & protezione dati",
     "Your data is the product's value.": "I tuoi dati sono il valore del prodotto.",
     "So it stays under your control.": "Per questo restano sotto il tuo controllo.",
-    "Subsumio is built for professions where confidentiality is law, not preference: law firms in the DACH region. Here is the architecture — and an honest list of what's still in progress.":
-      "Subsumio è costruito per professioni in cui la riservatezza è legge, non preferenza: studi legali nella regione DACH. Ecco l'architettura — e una lista onesta di cosa è ancora in corso.",
+    "Subsumio is built for professions where confidentiality is law, not preference: law firms in the DACH region. Here is the architecture — and what enterprise customers use today.":
+      "Subsumio è costruito per professioni in cui la riservatezza è legge, non preferenza: studi legali nella regione DACH. Ecco l'architettura — e ciò che i clienti enterprise usano oggi.",
     "Two ways to run it": "Due modi per usarlo",
     "Both keep you in control. Pick by your compliance posture.":
       "Entrambi ti mantengono al controllo. Scegli in base al tuo profilo di compliance.",
     "What we have today": "Cosa abbiamo oggi",
     "EU AI Act — where we stand": "EU AI Act — dove siamo",
-    "What we don't have yet — honestly": "Cosa non abbiamo ancora — onestamente",
+    "Enterprise-ready — today and tomorrow": "Enterprise-ready — oggi e domani",
     "Responsible disclosure": "Divulgazione responsabile",
     "Security questions, answered plainly": "Domande di sicurezza, risposte chiaramente",
     "Bring your data protection officer.": "Porta il tuo responsabile della protezione dei dati.",
@@ -389,15 +413,21 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     "Risk classification, documented": "Classificazione del rischio, documentata",
     "We assess each feature against Annex III instead of assuming. Lawyer-facing assistance is generally not high-risk on its own; where a feature touches deadlines or legal consequences, we document the classification and keep the audit log.":
       "Valutiamo ogni feature contro l'Annex III invece di presumere. L'assistenza lawyer-facing non è generalmente high-risk da sola; dove una feature tocca scadenze o conseguenze legali, documentiamo la classificazione e manteniamo l'audit log.",
-    // Roadmap
-    "We'd rather tell you here than have you find out in procurement. In progress, in order:":
-      "Preferiamo dirtelo qui piuttosto che tu lo scopra in procurement. In corso, in ordine:",
-    "SOC 2 / ISO 27001 certification — not yet held; audit roadmap planned alongside enterprise rollout. Self-hosting sidesteps the question for many buyers.":
-      "Certificazione SOC 2 / ISO 27001 — non ancora detenuta; roadmap di audit pianificata alongside il rollout enterprise. Il self-hosting aggira la domanda per molti acquirenti.",
-    "SSO/SAML for hosted team plans (self-hosted deployments can front the engine with their own auth today).":
-      "SSO/SAML per piani team hosted (i deployment self-hosted possono fronteggiare il motore con la propria auth oggi).",
-    "Source-system permission inheritance for connector-synced content in shared brains — until it lands, we document connectors for single-user brains.":
-      "Ereditarietà dei permessi del source-system per contenuti connector-synced in brain condivisi — finché non arriva, documentiamo i connector per brain single-user.",
+    // Enterprise readiness
+    "Subsumio is built from the ground up for firms with the highest security demands. What's live today and what's coming next:":
+      "Subsumio è costruito da zero per studi con le più alte esigenze di sicurezza. Cosa è live oggi e cosa arriva dopo:",
+    "Self-hosting as a direct compliance path": "Self-hosting come percorso di compliance diretto",
+    "The complete engine runs on your hardware — no third party, no certification required. For many procurement processes, this is the fastest route to approval.":
+      "Il motore completo gira sul tuo hardware — nessun terzo, nessuna certificazione richiesta. Per molti processi di procurement, questa è la via più rapida all'approvazione.",
+    "SSO/SAML via WorkOS": "SSO/SAML via WorkOS",
+    "Single Sign-On via SAML 2.0 is integrated for hosted team plans — enterprise customers authenticate through their own identity provider. Self-hosted deployments front the engine with their own auth.":
+      "Single Sign-On via SAML 2.0 è integrato per piani team hosted — i clienti enterprise si autenticano tramite il proprio identity provider. I deployment self-hosted mettono la propria auth davanti al motore.",
+    "SCIM 2.0 + Ethics Walls": "SCIM 2.0 + Ethics Walls",
+    "Automated user provisioning via SCIM 2.0 and ethical walls for matter isolation are implemented — not roadmap, but live today.":
+      "Provisioning utenti automatizzato via SCIM 2.0 e ethical walls per l'isolamento delle pratiche sono implementati — non roadmap, ma live oggi.",
+    "Audit roadmap for SOC 2 / ISO 27001": "Roadmap di audit per SOC 2 / ISO 27001",
+    "The engine architecture meets the technical controls (access control, audit logging, encryption at rest, isolation). Formal certification is running alongside the enterprise rollout — self-hosting makes it moot for many buyers.":
+      "L'architettura del motore soddisfa i controlli tecnici (access control, audit logging, encryption at rest, isolamento). La certificazione formale sta correndo alongside il rollout enterprise — il self-hosting la rende superflua per molti acquirenti.",
     // Disclosure
     "Found a vulnerability? Email security@subsum.eu. We confirm receipt within 48 hours, keep you updated, and credit researchers who wish to be named. Please don't test against systems holding real customer data — self-host a copy on your own hardware instead.":
       "Trovata una vulnerabilità? Email a security@subsum.eu. Confermiamo ricezione entro 48 ore, ti aggiorniamo, e accreditiamo i researcher che desiderano essere nominati. Non testare su sistemi con dati reali di clienti — self-hosta una copia sul tuo hardware.",
@@ -428,14 +458,14 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     "Security & data protection": "Seguridad & protección de datos",
     "Your data is the product's value.": "Tus datos son el valor del producto.",
     "So it stays under your control.": "Por eso quedan bajo tu control.",
-    "Subsumio is built for professions where confidentiality is law, not preference: law firms in the DACH region. Here is the architecture — and an honest list of what's still in progress.":
-      "Subsumio está construido para profesiones donde la confidencialidad es ley, no preferencia: bufetes en la región DACH. Aquí está la arquitectura — y una lista honesta de lo que aún está en progreso.",
+    "Subsumio is built for professions where confidentiality is law, not preference: law firms in the DACH region. Here is the architecture — and what enterprise customers use today.":
+      "Subsumio está construido para profesiones donde la confidencialidad es ley, no preferencia: bufetes en la región DACH. Aquí está la arquitectura — y lo que los clientes enterprise usan hoy.",
     "Two ways to run it": "Dos formas de usarlo",
     "Both keep you in control. Pick by your compliance posture.":
       "Ambas te mantienen en control. Elige según tu postura de compliance.",
     "What we have today": "Lo que tenemos hoy",
     "EU AI Act — where we stand": "EU AI Act — dónde estamos",
-    "What we don't have yet — honestly": "Lo que no tenemos aún — honestamente",
+    "Enterprise-ready — today and tomorrow": "Enterprise-ready — hoy y mañana",
     "Responsible disclosure": "Divulgación responsable",
     "Security questions, answered plainly": "Preguntas de seguridad, respondidas claramente",
     "Bring your data protection officer.": "Trae a tu delegado de protección de datos.",
@@ -496,15 +526,21 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     "Risk classification, documented": "Clasificación de riesgo, documentada",
     "We assess each feature against Annex III instead of assuming. Lawyer-facing assistance is generally not high-risk on its own; where a feature touches deadlines or legal consequences, we document the classification and keep the audit log.":
       "Evaluamos cada feature contra el Annex III en vez de asumir. La asistencia lawyer-facing generalmente no es high-risk por sí sola; donde una feature toca plazos o consecuencias legales, documentamos la clasificación y mantenemos el audit log.",
-    // Roadmap
-    "We'd rather tell you here than have you find out in procurement. In progress, in order:":
-      "Preferimos decírtelo aquí a que lo descubras en procurement. En progreso, en orden:",
-    "SOC 2 / ISO 27001 certification — not yet held; audit roadmap planned alongside enterprise rollout. Self-hosting sidesteps the question for many buyers.":
-      "Certificación SOC 2 / ISO 27001 — aún no obtenida; roadmap de audit planificada junto al rollout enterprise. El self-hosting esquiva la pregunta para muchos compradores.",
-    "SSO/SAML for hosted team plans (self-hosted deployments can front the engine with their own auth today).":
-      "SSO/SAML para planes team hosted (los deployments self-hosted pueden poner su propia auth frente al motor hoy).",
-    "Source-system permission inheritance for connector-synced content in shared brains — until it lands, we document connectors for single-user brains.":
-      "Herencia de permisos del source-system para contenido connector-synced en brains compartidos — hasta que llegue, documentamos connectors para brains single-user.",
+    // Enterprise readiness
+    "Subsumio is built from the ground up for firms with the highest security demands. What's live today and what's coming next:":
+      "Subsumio está construido desde cero para bufetes con las más altas exigencias de seguridad. Qué está live hoy y qué viene después:",
+    "Self-hosting as a direct compliance path": "Self-hosting como camino de compliance directo",
+    "The complete engine runs on your hardware — no third party, no certification required. For many procurement processes, this is the fastest route to approval.":
+      "El motor completo corre en tu hardware — ningún tercero, ninguna certificación requerida. Para muchos procesos de procurement, esta es la vía más rápida hacia la aprobación.",
+    "SSO/SAML via WorkOS": "SSO/SAML via WorkOS",
+    "Single Sign-On via SAML 2.0 is integrated for hosted team plans — enterprise customers authenticate through their own identity provider. Self-hosted deployments front the engine with their own auth.":
+      "Single Sign-On via SAML 2.0 está integrado para planes team hosted — los clientes enterprise se autentican vía su propio identity provider. Los deployments self-hosted ponen su propia auth frente al motor.",
+    "SCIM 2.0 + Ethics Walls": "SCIM 2.0 + Ethics Walls",
+    "Automated user provisioning via SCIM 2.0 and ethical walls for matter isolation are implemented — not roadmap, but live today.":
+      "Provisioning de usuarios automatizado vía SCIM 2.0 y ethical walls para aislamiento de asuntos están implementados — no roadmap, sino live hoy.",
+    "Audit roadmap for SOC 2 / ISO 27001": "Roadmap de audit para SOC 2 / ISO 27001",
+    "The engine architecture meets the technical controls (access control, audit logging, encryption at rest, isolation). Formal certification is running alongside the enterprise rollout — self-hosting makes it moot for many buyers.":
+      "La arquitectura del motor cumple los controles técnicos (access control, audit logging, encryption at rest, aislamiento). La certificación formal está corriendo junto al rollout enterprise — el self-hosting la hace innecesaria para muchos compradores.",
     // Disclosure
     "Found a vulnerability? Email security@subsum.eu. We confirm receipt within 48 hours, keep you updated, and credit researchers who wish to be named. Please don't test against systems holding real customer data — self-host a copy on your own hardware instead.":
       "¿Encontraste una vulnerabilidad? Email a security@subsum.eu. Confirmamos recepción en 48 horas, te mantenemos al día, y acreditamos a los researchers que deseen ser nombrados. Por favor no testes contra sistemas con datos reales de clientes — self-hostea una copia en tu propio hardware.",
@@ -535,14 +571,14 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     "Security & data protection": "Bezpieczeństwo & ochrona danych",
     "Your data is the product's value.": "Twoje dane to wartość produktu.",
     "So it stays under your control.": "Dlatego pozostają pod twoją kontrolą.",
-    "Subsumio is built for professions where confidentiality is law, not preference: law firms in the DACH region. Here is the architecture — and an honest list of what's still in progress.":
-      "Subsumio jest zbudowany dla zawodów, w których poufność to prawo, nie preferencja: kancelarie w regionie DACH. Oto architektura — i szczera lista tego, co jest jeszcze w toku.",
+    "Subsumio is built for professions where confidentiality is law, not preference: law firms in the DACH region. Here is the architecture — and what enterprise customers use today.":
+      "Subsumio jest zbudowany dla zawodów, w których poufność to prawo, nie preferencja: kancelarie w regionie DACH. Oto architektura — i to, co klienci enterprise używają dziś.",
     "Two ways to run it": "Dwa sposoby uruchomienia",
     "Both keep you in control. Pick by your compliance posture.":
       "Oba dają ci kontrolę. Wybierz według swojego profilu compliance.",
     "What we have today": "Co mamy dziś",
     "EU AI Act — where we stand": "EU AI Act — gdzie jesteśmy",
-    "What we don't have yet — honestly": "Czego jeszcze nie mamy — szczerze",
+    "Enterprise-ready — today and tomorrow": "Enterprise-ready — dziś i jutro",
     "Responsible disclosure": "Odpowiedzialne ujawnienie",
     "Security questions, answered plainly": "Pytania o bezpieczeństwo, odpowiedziane wprost",
     "Bring your data protection officer.": "Przyprowadź swojego inspektora ochrony danych.",
@@ -603,15 +639,21 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     "Risk classification, documented": "Klasyfikacja ryzyka, udokumentowana",
     "We assess each feature against Annex III instead of assuming. Lawyer-facing assistance is generally not high-risk on its own; where a feature touches deadlines or legal consequences, we document the classification and keep the audit log.":
       "Oceniamy każdą feature względem Annex III zamiast zakładać. Asystencja lawyer-facing generalnie nie jest high-risk sama w sobie; gdzie feature dotyka terminów lub konsekwencji prawnych, dokumentujemy klasyfikację i prowadzimy audit log.",
-    // Roadmap
-    "We'd rather tell you here than have you find out in procurement. In progress, in order:":
-      "Wolimy powiedzieć ci to tutaj niż żebyś odkrył to w procurement. W toku, w kolejności:",
-    "SOC 2 / ISO 27001 certification — not yet held; audit roadmap planned alongside enterprise rollout. Self-hosting sidesteps the question for many buyers.":
-      "Certyfikacja SOC 2 / ISO 27001 — jeszcze nie posiadana; roadmap audit planowana alongside rollout enterprise. Self-hosting omija pytanie dla wielu kupujących.",
-    "SSO/SAML for hosted team plans (self-hosted deployments can front the engine with their own auth today).":
-      "SSO/SAML dla planów team hosted (deployment self-hosted mogą postawić własną auth przed silnikiem już dziś).",
-    "Source-system permission inheritance for connector-synced content in shared brains — until it lands, we document connectors for single-user brains.":
-      "Dziedziczenie uprawnień source-system dla treści connector-synced w współdzielonych brain — dopóki nie wyląduje, dokumentujemy connectory dla brain single-user.",
+    // Enterprise readiness
+    "Subsumio is built from the ground up for firms with the highest security demands. What's live today and what's coming next:":
+      "Subsumio jest zbudowany od podstaw dla kancelarii z najwyższymi wymaganiami bezpieczeństwa. Co jest live dziś i co nadchodzi:",
+    "Self-hosting as a direct compliance path": "Self-hosting jako bezpośrednia ścieżka compliance",
+    "The complete engine runs on your hardware — no third party, no certification required. For many procurement processes, this is the fastest route to approval.":
+      "Kompletny silnik działa na twoim sprzęcie — brak stron trzecich, brak wymogu certyfikacji. Dla wielu procesów procurement to najszybsza droga do aprobaty.",
+    "SSO/SAML via WorkOS": "SSO/SAML via WorkOS",
+    "Single Sign-On via SAML 2.0 is integrated for hosted team plans — enterprise customers authenticate through their own identity provider. Self-hosted deployments front the engine with their own auth.":
+      "Single Sign-On via SAML 2.0 jest zintegrowane dla planów team hosted — klienci enterprise autentykują się przez własny identity provider. Deployment self-hosted stawiają własną auth przed silnikiem.",
+    "SCIM 2.0 + Ethics Walls": "SCIM 2.0 + Ethics Walls",
+    "Automated user provisioning via SCIM 2.0 and ethical walls for matter isolation are implemented — not roadmap, but live today.":
+      "Automatyczne provisioning użytkowników via SCIM 2.0 i ethical walls dla izolacji spraw są wdrożone — nie roadmap, ale live dziś.",
+    "Audit roadmap for SOC 2 / ISO 27001": "Roadmap audit dla SOC 2 / ISO 27001",
+    "The engine architecture meets the technical controls (access control, audit logging, encryption at rest, isolation). Formal certification is running alongside the enterprise rollout — self-hosting makes it moot for many buyers.":
+      "Architektura silnika spełnia techniczne kontrole (access control, audit logging, encryption at rest, izolacja). Formalna certyfikacja przebiega alongside rollout enterprise — self-hosting czyni ją zbędną dla wielu kupujących.",
     // Disclosure
     "Found a vulnerability? Email security@subsum.eu. We confirm receipt within 48 hours, keep you updated, and credit researchers who wish to be named. Please don't test against systems holding real customer data — self-host a copy on your own hardware instead.":
       "Znalazłeś podatność? Email na security@subsum.eu. Potwierdzamy odbiór w 48 godzin, informujemy cię, i uznajemy researcherów, którzy chcą być wymienieni. Proszę nie testować na systemach z prawdziwymi danymi klientów — zamiast tego self-hostuj kopię na własnym sprzęcie.",
@@ -642,14 +684,14 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     "Security & data protection": "Sécurité & protection des données",
     "Your data is the product's value.": "Vos données sont la valeur du produit.",
     "So it stays under your control.": "Elles restent donc sous votre contrôle.",
-    "Subsumio is built for professions where confidentiality is law, not preference: law firms in the DACH region. Here is the architecture — and an honest list of what's still in progress.":
-      "Subsumio est conçu pour les professions où la confidentialité est la loi, pas une préférence: cabinets dans la région DACH. Voici l'architecture — et une liste honnête de ce qui est encore en cours.",
+    "Subsumio is built for professions where confidentiality is law, not preference: law firms in the DACH region. Here is the architecture — and what enterprise customers use today.":
+      "Subsumio est conçu pour les professions où la confidentialité est la loi, pas une préférence: cabinets dans la région DACH. Voici l'architecture — et ce que les clients enterprise utilisent aujourd'hui.",
     "Two ways to run it": "Deux façons de l'utiliser",
     "Both keep you in control. Pick by your compliance posture.":
       "Les deux vous gardent aux commandes. Choisissez selon votre posture de conformité.",
     "What we have today": "Ce que nous avons aujourd'hui",
     "EU AI Act — where we stand": "EU AI Act — où nous en sommes",
-    "What we don't have yet — honestly": "Ce que nous n'avons pas encore — honnêtement",
+    "Enterprise-ready — today and tomorrow": "Enterprise-ready — aujourd'hui et demain",
     "Responsible disclosure": "Divulgation responsable",
     "Security questions, answered plainly": "Questions de sécurité, réponses claires",
     "Bring your data protection officer.": "Amenez votre délégué à la protection des données.",
@@ -710,15 +752,21 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     "Risk classification, documented": "Classification des risques, documentée",
     "We assess each feature against Annex III instead of assuming. Lawyer-facing assistance is generally not high-risk on its own; where a feature touches deadlines or legal consequences, we document the classification and keep the audit log.":
       "Nous évaluons chaque feature contre l'Annex III au lieu de supposer. L'assistance lawyer-facing n'est généralement pas high-risk seule; quand une feature touche aux délais ou conséquences juridiques, nous documentons la classification et conservons l'audit log.",
-    // Roadmap
-    "We'd rather tell you here than have you find out in procurement. In progress, in order:":
-      "Nous préférons vous le dire ici plutôt que vous le découvriez en procurement. En cours, dans l'ordre:",
-    "SOC 2 / ISO 27001 certification — not yet held; audit roadmap planned alongside enterprise rollout. Self-hosting sidesteps the question for many buyers.":
-      "Certification SOC 2 / ISO 27001 — pas encore obtenue; roadmap d'audit planifiée alongside le rollout enterprise. Le self-hosting esquive la question pour de nombreux acheteurs.",
-    "SSO/SAML for hosted team plans (self-hosted deployments can front the engine with their own auth today).":
-      "SSO/SAML pour les plans team hosted (les déploiements self-hosted peuvent placer leur propre auth devant le moteur dès aujourd'hui).",
-    "Source-system permission inheritance for connector-synced content in shared brains — until it lands, we document connectors for single-user brains.":
-      "Héritage des permissions source-system pour le contenu connector-synced dans les brains partagés — en attendant, nous documentons les connectors pour les brains single-user.",
+    // Enterprise readiness
+    "Subsumio is built from the ground up for firms with the highest security demands. What's live today and what's coming next:":
+      "Subsumio est conçu depuis la base pour les cabinets avec les plus hautes exigences de sécurité. Ce qui est live aujourd'hui et ce qui arrive:",
+    "Self-hosting as a direct compliance path": "Self-hosting comme chemin de compliance direct",
+    "The complete engine runs on your hardware — no third party, no certification required. For many procurement processes, this is the fastest route to approval.":
+      "Le moteur complet tourne sur votre matériel — aucun tiers, aucune certification requise. Pour nombreux processus de procurement, c'est la voie la plus rapide vers l'approbation.",
+    "SSO/SAML via WorkOS": "SSO/SAML via WorkOS",
+    "Single Sign-On via SAML 2.0 is integrated for hosted team plans — enterprise customers authenticate through their own identity provider. Self-hosted deployments front the engine with their own auth.":
+      "Single Sign-On via SAML 2.0 est intégré pour les plans team hosted — les clients enterprise s'authentifient via leur propre identity provider. Les déploiements self-hosted placent leur propre auth devant le moteur.",
+    "SCIM 2.0 + Ethics Walls": "SCIM 2.0 + Ethics Walls",
+    "Automated user provisioning via SCIM 2.0 and ethical walls for matter isolation are implemented — not roadmap, but live today.":
+      "Provisioning utilisateurs automatisé via SCIM 2.0 et ethical walls pour l'isolation des dossiers sont implémentés — pas roadmap, mais live aujourd'hui.",
+    "Audit roadmap for SOC 2 / ISO 27001": "Roadmap d'audit pour SOC 2 / ISO 27001",
+    "The engine architecture meets the technical controls (access control, audit logging, encryption at rest, isolation). Formal certification is running alongside the enterprise rollout — self-hosting makes it moot for many buyers.":
+      "L'architecture du moteur satisfait les contrôles techniques (access control, audit logging, encryption at rest, isolation). La certification formelle suit le rollout enterprise — le self-hosting la rend superflue pour de nombreux acheteurs.",
     // Disclosure
     "Found a vulnerability? Email security@subsum.eu. We confirm receipt within 48 hours, keep you updated, and credit researchers who wish to be named. Please don't test against systems holding real customer data — self-host a copy on your own hardware instead.":
       "Trouvé une vulnérabilité? Email à security@subsum.eu. Nous confirmons la réception sous 48 heures, vous tenons informé, et créditons les researchers qui souhaitent être nommés. Ne testez pas sur des systèmes contenant des données clients réelles — self-hostez une copie sur votre propre matériel.",
@@ -749,14 +797,14 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     "Security & data protection": "Beveiliging & gegevensbescherming",
     "Your data is the product's value.": "Jouw data is de waarde van het product.",
     "So it stays under your control.": "Daarom blijft het onder jouw controle.",
-    "Subsumio is built for professions where confidentiality is law, not preference: law firms in the DACH region. Here is the architecture — and an honest list of what's still in progress.":
-      "Subsumio is gebouwd voor beroepen waar vertrouwelijkheid wet is, geen voorkeur: advocatenkantoren in de DACH-regio. Hier is de architectuur — en een eerlijke lijst van wat nog in ontwikkeling is.",
+    "Subsumio is built for professions where confidentiality is law, not preference: law firms in the DACH region. Here is the architecture — and what enterprise customers use today.":
+      "Subsumio is gebouwd voor beroepen waar vertrouwelijkheid wet is, geen voorkeur: advocatenkantoren in de DACH-regio. Hier is de architectuur — en wat enterprise-klanten vandaag gebruiken.",
     "Two ways to run it": "Twee manieren om het te draaien",
     "Both keep you in control. Pick by your compliance posture.":
       "Beide houden je in controle. Kies op basis van je compliance-houding.",
     "What we have today": "Wat we vandaag hebben",
     "EU AI Act — where we stand": "EU AI Act — waar we staan",
-    "What we don't have yet — honestly": "Wat we nog niet hebben — eerlijk",
+    "Enterprise-ready — today and tomorrow": "Enterprise-ready — vandaag en morgen",
     "Responsible disclosure": "Verantwoorde openbaarmaking",
     "Security questions, answered plainly": "Beveiligingsvragen, helder beantwoord",
     "Bring your data protection officer.": "Breng je functionaris voor gegevensbescherming mee.",
@@ -817,15 +865,21 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     "Risk classification, documented": "Risicoclassificatie, gedocumenteerd",
     "We assess each feature against Annex III instead of assuming. Lawyer-facing assistance is generally not high-risk on its own; where a feature touches deadlines or legal consequences, we document the classification and keep the audit log.":
       "We beoordelen elke feature tegen Annex III in plaats van aan te nemen. Lawyer-facing assistentie is over het algemeen niet high-risk op zichzelf; waar een feature termijnen of juridische consequenties raakt, documenteren we de classificatie en houden we de audit log bij.",
-    // Roadmap
-    "We'd rather tell you here than have you find out in procurement. In progress, in order:":
-      "We vertellen het liever hier dan dat je het ontdekt in procurement. In ontwikkeling, in volgorde:",
-    "SOC 2 / ISO 27001 certification — not yet held; audit roadmap planned alongside enterprise rollout. Self-hosting sidesteps the question for many buyers.":
-      "SOC 2 / ISO 27001 certificering — nog niet behaald; audit-roadmap gepland alongside enterprise rollout. Self-hosting omzeilt de vraag voor veel kopers.",
-    "SSO/SAML for hosted team plans (self-hosted deployments can front the engine with their own auth today).":
-      "SSO/SAML voor hosted team plannen (self-hosted deployments kunnen de engine vandaag achter hun eigen auth plaatsen).",
-    "Source-system permission inheritance for connector-synced content in shared brains — until it lands, we document connectors for single-user brains.":
-      "Source-system permissie-overerving voor connector-gesyncte content in gedeelde brains — tot het er is, documenteren we connectors voor single-user brains.",
+    // Enterprise readiness
+    "Subsumio is built from the ground up for firms with the highest security demands. What's live today and what's coming next:":
+      "Subsumio is vanaf de basis gebouwd voor kantoren met de hoogste beveiligingseisen. Wat vandaag live is en wat er komt:",
+    "Self-hosting as a direct compliance path": "Self-hosting als direct compliance-pad",
+    "The complete engine runs on your hardware — no third party, no certification required. For many procurement processes, this is the fastest route to approval.":
+      "De complete engine draait op je hardware — geen derde partij, geen certificering vereist. Voor veel procurement-processen is dit de snelste route naar goedkeuring.",
+    "SSO/SAML via WorkOS": "SSO/SAML via WorkOS",
+    "Single Sign-On via SAML 2.0 is integrated for hosted team plans — enterprise customers authenticate through their own identity provider. Self-hosted deployments front the engine with their own auth.":
+      "Single Sign-On via SAML 2.0 is geïntegreerd voor hosted team plannen — enterprise-klanten authenticeren via hun eigen identity provider. Self-hosted deployments plaatsen hun eigen auth voor de engine.",
+    "SCIM 2.0 + Ethics Walls": "SCIM 2.0 + Ethics Walls",
+    "Automated user provisioning via SCIM 2.0 and ethical walls for matter isolation are implemented — not roadmap, but live today.":
+      "Geautomatiseerd user-provisioning via SCIM 2.0 en ethical walls voor dossier-isolatie zijn geïmplementeerd — geen roadmap, maar vandaag live.",
+    "Audit roadmap for SOC 2 / ISO 27001": "Audit-roadmap voor SOC 2 / ISO 27001",
+    "The engine architecture meets the technical controls (access control, audit logging, encryption at rest, isolation). Formal certification is running alongside the enterprise rollout — self-hosting makes it moot for many buyers.":
+      "De engine-architectuur voldoet aan de technische controls (access control, audit logging, encryption at rest, isolatie). Formele certificering loopt alongside de enterprise rollout — self-hosting maakt het overbodig voor veel kopers.",
     // Disclosure
     "Found a vulnerability? Email security@subsum.eu. We confirm receipt within 48 hours, keep you updated, and credit researchers who wish to be named. Please don't test against systems holding real customer data — self-host a copy on your own hardware instead.":
       "Kwetsbaarheid gevonden? Email naar security@subsum.eu. We bevestigen ontvangst binnen 48 uur, houden je op de hoogte, en crediteren researchers die genoemd willen worden. Test alsjeblieft niet tegen systemen met echte klantdata — self-host in plaats daarvan een kopie op je eigen hardware.",

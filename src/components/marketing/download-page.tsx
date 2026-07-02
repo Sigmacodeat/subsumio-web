@@ -159,7 +159,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
   return (
     <div
       data-tone="light"
-      className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
       lang={lang}
     >
       {/* Hero — copy left, phone mockup right */}
@@ -176,13 +176,13 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
               {t.badge}
             </div>
             <ClipReveal delay={0.1} duration={0.7} direction="up">
-              <h1 className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]">
+              <h1 className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)]">
                 {t.h1a}
                 <br />
                 <span className="gradient-text glow-text">{t.h1b}</span>
               </h1>
             </ClipReveal>
-            <p className="mx-auto mb-10 max-w-xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg lg:mx-0">
+            <p className="mx-auto mb-10 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg lg:mx-0">
               {t.sub}
             </p>
 

@@ -182,7 +182,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
   } as const;
 
   const chat = useMemo(() => c.chat.slice(0, 4), [c]);
-  const times = ["14:02", "14:02", "14:03", "14:04"];
+  const times = ["14:02", "14:02", "14:03", "14:04"] as const;
 
   const [visibleCount, setVisibleCount] = useState(reduce ? chat.length : 0);
   const [isTyping, setIsTyping] = useState(false);
@@ -410,9 +410,9 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
               const isUser = m.from === "user";
               return (
                 <div key={i}>
-                  {/* WhatsApp day separator after the confirmation message */}
-                  {i === 2 && (
-                    <div className="mb-4 flex justify-center">
+                  {/* WhatsApp day separator at conversation start */}
+                  {i === 0 && (
+                    <div className="mb-3 flex justify-center">
                       <span
                         className="rounded-md px-2 py-1 text-[10px] font-medium"
                         style={{ background: "#1e2a31", color: WA.meta }}
@@ -458,7 +458,10 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                         {/* Inline spacer — only takes space on the last text line,
                             so the timestamp doesn't overlap. WhatsApp does the same. */}
                         {!("file" in m && m.file) && !("chips" in m && m.chips) && (
-                          <span className="inline-block w-12 select-none" aria-hidden="true">
+                          <span
+                            className="ml-1 inline-block w-12 align-bottom select-none"
+                            aria-hidden="true"
+                          >
                             {"\u200B"}
                           </span>
                         )}
@@ -481,30 +484,37 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                       {"chips" in m && m.chips && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {m.chips.map((ch, idx) => {
-                            const isTapped = tappedChip === idx && visibleCount === i + 1;
+                            const isConfirmed = tappedChip === idx && visibleCount === i + 1;
                             return (
                               <motion.span
                                 key={ch}
-                                animate={isTapped ? { scale: [1, 0.92, 1] } : { scale: 1 }}
+                                animate={isConfirmed ? { scale: [1, 0.92, 1] } : { scale: 1 }}
                                 transition={{ duration: 0.3 }}
                                 className="rounded-full px-3 py-1 text-[11px] font-semibold"
                                 style={{
-                                  background: isTapped
+                                  background: isConfirmed
                                     ? WA.accent
                                     : idx === 0
                                       ? WA.accent
                                       : "transparent",
-                                  color: idx === 0 || isTapped ? "#0b0f1a" : WA.text,
+                                  color: idx === 0 || isConfirmed ? "#0b0f1a" : WA.text,
                                   border:
-                                    idx === 0 && !isTapped ? "none" : `1px solid ${WA.meta}40`,
-                                  opacity: isTapped
+                                    idx === 0 && !isConfirmed ? "none" : `1px solid ${WA.meta}40`,
+                                  opacity: isConfirmed
                                     ? 1
                                     : tappedChip !== null && visibleCount === i + 1
-                                      ? 0.5
+                                      ? 0.4
                                       : 1,
                                 }}
                               >
-                                {ch}
+                                {isConfirmed && idx === 0 ? (
+                                  <span className="flex items-center gap-1">
+                                    <Check size={11} strokeWidth={3} />
+                                    {lang === "en" ? "Confirmed" : "Bestätigt"}
+                                  </span>
+                                ) : (
+                                  ch
+                                )}
                               </motion.span>
                             );
                           })}
@@ -517,7 +527,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                       {("file" in m && m.file) || ("chips" in m && m.chips) ? (
                         <div className="mt-1 flex items-center justify-end gap-0.5">
                           <span className="text-[10px]" style={{ color: WA.meta }}>
-                            {times[i]}
+                            {times[i] ?? ""}
                           </span>
                           {isUser && readStatus[i] === "sent" && (
                             <Check size={11} style={{ color: WA.meta }} />
@@ -532,7 +542,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                       ) : (
                         <div className="absolute right-1.5 bottom-0.5 flex items-center gap-0.5">
                           <span className="text-[10px]" style={{ color: WA.meta }}>
-                            {times[i]}
+                            {times[i] ?? ""}
                           </span>
                           {isUser && readStatus[i] === "sent" && (
                             <Check size={11} style={{ color: WA.meta }} />

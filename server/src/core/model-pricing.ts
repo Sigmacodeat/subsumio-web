@@ -81,14 +81,60 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
   "google:gemini-2.0-flash": { input: 0.1, output: 0.4 },
   "google:gemini-2-flash": { input: 0.1, output: 0.4 },
 
-  // ── Mistral ────────────────────────────────────────────────────────────
-  // Mistral Large 3: $0.50 in / $1.50 out (verified 2026-06-20 via
-  // docsbot.ai + llmcosthub.com + tickerr.ai). EU-hosted (Paris), 256K context.
-  "mistral:mistral-large-3": { input: 0.5, output: 1.5 },
-
   // ── Together / DeepSeek (cross-modal-eval panel) ───────────────────────
   "together:meta-llama/Llama-3.3-70B-Instruct-Turbo": { input: 0.88, output: 0.88 },
   "deepseek:deepseek-chat": { input: 0.14, output: 0.28 },
+  "deepseek:deepseek-v3.2": { input: 0.14, output: 0.28 },
+  "deepseek:deepseek-v3.2-exp": { input: 0.14, output: 0.28 },
+  "deepseek:deepseek-reasoner": { input: 0.14, output: 0.28 },
+
+  // ── Mistral (EU-hosted, GDPR-compliant) ────────────────────────────────
+  // Verified 2026-06-20 via docsbot.ai + llmcosthub.com + tickerr.ai.
+  // Large 3: 128B dense, 256K context, EU data residency.
+  // Small 3.2: budget tier, 32K context, cheapest EU-compliant model.
+  "mistral:mistral-large-3": { input: 0.5, output: 1.5 },
+  "mistral:mistral-small-3.2": { input: 0.1, output: 0.3 },
+  "mistral:mistral-medium-3.5": { input: 0.4, output: 1.2 },
+
+  // ── xAI (Grok) — fast reasoning, 2M context ────────────────────────────
+  // Grok 4.3: 98% of Claude Opus legal quality at 1/20th cost (HAQQ June 2026).
+  // Verified 2026-06-29 via aipricing.guru + aifreeapi.com.
+  "xai:grok-4.3": { input: 0.2, output: 0.5 },
+  "xai:grok-4.1-fast": { input: 0.2, output: 0.5 },
+  "xai:grok-4.1": { input: 0.2, output: 0.5 },
+  "xai:grok-4": { input: 0.2, output: 0.5 },
+
+  // ── Cohere — RAG with native citations ──────────────────────────────────
+  // Verified 2026-06-10 via aipricing.guru + costbench.com.
+  // Command R+ 08-2024: flagship chat with built-in citation generation.
+  "cohere:command-r-plus-08-2024": { input: 2.5, output: 10.0 },
+  "cohere:command-r-08-2024": { input: 0.15, output: 0.6 },
+  "cohere:command-r7b-12-2024": { input: 0.037, output: 0.144 },
+
+  // ── Moonshot AI (Kimi) — 1T MoE, long context ──────────────────────────
+  // Verified 2026-06-20 via deepinfra.com + medium.com/@tentenco.
+  "moonshot:kimi-k2.6": { input: 0.6, output: 2.5 },
+  "moonshot:kimi-k2.7-code": { input: 0.6, output: 2.5 },
+  "moonshot:moonshot-v1-128k": { input: 0.8, output: 3.2 },
+  "moonshot:moonshot-v1-32k": { input: 0.4, output: 1.6 },
+
+  // ── Groq — LPU inference, ultra-fast ───────────────────────────────────
+  // Verified 2026-06-28 via groq.com/pricing + klymentiev.com.
+  "groq:llama-4-scout-17b-16e": { input: 0.11, output: 0.34 },
+  "groq:llama-4-maverick-17b-128e": { input: 0.5, output: 0.77 },
+  "groq:llama-3.3-70b-versatile": { input: 0.59, output: 0.79 },
+  "groq:llama-3.1-8b-instant": { input: 0.05, output: 0.08 },
+  "groq:gpt-oss-120b": { input: 0.15, output: 0.6 },
+  "groq:gpt-oss-20b": { input: 0.075, output: 0.3 },
+  "groq:qwen3-32b": { input: 0.29, output: 0.59 },
+  "groq:kimi-k2": { input: 1.0, output: 3.0 },
+
+  // ── Zhipu AI (GLM) — Chinese+English multilingual ──────────────────────
+  // Verified 2026-06-28 via morphllm.com.
+  "zhipu:glm-4.7": { input: 1.4, output: 4.4 },
+  "zhipu:glm-4.5": { input: 1.0, output: 3.0 },
+  "zhipu:glm-4-plus": { input: 1.0, output: 3.0 },
+  "zhipu:glm-4-flash": { input: 0.1, output: 0.3 },
 };
 
 /**

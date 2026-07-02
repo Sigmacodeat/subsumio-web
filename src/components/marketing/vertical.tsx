@@ -11,7 +11,7 @@ import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { VERTICALS, type VerticalSlug } from "@/content/verticals";
 import { profileForIndustry } from "@/lib/industry-pack";
 import { styleForIndustry } from "@/lib/industry-theme";
-import { Section, SectionHeading, ICONS } from "./chrome";
+import { Section, SectionHeading, ICONS, H1_CLASS, H2_CTA_CLASS, BadgePill } from "./chrome";
 import LiveDemo from "./live-demo";
 import BranchPricing from "./branch-pricing";
 import IndustryHeroMotif from "./industry-hero-motif";
@@ -44,7 +44,7 @@ function SignatureBand({ industry, lang }: { industry: string; lang: Lang }) {
             <p className="brand-text mb-3 font-mono text-xs tracking-wider uppercase">
               {profile.brand} {UI_STRINGS[lang].signatureLabel}
             </p>
-            <h2 className="text-2xl leading-tight font-black [color:var(--mk-text)] md:text-3xl">
+            <h2 className="text-2xl leading-tight font-black text-balance [color:var(--mk-text)] md:text-3xl">
               {signature.title[locale]}
             </h2>
             <p className="mt-4 text-sm leading-relaxed [color:var(--mk-text-muted)] md:text-base">
@@ -88,7 +88,7 @@ export default function VerticalPage({
   return (
     <div
       data-tone="light"
-      className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
       lang={lang}
       style={styleForIndustry(industry)}
     >
@@ -100,13 +100,13 @@ export default function VerticalPage({
             className="absolute inset-0 z-0 hidden opacity-[0.10] md:block"
           />
           <div className="relative z-10">
-            <div className="brand-border brand-soft brand-text mb-8 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium">
+            <BadgePill className="mb-8">
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
               {product ? product.poweredBy : t.badge}
-            </div>
+            </BadgePill>
             {product ? (
               <ClipReveal delay={0.1} duration={0.7} direction="up">
-                <h1 className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]">
+                <h1 className={`${H1_CLASS} mb-6`}>
                   {product.name}
                   <br />
                   <span className="gradient-text glow-text">{product.claim}</span>
@@ -114,14 +114,14 @@ export default function VerticalPage({
               </ClipReveal>
             ) : (
               <ClipReveal delay={0.1} duration={0.7} direction="up">
-                <h1 className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]">
+                <h1 className={`${H1_CLASS} mb-6`}>
                   {t.h1a}
                   <br />
                   <span className="gradient-text glow-text">{t.h1b}</span>
                 </h1>
               </ClipReveal>
             )}
-            <p className="mx-auto mb-12 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
+            <p className="mx-auto mb-12 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
               {t.sub}
             </p>
             <div className="mb-4 flex flex-col justify-center gap-4 sm:flex-row">
@@ -314,10 +314,10 @@ export default function VerticalPage({
             >
               &ldquo;
             </span>
-            <h2 className="-mt-6 mb-5 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+            <h2 className="-mt-6 mb-5 text-2xl font-black text-balance [color:var(--mk-text)] md:text-3xl">
               {t.proofTitle}
             </h2>
-            <p className="mx-auto max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)]">
+            <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
               {t.proof}
             </p>
           </motion.div>
@@ -356,9 +356,7 @@ export default function VerticalPage({
       >
         <div className="mx-auto max-w-3xl">
           <SubsumioMark size={56} className="mx-auto mb-7" />
-          <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
-            {t.ctaTitle}
-          </h2>
+          <h2 className={`${H2_CTA_CLASS} mb-4`}>{t.ctaTitle}</h2>
           <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
           <Link href={signupHref}>
             <Button size="xl" variant="primary">

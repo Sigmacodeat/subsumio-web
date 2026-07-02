@@ -63,7 +63,9 @@ function Shell({
         <Link href={home} className="brand-text text-sm hover:underline">
           {t.backLink}
         </Link>
-        <h1 className="mt-8 mb-2 text-3xl font-black [color:var(--mk-text)]">{title}</h1>
+        <h1 className="mt-8 mb-2 text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)]">
+          {title}
+        </h1>
         <p className="mb-6 text-xs [color:var(--mk-text-subtle)]">{subtitle}</p>
         <div className="space-y-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
           {children}

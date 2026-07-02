@@ -28,6 +28,13 @@ export type LegalDocType =
   | "correspondence"
   | "police_report"
   | "financial_record"
+  | "anordnungsbogen"
+  | "haftangelegenheit"
+  | "kostenverzeichnis"
+  | "akteneinsicht"
+  | "urgenz"
+  | "strafantrag"
+  | "nichtigkeitsbeschwerde"
   | "legal_document";
 
 interface ClassificationPattern {
@@ -453,6 +460,142 @@ const PATTERNS: ClassificationPattern[] = [
       "date de valeur",
     ],
   },
+  // ── Austrian-specific document types (GVgo / StPO) ──────────
+  {
+    type: "anordnungsbogen",
+    keywords: [
+      "anordnung",
+      "anordnungsbeschluss",
+      "bewilligung",
+      "einstellungsbeschluss",
+      "einstellung",
+      "anordnungsbogen",
+      "anordnungs- und bewilligungsbogen",
+    ],
+    minMatches: 2,
+    boostWords: [
+      "staatsanwaltschaft",
+      "ermittlungsrichter",
+      "gericht",
+      "untersagung",
+      "durchsuchungsanordnung",
+      "überwachung",
+      "maßnahme",
+    ],
+  },
+  {
+    type: "haftangelegenheit",
+    keywords: [
+      "haftbefehl",
+      "haft",
+      "unterbringung",
+      "festnahme",
+      "verhaftung",
+      "haftangelegenheit",
+      "haftprüfung",
+      "schubhaft",
+      "auslieferungshaft",
+      "untersuchungshaft",
+      "urteilshaft",
+    ],
+    minMatches: 1,
+    boostWords: [
+      "fluchtgefahr",
+      "verdunkelungsgefahr",
+      "tatverdacht",
+      "dringend",
+      "festnahme",
+      "aufenthaltsermittlung",
+      "auslieferung",
+    ],
+  },
+  {
+    type: "kostenverzeichnis",
+    keywords: [
+      "kostenverzeichnis",
+      "kosten",
+      "gebühren",
+      "vorschreibung",
+      "kostenansatz",
+      "gebührenvorschreibung",
+      "barauslagen",
+      "sachgebühren",
+    ],
+    minMatches: 2,
+    boostWords: [
+      "gerichtsgebühren",
+      "anwaltskosten",
+      "dolmetscherkosten",
+      "sachverständigenhonorar",
+      "ersatzforderungen",
+    ],
+  },
+  {
+    type: "akteneinsicht",
+    keywords: [
+      "akteneinsicht",
+      "einsicht",
+      "einsichtnahme",
+      "akteneinsichtsgesuch",
+      "einsicht in die akten",
+      "act inspection",
+    ],
+    minMatches: 1,
+    boostWords: [
+      "verteidiger",
+      "anwalt",
+      "staatsanwaltschaft",
+      "gericht",
+      "beantragt",
+      "gewährt",
+      "verweigert",
+    ],
+  },
+  {
+    type: "urgenz",
+    keywords: [
+      "urgenz",
+      "dringlichkeit",
+      "einstweilige verfügung",
+      "einstweilige anordnung",
+      "eilbedürftig",
+      "sofort",
+    ],
+    minMatches: 2,
+    boostWords: ["gefahr im verzug", "irreparabler schaden", "sofortige", "unverzüglich"],
+  },
+  {
+    type: "strafantrag",
+    keywords: [
+      "strafantrag",
+      "strafanzeige",
+      "anzeige",
+      "privatanzeige",
+      "strafbeschwerde",
+      "subsidiäranklage",
+    ],
+    minMatches: 1,
+    boostWords: ["staatsanwaltschaft", "strafbar", "tatvorwurf", "beschuldigter", "delikt"],
+  },
+  {
+    type: "nichtigkeitsbeschwerde",
+    keywords: [
+      "nichtigkeitsbeschwerde",
+      "nichtigkeit",
+      "revision",
+      "oberster gerichtshof",
+      "ogh",
+      "nichtigkeitsgrund",
+    ],
+    minMatches: 1,
+    boostWords: [
+      "rechtsmittel",
+      "gebracht",
+      "gerichtshof zweiter instanz",
+      "berufungsgericht",
+      "instanz",
+    ],
+  },
 ];
 
 /**
@@ -518,6 +661,13 @@ export function legalDocTypeLabel(type: LegalDocType): string {
     correspondence: "Korrespondenz",
     police_report: "Ermittlungsakte",
     financial_record: "Finanzunterlage",
+    anordnungsbogen: "Anordnungsbogen (A)",
+    haftangelegenheit: "Haftangelegenheit (H)",
+    kostenverzeichnis: "Kostenverzeichnis (G)",
+    akteneinsicht: "Akteneinsicht",
+    urgenz: "Urgenz",
+    strafantrag: "Strafantrag",
+    nichtigkeitsbeschwerde: "Nichtigkeitsbeschwerde",
     legal_document: "Rechtsdokument",
   };
   return labels[type] ?? "Rechtsdokument";

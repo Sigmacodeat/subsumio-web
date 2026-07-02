@@ -7,7 +7,15 @@ import { Button } from "@/components/ui/button";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import type { SolutionContent, SolutionSlug } from "@/content/solutions";
 import { SOLUTION_SLUGS, SOLUTION_CROSS_LINKS } from "@/content/solutions";
-import { Section, SectionHeading, ICONS, accentTile } from "./chrome";
+import {
+  Section,
+  SectionHeading,
+  ICONS,
+  accentTile,
+  CTASection,
+  H1_CLASS,
+  H2_CTA_CLASS,
+} from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { GlowCard, ClipReveal, EASE } from "./motion-system";
 
@@ -23,7 +31,7 @@ function HeroIconConstellation({ content }: { content: SolutionContent }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.55, delay: 0.3, ease: EASE.out }}
     >
-      {icons.map((feat, i) => {
+      {icons.map((feat) => {
         const Icon = ICONS[feat.icon] ?? ICONS.Layers;
         return (
           <div
@@ -56,14 +64,14 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             {content.badge}
           </motion.span>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className="text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]">
+            <h1 className={H1_CLASS}>
               {content.h1a}
               <br />
               <span className="brand-text">{content.h1b}</span>
             </h1>
           </ClipReveal>
           <motion.p
-            className="mx-auto mt-6 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+            className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.1, ease: EASE.out }}
@@ -175,10 +183,8 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             <div className="brand-soft brand-border mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border">
               <CheckCircle size={24} className="brand-text" />
             </div>
-            <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
-              {content.proofTitle}
-            </h2>
-            <p className="mx-auto max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)]">
+            <h2 className={`${H2_CTA_CLASS} mb-4`}>{content.proofTitle}</h2>
+            <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
               {content.proof}
             </p>
           </motion.div>
@@ -219,31 +225,13 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       </Section>
 
       {/* CTA */}
-      <Section tone="dark" className="px-4 py-28 sm:px-6 lg:px-8">
-        <motion.div
-          className="mx-auto max-w-3xl text-center"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.15 }}
-          transition={{ duration: 0.5, ease: EASE.out }}
-        >
-          <h2 className="mb-4 text-2xl font-black tracking-tight [color:var(--mk-text)] md:text-3xl">
-            {content.ctaTitle}
-          </h2>
-          <p className="mx-auto mb-8 max-w-xl text-base [color:var(--mk-text-muted)] md:text-lg">
-            {content.ctaSub}
-          </p>
-          <Link href={p(lang, "/signup")}>
-            <Button size="lg" variant="primary" className="group min-h-[48px]">
-              {content.ctaButton}
-              <ArrowRight
-                size={16}
-                className="transition-transform duration-200 group-hover:translate-x-0.5"
-              />
-            </Button>
-          </Link>
-        </motion.div>
-      </Section>
+      <CTASection
+        title={content.ctaTitle}
+        sub={content.ctaSub}
+        href={p(lang, "/signup")}
+        label={content.ctaButton}
+        showLogo={false}
+      />
     </>
   );
 }

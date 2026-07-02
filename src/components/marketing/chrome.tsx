@@ -43,10 +43,11 @@ import {
   Building2,
   Info,
   Sparkles,
+  ArrowRight,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EASE } from "./motion-system";
+import { EASE, ClipReveal, Reveal, GlowCard } from "./motion-system";
 import { SubsumioLogo, SubsumioMark } from "@/components/brand/subsumio-logo";
 import { type SiteBrand } from "@/lib/brand";
 import {
@@ -1398,6 +1399,191 @@ export function TypewriterText({ text, speed = 12 }: { text: string; speed?: num
         <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-[var(--brand-text)] align-text-bottom" />
       )}
     </span>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// SHARED PAGE PRIMITIVES — canonical building blocks for all marketing pages.
+// Every sub-page MUST use these for H1, H2, hero, CTA, cards, badges, icons.
+// This enforces typography consistency without per-page custom coding.
+// ════════════════════════════════════════════════════════════════════════
+
+/** Standard H1 class — used by PageHero, but also exported for pages that
+ *  compose their own hero layout (vertical.tsx, superbrain-page.tsx). */
+export const H1_CLASS =
+  "text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)]";
+
+/** Standard H2 class for CTA closers and inline section headings. */
+export const H2_CTA_CLASS =
+  "text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl";
+
+/** Standard badge pill — brand-soft, brand-text, brand-border. */
+export function BadgePill({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <span
+      className={`brand-soft brand-text brand-border mb-6 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold ${className}`}
+    >
+      <span className="brand-bg h-1.5 w-1.5 rounded-full" />
+      {children}
+    </span>
+  );
+}
+
+/** Standard hero subtitle paragraph. */
+export function HeroSub({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
+      {children}
+    </p>
+  );
+}
+
+/** Standard icon tile — brand-soft, brand-border, brand-text. */
+export function IconTile({
+  icon: Icon,
+  size = 22,
+  className = "",
+}: {
+  icon: LucideIcon;
+  size?: number;
+  className?: string;
+}) {
+  // Destructure `icon` → `Icon` for JSX rendering
+  return (
+    <div
+      className={`brand-soft brand-border mb-4 flex h-12 w-12 items-center justify-center rounded-xl border transition-transform duration-300 hover:scale-110 ${className}`}
+    >
+      <Icon size={size} className="brand-text" />
+    </div>
+  );
+}
+
+/** Standard content card — GlowCard wrapper with consistent surface, border,
+ *  hover, and shadow.  Uses IconTile + h3 + p pattern. */
+export function ContentCard({
+  icon,
+  title,
+  desc,
+  iconSize = 22,
+  className = "",
+}: {
+  icon: LucideIcon;
+  title: string;
+  desc: string;
+  iconSize?: number;
+  className?: string;
+}) {
+  return (
+    <GlowCard
+      className={`h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl ${className}`}
+    >
+      <IconTile icon={icon} size={iconSize} />
+      <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">{title}</h3>
+      <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{desc}</p>
+    </GlowCard>
+  );
+}
+
+/** Standard page hero — badge, two-part H1 (title + accent claim), subtitle.
+ *  Uses ClipReveal for the H1 and motion for badge + subtitle.
+ *  All sub-pages should use this instead of rolling their own hero markup. */
+export function PageHero({
+  badge,
+  h1a,
+  h1b,
+  sub,
+  tone = "light",
+  accentVariant = "brand",
+}: {
+  badge?: string;
+  h1a: string;
+  h1b?: string;
+  sub: string;
+  tone?: Tone;
+  accentVariant?: "brand" | "gradient" | "gradient-premium";
+}) {
+  const accentClass =
+    accentVariant === "gradient"
+      ? "gradient-text"
+      : accentVariant === "gradient-premium"
+        ? "gradient-text-premium glow-text"
+        : "brand-text";
+
+  return (
+    <Section tone={tone} className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl text-center">
+        {badge && (
+          <motion.span
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, ease: EASE.out }}
+          >
+            <BadgePill>{badge}</BadgePill>
+          </motion.span>
+        )}
+        <ClipReveal delay={0.1} duration={0.7} direction="up">
+          <h1 className={H1_CLASS}>
+            {h1a}
+            {h1b && (
+              <>
+                <br />
+                <span className={accentClass}>{h1b}</span>
+              </>
+            )}
+          </h1>
+        </ClipReveal>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.1, ease: EASE.out }}
+        >
+          <HeroSub>{sub}</HeroSub>
+        </motion.div>
+      </div>
+    </Section>
+  );
+}
+
+/** Standard CTA close section — dark tone, logo, H2, subtitle, button.
+ *  All sub-pages should close with this instead of custom CTA markup. */
+export function CTASection({
+  title,
+  sub,
+  href,
+  label,
+  showLogo = true,
+}: {
+  title: string;
+  sub: string;
+  href: string;
+  label: string;
+  showLogo?: boolean;
+}) {
+  return (
+    <Section tone="dark" className="px-4 py-28 text-center sm:px-6 lg:px-8">
+      <Reveal variant="upLg" className="mx-auto max-w-3xl">
+        {showLogo && <SubsumioMark size={56} className="mx-auto mb-7" />}
+        <h2 className={H2_CTA_CLASS}>{title}</h2>
+        <p className="mx-auto mb-8 max-w-xl text-base [color:var(--mk-text-muted)] md:text-lg">
+          {sub}
+        </p>
+        <Link href={href}>
+          <Button size="xl" variant="primary" className="group min-h-[48px]">
+            {label}
+            <ArrowRight
+              size={18}
+              className="transition-transform duration-200 group-hover:translate-x-0.5"
+            />
+          </Button>
+        </Link>
+      </Reveal>
+    </Section>
   );
 }
 

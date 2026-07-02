@@ -5,11 +5,9 @@
 // every section scroll-reveals; value-props use signal-colored tiles.
 
 import { motion } from "framer-motion";
-import { ArrowRight, Check } from "lucide-react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Check } from "lucide-react";
 import { PRICING, PRICING_FAQ, VALUE_PROPS, UI_STRINGS, p, type Lang } from "@/content/site";
-import { SectionHeading } from "./chrome";
+import { SectionHeading, CTASection, BadgePill } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { PricingGrid } from "./pricing-grid";
 import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal } from "./motion-system";
@@ -24,7 +22,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
   return (
     <div
       data-tone="light"
-      className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
       lang={lang}
     >
       {/* Hero */}
@@ -35,16 +33,16 @@ export default function PricingPage({ lang }: { lang: Lang }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
           >
-            <span className="brand-border brand-soft brand-text mb-6 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium">
+            <BadgePill className="mb-6">
               <Check size={12} className="brand-text" />
               {ui.transparentFair}
-            </span>
+            </BadgePill>
             <ClipReveal delay={0.1} duration={0.7} direction="up">
-              <h1 className="mb-5 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]">
+              <h1 className="mb-5 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)]">
                 {pricing.title}
               </h1>
             </ClipReveal>
-            <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
+            <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
               {pricing.sub}
             </p>
           </motion.div>
@@ -100,19 +98,13 @@ export default function PricingPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* CTA */}
-      <section data-tone="dark" className="relative z-10 px-4 py-28 sm:px-6 lg:px-8">
-        <Reveal variant="upLg" className="mx-auto max-w-3xl text-center">
-          <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
-            {ui.stillQuestions}
-          </h2>
-          <p className="mb-10 text-base [color:var(--mk-text-muted)] md:text-lg">{ui.writeUs}</p>
-          <Link href={p(lang, "/signup")}>
-            <Button size="xl" variant="primary">
-              {ui.startFree} <ArrowRight size={18} />
-            </Button>
-          </Link>
-        </Reveal>
-      </section>
+      <CTASection
+        title={ui.stillQuestions}
+        sub={ui.writeUs}
+        href={p(lang, "/signup")}
+        label={ui.startFree}
+        showLogo={false}
+      />
     </div>
   );
 }

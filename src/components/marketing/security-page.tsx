@@ -4,12 +4,10 @@
 // MotionConfig wraps the page; ScrollProgress shows reading position;
 // every section scroll-reveals with reduced-motion safety.
 
-import Link from "next/link";
-import { ArrowRight, Check, Shield, Layers, Lock, Eye, type LucideIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Check, Shield, Layers, Lock, Eye, type LucideIcon } from "lucide-react";
 import { p, type Lang } from "@/content/site";
 import { SECURITY } from "@/content/security";
-import { SectionHeading } from "./chrome";
+import { SectionHeading, CTASection, BadgePill, H1_CLASS } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal } from "./motion-system";
 
@@ -21,24 +19,22 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
   return (
     <div
       data-tone="light"
-      className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
       lang={lang}
     >
       {/* Hero */}
       <section className="relative z-10 px-4 pt-20 pb-16 sm:px-6 lg:px-8">
         <Reveal variant="up" className="mx-auto max-w-4xl text-center">
-          <span className="brand-text mb-6 inline-block rounded-full border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/10 px-3 py-1.5 text-xs font-medium">
-            {t.badge}
-          </span>
+          <BadgePill>{t.badge}</BadgePill>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)]">
+            <h1 className={H1_CLASS}>
               {t.h1a}
               <span className="sr-only"> </span>
               <br />
               <span className="brand-text">{t.h1b}</span>
             </h1>
           </ClipReveal>
-          <p className="mx-auto max-w-3xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
+          <p className="mx-auto max-w-3xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
             {t.sub}
           </p>
         </Reveal>
@@ -138,21 +134,26 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
         </Reveal>
       </section>
 
-      {/* Honest roadmap */}
+      {/* Enterprise readiness */}
       <section className="relative z-10 px-4 py-12 sm:px-6 lg:px-8">
         <Reveal
           variant="up"
-          className="mx-auto max-w-4xl rounded-2xl border [border-color:var(--signal-amber-border)] p-7 [background:var(--signal-amber-bg)]"
+          className="mx-auto max-w-4xl rounded-2xl border [border-color:var(--signal-green-border)] p-7 [background:var(--signal-green-bg)]"
         >
-          <h2 className="mb-2 text-lg font-bold [color:var(--signal-amber)]">{t.roadmapTitle}</h2>
+          <h2 className="mb-2 text-lg font-bold [color:var(--signal-green)]">
+            {t.enterpriseTitle}
+          </h2>
           <p className="mb-4 text-sm leading-relaxed [color:var(--mk-text-muted)]">
-            {t.roadmapText}
+            {t.enterpriseText}
           </p>
-          <StaggerContainer className="space-y-2.5" stagger={0.06}>
-            {t.roadmapItems.map((item, i) => (
+          <StaggerContainer className="space-y-3" stagger={0.06}>
+            {t.enterpriseItems.map((item, i) => (
               <StaggerItem key={i} className="flex gap-2.5 text-sm leading-relaxed">
-                <ArrowRight size={14} className="mt-1 shrink-0 [color:var(--signal-amber)]" />
-                <span className="[color:var(--mk-text-muted)]">{item}</span>
+                <Check size={14} className="mt-1 shrink-0 [color:var(--signal-green)]" />
+                <span>
+                  <span className="font-semibold [color:var(--mk-text)]">{item.title}</span>
+                  <span className="block [color:var(--mk-text-muted)]">{item.desc}</span>
+                </span>
               </StaggerItem>
             ))}
           </StaggerContainer>
@@ -183,19 +184,13 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* CTA */}
-      <section data-tone="dark" className="relative z-10 px-4 py-28 sm:px-6 lg:px-8">
-        <Reveal variant="upLg" className="mx-auto max-w-3xl text-center">
-          <h2 className="mb-4 text-[clamp(1.75rem,7.5vw,2.25rem)] leading-tight font-black text-balance [color:var(--mk-text)] md:text-3xl">
-            {t.ctaTitle}
-          </h2>
-          <p className="mb-8 text-base [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
-          <Link href={p(lang, "/signup")}>
-            <Button size="xl" variant="primary">
-              {t.ctaButton} <ArrowRight size={18} />
-            </Button>
-          </Link>
-        </Reveal>
-      </section>
+      <CTASection
+        title={t.ctaTitle}
+        sub={t.ctaSub}
+        href={p(lang, "/signup")}
+        label={t.ctaButton}
+        showLogo={false}
+      />
     </div>
   );
 }

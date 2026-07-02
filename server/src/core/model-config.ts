@@ -60,6 +60,16 @@ export const DEFAULT_ALIASES: Record<string, string> = {
   haiku: "anthropic:claude-haiku-4-5-20251001",
   gemini: "google:gemini-3-pro",
   gpt: "openai:gpt-5",
+  deepseek: "deepseek:deepseek-chat",
+  mistral: "mistral:mistral-large-3",
+  "mistral-small": "mistral:mistral-small-3.2",
+  grok: "xai:grok-4.3",
+  "grok-fast": "xai:grok-4.1-fast",
+  cohere: "cohere:command-r-plus-08-2024",
+  kimi: "moonshot:kimi-k2.6",
+  llama4: "groq:llama-4-scout-17b-16e",
+  qwen3: "groq:qwen3-32b",
+  glm: "zhipu:glm-4.7",
 };
 
 /**

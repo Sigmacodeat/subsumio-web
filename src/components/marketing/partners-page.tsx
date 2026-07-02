@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import type { Lang } from "@/content/site";
 import { UI_STRINGS } from "@/content/site";
 import { PARTNERS } from "@/content/partners";
-import { SectionHeading, ICONS } from "./chrome";
+import { SectionHeading, ICONS, CTASection, BadgePill, H1_CLASS } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal } from "./motion-system";
 
@@ -21,7 +21,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
   return (
     <div
       data-tone="light"
-      className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
       lang={lang}
     >
       {/* Hero — animate on mount */}
@@ -31,19 +31,16 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <span className="mb-8 inline-flex items-center gap-2 rounded-full border border-[color:var(--brand-tertiary)]/30 bg-[color:var(--brand-tertiary)]/10 px-3 py-1.5 text-xs font-medium text-[color:var(--brand-tertiary)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--brand-tertiary)]" />
-            {t.badge}
-          </span>
+          <BadgePill className="mb-8">{t.badge}</BadgePill>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)]">
+            <h1 className={`${H1_CLASS} mb-6`}>
               {t.h1a}
               <span className="sr-only"> </span>
               <br />
               <span className="gradient-text-premium glow-text">{t.h1b}</span>
             </h1>
           </ClipReveal>
-          <p className="mx-auto mb-4 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
+          <p className="mx-auto mb-4 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
             {t.sub}
           </p>
         </motion.div>
@@ -183,22 +180,13 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* CTA */}
-      <section
-        data-tone="dark"
-        className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
-      >
-        <Reveal variant="upLg">
-          <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
-            {t.ctaTitle}
-          </h2>
-          <p className="mb-10 text-base [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
-          <a href="mailto:partners@subsum.eu?subject=Partner%20application">
-            <Button size="xl" variant="primary">
-              {t.ctaButton} <ArrowRight size={18} />
-            </Button>
-          </a>
-        </Reveal>
-      </section>
+      <CTASection
+        title={t.ctaTitle}
+        sub={t.ctaSub}
+        href="mailto:partners@subsum.eu?subject=Partner%20application"
+        label={t.ctaButton}
+        showLogo={false}
+      />
     </div>
   );
 }

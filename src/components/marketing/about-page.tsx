@@ -1,12 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Shield, Brain, Globe, Heart } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Shield, Brain, Globe, Heart } from "lucide-react";
 import { p, type Lang } from "@/content/site";
-import { Section, SectionHeading } from "./chrome";
-import { GlowCard, AnimatedCounter, ClipReveal } from "./motion-system";
+import { Section, SectionHeading, PageHero, CTASection, ContentCard } from "./chrome";
+import { AnimatedCounter } from "./motion-system";
 
 const _deAbout = {
   badge: "Über Subsumio",
@@ -105,34 +103,7 @@ export default function AboutPage({ lang }: { lang: Lang }) {
   const c = (CONTENT as unknown as Record<string, typeof CONTENT.de>)[lang] ?? CONTENT.de;
   return (
     <>
-      <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl text-center">
-          <motion.span
-            className="brand-soft brand-text brand-border mb-6 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-          >
-            <span className="brand-bg h-1.5 w-1.5 rounded-full" />
-            {c.badge}
-          </motion.span>
-          <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className="text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]">
-              {c.h1a}
-              <br />
-              <span className="brand-text">{c.h1b}</span>
-            </h1>
-          </ClipReveal>
-          <motion.p
-            className="mx-auto mt-6 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.1 }}
-          >
-            {c.sub}
-          </motion.p>
-        </div>
-      </Section>
+      <PageHero badge={c.badge} h1a={c.h1a} h1b={c.h1b} sub={c.sub} />
 
       <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
@@ -163,13 +134,7 @@ export default function AboutPage({ lang }: { lang: Lang }) {
                   viewport={{ once: true, amount: 0.15 }}
                   transition={{ duration: 0.45, delay: i * 0.08 }}
                 >
-                  <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl">
-                    <div className="brand-soft brand-border mb-4 flex h-12 w-12 items-center justify-center rounded-xl border transition-transform duration-300 hover:scale-110">
-                      <Icon size={22} className="brand-text" />
-                    </div>
-                    <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">{v.title}</h3>
-                    <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{v.desc}</p>
-                  </GlowCard>
+                  <ContentCard icon={Icon} title={v.title} desc={v.desc} />
                 </motion.div>
               );
             })}
@@ -215,31 +180,12 @@ export default function AboutPage({ lang }: { lang: Lang }) {
         </div>
       </Section>
 
-      <Section tone="dark" className="px-4 py-28 sm:px-6 lg:px-8">
-        <motion.div
-          className="mx-auto max-w-3xl text-center"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.15 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h2 className="mb-4 text-2xl font-black tracking-tight [color:var(--mk-text)] md:text-3xl">
-            {c.ctaTitle}
-          </h2>
-          <p className="mx-auto mb-8 max-w-xl text-base [color:var(--mk-text-muted)] md:text-lg">
-            {c.ctaSub}
-          </p>
-          <Link href={p(lang, "/contact")}>
-            <Button size="lg" variant="primary" className="group min-h-[48px]">
-              {c.ctaButton}
-              <ArrowRight
-                size={16}
-                className="transition-transform duration-200 group-hover:translate-x-0.5"
-              />
-            </Button>
-          </Link>
-        </motion.div>
-      </Section>
+      <CTASection
+        title={c.ctaTitle}
+        sub={c.ctaSub}
+        href={p(lang, "/contact")}
+        label={c.ctaButton}
+      />
     </>
   );
 }

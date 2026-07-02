@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
-import { Section, SectionHeading } from "./chrome";
+import { Section, SectionHeading, H1_CLASS, H2_CTA_CLASS, BadgePill } from "./chrome";
 import { PhoneCopilot } from "./subsumio-showcase";
 import { Reveal, EASE } from "./motion-system";
 
@@ -31,7 +31,7 @@ function Shell({ lang, children }: { lang: Lang; children: React.ReactNode }) {
   return (
     <div
       data-tone="light"
-      className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
       lang={lang}
       style={styleForIndustry("legal")}
     >
@@ -61,15 +61,13 @@ function Hero({
     <Section tone="light" className="px-6 pt-16 pb-20">
       <div className="mx-auto max-w-4xl text-center">
         <motion.div {...reveal}>
-          <span className="brand-border brand-soft brand-text mb-7 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" /> {eyebrow}
-          </span>
-          <h1 className="mb-5 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]">
+          <BadgePill className="mb-7">{eyebrow}</BadgePill>
+          <h1 className={`${H1_CLASS} mb-5`}>
             {title}
             <br />
             <span className="gradient-text">{claim}</span>
           </h1>
-          <p className="mx-auto mb-9 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
+          <p className="mx-auto mb-9 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
             {sub}
           </p>
           <div className="flex flex-col justify-center gap-3 sm:flex-row">
@@ -106,7 +104,7 @@ function CtaClose({
     <Section tone="dark" className="px-4 py-24 text-center sm:px-6 lg:px-8">
       <Reveal variant="upLg" className="mx-auto max-w-3xl">
         <SubsumioMark size={56} className="mx-auto mb-7" />
-        <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">{title}</h2>
+        <h2 className={`${H2_CTA_CLASS} mb-4`}>{title}</h2>
         <p className="mb-9 text-base [color:var(--mk-text-muted)] md:text-lg">{sub}</p>
         <Link href={href}>
           <Button size="xl" variant="primary">

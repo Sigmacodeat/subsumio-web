@@ -223,6 +223,11 @@ const AT_LAWS: AtLaw[] = [
     abbr: "WEG",
     title: "Wohnungseigentumsgesetz 2002 (Österreich)",
   },
+  {
+    searchTitle: "Bundesrätegesetz",
+    abbr: "BRagG",
+    title: "Bundesrätegesetz (Österreich)",
+  },
 ];
 
 // ── Switzerland (3 core codes via Fedlex) ─────────────────────────────

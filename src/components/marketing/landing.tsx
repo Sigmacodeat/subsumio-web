@@ -122,7 +122,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 {t.badge}
               </motion.div>
               <h1
-                className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]"
+                className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)]"
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 <SplitTextReveal as="span" delay={0.2} stagger={0.08} useAnimate className="block">

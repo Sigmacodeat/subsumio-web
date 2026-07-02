@@ -197,6 +197,29 @@ export function makeSubagentHandler(deps: SubagentDeps) {
         }
         if (def.model) {
           data.model = def.model;
+        } else if (def.modelTier) {
+          // Per-specialist config override: models.specialist.<name>
+          // Takes precedence over tier defaults — enables hybrid routing
+          // where individual specialists use different providers.
+          // e.g. gbrain config set models.specialist.law-matcher cohere:command-r-plus-08-2024
+          const specialistKey = `models.specialist.${def.name}`;
+          const specialistModel = engine ? await engine.getConfig(specialistKey) : null;
+          if (specialistModel && specialistModel.trim()) {
+            data.model = await resolveModel(engine, {
+              tier: def.modelTier,
+              configKey: specialistKey,
+              fallback: TIER_DEFAULTS[def.modelTier],
+            });
+          } else {
+            // Tier-based config chain — allows users to override per-tier
+            // (e.g. models.tier.utility = deepseek:deepseek-chat)
+            const tierModel = await resolveModel(engine, {
+              tier: def.modelTier,
+              configKey: `models.tier.${def.modelTier}`,
+              fallback: TIER_DEFAULTS[def.modelTier],
+            });
+            data.model = tierModel;
+          }
         }
       }
       // Silently ignore unknown definitions so the handler falls back to

@@ -92,7 +92,6 @@ const FILES: StatuteFile[] = [
   { file: "at/tkg.md", abbr: "tkg", jurisdiction: "at" },
   { file: "at/urhg-at.md", abbr: "urhg", jurisdiction: "at" },
   // AT — construction + housing + environment
-  { file: "at/bao.md", abbr: "bao", jurisdiction: "at" },
   { file: "at/weg.md", abbr: "weg", jurisdiction: "at" },
   { file: "at/gebg.md", abbr: "gebg", jurisdiction: "at" },
   // AT — commercial + competition + energy
@@ -105,6 +104,7 @@ const FILES: StatuteFile[] = [
   // AT — social + misc
   { file: "at/mschg.md", abbr: "mschg", jurisdiction: "at" },
   { file: "at/au-strg.md", abbr: "au-strg", jurisdiction: "at" },
+  { file: "at/brag.md", abbr: "brag", jurisdiction: "at" },
   // DE
   { file: "de/ao.md", abbr: "ao", jurisdiction: "de" },
   { file: "de/bgb.md", abbr: "bgb", jurisdiction: "de" },

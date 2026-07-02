@@ -33,8 +33,10 @@ export default function Error({
           <AlertCircle size={26} className="text-rose-400" />
         </div>
         <p className="mb-3 font-mono text-xs text-rose-400">Error</p>
-        <h1 className="mb-3 text-3xl font-black [color:var(--mk-text)]">Something went wrong.</h1>
-        <p className="mb-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
+        <h1 className="mb-3 text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)]">
+          Something went wrong.
+        </h1>
+        <p className="mb-3 text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)]">
           An unexpected error occurred. Try again — or head back to safety.
         </p>
         <p className="mb-10 text-xs [color:var(--mk-text-subtle)]">

@@ -569,7 +569,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
   return (
     <div
       data-tone="light"
-      className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
       lang={lang}
     >
       {/* Hero — copy left, animated graph right */}
@@ -593,7 +593,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                 <span className="gradient-text glow-text">{t.h1b}</span>
               </h1>
             </ClipReveal>
-            <p className="mx-auto mb-8 max-w-xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg lg:mx-0">
+            <p className="mx-auto mb-8 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg lg:mx-0">
               {t.sub}
             </p>
             <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
