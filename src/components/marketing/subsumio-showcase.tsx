@@ -601,9 +601,9 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
               className="flex flex-1 items-center gap-2 rounded-full px-3 py-1.5"
               style={{ background: WA.inputField }}
             >
-              <Smile size={20} style={{ color: WA.meta }} />
+              <Smile size={20} style={{ color: WA.meta }} className="shrink-0" />
               <span
-                className="flex-1 truncate text-[13px]"
+                className="min-w-0 flex-1 truncate text-[13px]"
                 style={{ color: isUserTyping && inputText ? WA.text : WA.meta }}
               >
                 {isUserTyping && inputText ? inputText : lang === "en" ? "Message" : "Nachricht"}
@@ -618,8 +618,8 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                   </motion.span>
                 )}
               </span>
-              <Paperclip size={18} style={{ color: WA.meta }} />
-              <Camera size={18} style={{ color: WA.meta }} />
+              <Paperclip size={18} style={{ color: WA.meta }} className="shrink-0" />
+              <Camera size={18} style={{ color: WA.meta }} className="shrink-0" />
             </div>
             {/* Mic → Send arrow toggle: key-change triggers remount + scale-in.
                 No AnimatePresence = no layout gap = no shift. */}
@@ -628,7 +628,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ duration: 0.2 }}
-              className="flex h-9 w-9 items-center justify-center rounded-full"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
               style={{ background: WA.accent }}
             >
               {isUserTyping && inputText ? (
