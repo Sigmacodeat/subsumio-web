@@ -90,6 +90,17 @@ export async function getBrainHotMemoryMeta(
   rows.sort((a, b) => effectiveConfidence(b, now) - effectiveConfidence(a, now));
   rows = rows.slice(0, topK);
 
+  // v0.45: Open reconsolidation windows for injected facts (best-effort).
+  // This marks facts as "labile" so that if the agent's conversation produces
+  // new information about the same topic, reconsolidateFact can merge it.
+  for (const r of rows) {
+    try {
+      await ctx.engine.openReconsolidationWindow(r.id);
+    } catch {
+      // Best-effort — hot memory injection must not fail if reconsolidation bookkeeping fails.
+    }
+  }
+
   const payload = {
     brain_hot_memory: {
       source_id: sourceId,
@@ -104,6 +115,15 @@ export async function getBrainHotMemoryMeta(
         entity_slug: r.entity_slug,
         valid_from: r.valid_from.toISOString(),
         confidence: Number(effectiveConfidence(r, now).toFixed(3)),
+        // v0.45: Engram maturation state — lets agents distinguish
+        // silent (brand new), implicit (forming), and explicit (mature) memories.
+        activation_strength: r.activation_strength,
+        maturation_state:
+          r.activation_strength >= 0.5
+            ? "explicit"
+            : r.activation_strength > 0.03
+              ? "implicit"
+              : "silent",
       })),
     },
   };

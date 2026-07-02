@@ -8,8 +8,7 @@
  * Runs AFTER consolidate (so newly-consolidated facts get matured) and
  * BEFORE embed (so activation changes are visible to retrieval).
  *
- * Default: opt-in via config `cycle.engram_maturation.enabled = true`.
- * When disabled, the phase is a no-op.
+ * Always enabled — this is a core memory phase, not opt-in.
  */
 
 import type { BrainEngine } from "../engine.ts";

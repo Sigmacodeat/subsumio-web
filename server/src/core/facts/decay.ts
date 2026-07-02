@@ -37,7 +37,14 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
  *
  *   - If the fact is expired (`expired_at` in the past), returns 0.
  *   - If `valid_until` is set and `now` is past it, returns 0.
- *   - Otherwise: `confidence × exp(-age_days / halflife_days)` clamped to [0,1].
+ *   - Otherwise: `confidence × exp(-age_days / halflife_days) × activation_strength`
+ *     clamped to [0,1].
+ *
+ * v0.45: activation_strength (engram maturation sigmoid) is multiplied in
+ * so that "silent" memories (activation ~0) have near-zero effective
+ * confidence, while "explicit" memories (activation ~1) are unaffected.
+ * This means brand-new facts don't dominate retrieval until they've had
+ * time to mature — mirroring the hippocampal encoding→consolidation delay.
  *
  * Pure function. No side effects. No I/O.
  */
@@ -46,13 +53,35 @@ export function effectiveConfidence(fact: FactRow, now: Date = new Date()): numb
   if (fact.valid_until && fact.valid_until.getTime() <= now.getTime()) return 0;
 
   const ageMs = now.getTime() - fact.valid_from.getTime();
-  if (ageMs < 0) return clamp01(fact.confidence);
+  if (ageMs < 0) return clamp01(fact.confidence * activationFactor(fact));
 
   const ageDays = ageMs / MS_PER_DAY;
   const halflife = HALFLIFE_DAYS[fact.kind];
   // exp(-age/halflife) — at age=halflife returns ~0.368.
   const decayed = fact.confidence * Math.exp(-ageDays / halflife);
-  return clamp01(decayed);
+  return clamp01(decayed * activationFactor(fact));
+}
+
+/**
+ * v0.45 — Activation strength factor for effective confidence.
+ * Facts with activation_strength = 0 (brand new / silent) contribute ~0
+ * to effective confidence. Facts with activation_strength = 1 (explicit /
+ * mature) are unaffected. Pre-v119 facts that were backfilled to 1.0
+ * are also unaffected.
+ */
+function activationFactor(fact: FactRow): number {
+  // If activation_strength is 0 but the fact is old (pre-v119 backfill
+  // hasn't run yet), treat as fully mature to avoid zeroing all legacy
+  // facts before the first engram_maturation cycle runs.
+  if (fact.activation_strength === 0) {
+    // Check if the fact is older than the maturation half-life — if so,
+    // it should have been backfilled, so treat it as mature.
+    const ageMs = Date.now() - fact.created_at.getTime();
+    const ageHours = ageMs / (1000 * 60 * 60);
+    if (ageHours > 168) return 1.0; // 7 days — backfill threshold
+    return 0.0; // Genuinely new silent fact
+  }
+  return fact.activation_strength;
 }
 
 function clamp01(x: number): number {

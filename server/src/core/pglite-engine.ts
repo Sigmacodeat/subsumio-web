@@ -4000,13 +4000,15 @@ export class PGLiteEngine implements BrainEngine {
                  embedding, embedded_at,
                  row_num, source_markdown_slug,
                  claim_metric, claim_value, claim_unit, claim_period,
-                 event_type
+                 event_type,
+                 activation_strength
                ) VALUES (
                  $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,
                  NULL, $13,
                  $14, $15,
                  $16, $17, $18, $19,
-                 $20
+                 $20,
+                 0.0
                ) RETURNING id`
             : `INSERT INTO facts (
                  source_id, entity_slug, fact, kind, visibility, notability, context,
@@ -4014,13 +4016,15 @@ export class PGLiteEngine implements BrainEngine {
                  embedding, embedded_at,
                  row_num, source_markdown_slug,
                  claim_metric, claim_value, claim_unit, claim_period,
-                 event_type
+                 event_type,
+                 activation_strength
                ) VALUES (
                  $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,
                  $13::vector, $14,
                  $15, $16,
                  $17, $18, $19, $20,
-                 $21
+                 $21,
+                 0.0
                ) RETURNING id`,
           embedStr === null
             ? [
@@ -4093,7 +4097,7 @@ export class PGLiteEngine implements BrainEngine {
       ...opts,
       whereClauses: [`entity_slug = $entitySlug`],
       whereParams: { entitySlug },
-      order: "valid_from DESC, id DESC",
+      order: "activation_strength DESC, valid_from DESC, id DESC",
     });
   }
 
@@ -4112,7 +4116,7 @@ export class PGLiteEngine implements BrainEngine {
       ...opts,
       whereClauses: where,
       whereParams: params,
-      order: "created_at DESC, id DESC",
+      order: "activation_strength DESC, created_at DESC, id DESC",
     });
   }
 
@@ -4125,7 +4129,7 @@ export class PGLiteEngine implements BrainEngine {
       ...opts,
       whereClauses: [`source_session = $sessionId`],
       whereParams: { sessionId },
-      order: "created_at DESC, id DESC",
+      order: "activation_strength DESC, created_at DESC, id DESC",
     });
   }
 
@@ -4401,6 +4405,10 @@ export class PGLiteEngine implements BrainEngine {
     return result.rows.map(rowToFact);
   }
 
+  async clearLabileWindow(id: number): Promise<void> {
+    await this.db.query(`UPDATE facts SET labile_until = NULL WHERE id = $1`, [id]);
+  }
+
   async findMaturingFacts(sourceId: string, opts?: { limit?: number }): Promise<FactRow[]> {
     const limit = opts?.limit ?? 500;
     const result = await this.db.query<FactRowSqlShape>(
@@ -4499,6 +4507,10 @@ export class PGLiteEngine implements BrainEngine {
     if (opts.visibility && opts.visibility.length > 0) {
       whereParts.push(`visibility = ANY($visibility)`);
       params.visibility = opts.visibility;
+    }
+    if (opts.minActivation != null) {
+      whereParts.push(`activation_strength >= $minActivation`);
+      params.minActivation = opts.minActivation;
     }
     for (const c of opts.whereClauses ?? []) whereParts.push(c);
     Object.assign(params, opts.whereParams ?? {});

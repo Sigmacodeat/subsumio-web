@@ -4586,6 +4586,20 @@ const recall: Operation = {
 
     if (grep) rows = rows.filter((r) => r.fact.toLowerCase().includes(grep));
 
+    // v0.45: Open reconsolidation windows for retrieved facts (best-effort).
+    // This marks the facts as "labile" — if new information comes in within
+    // the labile window, reconsolidateFact can merge it. Errors are absorbed
+    // so retrieval never fails due to reconsolidation bookkeeping.
+    if (rows.length > 0 && !includeExpired) {
+      for (const r of rows) {
+        try {
+          await ctx.engine.openReconsolidationWindow(r.id);
+        } catch {
+          // Best-effort — retrieval must not fail if reconsolidation bookkeeping fails.
+        }
+      }
+    }
+
     // v0.32: optional pending-consolidation count piggy-backed on the recall
     // response. Single round trip on thin-client; omitted when not requested
     // so existing callers see no shape change.
@@ -4622,6 +4636,12 @@ const recall: Operation = {
         source_session: r.source_session,
         confidence: r.confidence,
         created_at: r.created_at.toISOString(),
+        // v0.45: Engram maturation + reconsolidation fields.
+        activation_strength: r.activation_strength,
+        matured_at: r.matured_at?.toISOString() ?? null,
+        labile_until: r.labile_until?.toISOString() ?? null,
+        reconsolidation_count: r.reconsolidation_count,
+        last_accessed_at: r.last_accessed_at?.toISOString() ?? null,
       })),
       total: rows.length,
       ...(pending_consolidation_count !== undefined ? { pending_consolidation_count } : {}),

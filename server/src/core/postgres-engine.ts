@@ -4056,14 +4056,16 @@ export class PostgresEngine implements BrainEngine {
             embedding, embedded_at,
             row_num, source_markdown_slug,
             claim_metric, claim_value, claim_unit, claim_period,
-            event_type
+            event_type,
+            activation_strength
           ) VALUES (
             ${ctx.source_id}, ${entitySlug}, ${input.fact}, ${kind}, ${visibility}, ${notability}, ${context},
             ${validFrom}, ${validUntil}, ${input.source}, ${sourceSession}, ${confidence},
             ${embedLit === null ? null : tx.unsafe(`'${embedLit}'${castSuffix}`)}, ${embeddedAt},
             ${input.row_num}, ${input.source_markdown_slug},
             ${claimMetric}, ${claimValue}, ${claimUnit}, ${claimPeriod},
-            ${eventType}
+            ${eventType},
+            0.0
           ) RETURNING id
         `;
         out.push(Number(ins[0].id));
@@ -4092,6 +4094,7 @@ export class PostgresEngine implements BrainEngine {
     const activeOnly = opts?.activeOnly !== false;
     const kinds = opts?.kinds && opts.kinds.length > 0 ? opts.kinds : null;
     const visibility = opts?.visibility && opts.visibility.length > 0 ? opts.visibility : null;
+    const minActivation = opts?.minActivation ?? null;
     const rows = await sql<FactRowSqlShape[]>`
       SELECT * FROM facts
       WHERE source_id = ${source_id}
@@ -4099,7 +4102,8 @@ export class PostgresEngine implements BrainEngine {
         ${activeOnly ? sql`AND expired_at IS NULL` : sql``}
         ${kinds ? sql`AND kind = ANY(${kinds}::text[])` : sql``}
         ${visibility ? sql`AND visibility = ANY(${visibility}::text[])` : sql``}
-      ORDER BY valid_from DESC, id DESC
+        ${minActivation !== null ? sql`AND activation_strength >= ${minActivation}` : sql``}
+      ORDER BY activation_strength DESC, valid_from DESC, id DESC
       LIMIT ${limit} OFFSET ${offset}
     `;
     return rows.map(rowToFactPg);
@@ -4117,6 +4121,7 @@ export class PostgresEngine implements BrainEngine {
     const kinds = opts?.kinds && opts.kinds.length > 0 ? opts.kinds : null;
     const visibility = opts?.visibility && opts.visibility.length > 0 ? opts.visibility : null;
     const entitySlug = opts?.entitySlug ?? null;
+    const minActivation = opts?.minActivation ?? null;
     const rows = await sql<FactRowSqlShape[]>`
       SELECT * FROM facts
       WHERE source_id = ${source_id}
@@ -4125,7 +4130,8 @@ export class PostgresEngine implements BrainEngine {
         ${activeOnly ? sql`AND expired_at IS NULL` : sql``}
         ${kinds ? sql`AND kind = ANY(${kinds}::text[])` : sql``}
         ${visibility ? sql`AND visibility = ANY(${visibility}::text[])` : sql``}
-      ORDER BY created_at DESC, id DESC
+        ${minActivation !== null ? sql`AND activation_strength >= ${minActivation}` : sql``}
+      ORDER BY activation_strength DESC, created_at DESC, id DESC
       LIMIT ${limit} OFFSET ${offset}
     `;
     return rows.map(rowToFactPg);
@@ -4142,6 +4148,7 @@ export class PostgresEngine implements BrainEngine {
     const activeOnly = opts?.activeOnly !== false;
     const kinds = opts?.kinds && opts.kinds.length > 0 ? opts.kinds : null;
     const visibility = opts?.visibility && opts.visibility.length > 0 ? opts.visibility : null;
+    const minActivation = opts?.minActivation ?? null;
     const rows = await sql<FactRowSqlShape[]>`
       SELECT * FROM facts
       WHERE source_id = ${source_id}
@@ -4149,7 +4156,8 @@ export class PostgresEngine implements BrainEngine {
         ${activeOnly ? sql`AND expired_at IS NULL` : sql``}
         ${kinds ? sql`AND kind = ANY(${kinds}::text[])` : sql``}
         ${visibility ? sql`AND visibility = ANY(${visibility}::text[])` : sql``}
-      ORDER BY created_at DESC, id DESC
+        ${minActivation !== null ? sql`AND activation_strength >= ${minActivation}` : sql``}
+      ORDER BY activation_strength DESC, created_at DESC, id DESC
       LIMIT ${limit} OFFSET ${offset}
     `;
     return rows.map(rowToFactPg);
@@ -4317,6 +4325,13 @@ export class PostgresEngine implements BrainEngine {
       LIMIT ${limit}
     `;
     return rows.map(rowToFactPg);
+  }
+
+  async clearLabileWindow(id: number): Promise<void> {
+    const sql = this.sql;
+    await sql`
+      UPDATE facts SET labile_until = NULL WHERE id = ${id}
+    `;
   }
 
   async findMaturingFacts(sourceId: string, opts?: { limit?: number }): Promise<FactRow[]> {

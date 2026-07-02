@@ -603,6 +603,13 @@ export interface FactListOpts {
    * are returned. Remote (untrusted) callers must supply ['world'].
    */
   visibility?: FactVisibility[];
+  /**
+   * v0.45 — Minimum activation strength threshold. When set, facts with
+   * activation_strength below this value are excluded from results.
+   * Use 0.03 to exclude "silent" memories, 0.5 to only return "explicit" ones.
+   * Default: undefined (no filtering — all activation levels returned).
+   */
+  minActivation?: number;
 }
 
 /** Per-source operational health snapshot consumed by `gbrain doctor`. */
@@ -1892,6 +1899,14 @@ export interface BrainEngine {
    * Used by the reconsolidation_sweep cycle phase to clean up.
    */
   findExpiredLabileFacts(sourceId: string, opts?: { limit?: number }): Promise<FactRow[]>;
+
+  /**
+   * v0.45 — Unconditionally clear the labile window on a fact.
+   * Sets labile_until = NULL regardless of whether the window is still
+   * active or expired. Used by the reconsolidation_sweep cycle phase to
+   * freeze memories whose labile windows have expired without any update.
+   */
+  clearLabileWindow(id: number): Promise<void>;
 
   /**
    * v0.45 — Find facts that need activation strength updates.

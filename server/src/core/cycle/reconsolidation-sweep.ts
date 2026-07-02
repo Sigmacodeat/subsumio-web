@@ -43,18 +43,10 @@ export async function runPhaseReconsolidationSweep(
       // Clear labile_until for expired facts — they're frozen again.
       for (const fact of expired) {
         if (opts.signal?.aborted) break;
-        // Just clear the labile window without any content update.
-        // This is the "no-op reconsolidation" — the memory was retrieved,
-        // the labile window opened, but no new information was merged.
-        // The memory is re-consolidated as-is.
-        await engine.updateFactActivation(fact.id, fact.activation_strength);
-        // Clear labile_until by opening a zero-minute window that immediately
-        // expires — but that's hacky. Instead, we use a direct SQL approach
-        // via the engine's existing methods. The cleanest way is to call
-        // reconsolidateFact with an empty update, which clears labile_until.
-        const ok = await engine.reconsolidateFact(fact.id, {});
-        if (ok) totalSwept++;
-        else totalStillLabile++;
+        // The labile window expired without any update being applied.
+        // Clear it unconditionally — the memory is re-consolidated as-is.
+        await engine.clearLabileWindow(fact.id);
+        totalSwept++;
       }
     }
 

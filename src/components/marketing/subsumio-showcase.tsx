@@ -363,7 +363,10 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
         </div>
 
         {/* Screen */}
-        <div className="relative overflow-hidden rounded-[2.4rem] bg-[#0b141a]">
+        <div
+          className="relative overflow-hidden rounded-[2.4rem] bg-[#0b141a] transition-opacity duration-[400ms] ease-in-out"
+          style={{ opacity: fadingOut ? 0 : 1 }}
+        >
           {/* WhatsApp chat background pattern */}
           <div
             className="absolute inset-0 opacity-[0.03]"
@@ -400,8 +403,8 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
           {/* Messages — auto-scrolling, hidden scrollbar */}
           <div
             ref={scrollRef}
-            className="relative z-10 h-[340px] space-y-2 overflow-y-auto px-3 py-3 transition-opacity duration-400 ease-in-out [&::-webkit-scrollbar]:hidden"
-            style={{ scrollbarWidth: "none", opacity: fadingOut ? 0 : 1 }}
+            className="relative z-10 h-[340px] space-y-2 overflow-y-auto px-3 py-3 [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: "none" }}
           >
             {chat.slice(0, visibleCount).map((m, i) => {
               const isUser = m.from === "user";
@@ -450,72 +453,98 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                           />
                         </svg>
                       </span>
-                      <div className="pr-12 whitespace-pre-line">
+                      <div className="whitespace-pre-line">
                         {m.text}
-
-                        {"file" in m && m.file && (
-                          <div className="mt-2 flex items-center gap-2 rounded-lg bg-black/10 px-2 py-1.5">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#2a3b45]">
-                              <FileText size={16} style={{ color: WA.accent }} />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="truncate text-[11px] font-medium">{m.file}</p>
-                              <p className="text-[10px]" style={{ color: WA.meta }}>
-                                PDF · 1.2 MB
-                              </p>
-                            </div>
-                          </div>
+                        {/* Inline spacer — only takes space on the last text line,
+                            so the timestamp doesn't overlap. WhatsApp does the same. */}
+                        {!("file" in m && m.file) && !("chips" in m && m.chips) && (
+                          <span className="inline-block w-12 select-none" aria-hidden="true">
+                            {"\u200B"}
+                          </span>
                         )}
+                      </div>
 
-                        {"chips" in m && m.chips && (
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            {m.chips.map((ch, idx) => {
-                              const isTapped = tappedChip === idx && visibleCount === i + 1;
-                              return (
-                                <motion.span
-                                  key={ch}
-                                  animate={isTapped ? { scale: [1, 0.92, 1] } : { scale: 1 }}
-                                  transition={{ duration: 0.3 }}
-                                  className="rounded-full px-3 py-1 text-[11px] font-semibold"
-                                  style={{
-                                    background: isTapped
+                      {"file" in m && m.file && (
+                        <div className="mt-2 flex items-center gap-2 rounded-lg bg-black/10 px-2 py-1.5">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#2a3b45]">
+                            <FileText size={16} style={{ color: WA.accent }} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-[11px] font-medium">{m.file}</p>
+                            <p className="text-[10px]" style={{ color: WA.meta }}>
+                              PDF · 1.2 MB
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {"chips" in m && m.chips && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {m.chips.map((ch, idx) => {
+                            const isTapped = tappedChip === idx && visibleCount === i + 1;
+                            return (
+                              <motion.span
+                                key={ch}
+                                animate={isTapped ? { scale: [1, 0.92, 1] } : { scale: 1 }}
+                                transition={{ duration: 0.3 }}
+                                className="rounded-full px-3 py-1 text-[11px] font-semibold"
+                                style={{
+                                  background: isTapped
+                                    ? WA.accent
+                                    : idx === 0
                                       ? WA.accent
-                                      : idx === 0
-                                        ? WA.accent
-                                        : "transparent",
-                                    color: idx === 0 || isTapped ? "#0b0f1a" : WA.text,
-                                    border:
-                                      idx === 0 && !isTapped ? "none" : `1px solid ${WA.meta}40`,
-                                    opacity: isTapped
-                                      ? 1
-                                      : tappedChip !== null && visibleCount === i + 1
-                                        ? 0.5
-                                        : 1,
-                                  }}
-                                >
-                                  {ch}
-                                </motion.span>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
+                                      : "transparent",
+                                  color: idx === 0 || isTapped ? "#0b0f1a" : WA.text,
+                                  border:
+                                    idx === 0 && !isTapped ? "none" : `1px solid ${WA.meta}40`,
+                                  opacity: isTapped
+                                    ? 1
+                                    : tappedChip !== null && visibleCount === i + 1
+                                      ? 0.5
+                                      : 1,
+                                }}
+                              >
+                                {ch}
+                              </motion.span>
+                            );
+                          })}
+                        </div>
+                      )}
 
-                      {/* timestamp + progressive read receipts */}
-                      <div className="absolute right-1.5 bottom-0.5 flex items-center gap-0.5">
-                        <span className="text-[10px]" style={{ color: WA.meta }}>
-                          {times[i]}
-                        </span>
-                        {isUser && readStatus[i] === "sent" && (
-                          <Check size={11} style={{ color: WA.meta }} />
-                        )}
-                        {isUser && readStatus[i] === "delivered" && (
-                          <CheckCheck size={11} style={{ color: WA.meta }} />
-                        )}
-                        {isUser && readStatus[i] === "read" && (
-                          <CheckCheck size={11} style={{ color: WA.read }} />
-                        )}
-                      </div>
+                      {/* timestamp + progressive read receipts.
+                          For plain text: absolute at bottom-right (spacer reserves space).
+                          For file/chips: in-flow below the attachment. */}
+                      {("file" in m && m.file) || ("chips" in m && m.chips) ? (
+                        <div className="mt-1 flex items-center justify-end gap-0.5">
+                          <span className="text-[10px]" style={{ color: WA.meta }}>
+                            {times[i]}
+                          </span>
+                          {isUser && readStatus[i] === "sent" && (
+                            <Check size={11} style={{ color: WA.meta }} />
+                          )}
+                          {isUser && readStatus[i] === "delivered" && (
+                            <CheckCheck size={11} style={{ color: WA.meta }} />
+                          )}
+                          {isUser && readStatus[i] === "read" && (
+                            <CheckCheck size={11} style={{ color: WA.read }} />
+                          )}
+                        </div>
+                      ) : (
+                        <div className="absolute right-1.5 bottom-0.5 flex items-center gap-0.5">
+                          <span className="text-[10px]" style={{ color: WA.meta }}>
+                            {times[i]}
+                          </span>
+                          {isUser && readStatus[i] === "sent" && (
+                            <Check size={11} style={{ color: WA.meta }} />
+                          )}
+                          {isUser && readStatus[i] === "delivered" && (
+                            <CheckCheck size={11} style={{ color: WA.meta }} />
+                          )}
+                          {isUser && readStatus[i] === "read" && (
+                            <CheckCheck size={11} style={{ color: WA.read }} />
+                          )}
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 </div>
@@ -568,7 +597,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                 style={{ color: isUserTyping && inputText ? WA.text : WA.meta }}
               >
                 {isUserTyping && inputText ? inputText : lang === "en" ? "Message" : "Nachricht"}
-                {isUserTyping && (
+                {isUserTyping && inputText && (
                   <motion.span
                     animate={{ opacity: [1, 0, 1] }}
                     transition={{ duration: 0.8, repeat: Infinity }}
@@ -582,34 +611,22 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
               <Paperclip size={18} style={{ color: WA.meta }} />
               <Camera size={18} style={{ color: WA.meta }} />
             </div>
-            {/* Mic → Send arrow toggle: when user is typing, show send arrow */}
-            <AnimatePresence mode="wait">
+            {/* Mic → Send arrow toggle: key-change triggers remount + scale-in.
+                No AnimatePresence = no layout gap = no shift. */}
+            <motion.div
+              key={isUserTyping && inputText ? "send" : "mic"}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.2 }}
+              className="flex h-9 w-9 items-center justify-center rounded-full"
+              style={{ background: WA.accent }}
+            >
               {isUserTyping && inputText ? (
-                <motion.div
-                  key="send"
-                  initial={{ scale: 0, rotate: -90 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  exit={{ scale: 0, rotate: 90 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex h-9 w-9 items-center justify-center rounded-full"
-                  style={{ background: WA.accent }}
-                >
-                  <Send size={18} className="text-[#0b0f1a]" />
-                </motion.div>
+                <Send size={18} className="text-[#0b0f1a]" />
               ) : (
-                <motion.div
-                  key="mic"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex h-9 w-9 items-center justify-center rounded-full"
-                  style={{ background: WA.accent }}
-                >
-                  <Mic size={18} className="text-[#0b0f1a]" />
-                </motion.div>
+                <Mic size={18} className="text-[#0b0f1a]" />
               )}
-            </AnimatePresence>
+            </motion.div>
           </div>
         </div>
       </div>
