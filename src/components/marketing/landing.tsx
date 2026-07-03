@@ -154,14 +154,20 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 </SplitTextReveal>
               </h1>
 
-              {/* Hero tagline — the outcome promise (already in content, was unused) */}
+              {/* Hero tagline — the outcome promise with gradient accent */}
               <motion.p
                 initial={reduce ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={
                   reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.35 }
                 }
-                className="mb-4 text-lg font-semibold [color:var(--brand-text)] md:text-xl"
+                className="mb-4 text-lg font-semibold md:text-xl"
+                style={{
+                  background: "linear-gradient(90deg, var(--brand-primary), var(--brand-tertiary))",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
               >
                 {t.heroTagline}
               </motion.p>
@@ -241,7 +247,8 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                           ? { duration: 0 }
                           : { delay: 0.8 + i * 0.08, duration: 0.3, ease: EASE.out }
                       }
-                      className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 text-xs [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
+                      whileHover={reduce ? undefined : { y: -2 }}
+                      className="inline-flex cursor-default items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 text-xs [color:var(--mk-text-muted)] transition-colors [background:var(--mk-surface)] hover:[border-color:var(--brand-border)] hover:[color:var(--mk-text)]"
                     >
                       <Icon size={12} className="text-[var(--brand-secondary)]" />
                       {item.label}
@@ -263,25 +270,36 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             </div>
           </div>
 
-          {/* Trust strip — 5 badges, hero closing → marquee transition */}
+          {/* Trust strip — 5 badges with gradient divider, hero closing → marquee transition */}
           <motion.div
             initial={reduce ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 1 }}
-            className="relative z-10 mx-auto mt-16 flex max-w-4xl flex-wrap items-center justify-center gap-x-6 gap-y-3 border-t [border-color:var(--mk-border)] pt-8"
+            className="relative z-10 mx-auto mt-16 max-w-4xl pt-8"
           >
-            {t.trustStripItems.map((item) => {
-              const Icon = TRUST_ICONS[item.icon] ?? ShieldCheck;
-              return (
-                <span
-                  key={item.label}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium [color:var(--mk-text-muted)]"
-                >
-                  <Icon size={14} className="text-[var(--brand-secondary)]" />
-                  {item.label}
-                </span>
-              );
-            })}
+            {/* gradient divider — fades from transparent to border to transparent */}
+            <div
+              aria-hidden
+              className="absolute inset-x-0 top-0 h-px"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, var(--mk-border-strong) 20%, var(--mk-border-strong) 80%, transparent)",
+              }}
+            />
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+              {t.trustStripItems.map((item) => {
+                const Icon = TRUST_ICONS[item.icon] ?? ShieldCheck;
+                return (
+                  <span
+                    key={item.label}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium [color:var(--mk-text-muted)] transition-colors hover:[color:var(--mk-text)]"
+                  >
+                    <Icon size={14} className="text-[var(--brand-secondary)]" />
+                    {item.label}
+                  </span>
+                );
+              })}
+            </div>
           </motion.div>
         </Section>
 

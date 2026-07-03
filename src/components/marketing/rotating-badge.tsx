@@ -34,7 +34,14 @@ export default function RotatingBadge({
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
+      {/* pulsing dot — signals live/active state */}
+      <motion.span
+        animate={
+          reduce || items.length <= 1 ? undefined : { scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }
+        }
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]"
+      />
       <div className="relative inline-block h-4 overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.span
@@ -49,6 +56,23 @@ export default function RotatingBadge({
           </motion.span>
         </AnimatePresence>
       </div>
+      {/* progress bar — visual cue for time until next rotation */}
+      {items.length > 1 && !reduce && (
+        <motion.div
+          key={`prog-${index}-${paused}`}
+          className="ml-1 h-0.5 w-6 overflow-hidden rounded-full [background:var(--brand-border)]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
+        >
+          <motion.div
+            className="h-full rounded-full [background:var(--brand-secondary)]"
+            initial={{ width: "0%" }}
+            animate={{ width: paused ? "0%" : "100%" }}
+            transition={{ duration: paused ? 0 : intervalMs / 1000, ease: "linear" }}
+          />
+        </motion.div>
+      )}
     </div>
   );
 }
