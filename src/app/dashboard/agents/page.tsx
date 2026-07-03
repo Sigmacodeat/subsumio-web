@@ -460,7 +460,7 @@ function JobDetail({
       )}
 
       {job.tokens && (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
             <div className="font-mono text-lg font-semibold text-[color:var(--ds-text)]">
               {job.tokens.input.toLocaleString()}

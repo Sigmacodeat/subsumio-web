@@ -84,6 +84,7 @@ export function VoiceToPromptButton({ onTranscript, className, lang }: VoiceToPr
               </h3>
               <button
                 onClick={handleClose}
+                aria-label="Spracheingabe schließen"
                 className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
               >
                 <X size={16} />

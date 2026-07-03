@@ -248,7 +248,7 @@ export default function CalendarExportPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">Anstehend</div>
           <div className="text-xl font-bold text-blue-600">{upcoming.length}</div>

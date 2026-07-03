@@ -168,9 +168,7 @@ export function SignatureQuickCreateDialog({
               <Input
                 id="quick-sig-doc"
                 {...sigForm.register("documentName")}
-                placeholder={
-                  lang === "en" ? "e.g. Mandate agreement GmbH" : "z.B. Mandatsvereinbarung GmbH"
-                }
+                placeholder={t("sigqc.placeholder_title")}
                 autoFocus
               />
               {sigForm.formState.errors.documentName && (

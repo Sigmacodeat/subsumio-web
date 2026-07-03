@@ -521,7 +521,7 @@ function UploadPageInner() {
       />
 
       {/* ── Mode Selector: Two-tier architecture (Akte vs. Kanzlei-Wissen) ── */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <button
           onClick={() => setMode("case")}
           className={cn(
@@ -1030,7 +1030,7 @@ function UploadPageInner() {
           </div>
           <p className="mb-4 text-sm text-[color:var(--ds-text-muted)]">{t("upload.indexing")}</p>
           <div className="flex gap-3">
-            <Button size="sm" variant="success" onClick={() => router.push("/dashboard/query")}>
+            <Button size="sm" variant="success" onClick={() => router.push("/dashboard/chat")}>
               {t("upload.ask_brain")}
             </Button>
             <Button size="sm" variant="secondary" onClick={() => router.push("/dashboard/brain")}>

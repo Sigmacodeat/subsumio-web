@@ -221,7 +221,7 @@ export default function AIModelSettingsPage() {
               </p>
 
               {/* Stats row */}
-              <div className="mb-4 grid grid-cols-3 gap-3">
+              <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5">
                   <div className="mb-1 flex items-center gap-1.5">
                     <Gauge size={11} className="text-[color:var(--ds-text-subtle)]" />

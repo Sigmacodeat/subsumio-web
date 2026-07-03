@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useToast } from "@/components/ui/toast";
 import {
   Share2,
   Plus,
@@ -45,6 +46,7 @@ const resourceIcon: Record<string, typeof FileText> = {
 };
 
 export default function SharedSpacesPage() {
+  const { addToast } = useToast();
   const [spaces, setSpaces] = useState<SharedSpace[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,8 +93,10 @@ export default function SharedSpacesPage() {
       }
       await load();
       setShowCreate(false);
+      addToast({ type: "success", description: "Shared Space erstellt" });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erstellung fehlgeschlagen");
+      addToast({ type: "error", description: "Erstellung fehlgeschlagen" });
     } finally {
       setCreating(false);
     }

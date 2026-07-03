@@ -67,6 +67,19 @@ jobs:
       - run: bun install
       - run: bun run test:unit
 
+  playwright-a11y:
+    name: Playwright + axe Accessibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bunx playwright install --with-deps chromium
+      - name: Run Playwright a11y + keyboard + visual tests
+        run: bun run test:e2e -- --grep "accessibility|a11y|keyboard|Keyboard|visual|Visual"
+        env:
+          CI: "true"
+
   check-resolvable:
     name: Skill Tree (Reachability/MECE/DRY)
     runs-on: ubuntu-latest
@@ -156,6 +169,7 @@ jobs:
         build,
         typecheck,
         test,
+        playwright-a11y,
         check-resolvable,
         server-verify,
         release-gate-eval,
@@ -172,6 +186,7 @@ jobs:
                 "${{ needs.build.result }}" != "success" || \
                 "${{ needs.typecheck.result }}" != "success" || \
                 "${{ needs.test.result }}" != "success" || \
+                "${{ needs.playwright-a11y.result }}" != "success" || \
                 "${{ needs.check-resolvable.result }}" != "success" || \
                 "${{ needs.server-verify.result }}" != "success" || \
                 "${{ needs.release-gate-eval.result }}" != "success" || \

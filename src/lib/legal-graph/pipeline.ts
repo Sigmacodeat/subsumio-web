@@ -23,12 +23,7 @@
  */
 
 import type { Pool } from "pg";
-import {
-  hybridSearch,
-  searchCommentaries,
-  type HybridSearchResult,
-  type CommentarySearchResult,
-} from "./search";
+import { hybridSearch, searchCommentaries, type CommentarySearchResult } from "./search";
 import { embedQuery, checkEmbeddingAvailability } from "./embedding";
 import { rerankResults, type RerankedResult } from "./reranking";
 import { graphSearch } from "./graph-embeddings";

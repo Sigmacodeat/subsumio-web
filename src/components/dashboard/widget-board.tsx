@@ -114,7 +114,7 @@ function SortableWidget({
           >
             <GripVertical size={13} />
           </button>
-          <span className="flex items-center gap-1 text-[11px] font-medium text-[color:var(--ds-text-muted)]">
+          <span className="flex items-center gap-1 text-xs font-medium text-[color:var(--ds-text-muted)]">
             <Icon size={11} />
             {label}
           </span>

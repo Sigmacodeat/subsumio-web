@@ -288,18 +288,42 @@ export function MobileTabBar({
                   setMoreOpen(false);
                 }}
               />
+              <MoreSheetButton
+                icon={FileCheck}
+                label={t("topbar.create_contract")}
+                onClick={() => {
+                  window.dispatchEvent(new Event("subsumio:create-contract"));
+                  setMoreOpen(false);
+                }}
+              />
+              <MoreSheetButton
+                icon={Library}
+                label={t("topbar.create_clause")}
+                onClick={() => {
+                  window.dispatchEvent(new Event("subsumio:create-clause"));
+                  setMoreOpen(false);
+                }}
+              />
+              <MoreSheetButton
+                icon={PenTool}
+                label={t("topbar.create_draft")}
+                onClick={() => {
+                  window.location.href = "/dashboard/drafting";
+                  setMoreOpen(false);
+                }}
+              />
             </div>
           </div>
 
           {/* Categorized navigation */}
           <div className="max-h-[50vh] overflow-y-auto px-3 py-3">
-            {/* Cases & Clients */}
-            <MoreSheetSection title={t("nav.section.cases_clients")}>
+            {/* Mandanten & Kommunikation */}
+            <MoreSheetSection title={t("nav.section.clients_comm")}>
               <MoreSheetLink href="/dashboard/contacts" icon={Users} label={t("nav.contacts")} />
               <MoreSheetLink href="/dashboard/opponents" icon={Scale} label={t("nav.opponents")} />
               <MoreSheetLink
                 href="/dashboard/kollisionspruefung"
-                icon={Scale}
+                icon={ShieldCheck}
                 label={t("nav.kollisionspruefung")}
               />
               <MoreSheetLink
@@ -312,25 +336,21 @@ export function MobileTabBar({
                 icon={FileClock}
                 label={t("nav.document_requests")}
               />
-            </MoreSheetSection>
-
-            {/* Communication */}
-            <MoreSheetSection title={t("nav.section.communication")}>
-              <MoreSheetLink
-                href="/dashboard/chat"
-                icon={MessageSquareText}
-                label={t("nav.chat")}
-              />
               <MoreSheetLink href="/dashboard/bea" icon={Mail} label={t("nav.bea")} />
               <MoreSheetLink
                 href="/dashboard/whatsapp"
                 icon={MessageCircle}
                 label={t("nav.whatsapp")}
               />
+              <MoreSheetLink
+                href="/dashboard/email-import"
+                icon={FileText}
+                label={t("nav.email_import")}
+              />
             </MoreSheetSection>
 
-            {/* Documents & Drafting */}
-            <MoreSheetSection title={t("nav.section.documents_drafting")}>
+            {/* Dokumente & Entwurf */}
+            <MoreSheetSection title={t("nav.section.docs_drafting")}>
               <MoreSheetLink href="/dashboard/vault" icon={FolderOpen} label={t("nav.vault")} />
               <MoreSheetLink href="/dashboard/upload" icon={Upload} label={t("nav.upload")} />
               <MoreSheetLink href="/dashboard/drafting" icon={PenTool} label={t("nav.drafting")} />
@@ -350,19 +370,17 @@ export function MobileTabBar({
                 label={t("nav.signature")}
               />
               <MoreSheetLink
-                href="/dashboard/litigation"
-                icon={Gavel}
-                label={t("nav.litigation")}
-              />
-              <MoreSheetLink
                 href="/dashboard/deep-analysis"
                 icon={FileSearch}
                 label={t("nav.deep_analysis")}
               />
             </MoreSheetSection>
 
-            {/* Research & Knowledge */}
-            <MoreSheetSection title={t("nav.section.research_knowledge")}>
+            {/* Wissen & Recherche */}
+            <MoreSheetSection title={t("nav.section.knowledge")}>
+              <MoreSheetLink href="/dashboard/brain" icon={Brain} label={t("nav.brain")} />
+              <MoreSheetLink href="/dashboard/graph" icon={Network} label={t("nav.graph")} />
+              <MoreSheetLink href="/dashboard/sources" icon={Database} label={t("nav.sources")} />
               <MoreSheetLink
                 href="/dashboard/research"
                 icon={Globe}
@@ -374,38 +392,29 @@ export function MobileTabBar({
                 label={t("nav.rechtsprechung")}
               />
               <MoreSheetLink href="/dashboard/norms" icon={BookOpen} label={t("nav.norms")} />
-              <MoreSheetLink href="/dashboard/brain" icon={Brain} label={t("nav.brain")} />
-              <MoreSheetLink href="/dashboard/graph" icon={Network} label={t("nav.graph")} />
-              <MoreSheetLink href="/dashboard/sources" icon={Database} label={t("nav.sources")} />
             </MoreSheetSection>
 
-            {/* Operations */}
-            <MoreSheetSection title={t("nav.section.operations")}>
+            {/* Prozess & Gericht */}
+            <MoreSheetSection title={t("nav.section.litigation")}>
               <MoreSheetLink
-                href="/dashboard/review-queue"
-                icon={ClipboardCheck}
-                label={t("nav.review_queue")}
+                href="/dashboard/litigation"
+                icon={Gavel}
+                label={t("nav.litigation")}
               />
               <MoreSheetLink
-                href="/dashboard/workflows"
-                icon={ClipboardList}
-                label={t("nav.workflows")}
+                href="/dashboard/process-strategy"
+                icon={Gavel}
+                label={t("nav.process_strategy")}
               />
-              <MoreSheetLink href="/dashboard/reports" icon={FileText} label={t("nav.reports")} />
               <MoreSheetLink
-                href="/dashboard/analytics"
+                href="/dashboard/portfolio-insights"
                 icon={TrendingUp}
-                label={t("nav.analytics")}
-              />
-              <MoreSheetLink
-                href="/dashboard/shared-spaces"
-                icon={Share2}
-                label={t("nav.shared_spaces")}
+                label={t("nav.portfolio_insights")}
               />
             </MoreSheetSection>
 
-            {/* Billing & Compliance */}
-            <MoreSheetSection title={t("nav.section.billing_compliance")}>
+            {/* Abrechnung, Compliance & Betrieb */}
+            <MoreSheetSection title={t("nav.section.billing_ops")}>
               <MoreSheetLink
                 href="/dashboard/invoicing"
                 icon={Receipt}
@@ -432,6 +441,28 @@ export function MobileTabBar({
                 icon={ClipboardCheck}
                 label={t("nav.verfahrensdoku")}
               />
+              <MoreSheetLink
+                href="/dashboard/review-queue"
+                icon={ClipboardCheck}
+                label={t("nav.review_queue")}
+              />
+              <MoreSheetLink
+                href="/dashboard/workflows"
+                icon={ClipboardList}
+                label={t("nav.workflows")}
+              />
+              <MoreSheetLink href="/dashboard/reports" icon={FileText} label={t("nav.reports")} />
+              <MoreSheetLink
+                href="/dashboard/analytics"
+                icon={TrendingUp}
+                label={t("nav.analytics")}
+              />
+              <MoreSheetLink
+                href="/dashboard/shared-spaces"
+                icon={Share2}
+                label={t("nav.shared_spaces")}
+              />
+              <MoreSheetLink href="/dashboard/monitoring" icon={Bell} label={t("nav.monitoring")} />
             </MoreSheetSection>
 
             {/* Admin */}
@@ -452,6 +483,20 @@ export function MobileTabBar({
           </div>
         </div>
       </motion.div>
+
+      {/* Quick Create FAB — floating above tab bar on mobile */}
+      <button
+        onClick={() => {
+          if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+            navigator.vibrate(8);
+          }
+          setMoreOpen(true);
+        }}
+        className="brand-bg fixed right-4 bottom-20 z-40 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-[transform,box-shadow] duration-200 ease-[var(--ds-ease-smooth)] hover:scale-105 active:scale-95 md:hidden"
+        aria-label={t("topbar.quick_create")}
+      >
+        <Plus size={24} />
+      </button>
 
       {/* Bottom tab bar */}
       <nav
@@ -587,7 +632,7 @@ function MoreSheetButton({
 function MoreSheetSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-4">
-      <h4 className="mb-2 px-1 text-[11px] font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+      <h4 className="mb-2 px-1 text-xs font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
         {title}
       </h4>
       <div className="grid grid-cols-4 gap-1">{children}</div>
@@ -612,9 +657,7 @@ function MoreSheetLink({
       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
         <Icon size={15} />
       </div>
-      <span className="line-clamp-1 text-center text-[10px] leading-tight font-medium">
-        {label}
-      </span>
+      <span className="line-clamp-1 text-center text-xs leading-tight font-medium">{label}</span>
     </Link>
   );
 }

@@ -516,14 +516,14 @@ function SuggestedFollowUps({
   return (
     <div className="px-4 py-2">
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-[10px] font-medium text-[color:var(--ds-text-subtle)]">
+        <span className="text-xs font-medium text-[color:var(--ds-text-subtle)]">
           {t("chat.follow_ups")}
         </span>
         {suggestions.map((s, i) => (
           <button
             key={i}
             onClick={() => onSelect(s.query)}
-            className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1 text-[11px] text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color] duration-200 hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97]"
+            className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color] duration-200 hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97]"
           >
             {s.label}
           </button>
@@ -965,6 +965,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       isStreaming,
       setMessages,
       userContext,
+      matterVitals,
     ]
   );
 
@@ -1789,7 +1790,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         onSessionSearchChange={setSessionSearch}
       />
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-2 text-[11px] text-[color:var(--ds-text-subtle)]">
+      <div className="flex flex-wrap items-center gap-2 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-2 text-xs text-[color:var(--ds-text-subtle)]">
         <span className="inline-flex items-center gap-1.5 font-medium text-[color:var(--ds-text-muted)]">
           {t("chat.trust_badge")}
         </span>
@@ -1856,7 +1857,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
               messages.length > 0 &&
               messages[messages.length - 1].role === "assistant" &&
               !messages[messages.length - 1].content && (
-                <div className="px-4 py-1.5 text-[11px] text-[color:var(--ds-text-muted)]">
+                <div className="px-4 py-1.5 text-xs text-[color:var(--ds-text-muted)]">
                   <span className="inline-flex items-center gap-1.5">
                     <span className="inline-flex items-center gap-0.5">
                       <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-60" />

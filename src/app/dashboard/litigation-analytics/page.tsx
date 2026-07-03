@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useToast } from "@/components/ui/toast";
 import { Plus, Trash2, Download, Loader2, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,6 +24,7 @@ import type { BrainPage } from "@/lib/types";
 type TFunc = (k: string) => string;
 
 export default function LitigationAnalyticsPage() {
+  const { addToast } = useToast();
   const { t } = useLang();
   const confirm = useConfirm();
   const [outcomes, setOutcomes] = useState<CaseOutcome[]>([]);
@@ -103,8 +105,10 @@ export default function LitigationAnalyticsPage() {
       try {
         await api.legal.analytics.delete(slug);
         setOutcomes((prev) => prev.filter((o) => o.slug !== slug));
+        addToast({ type: "success", description: "Eintrag gelöscht" });
       } catch (e) {
         setError(e instanceof Error ? e.message : "Delete failed");
+        addToast({ type: "error", description: "Löschen fehlgeschlagen" });
       }
       setDeleting(null);
     },
@@ -152,7 +156,7 @@ export default function LitigationAnalyticsPage() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         <KpiCard
           label={t("analytics.kpi_total")}
           value={String(kpis.totalCases)}
@@ -553,6 +557,7 @@ function CreateOutcomeModal({
   creating: boolean;
   setCreating: (v: boolean) => void;
 }) {
+  const { addToast } = useToast();
   const [form, setForm] = useState({
     caseSlug: "",
     caseTitle: "",
@@ -592,7 +597,9 @@ function CreateOutcomeModal({
         notes: form.notes || undefined,
       });
       onCreated();
+      addToast({ type: "success", description: "Eintrag erstellt" });
     } catch {
+      addToast({ type: "error", description: "Erstellen fehlgeschlagen" });
       setCreating(false);
     }
   };

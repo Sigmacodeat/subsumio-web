@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
@@ -98,6 +99,7 @@ const STEP_STATUS_COLORS: Record<StepStatus, string> = {
 
 export default function LitigationFlowPage() {
   const { t, lang } = useLang();
+  const confirm = useConfirm();
 
   const [matters, setMatters] = useState<Matter[]>([]);
   const [loading, setLoading] = useState(true);
@@ -243,7 +245,8 @@ export default function LitigationFlowPage() {
 
   async function handleDelete() {
     if (!selectedMatter) return;
-    if (!confirm(t("litigation.delete_confirm" as DashboardKey))) return;
+    const ok = await confirm({ message: t("litigation.delete_confirm" as DashboardKey) });
+    if (!ok) return;
     setSaving(true);
     try {
       await api.legal.litigation.delete(selectedMatter.slug);
@@ -518,7 +521,7 @@ export default function LitigationFlowPage() {
                         <span className="text-sm font-medium text-[color:var(--ds-text)]">
                           {step.title}
                         </span>
-                        <Badge variant="default" className="text-[10px]">
+                        <Badge variant="default" className="text-xs">
                           {t(`litigation.step_${step.type}` as DashboardKey)}
                         </Badge>
                       </div>

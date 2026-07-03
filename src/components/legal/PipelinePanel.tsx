@@ -459,13 +459,13 @@ export function PipelinePanel({
                     {hasOutput && (
                       <Badge
                         variant="default"
-                        className="ml-1 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[10px] text-[color:var(--ds-text-muted)]"
+                        className="ml-1 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                       >
                         {layerState!.output_slugs!.length}
                       </Badge>
                     )}
                     {layerState?.completed_at && (
-                      <span className="ml-2 text-[10px] text-[color:var(--ds-text-muted)]">
+                      <span className="ml-2 text-xs text-[color:var(--ds-text-muted)]">
                         {fmtDate(layerState.completed_at)}
                       </span>
                     )}
@@ -494,7 +494,7 @@ export function PipelinePanel({
                                 <Badge
                                   variant="default"
                                   className={cn(
-                                    "border text-[10px]",
+                                    "border text-xs",
                                     Number(fm.total_score) >= 70
                                       ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
                                       : Number(fm.total_score) >= 50
@@ -508,7 +508,7 @@ export function PipelinePanel({
                               {typeof fm.recommendation === "string" && fm.recommendation && (
                                 <Badge
                                   variant="default"
-                                  className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[10px] text-[color:var(--ds-text-muted)]"
+                                  className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                                 >
                                   {fm.recommendation}
                                 </Badge>
@@ -583,7 +583,7 @@ export function PipelinePanel({
                                   </select>
                                 </div>
                               ))}
-                              <p className="text-[10px] text-[color:var(--ds-text-muted)]">
+                              <p className="text-xs text-[color:var(--ds-text-muted)]">
                                 Nach Korrektur wird die Pipeline ab Layer 3 (Forensic Analyst) mit
                                 den korrigierten Rollen fortgesetzt.
                               </p>

@@ -394,7 +394,7 @@ export function CaseQuickCreateDialog({
                     >
                       {t(tpl.labelKey as DashboardKey)}
                     </span>
-                    <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                    <span className="text-xs text-[color:var(--ds-text-subtle)]">
                       {t(tpl.descKey as DashboardKey)}
                     </span>
                   </button>
@@ -537,7 +537,7 @@ export function CaseQuickCreateDialog({
                       id="quick-case-number"
                       value={caseNumber}
                       onChange={(e) => setCaseNumber(e.target.value)}
-                      placeholder={lang === "en" ? "e.g. 2026-001" : "z.B. 2026-001"}
+                      placeholder={t("caseqc.placeholder_file_no")}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -572,7 +572,7 @@ export function CaseQuickCreateDialog({
                       id="quick-legal-area"
                       value={legalArea}
                       onChange={(e) => setLegalArea(e.target.value)}
-                      placeholder={lang === "en" ? "e.g. Rental law" : "z.B. Mietrecht"}
+                      placeholder={t("caseqc.placeholder_area")}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -583,7 +583,7 @@ export function CaseQuickCreateDialog({
                       id="quick-sub-area"
                       value={subArea}
                       onChange={(e) => setSubArea(e.target.value)}
-                      placeholder={lang === "en" ? "e.g. Residential lease" : "z.B. Wohnraummiete"}
+                      placeholder={t("caseqc.placeholder_subject")}
                     />
                   </div>
                 </div>

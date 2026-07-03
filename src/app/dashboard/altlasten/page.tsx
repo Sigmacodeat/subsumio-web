@@ -18,12 +18,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
-import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useToast } from "@/components/ui/toast";
-import { useLang } from "@/lib/use-lang";
 
 interface CaseRow {
   slug: string;
@@ -42,7 +40,6 @@ type SortKey = "verjaehrung" | "score" | "updated" | "status";
 export default function AltlastenPage() {
   const router = useRouter();
   const { addToast } = useToast();
-  const { t } = useLang();
 
   const [cases, setCases] = useState<CaseRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +82,10 @@ export default function AltlastenPage() {
             const limPage = await api.brain.getPage(limSlug).catch(() => null);
             if (limPage) {
               const limFm = (limPage.frontmatter ?? {}) as Record<string, unknown>;
-              verjaehrungScore = typeof limFm.verjaehrung_risiko_score === "number" ? limFm.verjaehrung_risiko_score : null;
+              verjaehrungScore =
+                typeof limFm.verjaehrung_risiko_score === "number"
+                  ? limFm.verjaehrung_risiko_score
+                  : null;
               if (verjaehrungScore !== null) {
                 if (verjaehrungScore >= 75) verjaehrungStatus = "urgent";
                 else if (verjaehrungScore >= 50) verjaehrungStatus = "warning";
@@ -147,9 +147,7 @@ export default function AltlastenPage() {
   }, [autoRefresh, cases, fetchCases]);
 
   const sortedCases = useMemo(() => {
-    const filtered = filterStatus
-      ? cases.filter((c) => c.status === filterStatus)
-      : cases;
+    const filtered = filterStatus ? cases.filter((c) => c.status === filterStatus) : cases;
 
     const sorted = [...filtered].sort((a, b) => {
       switch (sortKey) {
@@ -180,11 +178,12 @@ export default function AltlastenPage() {
   const pipelineNotRan = cases.filter((c) => c.pipelineStatus === null).length;
 
   const handleBatchTrigger = useCallback(async () => {
-    const slugsToTrigger = selectedSlugs.size > 0
-      ? Array.from(selectedSlugs)
-      : sortedCases
-          .filter((c) => c.pipelineStatus === null && c.documentCount > 0)
-          .map((c) => c.slug);
+    const slugsToTrigger =
+      selectedSlugs.size > 0
+        ? Array.from(selectedSlugs)
+        : sortedCases
+            .filter((c) => c.pipelineStatus === null && c.documentCount > 0)
+            .map((c) => c.slug);
 
     if (slugsToTrigger.length === 0) {
       addToast({
@@ -271,26 +270,33 @@ export default function AltlastenPage() {
         if (Array.isArray(rawUrgent)) {
           fmUrgent = rawUrgent;
         } else if (typeof rawUrgent === "string") {
-          try { fmUrgent = JSON.parse(rawUrgent) as unknown[]; } catch { fmUrgent = []; }
+          try {
+            fmUrgent = JSON.parse(rawUrgent) as unknown[];
+          } catch {
+            fmUrgent = [];
+          }
         }
-        const urgentAnsprueche = fmUrgent.length > 0
-          ? fmUrgent.map((u: unknown) => {
-              const r = u as Record<string, unknown>;
-              return {
-                anspruch: String(r.anspruch ?? "Unbekannter Anspruch"),
-                restzeit_tage: typeof r.restzeit_tage === "number" ? r.restzeit_tage : 30,
-                paragraph: String(r.paragraph ?? ""),
-                handlungsbedarf: String(r.handlungsbedarf ?? "Sofortige Prüfung und Klageerhebung erforderlich"),
-              };
-            })
-          : [
-              {
-                anspruch: "Verjährung droht",
-                restzeit_tage: 30,
-                paragraph: String(fm.law ?? ""),
-                handlungsbedarf: "Sofortige Prüfung und Klageerhebung erforderlich",
-              },
-            ];
+        const urgentAnsprueche =
+          fmUrgent.length > 0
+            ? fmUrgent.map((u: unknown) => {
+                const r = u as Record<string, unknown>;
+                return {
+                  anspruch: String(r.anspruch ?? "Unbekannter Anspruch"),
+                  restzeit_tage: typeof r.restzeit_tage === "number" ? r.restzeit_tage : 30,
+                  paragraph: String(r.paragraph ?? ""),
+                  handlungsbedarf: String(
+                    r.handlungsbedarf ?? "Sofortige Prüfung und Klageerhebung erforderlich"
+                  ),
+                };
+              })
+            : [
+                {
+                  anspruch: "Verjährung droht",
+                  restzeit_tage: 30,
+                  paragraph: String(fm.law ?? ""),
+                  handlungsbedarf: "Sofortige Prüfung und Klageerhebung erforderlich",
+                },
+              ];
 
         const res = await csrfFetch("/api/legal/wiedervorlage", {
           method: "POST",
@@ -357,11 +363,7 @@ export default function AltlastenPage() {
               )}
               Wiedervorlage ({urgentCount})
             </Button>
-            <Button
-              onClick={handleBatchTrigger}
-              disabled={batchTriggering}
-              className="gap-2"
-            >
+            <Button onClick={handleBatchTrigger} disabled={batchTriggering} className="gap-2">
               {batchTriggering ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -376,7 +378,7 @@ export default function AltlastenPage() {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
         <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4">
           <div className="flex items-center gap-2">
             <Flame className="h-5 w-5 text-red-500" />
@@ -447,7 +449,9 @@ export default function AltlastenPage() {
               onClick={() => setFilterStatus(s)}
               className={cn(
                 "rounded-md px-3 py-1 text-sm font-medium transition-colors",
-                filterStatus === s ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80"
+                filterStatus === s
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted hover:bg-muted/80"
               )}
             >
               {s}
@@ -488,7 +492,7 @@ export default function AltlastenPage() {
               <tr
                 key={row.slug}
                 className={cn(
-                  "border-t transition-colors hover:bg-muted/30",
+                  "hover:bg-muted/30 border-t transition-colors",
                   selectedSlugs.has(row.slug) && "bg-primary/5"
                 )}
               >
@@ -503,7 +507,7 @@ export default function AltlastenPage() {
                 <td className="p-3">
                   <button
                     onClick={() => router.push(`/dashboard/cases/${encodeURIComponent(row.slug)}`)}
-                    className="font-medium text-left hover:underline"
+                    className="text-left font-medium hover:underline"
                   >
                     {row.title}
                   </button>
@@ -539,19 +543,19 @@ export default function AltlastenPage() {
                 </td>
                 <td className="p-3">
                   {row.verjaehrungStatus === "urgent" && (
-                    <Badge className="bg-red-500/10 text-red-600 border-red-500/20 gap-1">
+                    <Badge className="gap-1 border-red-500/20 bg-red-500/10 text-red-600">
                       <Flame className="h-3 w-3" />
                       URGENT ({row.verjaehrungScore})
                     </Badge>
                   )}
                   {row.verjaehrungStatus === "warning" && (
-                    <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 gap-1">
+                    <Badge className="gap-1 border-amber-500/20 bg-amber-500/10 text-amber-600">
                       <AlertTriangle className="h-3 w-3" />
                       WARNUNG ({row.verjaehrungScore})
                     </Badge>
                   )}
                   {row.verjaehrungStatus === "ok" && (
-                    <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 gap-1">
+                    <Badge className="gap-1 border-emerald-500/20 bg-emerald-500/10 text-emerald-600">
                       <CheckCircle2 className="h-3 w-3" />
                       OK ({row.verjaehrungScore})
                     </Badge>
@@ -583,7 +587,7 @@ export default function AltlastenPage() {
 
       {sortedCases.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <FileText className="h-12 w-12 text-[color:var(--ds-text-muted)] mb-4" />
+          <FileText className="mb-4 h-12 w-12 text-[color:var(--ds-text-muted)]" />
           <p className="text-[color:var(--ds-text-muted)]">
             Keine Akten gefunden. Laden Sie Akten hoch, um die Altlasten-Bearbeitung zu starten.
           </p>

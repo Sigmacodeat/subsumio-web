@@ -29,14 +29,15 @@ export function DeadlinesTasksTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
   const [showDeadlineForm, setShowDeadlineForm] = useState(false);
-  if (!ctx.caseData) return null;
-  const caseData = ctx.caseData;
-  const slug = ctx.slug;
 
   // Auto-expand form when editing
   useEffect(() => {
     if (ctx.editingDeadlineIndex !== null) setShowDeadlineForm(true);
   }, [ctx.editingDeadlineIndex]);
+
+  if (!ctx.caseData) return null;
+  const caseData = ctx.caseData;
+  const slug = ctx.slug;
 
   return (
     <div className="space-y-4 p-4 md:p-6">
@@ -52,173 +53,175 @@ export function DeadlinesTasksTab() {
             {t("cases.detail_dl_add")}
           </button>
         ) : (
-        <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              {ctx.editingDeadlineIndex !== null
-                ? t("cases.detail_dl_edit")
-                : t("cases.detail_dl_add")}
-            </h3>
-            {ctx.editingDeadlineIndex === null && (
-              <button
-                onClick={() => setShowDeadlineForm(false)}
-                className="text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-              >
-                <ChevronUp size={14} />
-              </button>
-            )}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                {t("cases.detail_dl_title")}
-              </label>
-              <input
-                {...ctx.deadlineForm.register("title")}
-                placeholder={t("cases.detail_dl_title_ph")}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-              />
-              {ctx.deadlineForm.formState.errors.title && (
-                <p className="mt-1 text-xs text-red-600">
-                  {ctx.deadlineForm.formState.errors.title.message}
-                </p>
+          <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                {ctx.editingDeadlineIndex !== null
+                  ? t("cases.detail_dl_edit")
+                  : t("cases.detail_dl_add")}
+              </h3>
+              {ctx.editingDeadlineIndex === null && (
+                <button
+                  onClick={() => setShowDeadlineForm(false)}
+                  aria-label="Formular einklappen"
+                  className="text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                >
+                  <ChevronUp size={14} />
+                </button>
               )}
             </div>
-            <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                {t("cases.detail_dl_due_date")}
-              </label>
-              <input
-                type="date"
-                {...ctx.deadlineForm.register("due_date")}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-              />
-              {ctx.deadlineForm.formState.errors.due_date && (
-                <p className="mt-1 text-xs text-red-600">
-                  {ctx.deadlineForm.formState.errors.due_date.message}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                {t("cases.detail_dl_type")}
-              </label>
-              <select
-                {...ctx.deadlineForm.register("type")}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-              >
-                <option value="deadline">{t("cases.detail_dl_type_deadline")}</option>
-                <option value="hearing">{t("cases.detail_dl_type_hearing")}</option>
-                <option value="meeting">{t("cases.detail_dl_type_meeting")}</option>
-                <option value="filing">{t("cases.detail_dl_type_filing")}</option>
-                <option value="reminder">{t("cases.detail_dl_type_reminder")}</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                {t("cases.detail_dl_status")}
-              </label>
-              <select
-                {...ctx.deadlineForm.register("status")}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-              >
-                <option value="pending">{t("cases.detail_dl_status_pending")}</option>
-                <option value="warning">{t("cases.detail_dl_status_warning")}</option>
-                <option value="critical">{t("cases.detail_dl_status_critical")}</option>
-                <option value="overdue">{t("cases.detail_dl_status_overdue")}</option>
-                <option value="done">{t("cases.detail_dl_status_done")}</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-              {t("cases.detail_dl_description")}
-            </label>
-            <textarea
-              {...ctx.deadlineForm.register("description")}
-              rows={2}
-              placeholder={t("cases.detail_dl_description_ph")}
-              className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-            />
-          </div>
-          <div className="brand-border brand-soft/5 space-y-3 rounded-lg border p-3">
-            <div className="flex items-center justify-between gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="brand-text text-xs font-medium">{t("cases.detail_dl_calc_rule")}</p>
-                <p className="text-xs text-[color:var(--ds-text-muted)]">
-                  {t("cases.detail_dl_calc_rule_desc")}
-                </p>
+                <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                  {t("cases.detail_dl_title")}
+                </label>
+                <input
+                  {...ctx.deadlineForm.register("title")}
+                  placeholder={t("cases.detail_dl_title_ph")}
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                />
+                {ctx.deadlineForm.formState.errors.title && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {ctx.deadlineForm.formState.errors.title.message}
+                  </p>
+                )}
               </div>
-              <Badge variant="default" className="brand-soft brand-border brand-text text-xs">
-                {t("cases.detail_dl_review_required")}
-              </Badge>
+              <div>
+                <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                  {t("cases.detail_dl_due_date")}
+                </label>
+                <input
+                  type="date"
+                  {...ctx.deadlineForm.register("due_date")}
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                />
+                {ctx.deadlineForm.formState.errors.due_date && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {ctx.deadlineForm.formState.errors.due_date.message}
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-              <select
-                value={ctx.deadlineRuleKey}
-                onChange={(e) => ctx.setDeadlineRuleKey(e.target.value)}
-                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-              >
-                {DEADLINE_RULES.map((rule) => (
-                  <option key={rule.key} value={rule.key}>
-                    {rule.label} ({rule.law})
-                  </option>
-                ))}
-              </select>
-              <input
-                type="date"
-                value={ctx.deadlineStartDate}
-                onChange={(e) => ctx.setDeadlineStartDate(e.target.value)}
-                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                  {t("cases.detail_dl_type")}
+                </label>
+                <select
+                  {...ctx.deadlineForm.register("type")}
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                >
+                  <option value="deadline">{t("cases.detail_dl_type_deadline")}</option>
+                  <option value="hearing">{t("cases.detail_dl_type_hearing")}</option>
+                  <option value="meeting">{t("cases.detail_dl_type_meeting")}</option>
+                  <option value="filing">{t("cases.detail_dl_type_filing")}</option>
+                  <option value="reminder">{t("cases.detail_dl_type_reminder")}</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                  {t("cases.detail_dl_status")}
+                </label>
+                <select
+                  {...ctx.deadlineForm.register("status")}
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                >
+                  <option value="pending">{t("cases.detail_dl_status_pending")}</option>
+                  <option value="warning">{t("cases.detail_dl_status_warning")}</option>
+                  <option value="critical">{t("cases.detail_dl_status_critical")}</option>
+                  <option value="overdue">{t("cases.detail_dl_status_overdue")}</option>
+                  <option value="done">{t("cases.detail_dl_status_done")}</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                {t("cases.detail_dl_description")}
+              </label>
+              <textarea
+                {...ctx.deadlineForm.register("description")}
+                rows={2}
+                placeholder={t("cases.detail_dl_description_ph")}
+                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               />
+            </div>
+            <div className="brand-border brand-soft/5 space-y-3 rounded-lg border p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="brand-text text-xs font-medium">{t("cases.detail_dl_calc_rule")}</p>
+                  <p className="text-xs text-[color:var(--ds-text-muted)]">
+                    {t("cases.detail_dl_calc_rule_desc")}
+                  </p>
+                </div>
+                <Badge variant="default" className="brand-soft brand-border brand-text text-xs">
+                  {t("cases.detail_dl_review_required")}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                <select
+                  value={ctx.deadlineRuleKey}
+                  onChange={(e) => ctx.setDeadlineRuleKey(e.target.value)}
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                >
+                  {DEADLINE_RULES.map((rule) => (
+                    <option key={rule.key} value={rule.key}>
+                      {rule.label} ({rule.law})
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="date"
+                  value={ctx.deadlineStartDate}
+                  onChange={(e) => ctx.setDeadlineStartDate(e.target.value)}
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                />
+                <Button
+                  variant="secondary"
+                  className="text-xs"
+                  onClick={() => {
+                    const rule =
+                      DEADLINE_RULES.find((r) => r.key === ctx.deadlineRuleKey) ??
+                      DEADLINE_RULES[0];
+                    const calculated = calculateDeadline(rule, ctx.deadlineStartDate);
+                    ctx.deadlineForm.reset(calculated as DeadlineFormData);
+                  }}
+                >
+                  {t("cases.detail_dl_calculate")}
+                </Button>
+              </div>
+            </div>
+            <div className="flex gap-2">
               <Button
-                variant="secondary"
-                className="text-xs"
-                onClick={() => {
-                  const rule =
-                    DEADLINE_RULES.find((r) => r.key === ctx.deadlineRuleKey) ?? DEADLINE_RULES[0];
-                  const calculated = calculateDeadline(rule, ctx.deadlineStartDate);
-                  ctx.deadlineForm.reset(calculated as DeadlineFormData);
-                }}
+                variant="primary"
+                disabled={caseData?.status === "archived"}
+                className="brand-bg brand-bg gap-2 text-sm text-white"
+                onClick={ctx.deadlineForm.handleSubmit(ctx.onDeadlineSubmit)}
               >
-                {t("cases.detail_dl_calculate")}
+                <Plus size={14} />
+                {ctx.editingDeadlineIndex !== null
+                  ? t("cases.detail_dl_save")
+                  : t("cases.detail_dl_add_btn")}
               </Button>
+              {ctx.editingDeadlineIndex !== null && (
+                <Button
+                  variant="ghost"
+                  className="text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                  onClick={() => {
+                    ctx.setEditingDeadlineIndex(null);
+                    ctx.deadlineForm.reset({
+                      title: "",
+                      due_date: "",
+                      type: "deadline",
+                      status: "pending",
+                      description: "",
+                    });
+                  }}
+                >
+                  {t("cases.detail_dl_cancel")}
+                </Button>
+              )}
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="primary"
-              disabled={caseData?.status === "archived"}
-              className="brand-bg brand-bg gap-2 text-sm text-white"
-              onClick={ctx.deadlineForm.handleSubmit(ctx.onDeadlineSubmit)}
-            >
-              <Plus size={14} />
-              {ctx.editingDeadlineIndex !== null
-                ? t("cases.detail_dl_save")
-                : t("cases.detail_dl_add_btn")}
-            </Button>
-            {ctx.editingDeadlineIndex !== null && (
-              <Button
-                variant="ghost"
-                className="text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-                onClick={() => {
-                  ctx.setEditingDeadlineIndex(null);
-                  ctx.deadlineForm.reset({
-                    title: "",
-                    due_date: "",
-                    type: "deadline",
-                    status: "pending",
-                    description: "",
-                  });
-                }}
-              >
-                {t("cases.detail_dl_cancel")}
-              </Button>
-            )}
-          </div>
-        </div>
         )}
 
         {/* AI Deadline Detection */}

@@ -250,7 +250,7 @@ export default function TaxAssessmentsPage() {
 
       {/* Stats */}
       {!loading && assessments.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-cols-4">
           <TaxStatCard
             label={t("tax.assessments.stat_total")}
             value={assessments.length}
@@ -433,15 +433,15 @@ export default function TaxAssessmentsPage() {
                     <td className="px-5 py-3">
                       {a.contested ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600">
-                          <AlertCircle size={12} /> {lang === "en" ? "Contested" : "Angefochten"}
+                          <AlertCircle size={12} /> {t("tax.assessments.stat_contested")}
                         </span>
                       ) : a.paidDate ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600">
-                          <CheckCircle2 size={12} /> {lang === "en" ? "Paid" : "Bezahlt"}
+                          <CheckCircle2 size={12} /> {t("tax.assessments.status_paid")}
                         </span>
                       ) : (
                         <span className="inline-flex items-center rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-text-subtle)]">
-                          {lang === "en" ? "Open" : "Offen"}
+                          {t("tax.assessments.stat_open")}
                         </span>
                       )}
                     </td>
@@ -496,7 +496,7 @@ export default function TaxAssessmentsPage() {
                 className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
                   {t("tax.assessments.label_type")}
@@ -540,7 +540,7 @@ export default function TaxAssessmentsPage() {
                 className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)]"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
                   {t("tax.assessments.label_notice_date")} *
@@ -564,7 +564,7 @@ export default function TaxAssessmentsPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
                   {t("tax.assessments.label_amount")}

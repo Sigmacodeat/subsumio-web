@@ -137,7 +137,7 @@ export default function ElsterPage() {
 
       {/* Stats */}
       {!loading && sortedSubmissions.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-cols-4">
           <TaxStatCard
             label={t("elster.stat_total")}
             value={sortedSubmissions.length}
@@ -396,7 +396,7 @@ function SubmissionDetailDialog({
             {t("elster.reference")}: {reference}
           </DialogDescription>
         </DialogHeader>
-        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+        <div className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
           <Detail label={t("elster.status")} value={status} />
           <Detail label={t("elster.year")} value={String(year)} />
           <Detail

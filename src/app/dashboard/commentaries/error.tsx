@@ -2,12 +2,12 @@
 
 import { DashboardError } from "@/components/dashboard/dashboard-error";
 
-export default function ErrorBoundary({
+export default function Error({
   error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  return <DashboardError error={error} reset={reset} moduleKey="query" />;
+  return <DashboardError error={error} reset={reset} />;
 }

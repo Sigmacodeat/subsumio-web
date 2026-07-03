@@ -307,7 +307,6 @@ export async function bulkImportOpenLegalData(
   let errors = 0;
   let total = 0;
   let nextUrl: string | null = null;
-  let currentPage = 1;
 
   // Update sync state
   await pool.query(
@@ -325,7 +324,6 @@ export async function bulkImportOpenLegalData(
       });
 
       total = response.count;
-      currentPage = page;
 
       for (const caseItem of response.results) {
         try {

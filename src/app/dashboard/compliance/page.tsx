@@ -307,7 +307,9 @@ export default function CompliancePage() {
       <div className="flex gap-2" role="tablist" aria-label={t("aria.compliance_area")}>
         <button
           role="tab"
+          id="tab-dsgvo"
           aria-selected={activeTab === "dsgvo"}
+          aria-controls="tabpanel-compliance"
           onClick={() => setActiveTab("dsgvo")}
           className={cn(
             "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
@@ -321,7 +323,9 @@ export default function CompliancePage() {
         </button>
         <button
           role="tab"
+          id="tab-gwg"
           aria-selected={activeTab === "gwg"}
+          aria-controls="tabpanel-compliance"
           onClick={() => setActiveTab("gwg")}
           className={cn(
             "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
@@ -335,7 +339,9 @@ export default function CompliancePage() {
         </button>
         <button
           role="tab"
+          id="tab-gobd"
           aria-selected={activeTab === "gobd"}
+          aria-controls="tabpanel-compliance"
           onClick={() => setActiveTab("gobd")}
           className={cn(
             "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
@@ -349,104 +355,113 @@ export default function CompliancePage() {
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
-          <div className="text-xl font-bold text-emerald-600">{okCount}</div>
-          <div className="text-xs text-[color:var(--ds-text-muted)]">
-            {t("compliance.status_ok")}
+      {/* Tab panel */}
+      <div
+        role="tabpanel"
+        id="tabpanel-compliance"
+        aria-labelledby={`tab-${activeTab}`}
+        tabIndex={0}
+        className="focus-visible:outline-none"
+      >
+        {/* Stats */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
+            <div className="text-xl font-bold text-emerald-600">{okCount}</div>
+            <div className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("compliance.status_ok")}
+            </div>
+          </div>
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-center">
+            <div className="text-xl font-bold text-amber-600">{warnCount}</div>
+            <div className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("compliance.status_warn")}
+            </div>
+          </div>
+          <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-center">
+            <div className="text-xl font-bold text-red-600">{failCount}</div>
+            <div className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("compliance.status_fail")}
+            </div>
           </div>
         </div>
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-center">
-          <div className="text-xl font-bold text-amber-600">{warnCount}</div>
-          <div className="text-xs text-[color:var(--ds-text-muted)]">
-            {t("compliance.status_warn")}
-          </div>
-        </div>
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-center">
-          <div className="text-xl font-bold text-red-600">{failCount}</div>
-          <div className="text-xs text-[color:var(--ds-text-muted)]">
-            {t("compliance.status_fail")}
-          </div>
-        </div>
-      </div>
 
-      {/* Save state */}
-      <div aria-live="polite" className="min-h-5 text-xs">
-        {saving && (
-          <span className="inline-flex items-center gap-1.5 text-[color:var(--ds-text-muted)]">
-            <Loader2 size={12} className="animate-spin" aria-hidden="true" />{" "}
-            {t("compliance.saving")}
-          </span>
-        )}
-        {saveError && <span className="text-red-600">{saveError}</span>}
-      </div>
-
-      {/* Checks list */}
-      {loading ? (
-        <div
-          className="flex items-center justify-center py-20"
-          role="status"
-          aria-label={t("aria.checklist_loading")}
-        >
-          <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
+        {/* Save state */}
+        <div aria-live="polite" className="min-h-5 text-xs">
+          {saving && (
+            <span className="inline-flex items-center gap-1.5 text-[color:var(--ds-text-muted)]">
+              <Loader2 size={12} className="animate-spin" aria-hidden="true" />{" "}
+              {t("compliance.saving")}
+            </span>
+          )}
+          {saveError && <span className="text-red-600">{saveError}</span>}
         </div>
-      ) : (
-        <div className="space-y-2">
-          {checks.map((check) => {
-            const status = statusOf(check);
-            return (
-              <button
-                key={check.id}
-                onClick={() => cycleStatus(check.id)}
-                aria-label={`${check.label} — ${t("aria.status")}: ${STATUS_LABEL[status](t)}. ${t("compliance.aria_change")}`}
-                className={cn(
-                  "flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--brand-primary)]",
-                  status === "ok"
-                    ? "border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/40"
-                    : status === "warn"
-                      ? "border-amber-500/20 bg-amber-500/5 hover:border-amber-500/40"
-                      : "border-red-500/20 bg-red-500/5 hover:border-red-500/40"
-                )}
-              >
-                <div className="mt-0.5 shrink-0" aria-hidden="true">
-                  {status === "ok" ? (
-                    <CheckCircle2 size={16} className="text-emerald-600" />
-                  ) : status === "warn" ? (
-                    <AlertTriangle size={16} className="text-amber-600" />
-                  ) : (
-                    <XCircle size={16} className="text-red-600" />
+
+        {/* Checks list */}
+        {loading ? (
+          <div
+            className="flex items-center justify-center py-20"
+            role="status"
+            aria-label={t("aria.checklist_loading")}
+          >
+            <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {checks.map((check) => {
+              const status = statusOf(check);
+              return (
+                <button
+                  key={check.id}
+                  onClick={() => cycleStatus(check.id)}
+                  aria-label={`${check.label} — ${t("aria.status")}: ${STATUS_LABEL[status](t)}. ${t("compliance.aria_change")}`}
+                  className={cn(
+                    "flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--brand-primary)]",
+                    status === "ok"
+                      ? "border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/40"
+                      : status === "warn"
+                        ? "border-amber-500/20 bg-amber-500/5 hover:border-amber-500/40"
+                        : "border-red-500/20 bg-red-500/5 hover:border-red-500/40"
                   )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-[color:var(--ds-text)]">
-                      {check.label}
-                    </span>
-                    <Badge
-                      variant="default"
-                      className={cn(
-                        "border text-xs",
-                        status === "ok"
-                          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
-                          : status === "warn"
-                            ? "border-amber-500/20 bg-amber-500/10 text-amber-600"
-                            : "border-red-500/20 bg-red-500/10 text-red-600"
-                      )}
-                    >
-                      {STATUS_LABEL[status](t)}
-                    </Badge>
+                >
+                  <div className="mt-0.5 shrink-0" aria-hidden="true">
+                    {status === "ok" ? (
+                      <CheckCircle2 size={16} className="text-emerald-600" />
+                    ) : status === "warn" ? (
+                      <AlertTriangle size={16} className="text-amber-600" />
+                    ) : (
+                      <XCircle size={16} className="text-red-600" />
+                    )}
                   </div>
-                  <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                    {check.description}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-[color:var(--ds-text)]">
+                        {check.label}
+                      </span>
+                      <Badge
+                        variant="default"
+                        className={cn(
+                          "border text-xs",
+                          status === "ok"
+                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                            : status === "warn"
+                              ? "border-amber-500/20 bg-amber-500/10 text-amber-600"
+                              : "border-red-500/20 bg-red-500/10 text-red-600"
+                        )}
+                      >
+                        {STATUS_LABEL[status](t)}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                      {check.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

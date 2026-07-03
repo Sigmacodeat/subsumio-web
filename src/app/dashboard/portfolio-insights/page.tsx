@@ -324,7 +324,7 @@ export default function PortfolioInsightsPage() {
             <TrendingUp className="h-5 w-5" />
             Vertrags-Trends
           </h2>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
             {data.trends.map((trend, i) => (
               <div key={i} className="rounded-lg border p-3 text-center">
                 <p className="text-muted-foreground text-xs">{trend.period}</p>

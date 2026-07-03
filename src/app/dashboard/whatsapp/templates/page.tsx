@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   Plus,
   Trash2,
@@ -54,6 +55,7 @@ const STATUS_ICONS: Record<string, typeof FileText> = {
 
 export default function WhatsAppTemplatesPage() {
   const { t } = useLang();
+  const confirm = useConfirm();
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -119,7 +121,8 @@ export default function WhatsAppTemplatesPage() {
   }
 
   async function deleteTemplate(slug: string) {
-    if (!confirm(t("wamplates.confirm_delete"))) return;
+    const ok = await confirm({ message: t("wamplates.confirm_delete") });
+    if (!ok) return;
     try {
       await csrfFetch("/api/whatsapp/templates", {
         method: "DELETE",
@@ -200,7 +203,7 @@ export default function WhatsAppTemplatesPage() {
                   onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="new-tpl-lang" className="text-xs">
                     Sprache
@@ -298,7 +301,7 @@ export default function WhatsAppTemplatesPage() {
                           value={editing.name}
                           onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                         />
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                           <Select
                             value={editing.language}
                             onValueChange={(v) => setEditing({ ...editing, language: v })}

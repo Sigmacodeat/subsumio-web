@@ -25,7 +25,7 @@ interface Precedent {
 }
 
 export function TaxPrecedentSearchPanel({ initialQuery = "" }: TaxPrecedentSearchPanelProps) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { addToast } = useToast();
   const [query, setQuery] = useState(initialQuery);
   const [loading, setLoading] = useState(false);

@@ -175,7 +175,7 @@ export default function SecuritySettingsPage() {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 font-mono text-sm">
+              <div className="grid grid-cols-1 gap-2 font-mono text-sm sm:grid-cols-2">
                 {backupCodes.map((code) => (
                   <div
                     key={code}
@@ -366,9 +366,9 @@ export default function SecuritySettingsPage() {
               </div>
             )}
 
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-700">
+            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-700">
               Configure via environment variable:
-              <pre className="mt-1 font-mono text-[10px] whitespace-pre-wrap">
+              <pre className="mt-1 font-mono text-xs whitespace-pre-wrap">
                 SUBSUMIO_IP_ALLOWLIST=10.0.0.0/8,192.168.1.100\nSUBSUMIO_TRUSTED_PROXY_HOPS=1
               </pre>
             </div>

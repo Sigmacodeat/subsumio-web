@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
+import { api } from "@/lib/api";
+import type { SearchResult } from "@/lib/types";
 import {
   Search,
   BookOpen,
@@ -25,6 +27,8 @@ import {
   FileSignature,
   Library,
   Share2,
+  Users,
+  FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -113,13 +117,16 @@ const CMD_LABEL_KEYS: Record<string, DashboardKey> = {
 
 const CMD_SECTION_KEYS: Record<string, DashboardKey> = {
   "nav.section.cockpit": "nav.section.cockpit",
-  "nav.section.cases_clients": "nav.section.cases_clients",
+  "nav.section.clients_comm": "nav.section.clients_comm",
+  "nav.section.docs_drafting": "nav.section.docs_drafting",
+  "nav.section.contracts": "nav.section.contracts",
+  "nav.section.knowledge": "nav.section.knowledge",
+  "nav.section.litigation": "nav.section.litigation",
+  "nav.section.billing": "nav.section.billing",
+  "nav.section.firm_ops": "nav.section.firm_ops",
+  "nav.section.compliance": "nav.section.compliance",
+  "nav.section.billing_ops": "nav.section.billing_ops",
   "nav.section.inbox_deadlines": "nav.section.inbox_deadlines",
-  "nav.section.documents_drafting": "nav.section.documents_drafting",
-  "nav.section.research_knowledge": "nav.section.research_knowledge",
-  "nav.section.billing_compliance": "nav.section.billing_compliance",
-  "nav.section.communication": "nav.section.communication",
-  "nav.section.operations": "nav.section.operations",
   Verwaltung: "cmd.section.admin",
 };
 
@@ -162,9 +169,18 @@ export function CommandPalette({
   const { t } = useLang();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [fedResults, setFedResults] = useState<{
+    cases: SearchResult[];
+    contacts: SearchResult[];
+    deadlines: SearchResult[];
+    documents: SearchResult[];
+  }>({ cases: [], contacts: [], deadlines: [], documents: [] });
+  const [searching, setSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { reduceMotion, panelTransition, modalInitial, modalAnimate, modalExit } =
     useDashboardMotion();
 
@@ -391,9 +407,50 @@ export function CommandPalette({
     if (open) {
       setQuery("");
       setActiveIndex(0);
+      setSearchResults([]);
+      setFedResults({ cases: [], contacts: [], deadlines: [], documents: [] });
       requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [open]);
+
+  // Federated search: fetch brain pages + cases + contacts + deadlines + documents in parallel
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (!query.trim() || query.trim().length < 2) {
+      setSearchResults([]);
+      setFedResults({ cases: [], contacts: [], deadlines: [], documents: [] });
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    searchTimerRef.current = setTimeout(async () => {
+      const q = query.trim();
+      try {
+        const [brainRes, casesRes, contactsRes, deadlinesRes, docsRes] = await Promise.allSettled([
+          api.brain.search(q, 8),
+          api.search(q, 5, "case"),
+          api.search(q, 5, "contact"),
+          api.search(q, 5, "deadline"),
+          api.search(q, 5, "document"),
+        ]);
+        setSearchResults(brainRes.status === "fulfilled" ? brainRes.value : []);
+        setFedResults({
+          cases: casesRes.status === "fulfilled" ? casesRes.value : [],
+          contacts: contactsRes.status === "fulfilled" ? contactsRes.value : [],
+          deadlines: deadlinesRes.status === "fulfilled" ? deadlinesRes.value : [],
+          documents: docsRes.status === "fulfilled" ? docsRes.value : [],
+        });
+      } catch {
+        setSearchResults([]);
+        setFedResults({ cases: [], contacts: [], deadlines: [], documents: [] });
+      } finally {
+        setSearching(false);
+      }
+    }, 200);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [query]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return allCommands;
@@ -413,15 +470,87 @@ export function CommandPalette({
       .filter((cmd): cmd is CommandItem => !!cmd);
   }, [open, query, allCommands]);
 
+  const searchCommands = useMemo<CommandItem[]>(() => {
+    if (!query.trim() || searchResults.length === 0) return [];
+    return searchResults.map((r) => ({
+      id: `search-${r.slug}`,
+      label: r.title,
+      icon: Search,
+      href: `/dashboard/brain/${encodeURIComponent(r.slug)}`,
+      section: t("cmd.recent"),
+      keywords: r.snippet,
+    }));
+  }, [query, searchResults, t]);
+
+  const fedCommands = useMemo<CommandItem[]>(() => {
+    if (!query.trim()) return [];
+    const cmds: CommandItem[] = [];
+    for (const r of fedResults.cases) {
+      cmds.push({
+        id: `fed-case-${r.slug}`,
+        label: r.title,
+        icon: Briefcase,
+        href: `/dashboard/cases/${encodeURIComponent(r.slug)}`,
+        section: t("nav.cases"),
+        keywords: r.snippet,
+      });
+    }
+    for (const r of fedResults.contacts) {
+      cmds.push({
+        id: `fed-contact-${r.slug}`,
+        label: r.title,
+        icon: Users,
+        href: `/dashboard/contacts`,
+        section: t("nav.contacts"),
+        keywords: r.snippet,
+      });
+    }
+    for (const r of fedResults.deadlines) {
+      cmds.push({
+        id: `fed-deadline-${r.slug}`,
+        label: r.title,
+        icon: CalendarClock,
+        href: `/dashboard/deadlines`,
+        section: t("nav.deadlines"),
+        keywords: r.snippet,
+      });
+    }
+    for (const r of fedResults.documents) {
+      cmds.push({
+        id: `fed-doc-${r.slug}`,
+        label: r.title,
+        icon: FolderOpen,
+        href: `/dashboard/vault`,
+        section: t("nav.vault"),
+        keywords: r.snippet,
+      });
+    }
+    return cmds;
+  }, [query, fedResults, t]);
+
   const grouped = useMemo(() => {
     const map = new Map<string, CommandItem[]>();
+    // Federated search results first (cases, contacts, deadlines)
+    const fedBySection = new Map<string, CommandItem[]>();
+    for (const cmd of fedCommands) {
+      const arr = fedBySection.get(cmd.section) ?? [];
+      arr.push(cmd);
+      fedBySection.set(cmd.section, arr);
+    }
+    for (const [section, items] of fedBySection) {
+      map.set(section, items);
+    }
+    // Brain search results
+    if (searchCommands.length > 0) {
+      map.set(t("cmd.recent"), searchCommands);
+    }
     for (const cmd of filtered) {
       const arr = map.get(cmd.section) ?? [];
       arr.push(cmd);
       map.set(cmd.section, arr);
     }
     return Array.from(map.entries());
-  }, [filtered]);
+  }, [filtered, searchCommands, fedCommands, t]);
 
   const flatList = useMemo(
     () => [...recentItems, ...grouped.flatMap(([, items]) => items)],

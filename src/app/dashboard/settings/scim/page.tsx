@@ -140,7 +140,7 @@ function SyncLogView({ status }: { status: SyncStatus }) {
 
       {result && (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-cols-4">
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
               <p className="text-xs text-[color:var(--ds-text-muted)]">Erstellt</p>
               <p className="text-lg font-semibold text-emerald-600 tabular-nums">
@@ -286,7 +286,7 @@ export default function ScimSettingsPage() {
       ) : (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-cols-4">
             <StatCard
               label="SCIM-Benutzer gesamt"
               value={status?.totalScimUsers ?? 0}

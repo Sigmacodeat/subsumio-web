@@ -626,7 +626,7 @@ export default function WhatsAppDashboardPage() {
                 {t("whatsapp.setup")}
               </h2>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-xs md:grid-cols-5">
+            <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 md:grid-cols-5">
               <SetupFlag label="Verify Token" ok={Boolean(status?.verifyToken)} />
               <SetupFlag label="App Secret" ok={Boolean(status?.appSecret)} />
               <SetupFlag label="Access Token" ok={Boolean(status?.accessToken)} />

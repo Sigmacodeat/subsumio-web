@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLang } from "@/lib/use-lang";
+import { useToast } from "@/components/ui/toast";
 import {
   Plug,
   Loader2,
@@ -22,6 +23,7 @@ import { api, type ConnectorStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { getCoverageMatrix, type ConnectorCoverageEntry } from "@/lib/connector-coverage";
+import type { DashboardKey } from "@/content/dashboard";
 
 const CONNECTOR_ICONS: Record<string, React.ElementType> = {
   "google-drive": Folder,
@@ -54,6 +56,7 @@ const CONNECTOR_LABELS: Record<string, string> = {
 };
 
 export default function ConnectorsPage() {
+  const { addToast } = useToast();
   const { t, lang } = useLang();
   const [connectors, setConnectors] = useState<ConnectorStatus[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,9 +93,14 @@ export default function ConnectorsPage() {
     try {
       await api.connectors.sync(service);
       setMessage(`Sync für ${CONNECTOR_LABELS[service] ?? service} gestartet.`);
+      addToast({
+        type: "success",
+        description: `Sync für ${CONNECTOR_LABELS[service] ?? service} gestartet`,
+      });
       await loadConnectors();
     } catch (e) {
       setError(e instanceof Error ? e.message : `Sync für ${service} fehlgeschlagen.`);
+      addToast({ type: "error", description: `Sync für ${service} fehlgeschlagen` });
     } finally {
       setSyncing(null);
     }
@@ -108,10 +116,18 @@ export default function ConnectorsPage() {
         `${CONNECTOR_LABELS[service] ?? service} ist jetzt ${res.enabled ? "aktiviert" : "deaktiviert"}.`
       );
       await loadConnectors();
+      addToast({
+        type: "success",
+        description: `${CONNECTOR_LABELS[service] ?? service} ${res.enabled ? "aktiviert" : "deaktiviert"}`,
+      });
     } catch (e) {
       setError(
         e instanceof Error ? e.message : `Status für ${service} konnte nicht geändert werden.`
       );
+      addToast({
+        type: "error",
+        description: `Status für ${service} konnte nicht geändert werden`,
+      });
     } finally {
       setToggling(null);
     }
@@ -136,8 +152,8 @@ export default function ConnectorsPage() {
   }
 
   function lastSyncLabel(value: number | null) {
-    if (!value) return "Noch nie synchronisiert";
-    return `Letzter Sync: ${new Date(value).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}`;
+    if (!value) return t("connectors.never_synced" as DashboardKey);
+    return `${t("connectors.last_sync" as DashboardKey)}: ${new Date(value).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}`;
   }
 
   return (
@@ -364,7 +380,7 @@ export default function ConnectorsPage() {
       {/* Coverage Matrix Toggle */}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-          {lang === "en" ? "Connector Coverage Matrix" : "Connector-Coverage-Matrix"}
+          {t("connectors.coverage_matrix" as DashboardKey)}
         </h2>
         <Button
           variant="ghost"
@@ -373,12 +389,8 @@ export default function ConnectorsPage() {
           className="text-xs"
         >
           {showCoverage
-            ? lang === "en"
-              ? "Hide"
-              : "Ausblenden"
-            : lang === "en"
-              ? "Show"
-              : "Anzeigen"}
+            ? t("connectors.hide" as DashboardKey)
+            : t("connectors.show" as DashboardKey)}
         </Button>
       </div>
 
@@ -388,7 +400,7 @@ export default function ConnectorsPage() {
 }
 
 function CoverageMatrix() {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const matrix = getCoverageMatrix();
 
   const statusColors: Record<string, string> = {
@@ -399,38 +411,38 @@ function CoverageMatrix() {
   };
 
   const statusLabels: Record<string, string> = {
-    available: lang === "en" ? "Available" : "Verfügbar",
+    available: t("connectors.status_available" as DashboardKey),
     beta: "Beta",
-    planned: lang === "en" ? "Planned" : "Geplant",
-    not_applicable: lang === "en" ? "N/A" : "N/A",
+    planned: t("connectors.status_planned" as DashboardKey),
+    not_applicable: t("connectors.status_na" as DashboardKey),
   };
 
   return (
     <div className="space-y-4">
       {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-lg font-bold text-[color:var(--ds-text)]">{matrix.total}</div>
-          <div className="text-[10px] text-[color:var(--ds-text-muted)]">
-            {lang === "en" ? "Total" : "Gesamt"}
+          <div className="text-xs text-[color:var(--ds-text-muted)]">
+            {t("connectors.total" as DashboardKey)}
           </div>
         </div>
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-lg font-bold text-emerald-600">{matrix.available_count}</div>
-          <div className="text-[10px] text-[color:var(--ds-text-muted)]">
-            {lang === "en" ? "Available" : "Verfügbar"}
+          <div className="text-xs text-[color:var(--ds-text-muted)]">
+            {t("connectors.status_available" as DashboardKey)}
           </div>
         </div>
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-lg font-bold text-amber-600">{matrix.beta_count}</div>
-          <div className="text-[10px] text-[color:var(--ds-text-muted)]">Beta</div>
+          <div className="text-xs text-[color:var(--ds-text-muted)]">Beta</div>
         </div>
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-lg font-bold text-[color:var(--ds-text-muted)]">
             {matrix.planned_count}
           </div>
-          <div className="text-[10px] text-[color:var(--ds-text-muted)]">
-            {lang === "en" ? "Planned" : "Geplant"}
+          <div className="text-xs text-[color:var(--ds-text-muted)]">
+            {t("connectors.status_planned" as DashboardKey)}
           </div>
         </div>
       </div>
@@ -441,7 +453,7 @@ function CoverageMatrix() {
           <div className="flex items-center gap-2">
             <AlertTriangle size={14} className="text-amber-600" />
             <h3 className="text-xs font-semibold text-amber-600">
-              {lang === "en" ? "Coverage Gaps" : "Coverage-Lücken"}
+              {t("connectors.coverage_gaps" as DashboardKey)}
             </h3>
           </div>
           {matrix.coverage_gaps.map((gap, i) => (
@@ -454,7 +466,7 @@ function CoverageMatrix() {
                       ? "warning"
                       : "default"
                 }
-                className="shrink-0 text-[10px]"
+                className="shrink-0 text-xs"
               >
                 {gap.severity}
               </Badge>
@@ -469,14 +481,18 @@ function CoverageMatrix() {
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-[color:var(--ds-border)] text-left text-[color:var(--ds-text-muted)]">
-              <th className="px-3 py-2 font-medium">{lang === "en" ? "Connector" : "Konnektor"}</th>
-              <th className="px-3 py-2 font-medium">{lang === "en" ? "Status" : "Status"}</th>
-              <th className="px-3 py-2 font-medium">{lang === "en" ? "Sync" : "Sync"}</th>
+              <th className="px-3 py-2 font-medium">
+                {t("connectors.col_connector" as DashboardKey)}
+              </th>
+              <th className="px-3 py-2 font-medium">Status</th>
+              <th className="px-3 py-2 font-medium">Sync</th>
               <th className="px-3 py-2 font-medium">Auth</th>
               <th className="px-3 py-2 font-medium">GoBD</th>
               <th className="px-3 py-2 font-medium">DSGVO</th>
-              <th className="px-3 py-2 font-medium">{lang === "en" ? "Matter" : "Akten"}</th>
-              <th className="px-3 py-2 font-medium">{lang === "en" ? "Push" : "Push"}</th>
+              <th className="px-3 py-2 font-medium">
+                {t("connectors.col_matter" as DashboardKey)}
+              </th>
+              <th className="px-3 py-2 font-medium">Push</th>
             </tr>
           </thead>
           <tbody>
@@ -484,7 +500,7 @@ function CoverageMatrix() {
               <tr key={c.id} className="border-b border-[color:var(--ds-border)] last:border-0">
                 <td className="px-3 py-2">
                   <div className="font-medium text-[color:var(--ds-text)]">{c.name}</div>
-                  <div className="text-[10px] text-[color:var(--ds-text-subtle)]">{c.category}</div>
+                  <div className="text-xs text-[color:var(--ds-text-subtle)]">{c.category}</div>
                 </td>
                 <td className="px-3 py-2">
                   <span className={cn("font-medium", statusColors[c.status])}>

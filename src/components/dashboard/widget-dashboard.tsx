@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -26,6 +26,8 @@ import { Badge } from "@/components/ui/badge";
 import { useBrainStats, useCockpitData } from "@/lib/queries/brain";
 import { useRecentMatters } from "@/lib/use-recent-matters";
 import { useLang } from "@/lib/use-lang";
+import { useRealtime, ensureRealtime } from "@/lib/realtime";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Lang } from "@/content/site";
 import type { BrainPage, BrainStats, RecentQuery } from "@/lib/types";
 import { StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
@@ -98,6 +100,30 @@ export type CockpitData = ReturnType<typeof useKanzleiCockpitData>;
 export function useKanzleiCockpitData() {
   const cockpitQuery = useCockpitData({ recentLimit: 5 });
   const statsQuery = useBrainStats();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    ensureRealtime();
+  }, []);
+
+  const invalidateCockpit = () => {
+    queryClient.invalidateQueries({ queryKey: ["brain", "cockpit"] });
+    queryClient.invalidateQueries({ queryKey: ["brain", "stats"] });
+  };
+
+  useRealtime("case.updated", invalidateCockpit);
+  useRealtime("case.created", invalidateCockpit);
+  useRealtime("case.deleted", invalidateCockpit);
+  useRealtime("deadline.created", invalidateCockpit);
+  useRealtime("deadline.updated", invalidateCockpit);
+  useRealtime("document.uploaded", invalidateCockpit);
+  useRealtime("document.processed", invalidateCockpit);
+  useRealtime("review.status_changed", invalidateCockpit);
+  useRealtime("workflow.started", invalidateCockpit);
+  useRealtime("workflow.completed", invalidateCockpit);
+  useRealtime("invoice.created", invalidateCockpit);
+  useRealtime("signature.requested", invalidateCockpit);
+  useRealtime("intake.received", invalidateCockpit);
 
   const pages = cockpitQuery.data?.pages ?? {};
   const cases = (pages.legal_case ?? []) as DashboardPageLike[];
@@ -726,11 +752,7 @@ export function AIActivityFeed({
             {t("cockpit.ai_control_title")}
           </span>
         </div>
-        <p className="text-[13px] text-[color:var(--ds-text-muted)]">
-          {lang === "en"
-            ? "No active AI tasks. Start a workflow to delegate."
-            : "Keine aktiven KI-Aufgaben. Starte einen Workflow."}
-        </p>
+        <p className="text-[13px] text-[color:var(--ds-text-muted)]">{t("widget.ai_empty")}</p>
       </section>
     );
   }
@@ -742,7 +764,7 @@ export function AIActivityFeed({
           {t("cockpit.ai_control_title")}
         </span>
         <span className="text-xs text-[color:var(--ds-text-subtle)]">
-          {items.length} {lang === "en" ? "active" : "aktiv"}
+          {items.length} {t("widget.ai_active")}
         </span>
       </div>
       <div className="space-y-2">
@@ -817,7 +839,7 @@ export function ActivityFeedWidget({ data }: { data: CockpitData }) {
         icon: CalendarClock,
         iconColor: "var(--ds-warning-text)",
         title: text(dl.page.title, t("widget.deadlines")),
-        meta: lang === "en" ? "Deadline registered" : "Frist erfasst",
+        meta: t("widget.activity_deadline"),
         href: "/dashboard/deadlines",
       });
     }
@@ -831,7 +853,7 @@ export function ActivityFeedWidget({ data }: { data: CockpitData }) {
         icon: Inbox,
         iconColor: "var(--ds-info-text)",
         title: text(item.title, t("widget.inbox")),
-        meta: lang === "en" ? "New intake" : "Neuer Eingang",
+        meta: t("widget.activity_intake"),
         href: "/dashboard/intake",
       });
     }
@@ -845,7 +867,7 @@ export function ActivityFeedWidget({ data }: { data: CockpitData }) {
         icon: CheckSquare,
         iconColor: "var(--brand-primary)",
         title: text(review.title, t("widget.ai_activity")),
-        meta: lang === "en" ? "AI review pending" : "KI-Review offen",
+        meta: t("widget.activity_review"),
         href: "/dashboard/review-queue",
       });
     }
@@ -859,7 +881,7 @@ export function ActivityFeedWidget({ data }: { data: CockpitData }) {
         icon: FileText,
         iconColor: "var(--ds-success-text)",
         title: text(inv.title, t("widget.active_cases")),
-        meta: lang === "en" ? "Invoice created" : "Rechnung erstellt",
+        meta: t("widget.activity_invoice"),
         href: "/dashboard/invoicing",
       });
     }
@@ -872,8 +894,8 @@ export function ActivityFeedWidget({ data }: { data: CockpitData }) {
         time: created,
         icon: FileText,
         iconColor: "var(--brand-primary)",
-        title: text(sig.title, lang === "en" ? "Signature request" : "Signatur-Anfrage"),
-        meta: lang === "en" ? "Signature pending" : "Signatur offen",
+        title: text(sig.title, t("widget.activity_signature")),
+        meta: t("widget.activity_signature_pending"),
         href: "/dashboard/signature",
       });
     }
@@ -891,9 +913,7 @@ export function ActivityFeedWidget({ data }: { data: CockpitData }) {
           </span>
         </div>
         <p className="text-[13px] text-[color:var(--ds-text-muted)]">
-          {lang === "en"
-            ? "No activity today yet. New items will appear here as they happen."
-            : "Heute noch keine Aktivität. Neue Einträge erscheinen hier automatisch."}
+          {t("widget.activity_empty")}
         </p>
       </section>
     );
@@ -907,7 +927,7 @@ export function ActivityFeedWidget({ data }: { data: CockpitData }) {
           {t("widget.activity_feed")}
         </span>
         <span className="text-xs text-[color:var(--ds-text-subtle)]">
-          {entries.length} {lang === "en" ? "today" : "heute"}
+          {entries.length} {t("widget.activity_today")}
         </span>
       </div>
       <div className="relative">

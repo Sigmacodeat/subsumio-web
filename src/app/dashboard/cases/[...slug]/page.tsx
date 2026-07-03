@@ -108,7 +108,7 @@ export default function CaseDetailPage() {
                   ) : (
                     <RotateCcw size={12} />
                   )}
-                  {lang === "en" ? "Restore as Open" : "Als Offen wiederherstellen"}
+                  {t("casesdetail.restore_open")}
                 </button>
                 <button
                   onClick={() => ctx.handleRestore("dormant")}
@@ -116,7 +116,7 @@ export default function CaseDetailPage() {
                   className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-500/10 hover:text-gray-900 disabled:opacity-50"
                 >
                   <PauseCircle size={12} />
-                  {lang === "en" ? "as Dormant" : "als Ruhend"}
+                  {t("casesdetail.as_dormant")}
                 </button>
               </div>
             ) : null}
@@ -151,7 +151,7 @@ export default function CaseDetailPage() {
           <div className="flex h-full flex-col items-center justify-center space-y-3 py-20">
             <AlertTriangle size={32} className="text-[color:var(--ds-border)]" />
             <p className="text-sm text-[color:var(--ds-text-muted)]">
-              {lang === "en" ? "This tab is not available." : "Dieser Tab ist nicht verfügbar."}
+              {t("casesdetail.tab_unavailable")}
             </p>
           </div>
         )}

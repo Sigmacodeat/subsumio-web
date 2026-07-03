@@ -155,7 +155,7 @@ export function ReviewTable({ data, caseSlug }: ReviewTableProps) {
                                 <div>
                                   <p className="italic">&ldquo;{cell.quote}&rdquo;</p>
                                   {cell.source_slug && (
-                                    <p className="mt-1 text-[10px] text-[color:var(--ds-text-muted)]">
+                                    <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                                       Quelle: {cell.source_slug}
                                     </p>
                                   )}

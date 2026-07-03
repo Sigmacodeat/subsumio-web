@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useToast } from "@/components/ui/toast";
 import {
   Search,
   Loader2,
@@ -42,6 +43,7 @@ interface ResearchSession {
 export default function ResearchPage() {
   const { t, lang } = useLang();
   const confirm = useConfirm();
+  const { addToast } = useToast();
   const [sessions, setSessions] = useState<ResearchSession[]>([]);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
@@ -249,8 +251,10 @@ export default function ResearchPage() {
       const nextPages = [page, ...savedPages];
       setSavedPages(nextPages);
       await setCache(OFFLINE_KEYS.research, nextPages);
+      addToast({ type: "success", description: "Recherche gespeichert" });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("research.error_save"));
+      addToast({ type: "error", description: t("research.error_save") });
     }
   }
 
@@ -284,8 +288,10 @@ export default function ResearchPage() {
       const nextPages = savedPages.filter((page) => page.slug !== slug);
       setSavedPages(nextPages);
       await setCache(OFFLINE_KEYS.research, nextPages);
+      addToast({ type: "success", description: "Recherche gelöscht" });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("research.error_delete"));
+      addToast({ type: "error", description: t("research.error_delete") });
     }
   }
 
@@ -300,7 +306,7 @@ export default function ResearchPage() {
         ]}
       />
 
-      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-7">
         <HubLink href="/dashboard/rechtsprechung" icon={Landmark} label={t("nav.rechtsprechung")} />
         <HubLink href="/dashboard/norms" icon={BookOpen} label={t("nav.norms")} />
         <HubLink
@@ -308,9 +314,10 @@ export default function ResearchPage() {
           icon={Search}
           label={t("nav.precedent_search")}
         />
-        <HubLink href="/dashboard/monitoring" icon={Bell} label={t("nav.monitoring")} />
-        <HubLink href="/dashboard/brain" icon={Brain} label={t("nav.brain")} />
+        <HubLink href="/dashboard/commentaries" icon={BookOpen} label={t("nav.commentaries")} />
         <HubLink href="/dashboard/playbooks" icon={ClipboardList} label={t("nav.playbooks")} />
+        <HubLink href="/dashboard/brain" icon={Brain} label={t("nav.brain")} />
+        <HubLink href="/dashboard/monitoring" icon={Bell} label={t("nav.monitoring")} />
       </div>
 
       {/* Research Input */}
@@ -372,46 +379,6 @@ export default function ResearchPage() {
           </div>
         )}
       </div>
-
-      {/* Current Result */}
-      {currentAnswer && (
-        <div className="brand-border space-y-4 rounded-xl border bg-[color:var(--ds-surface)] p-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Scale size={16} className="brand-text" />
-              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                {t("research.result_title")}
-              </h3>
-              <Badge
-                variant="default"
-                className="brand-border brand-soft brand-text border text-xs"
-              >
-                {jurisdiction.toUpperCase()}
-              </Badge>
-            </div>
-            <Button
-              onClick={saveResearch}
-              className="gap-2 bg-emerald-600 text-xs text-white hover:bg-emerald-500"
-            >
-              <Save size={14} /> {t("research.btn_save_brain")}
-            </Button>
-          </div>
-          <div
-            className="prose prose-invert prose-sm max-w-none leading-relaxed text-[color:var(--ds-text-muted)]"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(currentAnswer) }}
-          />
-          <CitationPanel
-            data={{
-              citations: currentCitations,
-              gaps: currentGaps,
-              grounding: currentGrounding,
-              isStreaming: loading,
-              jurisdiction,
-            }}
-            className="mt-3"
-          />
-        </div>
-      )}
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-[color:var(--ds-border)]">

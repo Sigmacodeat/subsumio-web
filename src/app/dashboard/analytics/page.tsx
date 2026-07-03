@@ -277,7 +277,7 @@ export default function AdoptionAnalyticsPage() {
                       className="w-full rounded-t bg-blue-500 transition-all hover:bg-blue-600"
                       style={{ height: `${height}px` }}
                     />
-                    <span className="text-muted-foreground text-[10px]">
+                    <span className="text-muted-foreground text-xs">
                       {new Date(t.date).toLocaleDateString("de-DE", { day: "numeric" })}
                     </span>
                   </div>

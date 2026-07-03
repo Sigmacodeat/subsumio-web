@@ -61,6 +61,7 @@ interface TopbarProps {
   onGuideOpen: () => void;
   copilotOpen: boolean;
   onCopilotToggle: () => void;
+  onCmdOpen: () => void;
 }
 
 export function Topbar({
@@ -74,6 +75,7 @@ export function Topbar({
   onGuideOpen,
   copilotOpen,
   onCopilotToggle,
+  onCmdOpen,
 }: TopbarProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -292,6 +294,7 @@ export function Topbar({
       message: string;
       type: "deadline" | "dream" | "system" | "mention" | "reply";
       read: boolean;
+      caseSlug?: string;
     }> = [...apiNotifications];
     for (const p of pages) {
       // Skip if already covered by API notification
@@ -307,6 +310,7 @@ export function Topbar({
           message: `${p.title} — ${days} ${t("topbar.notif_days")}`,
           type: "deadline",
           read: readInlineIds.has(`dl-${p.slug}`),
+          caseSlug: p.slug,
         });
       } else if (days < 0 && fm.status !== "done") {
         notifs.push({
@@ -315,6 +319,7 @@ export function Topbar({
           message: `${p.title} — ${Math.abs(days)} ${t("topbar.notif_days_overdue")}`,
           type: "deadline",
           read: readInlineIds.has(`dl-${p.slug}`),
+          caseSlug: p.slug,
         });
       }
     }
@@ -444,116 +449,23 @@ export function Topbar({
           />
           <input
             type="text"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setSearchOpen(true);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && searchQuery.trim()) {
-                if (
-                  searchOpen &&
-                  searchItems.length > 0 &&
-                  searchActiveIdx >= 0 &&
-                  searchActiveIdx < searchItems.length
-                ) {
-                  const item = searchItems[searchActiveIdx];
-                  router.push(`/dashboard/brain/${encodeURIComponent(item.slug)}`);
-                } else {
-                  router.push(`/dashboard/brain?q=${encodeURIComponent(searchQuery.trim())}`);
-                }
-                setSearchQuery("");
-                setSearchOpen(false);
-              } else if (e.key === "ArrowDown" && searchOpen && searchItems.length > 0) {
-                e.preventDefault();
-                setSearchActiveIdx((i) => Math.min(i + 1, searchItems.length - 1));
-              } else if (e.key === "ArrowUp" && searchOpen && searchItems.length > 0) {
-                e.preventDefault();
-                setSearchActiveIdx((i) => Math.max(i - 1, 0));
-              }
-            }}
-            onFocus={(e) => {
-              e.target.select();
-              if (searchQuery.trim()) setSearchOpen(true);
+            value=""
+            onChange={() => {}}
+            onFocus={() => {
+              onCmdOpen();
+              (document.activeElement as HTMLElement)?.blur();
             }}
             placeholder={t("topbar.search_placeholder")}
             aria-label={t("topbar.search_aria")}
-            aria-expanded={searchOpen && searchItems.length > 0}
-            aria-controls="topbar-search-results"
-            role="combobox"
             autoComplete="off"
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-16 pl-9 text-[13px] text-[color:var(--ds-text)] transition-[width,border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:w-full focus:max-w-lg focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+            className="w-full cursor-pointer rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-16 pl-9 text-[13px] text-[color:var(--ds-text)] transition-[width,border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:max-w-lg focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+            readOnly
           />
           <kbd className="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 items-center gap-0.5 rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-subtle)] md:flex">
             <Command size={9} />K
           </kbd>
-          <AnimatePresence initial={false}>
-            {searchOpen && searchQuery.trim().length >= 2 && (
-              <motion.div
-                id="topbar-search-results"
-                className="card-shadow-elevated absolute top-full right-0 left-0 z-50 mt-1 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-                role="listbox"
-                aria-label={t("topbar.search_aria")}
-                initial={popoverInitial}
-                animate={popoverAnimate}
-                exit={popoverExit}
-                transition={popoverTransition}
-              >
-                {searchResults.isLoading ? (
-                  <div className="flex items-center gap-2 px-4 py-3 text-xs text-[color:var(--ds-text-muted)]">
-                    <Loader2 size={13} className="animate-spin" /> {t("topbar.search_loading")}
-                  </div>
-                ) : searchItems.length === 0 ? (
-                  <div className="px-4 py-3 text-xs text-[color:var(--ds-text-subtle)]">
-                    {t("topbar.search_no_results")} „{searchQuery}“
-                  </div>
-                ) : (
-                  <>
-                    {searchItems.map((item, i) => (
-                      <button
-                        key={item.slug}
-                        onClick={() => {
-                          router.push(
-                            `/dashboard/brain?q=${encodeURIComponent(searchQuery.trim())}`
-                          );
-                          setSearchQuery("");
-                          setSearchOpen(false);
-                        }}
-                        onMouseEnter={() => setSearchActiveIdx(i)}
-                        className={`flex w-full items-start gap-2.5 px-4 py-2.5 text-left transition-colors ${i === searchActiveIdx ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
-                        role="option"
-                        aria-selected={i === searchActiveIdx}
-                      >
-                        <Search size={13} className="mt-0.5 shrink-0 opacity-50" />
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium">{item.title}</div>
-                          {item.snippet && (
-                            <div className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
-                              {item.snippet}
-                            </div>
-                          )}
-                        </div>
-                        {i === searchActiveIdx && (
-                          <CornerDownLeft
-                            size={12}
-                            className="shrink-0 text-[color:var(--ds-text-subtle)]"
-                          />
-                        )}
-                      </button>
-                    ))}
-                    <div className="flex items-center justify-between border-t border-[color:var(--ds-border)] px-4 py-2 text-xs text-[color:var(--ds-text-subtle)]">
-                      <span>{t("topbar.search_enter_all")}</span>
-                      <span>
-                        {searchItems.length} {t("topbar.search_hits")}
-                      </span>
-                    </div>
-                  </>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
-        {/* Mobile search icon — opens command palette via ⌘K simulation */}
+        {/* Mobile search icon — opens command palette */}
         <button
           onClick={() => {
             // Dispatch ⌘K to trigger command palette
@@ -639,53 +551,70 @@ export function Topbar({
                     </p>
                   </div>
                 ) : (
-                  notifications.map((n) => (
-                    <div
-                      key={n.id}
-                      role="menuitem"
-                      tabIndex={0}
-                      className={`rounded-lg border p-3 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none ${n.type === "deadline" ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : n.type === "reply" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
-                            {n.title}
+                  notifications.map((n) => {
+                    const notifHref = n.caseSlug
+                      ? `/dashboard/cases/${encodeURIComponent(n.caseSlug)}?tab=deadlines`
+                      : null;
+                    return (
+                      <button
+                        key={n.id}
+                        onClick={() => {
+                          if (notifHref) {
+                            router.push(notifHref);
+                            setNotifOpen(false);
+                          }
+                        }}
+                        className={`block w-full rounded-lg border p-3 text-left focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none ${notifHref ? "cursor-pointer hover:bg-[color:var(--ds-hover)]" : "cursor-default"} ${n.type === "deadline" ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : n.type === "reply" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
+                              {n.title}
+                            </div>
+                            <div className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                              {n.message}
+                            </div>
                           </div>
-                          <div className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-                            {n.message}
-                          </div>
+                          {!n.read && (
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (n.id.startsWith("dl-")) {
+                                  setReadInlineIds((prev) => new Set(prev).add(n.id));
+                                  return;
+                                }
+                                try {
+                                  await csrfFetch("/api/notifications", {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ id: n.id }),
+                                  });
+                                  setApiNotifications((prev) =>
+                                    prev.map((item) =>
+                                      item.id === n.id ? { ...item, read: true } : item
+                                    )
+                                  );
+                                } catch {}
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  (e.currentTarget as HTMLElement).click();
+                                }
+                              }}
+                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                              aria-label={t("topbar.mark_read")}
+                            >
+                              <Check size={12} />
+                            </span>
+                          )}
                         </div>
-                        {!n.read && (
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (n.id.startsWith("dl-")) {
-                                // Inline deadline notification — mark locally
-                                setReadInlineIds((prev) => new Set(prev).add(n.id));
-                                return;
-                              }
-                              try {
-                                await csrfFetch("/api/notifications", {
-                                  method: "PATCH",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ id: n.id }),
-                                });
-                                setApiNotifications((prev) =>
-                                  prev.map((item) =>
-                                    item.id === n.id ? { ...item, read: true } : item
-                                  )
-                                );
-                              } catch {}
-                            }}
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
-                            aria-label={t("topbar.mark_read")}
-                          >
-                            <Check size={12} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))
+                      </button>
+                    );
+                  })
                 )}
               </div>
             </motion.div>
@@ -722,7 +651,7 @@ export function Topbar({
                 transition={popoverTransition}
               >
                 <div className="border-b border-[color:var(--ds-border)] px-4 py-2.5">
-                  <span className="text-[11px] font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                  <span className="text-xs font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
                     {t("topbar.quick_create")}
                   </span>
                 </div>
@@ -737,69 +666,69 @@ export function Topbar({
                       const matterItems = [
                         {
                           icon: CalendarClock,
-                          label: lang === "en" ? "Add Deadline" : "Frist hinzufügen",
+                          label: t("quickcreate.add_deadline"),
                           event: "subsumio:create-deadline",
                           detail: { caseSlug: matterSlug },
                         },
                         {
                           icon: CheckSquare,
-                          label: lang === "en" ? "Add Task" : "Aufgabe hinzufügen",
+                          label: t("quickcreate.add_task"),
                           event: "subsumio:create-task",
                           detail: { caseSlug: matterSlug },
                         },
                         {
                           icon: FileUp,
-                          label: lang === "en" ? "Upload Document" : "Dokument hochladen",
+                          label: t("quickcreate.upload_document"),
                           event: "subsumio:upload-document",
                           detail: { caseSlug: matterSlug },
                         },
                         {
                           icon: Clock,
-                          label: lang === "en" ? "Log Time" : "Zeit erfassen",
+                          label: t("quickcreate.log_time"),
                           event: "subsumio:log-time",
                           detail: { caseSlug: matterSlug },
                         },
                         {
                           icon: Receipt,
-                          label: lang === "en" ? "Create Invoice" : "Rechnung erstellen",
+                          label: t("quickcreate.create_invoice"),
                           event: "subsumio:create-invoice",
                           detail: { caseSlug: matterSlug },
                         },
                         {
                           icon: FileSignature,
-                          label: lang === "en" ? "Request Signature" : "Signatur anfordern",
+                          label: t("quickcreate.request_signature"),
                           event: "subsumio:create-signature",
                           detail: { caseSlug: matterSlug },
                         },
                         {
                           icon: FileCheck,
-                          label: lang === "en" ? "Create Contract" : "Vertrag erstellen",
+                          label: t("quickcreate.create_contract"),
                           event: "subsumio:create-contract",
                           detail: { caseSlug: matterSlug },
                         },
                         {
                           icon: Library,
-                          label: lang === "en" ? "Add Clause" : "Klausel hinzufügen",
+                          label: t("quickcreate.add_clause"),
                           event: "subsumio:create-clause",
                           detail: { caseSlug: matterSlug },
                         },
                         {
                           icon: Users,
-                          label: lang === "en" ? "Add Contact" : "Kontakt hinzufügen",
+                          label: t("quickcreate.add_contact"),
                           event: "subsumio:create-contact",
                           detail: { caseSlug: matterSlug },
                         },
                         {
                           icon: MessageSquare,
-                          label: lang === "en" ? "Add Communication" : "Kommunikation hinzufügen",
+                          label: t("quickcreate.add_communication"),
                           event: "subsumio:create-communication",
                           detail: { caseSlug: matterSlug },
                         },
                       ];
                       return (
                         <>
-                          <div className="mb-1 px-3 pt-1 text-[10px] font-semibold tracking-wider text-[color:var(--brand-primary)] uppercase">
-                            {lang === "en" ? "This Matter" : "Diese Akte"}
+                          <div className="mb-1 px-3 pt-1 text-xs font-semibold tracking-wider text-[color:var(--brand-primary)] uppercase">
+                            {t("quickcreate.this_matter")}
                           </div>
                           {matterItems.map((item) => {
                             const Icon = item.icon;
@@ -821,8 +750,8 @@ export function Topbar({
                             );
                           })}
                           <div className="my-1.5 border-t border-[color:var(--ds-border)]" />
-                          <div className="mb-1 px-3 pt-1 text-[10px] font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
-                            {lang === "en" ? "General" : "Allgemein"}
+                          <div className="mb-1 px-3 pt-1 text-xs font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                            {t("quickcreate.general")}
                           </div>
                         </>
                       );
@@ -888,8 +817,8 @@ export function Topbar({
         <button
           onClick={onCopilotToggle}
           data-tour="copilot-toggle"
-          aria-label={copilotOpen ? "Copilot schließen" : "Copilot öffnen"}
-          title={copilotOpen ? "Copilot schließen (Cmd+J)" : "Copilot öffnen (Cmd+J)"}
+          aria-label={copilotOpen ? t("copilot.collapse") : t("copilot.expand")}
+          title={copilotOpen ? t("copilot.collapse") + " (Cmd+J)" : t("copilot.expand_hint")}
           aria-pressed={copilotOpen}
           className={cn(
             "flex h-9 w-9 items-center justify-center rounded-lg transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
@@ -933,7 +862,7 @@ export function Topbar({
           >
             <div className="brand-soft brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-full border">
               {userName ? (
-                <span className="brand-text text-[10px] font-bold uppercase">
+                <span className="brand-text text-xs font-bold uppercase">
                   {userName.slice(0, 2)}
                 </span>
               ) : (

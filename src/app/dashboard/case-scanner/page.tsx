@@ -164,7 +164,7 @@ export default function CaseScannerPage() {
             </div>
           </div>
 
-          <div className="mt-3 grid grid-cols-3 gap-3">
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
               <Clock size={16} className="mx-auto mb-1 text-emerald-600" />
               <div className="text-lg font-bold text-[color:var(--ds-text)]">

@@ -95,7 +95,7 @@ function ChatMessageBubbleInner({
             {message.attachments!.map((att) => (
               <span
                 key={att.slug}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-[11px] text-[color:var(--ds-text-muted)]"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)]"
               >
                 <FileText size={11} />
                 {att.name}
@@ -177,7 +177,7 @@ function ChatMessageBubbleInner({
                       <FileText size={9} />
                       {c.title}
                       {c.page_number && (
-                        <span className="ml-0.5 rounded bg-[color:var(--ds-surface-3)] px-1 py-0.5 text-[10px] font-medium text-[color:var(--ds-text-subtle)]">
+                        <span className="ml-0.5 rounded bg-[color:var(--ds-surface-3)] px-1 py-0.5 text-xs font-medium text-[color:var(--ds-text-subtle)]">
                           S. {c.page_number}
                         </span>
                       )}
@@ -207,7 +207,7 @@ function ChatMessageBubbleInner({
 
             {hasGaps && (
               <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-2.5">
-                <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-500">
+                <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-500">
                   <AlertTriangle size={12} />
                   {t("chat.gaps_in_brain")} ({message.gaps!.length})
                 </div>
@@ -220,7 +220,7 @@ function ChatMessageBubbleInner({
                     return (
                       <li
                         key={i}
-                        className="flex items-start gap-1.5 text-[11px] text-amber-700 dark:text-amber-500"
+                        className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-500"
                       >
                         <span className="shrink-0">{icon}</span>
                         <span>
@@ -238,7 +238,7 @@ function ChatMessageBubbleInner({
 
         {/* Metadata row (assistant only) */}
         {!isUser && !message.isStreaming && !message.error && (
-          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[color:var(--ds-text-subtle)]">
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-[color:var(--ds-text-subtle)]">
             <AIBadge size="sm" showTooltip={false} />
             {hasCitations && <GroundingStatus citations={message.citations} gaps={message.gaps} />}
             {features?.tokenWidget && message.tokensUsed != null && (

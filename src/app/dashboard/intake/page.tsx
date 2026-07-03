@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
@@ -23,6 +24,7 @@ import {
   Phone,
   User,
   Building2,
+  Landmark,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { FilterChip } from "@/components/dashboard/filter-chip";
@@ -351,7 +353,7 @@ export default function IntakePage() {
 
       {/* Stats bar */}
       {!loading && (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <StatCard label={t("intake.stats_new")} value={metrics.new || 0} tone="amber" />
           <StatCard
             label={t("intake.stats_incomplete")}
@@ -374,6 +376,73 @@ export default function IntakePage() {
             value={metrics.converted || 0}
             tone="blue"
           />
+        </div>
+      )}
+
+      {/* Channel Tabs (Kanal-Tabs) */}
+      {!loading && items.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1 border-b border-[color:var(--ds-border)]">
+          {(
+            [
+              { key: "all", icon: Inbox, label: t("intake.source_all") },
+              { key: "whatsapp", icon: MessageSquareText, label: "WhatsApp" },
+              { key: "email", icon: Mail, label: "E-Mail" },
+              { key: "bea", icon: Landmark, label: "beA", href: "/dashboard/bea" },
+              { key: "portal", icon: User, label: "Portal" },
+              { key: "web", icon: Search, label: "Web" },
+              { key: "manual", icon: FileText, label: t("intake.source_manual") },
+            ] as const
+          ).map((tab) => {
+            const count =
+              tab.key === "all"
+                ? items.length
+                : "href" in tab && tab.href
+                  ? 0
+                  : items.filter((i) => i.frontmatter.source === tab.key).length;
+            const isActive = sourceFilter === (tab.key as string);
+            const className = cn(
+              "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-colors",
+              isActive
+                ? "border-[color:var(--brand-primary)] font-medium text-[color:var(--ds-text)]"
+                : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+            );
+            const inner = (
+              <>
+                <tab.icon size={15} />
+                {tab.label}
+                {count > 0 && (
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 py-0.5 text-xs font-medium",
+                      isActive
+                        ? "brand-bg text-white"
+                        : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]"
+                    )}
+                  >
+                    {count}
+                  </span>
+                )}
+              </>
+            );
+            if ("href" in tab && tab.href) {
+              return (
+                <Link key={tab.key} href={tab.href} className={className}>
+                  {inner}
+                </Link>
+              );
+            }
+            return (
+              <button
+                key={tab.key}
+                onClick={() =>
+                  setSourceFilter(isActive ? "all" : (tab.key as "all" | IntakeSource))
+                }
+                className={className}
+              >
+                {inner}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -417,16 +486,6 @@ export default function IntakePage() {
                 </button>
               )}
             </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {(["all", "whatsapp", "email", "portal", "web", "manual"] as const).map((source) => (
-              <FilterChip
-                key={source}
-                label={source === "all" ? t("intake.source_all") : source}
-                active={sourceFilter === source}
-                onClick={() => setSourceFilter(sourceFilter === source ? "all" : source)}
-              />
-            ))}
           </div>
         </div>
       )}
@@ -814,7 +873,7 @@ export default function IntakePage() {
                 className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
                   {t("intake.label_client")}
@@ -842,7 +901,7 @@ export default function IntakePage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
                   {t("intake.label_email")}

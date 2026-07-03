@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
@@ -83,6 +84,7 @@ const REDACTIONS: RedactionCode[] = [
 
 export default function ReviewSetsPage() {
   const { t } = useLang();
+  const confirm = useConfirm();
   const _lang = useLang().lang;
 
   const [sets, setSets] = useState<ReviewSet[]>([]);
@@ -231,7 +233,8 @@ export default function ReviewSetsPage() {
 
   async function handleDelete() {
     if (!selectedSet) return;
-    if (!confirm(t("review_sets.delete_confirm" as DashboardKey))) return;
+    const ok = await confirm({ message: t("review_sets.delete_confirm" as DashboardKey) });
+    if (!ok) return;
     setSaving(true);
     try {
       await api.legal.reviewSets.delete(selectedSet.slug);
@@ -401,7 +404,7 @@ export default function ReviewSetsPage() {
             </DialogHeader>
 
             {/* Stats */}
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
               {[
                 {
                   label: t("review_sets.stats_total" as DashboardKey),
@@ -436,7 +439,7 @@ export default function ReviewSetsPage() {
                   <div className="text-lg font-bold" style={{ color: stat.color }}>
                     {stat.value}
                   </div>
-                  <div className="mt-0.5 text-[10px] text-[color:var(--ds-text-muted)]">
+                  <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
                     {stat.label}
                   </div>
                 </div>
@@ -487,14 +490,14 @@ export default function ReviewSetsPage() {
                         {doc.title}
                       </span>
                       {doc.batesNumber && (
-                        <Badge variant="default" className="font-mono text-[10px]">
+                        <Badge variant="default" className="font-mono text-xs">
                           {doc.batesNumber}
                         </Badge>
                       )}
                     </div>
                     <div className="mt-2 grid gap-2 sm:grid-cols-3">
                       <div>
-                        <label className="mb-0.5 block text-[10px] text-[color:var(--ds-text-muted)]">
+                        <label className="mb-0.5 block text-xs text-[color:var(--ds-text-muted)]">
                           {t("review_sets.decision" as DashboardKey)}
                         </label>
                         <select
@@ -514,7 +517,7 @@ export default function ReviewSetsPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="mb-0.5 block text-[10px] text-[color:var(--ds-text-muted)]">
+                        <label className="mb-0.5 block text-xs text-[color:var(--ds-text-muted)]">
                           {t("review_sets.privilege_type" as DashboardKey)}
                         </label>
                         <select
@@ -533,7 +536,7 @@ export default function ReviewSetsPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="mb-0.5 block text-[10px] text-[color:var(--ds-text-muted)]">
+                        <label className="mb-0.5 block text-xs text-[color:var(--ds-text-muted)]">
                           {t("review_sets.redaction_code" as DashboardKey)}
                         </label>
                         <select
@@ -598,7 +601,7 @@ export default function ReviewSetsPage() {
                 placeholder="..."
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
                   {t("review_sets.bates_prefix" as DashboardKey)}

@@ -60,7 +60,7 @@ export function RetrievalFeedbackButtons({
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1 text-[10px] text-[color:var(--ds-text-subtle)]",
+          "inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-subtle)]",
           className
         )}
       >

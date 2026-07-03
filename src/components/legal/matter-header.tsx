@@ -98,39 +98,40 @@ function VitalsBar({
   caseSlug: string;
   lang: string;
 }) {
+  const { t } = useLang();
   const encoded = caseSlug.split("/").map(encodeURIComponent).join("/");
   const items = [
     {
       icon: CalendarClock,
-      label: lang === "en" ? "Deadlines" : "Fristen",
+      label: t("matterheader.deadlines"),
       value: `${vitals.openDeadlineCount}/${vitals.deadlineCount}`,
       alert: vitals.openDeadlineCount > 0,
       href: `/dashboard/cases/${encoded}/deadlines`,
     },
     {
       icon: CheckSquare,
-      label: lang === "en" ? "Tasks" : "Aufgaben",
+      label: t("matterheader.tasks"),
       value: `${vitals.openTaskCount}/${vitals.taskCount}`,
       alert: vitals.openTaskCount > 0,
       href: `/dashboard/cases/${encoded}/deadlines`,
     },
     {
       icon: FolderOpen,
-      label: lang === "en" ? "Docs" : "Doku",
+      label: t("matterheader.docs"),
       value: String(vitals.documentCount),
       alert: false,
       href: `/dashboard/cases/${encoded}/documents`,
     },
     {
       icon: Clock,
-      label: lang === "en" ? "Hours" : "Std",
+      label: t("matterheader.hours"),
       value: vitals.totalHours > 0 ? vitals.totalHours.toFixed(1) : "—",
       alert: false,
       href: `/dashboard/cases/${encoded}/billing`,
     },
     {
       icon: Receipt,
-      label: lang === "en" ? "Expenses" : "Auslagen",
+      label: t("matterheader.expenses"),
       value: vitals.expenseTotal > 0 ? `${vitals.expenseTotal.toFixed(0)}€` : "—",
       alert: false,
       href: `/dashboard/cases/${encoded}/billing`,
@@ -172,7 +173,7 @@ function VitalsBar({
         <div className="flex items-center gap-1.5 rounded-md bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs">
           <CalendarClock size={12} className="shrink-0 text-[color:var(--ds-warning-text)]" />
           <span className="font-medium text-[color:var(--ds-warning-text)]">
-            {lang === "en" ? "Next:" : "Nächste:"} {formatDate(vitals.nextDeadlineDate, lang)}
+            {t("matterheader.next")} {formatDate(vitals.nextDeadlineDate, lang)}
           </span>
         </div>
       )}
@@ -227,13 +228,14 @@ function resolvePhaseIndex(phase: string | undefined): number {
 }
 
 function PhaseProgress({ phase, lang }: { phase?: string; lang: string }) {
+  const { t } = useLang();
   const currentIdx = resolvePhaseIndex(phase);
   if (currentIdx === -1) return null;
 
   return (
     <div className="flex items-center gap-1.5 border-t border-[color:var(--ds-border)] px-4 py-1.5 md:px-6">
-      <span className="text-[11px] font-medium text-[color:var(--ds-text-subtle)]">
-        {lang === "en" ? "Phase:" : "Phase:"}
+      <span className="text-xs font-medium text-[color:var(--ds-text-subtle)]">
+        {t("matterheader.phase")}
       </span>
       <div className="flex items-center gap-0.5">
         {MATTER_PHASES.map((p, idx) => {
@@ -254,7 +256,7 @@ function PhaseProgress({ phase, lang }: { phase?: string; lang: string }) {
               )}
               <span
                 className={cn(
-                  "rounded px-1.5 py-0.5 text-[10px] font-medium whitespace-nowrap",
+                  "rounded px-1.5 py-0.5 text-xs font-medium whitespace-nowrap",
                   isCurrent
                     ? "brand-soft brand-text"
                     : isPast
@@ -276,7 +278,7 @@ function PhaseProgress({ phase, lang }: { phase?: string; lang: string }) {
 
 export function MatterHeader() {
   const { matter, loading, error } = useMatterData();
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const { togglePin, isPinned } = useRecentMatters();
 
   if (loading) {
@@ -284,7 +286,7 @@ export function MatterHeader() {
       <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 md:px-6">
         <Loader2 size={18} className="animate-spin text-[color:var(--ds-text-muted)]" />
         <span className="text-sm text-[color:var(--ds-text-muted)]">
-          {lang === "en" ? "Loading matter…" : "Lade Akte…"}
+          {t("matterheader.loading")}
         </span>
       </div>
     );
@@ -294,13 +296,11 @@ export function MatterHeader() {
     return (
       <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 md:px-6">
         <AlertCircle size={18} className="text-red-500" />
-        <span className="text-sm text-red-600">
-          {error || (lang === "en" ? "Matter not found" : "Akte nicht gefunden")}
-        </span>
+        <span className="text-sm text-red-600">{error || t("matterheader.not_found")}</span>
         <Link href="/dashboard/cases" className="ml-auto">
           <Button variant="ghost" size="sm">
             <ArrowLeft size={14} className="mr-1.5" />
-            {lang === "en" ? "Back to Cases" : "Zurück zu Akten"}
+            {t("matterheader.back_to_cases")}
           </Button>
         </Link>
       </div>
@@ -319,7 +319,7 @@ export function MatterHeader() {
         <Link
           href="/dashboard/cases"
           className="mt-0.5 shrink-0 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-          aria-label={lang === "en" ? "Back to Cases" : "Zurück zu Akten"}
+          aria-label={t("matterheader.back_to_cases")}
         >
           <ArrowLeft size={18} />
         </Link>
@@ -391,18 +391,13 @@ export function MatterHeader() {
             variant="ghost"
             size="sm"
             onClick={() => togglePin(matter.slug)}
-            title={
-              pinned ? (lang === "en" ? "Unpin" : "Loslösen") : lang === "en" ? "Pin" : "Anheften"
-            }
+            title={pinned ? t("matterheader.unpin") : t("matterheader.pin")}
             className="h-8 w-8 p-0"
           >
             {pinned ? <PinOff size={15} /> : <Pin size={15} />}
           </Button>
           {matter.portalEnabled && (
-            <Link
-              href={`/dashboard/client-portal`}
-              title={lang === "en" ? "Client Portal" : "Mandantenportal"}
-            >
+            <Link href={`/dashboard/client-portal`} title={t("matterheader.client_portal")}>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                 <Globe size={15} />
               </Button>
@@ -414,7 +409,7 @@ export function MatterHeader() {
               className="border-gray-500/20 bg-gray-500/10 text-xs text-gray-500"
             >
               <Archive size={11} className="mr-1" />
-              {lang === "en" ? "Archived" : "Archiviert"}
+              {t("matterheader.archived")}
             </Badge>
           )}
         </div>

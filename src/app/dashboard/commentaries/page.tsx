@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/components/ui/toast";
 import {
   Search,
-  Filter,
   BookOpen,
   ChevronRight,
   ChevronDown,
@@ -23,7 +24,6 @@ import {
   Gavel,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useLang } from "@/lib/use-lang";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { api } from "@/lib/api";
 
@@ -74,6 +74,8 @@ const COMMENTARY_TYPES = [
 ];
 
 export default function CommentariesPage() {
+  const confirm = useConfirm();
+  const { addToast } = useToast();
   const [commentaries, setCommentaries] = useState<Commentary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -146,21 +148,26 @@ export default function CommentariesPage() {
       setSynthStatute("");
       setSynthSection("");
       await fetchCommentaries();
+      addToast({ type: "success", description: "Kommentierung synthetisiert" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Synthese fehlgeschlagen");
+      addToast({ type: "error", description: "Synthese fehlgeschlagen" });
     } finally {
       setSynthesizing(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Kommentierung wirklich löschen?")) return;
+    const ok = await confirm({ message: "Kommentierung wirklich löschen?" });
+    if (!ok) return;
     try {
       await api.legal.commentaries.delete(id);
       setSelectedCommentary(null);
       await fetchCommentaries();
+      addToast({ type: "success", description: "Kommentierung gelöscht" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Löschen fehlgeschlagen");
+      addToast({ type: "error", description: "Löschen fehlgeschlagen" });
     }
   };
 

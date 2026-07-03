@@ -25,7 +25,7 @@ interface MonthlyData {
 }
 
 export function KanzleiInsights() {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const { data: invoicePages } = usePages({ type: "invoice", limit: 200 });
   const { data: casePages } = usePages({ type: "legal_case", limit: 200 });
 
@@ -73,11 +73,9 @@ export function KanzleiInsights() {
       <div className="flex items-center gap-2">
         <TrendingUp size={15} className="text-[color:var(--brand-secondary)]" />
         <h3 className="text-[13px] font-semibold text-[color:var(--ds-text)]">
-          {lang === "en" ? "Firm Insights" : "Kanzlei-Insights"}
+          {t("insights.title")}
         </h3>
-        <span className="text-[11px] text-[color:var(--ds-text-subtle)]">
-          {lang === "en" ? "Last 6 months" : "Letzte 6 Monate"}
-        </span>
+        <span className="text-xs text-[color:var(--ds-text-subtle)]">{t("insights.last_6m")}</span>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -86,8 +84,8 @@ export function KanzleiInsights() {
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <TrendingUp size={13} className="text-[color:var(--ds-text-muted)]" />
-              <span className="text-[11px] font-medium text-[color:var(--ds-text-muted)]">
-                {lang === "en" ? "Revenue" : "Umsatz"}
+              <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                {t("insights.revenue")}
               </span>
             </div>
             <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
@@ -140,8 +138,8 @@ export function KanzleiInsights() {
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Briefcase size={13} className="text-[color:var(--ds-text-muted)]" />
-              <span className="text-[11px] font-medium text-[color:var(--ds-text-muted)]">
-                {lang === "en" ? "New Cases" : "Neue Akten"}
+              <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                {t("insights.new_cases")}
               </span>
             </div>
             <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">

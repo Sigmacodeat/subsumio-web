@@ -5,7 +5,7 @@ import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-medium select-none disabled:pointer-events-none disabled:opacity-40",
+  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-medium outline-none select-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ds-surface)] disabled:pointer-events-none disabled:opacity-40",
   {
     variants: {
       variant: {

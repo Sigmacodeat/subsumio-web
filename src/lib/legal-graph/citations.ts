@@ -8,11 +8,7 @@ import type { Pool } from "pg";
 // "BGH NJW 2024, 123"
 // "EuGH, Urteil vom 5.6.2023 - C-123/22"
 
-interface CitationPattern {
-  regex: RegExp;
-  type: "case" | "statute";
-  extract: (match: RegExpMatchArray) => { reference: string; statute?: string };
-}
+// German case citation patterns:
 
 const CASE_CITATION_PATTERNS: RegExp[] = [
   // "BGH, Urteil vom 15.03.2024 - I ZR 1/24"

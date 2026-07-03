@@ -12,7 +12,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, CheckCircle2, Circle, AlertCircle, Loader2 } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, Circle, AlertCircle } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +34,7 @@ export function TaxAuditFindingsTable({
   onChange,
   readOnly = false,
 }: TaxAuditFindingsTableProps) {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const [addOpen, setAddOpen] = useState(false);
   const [newIssue, setNewIssue] = useState("");
   const [newAmount, setNewAmount] = useState("");
@@ -77,7 +77,7 @@ export function TaxAuditFindingsTable({
       <div className="rounded-lg border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-8 text-center">
         <AlertCircle size={24} className="mx-auto text-[color:var(--ds-text-subtle)] opacity-50" />
         <p className="mt-2 text-sm text-[color:var(--ds-text-subtle)]">
-          {lang === "en" ? "No findings recorded" : "Keine Feststellungen dokumentiert"}
+          {t("tax.findings.no_findings")}
         </p>
       </div>
     );
@@ -88,13 +88,13 @@ export function TaxAuditFindingsTable({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 text-sm">
           <span className="text-[color:var(--ds-text-muted)]">
-            {findings.length} {lang === "en" ? "findings" : "Feststellungen"}
+            {findings.length} {t("tax.findings.count")}
           </span>
           {findings.length > 0 && (
             <>
               <span className="text-[color:var(--ds-text-subtle)]">·</span>
               <span className="text-emerald-600">
-                {acceptedCount} {lang === "en" ? "accepted" : "akzeptiert"}
+                {acceptedCount} {t("tax.findings.accepted")}
               </span>
               <span className="text-[color:var(--ds-text-subtle)]">·</span>
               <span className="font-medium text-[color:var(--ds-text)]">
@@ -112,7 +112,7 @@ export function TaxAuditFindingsTable({
             className="gap-1.5"
           >
             <Plus size={14} />
-            {lang === "en" ? "Add Finding" : "Feststellung hinzufügen"}
+            {t("tax.findings.add_finding")}
           </Button>
         )}
       </div>
@@ -122,15 +122,9 @@ export function TaxAuditFindingsTable({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-left text-xs tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
-                <th className="px-4 py-2 font-medium">
-                  {lang === "en" ? "Issue" : "Feststellung"}
-                </th>
-                <th className="px-4 py-2 text-right font-medium">
-                  {lang === "en" ? "Amount" : "Betrag"}
-                </th>
-                <th className="px-4 py-2 text-center font-medium">
-                  {lang === "en" ? "Status" : "Status"}
-                </th>
+                <th className="px-4 py-2 font-medium">{t("tax.findings.issue")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("tax.findings.amount")}</th>
+                <th className="px-4 py-2 text-center font-medium">{t("tax.findings.status")}</th>
                 {!readOnly && <th className="px-4 py-2" />}
               </tr>
             </thead>
@@ -191,7 +185,7 @@ export function TaxAuditFindingsTable({
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{lang === "en" ? "Add Finding" : "Feststellung hinzufügen"}</DialogTitle>
+            <DialogTitle>{t("tax.findings.add_finding")}</DialogTitle>
             <DialogDescription>
               {lang === "en"
                 ? "Document a new audit finding"
@@ -201,7 +195,7 @@ export function TaxAuditFindingsTable({
           <div className="space-y-3">
             <div>
               <Label htmlFor="finding-issue" className="text-xs">
-                {lang === "en" ? "Issue Description" : "Feststellungsbeschreibung"} *
+                {t("tax.findings.issue_desc")} *
               </Label>
               <Input
                 id="finding-issue"
@@ -217,7 +211,7 @@ export function TaxAuditFindingsTable({
             </div>
             <div>
               <Label htmlFor="finding-amount" className="text-xs">
-                {lang === "en" ? "Additional Tax (€)" : "Nachzahlung (€)"}
+                {t("tax.findings.additional_tax")}
               </Label>
               <Input
                 id="finding-amount"
@@ -237,7 +231,7 @@ export function TaxAuditFindingsTable({
               onClick={() => setAddOpen(false)}
               className="text-[color:var(--ds-text-muted)]"
             >
-              {lang === "en" ? "Cancel" : "Abbrechen"}
+              {t("tax.findings.cancel")}
             </Button>
             <Button
               type="button"
@@ -246,7 +240,7 @@ export function TaxAuditFindingsTable({
               className="brand-bg gap-2 text-white"
             >
               <Plus size={14} />
-              {lang === "en" ? "Add" : "Hinzufügen"}
+              {t("tax.findings.add")}
             </Button>
           </DialogFooter>
         </DialogContent>

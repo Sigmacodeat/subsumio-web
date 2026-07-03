@@ -301,7 +301,7 @@ export async function computeGraphEmbeddings(
   for (let hop = 0; hop < hops; hop++) {
     const nextEmbeddings = new Map<string, Float32Array>();
 
-    for (const [id, node] of nodes) {
+    for (const [id] of nodes) {
       const selfEmb = currentEmbeddings.get(id)!;
       const neighbours = adjacency.get(id) ?? [];
 

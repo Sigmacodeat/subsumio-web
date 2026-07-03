@@ -106,7 +106,7 @@ export default function DataExportPage() {
             <FileJson size={16} className="text-emerald-600" />
             <span className="text-sm font-medium text-emerald-600">Export erfolgreich</span>
           </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
               <div className="text-xl font-bold text-[color:var(--ds-text)]">{stats.total}</div>
               <div className="text-xs text-[color:var(--ds-text-muted)]">Gesamt</div>

@@ -98,7 +98,7 @@ export function TaxReturnQuickCreateDialog({
       });
       addToast({
         type: "success",
-        title: lang === "en" ? "Tax return created" : "Steuererklärung erstellt",
+        title: t("tax.returns.toast_created"),
       });
       if (createAnother) {
         resetForm();
@@ -110,7 +110,7 @@ export function TaxReturnQuickCreateDialog({
     } catch (err) {
       addToast({
         type: "error",
-        title: lang === "en" ? "Creation failed" : "Erstellung fehlgeschlagen",
+        title: t("tax.returns.toast_create_fail"),
         description: err instanceof Error ? err.message : undefined,
       });
     } finally {
@@ -129,25 +129,21 @@ export function TaxReturnQuickCreateDialog({
               <div className="brand-soft brand-border flex h-8 w-8 items-center justify-center rounded-lg border">
                 <FileText size={16} className="brand-text" />
               </div>
-              <DialogTitle>{lang === "en" ? "New Tax Return" : "Neue Steuererklärung"}</DialogTitle>
+              <DialogTitle>{t("tax.returns.modal_title")}</DialogTitle>
             </div>
-            <DialogDescription>
-              {lang === "en"
-                ? "Create a new tax return quickly"
-                : "Neue Steuererklärung schnell anlegen"}
-            </DialogDescription>
+            <DialogDescription>{t("tax.returns.modal_desc_short")}</DialogDescription>
           </DialogHeader>
 
           <div className="flex-1 space-y-5 overflow-y-auto px-6 py-2">
             <div className="space-y-1.5">
               <Label htmlFor="tax-return-client" className="text-xs">
-                {lang === "en" ? "Client" : "Mandant"} *
+                {t("tax.returns.label_client")} *
               </Label>
               <Input
                 id="tax-return-client"
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
-                placeholder={lang === "en" ? "Client name" : "Mandantenname"}
+                placeholder={t("tax.returns.placeholder_client_name")}
                 autoFocus
               />
             </div>
@@ -155,7 +151,7 @@ export function TaxReturnQuickCreateDialog({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="tax-return-type" className="text-xs">
-                  {lang === "en" ? "Tax Type" : "Steuerart"}
+                  {t("tax.returns.label_type")}
                 </Label>
                 <Select value={type} onValueChange={(v) => setType(v as TaxReturnType)}>
                   <SelectTrigger id="tax-return-type">
@@ -172,7 +168,7 @@ export function TaxReturnQuickCreateDialog({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="tax-return-year" className="text-xs">
-                  {lang === "en" ? "Year" : "Jahr"}
+                  {t("tax.returns.label_year")}
                 </Label>
                 <Input
                   id="tax-return-year"
@@ -194,13 +190,7 @@ export function TaxReturnQuickCreateDialog({
                 size={13}
                 className={cn("transition-transform", showAdvanced && "rotate-180")}
               />
-              {showAdvanced
-                ? lang === "en"
-                  ? "Hide advanced"
-                  : "Erweitert ausblenden"
-                : lang === "en"
-                  ? "Show advanced"
-                  : "Erweitert einblenden"}
+              {showAdvanced ? t("tax.returns.hide_advanced") : t("tax.returns.show_advanced")}
             </button>
 
             {showAdvanced && (
@@ -208,7 +198,7 @@ export function TaxReturnQuickCreateDialog({
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label htmlFor="tax-return-status" className="text-xs">
-                      {lang === "en" ? "Status" : "Status"}
+                      {t("tax.returns.label_status")}
                     </Label>
                     <Select value={status} onValueChange={(v) => setStatus(v as TaxReturnStatus)}>
                       <SelectTrigger id="tax-return-status">
@@ -225,7 +215,7 @@ export function TaxReturnQuickCreateDialog({
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="tax-return-due" className="text-xs">
-                      {lang === "en" ? "Due Date" : "Frist"}
+                      {t("tax.returns.label_due_date")}
                     </Label>
                     <Input
                       id="tax-return-due"
@@ -237,7 +227,7 @@ export function TaxReturnQuickCreateDialog({
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="tax-return-notes" className="text-xs">
-                    {lang === "en" ? "Notes" : "Notizen"}
+                    {t("tax.returns.label_notes")}
                   </Label>
                   <textarea
                     id="tax-return-notes"
@@ -260,7 +250,7 @@ export function TaxReturnQuickCreateDialog({
                   onChange={(e) => setCreateAnother(e.target.checked)}
                   className="h-3.5 w-3.5 rounded border-[color:var(--ds-border)]"
                 />
-                {lang === "en" ? "Create another" : "Weitere anlegen"}
+                {t("tax.returns.create_another")}
               </label>
             </div>
             <div className="flex gap-2">
@@ -270,7 +260,7 @@ export function TaxReturnQuickCreateDialog({
                 onClick={() => onOpenChange(false)}
                 className="text-[color:var(--ds-text-muted)]"
               >
-                {lang === "en" ? "Cancel" : "Abbrechen"}
+                {t("tax.returns.btn_cancel")}
               </Button>
               <Button
                 type="submit"
@@ -278,7 +268,7 @@ export function TaxReturnQuickCreateDialog({
                 className="brand-bg gap-2 text-white"
               >
                 {submitting ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                {lang === "en" ? "Create" : "Erstellen"}
+                {t("tax.returns.btn_create")}
               </Button>
             </div>
           </DialogFooter>

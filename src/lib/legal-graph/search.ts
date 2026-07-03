@@ -341,7 +341,7 @@ export async function hybridSearch(
 
   // If no vector results, return BM25 only
   if (vectorHits.length === 0) {
-    const results: HybridSearchResult[] = bm25Hits.map((hit, idx) => ({
+    const results: HybridSearchResult[] = bm25Hits.map((hit) => ({
       id: hit.id,
       title: hit.title,
       court: hit.court,

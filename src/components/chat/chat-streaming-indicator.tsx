@@ -32,7 +32,7 @@ export function ChatStreamingIndicator({ className }: ChatStreamingIndicatorProp
   return (
     <div
       className={cn(
-        "flex items-center gap-2 px-3 py-2 text-[11px] text-[color:var(--ds-text-muted)]",
+        "flex items-center gap-2 px-3 py-2 text-xs text-[color:var(--ds-text-muted)]",
         className
       )}
       role="status"

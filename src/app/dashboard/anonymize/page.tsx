@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "@/components/ui/toast";
 import { ShieldCheck, Loader2, Copy, Check, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,7 @@ const TYPE_LABELS: Record<string, DashboardKey> = {
 
 export default function AnonymizePage() {
   const { t } = useLang();
+  const { addToast } = useToast();
   const [input, setInput] = useState("");
   const [result, setResult] = useState<AnonymizeResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,8 +38,10 @@ export default function AnonymizePage() {
     try {
       const res = await api.legal.anonymize(input);
       setResult(res);
+      addToast({ type: "success", description: "Text anonymisiert" });
     } catch (e) {
       setError(e instanceof Error ? e.message : t("anonymize.error"));
+      addToast({ type: "error", description: t("anonymize.error") });
     } finally {
       setLoading(false);
     }

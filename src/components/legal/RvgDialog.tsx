@@ -57,6 +57,7 @@ export default function RvgDialog() {
                 </div>
                 <button
                   onClick={() => setOpen(false)}
+                  aria-label="Dialog schließen"
                   className="text-[color:var(--mk-text-subtle)] hover:[color:var(--mk-text)]"
                 >
                   <X size={18} />

@@ -43,12 +43,12 @@ export function StrategyTab() {
             <div className="flex items-center gap-2">
               <AlertTriangle size={16} className="text-[color:var(--ds-text-secondary)]" />
               <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                {lang === "en" ? "Semantic Contradictions" : "Semantische Widersprüche"}
+                {t("strategytab.semantic_contradictions")}
               </h3>
             </div>
             {ctx.probeLastRun && (
               <span className="text-xs text-[color:var(--ds-text-secondary)]">
-                {lang === "en" ? "Last probe:" : "Letzter Scan:"}{" "}
+                {t("strategytab.last_probe")}{" "}
                 {new Date(ctx.probeLastRun).toLocaleDateString(lang === "en" ? "en-US" : "de-DE", {
                   day: "2-digit",
                   month: "short",
@@ -138,7 +138,7 @@ export function StrategyTab() {
               <div className="flex items-center gap-2">
                 <ListChecks size={16} className="text-[color:var(--ds-text-secondary)]" />
                 <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  {lang === "en" ? "Field-Level Contradictions" : "Feld-Ebene Widersprüche"}
+                  {t("strategytab.field_contradictions")}
                 </h3>
               </div>
               <Button
@@ -158,7 +158,7 @@ export function StrategyTab() {
                 className="text-xs"
               >
                 <RefreshCw size={12} />
-                {lang === "en" ? "Re-check" : "Neu prüfen"}
+                {t("strategytab.recheck")}
               </Button>
             </div>
             <div className="space-y-2">
@@ -308,6 +308,7 @@ export function StrategyTab() {
               </span>
               <button
                 onClick={() => ctx.queryResult && ctx.copyToClipboard(ctx.queryResult)}
+                aria-label="Antwort kopieren"
                 className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"
               >
                 {ctx.copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}

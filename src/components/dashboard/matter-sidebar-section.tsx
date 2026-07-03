@@ -59,7 +59,7 @@ interface MatterSidebarSectionProps {
 
 export function MatterSidebarSection({ collapsed, onNavigate }: MatterSidebarSectionProps) {
   const ctx = useMatterDataSafe();
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const pathname = usePathname();
 
   // Parse slug from pathname as fallback when outside MatterDataProvider
@@ -85,9 +85,9 @@ export function MatterSidebarSection({ collapsed, onNavigate }: MatterSidebarSec
       {/* Matter header */}
       {!collapsed && (
         <div className="mb-2 px-3">
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+          <div className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
             <Briefcase size={10} className="shrink-0" />
-            {lang === "en" ? "Matter" : "Akte"}
+            {t("mattersidebar.matter")}
           </div>
           <div className="mt-1 truncate text-[12px] font-medium text-[color:var(--ds-text)]">
             {matter?.title ?? caseSlug}

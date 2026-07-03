@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/ui/toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FileText, Save, Printer, Download, Info, CheckCircle2, Loader2 } from "lucide-react";
@@ -123,6 +124,7 @@ ${markdownToHtml(markdown)}
 
 export default function VerfahrensdokuPage() {
   const { t } = useLang();
+  const { addToast } = useToast();
   const today = new Date().toISOString().split("T")[0];
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -229,9 +231,11 @@ export default function VerfahrensdokuPage() {
         },
       });
       setSaved(true);
+      addToast({ type: "success", description: t("verfahrensdoku.btn_saved") });
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : t("verfahrensdoku.error_save"));
+      addToast({ type: "error", description: t("verfahrensdoku.error_save") });
     } finally {
       setSaving(false);
     }

@@ -132,7 +132,7 @@ Sei präzise und kurz. Verweise auf Akten-Slugs wo möglich.`;
 
 export const GET = createCronHandler(async (_req: NextRequest): Promise<Response> => {
   if (env("ENABLE_RUNDOWN_CRON") !== "true") {
-    console.log(
+    console.info(
       "[cron/rundown] DISABLED — set ENABLE_RUNDOWN_CRON=true to re-enable. Use daily-briefing cron instead ($0 vs ~$5/day)."
     );
     return Response.json({
@@ -217,7 +217,7 @@ export const GET = createCronHandler(async (_req: NextRequest): Promise<Response
     }
   }
 
-  console.log(
+  console.info(
     `[cron/rundown] submitted=${submitted} completed=${completed} emailed=${emailed} whatsapped=${whatsapped} failed=${failed} brains=${brainIds.size}`
   );
 

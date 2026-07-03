@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import {
   Users,
   Plus,
@@ -10,7 +9,6 @@ import {
   Trash2,
   Pencil,
   Save,
-  X,
   AlertCircle,
   Mail,
   Phone,
@@ -109,7 +107,7 @@ export default function TaxClientsPage() {
   useEffect(() => {
     const timer = setTimeout(() => void load(), search ? 300 : 0);
     return () => clearTimeout(timer);
-  }, [load]);
+  }, [load, search]);
 
   function openCreate() {
     setForm(EMPTY_FORM);
@@ -423,7 +421,7 @@ export default function TaxClientsPage() {
                   onChange={(e) => setForm((p) => ({ ...p, street: e.target.value }))}
                 />
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
                     PLZ

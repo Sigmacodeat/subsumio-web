@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
@@ -76,6 +77,7 @@ function formatCurrency(amount: number, currency: string = "EUR"): string {
 
 export default function TrustAccountingPage() {
   const { t, lang } = useLang();
+  const confirm = useConfirm();
 
   const [accounts, setAccounts] = useState<TrustAccount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -207,7 +209,8 @@ export default function TrustAccountingPage() {
 
   async function handleDelete() {
     if (!selectedAccount) return;
-    if (!confirm(t("trust.delete_confirm" as DashboardKey))) return;
+    const ok = await confirm({ message: t("trust.delete_confirm" as DashboardKey) });
+    if (!ok) return;
     setSaving(true);
     try {
       await api.legal.trustAccounts.delete(selectedAccount.slug);
@@ -376,7 +379,7 @@ export default function TrustAccountingPage() {
             </DialogHeader>
 
             {/* Balance */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4">
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
                   {t("trust.opening_balance" as DashboardKey)}
@@ -597,7 +600,7 @@ export default function TrustAccountingPage() {
                 placeholder="Commerzbank"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
                   {t("trust.iban" as DashboardKey)}

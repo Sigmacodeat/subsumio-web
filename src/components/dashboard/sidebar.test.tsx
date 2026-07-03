@@ -91,7 +91,7 @@ describe("Sidebar accordion", () => {
     renderSidebar();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Mandanten & Parteien/i })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: /Mandanten & Kommunikation/i })).toHaveAttribute(
         "aria-expanded",
         "true"
       );
@@ -108,7 +108,7 @@ describe("Sidebar accordion", () => {
     renderSidebar();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Mandanten & Parteien/i })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: /Mandanten & Kommunikation/i })).toHaveAttribute(
         "aria-expanded",
         "true"
       );
@@ -119,19 +119,119 @@ describe("Sidebar accordion", () => {
       "/dashboard/contacts"
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Kommunikation/i }));
-    expect(screen.getByRole("button", { name: /Mandanten & Parteien/i })).toHaveAttribute(
+    fireEvent.click(screen.getByRole("button", { name: /Dokumente & Entwurf/i }));
+    expect(screen.getByRole("button", { name: /Mandanten & Kommunikation/i })).toHaveAttribute(
       "aria-expanded",
       "false"
     );
     expect(screen.queryByRole("link", { name: "Kontakte" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Kommunikation/i })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /Dokumente & Entwurf/i })).toHaveAttribute(
       "aria-expanded",
       "true"
     );
-    expect(screen.getByRole("link", { name: "WhatsApp" })).toHaveAttribute(
+  });
+});
+
+describe("Sidebar directory + admin filtering", () => {
+  beforeEach(() => {
+    pathname = "/dashboard";
+    localStorage.clear();
+  });
+
+  test("directory link is present for admin users", async () => {
+    renderSidebar({ role: "admin" });
+
+    // Admin section should be visible and contain directory link
+    const dirLink = screen.queryByRole("link", { name: /Alle Funktionen|Directory/i });
+    // The link may be inside a collapsed section — just verify it exists in DOM
+    expect(dirLink || screen.queryByText(/Alle Funktionen|Directory/i)).toBeTruthy();
+  });
+
+  test("non-admin users do not see admin-only items", async () => {
+    renderSidebar({ role: "member" });
+
+    // Admin-only items should not be visible
+    expect(screen.queryByRole("link", { name: /^Abrechnung$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Connectors$/i })).not.toBeInTheDocument();
+  });
+});
+
+describe("Sidebar restructured nav", () => {
+  beforeEach(() => {
+    pathname = "/dashboard";
+    localStorage.clear();
+  });
+
+  test("primary items: 5 items with Recherche replacing Chat", async () => {
+    renderSidebar();
+
+    // Primary items should include Rechtsrecherche (Research Hub)
+    expect(screen.getByRole("link", { name: /Rechtsrecherche/i })).toHaveAttribute(
       "href",
-      "/dashboard/whatsapp"
+      "/dashboard/research"
     );
+
+    // Chat/Assistent should NOT be a primary item (it's in the Copilot panel)
+    expect(screen.queryByRole("link", { name: /^Assistent$/i })).not.toBeInTheDocument();
+  });
+
+  test("Verträge section exists with contracts and clause-library", async () => {
+    renderSidebar();
+
+    fireEvent.click(screen.getByRole("button", { name: /Verträge/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Verträge/i })).toHaveAttribute(
+        "aria-expanded",
+        "true"
+      );
+    });
+    expect(screen.getByRole("link", { name: "Verträge" })).toHaveAttribute(
+      "href",
+      "/dashboard/contracts"
+    );
+  });
+
+  test("Abrechnung section contains trust-accounting (moved from Litigation)", async () => {
+    renderSidebar();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Abrechnung$/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^Abrechnung$/i })).toHaveAttribute(
+        "aria-expanded",
+        "true"
+      );
+    });
+    expect(screen.getByRole("link", { name: /Treuhandkonto/i })).toHaveAttribute(
+      "href",
+      "/dashboard/trust-accounting"
+    );
+  });
+
+  test("Compliance section exists separately from Abrechnung", async () => {
+    renderSidebar();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Compliance$/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^Compliance$/i })).toHaveAttribute(
+        "aria-expanded",
+        "true"
+      );
+    });
+    expect(screen.getByRole("link", { name: /DSGVO|Compliance/i })).toHaveAttribute(
+      "href",
+      "/dashboard/compliance"
+    );
+  });
+
+  test("communication channels (beA, WhatsApp) are not in sidebar sections", async () => {
+    renderSidebar();
+
+    // beA and WhatsApp should not appear as sidebar nav links
+    // (they're accessible via Intake channel tabs)
+    const beaButtons = screen.queryAllByRole("button", { name: /beA/i });
+    const waButtons = screen.queryAllByRole("button", { name: /WhatsApp/i });
+    // They might appear in search results but not as direct nav section items
+    // The sections that should exist don't include communication channels
+    expect(beaButtons.length + waButtons.length).toBe(0);
   });
 });

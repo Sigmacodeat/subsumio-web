@@ -50,7 +50,7 @@ const STATUS_CONFIG: Record<
 };
 
 export function EvalGateWidget() {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const [result, setResult] = useState<EvalGateResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,9 +81,7 @@ export function EvalGateWidget() {
     return (
       <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <Loader2 size={16} className="animate-spin text-[color:var(--ds-text-muted)]" />
-        <span className="text-sm text-[color:var(--ds-text-muted)]">
-          {lang === "en" ? "Loading eval gate..." : "Eval-Gate wird geladen..."}
-        </span>
+        <span className="text-sm text-[color:var(--ds-text-muted)]">{t("evalgate.loading")}</span>
       </div>
     );
   }
@@ -109,7 +107,7 @@ export function EvalGateWidget() {
         <div className="flex items-center gap-2">
           <Shield size={16} className="text-[color:var(--ds-text-secondary)]" />
           <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-            {lang === "en" ? "Unified Eval Gate" : "Unified Eval Gate"}
+            {t("evalgate.title")}
           </h3>
         </div>
         <div className={cn("flex items-center gap-1.5", overallConfig.color)}>
@@ -136,7 +134,7 @@ export function EvalGateWidget() {
                   : value.toString()
                 : value;
             return (
-              <Badge key={key} variant="default" className="text-[10px]">
+              <Badge key={key} variant="default" className="text-xs">
                 <Gauge size={10} className="mr-1" />
                 {key}: {displayValue}
               </Badge>
@@ -149,14 +147,14 @@ export function EvalGateWidget() {
       {result.all_breaches.length > 0 && (
         <div className="space-y-1 rounded-lg border border-red-500/20 bg-red-500/5 p-2">
           {result.all_breaches.slice(0, 5).map((b, i) => (
-            <div key={i} className="flex items-start gap-1.5 text-[11px] text-red-600">
+            <div key={i} className="flex items-start gap-1.5 text-xs text-red-600">
               <XCircle size={10} className="mt-0.5 shrink-0" />
               <span>{b}</span>
             </div>
           ))}
           {result.all_breaches.length > 5 && (
-            <div className="text-[10px] text-red-600">
-              +{result.all_breaches.length - 5} {lang === "en" ? "more" : "weitere"}
+            <div className="text-xs text-red-600">
+              +{result.all_breaches.length - 5} {t("evalgate.more")}
             </div>
           )}
         </div>
@@ -177,8 +175,8 @@ export function EvalGateWidget() {
                 <div>
                   <div className="text-xs font-medium text-[color:var(--ds-text)]">{h.name}</div>
                   {h.blocking && (
-                    <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
-                      {lang === "en" ? "blocking" : "blockierend"}
+                    <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                      {t("evalgate.blocking")}
                     </span>
                   )}
                 </div>
@@ -187,7 +185,7 @@ export function EvalGateWidget() {
                 {Object.entries(h.metrics)
                   .slice(0, 2)
                   .map(([key, value]) => (
-                    <span key={key} className="text-[10px] text-[color:var(--ds-text-muted)]">
+                    <span key={key} className="text-xs text-[color:var(--ds-text-muted)]">
                       {key}: {String(value)}
                     </span>
                   ))}
@@ -199,8 +197,8 @@ export function EvalGateWidget() {
 
       {/* Timestamp */}
       {result.evaluated_at && (
-        <div className="text-[10px] text-[color:var(--ds-text-subtle)]">
-          {lang === "en" ? "Evaluated" : "Ausgewertet"}:{" "}
+        <div className="text-xs text-[color:var(--ds-text-subtle)]">
+          {t("evalgate.evaluated")}:{" "}
           {new Date(result.evaluated_at).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
         </div>
       )}

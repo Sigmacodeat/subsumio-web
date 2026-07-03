@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "@/components/ui/toast";
 import { Table2, Loader2, Plus, X, Download, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
@@ -19,6 +20,7 @@ const DOC_TYPES: Array<{ value: string; labelKey: DashboardKey }> = [
 
 export default function TabularReviewPage() {
   const { t } = useLang();
+  const { addToast } = useToast();
   const [docType, setDocType] = useState("legal_case");
   const [limit, setLimit] = useState(15);
   const [questions, setQuestions] = useState<string[]>(["", ""]);
@@ -53,8 +55,10 @@ export default function TabularReviewPage() {
       });
       setResult(res);
       if (res.rows.length === 0) setError(t("tabular.error_no_docs"));
+      else addToast({ type: "success", description: `${res.rows.length} Dokumente analysiert` });
     } catch (e) {
       setError(e instanceof Error ? e.message : t("tabular.error_failed"));
+      addToast({ type: "error", description: t("tabular.error_failed") });
     } finally {
       setLoading(false);
     }

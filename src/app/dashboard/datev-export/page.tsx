@@ -280,7 +280,7 @@ export default function DatevExportPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.entries")}</div>
           <div className="text-xl font-bold text-[color:var(--ds-text)]">{entries.length}</div>

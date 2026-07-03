@@ -49,6 +49,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import type { DashboardKey } from "@/content/dashboard";
 
 const DOCS_LIMIT = 200;
 
@@ -414,7 +415,7 @@ export default function VaultPage() {
                 className="gap-2"
                 onClick={() => setShowDeepAnalysis(!showDeepAnalysis)}
               >
-                <Sparkles size={14} /> {lang === "en" ? "Deep Analysis" : "Tiefenanalyse"} (
+                <Sparkles size={14} /> {t("vault.deep_analysis" as DashboardKey)} (
                 {selectedSlugs.size})
               </Button>
             </div>
@@ -632,9 +633,9 @@ export default function VaultPage() {
           <div className="flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-text)]">
               <Sparkles size={16} className="brand-text" />
-              {lang === "en" ? "Deep Analysis" : "Tiefenanalyse"}
+              {t("vault.deep_analysis" as DashboardKey)}
               <span className="text-xs font-normal text-[color:var(--ds-text-muted)]">
-                ({selectedSlugs.size} {lang === "en" ? "documents" : "Dokumente"})
+                ({selectedSlugs.size} {t("vault.deep_analysis_documents" as DashboardKey)})
               </span>
             </h3>
             <button
@@ -658,7 +659,7 @@ export default function VaultPage() {
 
           <div className="space-y-2">
             <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-              {lang === "en" ? "Analysis prompt (optional)" : "Analyse-Prompt (optional)"}
+              {t("vault.deep_analysis_prompt" as DashboardKey)}
             </label>
             <Input
               value={deepAnalysisPrompt}
@@ -669,7 +670,7 @@ export default function VaultPage() {
                   : "z.B. Identifiziere Haftungsrisiken und Compliance-Lücken über alle Dokumente"
               }
             />
-            <p className="text-[10px] text-[color:var(--ds-text-subtle)]">
+            <p className="text-xs text-[color:var(--ds-text-subtle)]">
               {lang === "en"
                 ? "Generates a narrative report with cross-document insights, themes, and risks — every claim grounded with verbatim citations."
                 : "Generiert einen narrativen Bericht mit übergreifenden Erkenntnissen, Themen und Risiken — jeder Anspruch mit wörtlichen Zitaten belegt."}
@@ -719,7 +720,7 @@ export default function VaultPage() {
               {deepAnalysisResult.warnings.length > 0 && (
                 <div className="space-y-1 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
                   {deepAnalysisResult.warnings.map((w, i) => (
-                    <div key={i} className="flex items-center gap-1.5 text-[11px] text-amber-700">
+                    <div key={i} className="flex items-center gap-1.5 text-xs text-amber-700">
                       <AlertTriangle size={10} /> {w}
                     </div>
                   ))}
@@ -729,7 +730,7 @@ export default function VaultPage() {
               {/* Overall risk badge */}
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-                  {lang === "en" ? "Overall Risk" : "Gesamtrisiko"}:
+                  {t("vault.deep_analysis_risk" as DashboardKey)}:
                 </span>
                 <Badge
                   variant={
@@ -745,9 +746,9 @@ export default function VaultPage() {
                 >
                   {deepAnalysisResult.overall_risk}
                 </Badge>
-                <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                <span className="text-xs text-[color:var(--ds-text-subtle)]">
                   {deepAnalysisResult.document_count}{" "}
-                  {lang === "en" ? "documents analyzed" : "Dokumente analysiert"}
+                  {t("vault.deep_analysis_docs_analyzed" as DashboardKey)}
                 </span>
               </div>
 
@@ -755,7 +756,7 @@ export default function VaultPage() {
               {deepAnalysisResult.executive_summary && (
                 <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] p-3">
                   <h4 className="mb-1 text-xs font-semibold text-[color:var(--ds-text)]">
-                    {lang === "en" ? "Executive Summary" : "Zusammenfassung"}
+                    {t("vault.deep_analysis_summary" as DashboardKey)}
                   </h4>
                   <p className="text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
                     {deepAnalysisResult.executive_summary}
@@ -767,7 +768,7 @@ export default function VaultPage() {
               {deepAnalysisResult.findings.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold text-[color:var(--ds-text)]">
-                    {lang === "en" ? "Findings" : "Ergebnisse"}
+                    {t("vault.deep_analysis_findings" as DashboardKey)}
                   </h4>
                   {deepAnalysisResult.findings.map((f, i) => (
                     <div
@@ -783,7 +784,7 @@ export default function VaultPage() {
                                 ? "warning"
                                 : "default"
                           }
-                          className="text-[10px]"
+                          className="text-xs"
                         >
                           {f.risk_level}
                         </Badge>
@@ -797,7 +798,7 @@ export default function VaultPage() {
                       {f.affected_documents.length > 0 && (
                         <div className="mb-1 flex flex-wrap gap-1">
                           {f.affected_documents.map((d) => (
-                            <Badge key={d} variant="default" className="text-[10px]">
+                            <Badge key={d} variant="default" className="text-xs">
                               {d}
                             </Badge>
                           ))}
@@ -808,7 +809,7 @@ export default function VaultPage() {
                           {f.citations.slice(0, 3).map((c, j) => (
                             <div
                               key={j}
-                              className="flex items-start gap-1 text-[10px] text-[color:var(--ds-text-subtle)]"
+                              className="flex items-start gap-1 text-xs text-[color:var(--ds-text-subtle)]"
                             >
                               <span className="brand-text">»</span>
                               <span className="italic">{c.quote}</span>
@@ -826,7 +827,7 @@ export default function VaultPage() {
               {deepAnalysisResult.cross_document_patterns.length > 0 && (
                 <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] p-3">
                   <h4 className="mb-1 text-xs font-semibold text-[color:var(--ds-text)]">
-                    {lang === "en" ? "Cross-Document Patterns" : "Übergreifende Muster"}
+                    {t("vault.deep_analysis_patterns" as DashboardKey)}
                   </h4>
                   <ul className="space-y-1">
                     {deepAnalysisResult.cross_document_patterns.map((p, i) => (
@@ -844,7 +845,7 @@ export default function VaultPage() {
 
               {/* Attorney review notice */}
               {deepAnalysisResult.attorney_review_required && (
-                <p className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                <p className="text-xs text-[color:var(--ds-text-subtle)]">
                   {lang === "en"
                     ? "⚠ This automated analysis does not replace attorney review."
                     : "⚠ Diese automatisierte Analyse ersetzt keine anwaltliche Prüfung."}
@@ -904,21 +905,18 @@ export default function VaultPage() {
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger
-              className="w-[160px]"
-              aria-label={lang === "en" ? "All statuses" : "Alle Status"}
-            >
-              <SelectValue placeholder={lang === "en" ? "All statuses" : "Alle Status"} />
+            <SelectTrigger className="w-[160px]" aria-label={t("vault.status_all" as DashboardKey)}>
+              <SelectValue placeholder={t("vault.status_all" as DashboardKey)} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{lang === "en" ? "All statuses" : "Alle Status"}</SelectItem>
-              <SelectItem value="ready">{lang === "en" ? "Ready" : "Bereit"}</SelectItem>
+              <SelectItem value="all">{t("vault.status_all" as DashboardKey)}</SelectItem>
+              <SelectItem value="ready">{t("vault.status_ready" as DashboardKey)}</SelectItem>
               <SelectItem value="processing">
-                {lang === "en" ? "Processing" : "In Verarbeitung"}
+                {t("vault.status_processing" as DashboardKey)}
               </SelectItem>
-              <SelectItem value="failed">{lang === "en" ? "Failed" : "Fehlgeschlagen"}</SelectItem>
+              <SelectItem value="failed">{t("vault.status_failed" as DashboardKey)}</SelectItem>
               <SelectItem value="ocr_needed">
-                {lang === "en" ? "OCR needed" : "OCR nötig"}
+                {t("vault.status_ocr_needed" as DashboardKey)}
               </SelectItem>
             </SelectContent>
           </Select>
@@ -1051,10 +1049,8 @@ export default function VaultPage() {
                         className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                       >
                         {doc.partCount
-                          ? `${doc.partCount} ${lang === "en" ? "parts" : "Teile"}`
-                          : lang === "en"
-                            ? "Split parent"
-                            : "Gesplittet"}
+                          ? `${doc.partCount} ${t("vault.parts" as DashboardKey)}`
+                          : t("vault.split_parent" as DashboardKey)}
                       </Badge>
                     )}
                     {doc.partOf && (
@@ -1062,7 +1058,7 @@ export default function VaultPage() {
                         variant="default"
                         className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                       >
-                        {lang === "en" ? "Part of" : "Teil von"} {doc.partOf.split("/").pop()}
+                        {t("vault.part_of" as DashboardKey)} {doc.partOf.split("/").pop()}
                       </Badge>
                     )}
                   </div>

@@ -13,7 +13,6 @@ import {
   Target,
   TrendingUp,
   Database,
-  Cpu,
   Globe,
   Eye,
 } from "lucide-react";

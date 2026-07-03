@@ -142,7 +142,7 @@ export default function TaxStBVVPage() {
               value={`${formatCurrency(result.gebuehrNetto, locale)} €`}
               highlight
             />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <ResultRow
                 label={t("tax.stbvv.min_fee")}
                 value={`${formatCurrency(result.minGebuehr, locale)} €`}

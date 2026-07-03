@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useLang } from "@/lib/use-lang";
-import { ShieldAlert, Loader2, ChevronRight } from "lucide-react";
+import { ShieldAlert, Loader2, ChevronRight, Search as SearchIcon, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
@@ -35,6 +35,7 @@ export default function OpponentsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedOpponent, setSelectedOpponent] = useState<OpponentStats | null>(null);
   const [capped, setCapped] = useState(false);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -107,6 +108,16 @@ export default function OpponentsPage() {
     };
   }, []);
 
+  const filtered = useMemo(() => {
+    if (!query.trim()) return opponents;
+    const q = query.toLowerCase();
+    return opponents.filter(
+      (o) =>
+        o.name.toLowerCase().includes(q) ||
+        o.preferredAreas.some((a) => a.toLowerCase().includes(q))
+    );
+  }, [opponents, query]);
+
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader title="Gegner-Analyse" description="Intelligence über Gegner aus allen Akten" />
@@ -115,7 +126,7 @@ export default function OpponentsPage() {
 
       {/* Stats summary */}
       {opponents.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
             <div className="text-xs text-[color:var(--ds-text-muted)]">Gegner gesamt</div>
             <div className="text-xl font-bold text-[color:var(--ds-text)]">{opponents.length}</div>
@@ -168,6 +179,33 @@ export default function OpponentsPage() {
         </div>
       )}
 
+      {/* Search */}
+      {!loading && opponents.length > 0 && !selectedOpponent && (
+        <div className="relative max-w-md">
+          <SearchIcon
+            size={15}
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+          />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Gegner suchen…"
+            aria-label="Gegner suchen"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-9 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+              aria-label="Suche löschen"
+            >
+              <X size={15} />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Opponent list */}
       {loading ? (
         <div
@@ -214,7 +252,7 @@ export default function OpponentsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
                   <div className="text-xl font-bold text-emerald-600">{selectedOpponent.wins}</div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">Gewonnen</div>
@@ -292,7 +330,7 @@ export default function OpponentsPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {opponents.map((o) => (
+              {filtered.map((o) => (
                 <button
                   key={o.name}
                   onClick={() => setSelectedOpponent(o)}

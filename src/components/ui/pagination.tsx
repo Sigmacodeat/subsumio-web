@@ -19,6 +19,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage <= 1}
+        aria-label="Vorherige Seite"
         className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)] disabled:pointer-events-none disabled:opacity-50"
       >
         <ChevronLeft className="h-4 w-4" />
@@ -47,6 +48,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= totalPages}
+        aria-label="Nächste Seite"
         className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)] disabled:pointer-events-none disabled:opacity-50"
       >
         <ChevronRight className="h-4 w-4" />

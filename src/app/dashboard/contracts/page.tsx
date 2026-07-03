@@ -532,7 +532,7 @@ export default function ContractsPage() {
 
       {/* Summary stats */}
       {!loading && contracts.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
           <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
             <div className="brand-soft brand-border flex h-8 w-8 items-center justify-center rounded-lg border">
               <BarChart3 size={14} className="brand-text" />

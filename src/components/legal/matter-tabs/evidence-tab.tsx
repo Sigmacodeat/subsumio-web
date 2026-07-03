@@ -109,7 +109,7 @@ export function EvidenceTab() {
                       {card.docName}
                     </span>
                     {card.documentType && (
-                      <Badge variant="accent" className="shrink-0 text-[10px]">
+                      <Badge variant="accent" className="shrink-0 text-xs">
                         {card.documentType}
                       </Badge>
                     )}
@@ -124,7 +124,7 @@ export function EvidenceTab() {
                   </div>
                   {card.keyFacts.length > 0 && (
                     <div className="mb-2">
-                      <div className="text-[10px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                      <div className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
                         {t("cases.detail_evidence_ai_keyfacts")}
                       </div>
                       <ul className="mt-1 space-y-0.5">
@@ -138,14 +138,14 @@ export function EvidenceTab() {
                   )}
                   {card.parties.length > 0 && (
                     <div className="mb-2">
-                      <div className="text-[10px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                      <div className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
                         {t("cases.detail_evidence_ai_parties")}
                       </div>
                       <div className="mt-1 flex flex-wrap gap-1.5">
                         {card.parties.map((p, j) => (
                           <span
                             key={j}
-                            className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text)]"
+                            className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text)]"
                           >
                             {p.name}
                             {p.role && ` (${p.role})`}
@@ -156,7 +156,7 @@ export function EvidenceTab() {
                   )}
                   {card.evidenceRefs.length > 0 && (
                     <div className="mb-2">
-                      <div className="text-[10px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                      <div className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
                         {t("cases.detail_evidence_ai_refs")}
                       </div>
                       <ul className="mt-1 space-y-0.5">
@@ -170,14 +170,14 @@ export function EvidenceTab() {
                   )}
                   {card.citedStatutes.length > 0 && (
                     <div>
-                      <div className="text-[10px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                      <div className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
                         {t("cases.detail_evidence_ai_statutes")}
                       </div>
                       <div className="mt-1 flex flex-wrap gap-1.5">
                         {card.citedStatutes.map((s, j) => (
                           <span
                             key={j}
-                            className="rounded border border-amber-500/20 bg-amber-500/5 px-1.5 py-0.5 text-[10px] text-amber-700"
+                            className="rounded border border-amber-500/20 bg-amber-500/5 px-1.5 py-0.5 text-xs text-amber-700"
                           >
                             {s}
                           </span>

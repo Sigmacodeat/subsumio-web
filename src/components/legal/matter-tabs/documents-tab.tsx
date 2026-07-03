@@ -261,8 +261,7 @@ export function DocumentsTab() {
         <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-2.5 text-xs text-amber-700">
           <CloudUpload size={14} className="shrink-0" />
           <span>
-            {ctx.offlinePendingCount}{" "}
-            {lang === "en" ? "pending offline upload(s)" : t("casesdetail.upload.offline_queue")}
+            {ctx.offlinePendingCount} {t("casesdetail.upload.offline_queue")}
             {ctx.offlineSyncing ? ` — ${t("casesdetail.upload.syncing")}` : ""}
           </span>
         </div>
@@ -317,6 +316,7 @@ export function DocumentsTab() {
               </h3>
               <button
                 onClick={() => ctx.setShowLinkDialog(false)}
+                aria-label="Dialog schließen"
                 className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
               >
                 <XCircle size={16} />
@@ -443,18 +443,18 @@ export function DocumentsTab() {
                   <div className="flex items-center gap-2">
                     <span className="truncate text-sm text-[color:var(--ds-text)]">{doc.name}</span>
                     {doc.kind && (
-                      <Badge variant="accent" className="shrink-0 text-[10px]">
+                      <Badge variant="accent" className="shrink-0 text-xs">
                         {doc.kind}
                       </Badge>
                     )}
                     {doc.doc_type_label && doc.doc_type && doc.doc_type !== "legal_document" && (
-                      <Badge variant="info" className="shrink-0 text-[10px]">
+                      <Badge variant="info" className="shrink-0 text-xs">
                         {doc.doc_type_label}
                       </Badge>
                     )}
                     {doc.privileged && (
-                      <Badge variant="warning" className="shrink-0 text-[10px]">
-                        {lang === "en" ? "Privileged" : "Privilegiert"}
+                      <Badge variant="warning" className="shrink-0 text-xs">
+                        {t("docstab.privileged")}
                       </Badge>
                     )}
                     {(() => {
@@ -470,18 +470,13 @@ export function DocumentsTab() {
                         analysis_failed: "Analyse fehlgeschlagen",
                         analysis_retrying: "Analyse wird wiederholt",
                         analysis_permanently_failed: "Analyse dauerhaft fehlgeschlagen",
-                        extraction_failed:
-                          lang === "en" ? "Extraction failed" : "Extraktion fehlgeschlagen",
-                        extraction_password:
-                          lang === "en"
-                            ? "Password required — re-upload"
-                            : "Passwort nötig — neu hochladen",
-                        extraction_unsupported:
-                          lang === "en" ? "Unsupported format" : "Format nicht unterstützt",
+                        extraction_failed: t("docstab.extraction_failed"),
+                        extraction_password: t("docstab.extraction_password"),
+                        extraction_unsupported: t("docstab.extraction_unsupported"),
                       };
                       return (
                         <span
-                          className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-medium ${ps.color}`}
+                          className={`shrink-0 rounded border px-1.5 py-0.5 text-xs font-medium ${ps.color}`}
                         >
                           {labelMap[ps.key] ?? ps.key}
                         </span>

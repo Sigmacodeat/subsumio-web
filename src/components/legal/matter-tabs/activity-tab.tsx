@@ -72,8 +72,8 @@ export function ActivityTab() {
                       : "—"}
                   </div>
                   {ev.type === "status_change" && (
-                    <span className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--ds-text-muted)]">
-                      {lang === "en" ? "Status Change" : t("casesdetail.status_change")}
+                    <span className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      {t("casesdetail.status_change")}
                     </span>
                   )}
                 </div>

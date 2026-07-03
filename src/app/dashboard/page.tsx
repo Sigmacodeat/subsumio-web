@@ -1,18 +1,25 @@
 "use client";
 
 import { useMemo, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Briefcase, Upload, Search, ArrowRight, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/dashboard/skeleton";
-import { WidgetBoard } from "@/components/dashboard/widget-board";
-import { TaxWidgetBoard } from "@/components/dashboard/tax-widget-board";
 import { useBrainStats, useRecentQueries } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import type { BrainStats, RecentQuery } from "@/lib/types";
 import { StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
+
+const WidgetBoard = dynamic(() =>
+  import("@/components/dashboard/widget-board").then((m) => m.WidgetBoard)
+);
+const TaxWidgetBoard = dynamic(() =>
+  import("@/components/dashboard/tax-widget-board").then((m) => m.TaxWidgetBoard)
+);
 
 type Greeting = {
   greeting: string;
@@ -65,15 +72,16 @@ function CalmGreeting({
   degraded: boolean;
 }) {
   const { t, lang } = useLang();
+  const router = useRouter();
   const { greeting, sub } = useGreeting(name, lang);
   const [query, setQuery] = useState("");
   const onSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
       if (!query.trim()) return;
-      window.location.href = `/dashboard/chat?q=${encodeURIComponent(query.trim())}`;
+      router.push(`/dashboard/chat?q=${encodeURIComponent(query.trim())}`);
     },
-    [query]
+    [query, router]
   );
 
   return (
@@ -111,7 +119,7 @@ function CalmGreeting({
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={lang === "en" ? "Ask AI anything…" : "KI fragen…"}
+          placeholder={t("cockpit.ask_placeholder")}
           className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-9 pl-9 text-[13px] text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
         />
         <button

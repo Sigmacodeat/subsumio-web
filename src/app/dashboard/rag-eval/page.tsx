@@ -252,7 +252,7 @@ export default function RagEvalPage() {
               {t("rag_eval.human_review")}
             </h2>
           </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
             <div className="text-center">
               <div className="text-xl font-bold text-[color:var(--ds-text)]">
                 {reviewSummary.total}

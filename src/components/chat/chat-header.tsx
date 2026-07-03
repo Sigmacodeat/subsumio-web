@@ -129,7 +129,7 @@ export function ChatHeader(props: ChatHeaderProps) {
             <h2 className="truncate text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
               {t("chat.title")}
             </h2>
-            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--ds-text-subtle)]">
+            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-[color:var(--ds-text-subtle)]">
               {props.features.brainStatus && !compact && (
                 <span
                   className="inline-flex items-center gap-1.5 font-medium"
@@ -282,6 +282,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                           {props.sessionSearch && (
                             <button
                               onClick={() => props.onSessionSearchChange?.("")}
+                              aria-label="Suche zurücksetzen"
                               className="absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
                             >
                               <X size={12} />
@@ -328,7 +329,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                                   {s.tags.slice(0, 3).map((tag) => (
                                     <span
                                       key={tag}
-                                      className="inline-flex items-center gap-0.5 rounded bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text-subtle)]"
+                                      className="inline-flex items-center gap-0.5 rounded bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text-subtle)]"
                                     >
                                       <Tag size={7} />
                                       {tag}
@@ -412,7 +413,7 @@ export function ChatHeader(props: ChatHeaderProps) {
           {/* Jurisdiction indicator — read-only, derived from case or user profile */}
           {props.features.jurisdictionSelector && !compact && (
             <div
-              className="flex items-center gap-1 rounded-lg bg-[color:var(--ds-surface)] px-2 py-1 text-[11px] font-medium text-[color:var(--ds-text-muted)]"
+              className="flex items-center gap-1 rounded-lg bg-[color:var(--ds-surface)] px-2 py-1 text-xs font-medium text-[color:var(--ds-text-muted)]"
               title={t("chat.jurisdiction_locked")}
             >
               <Scale size={10} className="text-[color:var(--ds-text-subtle)]" />
@@ -466,7 +467,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                         <span className="text-xs text-[color:var(--ds-text-subtle)]">
                           {QUERY_MODE_LABELS[mode].description}
                         </span>
-                        <span className="text-[10px] text-[color:var(--ds-text-subtle)] opacity-70">
+                        <span className="text-xs text-[color:var(--ds-text-subtle)] opacity-70">
                           {QUERY_MODE_LABELS[mode].hint}
                         </span>
                       </button>

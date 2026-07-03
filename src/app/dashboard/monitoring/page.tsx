@@ -223,7 +223,7 @@ function MonitorFormDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className={labelCls}>{t("monitoring.form_jurisdiction")}</label>
               <select
@@ -322,7 +322,7 @@ function MonitorFormDialog({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className={labelCls}>{t("monitoring.form_status")}</label>
               <select
@@ -787,7 +787,7 @@ export default function MonitoringPage() {
       />
 
       {/* Stats bar */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <p className="text-2xl font-bold text-[color:var(--ds-text)]">{monitors.length}</p>
           <p className="text-xs text-[color:var(--ds-text-muted)]">

@@ -141,7 +141,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-3 items-start gap-4 border-b border-[color:var(--ds-border)] py-4 last:border-0">
+    <div className="grid grid-cols-1 items-start gap-4 border-b border-[color:var(--ds-border)] py-4 last:border-0 sm:grid-cols-3">
       <div>
         <p className="text-sm font-medium text-[color:var(--ds-text)]">{label}</p>
         {desc && (
@@ -177,9 +177,15 @@ function SettingsPageInner() {
   const [kanzleiSaved, setKanzleiSaved] = useState(false);
   const [kanzleiSaveError, setKanzleiSaveError] = useState<string | null>(null);
 
-  const [brainUrl, setBrainUrl] = useState("http://localhost:3001");
+  const [brainUrl, setBrainUrl] = useState(
+    process.env.NEXT_PUBLIC_SUBSUMIO_API_URL || "http://localhost:3001"
+  );
   const [searchMode, setSearchMode] = useState("balanced");
   const [dreamEnabled, setDreamEnabled] = useState(false);
+  const [singleKeyShortcuts, setSingleKeyShortcuts] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("single-key-shortcuts") !== "false";
+  });
 
   // Role & team
   const [userRole, setUserRole] = useState<string>("lawyer");
@@ -441,7 +447,7 @@ function SettingsPageInner() {
               <Input
                 value={brainUrl}
                 onChange={(e) => setBrainUrl(e.target.value)}
-                placeholder="http://localhost:3001"
+                placeholder="https://engine.example.com"
               />
             </Field>
 
@@ -1176,6 +1182,25 @@ function SettingsPageInner() {
                   English
                 </button>
               </div>
+            </Field>
+            <Field label={t("settings.accessibility")} desc={t("settings.accessibility_desc")}>
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={singleKeyShortcuts}
+                  onChange={(e) => {
+                    setSingleKeyShortcuts(e.target.checked);
+                    localStorage.setItem("single-key-shortcuts", String(e.target.checked));
+                  }}
+                  className="h-4 w-4 rounded border-[color:var(--ds-border)] accent-[var(--brand-primary)]"
+                />
+                <span className="text-sm text-[color:var(--ds-text)]">
+                  {t("settings.single_key_shortcuts")}
+                </span>
+              </label>
+              <p className="mt-1.5 text-xs text-[color:var(--ds-text-subtle)]">
+                {t("settings.single_key_shortcuts_hint")}
+              </p>
             </Field>
             <Field label={t("settings.data_export")} desc={t("settings.data_export_desc")}>
               <a href="/api/export" download>

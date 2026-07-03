@@ -59,7 +59,7 @@ export function PresenceIndicator({ pageSlug, className, maxAvatars = 5 }: Prese
             key={user.userId}
             title={`${user.email} — aktiv seit ${new Date(user.joinedAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}`}
             className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-full border-2 border-[color:var(--ds-surface)] text-[10px] font-semibold text-white shadow-sm",
+              "flex h-7 w-7 items-center justify-center rounded-full border-2 border-[color:var(--ds-surface)] text-xs font-semibold text-white shadow-sm",
               getColorForId(user.userId)
             )}
           >

@@ -87,7 +87,7 @@ export default function MobilePage() {
       />
 
       {/* Status */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
         {[
           { key: "push", label: "Push", icon: Bell, available: caps?.push },
           { key: "camera", label: "Kamera", icon: Camera, available: caps?.camera },

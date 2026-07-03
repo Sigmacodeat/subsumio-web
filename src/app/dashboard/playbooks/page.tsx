@@ -350,7 +350,7 @@ export default function PlaybooksPage() {
 
       {/* Stats */}
       {!loading && playbooks.length > 0 && !isFormOpen && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
           <StatCard
             icon={<BookOpen size={14} />}
             label={t("playbooks.stat_playbooks")}
@@ -769,7 +769,7 @@ function RuleRow({
           <X size={12} />
         </button>
       </div>
-      <div className="grid grid-cols-2 gap-2 pl-5 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 pl-5 sm:grid-cols-2 md:grid-cols-3">
         <select
           value={rule.required_position}
           onChange={(e) =>

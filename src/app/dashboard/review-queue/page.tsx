@@ -350,7 +350,7 @@ export default function ReviewQueuePage() {
               <CheckSquare size={16} className="text-[color:var(--ds-text-muted)]" />
               Freigabe-Status
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {[
                 { label: t("review_queue.all_status"), value: reviewSummary.total },
                 { label: STATUS_LABELS.pending, value: reviewSummary.pending },

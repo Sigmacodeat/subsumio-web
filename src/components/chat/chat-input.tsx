@@ -180,7 +180,7 @@ export function ChatInput({
           {attachments.map((att) => (
             <span
               key={att.slug}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-[11px] text-[color:var(--ds-text-muted)]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)]"
             >
               <FileText size={11} />
               {att.name}
@@ -220,7 +220,7 @@ export function ChatInput({
               <button
                 onClick={() => setShowModeMenu((v) => !v)}
                 disabled={isStreaming || disabled}
-                className="inline-flex items-center gap-1 rounded-lg bg-[color:var(--ds-surface-2)] px-2 py-1 text-[11px] font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-lg bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
                 aria-label={t("chat.mode")}
               >
                 <Activity size={11} className="text-[color:var(--ds-text-subtle)]" />
@@ -253,16 +253,16 @@ export function ChatInput({
                       >
                         <span
                           className={cn(
-                            "text-[11px] font-medium",
+                            "text-xs font-medium",
                             queryMode === mode ? "brand-text" : "text-[color:var(--ds-text)]"
                           )}
                         >
                           {QUERY_MODE_LABELS[mode].label}
                         </span>
-                        <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                        <span className="text-xs text-[color:var(--ds-text-subtle)]">
                           {QUERY_MODE_LABELS[mode].description}
                         </span>
-                        <span className="text-[9px] text-[color:var(--ds-text-subtle)] opacity-70">
+                        <span className="text-xs text-[color:var(--ds-text-subtle)] opacity-70">
                           {QUERY_MODE_LABELS[mode].hint}
                         </span>
                       </button>
@@ -332,7 +332,7 @@ export function ChatInput({
                         <span className="text-xs font-medium text-[color:var(--ds-text)]">
                           {tpl.label}
                         </span>
-                        <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                        <span className="text-xs text-[color:var(--ds-text-subtle)]">
                           {tpl.category}
                         </span>
                       </button>
@@ -396,7 +396,7 @@ export function ChatInput({
           {nearLimit && (
             <span
               className={cn(
-                "absolute right-12 bottom-1 text-[10px] font-medium",
+                "absolute right-12 bottom-1 text-xs font-medium",
                 overLimit ? "text-red-500" : "text-amber-500"
               )}
             >

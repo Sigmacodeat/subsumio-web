@@ -182,7 +182,7 @@ export default function ChatAnalyticsPage() {
                 </span>
                 <span
                   className={cn(
-                    "rounded px-1.5 py-0.5 text-[10px] font-medium",
+                    "rounded px-1.5 py-0.5 text-xs font-medium",
                     model.speedRating >= 4
                       ? "bg-emerald-500/10 text-emerald-600"
                       : model.speedRating >= 3

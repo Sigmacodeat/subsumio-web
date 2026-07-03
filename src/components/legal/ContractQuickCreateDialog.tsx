@@ -179,7 +179,7 @@ export function ContractQuickCreateDialog({
                   id="quick-contract-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder={lang === "en" ? "Contract name" : "Vertragsbezeichnung"}
+                  placeholder={t("contract.placeholder_name")}
                   autoFocus
                 />
               </div>
@@ -191,9 +191,7 @@ export function ContractQuickCreateDialog({
                   id="quick-contract-parties"
                   value={parties}
                   onChange={(e) => setParties(e.target.value)}
-                  placeholder={
-                    lang === "en" ? "e.g. Buyer A — Seller B" : "z.B. Käufer A — Verkäufer B"
-                  }
+                  placeholder={t("contract.placeholder_parties")}
                 />
               </div>
             </div>
@@ -227,9 +225,7 @@ export function ContractQuickCreateDialog({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={8}
-                placeholder={
-                  lang === "en" ? "Insert contract text…" : "Vertragstext hier einfügen…"
-                }
+                placeholder={t("contract.placeholder_text")}
                 className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               />
             </div>

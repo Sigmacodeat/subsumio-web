@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLang } from "@/lib/use-lang";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { encodeSlugPath } from "@/lib/utils";
 import { OFFLINE_KEYS, getCache, setCache } from "@/lib/offline-store";
@@ -99,7 +97,6 @@ function pageToRow(page: BrainPage): TaxReturnRow {
 export default function TaxReturnsPage() {
   const router = useRouter();
   const { t, lang } = useLang();
-  const { addToast } = useToast();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaxReturnStatus | "all">("all");
   const [typeFilter, setTypeFilter] = useState<TaxReturnType | "all">("all");
@@ -180,7 +177,7 @@ export default function TaxReturnsPage() {
 
       {/* Stats */}
       {!loading && returns.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-cols-4">
           <TaxStatCard
             label={t("tax.returns.stat_total")}
             value={returns.length}

@@ -31,6 +31,7 @@ const DASHBOARD_ROUTES = [
   "/dashboard/cost-calculator",
   "/dashboard/data-export",
   "/dashboard/datev-export",
+  "/dashboard/directory",
   "/dashboard/drafting",
   "/dashboard/email-import",
   "/dashboard/graph",

@@ -69,6 +69,9 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
     },
   ];
 
+  const singleKeyEnabled =
+    typeof window === "undefined" || localStorage.getItem("single-key-shortcuts") !== "false";
+
   return (
     <AnimatePresence initial={false}>
       {open && [
@@ -145,6 +148,11 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
                         </div>
                       ))}
                     </div>
+                    {group.title === t("cmd.shortcuts.quick_create") && (
+                      <p className="mt-2 rounded-lg bg-[color:var(--ds-surface-2)] px-3 py-2 text-xs text-[color:var(--ds-text-subtle)]">
+                        {t("cmd.shortcuts.single_key_hint")}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

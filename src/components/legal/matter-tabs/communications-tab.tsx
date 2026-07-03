@@ -1,15 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  Mail,
-  FileText,
-  Send,
-  MessageSquare,
-  Phone,
-  Clock,
-  Inbox,
-} from "lucide-react";
+import { Mail, FileText, Send, MessageSquare, Phone, Clock, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLang } from "@/lib/use-lang";
@@ -88,15 +80,16 @@ export function CommunicationsTab() {
     );
   }, [caseData]);
 
-  const filtered = filter === "all" ? communications : communications.filter((c) => c.type === filter);
+  const filtered =
+    filter === "all" ? communications : communications.filter((c) => c.type === filter);
 
   if (!caseData) return null;
 
   const filterOptions: Array<{ value: CommFilter; label: string; icon: typeof Mail }> = [
-    { value: "all", label: lang === "en" ? "All" : "Alle", icon: Inbox },
-    { value: "email", label: lang === "en" ? "Email" : "E-Mail", icon: Mail },
+    { value: "all", label: t("commstab.all"), icon: Inbox },
+    { value: "email", label: t("commstab.email"), icon: Mail },
     { value: "docusign", label: "DocuSign", icon: FileText },
-    { value: "call", label: lang === "en" ? "Calls" : "Anrufe", icon: Phone },
+    { value: "call", label: t("commstab.calls"), icon: Phone },
   ];
 
   const typeIcon = (type: string) => {
@@ -133,7 +126,7 @@ export function CommunicationsTab() {
             className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
           >
             <Send size={14} />
-            {lang === "en" ? "Send via DocuSign" : "Via DocuSign senden"}
+            {t("commstab.send_docusign")}
           </Button>
         </div>
 
@@ -191,10 +184,7 @@ export function CommunicationsTab() {
                       <span className="text-sm font-medium text-[color:var(--ds-text)]">
                         {comm.title}
                       </span>
-                      <Badge
-                        variant="default"
-                        className="shrink-0 text-[10px]"
-                      >
+                      <Badge variant="default" className="shrink-0 text-xs">
                         {comm.type}
                       </Badge>
                     </div>

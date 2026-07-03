@@ -71,7 +71,7 @@ export function ModelSelector({
     return (
       <div
         className={cn(
-          "flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] text-[color:var(--ds-text-muted)]",
+          "flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-[color:var(--ds-text-muted)]",
           isCompact && "bg-[color:var(--ds-surface-2)]",
           !isCompact &&
             "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-xs",
@@ -88,7 +88,7 @@ export function ModelSelector({
     return (
       <div
         className={cn(
-          "flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] text-[color:var(--ds-text-muted)]",
+          "flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-[color:var(--ds-text-muted)]",
           isCompact && "bg-[color:var(--ds-surface-2)]",
           !isCompact &&
             "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-xs",
@@ -108,7 +108,7 @@ export function ModelSelector({
         className={cn(
           "flex items-center gap-1.5 rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-text)]",
           isCompact
-            ? "bg-[color:var(--ds-surface-2)] px-2 py-1 text-[11px] hover:bg-[color:var(--ds-hover)]"
+            ? "bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs hover:bg-[color:var(--ds-hover)]"
             : "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-xs hover:border-[color:var(--ds-border-strong)]"
         )}
         title={
@@ -197,13 +197,13 @@ export function ModelSelector({
                       <span
                         className={cn(
                           "shrink-0 font-medium tracking-wide text-[color:var(--ds-text-subtle)] uppercase",
-                          isCompact ? "text-[10px]" : "text-xs"
+                          isCompact ? "text-xs" : "text-xs"
                         )}
                       >
                         {getProviderLabel(model.provider as never)}
                       </span>
                       {"dataResidency" in model && model.dataResidency === "eu" && (
-                        <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-1 py-0.5 text-[10px] font-medium text-[color:var(--ds-success-text)]">
+                        <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-1 py-0.5 text-xs font-medium text-[color:var(--ds-success-text)]">
                           <Globe size={7} />
                           EU
                         </span>

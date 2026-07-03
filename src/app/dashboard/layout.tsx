@@ -120,6 +120,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const onboardingCompleted = meQuery.data?.user?.onboardingCompletedAt;
   const isOnboardingPage = pathname === "/dashboard/onboarding";
   const industry = meQuery.data?.user?.industry ?? null;
+  const role = meQuery.data?.user?.role ?? null;
   const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? null;
   const userEmail = meQuery.data?.user?.email ?? null;
 
@@ -301,13 +302,23 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         return;
       }
       // Quick-create shortcuts (single key, no modifiers, only when not typing)
+      // WCAG 2.1.4: Single-key shortcuts must be disableable
       const target = e.target as HTMLElement;
       const isTyping =
         target instanceof HTMLInputElement ||
         target instanceof HTMLTextAreaElement ||
         target instanceof HTMLSelectElement ||
         target.isContentEditable;
-      if (!isTyping && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+      const singleKeyShortcutsEnabled =
+        typeof window === "undefined" || localStorage.getItem("single-key-shortcuts") !== "false";
+      if (
+        !isTyping &&
+        singleKeyShortcutsEnabled &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.shiftKey
+      ) {
         const key = e.key.toLowerCase();
         if (key === "n") {
           e.preventDefault();
@@ -392,6 +403,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         userEmail={userEmail}
         brainReachable={brainReachable}
         industry={industry}
+        role={role}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -406,6 +418,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           onGuideOpen={() => setGuideOpen(true)}
           copilotOpen={copilotOpen}
           onCopilotToggle={() => setCopilotOpen((v) => !v)}
+          onCmdOpen={() => setCmdOpen(true)}
         />
 
         <main

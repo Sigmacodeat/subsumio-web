@@ -191,6 +191,7 @@ function StepEditor({
             </button>
             <button
               onClick={() => removeStep(idx)}
+              aria-label="Schritt entfernen"
               className="rounded p-1 text-red-500 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-400"
             >
               <Trash2 size={14} />
@@ -383,6 +384,7 @@ function RunDialog({
           </div>
           <button
             onClick={onClose}
+            aria-label="Dialog schließen"
             className="rounded-md p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
           >
             <X size={18} />
@@ -1130,7 +1132,11 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
         <div className="fixed right-4 bottom-4 z-50 flex items-center gap-2 rounded-xl bg-[color:var(--ds-danger-text)] px-4 py-3 text-sm text-white shadow-2xl">
           <AlertCircle size={16} />
           {runError}
-          <button onClick={() => setRunError(null)} className="ml-2 hover:opacity-70">
+          <button
+            onClick={() => setRunError(null)}
+            aria-label="Fehlermeldung schließen"
+            className="ml-2 hover:opacity-70"
+          >
             <X size={14} />
           </button>
         </div>

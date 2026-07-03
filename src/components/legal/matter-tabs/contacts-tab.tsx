@@ -6,7 +6,6 @@ import {
   Plus,
   Mail,
   Phone,
-  Building2,
   ShieldAlert,
   AlertTriangle,
   Loader2,
@@ -18,7 +17,10 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
-import { ContactCreateDialog, type ContactCreateResult } from "@/components/legal/ContactCreateDialog";
+import {
+  ContactCreateDialog,
+  type ContactCreateResult,
+} from "@/components/legal/ContactCreateDialog";
 import type { CaseDetail } from "@/lib/matter-detail-types";
 
 const ROLE_LABELS_DE: Record<string, string> = {
@@ -128,17 +130,12 @@ export function ContactsTab() {
             <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
               {contact.name}
             </span>
-            <span
-              className={cn(
-                "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium",
-                roleColor
-              )}
-            >
+            <span className={cn("shrink-0 rounded px-1.5 py-0.5 text-xs font-medium", roleColor)}>
               {roleLabels[contact.role] || contact.role}
             </span>
             {isLinked && (
-              <Badge variant="success" className="shrink-0 text-[10px]">
-                {lang === "en" ? "Linked" : "Verknüpft"}
+              <Badge variant="success" className="shrink-0 text-xs">
+                {t("contactstab.linked")}
               </Badge>
             )}
           </div>
@@ -163,10 +160,10 @@ export function ContactsTab() {
             )}
             <Link
               href={`/dashboard/contacts?slug=${encodeURIComponent(contact.slug)}`}
-              className="flex items-center gap-1 hover:brand-text"
+              className="hover:brand-text flex items-center gap-1"
             >
               <Pencil size={11} />
-              {lang === "en" ? "Edit" : "Bearbeiten"}
+              {t("contactstab.edit")}
             </Link>
           </div>
         </div>
@@ -208,12 +205,10 @@ export function ContactsTab() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              {lang === "en" ? "Case Contacts" : "Aktenkontakte"}
+              {t("contactstab.case_contacts")}
             </h3>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-              {lang === "en"
-                ? "Contacts linked to this case and all available contacts."
-                : "Mit dieser Akte verknüpfte Kontakte und alle verfügbaren Kontakte."}
+              {t("contactstab.case_contacts_desc")}
             </p>
           </div>
           <Button
@@ -229,7 +224,7 @@ export function ContactsTab() {
             className="gap-1.5 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
           >
             <Plus size={13} />
-            {lang === "en" ? "Add Contact" : "Kontakt hinzufügen"}
+            {t("contactstab.add_contact")}
           </Button>
         </div>
 
@@ -261,7 +256,7 @@ export function ContactsTab() {
         {!ctx.contactsLoading && caseContacts.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-              {lang === "en" ? "Linked to this case" : "Mit dieser Akte verknüpft"}
+              {t("contactstab.linked_to_case")}
             </h4>
             {caseContacts.map(renderContactCard)}
           </div>
@@ -271,7 +266,7 @@ export function ContactsTab() {
         {!ctx.contactsLoading && otherContacts.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-              {lang === "en" ? "All contacts" : "Alle Kontakte"}
+              {t("contactstab.all_contacts")}
             </h4>
             {otherContacts.map(renderContactCard)}
           </div>
@@ -284,7 +279,7 @@ export function ContactsTab() {
               href="/dashboard/contacts"
               className="brand-text text-xs font-medium hover:underline"
             >
-              {lang === "en" ? "Manage all contacts →" : "Alle Kontakte verwalten →"}
+              {t("contactstab.manage_all")}
             </Link>
           </div>
         )}

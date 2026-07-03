@@ -143,7 +143,6 @@ function ShowreelTurn({
   thinkingLabel,
   verificationLabel,
   onComplete,
-  turnIndex,
 }: {
   turn: Turn;
   reduce: boolean | null;
@@ -152,7 +151,6 @@ function ShowreelTurn({
   thinkingLabel: string;
   verificationLabel: string;
   onComplete: () => void;
-  turnIndex: number;
 }) {
   const [phase, setPhase] = useState<"thinking" | "typing" | "sources" | "done">(
     reduce ? "done" : "thinking"
@@ -516,7 +514,6 @@ export default function ConversationShowreel({
               thinkingLabel={thinkingLabel}
               verificationLabel={verificationLabel}
               onComplete={handleTurnComplete}
-              turnIndex={i}
             />
           ))}
 

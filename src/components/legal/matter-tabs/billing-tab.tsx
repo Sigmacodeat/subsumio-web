@@ -220,7 +220,7 @@ export function BillingTab() {
               value={newEntry.description}
               disabled={isArchived}
               onChange={(e) => setNewEntry((p) => ({ ...p, description: e.target.value }))}
-              className="md:col-span-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none md:col-span-2"
             />
             <input
               type="number"
@@ -281,7 +281,7 @@ export function BillingTab() {
               className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
             >
               {showAdvanced ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              {lang === "en" ? "Advanced" : "Erweitert"}
+              {t("billingtab.advanced")}
             </button>
             <Button
               variant="primary"
@@ -300,7 +300,7 @@ export function BillingTab() {
             <div className="py-8 text-center">
               <Clock size={32} className="mx-auto text-[color:var(--ds-border)]" />
               <p className="mt-2 text-sm text-[color:var(--ds-text-muted)]">
-                {lang === "en" ? "No time entries yet." : "Noch keine Zeiteinträge."}
+                {t("billingtab.no_time_entries")}
               </p>
             </div>
           ) : (
@@ -334,7 +334,9 @@ export function BillingTab() {
                     </div>
                   </div>
                   <Badge
-                    variant={entry.billed ? "success" : entry.billable === false ? "default" : "warning"}
+                    variant={
+                      entry.billed ? "success" : entry.billable === false ? "default" : "warning"
+                    }
                     className="shrink-0 text-xs"
                   >
                     {entry.billed
@@ -410,7 +412,7 @@ export function BillingTab() {
             <div className="py-8 text-center">
               <Receipt size={32} className="mx-auto text-[color:var(--ds-border)]" />
               <p className="mt-2 text-sm text-[color:var(--ds-text-muted)]">
-                {lang === "en" ? "No expenses recorded." : "Keine Auslagen erfasst."}
+                {t("billingtab.no_expenses")}
               </p>
             </div>
           ) : (
@@ -432,7 +434,13 @@ export function BillingTab() {
                     {expense.amount.toFixed(2)} €
                   </div>
                   <Badge
-                    variant={expense.billed ? "success" : expense.billable === false ? "default" : "warning"}
+                    variant={
+                      expense.billed
+                        ? "success"
+                        : expense.billable === false
+                          ? "default"
+                          : "warning"
+                    }
                     className="shrink-0 text-xs"
                   >
                     {expense.billed
@@ -474,11 +482,11 @@ export function BillingTab() {
           <div className="flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
             <div>
               <h3 className="text-sm font-semibold text-amber-600">
-                {lang === "en" ? "Unbilled Summary" : "Nicht abgerechnet"}
+                {t("billingtab.unbilled_summary")}
               </h3>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                {billableHours}h {lang === "en" ? "time" : "Zeit"} +{" "}
-                {ctx.unbilledExpenses.toFixed(2)} € {lang === "en" ? "expenses" : "Auslagen"}
+                {billableHours}h {t("billingtab.time")} + {ctx.unbilledExpenses.toFixed(2)} €{" "}
+                {t("billingtab.expenses")}
               </p>
             </div>
             <Button
@@ -490,7 +498,7 @@ export function BillingTab() {
               className="gap-1.5 border border-amber-500/30 text-xs text-amber-600 hover:bg-amber-500/10"
             >
               <FileText size={14} />
-              {lang === "en" ? "Create Invoice" : "Rechnung erstellen"}
+              {t("billingtab.create_invoice")}
             </Button>
           </div>
         )}

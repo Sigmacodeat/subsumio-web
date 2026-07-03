@@ -342,7 +342,7 @@ export default function ClientPortalPage() {
                 >
                   <MessageSquare size={12} />
                   {t("client_portal.message")}
-                  <span className="ml-1 rounded bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-[10px] font-medium">
+                  <span className="ml-1 rounded bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-xs font-medium">
                     {t("client_portal.coming_soon")}
                   </span>
                 </div>

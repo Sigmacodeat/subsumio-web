@@ -13,7 +13,7 @@ interface TaxDeadlineTimelineProps {
 }
 
 export function TaxDeadlineTimeline({ deadlines, onSelect, className }: TaxDeadlineTimelineProps) {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const locale = lang === "en" ? "en-GB" : "de-DE";
 
   const sorted = useMemo(
@@ -35,7 +35,7 @@ export function TaxDeadlineTimeline({ deadlines, onSelect, className }: TaxDeadl
           className="mx-auto text-[color:var(--ds-text-subtle)] opacity-50"
         />
         <p className="mt-2 text-sm text-[color:var(--ds-text-subtle)]">
-          {lang === "en" ? "No deadlines" : "Keine Fristen"}
+          {t("tax.deadline_timeline.none")}
         </p>
       </div>
     );

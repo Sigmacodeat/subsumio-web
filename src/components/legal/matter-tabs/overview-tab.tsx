@@ -49,8 +49,6 @@ export function OverviewTab() {
   const { t, lang } = useLang();
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
   const moreActionsRef = useRef<HTMLDivElement>(null);
-  if (!ctx.caseData) return null;
-  const caseData = ctx.caseData;
 
   // Close "More actions" on outside click
   useEffect(() => {
@@ -63,6 +61,9 @@ export function OverviewTab() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [moreActionsOpen]);
+
+  if (!ctx.caseData) return null;
+  const caseData = ctx.caseData;
 
   return (
     <div className="space-y-4 p-4 md:p-6">
@@ -112,9 +113,7 @@ export function OverviewTab() {
             )}
           >
             <MoreHorizontal size={14} className="shrink-0" />
-            <span className="hidden sm:inline">
-              {lang === "en" ? "More" : "Mehr"}
-            </span>
+            <span className="hidden sm:inline">{t("overviewtab.more")}</span>
           </button>
           {moreActionsOpen && (
             <div className="absolute top-full right-0 mt-1 min-w-[200px] rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-1 shadow-lg">
@@ -165,52 +164,53 @@ export function OverviewTab() {
                 </button>
               )}
               {/* Portal link copy (if enabled) */}
-              {(ctx.userRole === "admin" || ctx.userRole === "lawyer") && caseData.portalEnabled && (
-                <button
-                  onClick={async () => {
-                    ctx.setGeneratingPortal(true);
-                    try {
-                      const res = await csrfFetch("/api/portal/generate", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ caseSlug: caseData.slug }),
-                      });
-                      const data = await res.json();
-                      if (res.ok && data.url) {
-                        const fullUrl = `${window.location.origin}${data.url}`;
-                        ctx.setPortalUrl(fullUrl);
-                        await navigator.clipboard.writeText(fullUrl);
-                        ctx.setCopied(true);
-                        setTimeout(() => ctx.setCopied(false), 2000);
-                      } else {
+              {(ctx.userRole === "admin" || ctx.userRole === "lawyer") &&
+                caseData.portalEnabled && (
+                  <button
+                    onClick={async () => {
+                      ctx.setGeneratingPortal(true);
+                      try {
+                        const res = await csrfFetch("/api/portal/generate", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ caseSlug: caseData.slug }),
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.url) {
+                          const fullUrl = `${window.location.origin}${data.url}`;
+                          ctx.setPortalUrl(fullUrl);
+                          await navigator.clipboard.writeText(fullUrl);
+                          ctx.setCopied(true);
+                          setTimeout(() => ctx.setCopied(false), 2000);
+                        } else {
+                          ctx.setSaveError(t("cases.detail_portal_error"));
+                        }
+                      } catch (err) {
+                        console.error(
+                          "[portal] generate failed:",
+                          err instanceof Error ? err.message : String(err)
+                        );
                         ctx.setSaveError(t("cases.detail_portal_error"));
+                      } finally {
+                        ctx.setGeneratingPortal(false);
                       }
-                    } catch (err) {
-                      console.error(
-                        "[portal] generate failed:",
-                        err instanceof Error ? err.message : String(err)
-                      );
-                      ctx.setSaveError(t("cases.detail_portal_error"));
-                    } finally {
-                      ctx.setGeneratingPortal(false);
-                    }
-                    setMoreActionsOpen(false);
-                  }}
-                  disabled={ctx.generatingPortal}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:text-sm"
-                >
-                  {ctx.generatingPortal ? (
-                    <Loader2 size={14} className="shrink-0 animate-spin" />
-                  ) : (
-                    <Copy size={14} className="shrink-0" />
-                  )}
-                  {ctx.generatingPortal
-                    ? t("cases.detail_btn_portal_generating")
-                    : ctx.copied
-                      ? t("cases.detail_btn_portal_copied")
-                      : t("cases.detail_btn_portal_link")}
-                </button>
-              )}
+                      setMoreActionsOpen(false);
+                    }}
+                    disabled={ctx.generatingPortal}
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:text-sm"
+                  >
+                    {ctx.generatingPortal ? (
+                      <Loader2 size={14} className="shrink-0 animate-spin" />
+                    ) : (
+                      <Copy size={14} className="shrink-0" />
+                    )}
+                    {ctx.generatingPortal
+                      ? t("cases.detail_btn_portal_generating")
+                      : ctx.copied
+                        ? t("cases.detail_btn_portal_copied")
+                        : t("cases.detail_btn_portal_link")}
+                  </button>
+                )}
             </div>
           )}
         </div>
@@ -916,16 +916,13 @@ export function OverviewTab() {
                 className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3"
               >
                 <div className="mb-1 flex items-center gap-2">
-                  <Badge
-                    variant={c.severity === "high" ? "danger" : "warning"}
-                    className="text-[10px]"
-                  >
+                  <Badge variant={c.severity === "high" ? "danger" : "warning"} className="text-xs">
                     {c.severity}
                   </Badge>
                   <span className="text-xs font-medium text-[color:var(--ds-text)]">{c.field}</span>
                 </div>
                 <p className="text-xs text-[color:var(--ds-text-muted)]">{c.description}</p>
-                <div className="mt-2 flex items-center gap-2 text-[11px] text-[color:var(--ds-text-muted)]">
+                <div className="mt-2 flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
                   <span className="truncate">{c.value_a}</span>
                   <span className="shrink-0 text-amber-600">vs</span>
                   <span className="truncate">{c.value_b}</span>

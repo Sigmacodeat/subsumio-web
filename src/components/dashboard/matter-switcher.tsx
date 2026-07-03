@@ -16,7 +16,7 @@ import { useLang } from "@/lib/use-lang";
 import { cn } from "@/lib/utils";
 
 export function MatterSwitcher() {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const router = useRouter();
   const pathname = usePathname();
   const { pinned, recent, togglePin } = useRecentMatters();
@@ -107,7 +107,7 @@ export function MatterSwitcher() {
     <div className="relative shrink-0" ref={containerRef}>
       <button
         onClick={() => setOpen((v) => !v)}
-        aria-label={lang === "en" ? "Switch matter" : "Akte wechseln"}
+        aria-label={t("matterswitcher.switch")}
         aria-expanded={open}
         aria-haspopup="listbox"
         className={cn(
@@ -119,7 +119,7 @@ export function MatterSwitcher() {
       >
         <Briefcase size={14} className="shrink-0" />
         <span className="hidden max-w-[120px] truncate sm:inline">
-          {currentMatter?.title ?? currentMatter?.slug ?? (lang === "en" ? "Matters" : "Akten")}
+          {currentMatter?.title ?? currentMatter?.slug ?? t("matterswitcher.matters")}
         </span>
         <ChevronDown
           size={12}
@@ -141,7 +141,7 @@ export function MatterSwitcher() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={lang === "en" ? "Search matters…" : "Akten durchsuchen…"}
+                placeholder={t("matterswitcher.search")}
                 className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-8 text-[13px] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               />
             </div>
@@ -167,9 +167,9 @@ export function MatterSwitcher() {
                 {/* Pinned section */}
                 {pinnedFiltered.length > 0 && (
                   <div className="mb-1">
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
                       <Pin size={10} />
-                      {lang === "en" ? "Pinned" : "Angeheftet"}
+                      {t("matterswitcher.pinned")}
                     </div>
                     {pinnedFiltered.map((m) => (
                       <MatterSwitcherItem
@@ -191,9 +191,9 @@ export function MatterSwitcher() {
                   <div>
                     {pinnedFiltered.length > 0 && (
                       <div className="mt-2 mb-1 border-t border-[color:var(--ds-border)] pt-1">
-                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
                           <FolderOpen size={10} />
-                          {lang === "en" ? "Recent" : "Zuletzt"}
+                          {t("matterswitcher.recent")}
                         </div>
                       </div>
                     )}
@@ -226,7 +226,7 @@ export function MatterSwitcher() {
               className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             >
               <ArrowRight size={13} className="shrink-0" />
-              {lang === "en" ? "All matters" : "Alle Akten"}
+              {t("matterswitcher.all")}
             </Link>
           </div>
         </div>
@@ -256,6 +256,7 @@ function MatterSwitcherItem({
   onTogglePin,
   lang,
 }: MatterSwitcherItemProps) {
+  const { t } = useLang();
   return (
     <div
       className={cn(
@@ -286,12 +287,8 @@ function MatterSwitcherItem({
             ? "brand-text"
             : "text-[color:var(--ds-text-subtle)] opacity-0 group-hover:opacity-100 hover:text-[color:var(--ds-text)]"
         )}
-        aria-label={
-          isPinned ? (lang === "en" ? "Unpin" : "Loslösen") : lang === "en" ? "Pin" : "Anheften"
-        }
-        title={
-          isPinned ? (lang === "en" ? "Unpin" : "Loslösen") : lang === "en" ? "Pin" : "Anheften"
-        }
+        aria-label={isPinned ? t("matterswitcher.unpin") : t("matterswitcher.pin")}
+        title={isPinned ? t("matterswitcher.unpin") : t("matterswitcher.pin")}
       >
         <Pin size={11} className={isPinned ? "fill-current" : ""} />
       </button>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLang } from "@/lib/use-lang";
+import { useToast } from "@/components/ui/toast";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
 import {
   FileText,
@@ -127,6 +128,7 @@ function getTemplates(t: (key: import("@/content/dashboard").DashboardKey) => st
 
 export default function DraftingPage() {
   const { t } = useLang();
+  const { addToast } = useToast();
   const TEMPLATES = getTemplates(t);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("klage");
   const [generating, setGenerating] = useState(false);
@@ -304,6 +306,7 @@ export default function DraftingPage() {
       }
 
       setDraftSaved(slug);
+      addToast({ type: "success", description: t("drafting.saved_default") });
       return slug;
     } catch (e) {
       setDraftSaved(
@@ -311,6 +314,7 @@ export default function DraftingPage() {
           ? `${t("drafting.error_prefix")}: ${e.message}`
           : t("drafting.error_save")
       );
+      addToast({ type: "error", description: t("drafting.error_save") });
       return null;
     } finally {
       setSavingDraft(false);
@@ -341,6 +345,7 @@ export default function DraftingPage() {
         }),
       });
       setDraftSaved(`approval:${actionSlug}`);
+      addToast({ type: "success", description: "Entwurf zur Freigabe eingereicht" });
     } catch (e) {
       if (draftSlug) {
         try {
@@ -371,7 +376,7 @@ export default function DraftingPage() {
       />
 
       {/* Template selector */}
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-7">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
         {TEMPLATES.map((t) => {
           const Icon = t.icon;
           return (
@@ -408,7 +413,7 @@ export default function DraftingPage() {
             <AlertTriangle size={14} /> {form.error}
           </div>
         )}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
               {t("drafting.label_title")}
@@ -435,7 +440,7 @@ export default function DraftingPage() {
             />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
               {t("drafting.label_klaeger")}

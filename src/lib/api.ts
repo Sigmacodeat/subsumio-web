@@ -116,6 +116,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  search(query: string, limit = 10, type?: string): Promise<SearchResult[]> {
+    const params = new URLSearchParams({ q: query, limit: String(limit) });
+    if (type) params.set("type", type);
+    return request(`/api/search?${params.toString()}`);
+  },
+
   brain: {
     stats(): Promise<BrainStats> {
       return request("/api/stats");

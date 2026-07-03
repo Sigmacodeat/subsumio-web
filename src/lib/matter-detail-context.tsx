@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  useRef,
-} from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams, useRouter } from "next/navigation";
@@ -29,20 +21,8 @@ import {
   uploadFiles as presignedUploadFiles,
   type UploadProgress as PresignedProgress,
 } from "@/lib/presigned-upload";
-import {
-  DEADLINE_RULES,
-  calculateDeadline,
-  computeDeadlineStatus,
-  timelineToDeadline,
-  withDeadlineAudit,
-} from "@/lib/legal-deadlines";
-import {
-  validateTransition,
-  getAllowedTransitions,
-  transitionDescription,
-  STATUS_LABELS_DE,
-  type CaseStatus,
-} from "@/lib/case-status";
+import { DEADLINE_RULES, computeDeadlineStatus, withDeadlineAudit } from "@/lib/legal-deadlines";
+import { STATUS_LABELS_DE, type CaseStatus } from "@/lib/case-status";
 import {
   deadlineFormSchema,
   evidenceFormSchema,
@@ -57,24 +37,17 @@ import {
   type ConflictCheckResult,
 } from "@/lib/contact-conflict";
 import type { BrainPage, SearchResult } from "@/lib/types";
-import type { DashboardKey } from "@/content/dashboard";
 import {
   caseFrontmatter,
   type EvidenceEntry,
-  type TaskEntry,
   type TimeEntry,
-  type TimelineEntry,
   type DocumentEntry,
   type DeadlineEntry,
   type ExpenseEntry,
-  type AuditLogEntry,
 } from "@/lib/legal-types";
 import { useMatterData } from "@/lib/matter-data-context";
 import {
   type CaseDetail,
-  type SuggestedDeadline,
-  type SuggestedParty,
-  type ContradictionFinding,
   type UploadQueueItem,
   type AiEvidenceCard,
   type ProbeFinding,
@@ -328,15 +301,18 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
 
   const activeTab: string = contextTab === "deadlines" ? "deadlines_tasks" : contextTab;
 
-  function navigateToTab(tab: string) {
-    const mapped = tab === "deadlines_tasks" ? "deadlines" : tab;
-    const encoded = contextCaseSlug.split("/").map(encodeURIComponent).join("/");
-    const url =
-      mapped === "overview"
-        ? `/dashboard/cases/${encoded}`
-        : `/dashboard/cases/${encoded}/${mapped}`;
-    router.push(url);
-  }
+  const navigateToTab = useCallback(
+    (tab: string) => {
+      const mapped = tab === "deadlines_tasks" ? "deadlines" : tab;
+      const encoded = contextCaseSlug.split("/").map(encodeURIComponent).join("/");
+      const url =
+        mapped === "overview"
+          ? `/dashboard/cases/${encoded}`
+          : `/dashboard/cases/${encoded}/${mapped}`;
+      router.push(url);
+    },
+    [contextCaseSlug, router]
+  );
 
   // ── State ───────────────────────────────────────────────────────────
 
@@ -492,7 +468,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
     ];
     events.forEach((evt) => window.addEventListener(evt, handler));
     return () => events.forEach((evt) => window.removeEventListener(evt, handler));
-  }, [contextCaseSlug]);
+  }, [contextCaseSlug, navigateToTab]);
 
   // ── Data loading ────────────────────────────────────────────────────
 

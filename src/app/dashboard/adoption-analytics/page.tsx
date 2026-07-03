@@ -210,7 +210,7 @@ export default function AdoptionAnalyticsPage() {
           )}
 
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
             <KPICard
               icon={Users}
               label="Aktive Nutzer (30d)"
@@ -269,7 +269,7 @@ export default function AdoptionAnalyticsPage() {
                           style={{ height: `${Math.max(heightPct, 2)}%` }}
                         />
                         {i % Math.ceil(data.usage_trends.length / 12) === 0 && (
-                          <span className="mt-1 origin-left rotate-45 text-[10px] whitespace-nowrap text-[color:var(--ds-text-muted)]">
+                          <span className="mt-1 origin-left rotate-45 text-xs whitespace-nowrap text-[color:var(--ds-text-muted)]">
                             {formatDate(t.date).slice(0, 5)}
                           </span>
                         )}

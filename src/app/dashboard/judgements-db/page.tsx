@@ -14,7 +14,6 @@ import {
   Database,
   GitBranch,
   TrendingUp,
-  Calendar,
   Scale,
   FileText,
   ArrowLeft,
@@ -26,7 +25,6 @@ import {
   Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useLang } from "@/lib/use-lang";
 
 interface SearchResult {
   id: string;
@@ -162,7 +160,6 @@ const TREATMENT_LABELS: Record<string, { de: string; en: string }> = {
 };
 
 export default function JudgementsDbPage() {
-  const { t } = useLang();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [total, setTotal] = useState(0);
@@ -401,7 +398,7 @@ export default function JudgementsDbPage() {
 
       {/* Stats Bar */}
       {stats && (
-        <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
           <StatCard
             icon={<Database className="h-4 w-4" />}
             label="Urteile"
@@ -594,7 +591,7 @@ export default function JudgementsDbPage() {
 
       {/* Filters */}
       {showFilters && (
-        <div className="bg-muted/30 mb-4 grid grid-cols-2 gap-3 rounded-lg border p-4 md:grid-cols-4">
+        <div className="bg-muted/30 mb-4 grid grid-cols-1 gap-3 rounded-lg border p-4 sm:grid-cols-2 md:grid-cols-4">
           <select
             value={filters.jurisdiction}
             onChange={(e) => setFilters({ ...filters, jurisdiction: e.target.value })}
@@ -807,7 +804,7 @@ function PipelinePanel({ result }: { result: PipelineResultData }) {
             {(result.total_duration_ms / 1000).toFixed(1)}s
           </span>
         </div>
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-4">
           {result.steps.map((step, i) => {
             const Icon = agentIcons[step.agent] ?? Brain;
             const label = agentLabels[step.agent] ?? step.agent;
@@ -1079,13 +1076,7 @@ function DetailPanel({
   );
 }
 
-function CitationItem({
-  cite,
-  direction,
-}: {
-  cite: CitationNode;
-  direction: "outgoing" | "incoming";
-}) {
+function CitationItem({ cite }: { cite: CitationNode; direction: "outgoing" | "incoming" }) {
   const treatmentColors: Record<string, string> = {
     positive: "text-emerald-600",
     negative: "text-red-600",

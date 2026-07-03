@@ -86,7 +86,7 @@ export default function RetentionPage() {
       />
 
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
           <div className="text-xl font-bold text-emerald-600">
             {cases.filter((c) => c.action === "keep").length}

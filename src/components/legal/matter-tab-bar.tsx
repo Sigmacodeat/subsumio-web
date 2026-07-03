@@ -48,7 +48,7 @@ const TAB_LABELS_DE: Record<MatterTab, string> = {
   overview: "Übersicht",
   documents: "Dokumente",
   deadlines: "Fristen",
-  strategy: "KI",
+  strategy: "Strategie",
   activity: "Verlauf",
   evidence: "Beweise",
   billing: "Kosten",
@@ -61,7 +61,7 @@ const TAB_LABELS_EN: Record<MatterTab, string> = {
   overview: "Overview",
   documents: "Documents",
   deadlines: "Deadlines",
-  strategy: "AI",
+  strategy: "Strategy",
   activity: "Activity",
   evidence: "Evidence",
   billing: "Billing",
@@ -72,7 +72,7 @@ const TAB_LABELS_EN: Record<MatterTab, string> = {
 
 export function MatterTabBar() {
   const { activeTab, caseSlug } = useMatterData();
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const [moreOpen, setMoreOpen] = useState(false);
   const labels = lang === "en" ? TAB_LABELS_EN : TAB_LABELS_DE;
   const moreRef = useRef<HTMLDivElement>(null);
@@ -129,7 +129,7 @@ export function MatterTabBar() {
         >
           <MoreHorizontal size={14} className="shrink-0" />
           <span className="hidden sm:inline">
-            {isSecondaryActive ? labels[activeTab] : lang === "en" ? "More" : "Mehr"}
+            {isSecondaryActive ? labels[activeTab] : t("mattertab.more")}
           </span>
         </button>
         {moreOpen && (

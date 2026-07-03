@@ -2,15 +2,24 @@ import { z } from "zod";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
 import { apiError } from "@/lib/api-response";
-import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 import { env } from "@/lib/env";
 import { groundCitations } from "@/lib/legal-grounding";
-import { searchJudgements, type JudgementHit } from "@/lib/judgements";
+import { encodeSlugPath } from "@/lib/utils";
 import type { RawCitation } from "@/lib/types";
+
+import { buildAnalysisPrompt } from "@/lib/legal/analysis-prompt";
+import {
+  buildEmptyResult,
+  safeParseJson,
+  ENGINE_FETCH_TIMEOUT,
+  MAX_ANALYSIS_CHARS,
+  CONTRADICTIONS_TIMEOUT,
+} from "@/lib/legal/analysis-utils";
+import { findRelevantPrecedents } from "@/lib/legal/precedent-search";
+import { writeSuggestedDeadlinesAndParties } from "@/lib/legal/case-writeback";
 
 export const maxDuration = 120;
 
-// ── Zod validation ────────────────────────────────────────────────────
 const analyzeSchema = z
   .object({
     document_slug: z.string().optional(),
@@ -20,111 +29,6 @@ const analyzeSchema = z
   })
   .passthrough();
 
-function safeParseJson(text: string): Record<string, unknown> {
-  try {
-    const cleaned = text
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/```\s*$/, "")
-      .trim();
-    return JSON.parse(cleaned) as Record<string, unknown>;
-  } catch {
-    const match = text.match(/\{[\s\S]*\}/);
-    if (match) {
-      try {
-        return JSON.parse(match[0]) as Record<string, unknown>;
-      } catch {
-        /* ignore */
-      }
-    }
-    return {};
-  }
-}
-
-function buildEmptyResult(reason: string): Record<string, unknown> {
-  return {
-    document_type: "unknown",
-    type_confidence: 0,
-    parties: [],
-    deadlines: [],
-    cited_statutes: [],
-    risks: [],
-    action_items: [],
-    summary: reason,
-    language: "de",
-    privilege: {
-      is_privileged: false,
-      privilege_type: "none",
-      privilege_basis: "Keine Analyse durchgeführt",
-    },
-  };
-}
-
-function buildAnalysisPrompt(text: string, jurisdiction: string): string {
-  const jurHint =
-    jurisdiction === "all"
-      ? "AT (\u00d6sterreich), DE (Deutschland) oder CH (Schweiz)"
-      : jurisdiction.toUpperCase();
-
-  // P0-SEC-001: the document text is user-controlled and is interpolated into
-  // the LLM prompt below. Strip prompt-injection patterns and control chars
-  // before embedding it between the document delimiters.
-  const safeText = sanitizeUserInput(text);
-
-  return `Du bist ein \u00f6sterreichischer/deutscher Rechtsexperte. Analysiere das folgende Rechtsdokument.
-
-KRITISCHE REGEL: Du darfst KEINE Gesetzesnormen erfinden oder raten. Nenne AUSSCHLIESSLICH \u00a7-Paragraphen, die EXPLIZIT im Dokument genannt werden oder sich zwingend logisch aus dem Dokumenttyp ergeben (Kaufvertrag \u2192 \u00a7 433 BGB, Gew\u00e4hrleistung \u2192 \u00a7 922 ABGB, etc.).
-
-Antworte AUSSCHLIESSLICH als g\u00fcltiges JSON ohne Markdown-Codeblock, keine anderen Zeichen au\u00dferhalb des JSON.
-
-Dokument:
----
-${safeText}
----
-
-Rechtsordnung: ${jurHint}
-
-Extrahiere:
-1. document_type: Kaufvertrag | Mietvertrag | Arbeitsvertrag | Gerichtsurteil | Schriftsatz | Mahnschreiben | Anwaltsschreiben | Rechnung | Gesetzesentwurf | Korrespondenz | sonstiges
-2. type_confidence: 0.0\u20131.0 (wie sicher bist du beim document_type)
-3. parties: Vollst\u00e4ndige Namen der Beteiligten (Klient, Gegner, Gericht, Beh\u00f6rde)
-4. deadlines: Fristen und Daten aus dem Dokument
-5. cited_statutes: Nur \u00a7\u00a7 die im Dokument stehen ODER zwingend anwendbar sind
-6. risks: Konkrete rechtliche Risiken mit Schweregrad
-7. action_items: N\u00e4chste konkrete Schritte f\u00fcr den Anwalt
-8. summary: 2-3 pr\u00e4zise S\u00e4tze
-9. language: de | en | other
-10. privilege: Pr\u00fcfe ob das Dokument dem anwaltlichen Geheimnisschutz unterliegt
-    - is_privileged: true wenn es sich um anwaltliche Kommunikation, Mandatsbriefe, interne Notizen, oder Dokumente mit anwaltlicher Stellungnahme handelt
-    - privilege_type: "attorney_client" | "work_product" | "settlement_negotiation" | "none"
-    - privilege_basis: Kurze Begr\u00fcndung warum privilegiert oder nicht
-
-Hinweis: Nach deiner Analyse wird automatisch nach relevanten Gerichtsentscheidungen (OGH, BGH, BFH, EuGH) gesucht. Deine zitierten Normen und Risiko-Beschreibungen werden als Suchkriterien verwendet — formuliere sie präzise.
-
-Antworte JETZT mit reinem JSON:
-{
-  "document_type": "string",
-  "type_confidence": 0.0,
-  "parties": [{"name":"string","role":"Klient|Gegner|Gericht|Beh\u00f6rde|Zeuge|sonstige"}],
-  "deadlines": [{"label":"string","date":"string","urgency":"critical|normal","source":"exact quote from document"}],
-  "cited_statutes": [{"code":"string","paragraph":"string","context":"why this statute applies"}],
-  "risks": [{"severity":"high|medium|low","description":"string","mitigation":"string"}],
-  "action_items": ["string"],
-  "summary": "string",
-  "language": "string",
-  "privilege": {
-    "is_privileged": false,
-    "privilege_type": "none",
-    "privilege_basis": "string"
-  }
-}`;
-}
-
-function encodeSlugPath(slug: string): string {
-  return slug.split("/").map(encodeURIComponent).join("/");
-}
-
-// ── Route handler ─────────────────────────────────────────────────────
-
 export const POST = createHandler(
   {
     action: "legal.document_review",
@@ -132,11 +36,6 @@ export const POST = createHandler(
     quota: "queries",
     body: analyzeSchema,
     maxDuration: 120,
-    // The post-upload pipeline (upload/route.ts → runAnalysisWithTracking)
-    // fires this endpoint server-to-server with x-internal-secret and the
-    // target brain in body.brain_id. Without allowInternal the call has no
-    // session/CSRF token and is rejected at the CSRF gate (HTTP 403), so the
-    // isInternal branch below was dead code and auto-analysis never ran.
     allowInternal: true,
   },
   async (ctx, body, _query, _req) => {
@@ -148,9 +47,6 @@ export const POST = createHandler(
     const jurisdiction =
       typeof body.jurisdiction === "string" ? body.jurisdiction.toLowerCase() : "all";
 
-    // Only internal service callers may specify a brain_id; authenticated user
-    // sessions always use the server-resolved brainId from engineContext to
-    // prevent IDOR (cross-tenant brain access).
     if (isInternal) {
       const brainId = typeof body.brain_id === "string" ? body.brain_id : "";
       if (brainId) {
@@ -159,15 +55,16 @@ export const POST = createHandler(
       }
     }
 
-    // 1. Fetch document text from Brain engine
+    // ── 1. Fetch document text ──────────────────────────────────────────
     const warnings: string[] = [];
     let text = "";
     let documentCaseSlug: string | undefined;
+
     if (documentSlug) {
       try {
         const pageRes = await fetch(`${ENGINE_URL}/api/pages/${encodeSlugPath(documentSlug)}`, {
           headers: engineHeaders,
-          signal: AbortSignal.timeout(300_000),
+          signal: AbortSignal.timeout(ENGINE_FETCH_TIMEOUT),
         });
         if (pageRes.ok) {
           const page = (await pageRes.json()) as {
@@ -176,7 +73,6 @@ export const POST = createHandler(
             frontmatter?: Record<string, unknown>;
           };
           text = [page.title, page.content].filter(Boolean).join("\n\n");
-          // P0-2: Remember the case_slug so we can write back suggested deadlines
           documentCaseSlug =
             typeof page.frontmatter?.case_slug === "string"
               ? page.frontmatter.case_slug
@@ -202,31 +98,23 @@ export const POST = createHandler(
       return apiError("document_not_found_or_empty", "Document not found or empty", 404);
     }
 
-    // 2. Truncate to ~80k chars
-    const MAX_CHARS = 80_000;
-    if (text.length > MAX_CHARS) {
-      text = text.slice(0, MAX_CHARS) + "\n\n[... document truncated for analysis]";
+    if (text.length > MAX_ANALYSIS_CHARS) {
+      text = text.slice(0, MAX_ANALYSIS_CHARS) + "\n\n[... document truncated for analysis]";
     }
 
-    // 3. AI analysis
-    // Route A (preferred): engine has its own /api/legal/analyze that takes a
-    // slug, runs the full analyzeDocument pipeline, and returns JSON directly.
-    // Route B (fallback): if no slug (inline text supplied), use /api/think with
-    // the correct `query` field \u2014 NOT `prompt` \u2014 and collect the SSE stream.
+    // ── 2. AI analysis (Route A: engine-native, Route B: /api/think) ────
     let parsed: Record<string, unknown>;
     try {
       if (documentSlug) {
-        // Route A \u2014 engine-native analyze (JSON response, no SSE)
         const analyzeRes = await fetch(`${ENGINE_URL}/api/legal/analyze`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...engineHeaders },
           body: JSON.stringify({ slug: documentSlug }),
-          signal: AbortSignal.timeout(300_000),
+          signal: AbortSignal.timeout(ENGINE_FETCH_TIMEOUT),
         });
         if (!analyzeRes.ok) throw new Error(`Engine legal/analyze ${analyzeRes.status}`);
         parsed = (await analyzeRes.json()) as Record<string, unknown>;
       } else {
-        // Route B \u2014 /api/think for inline text. Engine expects `query`, streams SSE.
         const thinkRes = await fetch(`${ENGINE_URL}/api/think`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...engineHeaders },
@@ -234,10 +122,9 @@ export const POST = createHandler(
             query: buildAnalysisPrompt(text, jurisdiction),
             mode: "balanced",
           }),
-          signal: AbortSignal.timeout(300_000),
+          signal: AbortSignal.timeout(ENGINE_FETCH_TIMEOUT),
         });
         if (!thinkRes.ok) throw new Error(`Engine think ${thinkRes.status}`);
-        // Collect SSE chunks: data: {"chunk":"..."} ... data: [DONE]
         const raw = await thinkRes.text();
         let answer = "";
         for (const line of raw.split("\n")) {
@@ -275,14 +162,17 @@ export const POST = createHandler(
       return Response.json(empty, { status: 502 });
     }
 
-    // 4. Ground cited_statutes against actual corpus (anti-hallucination)
+    // ── 3. Grounding + Precedent search (parallel) ──────────────────────
     const rawCitations = Array.isArray(parsed.cited_statutes)
       ? (parsed.cited_statutes as RawCitation[])
       : [];
 
-    const groundedCitations = await groundCitations(rawCitations);
-    parsed.cited_statutes = groundedCitations;
+    const [groundedCitations, suggestedPrecedents] = await Promise.all([
+      groundCitations(rawCitations),
+      findRelevantPrecedents(parsed, jurisdiction),
+    ]);
 
+    parsed.cited_statutes = groundedCitations;
     const verified = groundedCitations.filter((c) => c.verified).length;
     const unverified = groundedCitations.filter((c) => !c.verified).length;
     parsed._grounding = {
@@ -292,25 +182,14 @@ export const POST = createHandler(
       analyzed_at: new Date().toISOString(),
     };
 
-    // 5. Auto-search for relevant court decisions (precedent suggestions)
-    const suggestedPrecedents = await findRelevantPrecedents(parsed, jurisdiction);
     if (suggestedPrecedents.length > 0) {
       parsed.suggested_precedents = suggestedPrecedents;
     }
 
-    // 6. Store analysis results before acknowledging success. The outbox may
-    // only mark this task done after the result is durably visible.
-    // P0-3: Stamp document_type into the document's frontmatter (not just meta)
-    // P0-2: Write suggested_deadlines into the CASE frontmatter so the
-    //       deadline-reminder cron and the UI can pick them up.
+    // ── 4. Persist analysis to document frontmatter ─────────────────────
     if (documentSlug) {
       try {
         const docType = typeof parsed.document_type === "string" ? parsed.document_type : undefined;
-        // The engine persists data only from `frontmatter` on a merge-update
-        // (a top-level `meta` key is ignored), so the analysis result must
-        // live in frontmatter. merge:true (added by enginePatchPage) overlays
-        // just these keys, so case_slug/assignment_status/extraction metadata
-        // on the document are preserved.
         const docFrontmatter: Record<string, unknown> = {
           auto_analysis: parsed,
           analyzed_at: new Date().toISOString(),
@@ -330,7 +209,7 @@ export const POST = createHandler(
         const docPatch = await enginePatchPage(
           engineHeaders,
           { slug: documentSlug, frontmatter: docFrontmatter },
-          { timeoutMs: 300_000 }
+          { timeoutMs: ENGINE_FETCH_TIMEOUT }
         );
         if (!docPatch.ok)
           throw new Error(`HTTP ${docPatch.status}: ${(await docPatch.text()).slice(0, 300)}`);
@@ -350,163 +229,22 @@ export const POST = createHandler(
       }
     }
 
-    // P0-2: Write suggested deadlines + parties to the case frontmatter
+    // ── 5. Fire-and-forget: case writeback + contradictions check ───────
     if (documentCaseSlug) {
-      void (async () => {
-        try {
-          const extractedDeadlines = Array.isArray(parsed.deadlines)
-            ? (parsed.deadlines as Array<Record<string, unknown>>)
-            : [];
-          const extractedParties = Array.isArray(parsed.parties)
-            ? (parsed.parties as Array<Record<string, unknown>>)
-            : [];
+      void writeSuggestedDeadlinesAndParties(engineHeaders, documentCaseSlug, parsed, documentSlug);
 
-          if (extractedDeadlines.length === 0 && extractedParties.length === 0) return;
-
-          const encodedCaseSlug = documentCaseSlug.split("/").map(encodeURIComponent).join("/");
-          const caseRes = await fetch(`${ENGINE_URL}/api/pages/${encodedCaseSlug}`, {
-            headers: engineHeaders,
-            signal: AbortSignal.timeout(300_000),
-          });
-          if (!caseRes.ok) return;
-          const casePage = (await caseRes.json()) as {
-            frontmatter?: Record<string, unknown>;
-          };
-          const caseFm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
-
-          // Build suggested deadlines with source provenance — deduplicate by title+due_date
-          const existingDlKeys = new Set(
-            (Array.isArray(caseFm.suggested_deadlines) ? caseFm.suggested_deadlines : []).map(
-              (sd) => {
-                const e = sd as Record<string, unknown>;
-                return `${String(e.title ?? "")}|${String(e.due_date ?? "")}`;
-              }
-            )
-          );
-          const suggestedDeadlines = extractedDeadlines
-            .map((d) => ({
-              title: String(d.label ?? "Erkannte Frist"),
-              due_date: String(d.date ?? ""),
-              urgency: String(d.urgency ?? "normal"),
-              source: `KI-Analyse: ${documentSlug}`,
-              source_quote: String(d.source ?? ""),
-              confirmed: false,
-            }))
-            .filter((sd) => {
-              const key = `${sd.title}|${sd.due_date}`;
-              if (existingDlKeys.has(key)) return false;
-              existingDlKeys.add(key);
-              return true;
-            });
-
-          // Build suggested parties — deduplicate by name+role
-          const existingPartyKeys = new Set(
-            (Array.isArray(caseFm.suggested_parties) ? caseFm.suggested_parties : []).map((sp) => {
-              const e = sp as Record<string, unknown>;
-              return `${String(e.name ?? "")}|${String(e.role ?? "")}`;
-            })
-          );
-          const suggestedParties = extractedParties
-            .map((p) => ({
-              name: String(p.name ?? ""),
-              role: String(p.role ?? "sonstige"),
-              source: `KI-Analyse: ${documentSlug}`,
-              confirmed: false,
-            }))
-            .filter((sp) => {
-              const key = `${sp.name}|${sp.role}`;
-              if (existingPartyKeys.has(key)) return false;
-              existingPartyKeys.add(key);
-              return true;
-            });
-
-          // Append the freshly suggested deadlines/parties to whatever the case
-          // already has. The engine has no optimistic locking (no PATCH/If-Match),
-          // so this is a single read-modify-write off the `caseFm` read above;
-          // merge:true overlays only the two arrays we send and leaves the rest
-          // of the case frontmatter intact. Dedup above keeps re-analysis
-          // idempotent against the existing entries.
-          const mergedFrontmatter: Record<string, unknown> = {};
-          if (suggestedDeadlines.length > 0) {
-            mergedFrontmatter.suggested_deadlines = [
-              ...(Array.isArray(caseFm.suggested_deadlines) ? caseFm.suggested_deadlines : []),
-              ...suggestedDeadlines,
-            ];
-          }
-          if (suggestedParties.length > 0) {
-            mergedFrontmatter.suggested_parties = [
-              ...(Array.isArray(caseFm.suggested_parties) ? caseFm.suggested_parties : []),
-              ...suggestedParties,
-            ];
-          }
-          if (Object.keys(mergedFrontmatter).length > 0) {
-            await enginePatchPage(
-              engineHeaders,
-              { slug: documentCaseSlug, frontmatter: mergedFrontmatter },
-              { timeoutMs: 300_000 }
-            );
-          }
-
-          // P3-4: Auto-create legal_deadline pages for high-confidence suggested deadlines
-          // so they appear in the deadline review queue with review_status: "unreviewed".
-          // Only deadlines with a valid due_date and urgency "high" or "critical" are auto-created.
-          for (const sd of suggestedDeadlines) {
-            if (!sd.due_date || (sd.urgency !== "high" && sd.urgency !== "critical")) continue;
-            try {
-              const dlSlug = `legal/deadlines/${sd.due_date.replace(/[^0-9-]/g, "")}-${sd.title
-                .toLowerCase()
-                .replace(/[^a-z0-9äöüß]+/g, "-")
-                .replace(/^-|-$/g, "")
-                .slice(0, 48)}-${Date.now().toString(36)}`;
-              await fetch(`${ENGINE_URL}/api/pages`, {
-                method: "POST",
-                headers: { ...engineHeaders, "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  slug: dlSlug,
-                  title: sd.title,
-                  type: "legal_deadline",
-                  content: `Automatisch aus KI-Dokumentanalyse erstellt.\n\nQuelle: ${sd.source}\nBelegstelle: ${sd.source_quote}`,
-                  frontmatter: {
-                    type: "legal_deadline",
-                    case_slug: documentCaseSlug,
-                    due_date: sd.due_date,
-                    status: "pending",
-                    review_status: "unreviewed",
-                    source: "ai_document_analysis",
-                    urgency: sd.urgency,
-                    ai_confidence: "high",
-                  },
-                }),
-                signal: AbortSignal.timeout(15_000),
-              });
-            } catch {
-              // Non-blocking — einzelne Fehler nicht abbrechen
-            }
-          }
-        } catch (err) {
-          console.error(
-            `[analyze] failed to write suggested deadlines to case ${documentCaseSlug}:`,
-            err instanceof Error ? err.message : String(err)
-          );
-        }
-      })();
-    }
-
-    // P1: Trigger contradictions check after analysis — fire-and-forget.
-    // Cross-checks all documents in the case for conflicting parties, dates, facts.
-    if (documentCaseSlug) {
       void (async () => {
         try {
           const internalSecret = env("SUBSUMIO_INTERNAL_SECRET");
           if (!internalSecret) return;
-          await fetch(`http://localhost:3000/api/legal/contradictions`, {
+          await fetch(`/api/legal/contradictions`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               "x-internal-secret": internalSecret,
             },
             body: JSON.stringify({ case_slug: documentCaseSlug, brain_id: targetBrainId }),
-            signal: AbortSignal.timeout(60_000),
+            signal: AbortSignal.timeout(CONTRADICTIONS_TIMEOUT),
           });
         } catch {
           // Best-effort — contradictions check failure must not block analysis response
@@ -521,125 +259,3 @@ export const POST = createHandler(
     return Response.json(parsed);
   }
 );
-
-// ── Precedent discovery ───────────────────────────────────────────────
-
-interface SuggestedPrecedent {
-  id: string;
-  title: string;
-  court: string;
-  date: string;
-  case_number: string;
-  ecli: string;
-  legal_area: string;
-  url: string;
-  snippet: string;
-  source: string;
-  relevance_reason: string;
-}
-
-/**
- * Extract search keywords from the AI analysis result and query
- * external judgement databases for relevant court decisions.
- *
- * Strategy:
- *   1. Build a search query from cited statutes + document type + risk keywords
- *   2. Search RIS-OGD (AT), openlegaldata (DE), OpenCaseLaw (CH) in parallel
- *   3. Map hits to SuggestedPrecedent with a relevance reason
- *   4. Return top 10 results sorted by relevance
- */
-async function findRelevantPrecedents(
-  parsed: Record<string, unknown>,
-  jurisdiction: string
-): Promise<SuggestedPrecedent[]> {
-  const searchTerms: string[] = [];
-
-  // Extract statute codes from cited_statutes (e.g. "§ 433 BGB" → "433 BGB")
-  const citedStatutes = Array.isArray(parsed.cited_statutes)
-    ? (parsed.cited_statutes as Array<Record<string, unknown>>)
-    : [];
-  for (const cite of citedStatutes.slice(0, 5)) {
-    const code = String(cite.code ?? "").trim();
-    const paragraph = String(cite.paragraph ?? "")
-      .replace(/^§\s*/, "")
-      .trim();
-    if (code && paragraph) {
-      searchTerms.push(`${paragraph} ${code}`);
-    }
-  }
-
-  // Add document type as a search term
-  const docType = String(parsed.document_type ?? "").trim();
-  if (docType && docType !== "sonstiges" && docType !== "unknown") {
-    searchTerms.push(docType);
-  }
-
-  // Add key risk descriptions (first 3 words of each risk)
-  const risks = Array.isArray(parsed.risks) ? (parsed.risks as Array<Record<string, unknown>>) : [];
-  for (const risk of risks.slice(0, 3)) {
-    const desc = String(risk.description ?? "").trim();
-    if (desc) {
-      const keywords = desc.split(/\s+/).slice(0, 4).join(" ");
-      if (keywords.length > 3) searchTerms.push(keywords);
-    }
-  }
-
-  if (searchTerms.length === 0) return [];
-
-  // Determine which jurisdictions to search
-  const jur =
-    jurisdiction === "at"
-      ? "at"
-      : jurisdiction === "de"
-        ? "de"
-        : jurisdiction === "ch"
-          ? "ch"
-          : "all";
-
-  // Search with the most specific terms first, dedup by hit ID
-  const seenIds = new Set<string>();
-  const allHits: Array<{ hit: JudgementHit; reason: string }> = [];
-
-  for (const term of searchTerms.slice(0, 6)) {
-    try {
-      const { results } = await searchJudgements({
-        q: term,
-        jurisdiction: jur as "at" | "de" | "ch" | "all",
-        limit: 10,
-      });
-      for (const hit of results) {
-        if (seenIds.has(hit.id)) continue;
-        seenIds.add(hit.id);
-        allHits.push({
-          hit,
-          reason:
-            term.includes(" ") && /\d+/.test(term)
-              ? `Relevant zitierte Norm: ${term}`
-              : `Relevant für Dokumenttyp: ${docType}`,
-        });
-      }
-    } catch (err) {
-      // External judgement APIs may be down — continue with other terms,
-      // but log so a systemic outage shows up in monitoring.
-      console.error(
-        `[analyze] precedent search for "${term}" failed:`,
-        err instanceof Error ? err.message : String(err)
-      );
-    }
-    if (allHits.length >= 15) break;
-  }
-
-  return allHits.slice(0, 10).map(({ hit, reason }) => ({
-    id: hit.id,
-    title: hit.title,
-    court: hit.court,
-    date: hit.date,
-    case_number: hit.caseNumber,
-    ecli: hit.ecli,
-    legal_area: hit.legalArea || hit.type || "Allgemein",
-    url: hit.url,
-    snippet: hit.snippet || hit.summary || "",
-    source: hit.source,
-    relevance_reason: reason,
-  }));
-}

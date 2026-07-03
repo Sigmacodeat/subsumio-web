@@ -295,7 +295,7 @@ export default function NewCasePage() {
         await enqueueMutation({ type: "createPage", payload: pagePayload });
         // Cache the page locally so the detail page can load it offline
         const now = new Date().toISOString();
-        const fakePage: BrainPage = {
+        const optimisticPage: BrainPage = {
           slug,
           title: pagePayload.title,
           content: pagePayload.content || "",
@@ -303,11 +303,11 @@ export default function NewCasePage() {
           created_at: now,
           updated_at: now,
         };
-        await setCache(`page:${slug}`, fakePage);
+        await setCache(`page:${slug}`, optimisticPage);
         // Also add to cases list cache so it appears in the list
         const cachedCases = await getCache<unknown[]>(OFFLINE_KEYS.cases);
         if (cachedCases) {
-          await setCache(OFFLINE_KEYS.cases, [...cachedCases, fakePage]);
+          await setCache(OFFLINE_KEYS.cases, [...cachedCases, optimisticPage]);
         }
       }
       addToast({ type: "success", title: t("casesnew.toast_created") });
@@ -531,7 +531,7 @@ export default function NewCasePage() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="case-number" className="mb-1.5 block text-xs">
                   {t("casesnew.label_case_number")}
@@ -560,7 +560,7 @@ export default function NewCasePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="case-legal-area" className="mb-1.5 block text-xs">
                   {t("casesnew.label_area")}
@@ -595,7 +595,7 @@ export default function NewCasePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="case-jurisdiction" className="mb-1.5 block text-xs">
                   Rechtskreis *
@@ -652,7 +652,7 @@ export default function NewCasePage() {
               {t("casesnew.section_parties")}
             </h2>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="case-client" className="mb-1.5 block text-xs">
                   {t("casesnew.label_client")}
@@ -699,7 +699,7 @@ export default function NewCasePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="case-court" className="mb-1.5 block text-xs">
                   {t("casesnew.label_court")}
@@ -800,7 +800,7 @@ export default function NewCasePage() {
                 <Check size={14} className="brand-text" />
                 {t("casesnew.review_title")}
               </h3>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <div className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
                 <div>
                   <span className="text-xs text-[color:var(--ds-text-subtle)]">
                     {t("casesnew.label_title")}

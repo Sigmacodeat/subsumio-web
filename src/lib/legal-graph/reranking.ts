@@ -151,7 +151,7 @@ Kein Markdown, keine Erklärungen, nur das JSON-Array.`;
 
 export function parseScores(
   text: string,
-  count: number
+  _count: number
 ): Map<number, { score: number; reason: string }> {
   const scores = new Map<number, { score: number; reason: string }>();
 

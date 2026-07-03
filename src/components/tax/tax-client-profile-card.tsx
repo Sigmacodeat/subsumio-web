@@ -44,7 +44,7 @@ const TYPE_LABELS = {
 } as const;
 
 export function TaxClientProfileCard({ client, stats }: TaxClientProfileCardProps) {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const TypeIcon = TYPE_ICONS[client.type] ?? User;
   const langKey = (lang === "en" ? "en" : "de") as "de" | "en";
   const typeLabel = TYPE_LABELS[langKey][client.type];
@@ -85,15 +85,11 @@ export function TaxClientProfileCard({ client, stats }: TaxClientProfileCardProp
         )}
         <InfoRow
           icon={Calendar}
-          label={lang === "en" ? "Fiscal Year" : "Wirtschaftsjahr"}
+          label={t("tax.client.fiscal_year")}
           value={`${client.fiscalYearStart.slice(5)} – ${client.fiscalYearEnd.slice(5)}`}
         />
         {client.industryCode && (
-          <InfoRow
-            icon={Briefcase}
-            label={lang === "en" ? "Industry" : "Branche"}
-            value={client.industryCode}
-          />
+          <InfoRow icon={Briefcase} label={t("tax.client.industry")} value={client.industryCode} />
         )}
       </div>
 
@@ -101,25 +97,25 @@ export function TaxClientProfileCard({ client, stats }: TaxClientProfileCardProp
         <div className="mt-4 grid grid-cols-2 gap-2 border-t border-[color:var(--ds-border)] pt-4 sm:grid-cols-4">
           <StatItem
             icon={FileText}
-            label={lang === "en" ? "Open Returns" : "Offene Erklärungen"}
+            label={t("tax.client.open_returns")}
             value={stats.openReturns ?? 0}
             colorVar="--ds-text"
           />
           <StatItem
             icon={FileText}
-            label={lang === "en" ? "Open Assessments" : "Offene Bescheide"}
+            label={t("tax.client.open_assessments")}
             value={stats.openAssessments ?? 0}
             colorVar="--ds-text"
           />
           <StatItem
             icon={FileText}
-            label={lang === "en" ? "Open Audits" : "Offene Prüfungen"}
+            label={t("tax.client.open_audits")}
             value={stats.openAudits ?? 0}
             colorVar="--ds-text"
           />
           <StatItem
             icon={FileText}
-            label={lang === "en" ? "Total Assessed" : "Festgesetzt gesamt"}
+            label={t("tax.client.total_assessed")}
             value={`${(stats.totalAssessed ?? 0).toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €`}
             colorVar="--brand-primary"
           />

@@ -62,7 +62,7 @@ interface QueueHealth {
   engineReachable: boolean;
 }
 
-// ── Mock helpers (filled from real API when available) ────────────────
+// ── Default empty-state helpers ──────────────────────────────────────
 
 function emptySearchStats(): SearchStats {
   return {

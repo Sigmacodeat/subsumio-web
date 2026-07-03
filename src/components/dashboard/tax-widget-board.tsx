@@ -303,7 +303,7 @@ function StatCard({
         <div>
           <p className="text-lg font-semibold text-[color:var(--ds-text)]">{value}</p>
           <p className="text-xs text-[color:var(--ds-text-subtle)]">{label}</p>
-          {sublabel && <p className="text-[10px] text-[color:var(--ds-text-muted)]">{sublabel}</p>}
+          {sublabel && <p className="text-xs text-[color:var(--ds-text-muted)]">{sublabel}</p>}
         </div>
       </Card>
     </Link>

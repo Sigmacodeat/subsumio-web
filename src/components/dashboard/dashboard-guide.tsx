@@ -194,7 +194,7 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
                     {t("cmd.action.help.docs")}
                   </Link>
                   <Link
-                    href="/dashboard/assistant"
+                    href="/dashboard/chat"
                     className="brand-text text-sm font-medium transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-95"
                     onClick={onClose}
                   >

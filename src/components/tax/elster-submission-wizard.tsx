@@ -253,7 +253,7 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
               onClick={() => setStep("review")}
               className="gap-2"
             >
-              {lang === "en" ? "Review" : "Zur Prüfung"}
+              {t("elster.review")}
               <ChevronRight size={14} />
             </Button>
           </div>
@@ -310,10 +310,10 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
 
           <div className="flex justify-between">
             <Button type="button" variant="ghost" onClick={() => setStep("data")}>
-              {lang === "en" ? "Back" : "Zurück"}
+              {t("elster.back")}
             </Button>
             <Button type="button" onClick={() => setStep("submit")} className="gap-2">
-              {lang === "en" ? "Continue" : "Weiter"}
+              {t("elster.continue")}
               <ChevronRight size={14} />
             </Button>
           </div>
@@ -326,9 +326,7 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
           {!submitResult && (
             <div className="py-6 text-center">
               <Send size={32} className="mx-auto text-[color:var(--brand-primary)]" />
-              <p className="mt-3 text-sm text-[color:var(--ds-text-muted)]">
-                {lang === "en" ? "Ready to submit to ELSTER" : "Bereit zur Übermittlung an ELSTER"}
-              </p>
+              <p className="mt-3 text-sm text-[color:var(--ds-text-muted)]">{t("elster.ready")}</p>
               <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
                 {formType} {period} — {clientName}
               </p>
@@ -367,7 +365,7 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
                 {submitResult.message}
               </p>
               <Button type="button" variant="outline" onClick={reset} className="mt-4">
-                {lang === "en" ? "New Submission" : "Neue Übermittlung"}
+                {t("elster.new_submission")}
               </Button>
             </div>
           )}
@@ -375,7 +373,7 @@ export function ElsterSubmissionWizard({ onSubmitted }: ElsterSubmissionWizardPr
           {!submitResult && (
             <div className="flex justify-between">
               <Button type="button" variant="ghost" onClick={() => setStep("review")}>
-                {lang === "en" ? "Back" : "Zurück"}
+                {t("elster.back")}
               </Button>
             </div>
           )}

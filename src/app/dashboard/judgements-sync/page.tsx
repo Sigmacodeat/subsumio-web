@@ -123,7 +123,7 @@ export default function JudgementsSyncPage() {
       />
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">Im Brain</div>
           <div className="brand-text text-xl font-bold">

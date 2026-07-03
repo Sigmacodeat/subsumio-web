@@ -241,6 +241,24 @@ export interface DocumentAnalysisResult {
   summary: string;
   language?: string;
   attorney_review_required?: boolean;
+  privilege?: {
+    is_privileged: boolean;
+    privilege_type: "attorney_client" | "work_product" | "settlement_negotiation" | "none";
+    privilege_basis: string;
+  };
+  suggested_precedents?: Array<{
+    id: string;
+    title: string;
+    court: string;
+    date: string;
+    case_number: string;
+    ecli: string;
+    legal_area: string;
+    url: string;
+    snippet: string;
+    source: string;
+    relevance_reason: string;
+  }>;
   warnings?: string[];
   _grounding?: {
     citations_verified: number;
@@ -248,6 +266,8 @@ export interface DocumentAnalysisResult {
     corpus_checked: boolean;
     analyzed_at: string;
   };
+  _warnings?: string[];
+  _degraded?: boolean;
 }
 
 export interface PrecedentSearchResult {

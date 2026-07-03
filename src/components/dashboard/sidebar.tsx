@@ -28,6 +28,9 @@ import {
   ScrollText,
   FileText,
   FileSignature,
+  FileCog,
+  FileSliders,
+  FileJson,
   EyeOff,
   Gavel,
   CloudOff,
@@ -59,6 +62,40 @@ import {
   TrendingUp,
   Send,
   Archive,
+  FileQuestion,
+  Shield,
+  ShieldX,
+  Hammer,
+  FileCode,
+  Gauge,
+  Activity,
+  FileLock,
+  FolderSearch,
+  ScanSearch,
+  ScanLine,
+  Scale as ScaleIcon,
+  MailOpen,
+  History,
+  FileArchive,
+  ListChecks,
+  CheckSquare,
+  FileCheck2,
+  Download,
+  FileBarChart,
+  BadgeCheck,
+  FlaskConical,
+  RefreshCw,
+  GraduationCap,
+  Grid3x3,
+  Table2,
+  ChartNoAxesColumn,
+  SearchCheck,
+  Cpu,
+  Smartphone,
+  ServerCog,
+  MessagesSquare,
+  CalendarSync,
+  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -75,6 +112,7 @@ type NavItem = {
   icon: typeof LayoutDashboard;
   labelKey: DashboardKey;
   comingSoon?: boolean;
+  keywords?: string;
 };
 type NavSection = { titleKey: DashboardKey; items: NavItem[]; colorVar?: string };
 
@@ -83,137 +121,385 @@ type NavSection = { titleKey: DashboardKey; items: NavItem[]; colorVar?: string 
 // Section items expand on click. Search filters across all items.
 export const NAV_SECTIONS: NavSection[] = [
   {
-    titleKey: "nav.section.cases_clients",
+    titleKey: "nav.section.clients_comm",
     colorVar: "--nav-cat-cases",
     items: [
-      { href: "/dashboard/contacts", icon: Users, labelKey: "nav.contacts" },
-      { href: "/dashboard/opponents", icon: Scale, labelKey: "nav.opponents" },
-      { href: "/dashboard/kollisionspruefung", icon: Scale, labelKey: "nav.kollisionspruefung" },
-      { href: "/dashboard/client-portal", icon: UserCircle, labelKey: "nav.client_portal" },
-      { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
-      { href: "/dashboard/process-strategy", icon: Gavel, labelKey: "nav.process_strategy" },
-      { href: "/dashboard/case-scanner", icon: FileSearch, labelKey: "nav.case_scanner" },
+      {
+        href: "/dashboard/contacts",
+        icon: Users,
+        labelKey: "nav.contacts",
+        keywords: "mandanten klienten parteien clients",
+      },
+      {
+        href: "/dashboard/opponents",
+        icon: Scale,
+        labelKey: "nav.opponents",
+        keywords: "gegner processgegner opposite party",
+      },
+      {
+        href: "/dashboard/kollisionspruefung",
+        icon: ShieldX,
+        labelKey: "nav.kollisionspruefung",
+        keywords: "conflict check konflikt conflict search",
+      },
+      {
+        href: "/dashboard/client-portal",
+        icon: UserCircle,
+        labelKey: "nav.client_portal",
+        keywords: "mandantenportal portal client access",
+      },
+      {
+        href: "/dashboard/document-requests",
+        icon: FileClock,
+        labelKey: "nav.document_requests",
+        keywords: "dokumentenanforderung unterlagen documents request",
+      },
     ],
   },
   {
-    titleKey: "nav.section.communication",
-    colorVar: "--nav-cat-comm",
-    items: [
-      { href: "/dashboard/bea", icon: Mail, labelKey: "nav.bea" },
-      { href: "/dashboard/whatsapp", icon: MessageCircle, labelKey: "nav.whatsapp" },
-      { href: "/dashboard/email-import", icon: FileText, labelKey: "nav.email_import" },
-    ],
-  },
-  {
-    titleKey: "nav.section.documents_drafting",
+    titleKey: "nav.section.docs_drafting",
     colorVar: "--nav-cat-docs",
     items: [
-      { href: "/dashboard/upload", icon: FileUp, labelKey: "nav.upload" },
-      { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
-      { href: "/dashboard/drafting", icon: PenTool, labelKey: "nav.drafting" },
-      { href: "/dashboard/contracts", icon: FileCheck, labelKey: "nav.contracts" },
-      { href: "/dashboard/clause-library", icon: Library, labelKey: "nav.clause_library" },
-      { href: "/dashboard/templates", icon: FileText, labelKey: "nav.templates" },
-      { href: "/dashboard/deep-analysis", icon: FileSearch, labelKey: "nav.deep_analysis" },
-      { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
-      { href: "/dashboard/litigation", icon: Gavel, labelKey: "nav.litigation" },
-      { href: "/dashboard/review-sets", icon: FileSearch, labelKey: "nav.review_sets" },
-      { href: "/dashboard/trust-accounting", icon: ShieldCheck, labelKey: "nav.trust_accounting" },
+      {
+        href: "/dashboard/vault",
+        icon: FolderOpen,
+        labelKey: "nav.vault",
+        keywords: "dokumente vault archiv dms",
+      },
+      {
+        href: "/dashboard/upload",
+        icon: FileUp,
+        labelKey: "nav.upload",
+        keywords: "hochladen datei upload file",
+      },
+      {
+        href: "/dashboard/drafting",
+        icon: PenTool,
+        labelKey: "nav.drafting",
+        keywords: "entwurf drafting schreiben write",
+      },
+      {
+        href: "/dashboard/templates",
+        icon: FileCode,
+        labelKey: "nav.templates",
+        keywords: "vorlagen templates muster",
+      },
+      {
+        href: "/dashboard/version-history",
+        icon: History,
+        labelKey: "nav.version_history",
+        keywords: "versionen historie changes anderungen",
+      },
+      {
+        href: "/dashboard/word-addin",
+        icon: FileCog,
+        labelKey: "nav.word_addin",
+        keywords: "word plugin addin office",
+      },
+      {
+        href: "/dashboard/review-sets",
+        icon: FolderSearch,
+        labelKey: "nav.review_sets",
+        keywords: "review sets review-sets e-discovery privilege",
+      },
+    ],
+  },
+  {
+    titleKey: "nav.section.contracts",
+    colorVar: "--nav-cat-docs",
+    items: [
+      {
+        href: "/dashboard/contracts",
+        icon: FileCheck,
+        labelKey: "nav.contracts",
+        keywords: "vertrag contracts vertrage",
+      },
+      {
+        href: "/dashboard/clause-library",
+        icon: Library,
+        labelKey: "nav.clause_library",
+        keywords: "klauseln bibliothek clauses library",
+      },
+      {
+        href: "/dashboard/signature",
+        icon: FileSignature,
+        labelKey: "nav.signature",
+        keywords: "unterschrift sign docusign signatur",
+      },
+      {
+        href: "/dashboard/obligation-tracking",
+        icon: ListChecks,
+        labelKey: "nav.obligation_tracking",
+        keywords: "obligationen verpflichtungen obligations tracking",
+      },
+      {
+        href: "/dashboard/playbooks",
+        icon: BookOpen,
+        labelKey: "nav.playbooks",
+        keywords: "playbooks handbucher manuals vorlagen",
+      },
+    ],
+  },
+  {
+    titleKey: "nav.section.knowledge",
+    colorVar: "--nav-cat-research",
+    items: [
+      {
+        href: "/dashboard/brain",
+        icon: Brain,
+        labelKey: "nav.brain",
+        keywords: "wissen knowledge base explorer seiten",
+      },
+      {
+        href: "/dashboard/graph",
+        icon: Network,
+        labelKey: "nav.graph",
+        keywords: "graph netzwerk entitaten beziehungen entities",
+      },
+      {
+        href: "/dashboard/sources",
+        icon: Database,
+        labelKey: "nav.sources",
+        keywords: "quellen datenquellen connectors sources",
+      },
+    ],
+  },
+  {
+    titleKey: "nav.section.litigation",
+    colorVar: "--nav-cat-cases",
+    items: [
+      {
+        href: "/dashboard/litigation",
+        icon: Hammer,
+        labelKey: "nav.litigation",
+        keywords: "prozess gericht klage litigation court",
+      },
+      {
+        href: "/dashboard/process-strategy",
+        icon: Gavel,
+        labelKey: "nav.process_strategy",
+        keywords: "strategie prozess strategy litigation",
+      },
       {
         href: "/dashboard/litigation-analytics",
         icon: TrendingUp,
         labelKey: "nav.litigation_analytics",
+        keywords: "analytics statistik gericht urteile outcomes",
       },
-      { href: "/dashboard/tabular-review", icon: FileSpreadsheet, labelKey: "nav.tabular_review" },
-      {
-        href: "/dashboard/obligation-tracking",
-        icon: ClipboardCheck,
-        labelKey: "nav.obligation_tracking",
-      },
-      { href: "/dashboard/translate", icon: Globe, labelKey: "nav.translate" },
-      { href: "/dashboard/signature", icon: FileSignature, labelKey: "nav.signature" },
-      { href: "/dashboard/word-addin", icon: FileText, labelKey: "nav.word_addin" },
-      { href: "/dashboard/version-history", icon: FileClock, labelKey: "nav.version_history" },
       {
         href: "/dashboard/portfolio-insights",
         icon: BarChart3,
         labelKey: "nav.portfolio_insights",
+        keywords: "portfolio insights analytics kennzahlen",
       },
-    ],
-  },
-  {
-    titleKey: "nav.section.research_knowledge",
-    colorVar: "--nav-cat-research",
-    items: [
-      { href: "/dashboard/research", icon: Globe, labelKey: "nav.legal_research" },
-      { href: "/dashboard/rechtsprechung", icon: Landmark, labelKey: "nav.rechtsprechung" },
-      { href: "/dashboard/norms", icon: BookOpen, labelKey: "nav.norms" },
-      { href: "/dashboard/precedent-search", icon: Search, labelKey: "nav.precedent_search" },
-      { href: "/dashboard/brain", icon: Brain, labelKey: "nav.brain" },
-      { href: "/dashboard/graph", icon: Network, labelKey: "nav.graph" },
-      { href: "/dashboard/sources", icon: Database, labelKey: "nav.sources" },
-      { href: "/dashboard/playbooks", icon: ClipboardList, labelKey: "nav.playbooks" },
-      { href: "/dashboard/judgements-sync", icon: Landmark, labelKey: "nav.judgements_sync" },
-      { href: "/dashboard/judgements-db", icon: Database, labelKey: "nav.judgements_db" },
-      { href: "/dashboard/commentaries", icon: BookOpen, labelKey: "nav.commentaries" },
-    ],
-  },
-  {
-    titleKey: "nav.section.operations",
-    colorVar: "--nav-cat-ops",
-    items: [
-      { href: "/dashboard/review-queue", icon: ClipboardCheck, labelKey: "nav.review_queue" },
-      { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
-      { href: "/dashboard/workflows", icon: ClipboardList, labelKey: "nav.workflows" },
-      { href: "/dashboard/reports", icon: FileText, labelKey: "nav.reports" },
-      { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "nav.analytics" },
       {
-        href: "/dashboard/adoption-analytics",
-        icon: BarChart3,
-        labelKey: "nav.adoption_analytics",
+        href: "/dashboard/case-scanner",
+        icon: ScanLine,
+        labelKey: "nav.case_scanner",
+        keywords: "scanner akten scan case",
       },
-      { href: "/dashboard/shared-spaces", icon: Share2, labelKey: "nav.shared_spaces" },
-      { href: "/dashboard/monitoring", icon: Bell, labelKey: "nav.monitoring" },
+      {
+        href: "/dashboard/tabular-review",
+        icon: Table2,
+        labelKey: "nav.tabular_review",
+        keywords: "tabellarisch review tabelle table",
+      },
     ],
   },
   {
-    titleKey: "nav.section.billing_compliance",
+    titleKey: "nav.section.billing",
     colorVar: "--nav-cat-billing",
     items: [
-      { href: "/dashboard/invoicing", icon: Receipt, labelKey: "nav.invoicing" },
-      { href: "/dashboard/cost-calculator", icon: Calculator, labelKey: "nav.cost_calculator" },
-      { href: "/dashboard/datev-export", icon: FileSpreadsheet, labelKey: "nav.datev_export" },
-      { href: "/dashboard/controlling", icon: BarChart3, labelKey: "nav.controlling" },
-      { href: "/dashboard/compliance", icon: ShieldCheck, labelKey: "nav.compliance" },
-      { href: "/dashboard/compliance/retention", icon: FileClock, labelKey: "nav.retention" },
-      { href: "/dashboard/anonymize", icon: EyeOff, labelKey: "nav.anonymize" },
-      { href: "/dashboard/verfahrensdoku", icon: ClipboardCheck, labelKey: "nav.verfahrensdoku" },
-      { href: "/dashboard/data-export", icon: Database, labelKey: "nav.data_export" },
+      {
+        href: "/dashboard/invoicing",
+        icon: Receipt,
+        labelKey: "nav.invoicing",
+        keywords: "rechnung invoice rvg gebühren",
+      },
+      {
+        href: "/dashboard/cost-calculator",
+        icon: Calculator,
+        labelKey: "nav.cost_calculator",
+        keywords: "kostenrechner rvg calculator streitwert",
+      },
+      {
+        href: "/dashboard/datev-export",
+        icon: FileSpreadsheet,
+        labelKey: "nav.datev_export",
+        keywords: "datev export buhaltung steuer",
+      },
+      {
+        href: "/dashboard/trust-accounting",
+        icon: Landmark,
+        labelKey: "nav.trust_accounting",
+        keywords: "treuhand trust klientengelder fiduciary",
+      },
+      {
+        href: "/dashboard/controlling",
+        icon: Gauge,
+        labelKey: "nav.controlling",
+        keywords: "controlling kpi kennzahlen steuerung",
+      },
+    ],
+  },
+  {
+    titleKey: "nav.section.firm_ops",
+    colorVar: "--nav-cat-billing",
+    items: [
+      {
+        href: "/dashboard/reports",
+        icon: FileBarChart,
+        labelKey: "nav.reports",
+        keywords: "berichte reports reporte statistik",
+      },
+      {
+        href: "/dashboard/analytics",
+        icon: ChartNoAxesColumn,
+        labelKey: "nav.analytics",
+        keywords: "analytics statistik kpi dashboards",
+      },
+      {
+        href: "/dashboard/adoption-analytics",
+        icon: Activity,
+        labelKey: "nav.adoption_analytics",
+        keywords: "adoption nutzung analytics verwendung",
+      },
+      {
+        href: "/dashboard/workflows",
+        icon: ClipboardList,
+        labelKey: "nav.workflows",
+        keywords: "workflows automation prozesse workflow",
+      },
+      {
+        href: "/dashboard/approvals",
+        icon: BadgeCheck,
+        labelKey: "nav.approvals",
+        keywords: "approvals freigaben genehmigung approval",
+      },
+      {
+        href: "/dashboard/shared-spaces",
+        icon: Share2,
+        labelKey: "nav.shared_spaces",
+        keywords: "shared spaces kollaboration teams",
+      },
+      {
+        href: "/dashboard/monitoring",
+        icon: Bell,
+        labelKey: "nav.monitoring",
+        keywords: "monitoring uberwachung alerts health",
+      },
+    ],
+  },
+  {
+    titleKey: "nav.section.compliance",
+    colorVar: "--nav-cat-billing",
+    items: [
+      {
+        href: "/dashboard/compliance",
+        icon: ShieldCheck,
+        labelKey: "nav.compliance",
+        keywords: "compliance dsgvo gdpr brao compliance",
+      },
+      {
+        href: "/dashboard/compliance/retention",
+        icon: FileArchive,
+        labelKey: "nav.retention",
+        keywords: "aufbewahrung retention fristen archivierung",
+      },
+      {
+        href: "/dashboard/anonymize",
+        icon: EyeOff,
+        labelKey: "nav.anonymize",
+        keywords: "anonymisierung datenschutz privacy redact",
+      },
+      {
+        href: "/dashboard/verfahrensdoku",
+        icon: FileCheck2,
+        labelKey: "nav.verfahrensdoku",
+        keywords: "verfahrensdokumentation gobd protokoll",
+      },
+      {
+        href: "/dashboard/data-export",
+        icon: Download,
+        labelKey: "nav.data_export",
+        keywords: "export daten download csv",
+      },
+      {
+        href: "/dashboard/review-queue",
+        icon: CheckSquare,
+        labelKey: "nav.review_queue",
+        keywords: "review queue warteschlange freigabe",
+      },
     ],
   },
 ];
 
 export const BOTTOM_ITEMS: NavItem[] = [
-  { href: "/dashboard/settings", icon: Settings, labelKey: "nav.settings" },
-  { href: "/dashboard/team", icon: UserCog, labelKey: "nav.admin" },
-  { href: "/dashboard/audit", icon: ScrollText, labelKey: "nav.audit_log" },
+  {
+    href: "/dashboard/settings",
+    icon: Settings,
+    labelKey: "nav.settings",
+    keywords: "einstellungen settings konfiguration preferences",
+  },
+  {
+    href: "/dashboard/team",
+    icon: UserCog,
+    labelKey: "nav.admin",
+    keywords: "team verwaltung admin benutzer users mitarbeiter",
+  },
+  {
+    href: "/dashboard/audit",
+    icon: ScrollText,
+    labelKey: "nav.audit_log",
+    keywords: "audit log protokoll nachverfolgung trail",
+  },
+  {
+    href: "/dashboard/directory",
+    icon: Grid3x3,
+    labelKey: "nav.directory",
+    keywords: "alle funktionen verzeichnis directory ubersicht features",
+  },
 ];
 
 const PRIMARY_ITEMS: NavItem[] = [
-  { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.overview" },
-  { href: "/dashboard/cases", icon: Briefcase, labelKey: "nav.cases" },
-  { href: "/dashboard/altlasten", icon: Archive, labelKey: "nav.altlasten" },
-  { href: "/dashboard/deadlines", icon: CalendarClock, labelKey: "nav.deadlines" },
-  { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
-  { href: "/dashboard/chat", icon: MessageSquareText, labelKey: "nav.chat" },
+  {
+    href: "/dashboard",
+    icon: LayoutDashboard,
+    labelKey: "nav.overview",
+    keywords: "ubersicht dashboard home startseite overview heute",
+  },
+  {
+    href: "/dashboard/cases",
+    icon: Briefcase,
+    labelKey: "nav.cases",
+    keywords: "akten mandante falle cases matters altlasten",
+  },
+  {
+    href: "/dashboard/deadlines",
+    icon: CalendarClock,
+    labelKey: "nav.deadlines",
+    keywords: "fristen termine deadlines calendar kalender",
+  },
+  {
+    href: "/dashboard/intake",
+    icon: Inbox,
+    labelKey: "nav.intake",
+    keywords: "mandantsaufnahme intake eingang neue posteingang bea whatsapp email",
+  },
+  {
+    href: "/dashboard/research",
+    icon: SearchCheck,
+    labelKey: "nav.legal_research",
+    keywords: "recherche rechtsprechung gesetze urteile research hub",
+  },
 ];
 
 const PRIMARY_COLOR_VARS: string[] = [
   "--brand-primary",
   "--nav-cat-cases",
   "--nav-cat-cases",
-  "--nav-cat-cases",
   "--nav-cat-comm",
+  "--nav-cat-research",
 ];
 
 const ADMIN_SECTION: NavSection = {
@@ -221,199 +507,152 @@ const ADMIN_SECTION: NavSection = {
   colorVar: "--nav-cat-admin",
   items: [
     ...BOTTOM_ITEMS,
-    { href: "/dashboard/billing", icon: CreditCard, labelKey: "nav.billing" },
-    { href: "/dashboard/agents", icon: Bot, labelKey: "nav.agents" },
-    { href: "/dashboard/connectors", icon: Plug, labelKey: "nav.connectors" },
-    { href: "/dashboard/api-keys", icon: ShieldCheck, labelKey: "nav.api_keys" },
-    { href: "/dashboard/settings/kanzlei", icon: Settings, labelKey: "nav.kanzlei" },
-    { href: "/dashboard/settings/security", icon: ShieldCheck, labelKey: "nav.security" },
-    { href: "/dashboard/settings/scim", icon: Network, labelKey: "nav.scim" },
-    { href: "/dashboard/settings/ai-model", icon: Bot, labelKey: "nav.ai_model" },
-    { href: "/dashboard/import-kanzlei", icon: FileUp, labelKey: "nav.import_kanzlei" },
-    { href: "/dashboard/mobile", icon: UserCircle, labelKey: "nav.mobile" },
-    { href: "/dashboard/onboarding", icon: Award, labelKey: "nav.onboarding" },
-    { href: "/dashboard/experience", icon: Award, labelKey: "nav.experience" },
-    { href: "/dashboard/rag-eval", icon: FileSearch, labelKey: "nav.rag_eval" },
-    { href: "/dashboard/adoption-analytics", icon: BarChart3, labelKey: "nav.adoption_analytics" },
-    { href: "/dashboard/assistant", icon: MessageSquareText, labelKey: "nav.assistant" },
-    { href: "/dashboard/query", icon: MessageSquareText, labelKey: "nav.query" },
-    { href: "/dashboard/chat/analytics", icon: BarChart3, labelKey: "nav.chat_analytics" },
-    { href: "/dashboard/chat/compare", icon: GitCompare, labelKey: "nav.chat_compare" },
+    {
+      href: "/dashboard/billing",
+      icon: CreditCard,
+      labelKey: "nav.billing",
+      keywords: "billing abo plan subscription zahlung",
+    },
+    {
+      href: "/dashboard/agents",
+      icon: Bot,
+      labelKey: "nav.agents",
+      keywords: "agenten bots automation ki agents",
+    },
+    {
+      href: "/dashboard/connectors",
+      icon: Plug,
+      labelKey: "nav.connectors",
+      keywords: "connectors integrationen schnittstellen apis",
+    },
+    {
+      href: "/dashboard/api-keys",
+      icon: FileLock,
+      labelKey: "nav.api_keys",
+      keywords: "api keys schlussel tokens zugang",
+    },
+    {
+      href: "/dashboard/settings/kanzlei",
+      icon: ServerCog,
+      labelKey: "nav.kanzlei",
+      keywords: "kanzlei firma einstellungen orga",
+    },
+    {
+      href: "/dashboard/settings/security",
+      icon: ShieldAlert,
+      labelKey: "nav.security",
+      keywords: "sicherheit security 2fa passwort schutz",
+    },
+    {
+      href: "/dashboard/settings/scim",
+      icon: Network,
+      labelKey: "nav.scim",
+      keywords: "scim provisioning sso saml benutzer",
+    },
+    {
+      href: "/dashboard/settings/ai-model",
+      icon: Cpu,
+      labelKey: "nav.ai_model",
+      keywords: "ki modell ai model llm konfiguration",
+    },
+    {
+      href: "/dashboard/import-kanzlei",
+      icon: FileSliders,
+      labelKey: "nav.import_kanzlei",
+      keywords: "import kanzlei migration daten",
+    },
+    {
+      href: "/dashboard/mobile",
+      icon: Smartphone,
+      labelKey: "nav.mobile",
+      keywords: "mobile app handy smartphone install",
+    },
+    {
+      href: "/dashboard/onboarding",
+      icon: Award,
+      labelKey: "nav.onboarding",
+      keywords: "onboarding einfuhrung setup start",
+    },
+    {
+      href: "/dashboard/experience",
+      icon: GraduationCap,
+      labelKey: "nav.experience",
+      keywords: "erfahrung profil lebenslauf attorney",
+    },
+    {
+      href: "/dashboard/rag-eval",
+      icon: FlaskConical,
+      labelKey: "nav.rag_eval",
+      keywords: "rag eval evaluation qualitat test",
+    },
+    {
+      href: "/dashboard/chat/analytics",
+      icon: ChartNoAxesColumn,
+      labelKey: "nav.chat_analytics",
+      keywords: "chat analytics statistik nutzung",
+    },
+    {
+      href: "/dashboard/chat/compare",
+      icon: GitCompare,
+      labelKey: "nav.chat_compare",
+      keywords: "modell vergleich compare benchmark",
+    },
     {
       href: "/dashboard/whatsapp/templates",
-      icon: MessageCircle,
+      icon: MessagesSquare,
       labelKey: "nav.whatsapp_templates",
+      keywords: "whatsapp vorlagen templates",
     },
-    { href: "/dashboard/calendar-export", icon: CalendarClock, labelKey: "nav.calendar_export" },
+    {
+      href: "/dashboard/calendar-export",
+      icon: CalendarSync,
+      labelKey: "nav.calendar_export",
+      keywords: "kalender export ics sync outlook",
+    },
+    {
+      href: "/dashboard/judgements-sync",
+      icon: RefreshCw,
+      labelKey: "nav.judgements_sync",
+      keywords: "urteile sync rechtsprechung update",
+    },
+    {
+      href: "/dashboard/judgements-db",
+      icon: FileJson,
+      labelKey: "nav.judgements_db",
+      keywords: "urteile datenbank rechtsprechung gerichte",
+    },
   ],
 };
 
-export const ALL_NAV_ITEMS: NavItem[] = [
-  ...PRIMARY_ITEMS,
-  ...NAV_SECTIONS.flatMap((s) => s.items),
-  ...BOTTOM_ITEMS,
-  { href: "/dashboard/client-portal", icon: UserCircle, labelKey: "nav.client_portal" },
-  { href: "/dashboard/opponents", icon: Scale, labelKey: "nav.opponents" },
-  { href: "/dashboard/contracts", icon: FileCheck, labelKey: "nav.contracts" },
-  { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
-  { href: "/dashboard/process-strategy", icon: Gavel, labelKey: "nav.process_strategy" },
-  { href: "/dashboard/email-import", icon: FileText, labelKey: "nav.email_import" },
-  { href: "/dashboard/upload", icon: FileUp, labelKey: "nav.upload" },
-  { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
-  { href: "/dashboard/clause-library", icon: Library, labelKey: "nav.clause_library" },
-  { href: "/dashboard/templates", icon: FileText, labelKey: "nav.templates" },
-  { href: "/dashboard/litigation", icon: Gavel, labelKey: "nav.litigation" },
-  { href: "/dashboard/review-sets", icon: FileSearch, labelKey: "nav.review_sets" },
-  { href: "/dashboard/trust-accounting", icon: ShieldCheck, labelKey: "nav.trust_accounting" },
-  {
-    href: "/dashboard/litigation-analytics",
-    icon: TrendingUp,
-    labelKey: "nav.litigation_analytics",
-  },
-  {
-    href: "/dashboard/obligation-tracking",
-    icon: ClipboardCheck,
-    labelKey: "nav.obligation_tracking",
-  },
-  { href: "/dashboard/tabular-review", icon: FileSpreadsheet, labelKey: "nav.tabular_review" },
-  { href: "/dashboard/translate", icon: Globe, labelKey: "nav.translate" },
-  { href: "/dashboard/signature", icon: FileSignature, labelKey: "nav.signature" },
-  { href: "/dashboard/rechtsprechung", icon: Landmark, labelKey: "nav.rechtsprechung" },
-  { href: "/dashboard/norms", icon: BookOpen, labelKey: "nav.norms" },
-  { href: "/dashboard/precedent-search", icon: Search, labelKey: "nav.precedent_search" },
-  { href: "/dashboard/brain", icon: Brain, labelKey: "nav.brain" },
-  { href: "/dashboard/graph", icon: Network, labelKey: "nav.graph" },
-  { href: "/dashboard/sources", icon: Database, labelKey: "nav.sources" },
-  { href: "/dashboard/monitoring", icon: Bell, labelKey: "nav.monitoring" },
-  { href: "/dashboard/playbooks", icon: ClipboardList, labelKey: "nav.playbooks" },
-  { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
-  { href: "/dashboard/cost-calculator", icon: Calculator, labelKey: "nav.cost_calculator" },
-  { href: "/dashboard/datev-export", icon: FileSpreadsheet, labelKey: "nav.datev_export" },
-  { href: "/dashboard/controlling", icon: BarChart3, labelKey: "nav.controlling" },
-  { href: "/dashboard/verfahrensdoku", icon: ClipboardCheck, labelKey: "nav.verfahrensdoku" },
-  { href: "/dashboard/compliance/retention", icon: FileClock, labelKey: "nav.retention" },
-  { href: "/dashboard/anonymize", icon: EyeOff, labelKey: "nav.anonymize" },
-  { href: "/dashboard/data-export", icon: Database, labelKey: "nav.data_export" },
-  { href: "/dashboard/assistant", icon: MessageSquareText, labelKey: "nav.assistant" },
-  { href: "/dashboard/query", icon: MessageSquareText, labelKey: "nav.query" },
-  { href: "/dashboard/chat/analytics", icon: BarChart3, labelKey: "nav.chat_analytics" },
-  { href: "/dashboard/chat/compare", icon: GitCompare, labelKey: "nav.chat_compare" },
-  { href: "/dashboard/cases", icon: Briefcase, labelKey: "nav.cases" },
-  { href: "/dashboard/calendar-export", icon: CalendarClock, labelKey: "nav.calendar_export" },
-  { href: "/dashboard/case-scanner", icon: FileSearch, labelKey: "nav.case_scanner" },
-  { href: "/dashboard/judgements-sync", icon: Landmark, labelKey: "nav.judgements_sync" },
-  { href: "/dashboard/judgements-db", icon: Database, labelKey: "nav.judgements_db" },
-  { href: "/dashboard/commentaries", icon: BookOpen, labelKey: "nav.commentaries" },
-  { href: "/dashboard/word-addin", icon: FileText, labelKey: "nav.word_addin" },
-  { href: "/dashboard/version-history", icon: FileClock, labelKey: "nav.version_history" },
-  { href: "/dashboard/import-kanzlei", icon: FileUp, labelKey: "nav.import_kanzlei" },
-  { href: "/dashboard/mobile", icon: UserCircle, labelKey: "nav.mobile" },
-  { href: "/dashboard/onboarding", icon: Award, labelKey: "nav.onboarding" },
-  { href: "/dashboard/experience", icon: Award, labelKey: "nav.experience" },
-  { href: "/dashboard/agents", icon: Bot, labelKey: "nav.agents" },
-  { href: "/dashboard/connectors", icon: Plug, labelKey: "nav.connectors" },
-  { href: "/dashboard/api-keys", icon: ShieldCheck, labelKey: "nav.api_keys" },
-  { href: "/dashboard/billing", icon: CreditCard, labelKey: "nav.billing" },
-  { href: "/dashboard/settings/kanzlei", icon: Settings, labelKey: "nav.kanzlei" },
-  { href: "/dashboard/settings/security", icon: ShieldCheck, labelKey: "nav.security" },
-  { href: "/dashboard/settings/scim", icon: Network, labelKey: "nav.scim" },
-  { href: "/dashboard/settings/ai-model", icon: Bot, labelKey: "nav.ai_model" },
-  {
-    href: "/dashboard/whatsapp/templates",
-    icon: MessageCircle,
-    labelKey: "nav.whatsapp_templates",
-  },
-  { href: "/dashboard/rag-eval", icon: FileSearch, labelKey: "nav.rag_eval" },
-  { href: "/dashboard/portfolio-insights", icon: BarChart3, labelKey: "nav.portfolio_insights" },
-  { href: "/dashboard/deep-analysis", icon: FileSearch, labelKey: "nav.deep_analysis" },
-  { href: "/dashboard/adoption-analytics", icon: BarChart3, labelKey: "nav.adoption_analytics" },
-  { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "nav.analytics" },
-  { href: "/dashboard/reports", icon: FileText, labelKey: "nav.reports" },
-  { href: "/dashboard/shared-spaces", icon: Share2, labelKey: "nav.shared_spaces" },
-];
+export const ALL_NAV_ITEMS: NavItem[] = (() => {
+  const seen = new Set<string>();
+  const items: NavItem[] = [];
+  for (const item of [
+    ...PRIMARY_ITEMS,
+    ...NAV_SECTIONS.flatMap((s) => s.items),
+    ...ADMIN_SECTION.items,
+  ]) {
+    if (!seen.has(item.href)) {
+      seen.add(item.href);
+      items.push(item);
+    }
+  }
+  return items;
+})();
 
-export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: DashboardKey }> = [
-  { href: "/dashboard/contacts", section: "nav.section.cases_clients" },
-  { href: "/dashboard/opponents", section: "nav.section.cases_clients" },
-  { href: "/dashboard/client-portal", section: "nav.section.cases_clients" },
-  { href: "/dashboard/document-requests", section: "nav.section.cases_clients" },
-  { href: "/dashboard/kollisionspruefung", section: "nav.section.cases_clients" },
-  { href: "/dashboard/process-strategy", section: "nav.section.cases_clients" },
-  { href: "/dashboard/cases", section: "nav.section.cases_clients" },
-  { href: "/dashboard/altlasten", section: "nav.section.cases_clients" },
-  { href: "/dashboard/case-scanner", section: "nav.section.cases_clients" },
-  { href: "/dashboard/bea", section: "nav.section.communication" },
-  { href: "/dashboard/whatsapp", section: "nav.section.communication" },
-  { href: "/dashboard/whatsapp/templates", section: "nav.section.communication" },
-  { href: "/dashboard/email-import", section: "nav.section.communication" },
-  { href: "/dashboard/upload", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/vault", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/drafting", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/analyze", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/contracts", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/clause-library", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/templates", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/litigation", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/review-sets", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/trust-accounting", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/litigation-analytics", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/tabular-review", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/obligation-tracking", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/translate", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/signature", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/word-addin", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/version-history", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/research", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/rechtsprechung", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/norms", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/precedent-search", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/brain", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/graph", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/sources", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/monitoring", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/playbooks", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/judgements-sync", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/judgements-db", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/commentaries", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/review-queue", section: "nav.section.operations" },
-  { href: "/dashboard/approvals", section: "nav.section.operations" },
-  { href: "/dashboard/workflows", section: "nav.section.operations" },
-  { href: "/dashboard/reports", section: "nav.section.operations" },
-  { href: "/dashboard/invoicing", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/cost-calculator", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/datev-export", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/controlling", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/billing", section: "nav.section.admin" },
-  { href: "/dashboard/compliance", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/compliance/retention", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/anonymize", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/verfahrensdoku", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/data-export", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/import-kanzlei", section: "nav.section.admin" },
-  { href: "/dashboard/team", section: "nav.section.admin" },
-  { href: "/dashboard/experience", section: "nav.section.admin" },
-  { href: "/dashboard/agents", section: "nav.section.admin" },
-  { href: "/dashboard/connectors", section: "nav.section.admin" },
-  { href: "/dashboard/api-keys", section: "nav.section.admin" },
-  { href: "/dashboard/audit", section: "nav.section.admin" },
-  { href: "/dashboard/settings", section: "nav.section.admin" },
-  { href: "/dashboard/settings/kanzlei", section: "nav.section.admin" },
-  { href: "/dashboard/settings/security", section: "nav.section.admin" },
-  { href: "/dashboard/settings/scim", section: "nav.section.admin" },
-  { href: "/dashboard/settings/ai-model", section: "nav.section.admin" },
-  { href: "/dashboard/mobile", section: "nav.section.admin" },
-  { href: "/dashboard/onboarding", section: "nav.section.admin" },
-  { href: "/dashboard/rag-eval", section: "nav.section.admin" },
-  { href: "/dashboard/portfolio-insights", section: "nav.section.admin" },
-  { href: "/dashboard/deep-analysis", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/adoption-analytics", section: "nav.section.admin" },
-  { href: "/dashboard/analytics", section: "nav.section.operations" },
-  { href: "/dashboard/shared-spaces", section: "nav.section.operations" },
-  { href: "/dashboard/chat/analytics", section: "nav.section.admin" },
-  { href: "/dashboard/chat/compare", section: "nav.section.admin" },
-  { href: "/dashboard/assistant", section: "nav.section.admin" },
-  { href: "/dashboard/query", section: "nav.section.admin" },
-];
+export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: DashboardKey }> = (() => {
+  const seen = new Set<string>();
+  const entries: Array<{ href: string; section: DashboardKey }> = [];
+  for (const section of [...NAV_SECTIONS, ADMIN_SECTION]) {
+    for (const item of section.items) {
+      if (!seen.has(item.href)) {
+        seen.add(item.href);
+        entries.push({ href: item.href, section: section.titleKey });
+      }
+    }
+  }
+  return entries;
+})();
 
 // ── Industry-conditional navigation ──────────────────────────────────────────
 
@@ -438,11 +677,36 @@ const LEGAL_NAV: IndustryNavConfig = {
 };
 
 const TAX_PRIMARY_ITEMS: NavItem[] = [
-  { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.overview" },
-  { href: "/dashboard/contacts", icon: Users, labelKey: "nav.clients" },
-  { href: "/dashboard/tax-deadlines", icon: CalendarClock, labelKey: "nav.tax_deadlines" },
-  { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
-  { href: "/dashboard/chat", icon: MessageSquareText, labelKey: "nav.chat" },
+  {
+    href: "/dashboard",
+    icon: LayoutDashboard,
+    labelKey: "nav.overview",
+    keywords: "ubersicht dashboard home startseite overview",
+  },
+  {
+    href: "/dashboard/contacts",
+    icon: Users,
+    labelKey: "nav.clients",
+    keywords: "mandanten klienten clients",
+  },
+  {
+    href: "/dashboard/tax-deadlines",
+    icon: CalendarClock,
+    labelKey: "nav.tax_deadlines",
+    keywords: "steuerfristen fristen deadlines kalender",
+  },
+  {
+    href: "/dashboard/intake",
+    icon: Inbox,
+    labelKey: "nav.intake",
+    keywords: "mandantsaufnahme intake eingang neue",
+  },
+  {
+    href: "/dashboard/chat",
+    icon: MessageSquareText,
+    labelKey: "nav.chat",
+    keywords: "chat copilot assistent ki fragen",
+  },
 ];
 
 const TAX_PRIMARY_COLOR_VARS: string[] = [
@@ -458,73 +722,228 @@ const TAX_NAV_SECTIONS: NavSection[] = [
     titleKey: "nav.section.clients",
     colorVar: "--nav-cat-cases",
     items: [
-      { href: "/dashboard/contacts", icon: Users, labelKey: "nav.contacts" },
-      { href: "/dashboard/client-portal", icon: UserCircle, labelKey: "nav.client_portal" },
-      { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
+      {
+        href: "/dashboard/contacts",
+        icon: Users,
+        labelKey: "nav.contacts",
+        keywords: "mandanten klienten parteien clients",
+      },
+      {
+        href: "/dashboard/client-portal",
+        icon: UserCircle,
+        labelKey: "nav.client_portal",
+        keywords: "mandantenportal portal client access",
+      },
+      {
+        href: "/dashboard/document-requests",
+        icon: FileClock,
+        labelKey: "nav.document_requests",
+        keywords: "dokumentenanforderung unterlagen documents request",
+      },
     ],
   },
   {
     titleKey: "nav.section.tax_returns",
     colorVar: "--nav-cat-ops",
     items: [
-      { href: "/dashboard/tax-returns", icon: FileText, labelKey: "nav.tax_returns" },
-      { href: "/dashboard/tax-assessments", icon: FileCheck, labelKey: "nav.tax_assessments" },
-      { href: "/dashboard/tax-audit", icon: ClipboardCheck, labelKey: "nav.tax_audit" },
-      { href: "/dashboard/tax-clients", icon: Users, labelKey: "nav.tax_clients" },
-      { href: "/dashboard/tax-stbvv", icon: Calculator, labelKey: "nav.tax_stbvv" },
-      { href: "/dashboard/elster", icon: Send, labelKey: "nav.elster" },
+      {
+        href: "/dashboard/tax-returns",
+        icon: FileSpreadsheet,
+        labelKey: "nav.tax_returns",
+        keywords: "steuererklarung tax returns einkommensteuer",
+      },
+      {
+        href: "/dashboard/tax-assessments",
+        icon: FileCheck,
+        labelKey: "nav.tax_assessments",
+        keywords: "steuerbescheide assessments bescheid",
+      },
+      {
+        href: "/dashboard/tax-audit",
+        icon: Search,
+        labelKey: "nav.tax_audit",
+        keywords: "betriebsprufung audit finanzamt",
+      },
+      {
+        href: "/dashboard/tax-clients",
+        icon: Users,
+        labelKey: "nav.tax_clients",
+        keywords: "mandanten steuer clients",
+      },
+      {
+        href: "/dashboard/tax-stbvv",
+        icon: Calculator,
+        labelKey: "nav.tax_stbvv",
+        keywords: "stbvv gebuhren honorar calculator",
+      },
+      {
+        href: "/dashboard/elster",
+        icon: Send,
+        labelKey: "nav.elster",
+        keywords: "elster finanzamt ubermittlung",
+      },
     ],
   },
   {
     titleKey: "nav.section.documents",
     colorVar: "--nav-cat-docs",
     items: [
-      { href: "/dashboard/upload", icon: FileUp, labelKey: "nav.upload" },
-      { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
-      { href: "/dashboard/templates", icon: FileText, labelKey: "nav.templates" },
-      { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
-      { href: "/dashboard/signature", icon: FileSignature, labelKey: "nav.signature" },
+      {
+        href: "/dashboard/upload",
+        icon: FileUp,
+        labelKey: "nav.upload",
+        keywords: "hochladen datei upload file",
+      },
+      {
+        href: "/dashboard/vault",
+        icon: FolderOpen,
+        labelKey: "nav.vault",
+        keywords: "dokumente vault archiv dms",
+      },
+      {
+        href: "/dashboard/templates",
+        icon: FileCode,
+        labelKey: "nav.templates",
+        keywords: "vorlagen templates muster",
+      },
+      {
+        href: "/dashboard/analyze",
+        icon: FileSearch,
+        labelKey: "nav.analyze",
+        keywords: "analyse scan untersuchung examination",
+      },
+      {
+        href: "/dashboard/signature",
+        icon: FileSignature,
+        labelKey: "nav.signature",
+        keywords: "unterschrift sign docusign signatur",
+      },
     ],
   },
   {
     titleKey: "nav.section.billing_compliance",
     colorVar: "--nav-cat-billing",
     items: [
-      { href: "/dashboard/invoicing", icon: Receipt, labelKey: "nav.invoicing" },
-      { href: "/dashboard/datev-export", icon: FileSpreadsheet, labelKey: "nav.datev_export" },
-      { href: "/dashboard/cost-calculator", icon: Calculator, labelKey: "nav.cost_calculator" },
-      { href: "/dashboard/compliance", icon: ShieldCheck, labelKey: "nav.compliance" },
-      { href: "/dashboard/verfahrensdoku", icon: ClipboardCheck, labelKey: "nav.verfahrensdoku" },
+      {
+        href: "/dashboard/invoicing",
+        icon: Receipt,
+        labelKey: "nav.invoicing",
+        keywords: "rechnung invoice gebuhren honorar",
+      },
+      {
+        href: "/dashboard/datev-export",
+        icon: FileSpreadsheet,
+        labelKey: "nav.datev_export",
+        keywords: "datev export buhaltung steuer",
+      },
+      {
+        href: "/dashboard/cost-calculator",
+        icon: Calculator,
+        labelKey: "nav.cost_calculator",
+        keywords: "kostenrechner calculator streitwert",
+      },
+      {
+        href: "/dashboard/compliance",
+        icon: ShieldCheck,
+        labelKey: "nav.compliance",
+        keywords: "compliance dsgvo gdpr compliance",
+      },
+      {
+        href: "/dashboard/verfahrensdoku",
+        icon: FileCheck2,
+        labelKey: "nav.verfahrensdoku",
+        keywords: "verfahrensdokumentation gobd protokoll",
+      },
     ],
   },
   {
     titleKey: "nav.section.communication",
     colorVar: "--nav-cat-comm",
     items: [
-      { href: "/dashboard/whatsapp", icon: MessageCircle, labelKey: "nav.whatsapp" },
-      { href: "/dashboard/email-import", icon: FileText, labelKey: "nav.email_import" },
+      {
+        href: "/dashboard/whatsapp",
+        icon: MessageCircle,
+        labelKey: "nav.whatsapp",
+        keywords: "chat messages nachrichten messenger",
+      },
+      {
+        href: "/dashboard/email-import",
+        icon: MailOpen,
+        labelKey: "nav.email_import",
+        keywords: "e-mail import outlook imap",
+      },
     ],
   },
   {
     titleKey: "nav.section.research_knowledge",
     colorVar: "--nav-cat-research",
     items: [
-      { href: "/dashboard/brain", icon: Brain, labelKey: "nav.brain" },
-      { href: "/dashboard/graph", icon: Network, labelKey: "nav.graph" },
-      { href: "/dashboard/sources", icon: Database, labelKey: "nav.sources" },
+      {
+        href: "/dashboard/brain",
+        icon: Brain,
+        labelKey: "nav.brain",
+        keywords: "wissen knowledge base explorer seiten",
+      },
+      {
+        href: "/dashboard/graph",
+        icon: Network,
+        labelKey: "nav.graph",
+        keywords: "graph netzwerk entitaten beziehungen entities",
+      },
+      {
+        href: "/dashboard/sources",
+        icon: Database,
+        labelKey: "nav.sources",
+        keywords: "quellen datenquellen connectors sources",
+      },
     ],
   },
   {
     titleKey: "nav.section.operations",
     colorVar: "--nav-cat-ops",
     items: [
-      { href: "/dashboard/review-queue", icon: ClipboardCheck, labelKey: "nav.review_queue" },
-      { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
-      { href: "/dashboard/workflows", icon: ClipboardList, labelKey: "nav.workflows" },
-      { href: "/dashboard/reports", icon: FileText, labelKey: "nav.reports" },
-      { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "nav.analytics" },
-      { href: "/dashboard/shared-spaces", icon: Share2, labelKey: "nav.shared_spaces" },
-      { href: "/dashboard/monitoring", icon: Bell, labelKey: "nav.monitoring" },
+      {
+        href: "/dashboard/review-queue",
+        icon: CheckSquare,
+        labelKey: "nav.review_queue",
+        keywords: "review queue warteschlange freigabe",
+      },
+      {
+        href: "/dashboard/approvals",
+        icon: BadgeCheck,
+        labelKey: "nav.approvals",
+        keywords: "approvals freigaben genehmigung approval",
+      },
+      {
+        href: "/dashboard/workflows",
+        icon: ClipboardList,
+        labelKey: "nav.workflows",
+        keywords: "workflows automation prozesse workflow",
+      },
+      {
+        href: "/dashboard/reports",
+        icon: FileBarChart,
+        labelKey: "nav.reports",
+        keywords: "berichte reports reporte statistik",
+      },
+      {
+        href: "/dashboard/analytics",
+        icon: TrendingUp,
+        labelKey: "nav.analytics",
+        keywords: "analytics statistik kpi dashboards",
+      },
+      {
+        href: "/dashboard/shared-spaces",
+        icon: Share2,
+        labelKey: "nav.shared_spaces",
+        keywords: "shared spaces kollaboration teams",
+      },
+      {
+        href: "/dashboard/monitoring",
+        icon: Bell,
+        labelKey: "nav.monitoring",
+        keywords: "monitoring uberwachung alerts health",
+      },
     ],
   },
 ];
@@ -534,149 +953,140 @@ const TAX_ADMIN_SECTION: NavSection = {
   colorVar: "--nav-cat-admin",
   items: [
     ...BOTTOM_ITEMS,
-    { href: "/dashboard/billing", icon: CreditCard, labelKey: "nav.billing" },
-    { href: "/dashboard/agents", icon: Bot, labelKey: "nav.agents" },
-    { href: "/dashboard/connectors", icon: Plug, labelKey: "nav.connectors" },
-    { href: "/dashboard/api-keys", icon: ShieldCheck, labelKey: "nav.api_keys" },
-    { href: "/dashboard/settings/kanzlei", icon: Settings, labelKey: "nav.kanzlei" },
-    { href: "/dashboard/settings/security", icon: ShieldCheck, labelKey: "nav.security" },
-    { href: "/dashboard/settings/scim", icon: Network, labelKey: "nav.scim" },
-    { href: "/dashboard/settings/ai-model", icon: Bot, labelKey: "nav.ai_model" },
-    { href: "/dashboard/import-kanzlei", icon: FileUp, labelKey: "nav.import_kanzlei" },
-    { href: "/dashboard/mobile", icon: UserCircle, labelKey: "nav.mobile" },
-    { href: "/dashboard/onboarding", icon: Award, labelKey: "nav.onboarding" },
-    { href: "/dashboard/experience", icon: Award, labelKey: "nav.experience" },
-    { href: "/dashboard/rag-eval", icon: FileSearch, labelKey: "nav.rag_eval" },
-    { href: "/dashboard/adoption-analytics", icon: BarChart3, labelKey: "nav.adoption_analytics" },
-    { href: "/dashboard/assistant", icon: MessageSquareText, labelKey: "nav.assistant" },
-    { href: "/dashboard/query", icon: MessageSquareText, labelKey: "nav.query" },
-    { href: "/dashboard/chat/analytics", icon: BarChart3, labelKey: "nav.chat_analytics" },
-    { href: "/dashboard/chat/compare", icon: GitCompare, labelKey: "nav.chat_compare" },
+    {
+      href: "/dashboard/billing",
+      icon: CreditCard,
+      labelKey: "nav.billing",
+      keywords: "billing abo plan subscription zahlung",
+    },
+    {
+      href: "/dashboard/agents",
+      icon: Bot,
+      labelKey: "nav.agents",
+      keywords: "agenten bots automation ki agents",
+    },
+    {
+      href: "/dashboard/connectors",
+      icon: Plug,
+      labelKey: "nav.connectors",
+      keywords: "connectors integrationen schnittstellen apis",
+    },
+    {
+      href: "/dashboard/api-keys",
+      icon: FileLock,
+      labelKey: "nav.api_keys",
+      keywords: "api keys schlussel tokens zugang",
+    },
+    {
+      href: "/dashboard/settings/kanzlei",
+      icon: ServerCog,
+      labelKey: "nav.kanzlei",
+      keywords: "kanzlei firma einstellungen orga",
+    },
+    {
+      href: "/dashboard/settings/security",
+      icon: ShieldAlert,
+      labelKey: "nav.security",
+      keywords: "sicherheit security 2fa passwort schutz",
+    },
+    {
+      href: "/dashboard/settings/scim",
+      icon: Network,
+      labelKey: "nav.scim",
+      keywords: "scim provisioning sso saml benutzer",
+    },
+    {
+      href: "/dashboard/settings/ai-model",
+      icon: Cpu,
+      labelKey: "nav.ai_model",
+      keywords: "ki modell ai model llm konfiguration",
+    },
+    {
+      href: "/dashboard/import-kanzlei",
+      icon: FileSliders,
+      labelKey: "nav.import_kanzlei",
+      keywords: "import kanzlei migration daten",
+    },
+    {
+      href: "/dashboard/mobile",
+      icon: Smartphone,
+      labelKey: "nav.mobile",
+      keywords: "mobile app handy smartphone install",
+    },
+    {
+      href: "/dashboard/onboarding",
+      icon: Award,
+      labelKey: "nav.onboarding",
+      keywords: "onboarding einfuhrung setup start",
+    },
+    {
+      href: "/dashboard/experience",
+      icon: GraduationCap,
+      labelKey: "nav.experience",
+      keywords: "erfahrung profil lebenslauf attorney",
+    },
+    {
+      href: "/dashboard/rag-eval",
+      icon: FlaskConical,
+      labelKey: "nav.rag_eval",
+      keywords: "rag eval evaluation qualitat test",
+    },
+    {
+      href: "/dashboard/chat/analytics",
+      icon: ChartNoAxesColumn,
+      labelKey: "nav.chat_analytics",
+      keywords: "chat analytics statistik nutzung",
+    },
+    {
+      href: "/dashboard/chat/compare",
+      icon: GitCompare,
+      labelKey: "nav.chat_compare",
+      keywords: "modell vergleich compare benchmark",
+    },
     {
       href: "/dashboard/whatsapp/templates",
-      icon: MessageCircle,
+      icon: MessagesSquare,
       labelKey: "nav.whatsapp_templates",
+      keywords: "whatsapp vorlagen templates",
     },
-    { href: "/dashboard/calendar-export", icon: CalendarClock, labelKey: "nav.calendar_export" },
+    {
+      href: "/dashboard/calendar-export",
+      icon: CalendarSync,
+      labelKey: "nav.calendar_export",
+      keywords: "kalender export ics sync outlook",
+    },
   ],
 };
 
-const TAX_ALL_NAV_ITEMS: NavItem[] = [
-  ...TAX_PRIMARY_ITEMS,
-  ...TAX_NAV_SECTIONS.flatMap((s) => s.items),
-  ...BOTTOM_ITEMS,
-  { href: "/dashboard/client-portal", icon: UserCircle, labelKey: "nav.client_portal" },
-  { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
-  { href: "/dashboard/upload", icon: FileUp, labelKey: "nav.upload" },
-  { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
-  { href: "/dashboard/templates", icon: FileText, labelKey: "nav.templates" },
-  { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
-  { href: "/dashboard/signature", icon: FileSignature, labelKey: "nav.signature" },
-  { href: "/dashboard/tax-returns", icon: FileText, labelKey: "nav.tax_returns" },
-  { href: "/dashboard/tax-assessments", icon: FileCheck, labelKey: "nav.tax_assessments" },
-  { href: "/dashboard/tax-audit", icon: ClipboardCheck, labelKey: "nav.tax_audit" },
-  { href: "/dashboard/tax-deadlines", icon: CalendarClock, labelKey: "nav.tax_deadlines" },
-  { href: "/dashboard/elster", icon: Send, labelKey: "nav.elster" },
-  { href: "/dashboard/invoicing", icon: Receipt, labelKey: "nav.invoicing" },
-  { href: "/dashboard/datev-export", icon: FileSpreadsheet, labelKey: "nav.datev_export" },
-  { href: "/dashboard/cost-calculator", icon: Calculator, labelKey: "nav.cost_calculator" },
-  { href: "/dashboard/compliance", icon: ShieldCheck, labelKey: "nav.compliance" },
-  { href: "/dashboard/verfahrensdoku", icon: ClipboardCheck, labelKey: "nav.verfahrensdoku" },
-  { href: "/dashboard/whatsapp", icon: MessageCircle, labelKey: "nav.whatsapp" },
-  { href: "/dashboard/email-import", icon: FileText, labelKey: "nav.email_import" },
-  { href: "/dashboard/brain", icon: Brain, labelKey: "nav.brain" },
-  { href: "/dashboard/graph", icon: Network, labelKey: "nav.graph" },
-  { href: "/dashboard/sources", icon: Database, labelKey: "nav.sources" },
-  { href: "/dashboard/review-queue", icon: ClipboardCheck, labelKey: "nav.review_queue" },
-  { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
-  { href: "/dashboard/workflows", icon: ClipboardList, labelKey: "nav.workflows" },
-  { href: "/dashboard/reports", icon: FileText, labelKey: "nav.reports" },
-  { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "nav.analytics" },
-  { href: "/dashboard/shared-spaces", icon: Share2, labelKey: "nav.shared_spaces" },
-  { href: "/dashboard/monitoring", icon: Bell, labelKey: "nav.monitoring" },
-  { href: "/dashboard/assistant", icon: MessageSquareText, labelKey: "nav.assistant" },
-  { href: "/dashboard/query", icon: MessageSquareText, labelKey: "nav.query" },
-  { href: "/dashboard/chat/analytics", icon: BarChart3, labelKey: "nav.chat_analytics" },
-  { href: "/dashboard/chat/compare", icon: GitCompare, labelKey: "nav.chat_compare" },
-  {
-    href: "/dashboard/whatsapp/templates",
-    icon: MessageCircle,
-    labelKey: "nav.whatsapp_templates",
-  },
-  { href: "/dashboard/calendar-export", icon: CalendarClock, labelKey: "nav.calendar_export" },
-  { href: "/dashboard/agents", icon: Bot, labelKey: "nav.agents" },
-  { href: "/dashboard/connectors", icon: Plug, labelKey: "nav.connectors" },
-  { href: "/dashboard/api-keys", icon: ShieldCheck, labelKey: "nav.api_keys" },
-  { href: "/dashboard/billing", icon: CreditCard, labelKey: "nav.billing" },
-  { href: "/dashboard/settings/kanzlei", icon: Settings, labelKey: "nav.kanzlei" },
-  { href: "/dashboard/settings/security", icon: ShieldCheck, labelKey: "nav.security" },
-  { href: "/dashboard/settings/scim", icon: Network, labelKey: "nav.scim" },
-  { href: "/dashboard/settings/ai-model", icon: Bot, labelKey: "nav.ai_model" },
-  { href: "/dashboard/rag-eval", icon: FileSearch, labelKey: "nav.rag_eval" },
-  { href: "/dashboard/adoption-analytics", icon: BarChart3, labelKey: "nav.adoption_analytics" },
-  { href: "/dashboard/import-kanzlei", icon: FileUp, labelKey: "nav.import_kanzlei" },
-  { href: "/dashboard/mobile", icon: UserCircle, labelKey: "nav.mobile" },
-  { href: "/dashboard/onboarding", icon: Award, labelKey: "nav.onboarding" },
-  { href: "/dashboard/experience", icon: Award, labelKey: "nav.experience" },
-];
+const TAX_ALL_NAV_ITEMS: NavItem[] = (() => {
+  const seen = new Set<string>();
+  const items: NavItem[] = [];
+  for (const item of [
+    ...TAX_PRIMARY_ITEMS,
+    ...TAX_NAV_SECTIONS.flatMap((s) => s.items),
+    ...TAX_ADMIN_SECTION.items,
+  ]) {
+    if (!seen.has(item.href)) {
+      seen.add(item.href);
+      items.push(item);
+    }
+  }
+  return items;
+})();
 
-const TAX_PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: DashboardKey }> = [
-  { href: "/dashboard/contacts", section: "nav.section.clients" },
-  { href: "/dashboard/client-portal", section: "nav.section.clients" },
-  { href: "/dashboard/document-requests", section: "nav.section.clients" },
-  { href: "/dashboard/tax-returns", section: "nav.section.tax_returns" },
-  { href: "/dashboard/tax-assessments", section: "nav.section.tax_returns" },
-  { href: "/dashboard/tax-audit", section: "nav.section.tax_returns" },
-  { href: "/dashboard/tax-clients", section: "nav.section.tax_returns" },
-  { href: "/dashboard/tax-deadlines", section: "nav.section.tax_returns" },
-  { href: "/dashboard/tax-stbvv", section: "nav.section.tax_returns" },
-  { href: "/dashboard/elster", section: "nav.section.tax_returns" },
-  { href: "/dashboard/upload", section: "nav.section.documents" },
-  { href: "/dashboard/vault", section: "nav.section.documents" },
-  { href: "/dashboard/templates", section: "nav.section.documents" },
-  { href: "/dashboard/analyze", section: "nav.section.documents" },
-  { href: "/dashboard/signature", section: "nav.section.documents" },
-  { href: "/dashboard/invoicing", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/datev-export", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/cost-calculator", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/compliance", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/verfahrensdoku", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/whatsapp", section: "nav.section.communication" },
-  { href: "/dashboard/email-import", section: "nav.section.communication" },
-  { href: "/dashboard/brain", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/graph", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/sources", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/review-queue", section: "nav.section.operations" },
-  { href: "/dashboard/approvals", section: "nav.section.operations" },
-  { href: "/dashboard/workflows", section: "nav.section.operations" },
-  { href: "/dashboard/reports", section: "nav.section.operations" },
-  { href: "/dashboard/analytics", section: "nav.section.operations" },
-  { href: "/dashboard/shared-spaces", section: "nav.section.operations" },
-  { href: "/dashboard/monitoring", section: "nav.section.operations" },
-  { href: "/dashboard/billing", section: "nav.section.admin" },
-  { href: "/dashboard/team", section: "nav.section.admin" },
-  { href: "/dashboard/audit", section: "nav.section.admin" },
-  { href: "/dashboard/settings", section: "nav.section.admin" },
-  { href: "/dashboard/settings/kanzlei", section: "nav.section.admin" },
-  { href: "/dashboard/settings/security", section: "nav.section.admin" },
-  { href: "/dashboard/settings/scim", section: "nav.section.admin" },
-  { href: "/dashboard/settings/ai-model", section: "nav.section.admin" },
-  { href: "/dashboard/import-kanzlei", section: "nav.section.admin" },
-  { href: "/dashboard/mobile", section: "nav.section.admin" },
-  { href: "/dashboard/onboarding", section: "nav.section.admin" },
-  { href: "/dashboard/experience", section: "nav.section.admin" },
-  { href: "/dashboard/agents", section: "nav.section.admin" },
-  { href: "/dashboard/connectors", section: "nav.section.admin" },
-  { href: "/dashboard/api-keys", section: "nav.section.admin" },
-  { href: "/dashboard/rag-eval", section: "nav.section.admin" },
-  { href: "/dashboard/adoption-analytics", section: "nav.section.admin" },
-  { href: "/dashboard/assistant", section: "nav.section.admin" },
-  { href: "/dashboard/query", section: "nav.section.admin" },
-  { href: "/dashboard/chat/analytics", section: "nav.section.admin" },
-  { href: "/dashboard/chat/compare", section: "nav.section.admin" },
-  { href: "/dashboard/whatsapp/templates", section: "nav.section.admin" },
-  { href: "/dashboard/calendar-export", section: "nav.section.admin" },
-];
+const TAX_PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: DashboardKey }> = (() => {
+  const seen = new Set<string>();
+  const entries: Array<{ href: string; section: DashboardKey }> = [];
+  for (const section of [...TAX_NAV_SECTIONS, TAX_ADMIN_SECTION]) {
+    for (const item of section.items) {
+      if (!seen.has(item.href)) {
+        seen.add(item.href);
+        entries.push({ href: item.href, section: section.titleKey });
+      }
+    }
+  }
+  return entries;
+})();
 
 const TAX_NAV: IndustryNavConfig = {
   primaryItems: TAX_PRIMARY_ITEMS,
@@ -772,6 +1182,8 @@ interface SidebarProps {
   brainReachable?: boolean;
   /** User industry — drives which nav items are shown (legal, tax, …). */
   industry?: string | null;
+  /** User role — non-admins see a trimmed admin section. */
+  role?: string | null;
 }
 
 export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
@@ -787,6 +1199,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     userEmail,
     brainReachable,
     industry,
+    role,
   },
   ref
 ) {
@@ -806,11 +1219,46 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     primaryItems,
     primaryColorVars,
     sections: navSections,
-    adminSection,
+    adminSection: fullAdminSection,
     bottomItems,
-    allNavItems,
-    preferredSectionByHref,
+    allNavItems: fullAllNavItems,
+    preferredSectionByHref: fullPreferredSectionByHref,
   } = navConfig;
+
+  const isAdmin = role === "admin";
+  const adminSection = useMemo(
+    () =>
+      isAdmin
+        ? fullAdminSection
+        : {
+            ...fullAdminSection,
+            items: fullAdminSection.items.filter((item) =>
+              bottomItems.some((b) => b.href === item.href)
+            ),
+          },
+    [isAdmin, fullAdminSection, bottomItems]
+  );
+  const allNavItems = useMemo(
+    () =>
+      isAdmin
+        ? fullAllNavItems
+        : fullAllNavItems.filter(
+            (item) =>
+              adminSection.items.some((a) => a.href === item.href) ||
+              navSections.some((s) => s.items.some((sItem) => sItem.href === item.href)) ||
+              primaryItems.some((p) => p.href === item.href)
+          ),
+    [isAdmin, fullAllNavItems, adminSection, navSections, primaryItems]
+  );
+  const preferredSectionByHref = useMemo(
+    () =>
+      isAdmin
+        ? fullPreferredSectionByHref
+        : fullPreferredSectionByHref.filter((entry) =>
+            allNavItems.some((item) => item.href === entry.href)
+          ),
+    [isAdmin, fullPreferredSectionByHref, allNavItems]
+  );
 
   const brainStatusLabel =
     brainReachable === true
@@ -835,7 +1283,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             sectionKey === section.titleKey &&
             !item.comingSoon &&
             !primaryItems.some((primary) => primary.href === item.href) &&
-            t(item.labelKey).toLowerCase().includes(q)
+            (t(item.labelKey).toLowerCase().includes(q) ||
+              (item.keywords ?? "").toLowerCase().includes(q))
           );
         }),
       }))
@@ -1255,7 +1704,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                         />
                         <span
                           className={cn(
-                            "min-w-0 flex-1 truncate text-[11px] font-semibold tracking-wider uppercase",
+                            "min-w-0 flex-1 truncate text-xs font-semibold tracking-wider uppercase",
                             sectionActive || isOpen
                               ? "text-[color:var(--ds-text)]"
                               : "text-[color:var(--ds-text-subtle)]"
@@ -1401,7 +1850,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             >
               <div className="brand-soft brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-full border">
                 {userName ? (
-                  <span className="brand-text text-[10px] font-bold uppercase">
+                  <span className="brand-text text-xs font-bold uppercase">
                     {userName.slice(0, 2)}
                   </span>
                 ) : (

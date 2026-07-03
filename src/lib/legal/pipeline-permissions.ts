@@ -173,7 +173,8 @@ export function requirePermission(user: User, permission: PipelinePermission): v
 }
 
 /**
- * Extract user from request headers (mock — in production: JWT/session).
+ * Extract user from request headers.
+ * Headers are set by the auth middleware from the verified JWT/session.
  * Looks for x-user-id, x-user-email, x-user-role headers.
  */
 export function getUserFromHeaders(headers: Headers): User | null {

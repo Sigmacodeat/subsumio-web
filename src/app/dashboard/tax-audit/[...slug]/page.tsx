@@ -15,7 +15,6 @@ import {
   Save,
   X,
   AlertCircle,
-  Euro,
   Plus,
   Trash,
 } from "lucide-react";
@@ -456,7 +455,7 @@ export default function TaxAuditDetailPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <p className="text-xs text-[color:var(--ds-text-subtle)]">
                   {t("tax.detail.label_client")}

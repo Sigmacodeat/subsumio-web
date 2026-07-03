@@ -18,7 +18,6 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { DashboardKey } from "@/content/dashboard";
 
 interface TaxStrategyPanelProps {
   returnSlug: string;

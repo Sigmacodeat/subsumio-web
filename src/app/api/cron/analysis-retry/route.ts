@@ -147,7 +147,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
       // Fire the analysis endpoint — this is a Next.js route, not an engine route
       try {
-        const res = await fetch("http://localhost:3000/api/legal/analyze", {
+        const res = await fetch("/api/legal/analyze", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

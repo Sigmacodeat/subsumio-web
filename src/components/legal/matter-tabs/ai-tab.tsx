@@ -81,11 +81,14 @@ export function AiTab() {
   const [initialQuery, setInitialQuery] = useState<string | undefined>(undefined);
   const [queryNonce, setQueryNonce] = useState(0);
 
-  const handleQuickAction = useCallback((action: QuickAction) => {
-    const query = lang === "en" ? action.queryEn : action.queryDe;
-    setInitialQuery(query);
-    setQueryNonce((n) => n + 1);
-  }, [lang]);
+  const handleQuickAction = useCallback(
+    (action: QuickAction) => {
+      const query = lang === "en" ? action.queryEn : action.queryDe;
+      setInitialQuery(query);
+      setQueryNonce((n) => n + 1);
+    },
+    [lang]
+  );
 
   if (!ctx.caseData) return null;
   const caseData = ctx.caseData;
@@ -98,7 +101,7 @@ export function AiTab() {
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-[color:var(--ds-text-muted)]">
             <Sparkles size={12} className="text-blue-600" />
-            {lang === "en" ? "Quick actions:" : "Schnellaktionen:"}
+            {t("aitab.quick_actions")}
           </div>
           {QUICK_ACTIONS.map((action) => {
             const Icon = action.icon;
@@ -135,9 +138,7 @@ export function AiTab() {
           persistHistory
           className="flex-1"
           placeholder={
-            lang === "en"
-              ? "Ask the AI about this case…"
-              : "Frage die KI zu dieser Akte…"
+            lang === "en" ? "Ask the AI about this case…" : "Frage die KI zu dieser Akte…"
           }
         />
       </div>

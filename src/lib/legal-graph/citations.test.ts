@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { extractCitations, type ExtractedCitation } from "@/lib/legal-graph/citations";
+import { extractCitations } from "@/lib/legal-graph/citations";
 
 describe("extractCitations", () => {
   test("extracts BGH case citations with date and file number", () => {

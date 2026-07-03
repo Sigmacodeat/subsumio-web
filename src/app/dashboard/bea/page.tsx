@@ -274,7 +274,7 @@ export default function BeaPage() {
           }}
         >
           <h2 className="text-sm font-semibold text-blue-600">{t("bea.compose_title")}</h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="bea-recipient" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("bea.recipient_label")}
