@@ -1866,12 +1866,12 @@ const _landingDe = {
     { icon: "Globe", label: "EU-Cloud" },
   ],
   heroQACard: {
-    question: "Was ist die Frist für die Berufung?",
+    question: "Wo widersprechen sich die Schriftsätze der Gegenseite?",
     answer:
-      "§ 517 ZPO: Die Berufungsfrist beträgt einen Monat ab Zustellung des Urteils in vollständiger Form. Sie ist eine Notfrist — nicht verlängerbar.",
+      "Akte Bauer ./. Hofer: Plädandum der Gegenseite S. 3 claims „keine Kenntnis“ vom Vertrag — S. 7 zitiert denselben Vertrag als Beleg. Widerspruch erkannt.",
     sources: [
-      { label: "ZPO § 517", href: "/superbrain" },
-      { label: "BGB § 194", href: "/superbrain" },
+      { label: "akte/bauer-hofer", href: "/superbrain" },
+      { label: "schriftsatz/gegenseite", href: "/superbrain" },
     ],
     confidenceLabel: "5-Layer verifiziert",
   },
@@ -2118,12 +2118,12 @@ const _landingEn = {
     { icon: "Globe", label: "EU-Cloud" },
   ],
   heroQACard: {
-    question: "What's the deadline for filing an appeal?",
+    question: "Where do the opposing party's filings contradict each other?",
     answer:
-      "§ 517 ZPO: The appeal period is one month from service of the full judgment. It is a statutory deadline — non-extendable.",
+      'Matter Bauer ./. Hofer: Opposing counsel\'s brief p. 3 claims "no knowledge" of the contract — p. 7 cites the same contract as evidence. Contradiction found.',
     sources: [
-      { label: "ZPO § 517", href: "/superbrain" },
-      { label: "BGB § 194", href: "/superbrain" },
+      { label: "matter/bauer-hofer", href: "/superbrain" },
+      { label: "brief/opposing-counsel", href: "/superbrain" },
     ],
     confidenceLabel: "5-layer verified",
   },

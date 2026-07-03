@@ -8,7 +8,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { CheckCircle2, FileText, Sparkles } from "lucide-react";
+import { CheckCircle2, FileText } from "lucide-react";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import type { Lang } from "@/content/site";
 
@@ -60,8 +60,8 @@ export default function HeroQACard({
           timeoutRef.current = setTimeout(() => setShowSources(true), 300);
           setTimeout(() => setShowConfidence(true), 700);
         }
-      }, 18);
-    }, 1200);
+      }, 15);
+    }, 800);
 
     return () => {
       clearTimeout(startDelay);
@@ -109,9 +109,9 @@ export default function HeroQACard({
         {/* window header */}
         <div className="flex items-center gap-2 border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-bg)]">
           <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-400/60" />
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-400/60" />
-            <span className="h-2.5 w-2.5 rounded-full bg-green-400/60" />
+            <span className="h-2.5 w-2.5 rounded-full bg-red-400/80" />
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" />
+            <span className="h-2.5 w-2.5 rounded-full bg-green-400/80" />
           </div>
           <div className="ml-3 flex items-center gap-1.5 font-mono text-xs [color:var(--mk-text-muted)]">
             <SubsumioMark size={14} />
@@ -143,8 +143,8 @@ export default function HeroQACard({
           <div className="flex items-start gap-3">
             <SubsumioMark size={28} className="mt-0.5 shrink-0" />
             <div
-              className="flex-1 text-sm leading-relaxed [color:var(--mk-text-muted)]"
-              style={{ minHeight: reduce ? undefined : "4.5rem" }}
+              className="flex-1 text-[0.925rem] leading-relaxed [color:var(--mk-text-muted)]"
+              style={{ minHeight: reduce ? undefined : "5.5rem" }}
             >
               {/* thinking dots — shown before typewriter starts */}
               {!reduce && !isTyping && displayed.length === 0 && (
@@ -197,6 +197,8 @@ export default function HeroQACard({
               >
                 <Link
                   href={src.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="brand-text brand-soft hover:brand-soft-strong inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-xs transition-all hover:-translate-y-0.5 hover:shadow-sm"
                 >
                   <FileText size={10} />
@@ -230,7 +232,6 @@ export default function HeroQACard({
             <span className="text-xs font-medium [color:var(--mk-text-muted)]">
               {confidenceLabel}
             </span>
-            <Sparkles size={12} className="ml-auto text-[var(--brand-tertiary)]/60" />
           </motion.div>
         )}
       </motion.div>

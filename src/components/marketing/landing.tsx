@@ -146,7 +146,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
 
               {/* H1 — bold (not black — Space Grotesk loads max 700) */}
               <h1
-                className="mb-4 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-bold tracking-tight text-balance [color:var(--mk-text)]"
+                className="mb-5 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-bold tracking-tight text-balance [color:var(--mk-text)]"
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 <SplitTextReveal as="span" delay={0.2} stagger={0.06} useAnimate className="block">
@@ -161,7 +161,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 transition={
                   reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.35 }
                 }
-                className="mb-4 text-lg font-semibold md:text-xl"
+                className="mb-3 text-lg font-semibold md:text-xl"
                 style={{
                   background: "linear-gradient(90deg, var(--brand-primary), var(--brand-tertiary))",
                   WebkitBackgroundClip: "text",
@@ -180,7 +180,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.45 }
                 }
               >
-                <p className="mx-auto mb-10 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg lg:mx-0">
+                <p className="mx-auto mb-8 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg lg:mx-0">
                   {t.sub}
                 </p>
               </motion.div>
@@ -247,8 +247,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                           ? { duration: 0 }
                           : { delay: 0.8 + i * 0.08, duration: 0.3, ease: EASE.out }
                       }
-                      whileHover={reduce ? undefined : { y: -2 }}
-                      className="inline-flex cursor-default items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 text-xs [color:var(--mk-text-muted)] transition-colors [background:var(--mk-surface)] hover:[border-color:var(--brand-border)] hover:[color:var(--mk-text)]"
+                      className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 text-xs [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
                     >
                       <Icon size={12} className="text-[var(--brand-secondary)]" />
                       {item.label}
@@ -275,7 +274,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             initial={reduce ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 1 }}
-            className="relative z-10 mx-auto mt-16 max-w-4xl pt-8"
+            className="relative z-10 mx-auto mt-12 max-w-4xl pt-8"
           >
             {/* gradient divider — fades from transparent to border to transparent */}
             <div
