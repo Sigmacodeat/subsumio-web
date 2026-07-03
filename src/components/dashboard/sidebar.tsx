@@ -19,6 +19,7 @@ import {
   X,
   Briefcase,
   CalendarClock,
+  Clock,
   Landmark,
   Plug,
   PenTool,
@@ -153,6 +154,30 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: FileClock,
         labelKey: "nav.document_requests",
         keywords: "dokumentenanforderung unterlagen documents request",
+      },
+    ],
+  },
+  {
+    titleKey: "nav.section.schedule",
+    colorVar: "--nav-cat-cases",
+    items: [
+      {
+        href: "/dashboard/calendar",
+        icon: CalendarClock,
+        labelKey: "nav.calendar",
+        keywords: "kalender calendar fristen termine deadlines",
+      },
+      {
+        href: "/dashboard/deadlines",
+        icon: Clock,
+        labelKey: "nav.deadlines",
+        keywords: "fristen termine deadlines",
+      },
+      {
+        href: "/dashboard/tasks",
+        icon: CheckSquare,
+        labelKey: "nav.tasks",
+        keywords: "aufgaben tasks todos",
       },
     ],
   },
@@ -315,6 +340,12 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Receipt,
         labelKey: "nav.invoicing",
         keywords: "rechnung invoice rvg gebühren",
+      },
+      {
+        href: "/dashboard/time-tracking",
+        icon: Clock,
+        labelKey: "nav.time_tracking",
+        keywords: "zeit time tracking stunden zeiterfassung",
       },
       {
         href: "/dashboard/cost-calculator",

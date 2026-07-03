@@ -2062,6 +2062,78 @@ export const api = {
       });
     },
   },
+
+  cases: {
+    list(params?: { type?: string; limit?: number }): Promise<BrainPage[]> {
+      const searchParams = new URLSearchParams();
+      searchParams.set("type", params?.type ?? "legal_case");
+      if (params?.limit) searchParams.set("limit", String(params.limit));
+      return request(`/api/search?type=legal_case&limit=${params?.limit ?? 200}`);
+    },
+  },
+
+  deadlines: {
+    list(params?: { limit?: number }): Promise<BrainPage[]> {
+      return request(`/api/search?type=legal_deadline&limit=${params?.limit ?? 200}`);
+    },
+  },
+
+  tasks: {
+    list(params?: { limit?: number }): Promise<BrainPage[]> {
+      return request(`/api/search?type=legal_task&limit=${params?.limit ?? 200}`);
+    },
+  },
+
+  time: {
+    list(params?: {
+      from?: string;
+      to?: string;
+      billable?: boolean;
+      unbilled?: boolean;
+      limit?: number;
+    }): Promise<{
+      entries: Array<{
+        id: string;
+        description: string;
+        minutes: number;
+        date: string;
+        rate?: number;
+        billable: boolean;
+        billed: boolean;
+        case_slug?: string;
+        case_title?: string;
+        lawyer?: string;
+        activity_type?: string;
+      }>;
+      total: number;
+      summary: { total_minutes: number; total_hours: number; billable_amount: number };
+    }> {
+      const searchParams = new URLSearchParams();
+      if (params?.from) searchParams.set("from", params.from);
+      if (params?.to) searchParams.set("to", params.to);
+      if (params?.billable !== undefined) searchParams.set("billable", String(params.billable));
+      if (params?.unbilled) searchParams.set("unbilled", "true");
+      if (params?.limit) searchParams.set("limit", String(params.limit));
+      const qs = searchParams.toString();
+      return request(`/api/time${qs ? `?${qs}` : ""}`);
+    },
+
+    create(input: {
+      case_slug: string;
+      description: string;
+      minutes: number;
+      date: string;
+      rate?: number;
+      billable?: boolean;
+      activity_type?: string;
+      lawyer?: string;
+    }): Promise<{ id: string }> {
+      return request("/api/time", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+  },
 };
 
 export type {
