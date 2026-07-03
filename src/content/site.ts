@@ -1917,6 +1917,28 @@ const _landingDe = {
     sourcesLabel: "Quellen:",
     sources: ["akten/bauer-hofer", "fristen/replik", "dokumente/gutachten-klein"],
   },
+  showreel: {
+    turns: [
+      {
+        question: "Was muss ich vor der Verhandlung Bauer morgen wissen?",
+        answer:
+          "Akte Bauer ./. Hofer GmbH — Vertragsbruch, 84.000 €. LG Wien, Abt. 12. Verhandlung morgen 09:30. 3 offene Punkte: Replik heute fällig, Gutachten Dr. Klein fehlt, Vergleich unbestätigt. ⚠️ Notfrist — Einbringung endet um Mitternacht.",
+        sources: ["akten/bauer-hofer", "fristen/replik", "dokumente/gutachten-klein"],
+      },
+      {
+        question: "Wo widersprechen sich die Schriftsätze der Gegenseite?",
+        answer:
+          'Plädandum S. 3: „keine Kenntnis" vom Vertrag. S. 7: zitiert denselben Vertrag als Beleg. Widerspruch erkannt — Beweiswert geschwächt.',
+        sources: ["schriftsatz/gegenseite", "akten/bauer-hofer"],
+      },
+      {
+        question: "Entwirf die Replik dafür.",
+        answer:
+          "Argument 1: Widerspruch S.3 vs S.7 — Beweiswert geschwächt. Argument 2: Vertragskenntnis nach S.7 begründet Leistungspflicht. Antrag: Beweiswürdigung auf Widerspruch stützen.",
+        sources: ["zpo/§520", "akten/bauer-hofer"],
+      },
+    ],
+  },
   stats: [
     { value: "97,9 %", label: "Recall@5 — Retrieval-Benchmark" },
     { value: "3", label: "Jurisdiktionen — AT · DE · CH" },
@@ -2168,6 +2190,28 @@ const _landingEn = {
 ⚠️ Deadline: the reply brief is a statutory deadline — filing closes at midnight. Nothing newer than March 3 on the expert — follow up.`,
     sourcesLabel: "Sources:",
     sources: ["matters/bauer-hofer", "deadlines/reply-brief", "documents/expert-klein"],
+  },
+  showreel: {
+    turns: [
+      {
+        question: "What do I need to know before the Bauer hearing tomorrow?",
+        answer:
+          "Matter Bauer ./. Hofer Inc — breach of contract, €84,000. Vienna Regional Court, Dept. 12. Hearing tomorrow 09:30. 3 open items: reply brief due today, expert report Dr. Klein missing, settlement unconfirmed. ⚠️ Statutory deadline — filing closes at midnight.",
+        sources: ["matters/bauer-hofer", "deadlines/reply-brief", "documents/expert-klein"],
+      },
+      {
+        question: "Where do the opposing party's filings contradict each other?",
+        answer:
+          'Brief p. 3: "no knowledge" of the contract. p. 7: cites the same contract as evidence. Contradiction found — evidentiary value weakened.',
+        sources: ["brief/opposing-counsel", "matters/bauer-hofer"],
+      },
+      {
+        question: "Draft the reply brief for this.",
+        answer:
+          "Argument 1: Contradiction p.3 vs p.7 — evidentiary value weakened. Argument 2: Contract knowledge per p.7 establishes performance obligation. Prayer: rely on contradiction in evidence assessment.",
+        sources: ["cpc/§520", "matters/bauer-hofer"],
+      },
+    ],
   },
   stats: [
     { value: "97.9%", label: "Recall@5 — retrieval benchmark" },
