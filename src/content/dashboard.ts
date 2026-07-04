@@ -4566,6 +4566,9 @@ export const D = {
   "copilot.ctx.controlling": { de: "Controlling", en: "Controlling" },
   "copilot.ctx.workflows": { de: "Workflows", en: "Workflows" },
   "copilot.ctx.monitoring": { de: "Monitoring", en: "Monitoring" },
+  "copilot.ctx.calendar": { de: "Kalender", en: "Calendar" },
+  "copilot.ctx.tasks": { de: "Aufgaben", en: "Tasks" },
+  "copilot.ctx.time_tracking": { de: "Zeiterfassung", en: "Time Tracking" },
   "copilot.qa.tax_filing_status": {
     de: "Welche Steuererklärungen sind noch offen?",
     en: "Which tax returns are still pending?",
@@ -4613,6 +4616,30 @@ export const D = {
   "copilot.qa.monitoring_alerts": {
     de: "Gibt es aktuelle System-Warnungen oder Anomalien?",
     en: "Are there any current system alerts or anomalies?",
+  },
+  "copilot.qa.calendar_this_week": {
+    de: "Welche Fristen und Termine stehen diese Woche an?",
+    en: "What deadlines and appointments are scheduled this week?",
+  },
+  "copilot.qa.calendar_overdue": {
+    de: "Gibt es überfällige Fristen im Kalender?",
+    en: "Are there any overdue deadlines in the calendar?",
+  },
+  "copilot.qa.tasks_open": {
+    de: "Zeige mir alle offenen Aufgaben über alle Akten.",
+    en: "Show me all open tasks across all cases.",
+  },
+  "copilot.qa.tasks_due_soon": {
+    de: "Welche Aufgaben sind in den nächsten 3 Tagen fällig?",
+    en: "Which tasks are due in the next 3 days?",
+  },
+  "copilot.qa.time_unbilled": {
+    de: "Wie viele Stunden sind noch nicht abgerechnet?",
+    en: "How many hours are still unbilled?",
+  },
+  "copilot.qa.time_this_week": {
+    de: "Wie viele Stunden habe ich diese Woche erfasst?",
+    en: "How many hours have I recorded this week?",
   },
   "copilot.activity_empty": {
     de: "Keine aktiven KI-Aufgaben. Starte einen Workflow, um zu delegieren.",

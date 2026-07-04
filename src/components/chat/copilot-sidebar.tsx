@@ -853,6 +853,84 @@ const ROUTE_PATTERNS: Array<{
       };
     },
   },
+  {
+    pattern: /^\/dashboard\/calendar$/,
+    context: (_m, t, lang) => {
+      const isEn = lang === "en";
+      return {
+        type: "global",
+        label: t("copilot.ctx.calendar"),
+        quickActions: [
+          {
+            label: t("copilot.qa.calendar_this_week"),
+            query: isEn
+              ? "What deadlines and appointments are scheduled this week?"
+              : "Welche Fristen und Termine stehen diese Woche an?",
+            icon: "deadline",
+          },
+          {
+            label: t("copilot.qa.calendar_overdue"),
+            query: isEn
+              ? "Are there any overdue deadlines in the calendar?"
+              : "Gibt es überfällige Fristen im Kalender?",
+            icon: "deadline",
+          },
+        ],
+      };
+    },
+  },
+  {
+    pattern: /^\/dashboard\/tasks$/,
+    context: (_m, t, lang) => {
+      const isEn = lang === "en";
+      return {
+        type: "global",
+        label: t("copilot.ctx.tasks"),
+        quickActions: [
+          {
+            label: t("copilot.qa.tasks_open"),
+            query: isEn
+              ? "Show me all open tasks across all cases."
+              : "Zeige mir alle offenen Aufgaben über alle Akten.",
+            icon: "case",
+          },
+          {
+            label: t("copilot.qa.tasks_due_soon"),
+            query: isEn
+              ? "Which tasks are due in the next 3 days?"
+              : "Welche Aufgaben sind in den nächsten 3 Tagen fällig?",
+            icon: "deadline",
+          },
+        ],
+      };
+    },
+  },
+  {
+    pattern: /^\/dashboard\/time-tracking$/,
+    context: (_m, t, lang) => {
+      const isEn = lang === "en";
+      return {
+        type: "global",
+        label: t("copilot.ctx.time_tracking"),
+        quickActions: [
+          {
+            label: t("copilot.qa.time_unbilled"),
+            query: isEn
+              ? "How many hours are still unbilled?"
+              : "Wie viele Stunden sind noch nicht abgerechnet?",
+            icon: "case",
+          },
+          {
+            label: t("copilot.qa.time_this_week"),
+            query: isEn
+              ? "How many hours have I recorded this week?"
+              : "Wie viele Stunden habe ich diese Woche erfasst?",
+            icon: "case",
+          },
+        ],
+      };
+    },
+  },
 ];
 
 interface ActivityItem {
