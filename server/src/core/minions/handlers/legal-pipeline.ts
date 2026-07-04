@@ -200,6 +200,10 @@ export interface LegalPipelineData {
    * When set, the draft resolver appends the corresponding draft packages.
    */
   nebenverfahren?: string[];
+  /** Phase B: Related case slugs for cross-case matrix (Mandats-Klammer). */
+  related_case_slugs?: string[];
+  /** Phase B: Mandate ID — shared key across multiple cases. */
+  mandate_id?: string;
 }
 
 interface PipelineState {
@@ -255,6 +259,10 @@ interface PipelineState {
   cross_case_findings?: CrossCaseFinding[];
   /** Gap 4: Damage overlap warnings (potential double-counting) */
   damage_overlap_warnings?: string[];
+  /** Phase B2: Cross-case liability matrix page slug */
+  cross_case_matrix_slug?: string;
+  /** Phase D1: Institution checklist page slug */
+  institution_checklist_slug?: string;
 }
 
 /** A counter-argument found by the opponent-simulator. */
@@ -328,8 +336,11 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
       throw new Error("legal-pipeline: data.part_slugs is required (non-empty string[])");
     }
 
+    const rawData = data as unknown as Record<string, unknown>;
     const sourceStamp =
-      typeof data.source_id === "string" && data.source_id ? data.source_id : undefined;
+      typeof rawData._source_id === "string" && rawData._source_id
+        ? (rawData._source_id as string)
+        : undefined;
     const queue = new MinionQueue(engine);
     const stateSlug = `pipeline/state-${data.case_slug}`;
     const startTime = Date.now();
@@ -1694,6 +1705,55 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
           state.warnings = [...(state.warnings ?? []), `Cross-case analysis failed: ${msg}`];
           console.warn(`[legal-pipeline] Cross-case analysis error: ${msg}`);
         }
+      }
+
+      // ── Phase B2: Cross-Case Liability Matrix ──────────────
+      // When related_case_slugs or linked_cases are provided, run the
+      // cross-case-matrix specialist to generate a fall-übergreifende
+      // Haftungsmatrix + Master-Schadenstabelle.
+      const relatedCaseSlugs = data.related_case_slugs ?? data.linked_cases ?? [];
+      if (relatedCaseSlugs.length > 0) {
+        try {
+          const matrixSlug = await runCrossCaseMatrixLayer({
+            ctx,
+            queue,
+            engine,
+            caseSlug: data.case_slug,
+            relatedCaseSlugs,
+            mandateId: data.mandate_id,
+            sourceStamp,
+          });
+          state.cross_case_matrix_slug = matrixSlug;
+          console.warn(`[legal-pipeline] Phase B2: Cross-case matrix generated at ${matrixSlug}`);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          state.warnings = [...(state.warnings ?? []), `Cross-case matrix layer failed: ${msg}`];
+          console.warn(`[legal-pipeline] Cross-case matrix error: ${msg}`);
+        }
+      }
+
+      // ── Phase D1: Institutionen-Checkliste ──────────────────
+      // Runs the institution-checklist specialist to identify which
+      // institutions need to be notified for this case.
+      try {
+        const instSlug = await runInstitutionChecklistLayer({
+          ctx,
+          queue,
+          engine,
+          caseSlug: data.case_slug,
+          jurisdiction: data.jurisdiction ?? "at",
+          verfahrenstyp:
+            data.verfahrenstyp ??
+            (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+          additionalOpponents: data.additional_opponents,
+          sourceStamp,
+        });
+        state.institution_checklist_slug = instSlug;
+        console.warn(`[legal-pipeline] Phase D1: Institution checklist generated at ${instSlug}`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        state.warnings = [...(state.warnings ?? []), `Institution checklist failed: ${msg}`];
+        console.warn(`[legal-pipeline] Institution checklist error: ${msg}`);
       }
 
       // ── Finalize ───────────────────────────────────────────
@@ -7470,6 +7530,7 @@ interface ForensicReport {
   nicht_vernommene_personen: Array<Record<string, unknown>>;
   geldfluss: Array<Record<string, unknown>>;
   amtshaftungspunkte: Array<Record<string, unknown>>;
+  verfahrensverstoesse_gegenseite?: Array<Record<string, unknown>>;
 }
 
 interface DamageEntry {
@@ -7611,6 +7672,7 @@ function extractForensicReport(result: unknown): ForensicReport {
       nicht_vernommene_personen: [],
       geldfluss: [],
       amtshaftungspunkte: [],
+      verfahrensverstoesse_gegenseite: [],
     };
   return {
     summary: (parsed.summary as Record<string, unknown>) ?? {},
@@ -7623,6 +7685,9 @@ function extractForensicReport(result: unknown): ForensicReport {
       : [],
     geldfluss: Array.isArray(parsed.geldfluss) ? parsed.geldfluss : [],
     amtshaftungspunkte: Array.isArray(parsed.amtshaftungspunkte) ? parsed.amtshaftungspunkte : [],
+    verfahrensverstoesse_gegenseite: Array.isArray(parsed.verfahrensverstoesse_gegenseite)
+      ? parsed.verfahrensverstoesse_gegenseite
+      : [],
   };
 }
 
@@ -8261,6 +8326,21 @@ async function writeForensicReportPage(
       });
     }
   }
+  for (const item of report.verfahrensverstoesse_gegenseite ?? []) {
+    const verstoß = String(item.verstoß ?? item.verstoss ?? "");
+    const paragraph = String(item.paragraph ?? "");
+    const severity = String(item.severity ?? "info");
+    if (verstoß) {
+      factRows.push({
+        claim: `Verfahrensverstoß Gegenseite: ${verstoß}${paragraph ? ` (${paragraph})` : ""}`,
+        kind: "fact",
+        confidence: "0.85",
+        notability: severity === "kritisch" ? "high" : severity === "warnung" ? "medium" : "low",
+        source: String(item.on ?? "forensic-report"),
+        context: caseSlug,
+      });
+    }
+  }
   const factsFence = buildFactsFence(factRows);
   if (factsFence) {
     lines.push("");
@@ -8586,6 +8666,10 @@ async function persistPipelineState(
     fmLines.push(`cross_case_findings: ${state.cross_case_findings.length}`);
   if (state.damage_overlap_warnings && state.damage_overlap_warnings.length > 0)
     fmLines.push(`damage_overlap_warnings: ${state.damage_overlap_warnings.length}`);
+  if (state.cross_case_matrix_slug)
+    fmLines.push(`cross_case_matrix_slug: "${state.cross_case_matrix_slug}"`);
+  if (state.institution_checklist_slug)
+    fmLines.push(`institution_checklist_slug: "${state.institution_checklist_slug}"`);
   fmLines.push("---");
 
   const md = `${fmLines.join("\n")}\n\n${JSON.stringify(state, null, 2)}`;
@@ -9072,4 +9156,267 @@ function decodeAbbBogenKuerzel(text: string): string {
     result = result.replace(regex, `${kuerzel} [${ABBOGEN_KUERZEL[kuerzel]}]`);
   }
   return result;
+}
+
+// ── Phase B2: Cross-Case Liability Matrix ──────────────────────
+
+async function runCrossCaseMatrixLayer(opts: {
+  ctx: MinionJobContext;
+  queue: MinionQueue;
+  engine: BrainEngine;
+  caseSlug: string;
+  relatedCaseSlugs: string[];
+  mandateId?: string;
+  sourceStamp?: string;
+}): Promise<string> {
+  const { ctx, queue, engine, caseSlug, relatedCaseSlugs, mandateId, sourceStamp } = opts;
+  const allSlugs = [caseSlug, ...relatedCaseSlugs.filter((s) => s !== caseSlug)];
+
+  const prompt = [
+    "Erstelle eine fall-übergreifende Haftungsmatrix und Master-Schadenstabelle.",
+    "",
+    `Mandats-ID: ${mandateId ?? "nicht gesetzt"}`,
+    `Verknüpfte Akten: ${allSlugs.join(", ")}`,
+    "",
+    "Lade für JEDEN verknüpften Fall die folgenden Pages mit get_page:",
+    ...allSlugs.flatMap((slug) => [
+      `- damage-tables/${slug}`,
+      `- forensic-reports/${slug}`,
+      `- entities/${slug}`,
+    ]),
+    "",
+    "Erstelle dann:",
+    "1. MASTER-SCHADENSTABELLE: Alle Schäden aus allen Akten, mit case_slug und Gegner-Zuordnung.",
+    "2. HAFTUNGSMATRIX: Welcher Gegner haftet für welchen Schaden in welcher Akte?",
+    "3. HAFTUNGSLÜCKEN: Schäden ohne Gegner-Zuordnung.",
+    "4. DOPPELGEFAHREN: Schäden, die gegen mehrere Gegner parallel geltend gemacht werden.",
+    "",
+    'Gib JSON zurück: { master_schadenstabelle: [...], haftungsmatrix: [...], haftungsluecken: [...], doppelgefahren: [...], gesamt_schaden_summe: N, gesamt_haftungssumme: N, empfehlung: "..." }',
+  ].join("\n");
+
+  const json = await runSpecialistLayer({
+    ctx,
+    queue,
+    specialistName: "cross-case-matrix",
+    prompt,
+    sourceStamp,
+  });
+
+  const slug = `cross-case-matrices/${caseSlug}`;
+  const lines: string[] = [];
+  lines.push(`# Cross-Case Haftungsmatrix — ${mandateId ?? caseSlug}`);
+  lines.push("");
+  lines.push(`**Verknüpfte Akten:** ${allSlugs.join(", ")}`);
+  lines.push("");
+
+  if (json) {
+    const master = Array.isArray(json.master_schadenstabelle)
+      ? (json.master_schadenstabelle as Record<string, unknown>[])
+      : [];
+    const matrix = Array.isArray(json.haftungsmatrix)
+      ? (json.haftungsmatrix as Record<string, unknown>[])
+      : [];
+    const luecken = Array.isArray(json.haftungsluecken)
+      ? (json.haftungsluecken as Record<string, unknown>[])
+      : [];
+    const doppel = Array.isArray(json.doppelgefahren)
+      ? (json.doppelgefahren as Record<string, unknown>[])
+      : [];
+    const totalSumme = Number(json.gesamt_schaden_summe ?? 0);
+    const haftungSumme = Number(json.gesamt_haftungssumme ?? 0);
+    const empfehlung = String(json.empfehlung ?? "");
+
+    if (master.length > 0) {
+      lines.push("## Master-Schadenstabelle");
+      lines.push("");
+      lines.push("| Schaden | Betrag | Akte | Gegner | Haftungsgrund | Status |");
+      lines.push("|---------|--------|------|--------|---------------|--------|");
+      for (const e of master) {
+        lines.push(
+          `| ${e.schaden ?? ""} | €${Number(e.betrag ?? 0).toLocaleString("de-DE")} | ${e.case_slug ?? ""} | ${e.gegner ?? "—"} | ${e.haftungsgrund ?? ""} | ${e.status ?? ""} |`
+        );
+      }
+      lines.push("");
+    }
+
+    if (matrix.length > 0) {
+      lines.push("## Haftungsmatrix");
+      lines.push("");
+      lines.push("| Schaden | Gegner | Rolle | Haftet | § | Akte |");
+      lines.push("|---------|--------|-------|--------|---|------|");
+      for (const m of matrix) {
+        lines.push(
+          `| ${m.schaden ?? ""} | ${m.gegner ?? ""} | ${m.rolle ?? ""} | ${m.haftet ? "Ja" : "Nein"} | ${m.paragraph ?? ""} | ${m.case_slug ?? ""} |`
+        );
+      }
+      lines.push("");
+    }
+
+    if (luecken.length > 0) {
+      lines.push("> ⚠️ **Haftungslücken**");
+      lines.push("");
+      lines.push("| Schaden | Betrag | Grund |");
+      lines.push("|---------|--------|-------|");
+      for (const l of luecken) {
+        lines.push(
+          `| ${l.schaden ?? ""} | €${Number(l.betrag ?? 0).toLocaleString("de-DE")} | ${l.grund ?? ""} |`
+        );
+      }
+      lines.push("");
+    }
+
+    if (doppel.length > 0) {
+      lines.push("> ⚠️ **Doppelgefahren (Kumulationsrisiko)**");
+      lines.push("");
+      lines.push("| Schaden | Gegner A | Gegner B | Betrag | Risiko |");
+      lines.push("|---------|----------|----------|--------|--------|");
+      for (const d of doppel) {
+        lines.push(
+          `| ${d.schaden ?? ""} | ${d.gegner_a ?? ""} | ${d.gegner_b ?? ""} | €${Number(d.betrag ?? 0).toLocaleString("de-DE")} | ${d.risiko ?? ""} |`
+        );
+      }
+      lines.push("");
+    }
+
+    lines.push(
+      `**Gesamtschaden:** €${totalSumme.toLocaleString("de-DE")} | **Haftungssumme:** €${haftungSumme.toLocaleString("de-DE")}`
+    );
+    lines.push("");
+    lines.push(`**Empfehlung:** ${empfehlung}`);
+  } else {
+    lines.push("*Cross-Case Matrix konnte nicht generiert werden — keine Daten verfügbar.*");
+  }
+
+  const md = lines.join("\n");
+  const parsed = parseMarkdown(md);
+  await safePutPage(
+    engine,
+    slug,
+    {
+      type: "cross_case_matrix",
+      title: parsed.title ?? `Cross-Case Haftungsmatrix — ${mandateId ?? caseSlug}`,
+      compiled_truth: md,
+      frontmatter: {
+        ...(parsed.frontmatter ?? {}),
+        mandate_id: mandateId,
+        case_slugs: allSlugs,
+      },
+    },
+    sourceStamp
+  );
+
+  return slug;
+}
+
+// ── Phase D1: Institutionen-Checkliste ─────────────────────────
+
+async function runInstitutionChecklistLayer(opts: {
+  ctx: MinionJobContext;
+  queue: MinionQueue;
+  engine: BrainEngine;
+  caseSlug: string;
+  jurisdiction: "at" | "de" | "ch" | "eu";
+  verfahrenstyp: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
+  additionalOpponents?: LegalPipelineData["additional_opponents"];
+  sourceStamp?: string;
+}): Promise<string> {
+  const {
+    ctx,
+    queue,
+    engine,
+    caseSlug,
+    jurisdiction,
+    verfahrenstyp,
+    additionalOpponents,
+    sourceStamp,
+  } = opts;
+
+  const opponentInfo = additionalOpponents?.length
+    ? `\nAdditional opponents:\n${additionalOpponents.map((o) => `- ${o.name} (${o.rolle}${o.verfahrensschiene ? `, ${o.verfahrensschiene}` : ""})`).join("\n")}`
+    : "";
+
+  const prompt = [
+    "Prüfe, welche Institutionen für diesen Fall benachrichtigt werden müssen.",
+    "",
+    `Akte: ${caseSlug}`,
+    `Jurisdiktion: ${jurisdiction}`,
+    `Verfahrenstyp: ${verfahrenstyp}`,
+    `Forensischer Bericht: forensic-reports/${caseSlug}`,
+    `Entitäten: entities/${caseSlug}`,
+    opponentInfo,
+    "",
+    "Lade den forensischen Bericht und die Entitäten mit get_page.",
+    "Prüfe dann pro Institution, ob sie relevant ist.",
+    "",
+    'Gib JSON zurück: { institutions: [...], urgent_count: N, warning_count: N, info_count: N, empfehlung: "..." }',
+  ].join("\n");
+
+  const json = await runSpecialistLayer({
+    ctx,
+    queue,
+    specialistName: "institution-checklist",
+    prompt,
+    sourceStamp,
+  });
+
+  const slug = `institution-checklists/${caseSlug}`;
+  const lines: string[] = [];
+  lines.push(`# Institutionen-Checkliste — ${caseSlug}`);
+  lines.push("");
+  lines.push(`**Jurisdiktion:** ${jurisdiction} | **Verfahrenstyp:** ${verfahrenstyp}`);
+  lines.push("");
+
+  if (json) {
+    const institutions = Array.isArray(json.institutions)
+      ? (json.institutions as Record<string, unknown>[])
+      : [];
+    const urgentCount = Number(json.urgent_count ?? 0);
+    const warningCount = Number(json.warning_count ?? 0);
+    const infoCount = Number(json.info_count ?? 0);
+    const empfehlung = String(json.empfehlung ?? "");
+
+    if (institutions.length > 0) {
+      lines.push("| Institution | Priorität | Grund | Frist | Draft-Typ | Adresse |");
+      lines.push("|-------------|-----------|-------|-------|-----------|---------|");
+      for (const inst of institutions) {
+        const priorityStr =
+          inst.priority === "URGENT"
+            ? "🚨 URGENT"
+            : inst.priority === "WARNUNG"
+              ? "⚠️ WARNUNG"
+              : "ℹ️ INFO";
+        lines.push(
+          `| ${inst.name ?? ""} | ${priorityStr} | ${inst.reason ?? ""} | ${inst.deadline ?? "—"} | ${inst.draft_type ?? "—"} | ${inst.address ?? "—"} |`
+        );
+      }
+      lines.push("");
+    } else {
+      lines.push("*Keine Institutionen-Meldung erforderlich.*");
+      lines.push("");
+    }
+
+    lines.push(
+      `**🚨 URGENT:** ${urgentCount} | **⚠️ WARNUNG:** ${warningCount} | **ℹ️ INFO:** ${infoCount}`
+    );
+    lines.push("");
+    lines.push(`**Empfehlung:** ${empfehlung}`);
+  } else {
+    lines.push("*Institutionen-Checkliste konnte nicht generiert werden.*");
+  }
+
+  const md = lines.join("\n");
+  const parsed = parseMarkdown(md);
+  await safePutPage(
+    engine,
+    slug,
+    {
+      type: "institution_checklist",
+      title: parsed.title ?? `Institutionen-Checkliste — ${caseSlug}`,
+      compiled_truth: md,
+      frontmatter: { ...(parsed.frontmatter ?? {}) },
+    },
+    sourceStamp
+  );
+
+  return slug;
 }
