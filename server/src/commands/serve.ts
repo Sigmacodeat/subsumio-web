@@ -121,7 +121,7 @@ export async function runServe(engine: BrainEngine, args: string[] = [], opts: S
       const { registerBuiltinHandlers } = await import("./jobs.ts");
       const queue = new MinionQueue(engine);
       await queue.ensureSchema();
-      const worker = new MinionWorker(engine, { queue: "default" });
+      const worker = new MinionWorker(engine, { queue: "default", concurrency: 3 });
       await registerBuiltinHandlers(worker, engine);
       // Embedded mode: a worker health failure must NOT kill the HTTP server.
       // Log loudly; the worker stops, the API stays up, operators see it.
