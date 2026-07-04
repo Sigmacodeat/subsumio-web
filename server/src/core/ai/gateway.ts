@@ -2916,10 +2916,30 @@ export async function chat(opts: ChatOpts): Promise<ChatResult> {
   };
 
   try {
+    const modelMessages = toModelMessages(opts.messages) as any[];
+    // Debug: log message structure before generateText
+    const msgSummary = modelMessages
+      .map((m: any) => {
+        if (m.role === "assistant") {
+          const tc = Array.isArray(m.content)
+            ? m.content.filter((b: any) => b.type === "tool-call").length
+            : 0;
+          return `asst(tc=${tc})`;
+        }
+        if (m.role === "tool") {
+          const tr = Array.isArray(m.content)
+            ? m.content.filter((b: any) => b.type === "tool-result").length
+            : 0;
+          return `tool(tr=${tr})`;
+        }
+        return m.role;
+      })
+      .join(" ");
+    console.error(`[chat] model=${opts.model} msgs=${modelMessages.length} [${msgSummary}]`);
     const result = await generateText({
       model,
       system: opts.system,
-      messages: toModelMessages(opts.messages) as any,
+      messages: modelMessages as any,
       tools: opts.tools && opts.tools.length > 0 ? tools : undefined,
       maxOutputTokens: opts.maxTokens ?? 4096,
       // v0.42.20.0 — default a chat timeout (composes with the caller's signal,
