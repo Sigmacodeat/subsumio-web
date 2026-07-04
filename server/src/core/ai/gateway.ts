@@ -2629,6 +2629,21 @@ function instantiateChat(recipe: Recipe, modelId: string, cfg: AIGatewayConfig):
           ? (body: Record<string, unknown>) => {
               const messages = body.messages;
               if (Array.isArray(messages)) {
+                // Debug: log message structure
+                const summary = messages
+                  .map((m: any) => {
+                    if (m.role === "assistant") {
+                      const tc = Array.isArray(m.tool_calls) ? m.tool_calls.length : 0;
+                      const rc = m.reasoning_content ? "yes" : m.reasoning ? "yes" : "no";
+                      return `asst(tc=${tc},rc=${rc})`;
+                    }
+                    if (m.role === "tool") {
+                      return `tool(id=${m.tool_call_id?.slice(0, 12)})`;
+                    }
+                    return `${m.role}`;
+                  })
+                  .join(" ");
+                console.error(`[openRouterTransform] msgs=${messages.length} [${summary}]`);
                 for (const msg of messages) {
                   if (
                     msg.role === "assistant" &&
