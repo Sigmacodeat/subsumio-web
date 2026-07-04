@@ -850,7 +850,7 @@ export class MinionQueue {
       const rows = await tx.executeRaw<Record<string, unknown>>(
         `UPDATE minion_jobs SET status = 'completed', result = $1::jsonb,
           finished_at = now(), lock_token = NULL, lock_until = NULL, updated_at = now()
-         WHERE id = $2 AND status = 'active' AND lock_token = $3
+         WHERE id = $2 AND status IN ('active', 'waiting-children') AND lock_token = $3
          RETURNING *`,
         [result ?? null, id, lockToken]
       );
@@ -905,9 +905,13 @@ export class MinionQueue {
         // in ANY terminal state. Terminal set includes 'failed' so a failed
         // child with on_child_fail='continue'/'ignore' doesn't strand the
         // parent in waiting-children forever (v0.15 aggregator fix).
+        // Only transition if the parent's lock has expired — if the lock is
+        // still valid, the handler is still running (e.g. pipeline waitForChild
+        // polling) and will process the inbox message itself.
         await tx.executeRaw(
           `UPDATE minion_jobs SET status = 'waiting', updated_at = now()
            WHERE id = $1 AND status = 'waiting-children'
+             AND (lock_until IS NULL OR lock_until < now())
              AND NOT EXISTS (
                SELECT 1 FROM minion_jobs
                WHERE parent_job_id = $1
@@ -968,7 +972,7 @@ export class MinionQueue {
           delay_until = CASE WHEN $1 = 'delayed' THEN now() + ($4::double precision * interval '1 millisecond') ELSE NULL END,
           finished_at = CASE WHEN $1 IN ('failed', 'dead') THEN now() ELSE NULL END,
           lock_token = NULL, lock_until = NULL, updated_at = now()
-         WHERE id = $5 AND status = 'active' AND lock_token = $6
+         WHERE id = $5 AND status IN ('active', 'waiting-children') AND lock_token = $6
          RETURNING *`,
         [newStatus, errorText, errorText, backoffMs ?? 0, id, lockToken]
       );
@@ -1037,6 +1041,7 @@ export class MinionQueue {
           await tx.executeRaw(
             `UPDATE minion_jobs SET status = 'waiting', updated_at = now()
              WHERE id = $1 AND status = 'waiting-children'
+               AND (lock_until IS NULL OR lock_until < now())
                AND NOT EXISTS (
                  SELECT 1 FROM minion_jobs
                  WHERE parent_job_id = $1
@@ -1093,7 +1098,7 @@ export class MinionQueue {
         stacktrace = COALESCE(stacktrace, '[]'::jsonb) || to_jsonb($1::text),
         delay_until = now() + ($2::double precision * interval '1 millisecond'),
         lock_token = NULL, lock_until = NULL, updated_at = now()
-       WHERE id = $3 AND status = 'active' AND lock_token = $4
+       WHERE id = $3 AND status IN ('active', 'waiting-children') AND lock_token = $4
        RETURNING *`,
       [errorText, backoffMs, id, lockToken]
     );
@@ -1105,7 +1110,7 @@ export class MinionQueue {
   async updateProgress(id: number, lockToken: string, progress: unknown): Promise<boolean> {
     const rows = await this.engine.executeRaw<Record<string, unknown>>(
       `UPDATE minion_jobs SET progress = $1::jsonb, updated_at = now()
-       WHERE id = $2 AND status = 'active' AND lock_token = $3
+       WHERE id = $2 AND status IN ('active', 'waiting-children') AND lock_token = $3
        RETURNING id`,
       [progress, id, lockToken]
     );
@@ -1236,6 +1241,7 @@ export class MinionQueue {
     const rows = await this.engine.executeRaw<Record<string, unknown>>(
       `UPDATE minion_jobs SET status = 'waiting', updated_at = now()
        WHERE id = $1 AND status = 'waiting-children'
+         AND (lock_until IS NULL OR lock_until < now())
          AND NOT EXISTS (
            SELECT 1 FROM minion_jobs
            WHERE parent_job_id = $1
@@ -1311,9 +1317,11 @@ export class MinionQueue {
 
   /** Read unread inbox messages for a job. Token-fenced. Marks messages as read. */
   async readInbox(jobId: number, lockToken: string): Promise<InboxMessage[]> {
-    // Verify lock ownership
+    // Verify lock ownership — also allow waiting-children and waiting status
+    // because pipeline jobs transition to these statuses while still needing
+    // to read child_done messages from their inbox.
     const lockCheck = await this.engine.executeRaw<{ id: number }>(
-      `SELECT id FROM minion_jobs WHERE id = $1 AND lock_token = $2 AND status = 'active'`,
+      `SELECT id FROM minion_jobs WHERE id = $1 AND lock_token = $2 AND status IN ('active', 'waiting-children', 'waiting')`,
       [jobId, lockToken]
     );
     if (lockCheck.length === 0) return [];
@@ -1335,7 +1343,7 @@ export class MinionQueue {
         tokens_output = tokens_output + $2,
         tokens_cache_read = tokens_cache_read + $3,
         updated_at = now()
-       WHERE id = $4 AND status = 'active' AND lock_token = $5
+       WHERE id = $4 AND status IN ('active', 'waiting-children') AND lock_token = $5
        RETURNING id`,
       [tokens.input ?? 0, tokens.output ?? 0, tokens.cache_read ?? 0, id, lockToken]
     );
@@ -1383,7 +1391,7 @@ export class MinionQueue {
   ): Promise<ChildDoneMessage[]> {
     // Verify the caller holds the parent's lock.
     const lockCheck = await this.engine.executeRaw<{ id: number }>(
-      `SELECT id FROM minion_jobs WHERE id = $1 AND lock_token = $2 AND status = 'active'`,
+      `SELECT id FROM minion_jobs WHERE id = $1 AND lock_token = $2 AND status IN ('active', 'waiting-children')`,
       [parentId, lockToken]
     );
     if (lockCheck.length === 0) return [];
