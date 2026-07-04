@@ -2626,8 +2626,7 @@ function instantiateChat(recipe: Recipe, modelId: string, cfg: AIGatewayConfig):
       // which runs before the body is stringified.
       const openRouterTransform =
         recipe.id === "openrouter"
-          ? (args: { body?: Record<string, unknown> }) => {
-              const body = args.body ?? {};
+          ? (body: Record<string, unknown>) => {
               const messages = body.messages;
               if (Array.isArray(messages)) {
                 for (const msg of messages) {
