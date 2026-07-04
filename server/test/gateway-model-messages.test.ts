@@ -26,7 +26,7 @@ describe("toModelMessages — v6 ModelMessage shape", () => {
     ]);
   });
 
-  test("assistant tool-call block keeps {toolCallId,toolName,input} + reasoning fallback", () => {
+  test("assistant tool-call block keeps {toolCallId,toolName,input}", () => {
     const msgs: ChatMessage[] = [
       {
         role: "assistant",
@@ -44,8 +44,6 @@ describe("toModelMessages — v6 ModelMessage shape", () => {
       toolName: "search",
       input: { query: "x" },
     });
-    // DeepSeek reasoning fallback: zero-width space when no reasoning captured
-    expect(out[0].reasoning).toBe("\u200B");
   });
 
   test("tool-result on a user-role message becomes role:tool with json output", () => {
@@ -166,7 +164,6 @@ describe("toModelMessages — v6 ModelMessage shape", () => {
     expect(out).toHaveLength(3);
     expect((out[0] as any).role).toBe("user");
     expect((out[1] as any).role).toBe("assistant");
-    expect((out[1] as any).reasoning).toBe("\u200B"); // DeepSeek reasoning fallback
     expect((out[2] as any).role).toBe("tool");
     expect((out[2] as any).content[0].output).toEqual({ type: "json", value: { hits: 0 } });
   });
@@ -193,7 +190,6 @@ describe("toModelMessages — v6 ModelMessage shape", () => {
     expect(out).toHaveLength(4);
     expect((out[0] as any).role).toBe("user");
     expect((out[1] as any).role).toBe("assistant");
-    expect((out[1] as any).reasoning).toBe("\u200B"); // DeepSeek reasoning fallback
     expect((out[2] as any).role).toBe("tool");
     expect((out[2] as any).content).toHaveLength(1);
     expect((out[2] as any).content[0].toolCallId).toBe("c1");

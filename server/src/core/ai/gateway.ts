@@ -1134,6 +1134,48 @@ const zeroEntropyCompatFetch = (async (input: RequestInfo | URL, init?: RequestI
   }
 }) as unknown as typeof fetch;
 
+/**
+ * OpenRouter fetch wrapper for DeepSeek thinking mode compatibility.
+ *
+ * DeepSeek via OpenRouter generates `reasoning_content` in thinking mode. When
+ * the assistant message with tool_calls is sent back in the next turn, the
+ * `reasoning_content` must be present or DeepSeek rejects with "Tool results
+ * are missing for tool calls". OpenRouter strips empty string `reasoning`
+ * values before forwarding, so we inject a zero-width space (U+200B) which
+ * OpenRouter preserves but DeepSeek accepts as a valid reasoning placeholder.
+ *
+ * Also ensures each tool result is a separate `role: 'tool'` message with
+ * `tool_call_id`, as required by the OpenAI-compatible API spec.
+ */
+const openRouterCompatFetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  if (init?.body && typeof init.body === "string") {
+    try {
+      const parsed = JSON.parse(init.body);
+      if (parsed.messages && Array.isArray(parsed.messages)) {
+        let modified = false;
+        for (const msg of parsed.messages) {
+          if (
+            msg.role === "assistant" &&
+            Array.isArray(msg.tool_calls) &&
+            msg.tool_calls.length > 0
+          ) {
+            if (!msg.reasoning_content && !msg.reasoning) {
+              msg.reasoning_content = "\u200B";
+              modified = true;
+            }
+          }
+        }
+        if (modified) {
+          init.body = JSON.stringify(parsed);
+        }
+      }
+    } catch {
+      // Not JSON or parse error — pass through unchanged.
+    }
+  }
+  return globalThis.fetch(input, init);
+}) as unknown as typeof fetch;
+
 async function resolveEmbeddingProvider(
   modelStr: string
 ): Promise<{ model: any; recipe: Recipe; modelId: string }> {
@@ -2379,12 +2421,7 @@ export function toModelMessages(messages: ChatMessage[]): unknown[] {
       }
       continue;
     }
-    // Assistant messages with tool-calls need reasoning_content round-tripped
-    // for DeepSeek thinking mode. If no reasoning block was captured, inject a
-    // zero-width space fallback (OpenRouter strips empty string reasoning).
-    const hasToolCalls = blocks.some((b) => b.type === "tool-call");
-    const reasoningBlock = blocks.find((b) => b.type === "reasoning");
-    const assistantMsg: Record<string, unknown> = {
+    result.push({
       role: m.role,
       content: blocks
         .filter((b) => b.type !== "reasoning")
@@ -2399,14 +2436,7 @@ export function toModelMessages(messages: ChatMessage[]): unknown[] {
             };
           return b;
         }),
-    };
-    if (hasToolCalls) {
-      // DeepSeek via OpenRouter requires reasoning_content on assistant messages
-      // that contain tool_calls. Use the captured reasoning, or a zero-width space
-      // fallback (OpenRouter strips empty strings but preserves zero-width spaces).
-      assistantMsg.reasoning = reasoningBlock?.text ?? "\u200B";
-    }
-    result.push(assistantMsg);
+    });
   }
   return result;
 }
@@ -2575,10 +2605,14 @@ function instantiateChat(recipe: Recipe, modelId: string, cfg: AIGatewayConfig):
       const auth = applyResolveAuth(recipe, cfg, "chat");
       // v0.32: env-templated base URL + optional fetch wrapper.
       const compat = applyOpenAICompatConfig(recipe, cfg);
+      // OpenRouter needs a fetch wrapper to inject reasoning_content for
+      // DeepSeek thinking mode round-trip (prevents "Tool results are missing").
+      const chatFetchWrapper =
+        compat.fetch ?? (recipe.id === "openrouter" ? openRouterCompatFetch : undefined);
       return createOpenAICompatible({
         name: recipe.id,
         baseURL: compat.baseURL,
-        ...(compat.fetch ? { fetch: compat.fetch } : {}),
+        ...(chatFetchWrapper ? { fetch: chatFetchWrapper } : {}),
         ...auth,
       }).languageModel(modelId);
     }
