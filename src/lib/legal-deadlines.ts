@@ -1,6 +1,6 @@
 import type { DeadlineAuditEntry, DeadlineEntry, TimelineEntry } from "@/lib/legal-types";
 
-export type DeadlineStatus = "pending" | "warning" | "critical" | "overdue" | "done";
+export type DeadlineStatus = "pending" | "warning" | "critical" | "overdue" | "done" | "vorfrist";
 
 // ── Feiertags-Kalkulator (DE + AT + CH) ──────────────────────────────────
 //
@@ -792,7 +792,16 @@ export function calculateDeadline(
   };
 }
 
-export function computeDeadlineStatus(dateStr: string, existingStatus?: string): DeadlineStatus {
+/**
+ * E1: Unified status vocabulary across frontend, cron, and engine.
+ * Returns 'vorfrist' when the Vorfrist date has been reached but the main
+ * deadline is still > 7 days away.
+ */
+export function computeDeadlineStatus(
+  dateStr: string,
+  existingStatus?: string,
+  vorfristDate?: string
+): DeadlineStatus {
   if (existingStatus === "done") return "done";
   // Normalize both to midnight UTC to avoid DST / timezone skew.
   const target = new Date(dateStr);
@@ -804,6 +813,12 @@ export function computeDeadlineStatus(dateStr: string, existingStatus?: string):
   if (days < 0) return "overdue";
   if (days <= 3) return "critical";
   if (days <= 7) return "warning";
+  // E1: Check Vorfrist before falling back to 'pending'
+  if (vorfristDate) {
+    const vf = new Date(vorfristDate);
+    vf.setUTCHours(0, 0, 0, 0);
+    if (vf.getTime() <= now.getTime()) return "vorfrist";
+  }
   return "pending";
 }
 

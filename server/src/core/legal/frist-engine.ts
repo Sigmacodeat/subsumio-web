@@ -399,6 +399,13 @@ export interface FristArt {
   gehemmtInVhfz: boolean;
   verfahrenstyp: "zivil" | "straf" | "verwaltungsrecht" | "arbeitsrecht" | "alle";
   hinweis?: string;
+  /** D1: Absolute Stichtagsfrist — kein Trigger nötig, Frist endet an diesem Datum. */
+  absolute_date_at?: string;
+  /** D1: Längstens-Frist — Frist endet spätestens an diesem Datum, auch wenn
+   *  die relative Berechnung später läge. Min(Relativ, Absolut) gewinnt. */
+  laengstens_date?: string;
+  /** D1: Zustellungs-Trigger-Typ — bestimmt welche Zustellfiktion angewendet wird. */
+  zustellungs_trigger?: "erv" | "hinterlegung" | "ohne_nachweis" | "standard";
 }
 
 export const FRISTEN_REGISTRY: readonly FristArt[] = [
@@ -622,7 +629,10 @@ export interface FristAutoErgebnis extends FristErgebnis {
   art: FristArt;
 }
 
-/** Berechnet eine Frist aus der Registry (z.B. "berufung") ab Zustellung. */
+/** Berechnet eine Frist aus der Registry (z.B. "berufung") ab Zustellung.
+ *  D1: Berücksichtigt absolute_date_at (Stichtagsfrist), laengstens_date
+ *  (Längstens-Frist) und zustellungs_trigger (ERV/Hinterlegung/ohne Nachweis).
+ */
 export function berechneFristAuto(
   artKey: string,
   zustellungIso: string,
@@ -634,15 +644,63 @@ export function berechneFristAuto(
       `frist-engine: unknown Fristart "${artKey}" (known: ${[...FRISTEN_MAP.keys()].join(", ")})`
     );
   }
+
+  // D1: Apply Zustellungs-Trigger fiction if configured
+  let ausloeser = zustellungIso;
+  const hinweiseExtra: string[] = [];
+  if (art.zustellungs_trigger === "erv") {
+    ausloeser = zustellungERV(zustellungIso);
+    hinweiseExtra.push(`ERV-Zustellungsfiktion (§ 89a GOG): zugestellt am ${ausloeser}`);
+  } else if (art.zustellungs_trigger === "hinterlegung") {
+    ausloeser = zustellungHinterlegung(zustellungIso);
+    hinweiseExtra.push(`Hinterlegungsfiktion (§ 17 Abs 3 ZustG): zugestellt am ${ausloeser}`);
+  } else if (art.zustellungs_trigger === "ohne_nachweis") {
+    ausloeser = zustellungOhneNachweis(zustellungIso);
+    hinweiseExtra.push(`Zustellung ohne Nachweis (§ 26 Abs 2 ZustG): zugestellt am ${ausloeser}`);
+  }
+
+  // D1: Absolute Stichtagsfrist — kein Trigger nötig
+  if (art.absolute_date_at) {
+    const fristende = art.absolute_date_at;
+    const vorfristTage = opts?.vorfristTage ?? 7;
+    let vorfrist = addDays(fristende, -vorfristTage);
+    if (!istWerktag(vorfrist)) vorfrist = vorigerWerktag(vorfrist);
+    return {
+      fristbeginn: ausloeser,
+      fristendeRoh: fristende,
+      fristende,
+      vorfrist,
+      kalendertage: daysBetween(ausloeser, fristende),
+      hinweise: [
+        ...hinweiseExtra,
+        `Stichtagsfrist — festes Datum ${fristende} (${art.rechtsgrundlage})`,
+      ],
+      art,
+    };
+  }
+
   const result = berechneFrist({
-    ausloeser: zustellungIso,
+    ausloeser,
     dauer: art.dauer,
     regime: art.regime,
     gehemmtInVhfz: art.gehemmtInVhfz,
     ferialsache: opts?.ferialsache,
     vorfristTage: opts?.vorfristTage,
   });
-  return { ...result, art };
+
+  // D1: Längstens-Frist — wenn laengstens_date gesetzt, gewinnt das frühere Datum
+  if (art.laengstens_date && result.fristende > art.laengstens_date) {
+    result.fristende = art.laengstens_date;
+    let vorfristNeu = addDays(result.fristende, -(opts?.vorfristTage ?? 7));
+    if (!istWerktag(vorfristNeu)) vorfristNeu = vorigerWerktag(vorfristNeu);
+    result.vorfrist = vorfristNeu;
+    result.kalendertage = daysBetween(ausloeser, result.fristende);
+    result.hinweise.push(
+      `Längstens-Frist: ${art.laengstens_date} greift — Fristende auf ${result.fristende} begrenzt`
+    );
+  }
+
+  return { ...result, hinweise: [...hinweiseExtra, ...result.hinweise], art };
 }
 
 // ── Fristenbuch-Klassifikation ──────────────────────────────

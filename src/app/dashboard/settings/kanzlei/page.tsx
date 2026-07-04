@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, CheckCircle2, Loader2, Shield } from "lucide-react";
+import { Save, CheckCircle2, Loader2, Shield, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   loadKanzleiSettings,
@@ -172,6 +172,122 @@ export default function KanzleiSettingsPage() {
             </p>
           </div>
         </label>
+        <div className="flex items-center gap-3 pt-2">
+          <Button
+            className="gap-2 bg-slate-600 text-sm text-white hover:bg-slate-500"
+            onClick={() => void handleSave()}
+          >
+            <Save size={14} />
+            {t("settings.kanzlei.btn_save")}
+          </Button>
+          {saved && (
+            <span className="flex items-center gap-1 text-sm text-emerald-600">
+              <CheckCircle2 size={14} />
+              {t("settings.kanzlei.toast_saved")}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Rechtsraum: Land + Bundesland/Kanton */}
+      <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+        <div className="flex items-center gap-2">
+          <MapPin size={16} className="text-blue-600" />
+          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Rechtsraum</h2>
+        </div>
+        <p className="text-xs text-[color:var(--ds-text-muted)]">
+          Bestimmt die Feiertagsverschiebung bei der Fristenberechnung (§ 222 Abs. 2 ZPO / § 193
+          BGB). Ohne Angabe werden nur Samstag/Sonntag verschoben, keine regionalen Feiertage.
+        </p>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-1">
+            <label className="text-xs text-[color:var(--ds-text-muted)]">Land</label>
+            <select
+              value={settings.rechtsraumCountry ?? ""}
+              onChange={(e) => {
+                update("rechtsraumCountry", e.target.value);
+                update("rechtsraumState", "");
+              }}
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-slate-500/50 focus:outline-none"
+            >
+              <option value="">— Bitte wählen —</option>
+              <option value="DE">Deutschland</option>
+              <option value="AT">Österreich</option>
+              <option value="CH">Schweiz</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-[color:var(--ds-text-muted)]">
+              {settings.rechtsraumCountry === "CH" ? "Kanton" : "Bundesland"}
+            </label>
+            <select
+              value={settings.rechtsraumState ?? ""}
+              onChange={(e) => update("rechtsraumState", e.target.value)}
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-slate-500/50 focus:outline-none"
+            >
+              <option value="">— Bitte wählen —</option>
+              {settings.rechtsraumCountry === "AT" && (
+                <option value="AT">Österreich (bundesweit)</option>
+              )}
+              {settings.rechtsraumCountry === "DE" &&
+                [
+                  "BW",
+                  "BY",
+                  "BE",
+                  "BB",
+                  "HB",
+                  "HH",
+                  "HE",
+                  "MV",
+                  "NI",
+                  "NW",
+                  "RP",
+                  "SL",
+                  "SN",
+                  "ST",
+                  "SH",
+                  "TH",
+                ].map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              {settings.rechtsraumCountry === "CH" &&
+                [
+                  "ZH",
+                  "BE",
+                  "LU",
+                  "UR",
+                  "SZ",
+                  "OW",
+                  "NW",
+                  "GL",
+                  "ZG",
+                  "FR",
+                  "SO",
+                  "BS",
+                  "BL",
+                  "SH",
+                  "AR",
+                  "AI",
+                  "SG",
+                  "GR",
+                  "AG",
+                  "TG",
+                  "TI",
+                  "VD",
+                  "VS",
+                  "NE",
+                  "GE",
+                  "JU",
+                ].map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+            </select>
+          </div>
+        </div>
         <div className="flex items-center gap-3 pt-2">
           <Button
             className="gap-2 bg-slate-600 text-sm text-white hover:bg-slate-500"

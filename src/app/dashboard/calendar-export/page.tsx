@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, CalendarClock, AlertTriangle, Clock } from "lucide-react";
+import { Download, CalendarClock, AlertTriangle, Clock, Link2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
@@ -22,6 +22,7 @@ interface CalendarEvent {
   type: "deadline" | "hearing" | "meeting" | "reminder" | "appointment";
   caseNumber?: string;
   location?: string;
+  vorfristDate?: string;
 }
 
 function generateIcal(events: CalendarEvent[], _lang: Lang = "de"): string {
@@ -58,6 +59,23 @@ function generateIcal(events: CalendarEvent[], _lang: Lang = "de"): string {
     lines.push(`SUMMARY:${escapeIcalText(ev.title)}`);
     if (ev.description) lines.push(`DESCRIPTION:${escapeIcalText(ev.description)}`);
     if (ev.location) lines.push(`LOCATION:${escapeIcalText(ev.location)}`);
+    // VALARM for deadlines: use Vorfrist date if available, otherwise remind 2 days before at 08:00
+    if (ev.type === "deadline") {
+      if (ev.vorfristDate) {
+        const vfDate = ev.vorfristDate.replace(/-/g, "");
+        lines.push("BEGIN:VALARM");
+        lines.push(`TRIGGER;VALUE=DATE-TIME:${vfDate}T080000`);
+        lines.push("ACTION:DISPLAY");
+        lines.push(`DESCRIPTION:${escapeIcalText(`Vorfrist: ${ev.title}`)}`);
+        lines.push("END:VALARM");
+      }
+      // Always also add a 2-day reminder as fallback
+      lines.push("BEGIN:VALARM");
+      lines.push("TRIGGER:-P2DT8H");
+      lines.push("ACTION:DISPLAY");
+      lines.push(`DESCRIPTION:${escapeIcalText(`Frist: ${ev.title}`)}`);
+      lines.push("END:VALARM");
+    }
     lines.push(`DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").split(".")[0]}Z`);
     lines.push("END:VEVENT");
   }
@@ -107,6 +125,7 @@ export default function CalendarExportPage() {
           type: String(fm.event_type || "deadline") as CalendarEvent["type"],
           caseNumber: fm.case_number ? String(fm.case_number) : undefined,
           location: fm.court ? String(fm.court) : fm.location ? String(fm.location) : undefined,
+          vorfristDate: typeof fm.vorfrist_date === "string" ? fm.vorfrist_date : undefined,
         };
       });
 
@@ -130,6 +149,7 @@ export default function CalendarExportPage() {
               type: String(dl.type || "deadline") as CalendarEvent["type"],
               caseNumber: fm.case_number ? String(fm.case_number) : undefined,
               location: dl.court ? String(dl.court) : dl.location ? String(dl.location) : undefined,
+              vorfristDate: dl.vorfrist_date,
             });
           }
         }
@@ -191,6 +211,18 @@ export default function CalendarExportPage() {
     appointment: "blue",
   };
 
+  const [copied, setCopied] = useState(false);
+  const icsSubscriptionUrl =
+    typeof window !== "undefined" ? `${window.location.origin}/api/legal/deadlines.ics` : "";
+
+  function copySubscriptionUrl() {
+    if (!icsSubscriptionUrl) return;
+    navigator.clipboard.writeText(icsSubscriptionUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    });
+  }
+
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
@@ -208,6 +240,35 @@ export default function CalendarExportPage() {
           </Button>
         }
       />
+
+      {/* Subscription URL */}
+      <div className="space-y-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+        <div className="flex items-start gap-3">
+          <Link2 size={16} className="mt-0.5 shrink-0 text-emerald-600" />
+          <div className="flex-1">
+            <p className="mb-1 text-sm font-medium text-emerald-700">
+              Kalender-Abonnement (mit Vorfrist-Alarm)
+            </p>
+            <p className="mb-2 text-xs text-emerald-600">
+              Abonnieren Sie den Live-Feed mit automatischen Vorfrist-Warnungen (VALARM 2 Tage vor
+              der Frist). Outlook, Google Calendar und Apple Calendar unterstützen
+              Kalender-Abonnements.
+            </p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 truncate rounded-lg border border-emerald-500/20 bg-white/50 px-3 py-1.5 text-xs text-emerald-800">
+                {icsSubscriptionUrl}
+              </code>
+              <button
+                onClick={copySubscriptionUrl}
+                className="flex shrink-0 items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-600/10 px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-600/20"
+              >
+                {copied ? <Check size={12} /> : <Copy size={12} />}
+                {copied ? "Kopiert!" : "Kopieren"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Info */}
       <div className="flex items-start gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">

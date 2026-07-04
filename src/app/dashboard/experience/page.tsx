@@ -178,7 +178,7 @@ export default function ExperiencePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t("experience.title")}</h1>
-          <p className="text-muted-foreground text-sm">{t("experience.description")}</p>
+          <p className="text-sm text-[color:var(--ds-text-muted)]">{t("experience.description")}</p>
         </div>
       </div>
 
@@ -207,9 +207,7 @@ export default function ExperiencePage() {
         </TabButton>
       </div>
 
-      {error && (
-        <div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">{error}</div>
-      )}
+      {error && <div className="rounded-md bg-red-500/10 p-3 text-sm text-red-600">{error}</div>}
 
       {/* Who Knows Tab */}
       {tab === "who_knows" && (
@@ -281,12 +279,12 @@ export default function ExperiencePage() {
           </Card>
 
           {loading ? (
-            <div className="text-muted-foreground py-8 text-center">
+            <div className="py-8 text-center text-[color:var(--ds-text-muted)]">
               {t("experience.loading_results")}
             </div>
           ) : whoKnowsResults.length === 0 ? (
             <Card>
-              <CardContent className="text-muted-foreground py-8 text-center">
+              <CardContent className="py-8 text-center text-[color:var(--ds-text-muted)]">
                 {t("experience.empty_results")}
               </CardContent>
             </Card>
@@ -310,7 +308,7 @@ export default function ExperiencePage() {
                           <Badge className={`text-xs ${LEVEL_COLORS[result.practice_area.level]}`}>
                             {result.practice_area.level_label}
                           </Badge>
-                          <span className="text-muted-foreground text-sm">
+                          <span className="text-sm text-[color:var(--ds-text-muted)]">
                             {result.practice_area.label}
                           </span>
                         </div>
@@ -326,7 +324,7 @@ export default function ExperiencePage() {
                         </div>
                       )}
                     </div>
-                    <div className="text-muted-foreground flex gap-4 text-right text-sm">
+                    <div className="flex gap-4 text-right text-sm text-[color:var(--ds-text-muted)]">
                       <div>
                         <div className="font-semibold">{result.active_matters}</div>
                         <div className="text-xs">{t("experience.stat_active_matters")}</div>
@@ -357,12 +355,12 @@ export default function ExperiencePage() {
           </div>
 
           {loading ? (
-            <div className="text-muted-foreground py-8 text-center">
+            <div className="py-8 text-center text-[color:var(--ds-text-muted)]">
               {t("experience.loading_profiles")}
             </div>
           ) : filteredProfiles.length === 0 ? (
             <Card>
-              <CardContent className="text-muted-foreground py-8 text-center">
+              <CardContent className="py-8 text-center text-[color:var(--ds-text-muted)]">
                 {t("experience.empty_profiles")}
               </CardContent>
             </Card>
@@ -389,7 +387,7 @@ export default function ExperiencePage() {
                         ))}
                       </div>
                     )}
-                    <div className="text-muted-foreground flex flex-wrap gap-3 text-xs">
+                    <div className="flex flex-wrap gap-3 text-xs text-[color:var(--ds-text-muted)]">
                       {profile.qualifications.length > 0 && (
                         <span className="flex items-center gap-1">
                           <Briefcase className="h-3 w-3" />
@@ -418,7 +416,7 @@ export default function ExperiencePage() {
       {tab === "summary" && (
         <div className="space-y-4">
           {loading ? (
-            <div className="text-muted-foreground py-8 text-center">
+            <div className="py-8 text-center text-[color:var(--ds-text-muted)]">
               {t("experience.loading_summary")}
             </div>
           ) : summary ? (
@@ -456,7 +454,7 @@ export default function ExperiencePage() {
                       </div>
                     ))}
                     {Object.keys(summary.by_practice_area).length === 0 && (
-                      <div className="text-muted-foreground text-sm">
+                      <div className="text-sm text-[color:var(--ds-text-muted)]">
                         {t("experience.empty_data")}
                       </div>
                     )}
@@ -475,7 +473,7 @@ export default function ExperiencePage() {
                       </div>
                     ))}
                     {Object.keys(summary.by_role).length === 0 && (
-                      <div className="text-muted-foreground text-sm">
+                      <div className="text-sm text-[color:var(--ds-text-muted)]">
                         {t("experience.empty_data")}
                       </div>
                     )}
@@ -510,7 +508,7 @@ export default function ExperiencePage() {
               </Card>
             </>
           ) : (
-            <div className="text-muted-foreground py-8 text-center">
+            <div className="py-8 text-center text-[color:var(--ds-text-muted)]">
               {t("experience.empty_data")}
             </div>
           )}
@@ -536,8 +534,8 @@ function TabButton({
       onClick={onClick}
       className={`flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
         active
-          ? "border-primary text-primary"
-          : "text-muted-foreground hover:text-foreground border-transparent"
+          ? "border-[color:var(--brand-primary)] text-[color:var(--brand-primary)]"
+          : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
       }`}
     >
       {icon}
@@ -551,7 +549,7 @@ function StatCard({ label, value }: { label: string; value: number }) {
     <Card>
       <CardContent className="py-4 text-center">
         <div className="text-2xl font-bold">{value}</div>
-        <div className="text-muted-foreground text-sm">{label}</div>
+        <div className="text-sm text-[color:var(--ds-text-muted)]">{label}</div>
       </CardContent>
     </Card>
   );

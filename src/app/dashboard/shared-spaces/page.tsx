@@ -105,7 +105,7 @@ export default function SharedSpacesPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );
   }
@@ -113,8 +113,10 @@ export default function SharedSpacesPage() {
   if (error && spaces.length === 0) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <AlertCircle className="text-destructive h-12 w-12" />
-        <p className="text-muted-foreground">Fehler beim Laden der Shared Spaces: {error}</p>
+        <AlertCircle className="h-12 w-12 text-red-600" />
+        <p className="text-[color:var(--ds-text-muted)]">
+          Fehler beim Laden der Shared Spaces: {error}
+        </p>
         <Button onClick={load} variant="outline">
           Erneut versuchen
         </Button>
@@ -147,9 +149,9 @@ export default function SharedSpacesPage() {
 
       {spaces.length === 0 ? (
         <Card className="flex flex-col items-center justify-center gap-4 p-12">
-          <Share2 className="text-muted-foreground h-12 w-12" />
+          <Share2 className="h-12 w-12 text-[color:var(--ds-text-muted)]" />
           <h2 className="text-xl font-semibold">Keine Shared Spaces vorhanden</h2>
-          <p className="text-muted-foreground max-w-md text-center">
+          <p className="max-w-md text-center text-[color:var(--ds-text-muted)]">
             Erstelle einen Shared Space, um Dokumente, Akten und Playbooks mit anderen
             Organisationen zu teilen.
           </p>
@@ -194,7 +196,7 @@ function SpaceCard({ space, onClick }: { space: SharedSpace; onClick: () => void
           </div>
           <div>
             <h3 className="font-semibold text-[color:var(--ds-text)]">{space.title}</h3>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-[color:var(--ds-text-muted)]">
               {new Date(space.created_at).toLocaleDateString("de-DE")}
             </p>
           </div>
@@ -205,7 +207,9 @@ function SpaceCard({ space, onClick }: { space: SharedSpace; onClick: () => void
       </div>
 
       {space.description && (
-        <p className="text-muted-foreground mt-3 line-clamp-2 text-sm">{space.description}</p>
+        <p className="mt-3 line-clamp-2 text-sm text-[color:var(--ds-text-muted)]">
+          {space.description}
+        </p>
       )}
 
       <div className="mt-4 flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
@@ -246,7 +250,7 @@ function CreateSpaceModal({
           <h2 className="text-lg font-semibold">Neuer Shared Space</h2>
           <button
             onClick={onClose}
-            className="text-muted-foreground hover:text-[color:var(--ds-text)]"
+            className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
           >
             <X className="h-5 w-5" />
           </button>
@@ -312,13 +316,15 @@ function SpaceDetailModal({ space, onClose }: { space: SharedSpace; onClose: () 
             <div>
               <h2 className="text-xl font-semibold">{space.title}</h2>
               {space.description && (
-                <p className="text-muted-foreground mt-0.5 text-sm">{space.description}</p>
+                <p className="mt-0.5 text-sm text-[color:var(--ds-text-muted)]">
+                  {space.description}
+                </p>
               )}
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-muted-foreground hover:text-[color:var(--ds-text)]"
+            className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
           >
             <X className="h-5 w-5" />
           </button>
@@ -350,7 +356,7 @@ function SpaceDetailModal({ space, onClose }: { space: SharedSpace; onClose: () 
                   {member.role === "owner" && <Crown className="h-4 w-4 text-yellow-500" />}
                   <div>
                     <p className="text-sm font-medium">{member.org_name}</p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-[color:var(--ds-text-muted)]">
                       Eingeladen von {member.invited_by}
                     </p>
                   </div>
@@ -374,7 +380,7 @@ function SpaceDetailModal({ space, onClose }: { space: SharedSpace; onClose: () 
             Ressourcen ({space.resources.length})
           </h3>
           {space.resources.length === 0 ? (
-            <p className="text-muted-foreground rounded-lg border border-dashed border-[color:var(--ds-border)] px-3 py-6 text-center text-sm">
+            <p className="rounded-lg border border-dashed border-[color:var(--ds-border)] px-3 py-6 text-center text-sm text-[color:var(--ds-text-muted)]">
               Noch keine Ressourcen geteilt. Füge Dokumente, Akten oder Playbooks hinzu.
             </p>
           ) : (
@@ -387,10 +393,10 @@ function SpaceDetailModal({ space, onClose }: { space: SharedSpace; onClose: () 
                     className="flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] px-3 py-2"
                   >
                     <div className="flex items-center gap-2">
-                      <Icon className="text-muted-foreground h-4 w-4" />
+                      <Icon className="h-4 w-4 text-[color:var(--ds-text-muted)]" />
                       <div>
                         <p className="text-sm font-medium">{resource.title}</p>
-                        <p className="text-muted-foreground text-xs">
+                        <p className="text-xs text-[color:var(--ds-text-muted)]">
                           Geteilt von {resource.shared_by} ·{" "}
                           {new Date(resource.shared_at).toLocaleDateString("de-DE")}
                         </p>
@@ -411,13 +417,13 @@ function SpaceDetailModal({ space, onClose }: { space: SharedSpace; onClose: () 
           </h3>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <div className="rounded-lg border border-[color:var(--ds-border)] px-3 py-2">
-              <p className="text-muted-foreground text-xs">Standard-Berechtigung</p>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">Standard-Berechtigung</p>
               <p className="mt-0.5 text-sm font-medium capitalize">
                 {space.settings.default_permission}
               </p>
             </div>
             <div className="rounded-lg border border-[color:var(--ds-border)] px-3 py-2">
-              <p className="text-muted-foreground text-xs">Mitglieder-Einladung</p>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">Mitglieder-Einladung</p>
               <p className="mt-0.5 flex items-center gap-1 text-sm font-medium">
                 {space.settings.allow_member_invite ? (
                   <>
@@ -431,7 +437,7 @@ function SpaceDetailModal({ space, onClose }: { space: SharedSpace; onClose: () 
               </p>
             </div>
             <div className="rounded-lg border border-[color:var(--ds-border)] px-3 py-2">
-              <p className="text-muted-foreground text-xs">Ressourcen-Freigabe</p>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">Ressourcen-Freigabe</p>
               <p className="mt-0.5 flex items-center gap-1 text-sm font-medium">
                 {space.settings.require_approval_for_resources ? (
                   <>

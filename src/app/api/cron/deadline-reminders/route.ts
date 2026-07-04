@@ -11,6 +11,7 @@ import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
 import { normalizePhone } from "@/lib/whatsapp/types";
 import { sendPushToUser } from "@/lib/push-send";
+import { isVorfristReached } from "@/lib/legal/vorfrist";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,10 @@ interface DeadlineItem {
   date?: string;
   reminder_sent_at?: string;
   reminder_stages_sent?: number[];
+  vorfrist_date?: string;
+  vorfrist_reminder_sent_at?: string;
+  is_notfrist?: boolean;
+  erv_zustelldatum?: string;
 }
 
 // Gestaffelte Eskalation statt einer einzelnen "irgendwann in 3 Tagen"-Mail:
@@ -138,9 +143,19 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
           const dd = String(d.due_date ?? d.date ?? "");
           if (!dd) return null;
           const stage = nextDueStage(d, dd);
-          return stage === undefined ? null : { d, dd, stage };
+          // B3: Check Vorfrist separately — if Vorfrist is reached but
+          // no vorfrist reminder has been sent yet, include it
+          const vfReached =
+            d.vorfrist_date && isVorfristReached(d.vorfrist_date) && !d.vorfrist_reminder_sent_at;
+          if (stage === undefined && !vfReached) return null;
+          return { d, dd, stage, vfReached: !!vfReached };
         })
-        .filter((x): x is { d: DeadlineItem; dd: string; stage: number } => x !== null);
+        .filter(
+          (
+            x
+          ): x is { d: DeadlineItem; dd: string; stage: number | undefined; vfReached: boolean } =>
+            x !== null
+        );
 
       if (due.length === 0) continue;
 
@@ -150,13 +165,19 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
           (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!
         );
       const subject = `Fristen-Erinnerung — Akte ${esc(fm.case_number ?? page.slug)}`;
-      const stageLabel = (stage: number) =>
-        stage === 0 ? "HEUTE fällig" : stage === 1 ? "morgen fällig" : `in ${stage} Tagen fällig`;
+      const stageLabel = (stage: number | undefined, vfReached: boolean) =>
+        vfReached
+          ? "Vorfrist erreicht"
+          : stage === 0
+            ? "HEUTE fällig"
+            : stage === 1
+              ? "morgen fällig"
+              : `in ${stage} Tagen fällig`;
       const trackingId = generateTrackingId();
       const rawHtml = `<p>Sehr geehrte/r ${esc(settings.anwaltName || "Anwalt")},</p>
 <p>folgende Fristen stehen an:</p>
 <ul>
-${due.map(({ d, dd, stage }) => `<li><strong>${esc(d.title ?? "Frist")}</strong> — ${esc(dd)} (${stageLabel(stage)})</li>`).join("\n")}
+${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist")}</strong> — ${esc(dd)} (${stageLabel(stage, vfReached)})${d.is_notfrist ? " <strong>[Notfrist — Vier-Augen-Kontrolle]</strong>" : ""}${d.erv_zustelldatum ? ` <em>[ERV-Zustellung: ${esc(d.erv_zustelldatum)}]</em>` : ""}</li>`).join("\n")}
 </ul>
 <p>Akte: ${esc(fm.case_number ?? page.slug)} — ${esc(fm.title ?? page.title ?? "")}</p>
 <p>Subsumio Kanzlei-OS</p>`;
@@ -182,7 +203,8 @@ ${due.map(({ d, dd, stage }) => `<li><strong>${esc(d.title ?? "Frist")}</strong>
         const waBodyLines = [
           "⚖️ Fristen-Erinnerung:",
           ...due.map(
-            ({ d, dd, stage }) => `• ${d.title ?? "Frist"} — ${dd} (${stageLabel(stage)})`
+            ({ d, dd, stage, vfReached }) =>
+              `• ${d.title ?? "Frist"} — ${dd} (${stageLabel(stage, vfReached)})${d.is_notfrist ? " [Notfrist]" : ""}${d.erv_zustelldatum ? ` [ERV: ${d.erv_zustelldatum}]` : ""}`
           ),
           `Akte: ${fm.case_number ?? page.slug}`,
           "",
@@ -210,7 +232,7 @@ ${due.map(({ d, dd, stage }) => `<li><strong>${esc(d.title ?? "Frist")}</strong>
 
         // B2: Always create in-app notifications (dual-channel when SMTP is on, fallback when off)
         for (const recipient of recipients) {
-          for (const { dd } of due) {
+          for (const { dd, vfReached } of due) {
             const remaining = daysUntil(dd);
             await createDeadlineNotification({
               userId: recipient.id,
@@ -220,13 +242,14 @@ ${due.map(({ d, dd, stage }) => `<li><strong>${esc(d.title ?? "Frist")}</strong>
               deadlineDate: dd,
               daysRemaining: remaining,
               isOverdue: remaining < 0,
+              isVorfrist: vfReached,
             });
           }
           notificationSent = true;
         }
 
         // P1-4: Send push notification to all recipients with registered devices
-        const pushTitle = `⚖️ Frist: ${due[0].d.title ?? "Frist"} ${stageLabel(due[0].stage)}`;
+        const pushTitle = `⚖️ Frist: ${due[0].d.title ?? "Frist"} ${stageLabel(due[0].stage, due[0].vfReached)}`;
         const pushBody = `Akte ${fm.case_number ?? page.slug} — ${due.length} Frist(en) anstehend`;
         for (const recipient of recipients) {
           try {
@@ -246,13 +269,19 @@ ${due.map(({ d, dd, stage }) => `<li><strong>${esc(d.title ?? "Frist")}</strong>
         if (!notificationSent) continue;
 
         const stageByDeadline = new Map(due.map(({ d, stage }) => [d, stage]));
+        const vfByDeadline = new Map(due.map(({ d, vfReached }) => [d, vfReached]));
+        const nowIso = now.toISOString();
         const updatedDeadlines = deadlines.map((d) => {
           const stage = stageByDeadline.get(d);
-          if (stage === undefined) return d;
+          const vf = vfByDeadline.get(d);
           return {
             ...d,
-            reminder_sent_at: now.toISOString(),
-            reminder_stages_sent: [...(d.reminder_stages_sent ?? []), stage],
+            reminder_sent_at: stage !== undefined ? nowIso : d.reminder_sent_at,
+            reminder_stages_sent:
+              stage !== undefined
+                ? [...(d.reminder_stages_sent ?? []), stage]
+                : d.reminder_stages_sent,
+            vorfrist_reminder_sent_at: vf ? nowIso : d.vorfrist_reminder_sent_at,
           };
         });
 

@@ -421,8 +421,8 @@ export default function AltlastenPage() {
               className={cn(
                 "rounded-md px-3 py-1 text-sm font-medium transition-colors",
                 sortKey === key
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted hover:bg-muted/80"
+                  ? "bg-[color:var(--brand-primary)] text-white"
+                  : "bg-[color:var(--ds-surface-2)] hover:bg-[color:var(--ds-surface-2)]/80"
               )}
             >
               {key === "verjaehrung" && "Verjährung"}
@@ -438,7 +438,9 @@ export default function AltlastenPage() {
             onClick={() => setFilterStatus(null)}
             className={cn(
               "rounded-md px-3 py-1 text-sm font-medium transition-colors",
-              !filterStatus ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80"
+              !filterStatus
+                ? "bg-[color:var(--brand-primary)] text-white"
+                : "bg-[color:var(--ds-surface-2)] hover:bg-[color:var(--ds-surface-2)]/80"
             )}
           >
             Alle
@@ -450,8 +452,8 @@ export default function AltlastenPage() {
               className={cn(
                 "rounded-md px-3 py-1 text-sm font-medium transition-colors",
                 filterStatus === s
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted hover:bg-muted/80"
+                  ? "bg-[color:var(--brand-primary)] text-white"
+                  : "bg-[color:var(--ds-surface-2)] hover:bg-[color:var(--ds-surface-2)]/80"
               )}
             >
               {s}
@@ -463,7 +465,7 @@ export default function AltlastenPage() {
       {/* Cases Table */}
       <div className="overflow-x-auto rounded-lg border">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50">
+          <thead className="bg-[color:var(--ds-surface-2)]/50">
             <tr>
               <th className="w-10 p-3 text-left">
                 <input
@@ -492,8 +494,8 @@ export default function AltlastenPage() {
               <tr
                 key={row.slug}
                 className={cn(
-                  "hover:bg-muted/30 border-t transition-colors",
-                  selectedSlugs.has(row.slug) && "bg-primary/5"
+                  "border-t transition-colors hover:bg-[color:var(--ds-surface-2)]/30",
+                  selectedSlugs.has(row.slug) && "bg-[color:var(--brand-primary)]/5"
                 )}
               >
                 <td className="p-3">

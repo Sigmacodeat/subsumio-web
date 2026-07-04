@@ -454,6 +454,7 @@ export async function createDeadlineNotification(opts: {
   deadlineDate: string;
   daysRemaining: number;
   isOverdue: boolean;
+  isVorfrist?: boolean;
 }): Promise<void> {
   // Deterministic ID based on caseSlug + deadlineDate to prevent duplicates
   const slugPart = opts.caseSlug ?? opts.caseTitle.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
@@ -473,6 +474,7 @@ export async function createDeadlineNotification(opts: {
       deadlineDate: opts.deadlineDate,
       daysRemaining: opts.daysRemaining,
       isOverdue: opts.isOverdue,
+      isVorfrist: opts.isVorfrist,
     },
     readAt: null,
     createdAt: new Date().toISOString(),

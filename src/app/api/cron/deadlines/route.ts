@@ -7,6 +7,7 @@ import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { loadAllowedSenders } from "@/lib/whatsapp/verify";
 import { env } from "@/lib/env";
 import type { WhatsAppTemplateMessage } from "@/lib/whatsapp/types";
+import { syncPipelineDeadlines } from "@/lib/legal/pipeline-sync";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -27,18 +28,30 @@ export const maxDuration = 300;
 interface DeadlineItem {
   title: string;
   dueDate: string;
-  status: "overdue" | "critical" | "warning";
+  status: "overdue" | "critical" | "warning" | "vorfrist";
   caseTitle?: string;
   law?: string;
+  vorfristDate?: string;
 }
 
-function classify(dueDate: string, doneFlag: unknown): DeadlineItem["status"] | null {
+function classify(
+  dueDate: string,
+  doneFlag: unknown,
+  vorfristDate?: string
+): DeadlineItem["status"] | null {
   if (doneFlag === "done") return null;
   const status = computeDeadlineStatus(
     dueDate,
-    typeof doneFlag === "string" ? doneFlag : undefined
+    typeof doneFlag === "string" ? doneFlag : undefined,
+    vorfristDate
   );
-  if (status === "overdue" || status === "critical" || status === "warning") return status;
+  if (
+    status === "overdue" ||
+    status === "critical" ||
+    status === "warning" ||
+    status === "vorfrist"
+  )
+    return status;
   return null;
 }
 
@@ -58,7 +71,8 @@ async function collectDeadlines(brainId: string): Promise<DeadlineItem[]> {
       const d = raw as Record<string, unknown>;
       const dueDate = String(d.due_date ?? d.date ?? "");
       if (!dueDate) continue;
-      const status = classify(dueDate, d.status);
+      const vfDate = d.vorfrist_date ? String(d.vorfrist_date) : undefined;
+      const status = classify(dueDate, d.status, vfDate);
       if (!status) continue;
       items.push({
         title: String(d.title ?? "Frist"),
@@ -66,6 +80,7 @@ async function collectDeadlines(brainId: string): Promise<DeadlineItem[]> {
         status,
         caseTitle: page.title,
         law: d.law ? String(d.law) : undefined,
+        vorfristDate: vfDate,
       });
     }
   }
@@ -75,18 +90,20 @@ async function collectDeadlines(brainId: string): Promise<DeadlineItem[]> {
     const fm = page.frontmatter ?? {};
     const dueDate = String(fm.due_date ?? fm.date ?? fm.deadline_date ?? "");
     if (!dueDate) continue;
-    const status = classify(dueDate, fm.status);
+    const vfDate = fm.vorfrist_date ? String(fm.vorfrist_date) : undefined;
+    const status = classify(dueDate, fm.status, vfDate);
     if (!status) continue;
     items.push({
       title: page.title || "Frist",
       dueDate: dueDate.slice(0, 10),
       status,
       law: fm.law ? String(fm.law) : undefined,
+      vorfristDate: vfDate,
     });
   }
 
   // Überfällig zuerst, dann nach Datum.
-  const rank = { overdue: 0, critical: 1, warning: 2 } as const;
+  const rank = { overdue: 0, critical: 1, warning: 2, vorfrist: 3 } as const;
   items.sort((a, b) => rank[a.status] - rank[b.status] || a.dueDate.localeCompare(b.dueDate));
   return items;
 }
@@ -95,14 +112,16 @@ function renderDigest(items: DeadlineItem[], appUrl: string): { subject: string;
   const overdue = items.filter((i) => i.status === "overdue");
   const critical = items.filter((i) => i.status === "critical");
   const warning = items.filter((i) => i.status === "warning");
+  const vorfrist = items.filter((i) => i.status === "vorfrist");
 
   const parts: string[] = [];
   const section = (label: string, list: DeadlineItem[]) => {
     if (list.length === 0) return;
     parts.push(`${label}:`);
     for (const i of list) {
+      const vf = i.vorfristDate ? ` [Vorfrist: ${i.vorfristDate}]` : "";
       parts.push(
-        `  • ${i.dueDate} — ${i.title}${i.caseTitle ? ` (Akte: ${i.caseTitle})` : ""}${i.law ? ` [${i.law}]` : ""}`
+        `  • ${i.dueDate} — ${i.title}${i.caseTitle ? ` (Akte: ${i.caseTitle})` : ""}${i.law ? ` [${i.law}]` : ""}${vf}`
       );
     }
     parts.push("");
@@ -110,6 +129,7 @@ function renderDigest(items: DeadlineItem[], appUrl: string): { subject: string;
   section("🔴 ÜBERFÄLLIG", overdue);
   section("🟠 KRITISCH (fällig in ≤ 3 Tagen)", critical);
   section("🟡 Bald fällig (≤ 7 Tage)", warning);
+  section("🔵 Vorfrist erreicht", vorfrist);
 
   parts.push(`Alle Fristen: ${appUrl}/dashboard/deadlines`);
   parts.push("");
@@ -119,6 +139,7 @@ function renderDigest(items: DeadlineItem[], appUrl: string): { subject: string;
     overdue.length ? `${overdue.length} überfällig` : "",
     critical.length ? `${critical.length} kritisch` : "",
     warning.length ? `${warning.length} bald fällig` : "",
+    vorfrist.length ? `${vorfrist.length} Vorfrist` : "",
   ]
     .filter(Boolean)
     .join(", ");
@@ -141,6 +162,8 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let brainsWithDeadlines = 0;
   let whatsappSent = 0;
   let whatsappBlocked = 0;
+  let pipelineSynced = 0;
+  let pipelineCreated = 0;
 
   const allowedSenders = loadAllowedSenders();
   const whatsappSendersByBrain = new Map<string, string[]>();
@@ -152,6 +175,17 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
   for (const [brainId, recipients] of recipientsByBrain) {
     brainsChecked++;
+
+    // A1: Sync pipeline-extracted deadlines into legal_deadline pages
+    // so they reach the reminder infrastructure.
+    try {
+      const syncResult = await syncPipelineDeadlines(brainId);
+      pipelineSynced += syncResult.scanned;
+      pipelineCreated += syncResult.created;
+    } catch {
+      // Non-blocking — sync failures must not prevent the digest
+    }
+
     const items = await collectDeadlines(brainId);
     if (items.length === 0) continue;
     brainsWithDeadlines++;
@@ -210,5 +244,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     mails_sent: mailsSent,
     whatsapp_sent: whatsappSent,
     whatsapp_blocked: whatsappBlocked,
+    pipeline_synced: pipelineSynced,
+    pipeline_created: pipelineCreated,
   });
 });

@@ -15,6 +15,9 @@ import {
   Loader2,
   RotateCcw,
   Plus,
+  ShieldCheck,
+  EyeOff,
+  Printer,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,13 +59,19 @@ interface DeadlineItem {
   caseSlug?: string;
   caseTitle?: string;
   source?: string;
-  status: "pending" | "warning" | "critical" | "overdue" | "done";
+  status: "pending" | "warning" | "critical" | "overdue" | "done" | "vorfrist";
   type: "deadline" | "event" | "hearing" | "filing";
   reviewStatus?: string;
   law?: string;
   reminderSentAt?: string;
   slug?: string;
   confidence?: string;
+  vorfristDate?: string;
+  isNotfrist?: boolean;
+  secondCheckRequired?: boolean;
+  secondCheckBy?: string;
+  secondCheckAt?: string;
+  ervZustelldatum?: string;
 }
 
 const STATUS_CONFIG: Record<
@@ -74,6 +83,7 @@ const STATUS_CONFIG: Record<
   critical: { labelKey: "deadlines.status_critical", color: "red", icon: AlertTriangle },
   overdue: { labelKey: "deadlines.status_overdue", color: "rose", icon: XCircle },
   done: { labelKey: "deadlines.status_done", color: "emerald", icon: CheckCircle2 },
+  vorfrist: { labelKey: "deadlines.vorfrist_reached", color: "blue", icon: Clock },
 };
 
 const TYPE_CONFIG: Record<string, DashboardKey> = {
@@ -154,7 +164,8 @@ export default function DeadlinesPage() {
           source: String(fm.source ?? page.slug ?? ""),
           status: computeDeadlineStatus(
             date,
-            typeof fm.status === "string" ? fm.status : undefined
+            typeof fm.status === "string" ? fm.status : undefined,
+            typeof fm.vorfrist_date === "string" ? fm.vorfrist_date : undefined
           ),
           type: (["deadline", "event", "hearing", "filing"].includes(eventType)
             ? eventType
@@ -163,6 +174,13 @@ export default function DeadlinesPage() {
           law: typeof fm.law === "string" ? fm.law : undefined,
           reminderSentAt: typeof fm.reminder_sent_at === "string" ? fm.reminder_sent_at : undefined,
           confidence: typeof fm.confidence === "string" ? fm.confidence : undefined,
+          vorfristDate: typeof fm.vorfrist_date === "string" ? fm.vorfrist_date : undefined,
+          isNotfrist: fm.is_notfrist === true,
+          secondCheckRequired: fm.second_check_required === true,
+          secondCheckBy: typeof fm.second_check_by === "string" ? fm.second_check_by : undefined,
+          secondCheckAt: typeof fm.second_check_at === "string" ? fm.second_check_at : undefined,
+          ervZustelldatum:
+            typeof fm.erv_zustelldatum === "string" ? fm.erv_zustelldatum : undefined,
         });
       }
 
@@ -179,11 +197,17 @@ export default function DeadlinesPage() {
             caseSlug: page.slug,
             caseTitle: page.title,
             source: d.source || page.slug,
-            status: computeDeadlineStatus(date, d.status),
+            status: computeDeadlineStatus(date, d.status, d.vorfrist_date),
             type: (d.type as DeadlineItem["type"]) || "deadline",
             reviewStatus: d.review_status,
             law: d.law,
             reminderSentAt: d.reminder_sent_at,
+            vorfristDate: d.vorfrist_date,
+            isNotfrist: d.is_notfrist,
+            secondCheckRequired: d.second_check_required,
+            secondCheckBy: d.second_check_by,
+            secondCheckAt: d.second_check_at,
+            ervZustelldatum: d.erv_zustelldatum,
           });
         }
         const timeline = [...(fm.timeline ?? []), ...(fm.timeline_events ?? [])];
@@ -356,7 +380,12 @@ export default function DeadlinesPage() {
       search === "" ||
       d.description.toLowerCase().includes(search.toLowerCase()) ||
       (d.caseTitle || "").toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === "all" || d.status === filter;
+    const matchesFilter =
+      filter === "all" ||
+      d.status === filter ||
+      (filter === "unreviewed" && d.reviewStatus === "unreviewed") ||
+      (filter === "notfrist" && d.isNotfrist) ||
+      (filter === "vorfrist" && d.vorfristDate && new Date(d.vorfristDate) <= new Date());
     return matchesSearch && matchesFilter;
   });
 
@@ -385,6 +414,11 @@ export default function DeadlinesPage() {
   );
   const reviewOpenCount = deadlines.filter(
     (d) => d.reviewStatus && d.reviewStatus !== "approved"
+  ).length;
+  const unreviewedCount = deadlines.filter((d) => d.reviewStatus === "unreviewed").length;
+  const notfristCount = deadlines.filter((d) => d.isNotfrist).length;
+  const vorfristReachedCount = deadlines.filter(
+    (d) => d.vorfristDate && new Date(d.vorfristDate) <= new Date()
   ).length;
 
   const columns: Column<DeadlineItem>[] = [
@@ -444,6 +478,53 @@ export default function DeadlinesPage() {
                     className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                   >
                     {d.law}
+                  </Badge>
+                )}
+                {d.isNotfrist && (
+                  <Badge
+                    variant="default"
+                    className="flex items-center gap-0.5 border border-amber-500/30 bg-amber-500/10 text-xs text-amber-700"
+                  >
+                    <ShieldCheck size={10} />
+                    {t("deadlines.notfrist")}
+                  </Badge>
+                )}
+                {d.vorfristDate &&
+                  new Date(d.vorfristDate) <= new Date() &&
+                  d.status !== "done" && (
+                    <Badge
+                      variant="default"
+                      className="border border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
+                    >
+                      {t("deadlines.vorfrist_reached")}
+                    </Badge>
+                  )}
+                {d.ervZustelldatum && (
+                  <Badge
+                    variant="default"
+                    className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
+                  >
+                    {t("deadlines.erv_date")}:{" "}
+                    {new Date(d.ervZustelldatum).toLocaleDateString(
+                      lang === "en" ? "en-GB" : "de-DE"
+                    )}
+                  </Badge>
+                )}
+                {d.reviewStatus === "unreviewed" && (
+                  <Badge
+                    variant="default"
+                    className="flex items-center gap-0.5 border border-slate-400/20 bg-slate-400/10 text-xs text-slate-600"
+                  >
+                    <EyeOff size={10} />
+                    {t("deadlines.unreviewed")}
+                  </Badge>
+                )}
+                {d.secondCheckRequired && !d.secondCheckAt && (
+                  <Badge
+                    variant="default"
+                    className="border border-orange-500/20 bg-orange-500/10 text-xs text-orange-600"
+                  >
+                    {t("deadlines.second_check_pending")}
                   </Badge>
                 )}
               </div>
@@ -567,6 +648,15 @@ export default function DeadlinesPage() {
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("deadlines.title") }]}
         actions={
           <div className="flex items-center gap-2.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.print()}
+              className="gap-2 text-xs"
+            >
+              <Printer size={14} />
+              {t("deadlines.fristenbuch_print")}
+            </Button>
             <Button
               variant="primary"
               size="sm"
@@ -859,6 +949,27 @@ export default function DeadlinesPage() {
             />
           );
         })}
+        {unreviewedCount > 0 && (
+          <FilterChip
+            label={`${t("deadlines.filter_unreviewed")} (${unreviewedCount})`}
+            active={filter === "unreviewed"}
+            onClick={() => setFilter(filter === "unreviewed" ? "all" : "unreviewed")}
+          />
+        )}
+        {notfristCount > 0 && (
+          <FilterChip
+            label={`${t("deadlines.filter_notfrist")} (${notfristCount})`}
+            active={filter === "notfrist"}
+            onClick={() => setFilter(filter === "notfrist" ? "all" : "notfrist")}
+          />
+        )}
+        {vorfristReachedCount > 0 && (
+          <FilterChip
+            label={`${t("deadlines.filter_vorfrist")} (${vorfristReachedCount})`}
+            active={filter === "vorfrist"}
+            onClick={() => setFilter(filter === "vorfrist" ? "all" : "vorfrist")}
+          />
+        )}
       </div>
 
       {/* Search */}

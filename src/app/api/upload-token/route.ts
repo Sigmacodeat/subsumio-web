@@ -19,6 +19,9 @@ const uploadTokenSchema = z.object({
     .string()
     .regex(/^[a-f0-9]{64}$/)
     .optional(),
+  pause_for_review: z.boolean().optional(),
+  jurisdiction: z.string().max(10).optional(),
+  doc_type: z.string().max(100).optional(),
 });
 
 const ALLOWED_SOURCES = new Set([
@@ -46,6 +49,9 @@ interface UploadTokenPayload {
   size: number;
   mime_type?: string;
   password_hash?: string;
+  pause_for_review?: boolean;
+  jurisdiction?: string;
+  doc_type?: string;
   exp: number;
 }
 
@@ -151,6 +157,9 @@ export const POST = createHandler(
       size: b.size,
       ...(b.mime_type ? { mime_type: b.mime_type } : {}),
       ...(b.password_hash ? { password_hash: b.password_hash } : {}),
+      ...(b.pause_for_review ? { pause_for_review: true } : {}),
+      ...(b.jurisdiction ? { jurisdiction: b.jurisdiction } : {}),
+      ...(b.doc_type ? { doc_type: b.doc_type } : {}),
       exp: Math.floor(Date.now() / 1000) + 600, // 10 minutes
     };
 

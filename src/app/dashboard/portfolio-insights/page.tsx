@@ -101,7 +101,7 @@ export default function PortfolioInsightsPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );
   }
@@ -109,8 +109,10 @@ export default function PortfolioInsightsPage() {
   if (error) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <AlertCircle className="text-destructive h-12 w-12" />
-        <p className="text-muted-foreground">Fehler beim Laden der Portfolio-Insights: {error}</p>
+        <AlertCircle className="h-12 w-12 text-red-600" />
+        <p className="text-[color:var(--ds-text-muted)]">
+          Fehler beim Laden der Portfolio-Insights: {error}
+        </p>
         <Button onClick={load} variant="outline">
           Erneut versuchen
         </Button>
@@ -121,9 +123,11 @@ export default function PortfolioInsightsPage() {
   if (!data || data.total_contracts === 0) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <FileText className="text-muted-foreground h-12 w-12" />
+        <FileText className="h-12 w-12 text-[color:var(--ds-text-muted)]" />
         <h2 className="text-xl font-semibold">{t("pi.empty_title")}</h2>
-        <p className="text-muted-foreground max-w-md text-center">{t("pi.empty_desc")}</p>
+        <p className="max-w-md text-center text-[color:var(--ds-text-muted)]">
+          {t("pi.empty_desc")}
+        </p>
       </div>
     );
   }
@@ -142,7 +146,7 @@ export default function PortfolioInsightsPage() {
             <BarChart3 className="h-6 w-6" />
             Contract Portfolio Insights
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
             {data.total_contracts} {t("pi.summary")} · {data.analyzed_contracts}{" "}
             {t("pi.summary_analyzed")} · {t("pi.summary_stand")}{" "}
             {new Date(data.generated_at).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
@@ -174,7 +178,7 @@ export default function PortfolioInsightsPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">{t("pi.stat_total")}</p>
+              <p className="text-sm text-[color:var(--ds-text-muted)]">{t("pi.stat_total")}</p>
               <p className="text-2xl font-bold">{data.total_contracts}</p>
             </div>
             <FileText className="h-8 w-8 text-blue-500" />
@@ -183,7 +187,7 @@ export default function PortfolioInsightsPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Analysiert</p>
+              <p className="text-sm text-[color:var(--ds-text-muted)]">Analysiert</p>
               <p className="text-2xl font-bold">{data.analyzed_contracts}</p>
             </div>
             <Target className="h-8 w-8 text-green-500" />
@@ -192,7 +196,9 @@ export default function PortfolioInsightsPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">{t("pi.stat_obligations")}</p>
+              <p className="text-sm text-[color:var(--ds-text-muted)]">
+                {t("pi.stat_obligations")}
+              </p>
               <p className="text-2xl font-bold">{data.obligation_summary.total}</p>
               {data.obligation_summary.overdue > 0 && (
                 <p className="text-xs text-red-600">
@@ -206,7 +212,7 @@ export default function PortfolioInsightsPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Outlier</p>
+              <p className="text-sm text-[color:var(--ds-text-muted)]">Outlier</p>
               <p className="text-2xl font-bold">{data.outlier_provisions.length}</p>
             </div>
             <WarningIcon className="h-8 w-8 text-red-500" />
@@ -227,7 +233,7 @@ export default function PortfolioInsightsPage() {
             return (
               <div key={level} className="flex items-center gap-3">
                 <span className="w-20 text-sm capitalize">{level}</span>
-                <div className="bg-muted h-6 flex-1 overflow-hidden rounded-full">
+                <div className="h-6 flex-1 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
                   <div
                     className={`h-full ${riskColors[level]} transition-all`}
                     style={{ width: `${pct}%` }}
@@ -250,7 +256,7 @@ export default function PortfolioInsightsPage() {
             {t("pi.clause_freq")}
           </h2>
           {data.clause_frequencies.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{t("pi.clause_empty")}</p>
+            <p className="text-sm text-[color:var(--ds-text-muted)]">{t("pi.clause_empty")}</p>
           ) : (
             <div className="space-y-2">
               {data.clause_frequencies.slice(0, 10).map((c, i) => (
@@ -260,12 +266,14 @@ export default function PortfolioInsightsPage() {
                 >
                   <div className="flex-1">
                     <p className="text-sm font-medium">{c.clause_type}</p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-[color:var(--ds-text-muted)]">
                       {c.count} Vorkommen · {c.variants} Varianten
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground text-sm">{c.percentage}%</span>
+                    <span className="text-sm text-[color:var(--ds-text-muted)]">
+                      {c.percentage}%
+                    </span>
                     <Badge className={riskColors[c.avg_risk_level]} variant="default">
                       {c.avg_risk_level}
                     </Badge>
@@ -283,7 +291,7 @@ export default function PortfolioInsightsPage() {
             Outlier-Provisionen
           </h2>
           {data.outlier_provisions.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{t("pi.outliers_empty")}</p>
+            <p className="text-sm text-[color:var(--ds-text-muted)]">{t("pi.outliers_empty")}</p>
           ) : (
             <div className="max-h-96 space-y-3 overflow-y-auto">
               {data.outlier_provisions.slice(0, 15).map((o, i) => {
@@ -302,9 +310,11 @@ export default function PortfolioInsightsPage() {
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{o.title}</p>
-                        <p className="text-muted-foreground mt-0.5 text-xs">{o.clause_type}</p>
+                        <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                          {o.clause_type}
+                        </p>
                         <p className="mt-1 text-sm">{o.deviation}</p>
-                        <div className="text-muted-foreground mt-2 text-xs">
+                        <div className="mt-2 text-xs text-[color:var(--ds-text-muted)]">
                           <span>Erwartet: {o.expected}</span>
                         </div>
                       </div>
@@ -327,9 +337,11 @@ export default function PortfolioInsightsPage() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
             {data.trends.map((trend, i) => (
               <div key={i} className="rounded-lg border p-3 text-center">
-                <p className="text-muted-foreground text-xs">{trend.period}</p>
+                <p className="text-xs text-[color:var(--ds-text-muted)]">{trend.period}</p>
                 <p className="mt-1 text-xl font-bold">{trend.contract_count}</p>
-                <p className="text-muted-foreground text-xs">{t("pi.trend_contracts")}</p>
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  {t("pi.trend_contracts")}
+                </p>
                 {trend.avg_risk_score > 0 && (
                   <Badge variant="default" className="mt-1 text-xs">
                     Ø {trend.avg_risk_score}
@@ -348,7 +360,7 @@ export default function PortfolioInsightsPage() {
           <ul className="space-y-2">
             {data.negotiation_patterns.map((p, i) => (
               <li key={i} className="flex items-start gap-2 text-sm">
-                <span className="text-muted-foreground">•</span>
+                <span className="text-[color:var(--ds-text-muted)]">•</span>
                 <span>{p}</span>
               </li>
             ))}

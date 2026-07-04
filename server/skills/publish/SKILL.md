@@ -103,7 +103,7 @@ gbrain files signed-url shares/acme/acme.html
 
 Share the signed URL + password. URL expires in 1 hour. Re-generate as needed.
 
-### Option C: Static hosting (Render, Netlify, S3)
+### Option C: Static hosting (Render, S3)
 
 Upload the HTML file to any static hosting service. The file is self-contained,
 no server logic needed. Password-protected files work entirely client-side via

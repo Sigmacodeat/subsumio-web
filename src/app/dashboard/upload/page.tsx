@@ -147,6 +147,14 @@ function UploadPageInner() {
   // frist + Inhalts-Hash stempeln (§ 147 AO / § 146 Abs. 4 AO). Bewusst opt-in:
   // nicht jeder Upload ist ein Buchungsbeleg.
   const [gobdReceipt, setGobdReceipt] = useState(false);
+  // HITL: Pause pipeline after Layer 2 for attorney review of extracted entities.
+  // When enabled, the pipeline sets status 'awaiting_review' and waits for a
+  // resume job with manual_overrides before continuing to Layer 3+.
+  const [pauseForReview, setPauseForReview] = useState(false);
+  // Optional overrides — let the user explicitly set jurisdiction or doc_type
+  // instead of relying on heuristic detection.
+  const [jurisdictionOverride, setJurisdictionOverride] = useState("");
+  const [docTypeOverride, setDocTypeOverride] = useState("");
 
   // File System Access API (Chromium) — feature-detected client-side so we can
   // show an IDE-style "ganzen Ordner einlesen"-Button only where it actually works.
@@ -361,6 +369,9 @@ function UploadPageInner() {
             tags: fileTags.length > 0 ? fileTags : undefined,
             case_slug: fileCaseSlug,
             password: documentPassword || undefined,
+            pause_for_review: pauseForReview || undefined,
+            jurisdiction: jurisdictionOverride || undefined,
+            doc_type: docTypeOverride || undefined,
           },
           (progress, transfer) => {
             const phase = transfer?.phase;
@@ -712,6 +723,73 @@ function UploadPageInner() {
           </span>
         </span>
       </label>
+
+      {/* HITL: Pause for attorney review + optional overrides */}
+      <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={pauseForReview}
+            onChange={(e) => setPauseForReview(e.target.checked)}
+            className="mt-0.5 accent-[var(--brand-primary)]"
+          />
+          <span className="flex items-start gap-2.5 text-sm">
+            <AlertCircle size={15} className="brand-text mt-0.5 shrink-0" />
+            <span className="leading-relaxed text-[color:var(--ds-text-muted)]">
+              <strong className="text-[color:var(--ds-text)]">Human-in-the-Loop</strong> Pipeline
+              nach Layer 2 (Entity-Extraktion) pausieren. Extrahierte Parteien, Gericht und
+              Aktenzeichen müssen vor der Analyse freigegeben werden.
+              <span className="mt-1 block text-xs text-[color:var(--ds-text-muted)]">
+                Die Pipeline wartet im Status &ldquo;awaiting_review&rdquo; — Freigabe über die
+                Review-Queue.
+              </span>
+            </span>
+          </span>
+        </label>
+
+        {/* Optional overrides */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <Label className="mb-1.5 block text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+              Juristiktion (optional)
+            </Label>
+            <Select value={jurisdictionOverride} onValueChange={setJurisdictionOverride}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Automatisch erkennen" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="at">Österreich</SelectItem>
+                <SelectItem value="de">Deutschland</SelectItem>
+                <SelectItem value="ch">Schweiz</SelectItem>
+                <SelectItem value="eu">EU</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="mb-1.5 block text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+              Dokumenttyp (optional)
+            </Label>
+            <Select value={docTypeOverride} onValueChange={setDocTypeOverride}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Automatisch klassifizieren" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="court_judgment">Urteil</SelectItem>
+                <SelectItem value="court_order">Gerichtsbeschluss</SelectItem>
+                <SelectItem value="pleading">Schriftsatz</SelectItem>
+                <SelectItem value="contract">Vertrag</SelectItem>
+                <SelectItem value="correspondence">Korrespondenz</SelectItem>
+                <SelectItem value="witness_statement">Zeugenaussage</SelectItem>
+                <SelectItem value="expert_report">Gutachten</SelectItem>
+                <SelectItem value="police_report">Ermittlungsakte</SelectItem>
+                <SelectItem value="ladung">Ladung</SelectItem>
+                <SelectItem value="zahlungsbefehl">Zahlungsbefehl</SelectItem>
+                <SelectItem value="erv_erledigung">ERV-Erledigung</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
 
       {/* Offline warning */}
       {!isOnline() && (

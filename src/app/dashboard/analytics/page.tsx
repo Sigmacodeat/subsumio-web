@@ -68,7 +68,7 @@ const trendIcon: Record<string, typeof TrendingUp> = {
 const trendColor: Record<string, string> = {
   up: "text-green-600",
   down: "text-red-600",
-  stable: "text-muted-foreground",
+  stable: "text-[color:var(--ds-text-muted)]",
 };
 
 export default function AdoptionAnalyticsPage() {
@@ -85,7 +85,7 @@ export default function AdoptionAnalyticsPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );
   }
@@ -93,8 +93,10 @@ export default function AdoptionAnalyticsPage() {
   if (error) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <AlertCircle className="text-destructive h-12 w-12" />
-        <p className="text-muted-foreground">Fehler beim Laden der Analytics: {error}</p>
+        <AlertCircle className="h-12 w-12 text-red-600" />
+        <p className="text-[color:var(--ds-text-muted)]">
+          Fehler beim Laden der Analytics: {error}
+        </p>
         <Button onClick={refetch} variant="outline">
           Erneut versuchen
         </Button>
@@ -112,7 +114,7 @@ export default function AdoptionAnalyticsPage() {
             <BarChart3 className="h-5 w-5 shrink-0 md:h-6 md:w-6" />
             Adoption Analytics
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
             Stand: {new Date(data.generated_at).toLocaleString("de-DE")}
           </p>
         </div>
@@ -150,9 +152,11 @@ export default function AdoptionAnalyticsPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Aktive Nutzer (30d)</p>
+              <p className="text-sm text-[color:var(--ds-text-muted)]">Aktive Nutzer (30d)</p>
               <p className="text-2xl font-bold">{data.active_users_30d}</p>
-              <p className="text-muted-foreground text-xs">von {data.total_users} gesamt</p>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                von {data.total_users} gesamt
+              </p>
             </div>
             <Users className="h-8 w-8 text-blue-500" />
           </div>
@@ -160,7 +164,7 @@ export default function AdoptionAnalyticsPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Aktive Nutzer (7d)</p>
+              <p className="text-sm text-[color:var(--ds-text-muted)]">Aktive Nutzer (7d)</p>
               <p className="text-2xl font-bold">{data.active_users_7d}</p>
             </div>
             <Activity className="h-8 w-8 text-green-500" />
@@ -169,7 +173,7 @@ export default function AdoptionAnalyticsPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Anfragen (30d)</p>
+              <p className="text-sm text-[color:var(--ds-text-muted)]">Anfragen (30d)</p>
               <p className="text-2xl font-bold">{data.total_requests_30d}</p>
             </div>
             <Zap className="h-8 w-8 text-orange-500" />
@@ -178,9 +182,9 @@ export default function AdoptionAnalyticsPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Adoption Rate</p>
+              <p className="text-sm text-[color:var(--ds-text-muted)]">Adoption Rate</p>
               <p className="text-2xl font-bold">{data.adoption_rate}%</p>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
                 Ø {data.avg_requests_per_user} Anfragen/Nutzer
               </p>
             </div>
@@ -194,7 +198,9 @@ export default function AdoptionAnalyticsPage() {
         <Card className="p-6">
           <h2 className="mb-4 text-lg font-semibold">Feature-Nutzung</h2>
           {data.top_features.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Keine Nutzungsdaten verfügbar.</p>
+            <p className="text-sm text-[color:var(--ds-text-muted)]">
+              Keine Nutzungsdaten verfügbar.
+            </p>
           ) : (
             <div className="space-y-2">
               {data.top_features.map((f, i) => {
@@ -206,7 +212,7 @@ export default function AdoptionAnalyticsPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium capitalize">{f.feature}</p>
-                      <p className="text-muted-foreground text-xs">
+                      <p className="text-xs text-[color:var(--ds-text-muted)]">
                         {f.unique_users} eindeutige Nutzer
                       </p>
                     </div>
@@ -225,7 +231,9 @@ export default function AdoptionAnalyticsPage() {
         <Card className="p-6">
           <h2 className="mb-4 text-lg font-semibold">Nutzer-Übersicht</h2>
           {data.user_breakdown.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Keine Nutzer-Daten verfügbar.</p>
+            <p className="text-sm text-[color:var(--ds-text-muted)]">
+              Keine Nutzer-Daten verfügbar.
+            </p>
           ) : (
             <div className="max-h-96 space-y-2 overflow-y-auto">
               {data.user_breakdown.map((u, i) => (
@@ -239,7 +247,7 @@ export default function AdoptionAnalyticsPage() {
                       <Badge variant="default" className="text-xs">
                         {u.role}
                       </Badge>
-                      <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                      <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
                         <Clock className="h-3 w-3" />
                         {new Date(u.last_active).toLocaleDateString("de-DE")}
                       </span>
@@ -247,7 +255,7 @@ export default function AdoptionAnalyticsPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium">{u.total_requests}</p>
-                    <p className="text-muted-foreground text-xs">Anfragen</p>
+                    <p className="text-xs text-[color:var(--ds-text-muted)]">Anfragen</p>
                   </div>
                 </div>
               ))}
@@ -277,7 +285,7 @@ export default function AdoptionAnalyticsPage() {
                       className="w-full rounded-t bg-blue-500 transition-all hover:bg-blue-600"
                       style={{ height: `${height}px` }}
                     />
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-xs text-[color:var(--ds-text-muted)]">
                       {new Date(t.date).toLocaleDateString("de-DE", { day: "numeric" })}
                     </span>
                   </div>

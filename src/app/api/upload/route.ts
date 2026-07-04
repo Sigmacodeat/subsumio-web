@@ -137,6 +137,15 @@ export const POST = createHandler(
         return apiError("document_password_too_long", "Dokumentkennwort ist zu lang.", 400);
       }
       if (typeof password === "string" && password) cleanForm.append("password", password);
+      const pauseForReview = formData.get("pause_for_review");
+      if (typeof pauseForReview === "string" && pauseForReview === "true")
+        cleanForm.append("pause_for_review", "true");
+      const jurisdictionOverride = formData.get("jurisdiction");
+      if (typeof jurisdictionOverride === "string" && jurisdictionOverride)
+        cleanForm.append("jurisdiction", jurisdictionOverride);
+      const docTypeOverride = formData.get("doc_type");
+      if (typeof docTypeOverride === "string" && docTypeOverride)
+        cleanForm.append("doc_type", docTypeOverride);
 
       const upstream = await fetch(`${ENGINE_URL}/api/upload`, {
         method: "POST",

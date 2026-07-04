@@ -403,6 +403,10 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
       type: "deadline",
       status: "pending",
       description: "",
+      vorfrist_date: undefined,
+      is_notfrist: false,
+      second_check_required: undefined,
+      erv_zustelldatum: undefined,
     },
   });
   const evidenceForm = useForm<EvidenceFormData>({
@@ -1279,8 +1283,12 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
         id: data.id || `dl-${Date.now()}`,
         due_date: date,
         date,
-        status: computeDeadlineStatus(date, data.status),
+        status: computeDeadlineStatus(date, data.status, data.vorfrist_date),
         review_status: data.review_status ?? "unreviewed",
+        vorfrist_date: data.vorfrist_date,
+        is_notfrist: data.is_notfrist,
+        second_check_required: data.second_check_required ?? (data.is_notfrist ? true : undefined),
+        erv_zustelldatum: data.erv_zustelldatum,
       };
       let updated: DeadlineEntry[];
       if (editingDeadlineIndex !== null) {
@@ -1296,6 +1304,10 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
         type: "deadline",
         status: "pending",
         description: "",
+        vorfrist_date: undefined,
+        is_notfrist: false,
+        second_check_required: undefined,
+        erv_zustelldatum: undefined,
       });
       void saveCaseUpdate({ deadlines: updated });
     },

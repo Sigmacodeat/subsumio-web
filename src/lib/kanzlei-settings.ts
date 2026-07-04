@@ -38,6 +38,9 @@ export interface KanzleiSettings {
   logoUrl?: string;
   // Security: org-level 2FA enforcement
   require2FA?: boolean;
+  // C1: Rechtsraum — jurisdiction for holiday-aware deadline calculation
+  rechtsraumCountry?: "DE" | "AT" | "CH";
+  rechtsraumState?: string;
 }
 
 export const KANZLEI_SETTINGS_SLUG = "legal/settings/kanzlei";

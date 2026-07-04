@@ -35,6 +35,9 @@ export type LegalDocType =
   | "urgenz"
   | "strafantrag"
   | "nichtigkeitsbeschwerde"
+  | "erv_erledigung"
+  | "ladung"
+  | "zahlungsbefehl"
   | "legal_document";
 
 interface ClassificationPattern {
@@ -61,7 +64,7 @@ const PATTERNS: ClassificationPattern[] = [
       "deposition",
       "interview",
       "témoignage",
-      "témain",
+      "témoin",
       "audition",
     ],
     minMatches: 2,
@@ -596,6 +599,74 @@ const PATTERNS: ClassificationPattern[] = [
       "instanz",
     ],
   },
+  {
+    type: "erv_erledigung",
+    keywords: [
+      "erv",
+      "elektronischer rechtsverkehr",
+      "erledigung",
+      "zustellung",
+      "rueckverkehr",
+      "rückverkehr",
+      "erv-rueckverkehr",
+      "erv-rückverkehr",
+    ],
+    minMatches: 2,
+    boostWords: [
+      "justiz.gv.at",
+      "weberv",
+      "zustellbestaetigung",
+      "zustellbestätigung",
+      "rechtsanwalt",
+      "empfangsbekenntnis",
+    ],
+  },
+  {
+    type: "ladung",
+    keywords: [
+      "ladung",
+      "geladen",
+      "terminsverlegung",
+      "hauptverhandlung",
+      "verhandlung",
+      "erscheinen",
+      "termin",
+    ],
+    minMatches: 2,
+    boostWords: [
+      "gericht",
+      "richter",
+      "partei",
+      "zeuge",
+      "sachverstaendiger",
+      "sachverständiger",
+      "saal",
+      "uhr",
+    ],
+  },
+  {
+    type: "zahlungsbefehl",
+    keywords: [
+      "zahlungsbefehl",
+      "mahnverfahren",
+      "mahnbescheid",
+      "zahlungsbefehlsantrag",
+      "rechtsmittelbelehrung",
+      "widerspruch",
+      "vollstreckungsklausel",
+    ],
+    minMatches: 1,
+    boostWords: [
+      "gericht",
+      "glaeubiger",
+      "gläubiger",
+      "schuldner",
+      "forderung",
+      "hauptforderung",
+      "zinsen",
+      "kosten",
+    ],
+  },
 ];
 
 /**
@@ -668,6 +739,9 @@ export function legalDocTypeLabel(type: LegalDocType): string {
     urgenz: "Urgenz",
     strafantrag: "Strafantrag",
     nichtigkeitsbeschwerde: "Nichtigkeitsbeschwerde",
+    erv_erledigung: "ERV-Erledigung",
+    ladung: "Ladung",
+    zahlungsbefehl: "Zahlungsbefehl",
     legal_document: "Rechtsdokument",
   };
   return labels[type] ?? "Rechtsdokument";

@@ -28,6 +28,8 @@ import {
   Gavel,
   FileText,
   ChevronDown,
+  ShieldCheck,
+  Clock,
 } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
@@ -35,6 +37,9 @@ import { api } from "@/lib/api";
 import { isOnline, enqueueMutation } from "@/lib/offline-store";
 import { useToast } from "@/components/ui/toast";
 import { DEADLINE_RULES, computeDueDate, type DeadlineRule } from "@/lib/legal-deadlines";
+import { computeVorfrist } from "@/lib/legal/vorfrist";
+import { getRechtsraumParams } from "@/lib/legal/rechtsraum";
+import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -76,6 +81,10 @@ export function DeadlineQuickCreateDialog({
   const [createAnother, setCreateAnother] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [calcPreview, setCalcPreview] = useState<string | null>(null);
+  const [isNotfrist, setIsNotfrist] = useState(false);
+  const [vorfristPreview, setVorfristPreview] = useState<string | null>(null);
+  const [rechtsraum, setRechtsraum] = useState<{ state?: string; country?: string }>({});
+  const [isErvDate, setIsErvDate] = useState(false);
 
   const { data: cases, loading: loadingCases } = useDialogFetch<CaseOption[]>(open, async () => {
     const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
@@ -84,6 +93,14 @@ export function DeadlineQuickCreateDialog({
       title: p.title || p.slug,
     }));
   });
+
+  // Load Rechtsraum settings for holiday-aware calculation
+  useEffect(() => {
+    if (!open) return;
+    loadKanzleiSettings()
+      .then((s) => setRechtsraum(getRechtsraumParams(s)))
+      .catch(() => {});
+  }, [open]);
 
   useEffect(() => {
     if (!ruleKey) {
@@ -95,9 +112,30 @@ export function DeadlineQuickCreateDialog({
       setCalcPreview(null);
       return;
     }
-    const { dueDate } = computeDueDate(rule, date);
+    const { dueDate } = computeDueDate(
+      rule,
+      date,
+      rechtsraum.state as never,
+      rechtsraum.country as never
+    );
     setCalcPreview(dueDate);
-  }, [ruleKey, date]);
+  }, [ruleKey, date, rechtsraum]);
+
+  // Auto-compute Vorfrist from the final deadline date
+  useEffect(() => {
+    const finalDate = calcPreview || date;
+    if (!finalDate) {
+      setVorfristPreview(null);
+      return;
+    }
+    const vf = computeVorfrist(
+      finalDate,
+      isNotfrist ? 7 : 0,
+      rechtsraum.state as never,
+      rechtsraum.country as never
+    );
+    setVorfristPreview(vf);
+  }, [calcPreview, date, isNotfrist]);
 
   const resetForm = useCallback(() => {
     setDescription("");
@@ -108,6 +146,9 @@ export function DeadlineQuickCreateDialog({
     setRuleKey("");
     setShowAdvanced(false);
     setCalcPreview(null);
+    setIsNotfrist(false);
+    setVorfristPreview(null);
+    setIsErvDate(false);
   }, [presetCaseSlug]);
 
   useEffect(() => {
@@ -141,6 +182,9 @@ export function DeadlineQuickCreateDialog({
         type: "legal_deadline",
         event_type: type,
         due_date: finalDate,
+        vorfrist_date: vorfristPreview || undefined,
+        is_notfrist: isNotfrist || undefined,
+        second_check_required: isNotfrist || undefined,
         description: description.trim(),
         status: "pending",
         review_status: "unreviewed",
@@ -149,6 +193,7 @@ export function DeadlineQuickCreateDialog({
         source: "manual",
         law: law.trim() || rule?.law,
         rule_key: rule?.key,
+        erv_zustelldatum: isErvDate ? date : undefined,
         created_at: now.toISOString(),
       },
     };
@@ -348,6 +393,61 @@ export function DeadlineQuickCreateDialog({
                     </p>
                   </div>
                 )}
+
+                {/* Notfrist + Vorfrist + ERV */}
+                <div className="space-y-3 border-t border-[color:var(--ds-border)] pt-3">
+                  {/* ERV-Zustelldatum toggle */}
+                  <label className="flex cursor-pointer items-start gap-2.5">
+                    <input
+                      type="checkbox"
+                      checked={isErvDate}
+                      onChange={(e) => setIsErvDate(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-[color:var(--ds-border-strong)] accent-blue-600"
+                    />
+                    <div>
+                      <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                        {t("deadlines.erv_date")}
+                      </span>
+                      <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                        {t("deadlines.erv_date_hint")}
+                      </p>
+                    </div>
+                  </label>
+                  <label className="flex cursor-pointer items-start gap-2.5">
+                    <input
+                      type="checkbox"
+                      checked={isNotfrist}
+                      onChange={(e) => setIsNotfrist(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-[color:var(--ds-border-strong)] accent-amber-600"
+                    />
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <ShieldCheck size={13} className="text-amber-600" />
+                        <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                          Notfrist (Vier-Augen-Kontrolle)
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                        Gesetzliche Frist mit zwingender Zweiprüfung vor Erledigung.
+                      </p>
+                    </div>
+                  </label>
+
+                  {vorfristPreview && (
+                    <div className="flex items-center gap-2 rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2">
+                      <Clock size={13} className="shrink-0 text-blue-600" />
+                      <div className="text-xs">
+                        <span className="text-[color:var(--ds-text-muted)]">Vorfrist: </span>
+                        <strong className="text-blue-700">
+                          {new Date(`${vorfristPreview}T12:00:00Z`).toLocaleDateString(
+                            lang === "en" ? "en-GB" : "de-DE",
+                            { weekday: "short", day: "numeric", month: "short", year: "numeric" }
+                          )}
+                        </strong>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

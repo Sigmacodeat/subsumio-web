@@ -14,6 +14,10 @@ export const deadlineFormSchema = z.object({
   review_status: z.enum(["unreviewed", "reviewed", "approved", "rejected"]).optional(),
   reviewed_by: z.string().optional(),
   reviewed_at: z.string().optional(),
+  vorfrist_date: z.string().optional(),
+  is_notfrist: z.boolean().optional(),
+  second_check_required: z.boolean().optional(),
+  erv_zustelldatum: z.string().optional(),
 });
 
 export type DeadlineFormData = z.infer<typeof deadlineFormSchema>;

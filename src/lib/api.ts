@@ -1850,6 +1850,9 @@ export const api = {
         tags?: string[];
         case_slug?: string;
         password?: string;
+        pause_for_review?: boolean;
+        jurisdiction?: string;
+        doc_type?: string;
       },
       onProgress?: (
         progress: number,
@@ -1872,6 +1875,9 @@ export const api = {
       if (options?.tags) formData.append("tags", JSON.stringify(options.tags));
       if (options?.case_slug) formData.append("case_slug", options.case_slug);
       if (options?.password) formData.append("password", options.password);
+      if (options?.pause_for_review) formData.append("pause_for_review", "true");
+      if (options?.jurisdiction) formData.append("jurisdiction", options.jurisdiction);
+      if (options?.doc_type) formData.append("doc_type", options.doc_type);
 
       const MAX_RETRIES = 2;
       const RETRYABLE_STATUS = new Set([502, 503, 504]);
@@ -1903,6 +1909,9 @@ export const api = {
             size: file.size,
             mime_type: file.type || undefined,
             password_hash: passwordHash,
+            pause_for_review: options?.pause_for_review,
+            jurisdiction: options?.jurisdiction,
+            doc_type: options?.doc_type,
           }),
         });
         if (tokenRes.ok) {

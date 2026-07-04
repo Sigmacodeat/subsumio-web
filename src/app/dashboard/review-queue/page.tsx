@@ -10,6 +10,8 @@ import {
   FileText,
   Filter,
   Inbox,
+  Play,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +27,8 @@ const STATUS_STYLES: Record<string, string> = {
   approved: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
   rejected: "bg-red-500/10 border-red-500/20 text-red-600",
   changes_requested: "bg-orange-500/10 border-orange-500/20 text-orange-600",
+  awaiting_review: "bg-purple-500/10 border-purple-500/20 text-purple-600",
+  needs_human_review: "bg-red-500/10 border-red-500/20 text-red-600",
 };
 
 function useStatusLabels(t: ReturnType<typeof useLang>["t"]): Record<string, string> {
@@ -34,10 +38,19 @@ function useStatusLabels(t: ReturnType<typeof useLang>["t"]): Record<string, str
     approved: t("review_queue.status_approved"),
     rejected: t("review_queue.status_rejected"),
     changes_requested: t("review_queue.status_changes_requested"),
+    awaiting_review: "Awaiting Review",
+    needs_human_review: "Needs Human Review",
   };
 }
 
-const REVIEWABLE_TYPES = ["document_draft", "contract", "legal_case", "letter", "memo"];
+const REVIEWABLE_TYPES = [
+  "document_draft",
+  "contract",
+  "legal_case",
+  "letter",
+  "memo",
+  "pipeline_state",
+];
 
 export default function ReviewQueuePage() {
   const { t, lang } = useLang();
@@ -75,18 +88,42 @@ export default function ReviewQueuePage() {
     return pages
       .map((p) => {
         const fm = p.frontmatter ?? {};
-        const status = typeof fm.review_status === "string" ? fm.review_status : "pending";
+        // Pipeline state pages use 'status' (awaiting_review / needs_human_review)
+        // while document pages use 'review_status'
+        const isPipeline = p.type === "pipeline_state";
+        const status = isPipeline
+          ? typeof fm.status === "string"
+            ? fm.status
+            : "pending"
+          : typeof fm.review_status === "string"
+            ? fm.review_status
+            : "pending";
         const assignee = typeof fm.review_assignee === "string" ? fm.review_assignee : undefined;
         const reviewedAt = typeof fm.reviewed_at === "string" ? fm.reviewed_at : undefined;
-        return { page: p, status, assignee, reviewedAt };
+        return { page: p, status, assignee, reviewedAt, isPipeline };
       })
       .filter((item) => {
+        // Only show pipeline_state pages that are awaiting_review or needs_human_review
+        if (
+          item.isPipeline &&
+          item.status !== "awaiting_review" &&
+          item.status !== "needs_human_review"
+        )
+          return false;
         if (statusFilter !== "all" && item.status !== statusFilter) return false;
         if (assigneeFilter !== "all" && item.assignee !== assigneeFilter) return false;
         return true;
       })
       .sort((a, b) => {
-        const order = { pending: 0, in_review: 1, changes_requested: 2, rejected: 3, approved: 4 };
+        const order = {
+          pending: 0,
+          in_review: 1,
+          awaiting_review: 1,
+          changes_requested: 2,
+          needs_human_review: 2,
+          rejected: 3,
+          approved: 4,
+        };
         return (
           (order[a.status as keyof typeof order] ?? 5) -
           (order[b.status as keyof typeof order] ?? 5)
@@ -153,6 +190,23 @@ export default function ReviewQueuePage() {
       await loadPages();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Zuweisung fehlgeschlagen.");
+    } finally {
+      setUpdating(null);
+    }
+  }
+
+  async function resumePipeline(caseSlug: string) {
+    setUpdating(`pipeline-${caseSlug}`);
+    try {
+      const res = await fetch("/api/pipeline/resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ case_slug: caseSlug, resume_from_layer: 3 }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await loadPages();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Pipeline konnte nicht fortgesetzt werden.");
     } finally {
       setUpdating(null);
     }
@@ -225,7 +279,7 @@ export default function ReviewQueuePage() {
           {/* Review items */}
           {!loading && reviewItems.length > 0 && (
             <div className="space-y-3">
-              {reviewItems.map(({ page, status, assignee, reviewedAt }) => (
+              {reviewItems.map(({ page, status, assignee, reviewedAt, isPipeline }) => (
                 <div
                   key={page.slug}
                   className="rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-[color:var(--ds-border-strong)] hover:shadow-md"
@@ -287,11 +341,47 @@ export default function ReviewQueuePage() {
                       className="h-10 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 text-xs text-[color:var(--ds-text)] md:w-56"
                     />
                     <div className="flex flex-wrap gap-1 md:ml-auto md:justify-end">
-                      {updating === page.slug ? (
+                      {updating === page.slug ||
+                      updating === `pipeline-${page.frontmatter?.case_ref}` ? (
                         <Loader2
                           size={14}
                           className="animate-spin text-[color:var(--ds-text-muted)]"
                         />
+                      ) : isPipeline ? (
+                        <>
+                          {status === "awaiting_review" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const caseRef =
+                                  typeof page.frontmatter?.case_ref === "string"
+                                    ? page.frontmatter.case_ref
+                                    : "";
+                                if (caseRef) void resumePipeline(caseRef);
+                              }}
+                              className="gap-1 text-xs text-emerald-600 hover:bg-emerald-500/10"
+                            >
+                              <Play size={12} /> Freigeben & Fortsetzen
+                            </Button>
+                          )}
+                          {status === "needs_human_review" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const caseRef =
+                                  typeof page.frontmatter?.case_ref === "string"
+                                    ? page.frontmatter.case_ref
+                                    : "";
+                                if (caseRef) void resumePipeline(caseRef);
+                              }}
+                              className="gap-1 text-xs text-orange-600 hover:bg-orange-500/10"
+                            >
+                              <AlertCircle size={12} /> Review &amp; Fortsetzen
+                            </Button>
+                          )}
+                        </>
                       ) : (
                         <>
                           <Button

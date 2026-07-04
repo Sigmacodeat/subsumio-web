@@ -766,39 +766,57 @@ export async function splitAndImportLargeDocument(
 /**
  * Detect jurisdiction from frontmatter or document text.
  * Priority: explicit frontmatter > text heuristics > default "at".
+ *
+ * Returns jurisdiction + confidence (0–1) + whether it was unverified.
+ * StPO is ambiguous (both AT and DE Strafprozessordnung) — counted for both.
+ * GZ patterns (Austrian Geschäftszahl) are strong AT-only indicators.
  */
-function detectJurisdiction(
+export function detectJurisdiction(
   frontmatter: Record<string, unknown>,
   text: string
-): "at" | "de" | "ch" | "eu" {
+): { jurisdiction: "at" | "de" | "ch" | "eu"; confidence: number; unverified: boolean } {
   const explicit = frontmatter.jurisdiction;
   if (typeof explicit === "string") {
     const j = explicit.toLowerCase();
-    if (j === "at" || j === "de" || j === "ch" || j === "eu") return j;
+    if (j === "at" || j === "de" || j === "ch" || j === "eu") {
+      return { jurisdiction: j as "at" | "de" | "ch" | "eu", confidence: 1.0, unverified: false };
+    }
   }
 
   const lower = text.toLowerCase();
   const sample = lower.slice(0, 5000);
 
-  // AT indicators: ABGB, StPO, AHG, GVgo, ON-Nummern, RIS, österreichische Gerichte
+  // AT indicators: ABGB, AHG, GVgo, ON-Nummern, RIS, österreichische Gerichte.
+  // StPO is ambiguous (also DE) — counted for both AT and DE.
+  // GZ pattern (e.g. "10 C 125/95t") is a strong AT-only signal.
+  const gzPatternMatches =
+    sample.match(/\b\d{1,3}\s+[A-Za-z]{1,4}\s+\d{1,5}\s*\/\s*\d{2}[a-z]?/g)?.length ?? 0;
   const atScore =
     (sample.match(/\bABGB\b/g)?.length ?? 0) +
     (sample.match(/\bStPO\b/g)?.length ?? 0) +
     (sample.match(/\bAHG\b/g)?.length ?? 0) +
     (sample.match(/\bGVgo\b/g)?.length ?? 0) +
     (sample.match(/\bEKV\b/g)?.length ?? 0) +
-    (sample.match(/\bON\s?\d/i)?.length ?? 0) +
+    (sample.match(/\bON\s?\d/gi)?.length ?? 0) +
     (sample.match(/\bRIS\b/g)?.length ?? 0) +
     (sample.match(/\bLandesgericht\b/g)?.length ?? 0) +
     (sample.match(/\bBezirksgericht\b/g)?.length ?? 0) +
     (sample.match(/\bÖGK\b/g)?.length ?? 0) +
-    (sample.match(/\bAmtshaftung\b/g)?.length ?? 0);
+    (sample.match(/\bAmtshaftung\b/g)?.length ?? 0) +
+    (sample.match(/\bRepublik Österreich\b/gi)?.length ?? 0) +
+    (sample.match(/\bOGH\b/g)?.length ?? 0) +
+    gzPatternMatches * 5;
 
-  // DE indicators: BGB, ZPO, StGB, BRAO, RVG, BVerfG
+  // DE indicators: BGB, ZPO, StGB, BRAO, RVG, BVerfG.
+  // StPO is also DE (Strafprozessordnung) — counted here too.
+  // OWiG and GKV are DE-only.
   const deScore =
     (sample.match(/\bBGB\b/g)?.length ?? 0) +
     (sample.match(/\bZPO\b/g)?.length ?? 0) +
     (sample.match(/\bStGB\b/g)?.length ?? 0) +
+    (sample.match(/\bStPO\b/g)?.length ?? 0) +
+    (sample.match(/\bOWiG\b/g)?.length ?? 0) +
+    (sample.match(/\bGKV\b/g)?.length ?? 0) +
     (sample.match(/\bBRAO\b/g)?.length ?? 0) +
     (sample.match(/\bRVG\b/g)?.length ?? 0) +
     (sample.match(/\bBVerfG\b/g)?.length ?? 0) +
@@ -808,17 +826,18 @@ function detectJurisdiction(
     (sample.match(/\bSchmerzensgeld\b/g)?.length ?? 0) +
     (sample.match(/\b§\s?\d+\s?(?:Abs\.?\s?\d+\s?)?BGB/g)?.length ?? 0);
 
-  // CH indicators: OR, ZGB, BV, VwVG, BGer, Bundesgericht
+  // CH indicators: OR, ZGB, BV, VwVG, BGer, Bundesgericht.
+  // BV and OR are highly ambiguous — weighted lower.
   const chScore =
-    (sample.match(/\bOR\b/g)?.length ?? 0) +
     (sample.match(/\bZGB\b/g)?.length ?? 0) +
-    (sample.match(/\bBV\b/g)?.length ?? 0) +
     (sample.match(/\bVwVG\b/g)?.length ?? 0) +
     (sample.match(/\bBGer\b/g)?.length ?? 0) +
     (sample.match(/\bBundesgericht\b/g)?.length ?? 0) +
     (sample.match(/\bKantonsgericht\b/g)?.length ?? 0) +
     (sample.match(/\bObergericht\b/g)?.length ?? 0) +
-    (sample.match(/\bArt\.\s?\d+\s?(?:Abs\.?\s?\d+\s?)?OR/g)?.length ?? 0);
+    (sample.match(/\bArt\.\s?\d+\s?(?:Abs\.?\s?\d+\s?)?OR/g)?.length ?? 0) +
+    (sample.match(/\bBV\b/g)?.length ?? 0) * 0.5 +
+    (sample.match(/\bOR\b/g)?.length ?? 0) * 0.5;
 
   // EU indicators: AEUV, EUV, DSGVO (shared with DE/AT, but EU-specific regs)
   const euScore =
@@ -829,11 +848,25 @@ function detectJurisdiction(
     (sample.match(/\bVerordnung\s?\(EU\)/g)?.length ?? 0);
 
   const max = Math.max(atScore, deScore, chScore, euScore);
-  if (max === 0) return "at";
-  if (euScore === max) return "eu";
-  if (chScore === max) return "ch";
-  if (deScore === max) return "de";
-  return "at";
+  if (max === 0) return { jurisdiction: "at", confidence: 0, unverified: true };
+
+  // Confidence: ratio of winner to total, with a floor for low-signal cases.
+  const total = atScore + deScore + chScore + euScore;
+  const ratio = max / total;
+  const confidence = Math.min(1, Math.max(0, ratio));
+
+  // Tie-breaking: if two scores are within 10% of each other, mark as unverified.
+  const secondMax = [atScore, deScore, chScore, euScore].sort((a, b) => b - a)[1] ?? 0;
+  const isTie = secondMax > 0 && secondMax / max > 0.85;
+  const unverified = isTie || confidence < 0.4;
+
+  let jurisdiction: "at" | "de" | "ch" | "eu";
+  if (euScore === max) jurisdiction = "eu";
+  else if (chScore === max) jurisdiction = "ch";
+  else if (deScore === max) jurisdiction = "de";
+  else jurisdiction = "at";
+
+  return { jurisdiction, confidence: Math.round(confidence * 100) / 100, unverified };
 }
 
 /**
@@ -966,7 +999,18 @@ export async function runExtractionAndImport(
     const { MinionQueue } = await import("../core/minions/queue.ts");
     const queue = new MinionQueue(engine);
     const pipelineSlugs = partSlugs.length > 0 ? partSlugs : [slug];
-    const jurisdiction = detectJurisdiction(uploadFrontmatter, markdown);
+    const jurResult = detectJurisdiction(uploadFrontmatter, markdown);
+    const jurisdiction = jurResult.jurisdiction;
+
+    // Persist jurisdiction confidence + unverified flag on all parts
+    for (const s of [slug, ...partSlugs]) {
+      await patchPageFrontmatter(engine, s, tenantSource, {
+        jurisdiction,
+        jurisdiction_confidence: jurResult.confidence,
+        ...(jurResult.unverified ? { jurisdiction_unverified: true } : {}),
+      });
+    }
+
     await queue.add(
       "legal-pipeline",
       {
@@ -975,6 +1019,7 @@ export async function runExtractionAndImport(
         ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
         trigger: "post_upload",
         ...(jurisdiction !== "at" ? { jurisdiction } : {}),
+        ...(uploadFrontmatter.pause_for_review ? { pause_for_review: true } : {}),
       },
       { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
       { allowProtectedSubmit: true }
@@ -1631,6 +1676,9 @@ interface UploadTokenPayload {
   size: number;
   mime_type?: string;
   password_hash?: string;
+  pause_for_review?: boolean;
+  jurisdiction?: string;
+  doc_type?: string;
   exp: number; // Unix seconds
 }
 
@@ -2030,6 +2078,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           uploaded_by: payload.user_id,
           upload_source: "direct",
           ...(caseSlug ? { case_slug: caseSlug, assignment_status: "assigned" } : {}),
+          ...(payload.pause_for_review ? { pause_for_review: true } : {}),
+          ...(payload.jurisdiction ? { jurisdiction: payload.jurisdiction } : {}),
+          ...(payload.doc_type ? { doc_type: payload.doc_type } : {}),
         };
         // Never persist a document password in Minion job JSON. Password-bearing
         // uploads are processed in the request and the secret dies with it.
@@ -3885,6 +3936,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           source: "upload",
           source_format: extname(file.filename).replace(/^\./, "").toLowerCase() || undefined,
           ...(caseSlug ? { case_slug: caseSlug, assignment_status: "assigned" } : {}),
+          ...(fields.pause_for_review === "true" ? { pause_for_review: true } : {}),
+          ...(fields.jurisdiction ? { jurisdiction: fields.jurisdiction } : {}),
+          ...(fields.doc_type ? { doc_type: fields.doc_type } : {}),
         };
         // Passwords are request-scoped secrets and must never be serialized into
         // the persistent Minion queue. Process encrypted documents synchronously.

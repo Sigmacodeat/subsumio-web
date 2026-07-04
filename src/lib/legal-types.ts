@@ -28,11 +28,23 @@ export interface DeadlineEntry {
   created_at?: string;
   updated_at?: string;
   audit_log?: DeadlineAuditEntry[];
+  /** B1: Vorfrist — internal control deadline N days before the main deadline. */
+  vorfrist_date?: string;
+  /** B1: Whether this is a Notfrist (statutory deadline) requiring Vier-Augen-Kontrolle. */
+  is_notfrist?: boolean;
+  /** B1: Vier-Augen-Prinzip — second checker must confirm before deadline can be marked done. */
+  second_check_required?: boolean;
+  second_check_by?: string;
+  second_check_at?: string;
+  /** B1: Vorfrist reminder tracking. */
+  vorfrist_reminder_sent_at?: string;
+  /** C3: ERV-Zustelldatum — Fristbeginn ab elektronischer Zustellung. */
+  erv_zustelldatum?: string;
 }
 
 export interface DeadlineAuditEntry {
   at: string;
-  action: "created" | "updated" | "reviewed" | "deleted";
+  action: "created" | "updated" | "reviewed" | "deleted" | "second_check" | "vorfrist_reached";
   actor?: string;
   note?: string;
 }

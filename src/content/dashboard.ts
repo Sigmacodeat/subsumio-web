@@ -1439,6 +1439,34 @@ export const D = {
   "deadlines.toast_fail": { de: "Senden fehlgeschlagen", en: "Sending failed" },
   "deadlines.error_prefix": { de: "Fehler", en: "Error" },
 
+  // ── Deadline enhancements: Vorfrist, Vier-Augen, Pipeline-Sync ──
+  "deadlines.vorfrist": { de: "Vorfrist", en: "Pre-deadline" },
+  "deadlines.vorfrist_reached": { de: "Vorfrist erreicht", en: "Pre-deadline reached" },
+  "deadlines.notfrist": { de: "Notfrist", en: "Statutory deadline" },
+  "deadlines.second_check": { de: "Vier-Augen-Kontrolle", en: "Four-eyes check" },
+  "deadlines.second_check_pending": { de: "Zweiprüfung ausstehend", en: "Second check pending" },
+  "deadlines.second_check_done": { de: "Zweiprüfung bestätigt", en: "Second check confirmed" },
+  "deadlines.second_check_by": { de: "Geprüft von", en: "Checked by" },
+  "deadlines.unreviewed": { de: "Ungeprüft", en: "Unreviewed" },
+  "deadlines.source_pipeline": { de: "Pipeline", en: "Pipeline" },
+  "deadlines.source_manual": { de: "Manuell", en: "Manual" },
+  "deadlines.filter_all": { de: "Alle", en: "All" },
+  "deadlines.filter_unreviewed": { de: "Ungeprüft", en: "Unreviewed" },
+  "deadlines.filter_notfrist": { de: "Notfristen", en: "Statutory" },
+  "deadlines.filter_vorfrist": { de: "Vorfrist erreicht", en: "Pre-deadline reached" },
+  "deadlines.fristenbuch": { de: "Fristenbuch", en: "Deadline register" },
+  "deadlines.fristenbuch_desc": {
+    de: "Chronologische Fristenübersicht aller Akten",
+    en: "Chronological deadline overview across all cases",
+  },
+  "deadlines.fristenbuch_print": { de: "Drucken", en: "Print" },
+  "deadlines.fristenbuch_empty": { de: "Keine Fristen vorhanden", en: "No deadlines found" },
+  "deadlines.erv_date": { de: "ERV-Zustelldatum", en: "ERV service date" },
+  "deadlines.erv_date_hint": {
+    de: "Beginn der Frist ab elektronischer Zustellung",
+    en: "Deadline start from electronic service",
+  },
+
   // ── Invoicing page ──
   "inv.title": { de: "Rechnungen", en: "Invoices" },
   "inv.desc": { de: "Abrechnung & PDF-Export", en: "Billing & PDF export" },

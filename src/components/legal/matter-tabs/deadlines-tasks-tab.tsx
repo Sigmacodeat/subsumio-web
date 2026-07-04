@@ -11,6 +11,8 @@ import {
   Loader2,
   ListChecks,
   ChevronUp,
+  ShieldCheck,
+  Clock,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -145,6 +147,41 @@ export function DeadlinesTasksTab() {
                 className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               />
             </div>
+
+            {/* Notfrist + ERV-Zustelldatum */}
+            <div className="space-y-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
+              <label className="flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  {...ctx.deadlineForm.register("is_notfrist")}
+                  className="mt-0.5 h-4 w-4 rounded border-[color:var(--ds-border-strong)] accent-amber-600"
+                />
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck size={13} className="text-amber-600" />
+                    <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                      Notfrist (Vier-Augen-Kontrolle)
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                    Gesetzliche Frist mit zwingender Zweiprüfung vor Erledigung.
+                  </p>
+                </div>
+              </label>
+              <div>
+                <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                  {t("deadlines.erv_date")} (optional)
+                </label>
+                <input
+                  type="date"
+                  {...ctx.deadlineForm.register("erv_zustelldatum")}
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                />
+                <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                  {t("deadlines.erv_date_hint")}
+                </p>
+              </div>
+            </div>
             <div className="brand-border brand-soft/5 space-y-3 rounded-lg border p-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -214,6 +251,10 @@ export function DeadlinesTasksTab() {
                       type: "deadline",
                       status: "pending",
                       description: "",
+                      vorfrist_date: undefined,
+                      is_notfrist: false,
+                      second_check_required: undefined,
+                      erv_zustelldatum: undefined,
                     });
                   }}
                 >
@@ -600,6 +641,48 @@ export function DeadlinesTasksTab() {
                         className="border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                       >
                         {dl.law}
+                      </Badge>
+                    )}
+                    {dl.is_notfrist && (
+                      <Badge
+                        variant="default"
+                        className="flex items-center gap-0.5 border border-amber-500/30 bg-amber-500/10 text-xs text-amber-700"
+                      >
+                        <ShieldCheck size={10} />
+                        Notfrist
+                      </Badge>
+                    )}
+                    {dl.vorfrist_date &&
+                      new Date(dl.vorfrist_date) <= new Date() &&
+                      dl.status !== "done" && (
+                        <Badge
+                          variant="default"
+                          className="border border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
+                        >
+                          Vorfrist erreicht
+                        </Badge>
+                      )}
+                    {dl.vorfrist_date && new Date(dl.vorfrist_date) > new Date() && (
+                      <Badge
+                        variant="default"
+                        className="flex items-center gap-0.5 border border-blue-500/10 bg-blue-500/5 text-xs text-blue-500/80"
+                      >
+                        <Clock size={10} />
+                        Vorfrist:{" "}
+                        {new Date(dl.vorfrist_date).toLocaleDateString(
+                          lang === "en" ? "en-GB" : "de-DE"
+                        )}
+                      </Badge>
+                    )}
+                    {dl.erv_zustelldatum && (
+                      <Badge
+                        variant="default"
+                        className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
+                      >
+                        ERV:{" "}
+                        {new Date(dl.erv_zustelldatum).toLocaleDateString(
+                          lang === "en" ? "en-GB" : "de-DE"
+                        )}
                       </Badge>
                     )}
                   </div>
