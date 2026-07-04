@@ -1116,9 +1116,11 @@ export class MinionQueue {
     // Direct (session-mode) pool — see claim(). The heartbeat that keeps a job
     // alive for minutes cannot run on the transaction pooler without periodic
     // CONNECTION_ENDED drops that look like lock-expiry and orphan the job.
+    // Also renew 'waiting-children' status — long-running pipeline jobs wait
+    // for child subagents and need lock renewal during that phase.
     const rows = await this.engine.executeRawDirect<Record<string, unknown>>(
       `UPDATE minion_jobs SET lock_until = now() + ($1::double precision * interval '1 millisecond'), updated_at = now()
-       WHERE id = $2 AND lock_token = $3 AND status = 'active'
+       WHERE id = $2 AND lock_token = $3 AND status IN ('active', 'waiting-children')
        RETURNING id`,
       [lockDurationMs, id, lockToken]
     );
