@@ -5128,7 +5128,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
 
         const queue = new MinionQueue(engine);
-        const job = await queue.add("legal-pipeline", pipelineData);
+        const job = await queue.add(
+          "legal-pipeline",
+          pipelineData,
+          { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+          { allowProtectedSubmit: true }
+        );
 
         res.json({ success: true, job_id: job.id, status: "queued" });
       } catch (err) {
