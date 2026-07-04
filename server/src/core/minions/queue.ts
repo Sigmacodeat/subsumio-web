@@ -653,6 +653,7 @@ export class MinionQueue {
        WHERE id = (
          SELECT id FROM minion_jobs
          WHERE queue = $3 AND status = 'waiting' AND name = ANY($4)
+           AND (lock_until IS NULL OR lock_until < now())
          ORDER BY priority ASC, created_at ASC
          FOR UPDATE SKIP LOCKED
          LIMIT 1
@@ -1116,11 +1117,13 @@ export class MinionQueue {
     // Direct (session-mode) pool — see claim(). The heartbeat that keeps a job
     // alive for minutes cannot run on the transaction pooler without periodic
     // CONNECTION_ENDED drops that look like lock-expiry and orphan the job.
-    // Also renew 'waiting-children' status — long-running pipeline jobs wait
-    // for child subagents and need lock renewal during that phase.
+    // Also renew 'waiting-children' and 'waiting' status — long-running pipeline
+    // jobs wait for child subagents and need lock renewal during that phase.
+    // When resolveParent flips waiting-children → waiting, the handler is still
+    // running and processing child results, so the lock must be renewed.
     const rows = await this.engine.executeRawDirect<Record<string, unknown>>(
       `UPDATE minion_jobs SET lock_until = now() + ($1::double precision * interval '1 millisecond'), updated_at = now()
-       WHERE id = $2 AND lock_token = $3 AND status IN ('active', 'waiting-children')
+       WHERE id = $2 AND lock_token = $3 AND status IN ('active', 'waiting-children', 'waiting')
        RETURNING id`,
       [lockDurationMs, id, lockToken]
     );
@@ -1190,7 +1193,7 @@ export class MinionQueue {
       `WITH stalled AS (
         SELECT id, stalled_counter, max_stalled
         FROM minion_jobs
-        WHERE status = 'active' AND lock_until < now()
+        WHERE status IN ('active', 'waiting') AND lock_until < now()
         FOR UPDATE SKIP LOCKED
       ),
       requeued AS (

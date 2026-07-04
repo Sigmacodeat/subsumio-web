@@ -199,7 +199,7 @@ export class MinionWorker extends EventEmitter {
     this.opts = {
       queue: opts?.queue ?? "default",
       concurrency: opts?.concurrency ?? 1,
-      lockDuration: opts?.lockDuration ?? 30000,
+      lockDuration: opts?.lockDuration ?? 300000,
       stalledInterval: opts?.stalledInterval ?? 30000,
       maxStalledCount: opts?.maxStalledCount ?? 1,
       pollInterval: opts?.pollInterval ?? 5000,
