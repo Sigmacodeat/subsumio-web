@@ -3525,14 +3525,32 @@ export async function toolLoop(opts: ToolLoopOpts): Promise<ToolLoopResult> {
 
     // D11 step 1: persist assistant turn BEFORE any tool dispatch.
     const assistantMessageIdx = messageIdx++;
+    // Split blocks: assistant message should only contain text + tool-call blocks.
+    // generateText with stopWhen=stepCountIs(1) may still execute tools internally
+    // and include tool-result blocks in result.content. Pushing those into the
+    // assistant message causes MissingToolResultsError on the next turn because
+    // the AI SDK expects tool-results in separate tool-role messages.
+    const assistantBlocks = chatResult.blocks.filter(
+      (b) => b.type === "text" || b.type === "tool-call" || b.type === "reasoning"
+    );
+    const prebuiltToolResults = chatResult.blocks.filter(
+      (b): b is Extract<ChatBlock, { type: "tool-result" }> => b.type === "tool-result"
+    );
     await opts.onAssistantTurn?.(
       turnIdx,
       assistantMessageIdx,
-      chatResult.blocks,
+      assistantBlocks,
       chatResult.usage,
       chatResult.model
     );
-    messages.push({ role: "assistant", content: chatResult.blocks });
+    messages.push({ role: "assistant", content: assistantBlocks });
+
+    // If generateText already executed tools internally, push those results
+    // as a separate user message so the conversation history is valid.
+    if (prebuiltToolResults.length > 0) {
+      messages.push({ role: "user", content: prebuiltToolResults });
+      messageIdx++;
+    }
 
     // Check stop reason BEFORE tool dispatch. The loop only continues on tool_calls.
     if (chatResult.stopReason === "refusal") {
@@ -3546,7 +3564,7 @@ export async function toolLoop(opts: ToolLoopOpts): Promise<ToolLoopResult> {
       break;
     }
 
-    const toolCalls = chatResult.blocks.filter(
+    const toolCalls = assistantBlocks.filter(
       (b): b is { type: "tool-call"; toolCallId: string; toolName: string; input: unknown } =>
         b.type === "tool-call"
     );
@@ -3555,6 +3573,14 @@ export async function toolLoop(opts: ToolLoopOpts): Promise<ToolLoopResult> {
       stopReason = "end";
       finalText = chatResult.text;
       break;
+    }
+
+    // If generateText already executed tools internally, skip re-execution.
+    if (prebuiltToolResults.length > 0) {
+      // Tools were already executed by generateText. The results are already
+      // pushed as a user message above. Skip the manual tool dispatch loop.
+      turnIdx++;
+      continue;
     }
 
     // D11 + write-ordering invariant: persist pending → execute → settle.
