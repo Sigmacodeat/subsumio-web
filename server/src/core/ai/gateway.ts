@@ -2621,17 +2621,38 @@ function instantiateChat(recipe: Recipe, modelId: string, cfg: AIGatewayConfig):
       const auth = applyResolveAuth(recipe, cfg, "chat");
       // v0.32: env-templated base URL + optional fetch wrapper.
       const compat = applyOpenAICompatConfig(recipe, cfg);
-      // OpenRouter needs a fetch wrapper to inject reasoning_content for
-      // DeepSeek thinking mode round-trip (prevents "Tool results are missing").
-      const chatFetchWrapper =
-        compat.fetch ?? (recipe.id === "openrouter" ? openRouterCompatFetch : undefined);
+      // OpenRouter/DeepSeek: inject reasoning_content into assistant messages
+      // with tool_calls for thinking mode round-trip. Uses transformRequestBody
+      // which runs before the body is stringified.
+      const openRouterTransform =
+        recipe.id === "openrouter"
+          ? (args: { body?: Record<string, unknown> }) => {
+              const body = args.body ?? {};
+              const messages = body.messages;
+              if (Array.isArray(messages)) {
+                for (const msg of messages) {
+                  if (
+                    msg.role === "assistant" &&
+                    Array.isArray(msg.tool_calls) &&
+                    msg.tool_calls.length > 0 &&
+                    !msg.reasoning_content &&
+                    !msg.reasoning
+                  ) {
+                    msg.reasoning_content = "\u200B";
+                  }
+                }
+              }
+              return body;
+            }
+          : undefined;
       console.error(
-        `[instantiateChat] recipe.id=${recipe.id} fetchWrapper=${chatFetchWrapper ? "yes" : "no"} compat.fetch=${compat.fetch ? "yes" : "no"}`
+        `[instantiateChat] recipe.id=${recipe.id} transform=${openRouterTransform ? "yes" : "no"} compat.fetch=${compat.fetch ? "yes" : "no"}`
       );
       return createOpenAICompatible({
         name: recipe.id,
         baseURL: compat.baseURL,
-        ...(chatFetchWrapper ? { fetch: chatFetchWrapper } : {}),
+        ...(compat.fetch ? { fetch: compat.fetch } : {}),
+        ...(openRouterTransform ? { transformRequestBody: openRouterTransform as any } : {}),
         ...auth,
       }).languageModel(modelId);
     }
