@@ -2625,6 +2625,9 @@ function instantiateChat(recipe: Recipe, modelId: string, cfg: AIGatewayConfig):
       // DeepSeek thinking mode round-trip (prevents "Tool results are missing").
       const chatFetchWrapper =
         compat.fetch ?? (recipe.id === "openrouter" ? openRouterCompatFetch : undefined);
+      console.error(
+        `[instantiateChat] recipe.id=${recipe.id} fetchWrapper=${chatFetchWrapper ? "yes" : "no"} compat.fetch=${compat.fetch ? "yes" : "no"}`
+      );
       return createOpenAICompatible({
         name: recipe.id,
         baseURL: compat.baseURL,
