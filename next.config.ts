@@ -28,6 +28,9 @@ const nextConfig: NextConfig = {
       { source: "/produkt", destination: "/", permanent: true },
       // Deduplicate: canonical security page is /security
       { source: "/sicherheit", destination: "/security", permanent: true },
+      // Removed dashboard routes (IA consolidation) — keep old bookmarks alive
+      { source: "/dashboard/assistant", destination: "/dashboard/chat", permanent: true },
+      { source: "/dashboard/query", destination: "/dashboard/brain", permanent: true },
     ];
   },
   async headers() {

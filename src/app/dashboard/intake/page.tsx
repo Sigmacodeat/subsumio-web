@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
+  ArrowUpRight,
   CheckCircle2,
   ChevronRight,
   Clock,
@@ -425,9 +426,17 @@ export default function IntakePage() {
               </>
             );
             if ("href" in tab && tab.href) {
+              // Not a filter — jumps to the dedicated page. The arrow marks it
+              // as an outbound link so it doesn't masquerade as a tab.
               return (
-                <Link key={tab.key} href={tab.href} className={className}>
+                <Link
+                  key={tab.key}
+                  href={tab.href}
+                  className={className}
+                  title={`${tab.label} — ${t("intake.opens_page")}`}
+                >
                   {inner}
+                  <ArrowUpRight size={12} className="text-[color:var(--ds-text-subtle)]" />
                 </Link>
               );
             }

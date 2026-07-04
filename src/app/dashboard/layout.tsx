@@ -438,6 +438,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         onToggleTheme={toggleTheme}
         onToggleSidebar={() => setCollapsed((c) => !c)}
         industry={industry}
+        role={role}
       />
       <KeyboardShortcuts open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <DashboardGuide open={guideOpen} onClose={() => setGuideOpen(false)} />

@@ -4915,6 +4915,7 @@ export const D = {
   "intake.search_placeholder": { de: "Mandatsanfrage suchen…", en: "Search intake…" },
   "intake.source_all": { de: "Alle Quellen", en: "All sources" },
   "intake.source_manual": { de: "Manuell", en: "Manual" },
+  "intake.opens_page": { de: "öffnet eigene Seite", en: "opens dedicated page" },
   "intake.loading": { de: "Lade Mandatsanfragen…", en: "Loading intake…" },
   "intake.empty_title": { de: "Keine Mandatsanfragen", en: "No intakes" },
   "intake.empty_hint": {

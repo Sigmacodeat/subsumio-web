@@ -8,7 +8,6 @@ import {
   X,
   PanelRightClose,
   PanelRightOpen,
-  AlertCircle,
   Clock,
   Briefcase,
   CalendarClock,
@@ -17,7 +16,6 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
-  Zap,
   CheckSquare,
   Circle,
   Loader2,
@@ -1544,6 +1542,14 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     [router]
   );
 
+  // Panel → fullscreen handoff: carry the running session into /dashboard/chat
+  const handleOpenFullscreen = useCallback(() => {
+    const sessionId = chatRef.current?.getActiveSessionId();
+    router.push(
+      sessionId ? `/dashboard/chat?session=${encodeURIComponent(sessionId)}` : "/dashboard/chat"
+    );
+  }, [router]);
+
   const handleDismissAlert = useCallback((alertKey: string) => {
     setDismissedAlerts((prev) => {
       const next = new Set(prev);
@@ -1622,7 +1628,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             </div>
             <div className="flex items-center gap-0.5">
               <button
-                onClick={() => router.push("/dashboard/chat")}
+                onClick={handleOpenFullscreen}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                 aria-label={t("copilot.open_fullscreen")}
                 title={t("copilot.open_fullscreen")}
@@ -1824,7 +1830,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 </div>
                 <div className="flex items-center gap-0.5">
                   <button
-                    onClick={() => router.push("/dashboard/chat")}
+                    onClick={handleOpenFullscreen}
                     className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                     aria-label={t("copilot.open_fullscreen")}
                     title={t("copilot.open_fullscreen")}

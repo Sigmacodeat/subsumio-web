@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Briefcase,
@@ -699,6 +700,14 @@ export default function CasesPage() {
             />
           );
         })}
+        <Link
+          href="/dashboard/altlasten"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[color:var(--ds-border)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] duration-200 hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+        >
+          <Archive size={13} />
+          {t("nav.altlasten")}
+          <ChevronRight size={12} />
+        </Link>
       </div>
 
       {/* Search */}

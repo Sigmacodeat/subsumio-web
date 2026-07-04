@@ -6,6 +6,7 @@ import { AnimatePresence } from "framer-motion";
 import { api } from "@/lib/api";
 import type { SearchResult } from "@/lib/types";
 import {
+  Archive,
   Search,
   BookOpen,
   RefreshCw,
@@ -136,6 +137,8 @@ interface CommandPaletteProps {
   onToggleTheme?: () => void;
   onToggleSidebar?: () => void;
   industry?: string | null;
+  /** User role — non-admins don't see admin-only routes (mirrors sidebar trim). */
+  role?: string | null;
 }
 
 const RECENT_KEY = "subsumio:cmd_recent";
@@ -164,6 +167,7 @@ export function CommandPalette({
   onToggleTheme,
   onToggleSidebar,
   industry,
+  role,
 }: CommandPaletteProps) {
   const router = useRouter();
   const { t } = useLang();
@@ -176,7 +180,8 @@ export function CommandPalette({
     deadlines: SearchResult[];
     documents: SearchResult[];
   }>({ cases: [], contacts: [], deadlines: [], documents: [] });
-  const [searching, setSearching] = useState(false);
+  // Value intentionally unused for now — state drives future loading UI.
+  const [_searching, setSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -186,10 +191,19 @@ export function CommandPalette({
 
   const navCommands = useMemo(() => {
     const cfg = navForIndustry(industry);
+    const isAdmin = role === "admin";
+    // Mirror the sidebar's role trim: non-admins only see admin-section items
+    // that are also bottom items (settings, team, audit, directory).
+    const adminOnlyHrefs = new Set(
+      cfg.adminSection.items
+        .filter((item) => !cfg.bottomItems.some((b) => b.href === item.href))
+        .map((item) => item.href)
+    );
     const seen = new Set<string>();
     const commands: CommandItem[] = [];
     for (const item of cfg.allNavItems) {
       if (item.comingSoon || seen.has(item.href)) continue;
+      if (!isAdmin && adminOnlyHrefs.has(item.href)) continue;
       seen.add(item.href);
       const sectionEntry = cfg.preferredSectionByHref.find((p) => p.href === item.href);
       const section = sectionEntry?.section ?? "nav.section.admin";
@@ -201,10 +215,24 @@ export function CommandPalette({
         href: item.href,
         section,
         sectionKey: section,
+        keywords: item.keywords,
+      });
+    }
+    // Legal-only routes that live outside the sidebar but must stay findable.
+    if (industry !== "tax") {
+      commands.push({
+        id: "altlasten",
+        label: "nav.altlasten",
+        labelKey: "nav.altlasten",
+        icon: Archive,
+        href: "/dashboard/altlasten",
+        section: "nav.section.clients_comm",
+        sectionKey: "nav.section.clients_comm",
+        keywords: "altlasten backlog alte akten bestandsakten archiv",
       });
     }
     return commands;
-  }, [industry]);
+  }, [industry, role]);
   const resolveLabel = useCallback(
     (cmd: CommandItem) => {
       if (cmd.labelKey) return t(cmd.labelKey);

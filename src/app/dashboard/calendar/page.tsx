@@ -122,7 +122,7 @@ export default function CalendarPage() {
   const isLoading = deadlinesLoading || casesLoading;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="mx-auto flex h-full w-full max-w-[1400px] flex-col p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("calendar.title")}
         description={t("calendar.description")}
@@ -169,7 +169,7 @@ export default function CalendarPage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="space-y-3">
             <Skeleton className="h-12 w-full" />

@@ -45,6 +45,7 @@ import {
   createSession,
   updateSession,
   deleteSession,
+  getSession,
   listSessions,
   loadMessages,
   saveMessage,
@@ -69,6 +70,8 @@ interface ChatPanelProps {
   className?: string;
   title?: string;
   initialQuery?: string;
+  /** Load this session on mount instead of the latest one (panel → fullscreen handoff). */
+  initialSessionId?: string;
   placeholder?: string;
 }
 
@@ -442,6 +445,8 @@ export interface ChatPanelHandle {
       replyTo?: { id: string; role: "user" | "assistant"; preview: string } | null;
     }
   ) => void;
+  /** Current session id — used to hand the conversation off to the fullscreen chat. */
+  getActiveSessionId: () => string | undefined;
 }
 
 function SuggestedFollowUps({
@@ -541,6 +546,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     className,
     title,
     initialQuery,
+    initialSessionId,
     placeholder,
   },
   ref
@@ -713,6 +719,19 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   useEffect(() => {
     if (!persistHistory) return;
     (async () => {
+      // Explicit session handoff (panel → fullscreen): load the requested
+      // session regardless of context filters.
+      if (initialSessionId && !activeSessionId) {
+        const handoff = await getSession(initialSessionId);
+        if (handoff) {
+          setActiveSessionId(handoff.id);
+          const msgs = await loadMessages(handoff.id);
+          const sanitized = sanitizeSessionMessages(msgs);
+          setMessages(sanitized);
+          setSessionTokens(sanitized.reduce((sum, m) => sum + (m.tokensUsed ?? 0), 0));
+          return;
+        }
+      }
       const list = await listSessions({
         caseSlug: selectedCaseSlug || context.caseSlug,
         contextType: context.type,
@@ -985,8 +1004,9 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           replyTo?: { id: string; role: "user" | "assistant"; preview: string } | null;
         }
       ) => handleSend(text, options?.attachments, options?.replyTo ?? undefined),
+      getActiveSessionId: () => activeSessionId,
     }),
-    [handleSend]
+    [handleSend, activeSessionId]
   );
 
   // ── G15: Tool Confirmation / Cancel handlers ──

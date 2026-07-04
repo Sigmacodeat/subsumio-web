@@ -17,6 +17,7 @@ function ChatPageInner() {
   const caseSlug = searchParams.get("case") ?? undefined;
   const pageSlug = searchParams.get("page") ?? undefined;
   const initialQuery = searchParams.get("q") ?? undefined;
+  const initialSessionId = searchParams.get("session") ?? undefined;
   const contextType = caseSlug ? "case" : pageSlug ? "brain_page" : "global";
 
   return (
@@ -24,6 +25,7 @@ function ChatPageInner() {
       <ChatPanel
         context={{ type: contextType, caseSlug, pageSlug }}
         initialQuery={initialQuery}
+        initialSessionId={initialSessionId}
         className="flex-1"
       />
     </div>

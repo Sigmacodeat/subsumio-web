@@ -18,8 +18,6 @@ import {
   Command,
   Check,
   Brain as BrainIcon,
-  Loader2,
-  CornerDownLeft,
   HelpCircle,
   PanelRightOpen,
   Languages,
@@ -38,7 +36,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useBrainSelector } from "@/lib/use-brain-selector";
-import { useBrainStats, usePages, useSearch } from "@/lib/queries/brain";
+import { useBrainStats, usePages } from "@/lib/queries/brain";
 import { useLogout } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
 import { NetworkStatusBadge } from "@/components/dashboard/sidebar";
@@ -79,15 +77,11 @@ export function Topbar({
 }: TopbarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [brainOpen, setBrainOpen] = useState(false);
   const [brainActiveIdx, setBrainActiveIdx] = useState(0);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const brainRef = useRef<HTMLDivElement>(null);
@@ -95,28 +89,13 @@ export function Topbar({
   const { t, lang, setLang } = useLang();
   const { popoverTransition, popoverInitial, popoverAnimate, popoverExit } = useDashboardMotion();
 
-  // Debounce search query for live results
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  const searchResults = useSearch(debouncedQuery, 5, debouncedQuery.length >= 2);
-
-  const searchItems = useMemo(() => searchResults.data ?? [], [searchResults.data]);
-  const [searchActiveIdx, setSearchActiveIdx] = useState(0);
-  useEffect(() => {
-    setSearchActiveIdx(0);
-  }, [debouncedQuery]);
-
-  useEffect(() => {
-    if (!notifOpen && !userMenuOpen && !brainOpen && !searchOpen && !quickCreateOpen) return;
+    if (!notifOpen && !userMenuOpen && !brainOpen && !quickCreateOpen) return;
     const onMouseDown = (e: MouseEvent) => {
       const target = e.target as Node;
       if (notifRef.current && !notifRef.current.contains(target)) setNotifOpen(false);
       if (userMenuRef.current && !userMenuRef.current.contains(target)) setUserMenuOpen(false);
       if (brainRef.current && !brainRef.current.contains(target)) setBrainOpen(false);
-      if (searchRef.current && !searchRef.current.contains(target)) setSearchOpen(false);
       if (quickCreateRef.current && !quickCreateRef.current.contains(target))
         setQuickCreateOpen(false);
     };
@@ -125,7 +104,6 @@ export function Topbar({
         setNotifOpen(false);
         setUserMenuOpen(false);
         setBrainOpen(false);
-        setSearchOpen(false);
         setQuickCreateOpen(false);
       }
     };
@@ -135,7 +113,7 @@ export function Topbar({
       document.removeEventListener("mousedown", onMouseDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [notifOpen, userMenuOpen, brainOpen, searchOpen, quickCreateOpen]);
+  }, [notifOpen, userMenuOpen, brainOpen, quickCreateOpen]);
 
   const statsQuery = useBrainStats();
   const deadlinesQuery = usePages({ type: "legal_deadline", limit: 20 });
@@ -438,39 +416,28 @@ export function Topbar({
         >
           {mobileOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
-        <div
+        {/* Palette trigger — a button styled as a search field so Tab focus
+            doesn't open the palette involuntarily (only click/Enter/Space). */}
+        <button
+          type="button"
           data-tour="command-palette-hint"
-          className="group relative hidden flex-1 sm:block"
-          ref={searchRef}
+          onClick={onCmdOpen}
+          aria-label={t("topbar.search_aria")}
+          aria-haspopup="dialog"
+          className="group relative hidden flex-1 cursor-pointer rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-16 pl-9 text-left text-[13px] text-[color:var(--ds-text-subtle)] transition-[border-color,box-shadow] hover:border-[color:var(--ds-border-strong)] focus-visible:border-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none sm:block"
         >
           <Search
             size={16}
-            className="absolute top-1/2 left-3 z-10 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
           />
-          <input
-            type="text"
-            value=""
-            onChange={() => {}}
-            onFocus={() => {
-              onCmdOpen();
-              (document.activeElement as HTMLElement)?.blur();
-            }}
-            placeholder={t("topbar.search_placeholder")}
-            aria-label={t("topbar.search_aria")}
-            autoComplete="off"
-            className="w-full cursor-pointer rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-16 pl-9 text-[13px] text-[color:var(--ds-text)] transition-[width,border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:max-w-lg focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
-            readOnly
-          />
+          <span className="block truncate">{t("topbar.search_placeholder")}</span>
           <kbd className="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 items-center gap-0.5 rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-subtle)] md:flex">
             <Command size={9} />K
           </kbd>
-        </div>
+        </button>
         {/* Mobile search icon — opens command palette */}
         <button
-          onClick={() => {
-            // Dispatch ⌘K to trigger command palette
-            window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
-          }}
+          onClick={onCmdOpen}
           className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none md:hidden"
           aria-label={t("topbar.search_aria")}
         >
@@ -555,18 +522,30 @@ export function Topbar({
                     const notifHref = n.caseSlug
                       ? `/dashboard/cases/${encodeURIComponent(n.caseSlug)}?tab=deadlines`
                       : null;
+                    // Row is a plain div; the navigate action and the mark-read
+                    // action are sibling buttons (no nested interactive controls).
                     return (
-                      <button
+                      <div
                         key={n.id}
-                        onClick={() => {
-                          if (notifHref) {
-                            router.push(notifHref);
-                            setNotifOpen(false);
-                          }
-                        }}
-                        className={`block w-full rounded-lg border p-3 text-left focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none ${notifHref ? "cursor-pointer hover:bg-[color:var(--ds-hover)]" : "cursor-default"} ${n.type === "deadline" ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : n.type === "reply" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
+                        className={`flex items-start gap-2 rounded-lg border p-3 ${n.type === "deadline" ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : n.type === "reply" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
                       >
-                        <div className="flex items-start justify-between gap-2">
+                        {notifHref ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              router.push(notifHref);
+                              setNotifOpen(false);
+                            }}
+                            className="min-w-0 flex-1 cursor-pointer rounded-md text-left transition-colors hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                          >
+                            <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
+                              {n.title}
+                            </div>
+                            <div className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                              {n.message}
+                            </div>
+                          </button>
+                        ) : (
                           <div className="min-w-0 flex-1">
                             <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
                               {n.title}
@@ -575,44 +554,35 @@ export function Topbar({
                               {n.message}
                             </div>
                           </div>
-                          {!n.read && (
-                            <span
-                              role="button"
-                              tabIndex={0}
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                if (n.id.startsWith("dl-")) {
-                                  setReadInlineIds((prev) => new Set(prev).add(n.id));
-                                  return;
-                                }
-                                try {
-                                  await csrfFetch("/api/notifications", {
-                                    method: "PATCH",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ id: n.id }),
-                                  });
-                                  setApiNotifications((prev) =>
-                                    prev.map((item) =>
-                                      item.id === n.id ? { ...item, read: true } : item
-                                    )
-                                  );
-                                } catch {}
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  (e.currentTarget as HTMLElement).click();
-                                }
-                              }}
-                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
-                              aria-label={t("topbar.mark_read")}
-                            >
-                              <Check size={12} />
-                            </span>
-                          )}
-                        </div>
-                      </button>
+                        )}
+                        {!n.read && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (n.id.startsWith("dl-")) {
+                                setReadInlineIds((prev) => new Set(prev).add(n.id));
+                                return;
+                              }
+                              try {
+                                await csrfFetch("/api/notifications", {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ id: n.id }),
+                                });
+                                setApiNotifications((prev) =>
+                                  prev.map((item) =>
+                                    item.id === n.id ? { ...item, read: true } : item
+                                  )
+                                );
+                              } catch {}
+                            }}
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                            aria-label={t("topbar.mark_read")}
+                          >
+                            <Check size={12} />
+                          </button>
+                        )}
+                      </div>
                     );
                   })
                 )}

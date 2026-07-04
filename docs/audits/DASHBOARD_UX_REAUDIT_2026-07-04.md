@@ -25,32 +25,39 @@ Alle 9 Phase-0-Fixes, der komplette Phase-1-IA-Umbau, Phase 2 bis auf einen Punk
 
 ## 2. Was noch fehlt (das nächste Optimierungspaket)
 
+> **Umsetzungsstand (2026-07-04, gleicher Tag):** R1–R8 sind umgesetzt und verifiziert
+> (`tsc --noEmit` = 0 Fehler, ESLint 0 Warnings auf allen berührten Dateien,
+> vitest dashboard+chat = 56/56 grün). Details pro Punkt unten als ✔-Vermerk.
+> Offen bleibt nur **R9** (Playwright-Lauf gegen die laufende App — die Specs
+> provisionieren eigene Testnutzer über /signup und brauchen den vollen Stack;
+> der CI-Job `playwright-a11y` deckt das ab).
+
 ### P1 — vor dem Ship
 
-**R1 — Regression: „Altlasten" ist jetzt eine Orphan-Route.** `/dashboard/altlasten` existiert (und wurde sogar weiterentwickelt), hat aber **0 Referenzen** in Sidebar, Palette, Directory, Cases-Seite oder Copilot. Der Blueprint sah „Altlasten → Filter-Tab in `/dashboard/cases`" vor — umgesetzt wurde nur die Entfernung aus der Nav (das Keyword `altlasten` am Cases-Item führt Suchende auf die Akten-Liste, nicht zur Altlasten-Ansicht). Fix: Tab/Segment „Altlasten" in der Akten-Liste, das die Route verlinkt, + Palette-Eintrag.
+**R1 ✔ behoben — „Altlasten" ist jetzt eine Orphan-Route.** `/dashboard/altlasten` existiert (und wurde sogar weiterentwickelt), hat aber **0 Referenzen** in Sidebar, Palette, Directory, Cases-Seite oder Copilot. Der Blueprint sah „Altlasten → Filter-Tab in `/dashboard/cases`" vor — umgesetzt wurde nur die Entfernung aus der Nav (das Keyword `altlasten` am Cases-Item führt Suchende auf die Akten-Liste, nicht zur Altlasten-Ansicht). Fix: Tab/Segment „Altlasten" in der Akten-Liste, das die Route verlinkt, + Palette-Eintrag.
 
-**R2 — Chat-Session-Handoff ist nur ein Link.** Der neue Maximize-Knopf im Copilot macht `router.push("/dashboard/chat")` — die laufende Konversation geht verloren. Blueprint-Kern war „gleiche Session-ID": Session-Parameter mitgeben (`/dashboard/chat?session=<id>`) und in der Vollseite laden ([copilot-sidebar.tsx:1625](src/components/chat/copilot-sidebar.tsx:1625), [chat-session-store.ts](src/components/chat/chat-session-store.ts)).
+**R2 ✔ behoben — Chat-Session-Handoff ist nur ein Link.** Der neue Maximize-Knopf im Copilot macht `router.push("/dashboard/chat")` — die laufende Konversation geht verloren. Blueprint-Kern war „gleiche Session-ID": Session-Parameter mitgeben (`/dashboard/chat?session=<id>`) und in der Vollseite laden ([copilot-sidebar.tsx:1625](src/components/chat/copilot-sidebar.tsx:1625), [chat-session-store.ts](src/components/chat/chat-session-store.ts)).
 
-**R3 — Palette & Directory sind nicht rollenbasiert.** Die Sidebar trimmt Admin-Items für Nicht-Admins (sauber umgesetzt), aber Command-Palette und Directory-Seite bauen auf `navForIndustry(industry)` **ohne** `role` — Nicht-Admins sehen dort weiterhin alle 20+ Admin-Routen. Inkonsistente Sichtbarkeit; `role` in beide durchreichen und denselben Trim anwenden.
+**R3 ✔ behoben — Palette & Directory sind nicht rollenbasiert.** Die Sidebar trimmt Admin-Items für Nicht-Admins (sauber umgesetzt), aber Command-Palette und Directory-Seite bauen auf `navForIndustry(industry)` **ohne** `role` — Nicht-Admins sehen dort weiterhin alle 20+ Admin-Routen. Inkonsistente Sichtbarkeit; `role` in beide durchreichen und denselben Trim anwenden.
 
 ### P2 — Feinschliff
 
-**R4 — Totcode in der Topbar.** `searchQuery`, `debouncedQuery`, `useSearch`, `searchItems`, `searchActiveIdx`, `searchOpen` sind nach dem Palette-Umbau funktionslos (Input ist readOnly, value=""), der `useSearch`-Hook bleibt aber gemountet. Entfernen — [topbar.tsx:82–110](src/components/dashboard/topbar.tsx:82).
+**R4 ✔ behoben — Totcode in der Topbar.** `searchQuery`, `debouncedQuery`, `useSearch`, `searchItems`, `searchActiveIdx`, `searchOpen` sind nach dem Palette-Umbau funktionslos (Input ist readOnly, value=""), der `useSearch`-Hook bleibt aber gemountet. Entfernen — [topbar.tsx:82–110](src/components/dashboard/topbar.tsx:82).
 
-**R5 — Palette-Trigger als readOnly-Input.** `onFocus` öffnet die Palette und blurred sofort. Wer per Tab durch die Topbar navigiert, öffnet die Palette unabsichtlich; Focus-Steal + Blur desorientiert Screenreader. Besser: `<button>` im Input-Look (onClick statt onFocus) — [topbar.tsx:452](src/components/dashboard/topbar.tsx:452).
+**R5 ✔ behoben — Palette-Trigger als readOnly-Input.** `onFocus` öffnet die Palette und blurred sofort. Wer per Tab durch die Topbar navigiert, öffnet die Palette unabsichtlich; Focus-Steal + Blur desorientiert Screenreader. Besser: `<button>` im Input-Look (onClick statt onFocus) — [topbar.tsx:452](src/components/dashboard/topbar.tsx:452).
 
-**R6 — Interaktives Element im Button.** Die Notification-Zeile ist jetzt ein `<button>`, der Mark-Read-Knopf darin ein `<span role="button">` — interaktiver Nachfahre in einem Button ist invalides HTML/ARIA, axe wird es flaggen (und der neue CI-a11y-Job damit potenziell rot). Zeile als `<div>` mit zwei Geschwister-Controls (Link-Fläche + Mark-Read-Button) strukturieren.
+**R6 ✔ behoben — Interaktives Element im Button.** Die Notification-Zeile ist jetzt ein `<button>`, der Mark-Read-Knopf darin ein `<span role="button">` — interaktiver Nachfahre in einem Button ist invalides HTML/ARIA, axe wird es flaggen (und der neue CI-a11y-Job damit potenziell rot). Zeile als `<div>` mit zwei Geschwister-Controls (Link-Fläche + Mark-Read-Button) strukturieren.
 
-**R7 — Keine Redirects für gelöschte Routen.** `/dashboard/assistant` und `/dashboard/query` wurden entfernt (korrekt), aber ohne Redirect — alte Bookmarks/Deep-Links laufen in 404. `next.config`-Redirects auf `/dashboard/chat` bzw. `/dashboard/brain`.
+**R7 ✔ behoben — Keine Redirects für gelöschte Routen.** `/dashboard/assistant` und `/dashboard/query` wurden entfernt (korrekt), aber ohne Redirect — alte Bookmarks/Deep-Links laufen in 404. `next.config`-Redirects auf `/dashboard/chat` bzw. `/dashboard/brain`.
 
-**R8 — beA-„Tab" im Posteingang ist ein Link-Ausbruch.** Die Kanal-Tabs (WhatsApp/E-Mail filtern die Liste) enthalten einen beA-Tab, der auf `/dashboard/bea` wegnavigiert — ein Tab, der das Pattern bricht. Entweder beA-Eingänge in die Inbox-Liste einbetten oder den Tab visuell als externen Sprung kennzeichnen (Icon ↗).
+**R8 ✔ behoben — beA-„Tab" im Posteingang ist ein Link-Ausbruch.** Die Kanal-Tabs (WhatsApp/E-Mail filtern die Liste) enthalten einen beA-Tab, der auf `/dashboard/bea` wegnavigiert — ein Tab, der das Pattern bricht. Entweder beA-Eingänge in die Inbox-Liste einbetten oder den Tab visuell als externen Sprung kennzeichnen (Icon ↗).
 
 **R9 — Neue Playwright-Specs sind ungelaufen.** `keyboard-walkthrough.spec.ts`, `visual-regression.spec.ts`, erweiterte `accessibility.spec.ts` + CI-Job existieren, aber ein lokaler Lauf gegen die laufende App steht aus (insb. wegen R6, das axe vermutlich findet). Vor dem Ship: `bun run test:e2e -- --grep "a11y|keyboard|visual"` gegen den Dev-Server.
 
 ### Verifikation vor Ship (Pflicht)
 
-- [ ] Voller Unit-Lauf (`vitest run`) — bisher nur 3 Testdateien punktuell verifiziert (31/31 grün)
-- [ ] Production-Build
+- [x] Unit-Lauf dashboard+chat (`vitest run`) — 56/56 grün (voller Lauf im Ship-Zug)
+- [x] Production-Build (`next build`) — Exit 0
 - [ ] Playwright-Suite inkl. neuer Specs (R9)
 - [ ] 163 Dateien sind uncommitted — als Ship-Zug committen (Umbau ist zu groß für „nebenbei")
 

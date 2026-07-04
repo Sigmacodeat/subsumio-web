@@ -19,6 +19,7 @@ export default function DirectoryPage() {
   const { t } = useLang();
   const meQuery = useMe();
   const industry = meQuery.data?.user?.industry ?? null;
+  const isAdmin = meQuery.data?.user?.role === "admin";
 
   const [query, setQuery] = useState("");
 
@@ -39,8 +40,11 @@ export default function DirectoryPage() {
         entries.push({ href: item.href, labelKey: item.labelKey, sectionKey: section.titleKey });
       }
     }
+    // Mirror the sidebar's role trim: non-admins only see admin-section items
+    // that are also bottom items (settings, team, audit, directory).
     for (const item of cfg.adminSection.items) {
       if (seen.has(item.href)) continue;
+      if (!isAdmin && !cfg.bottomItems.some((b) => b.href === item.href)) continue;
       seen.add(item.href);
       entries.push({
         href: item.href,
@@ -49,7 +53,7 @@ export default function DirectoryPage() {
       });
     }
     return entries;
-  }, [industry]);
+  }, [industry, isAdmin]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return allEntries;
