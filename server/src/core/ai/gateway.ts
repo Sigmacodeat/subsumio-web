@@ -2312,7 +2312,8 @@ export type ChatBlock =
       toolName: string;
       output: unknown;
       isError?: boolean;
-    };
+    }
+  | { type: "reasoning"; text: string };
 
 export interface ChatMessage {
   role: ChatRole;
@@ -2378,20 +2379,34 @@ export function toModelMessages(messages: ChatMessage[]): unknown[] {
       }
       continue;
     }
-    result.push({
+    // Assistant messages with tool-calls need reasoning_content round-tripped
+    // for DeepSeek thinking mode. If no reasoning block was captured, inject a
+    // zero-width space fallback (OpenRouter strips empty string reasoning).
+    const hasToolCalls = blocks.some((b) => b.type === "tool-call");
+    const reasoningBlock = blocks.find((b) => b.type === "reasoning");
+    const assistantMsg: Record<string, unknown> = {
       role: m.role,
-      content: blocks.map((b) => {
-        if (b.type === "text") return { type: "text" as const, text: b.text };
-        if (b.type === "tool-call")
-          return {
-            type: "tool-call" as const,
-            toolCallId: b.toolCallId,
-            toolName: b.toolName,
-            input: b.input,
-          };
-        return b;
-      }),
-    });
+      content: blocks
+        .filter((b) => b.type !== "reasoning")
+        .map((b) => {
+          if (b.type === "text") return { type: "text" as const, text: b.text };
+          if (b.type === "tool-call")
+            return {
+              type: "tool-call" as const,
+              toolCallId: b.toolCallId,
+              toolName: b.toolName,
+              input: b.input,
+            };
+          return b;
+        }),
+    };
+    if (hasToolCalls) {
+      // DeepSeek via OpenRouter requires reasoning_content on assistant messages
+      // that contain tool_calls. Use the captured reasoning, or a zero-width space
+      // fallback (OpenRouter strips empty strings but preserves zero-width spaces).
+      assistantMsg.reasoning = reasoningBlock?.text ?? "\u200B";
+    }
+    result.push(assistantMsg);
   }
   return result;
 }
@@ -2832,6 +2847,10 @@ export async function chat(opts: ChatOpts): Promise<ChatResult> {
             toolName: part.toolName,
             input: part.input ?? part.args,
           });
+        } else if (part.type === "reasoning" && typeof part.text === "string") {
+          // DeepSeek thinking mode: capture reasoning_content so it can be
+          // round-tripped back to the API on subsequent turns.
+          blocks.push({ type: "reasoning", text: part.text });
         }
       }
     } else {
