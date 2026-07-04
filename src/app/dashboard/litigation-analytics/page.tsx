@@ -121,7 +121,7 @@ export default function LitigationAnalyticsPage() {
   const fmtDays = (n: number) => `${Math.round(n)}d`;
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("analytics.title")}
         description={t("analytics.description")}

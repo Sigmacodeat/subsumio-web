@@ -229,7 +229,7 @@ export default function TaxAuditDetailPage() {
   const locale = lang === "en" ? "en-GB" : "de-DE";
 
   return (
-    <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[900px] space-y-6 p-4 md:p-6 lg:p-8">
       <Link
         href="/dashboard/tax-audit"
         className="inline-flex items-center gap-1 text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--brand-primary)]"

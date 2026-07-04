@@ -122,7 +122,7 @@ export default function CalendarPage() {
   const isLoading = deadlinesLoading || casesLoading;
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-[1400px] flex-col p-4 md:p-6 lg:p-8">
+    <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("calendar.title")}
         description={t("calendar.description")}

@@ -174,7 +174,7 @@ export default function ExperiencePage() {
   });
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t("experience.title")}</h1>

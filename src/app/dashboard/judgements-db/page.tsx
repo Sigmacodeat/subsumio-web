@@ -376,7 +376,7 @@ export default function JudgementsDbPage() {
   if (selectedId && detailLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );
   }
@@ -384,13 +384,13 @@ export default function JudgementsDbPage() {
   // ── Search View ─────────────────────────────────────────────────
 
   return (
-    <div className="flex h-full flex-col p-4 md:p-6">
+    <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col p-4 md:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-6 flex items-center gap-3">
-        <Database className="text-primary h-6 w-6" />
+        <Database className="h-6 w-6 text-[color:var(--brand-primary)]" />
         <div>
-          <h1 className="text-xl font-semibold">Urteils-Datenbank</h1>
-          <p className="text-muted-foreground text-sm">
+          <h1 className="text-xl font-semibold text-[color:var(--ds-text)]">Urteils-Datenbank</h1>
+          <p className="text-sm text-[color:var(--ds-text-muted)]">
             Semantische Suche · Citation Graph · Treatment Validation
           </p>
         </div>
@@ -424,21 +424,23 @@ export default function JudgementsDbPage() {
 
       {/* Embedding Status */}
       {embeddingStatus && (
-        <div className="bg-muted/30 mb-4 flex items-center justify-between rounded-lg border px-4 py-2">
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-2">
           <div className="flex items-center gap-2 text-xs">
             {embeddingStatus.available ? (
               <>
                 <CheckCircle className="h-4 w-4 text-emerald-500" />
-                <span className="text-muted-foreground">
+                <span className="text-[color:var(--ds-text-muted)]">
                   Embedding:{" "}
-                  <span className="text-foreground font-medium">{embeddingStatus.model}</span> ·{" "}
-                  {embeddingStatus.dimensions}d
+                  <span className="font-medium text-[color:var(--ds-text)]">
+                    {embeddingStatus.model}
+                  </span>{" "}
+                  · {embeddingStatus.dimensions}d
                 </span>
               </>
             ) : (
               <>
                 <AlertTriangle className="h-4 w-4 text-orange-500" />
-                <span className="text-muted-foreground">
+                <span className="text-[color:var(--ds-text-muted)]">
                   Embedding nicht verfügbar: {embeddingStatus.error}
                 </span>
               </>
@@ -448,7 +450,7 @@ export default function JudgementsDbPage() {
             <button
               onClick={triggerEmbedding}
               disabled={embedLoading}
-              className="hover:bg-background flex items-center gap-1 rounded border px-2 py-1 text-xs"
+              className="flex items-center gap-1 rounded border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)]"
             >
               {embedLoading ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -463,12 +465,12 @@ export default function JudgementsDbPage() {
 
       {/* Graph Embedding Status */}
       {graphEmbeddingStatus && (
-        <div className="bg-muted/30 mb-4 flex items-center justify-between rounded-lg border px-4 py-2">
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-2">
           <div className="flex items-center gap-2 text-xs">
             <GitBranch className="h-4 w-4 text-blue-500" />
-            <span className="text-muted-foreground">
+            <span className="text-[color:var(--ds-text-muted)]">
               GraphSAGE:{" "}
-              <span className="text-foreground font-medium">
+              <span className="font-medium text-[color:var(--ds-text)]">
                 {graphEmbeddingStatus.total_embeddings.toLocaleString("de-DE")}
               </span>{" "}
               Embeddings
@@ -487,7 +489,7 @@ export default function JudgementsDbPage() {
           <button
             onClick={triggerGraphEmbedding}
             disabled={graphLoading}
-            className="hover:bg-background flex items-center gap-1 rounded border px-2 py-1 text-xs"
+            className="flex items-center gap-1 rounded border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)]"
           >
             {graphLoading ? (
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -502,21 +504,23 @@ export default function JudgementsDbPage() {
       {/* Search Bar */}
       <div className="mb-4 flex gap-2">
         <div className="relative flex-1">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[color:var(--ds-text-muted)]" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (pipelineMode ? runPipelineSearch() : search())}
             placeholder="Suche nach Schlagwort, Aktenzeichen, Thema..."
-            className="bg-background focus:ring-primary w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm focus:ring-2 focus:outline-none"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-4 pl-10 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
           />
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
             "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors",
-            showFilters ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+            showFilters
+              ? "bg-[color:var(--brand-primary)] text-[color:var(--ds-text)]"
+              : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)]"
           )}
         >
           <Filter className="h-4 w-4" />
@@ -527,7 +531,9 @@ export default function JudgementsDbPage() {
           onClick={() => setPipelineMode(!pipelineMode)}
           className={cn(
             "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors",
-            pipelineMode ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+            pipelineMode
+              ? "bg-[color:var(--brand-primary)] text-[color:var(--ds-text)]"
+              : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)]"
           )}
           title="Multi-Agent Pipeline: Query-Routing → Retrieval → Validation → Synthesis"
         >
@@ -539,7 +545,9 @@ export default function JudgementsDbPage() {
           onClick={() => setRerank(!rerank)}
           className={cn(
             "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors",
-            rerank ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+            rerank
+              ? "bg-[color:var(--brand-primary)] text-[color:var(--ds-text)]"
+              : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)]"
           )}
           title="Cross-Encoder Reranking der Top-K Ergebnisse"
         >
@@ -549,7 +557,7 @@ export default function JudgementsDbPage() {
         <button
           onClick={pipelineMode ? runPipelineSearch : search}
           disabled={(pipelineMode ? pipelineLoading : loading) || !query.trim()}
-          className="bg-primary text-primary-foreground flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-50"
+          className="flex items-center gap-2 rounded-lg bg-[color:var(--brand-primary)] px-4 py-2.5 text-sm font-medium text-[color:var(--ds-text)] disabled:opacity-50"
         >
           {(pipelineMode ? pipelineLoading : loading) ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -564,8 +572,10 @@ export default function JudgementsDbPage() {
 
       {/* Pipeline Options */}
       {pipelineMode && (
-        <div className="bg-muted/30 mb-4 flex items-center gap-4 rounded-lg border px-4 py-2">
-          <span className="text-muted-foreground text-xs font-medium">Pipeline-Optionen:</span>
+        <div className="mb-4 flex items-center gap-4 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-2">
+          <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+            Pipeline-Optionen:
+          </span>
           <label className="flex cursor-pointer items-center gap-1.5 text-xs">
             <input
               type="checkbox"
@@ -591,11 +601,11 @@ export default function JudgementsDbPage() {
 
       {/* Filters */}
       {showFilters && (
-        <div className="bg-muted/30 mb-4 grid grid-cols-1 gap-3 rounded-lg border p-4 sm:grid-cols-2 md:grid-cols-4">
+        <div className="mb-4 grid grid-cols-1 gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4 sm:grid-cols-2 md:grid-cols-4">
           <select
             value={filters.jurisdiction}
             onChange={(e) => setFilters({ ...filters, jurisdiction: e.target.value })}
-            className="bg-background rounded border px-3 py-2 text-sm"
+            className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
           >
             <option value="de">Deutschland</option>
             <option value="at">Österreich</option>
@@ -607,12 +617,12 @@ export default function JudgementsDbPage() {
             placeholder="Gericht"
             value={filters.court}
             onChange={(e) => setFilters({ ...filters, court: e.target.value })}
-            className="bg-background rounded border px-3 py-2 text-sm"
+            className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
           />
           <select
             value={filters.courtLevel}
             onChange={(e) => setFilters({ ...filters, courtLevel: e.target.value })}
-            className="bg-background rounded border px-3 py-2 text-sm"
+            className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
           >
             <option value="">Alle Instanzen</option>
             <option value="supreme">Obergericht</option>
@@ -623,7 +633,7 @@ export default function JudgementsDbPage() {
           <select
             value={filters.treatmentStatus}
             onChange={(e) => setFilters({ ...filters, treatmentStatus: e.target.value })}
-            className="bg-background rounded border px-3 py-2 text-sm"
+            className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
           >
             <option value="">Alle Behandlungen</option>
             <option value="good_law">Good Law</option>
@@ -637,14 +647,14 @@ export default function JudgementsDbPage() {
             placeholder="Von"
             value={filters.dateFrom}
             onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-            className="bg-background rounded border px-3 py-2 text-sm"
+            className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
           />
           <input
             type="date"
             placeholder="Bis"
             value={filters.dateTo}
             onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-            className="bg-background rounded border px-3 py-2 text-sm"
+            className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
           />
         </div>
       )}
@@ -662,7 +672,7 @@ export default function JudgementsDbPage() {
         {pipelineResult && <PipelinePanel result={pipelineResult} />}
 
         {results.length > 0 && (
-          <div className="text-muted-foreground mb-2 flex items-center justify-between text-xs">
+          <div className="mb-2 flex items-center justify-between text-xs text-[color:var(--ds-text-muted)]">
             <span>
               {total} Treffer · Modus:{" "}
               {mode === "hybrid" ? "Hybrid (BM25 + Vector + Citation)" : "BM25 (Volltext)"}
@@ -673,19 +683,27 @@ export default function JudgementsDbPage() {
         )}
 
         {results.length === 0 && !loading && !pipelineLoading && query && (
-          <div className="text-muted-foreground flex flex-col items-center justify-center py-12">
+          <div className="flex flex-col items-center justify-center py-12 text-[color:var(--ds-text-muted)]">
             <Search className="mb-3 h-10 w-10 opacity-30" />
             <p className="text-sm">Keine Treffer — versuchen Sie eine andere Suchanfrage.</p>
           </div>
         )}
 
         {results.length === 0 && !loading && !pipelineLoading && !query && (
-          <div className="text-muted-foreground flex flex-col items-center justify-center py-12">
+          <div className="flex flex-col items-center justify-center py-12 text-[color:var(--ds-text-muted)]">
             <Landmark className="mb-3 h-10 w-10 opacity-30" />
             <p className="text-sm">Suchen Sie nach Urteilen, Aktenzeichen oder Rechtsgebieten.</p>
             <p className="mt-1 text-xs">Hybrid-Suche: BM25 + Vector + Citation Graph</p>
-            {rerank && <p className="text-primary text-xs">Cross-Encoder Reranking aktiv</p>}
-            {pipelineMode && <p className="text-primary text-xs">Multi-Agent Pipeline aktiv</p>}
+            {rerank && (
+              <p className="text-xs text-[color:var(--brand-primary)]">
+                Cross-Encoder Reranking aktiv
+              </p>
+            )}
+            {pipelineMode && (
+              <p className="text-xs text-[color:var(--brand-primary)]">
+                Multi-Agent Pipeline aktiv
+              </p>
+            )}
           </div>
         )}
 
@@ -703,13 +721,13 @@ export default function JudgementsDbPage() {
 
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="bg-card flex items-center gap-3 rounded-lg border p-3">
-      <div className="bg-primary/10 text-primary flex h-9 w-9 items-center justify-center rounded-md">
+    <div className="flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+      <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]">
         {icon}
       </div>
       <div>
-        <p className="text-muted-foreground text-xs">{label}</p>
-        <p className="text-lg font-semibold">{value}</p>
+        <p className="text-xs text-[color:var(--ds-text-muted)]">{label}</p>
+        <p className="text-lg font-semibold text-[color:var(--ds-text)]">{value}</p>
       </div>
     </div>
   );
@@ -722,24 +740,30 @@ function ResultCard({ result, onClick }: { result: SearchResult; onClick: () => 
   return (
     <button
       onClick={onClick}
-      className="bg-card hover:border-primary/50 hover:bg-accent/30 w-full rounded-lg border p-4 text-left transition-colors"
+      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-colors hover:border-[color:var(--brand-primary)]/50 hover:bg-[color:var(--ds-surface-2)]"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{result.court}</span>
+            <span className="text-sm font-medium text-[color:var(--ds-text)]">{result.court}</span>
             {result.file_number && (
-              <span className="text-muted-foreground text-xs">— {result.file_number}</span>
+              <span className="text-xs text-[color:var(--ds-text-muted)]">
+                — {result.file_number}
+              </span>
             )}
             {result.decision_date && (
-              <span className="text-muted-foreground text-xs">
+              <span className="text-xs text-[color:var(--ds-text-muted)]">
                 · {new Date(result.decision_date).toLocaleDateString("de-DE")}
               </span>
             )}
           </div>
-          <h3 className="mt-1 truncate text-sm font-medium">{result.title}</h3>
+          <h3 className="mt-1 truncate text-sm font-medium text-[color:var(--ds-text)]">
+            {result.title}
+          </h3>
           {result.snippet && (
-            <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{result.snippet}</p>
+            <p className="mt-1 line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
+              {result.snippet}
+            </p>
           )}
           <div className="mt-2 flex items-center gap-3 text-xs">
             <span className={cn("flex items-center gap-1 rounded px-2 py-0.5", treatmentColor)}>
@@ -747,7 +771,7 @@ function ResultCard({ result, onClick }: { result: SearchResult; onClick: () => 
               {TREATMENT_LABELS[result.treatment_status]?.de ?? result.treatment_status}
             </span>
             {result.citation_count > 0 && (
-              <span className="text-muted-foreground flex items-center gap-1">
+              <span className="flex items-center gap-1 text-[color:var(--ds-text-muted)]">
                 <GitBranch className="h-3 w-3" />
                 {result.citation_count} Zitate
               </span>
@@ -769,7 +793,7 @@ function ResultCard({ result, onClick }: { result: SearchResult; onClick: () => 
             )}
           </div>
         </div>
-        <ChevronRight className="text-muted-foreground h-5 w-5 shrink-0" />
+        <ChevronRight className="h-5 w-5 shrink-0 text-[color:var(--ds-text-muted)]" />
       </div>
     </button>
   );
@@ -793,13 +817,13 @@ function PipelinePanel({ result }: { result: PipelineResultData }) {
   return (
     <div className="mb-6 space-y-4">
       {/* Pipeline Steps */}
-      <div className="bg-card rounded-lg border p-4">
+      <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="flex items-center gap-2 text-sm font-medium">
-            <Brain className="text-primary h-4 w-4" />
+          <h3 className="flex items-center gap-2 text-sm font-medium text-[color:var(--ds-text)]">
+            <Brain className="h-4 w-4 text-[color:var(--brand-primary)]" />
             Multi-Agent Pipeline
           </h3>
-          <span className="text-muted-foreground flex items-center gap-1 text-xs">
+          <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
             <Clock className="h-3 w-3" />
             {(result.total_duration_ms / 1000).toFixed(1)}s
           </span>
@@ -819,18 +843,19 @@ function PipelinePanel({ result }: { result: PipelineResultData }) {
                     "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30",
                   step.status === "running" &&
                     "border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30",
-                  step.status === "pending" && "border-muted bg-muted/30"
+                  step.status === "pending" &&
+                    "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
                 )}
               >
                 <div className="flex items-center gap-1.5">
                   <Icon className="h-3 w-3" />
-                  <span className="font-medium">{label}</span>
+                  <span className="font-medium text-[color:var(--ds-text)]">{label}</span>
                   {step.status === "running" && <Loader2 className="h-3 w-3 animate-spin" />}
                   {step.status === "done" && <CheckCircle className="h-3 w-3 text-emerald-500" />}
                   {step.status === "error" && <XCircle className="h-3 w-3 text-red-500" />}
                 </div>
                 {step.duration_ms !== undefined && (
-                  <p className="text-muted-foreground mt-0.5">
+                  <p className="mt-0.5 text-[color:var(--ds-text-muted)]">
                     {(step.duration_ms / 1000).toFixed(1)}s
                   </p>
                 )}
@@ -843,23 +868,28 @@ function PipelinePanel({ result }: { result: PipelineResultData }) {
 
       {/* Routing Info */}
       {result.routing && (
-        <div className="bg-card rounded-lg border p-4">
-          <h4 className="text-muted-foreground mb-2 text-xs font-medium">Query Routing</h4>
+        <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <h4 className="mb-2 text-xs font-medium text-[color:var(--ds-text-muted)]">
+            Query Routing
+          </h4>
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="bg-primary/10 text-primary rounded px-2 py-0.5 font-medium">
+            <span className="rounded bg-[color:var(--brand-primary)]/10 px-2 py-0.5 font-medium text-[color:var(--brand-primary)]">
               {result.routing.intent}
             </span>
-            <span className="bg-muted rounded px-2 py-0.5">
+            <span className="rounded bg-[color:var(--ds-surface-2)] px-2 py-0.5 text-[color:var(--ds-text-muted)]">
               Strategy: {result.routing.search_strategy}
             </span>
             {result.routing.legal_concepts.map((concept, i) => (
-              <span key={i} className="bg-muted rounded px-2 py-0.5">
+              <span
+                key={i}
+                className="rounded bg-[color:var(--ds-surface-2)] px-2 py-0.5 text-[color:var(--ds-text-muted)]"
+              >
                 {concept}
               </span>
             ))}
           </div>
           {result.routing.expanded_query !== result.query && (
-            <p className="text-muted-foreground mt-2 text-xs italic">
+            <p className="mt-2 text-xs text-[color:var(--ds-text-muted)] italic">
               Expanded: &quot;{result.routing.expanded_query}&quot;
             </p>
           )}
@@ -868,8 +898,10 @@ function PipelinePanel({ result }: { result: PipelineResultData }) {
 
       {/* Validation Summary */}
       {result.validation_summary && (
-        <div className="bg-card rounded-lg border p-4">
-          <h4 className="text-muted-foreground mb-2 text-xs font-medium">Citation Validation</h4>
+        <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <h4 className="mb-2 text-xs font-medium text-[color:var(--ds-text-muted)]">
+            Citation Validation
+          </h4>
           <div className="flex gap-4 text-xs">
             <span className="flex items-center gap-1 text-emerald-600">
               <CheckCircle2 className="h-3 w-3" />
@@ -893,9 +925,9 @@ function PipelinePanel({ result }: { result: PipelineResultData }) {
 
       {/* Synthesized Answer */}
       {result.answer && (
-        <div className="bg-card rounded-lg border p-4">
-          <h4 className="text-muted-foreground mb-2 flex items-center gap-2 text-xs font-medium">
-            <Sparkles className="text-primary h-3 w-3" />
+        <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <h4 className="mb-2 flex items-center gap-2 text-xs font-medium text-[color:var(--ds-text-muted)]">
+            <Sparkles className="h-3 w-3 text-[color:var(--brand-primary)]" />
             Synthesized Answer
           </h4>
           <div className="prose prose-sm max-w-none text-sm leading-relaxed whitespace-pre-wrap">
@@ -906,8 +938,8 @@ function PipelinePanel({ result }: { result: PipelineResultData }) {
 
       {/* Citations */}
       {result.citations.length > 0 && (
-        <div className="bg-card rounded-lg border p-4">
-          <h4 className="text-muted-foreground mb-2 text-xs font-medium">Citations</h4>
+        <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <h4 className="mb-2 text-xs font-medium text-[color:var(--ds-text-muted)]">Citations</h4>
           <div className="space-y-1">
             {result.citations.slice(0, 10).map((cite, i) => (
               <div key={i} className="flex items-center justify-between text-xs">
@@ -915,7 +947,9 @@ function PipelinePanel({ result }: { result: PipelineResultData }) {
                   [{i + 1}] {cite.court} — {cite.title}
                   {cite.file_number && ` (${cite.file_number})`}
                 </span>
-                <span className="text-muted-foreground ml-2 shrink-0">{cite.treatment}</span>
+                <span className="ml-2 shrink-0 text-[color:var(--ds-text-muted)]">
+                  {cite.treatment}
+                </span>
               </div>
             ))}
           </div>
@@ -939,11 +973,11 @@ function DetailPanel({
   const [validating, setValidating] = useState(false);
 
   return (
-    <div className="flex h-full flex-col p-4 md:p-6">
+    <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col p-4 md:p-6 lg:p-8">
       {/* Back */}
       <button
         onClick={onBack}
-        className="text-muted-foreground hover:text-foreground mb-4 flex items-center gap-1 text-sm"
+        className="mb-4 flex items-center gap-1 text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
       >
         <ArrowLeft className="h-4 w-4" />
         Zurück zur Suche
@@ -951,7 +985,7 @@ function DetailPanel({
 
       {/* Header */}
       <div className="mb-6">
-        <div className="text-muted-foreground flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 text-sm text-[color:var(--ds-text-muted)]">
           <Scale className="h-4 w-4" />
           {detail.court}
           {detail.file_number && <span>— {detail.file_number}</span>}
@@ -959,8 +993,10 @@ function DetailPanel({
             <span>· {new Date(detail.decision_date).toLocaleDateString("de-DE")}</span>
           )}
         </div>
-        <h1 className="mt-2 text-xl font-semibold">{detail.title}</h1>
-        {detail.ecli && <p className="text-muted-foreground mt-1 text-xs">ECLI: {detail.ecli}</p>}
+        <h1 className="mt-2 text-xl font-semibold text-[color:var(--ds-text)]">{detail.title}</h1>
+        {detail.ecli && (
+          <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">ECLI: {detail.ecli}</p>
+        )}
       </div>
 
       {/* Treatment Status */}
@@ -968,7 +1004,7 @@ function DetailPanel({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <TreatmentIcon className="h-5 w-5" />
-            <span className="font-medium">
+            <span className="font-medium text-[color:var(--ds-text)]">
               {TREATMENT_LABELS[detail.treatment_status]?.de ?? detail.treatment_status}
             </span>
           </div>
@@ -1024,11 +1060,11 @@ function DetailPanel({
       {/* Content */}
       {detail.content && (
         <div className="mb-6">
-          <h2 className="mb-2 text-sm font-medium">Volltext</h2>
-          <div className="bg-card max-h-96 overflow-y-auto rounded-lg border p-4 text-sm leading-relaxed">
+          <h2 className="mb-2 text-sm font-medium text-[color:var(--ds-text)]">Volltext</h2>
+          <div className="max-h-96 overflow-y-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm leading-relaxed text-[color:var(--ds-text)]">
             {detail.content.slice(0, 5000)}
             {detail.content.length > 5000 && (
-              <p className="text-muted-foreground mt-2 text-xs">
+              <p className="mt-2 text-xs text-[color:var(--ds-text-muted)]">
                 ... ({detail.content.length - 5000} weitere Zeichen)
               </p>
             )}
@@ -1040,13 +1076,13 @@ function DetailPanel({
       <div className="grid gap-6 md:grid-cols-2">
         {/* Outgoing */}
         <div>
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-medium text-[color:var(--ds-text)]">
             <GitBranch className="h-4 w-4" />
             Zitiert ({detail.citation_graph.outgoing.length})
           </h2>
           <div className="space-y-2">
             {detail.citation_graph.outgoing.length === 0 ? (
-              <p className="text-muted-foreground text-xs">Keine Zitate extrahiert.</p>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">Keine Zitate extrahiert.</p>
             ) : (
               detail.citation_graph.outgoing
                 .slice(0, 20)
@@ -1057,13 +1093,13 @@ function DetailPanel({
 
         {/* Incoming */}
         <div>
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-medium text-[color:var(--ds-text)]">
             <FileText className="h-4 w-4" />
             Wird zitiert von ({detail.citation_graph.incoming.length})
           </h2>
           <div className="space-y-2">
             {detail.citation_graph.incoming.length === 0 ? (
-              <p className="text-muted-foreground text-xs">Keine eingehenden Zitate.</p>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">Keine eingehenden Zitate.</p>
             ) : (
               detail.citation_graph.incoming
                 .slice(0, 20)
@@ -1087,9 +1123,9 @@ function CitationItem({ cite }: { cite: CitationNode; direction: "outgoing" | "i
   };
 
   return (
-    <div className="bg-card rounded border p-3 text-xs">
+    <div className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-xs text-[color:var(--ds-text)]">
       <div className="flex items-center justify-between">
-        <span className="font-medium">{cite.reference}</span>
+        <span className="font-medium text-[color:var(--ds-text)]">{cite.reference}</span>
         <span
           className={cn("font-medium", treatmentColors[cite.treatment] ?? treatmentColors.unknown)}
         >
@@ -1097,13 +1133,13 @@ function CitationItem({ cite }: { cite: CitationNode; direction: "outgoing" | "i
         </span>
       </div>
       {(cite.court || cite.decision_date) && (
-        <p className="text-muted-foreground mt-1">
+        <p className="mt-1 text-[color:var(--ds-text-muted)]">
           {cite.court}
           {cite.decision_date && ` · ${new Date(cite.decision_date).toLocaleDateString("de-DE")}`}
         </p>
       )}
       {cite.context && (
-        <p className="text-muted-foreground mt-1 line-clamp-2 italic">
+        <p className="mt-1 line-clamp-2 text-[color:var(--ds-text-muted)] italic">
           &ldquo;{cite.context.slice(0, 200)}&rdquo;
         </p>
       )}

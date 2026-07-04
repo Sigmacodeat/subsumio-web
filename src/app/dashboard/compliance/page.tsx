@@ -269,7 +269,7 @@ export default function CompliancePage() {
   const failCount = checks.filter((c) => statusOf(c) === "fail").length;
 
   return (
-    <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("compliance.title")}
         description={t("compliance.description")}

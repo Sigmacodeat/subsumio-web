@@ -254,7 +254,7 @@ export default function TemplateLibraryPage() {
   const categoryLabel = (cat: string) => t(`templates.cat_${cat}` as DashboardKey);
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("templates.title")}
         description={t("templates.description")}

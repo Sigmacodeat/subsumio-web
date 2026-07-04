@@ -249,197 +249,199 @@ export default function GraphPage() {
   };
 
   return (
-    <div className="flex h-full overflow-hidden">
-      <div className="relative flex-1 bg-[color:var(--ds-bg)]">
-        {loading ? (
-          <div className="flex h-full flex-col items-center justify-center">
-            <Loader2 size={32} className="mb-3 animate-spin text-[color:var(--ds-text-muted)]" />
-            <p className="text-sm text-[color:var(--ds-text-muted)]">{t("graph.loading")}</p>
-          </div>
-        ) : isEmpty ? (
-          <div className="flex h-full flex-col items-center justify-center text-center">
-            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
-              <Network size={28} className="text-[color:var(--ds-border-strong)]" />
+    <div className="flex h-full flex-col p-4 md:p-6 lg:p-8">
+      <div className="flex h-full overflow-hidden">
+        <div className="relative flex-1 bg-[color:var(--ds-bg)]">
+          {loading ? (
+            <div className="flex h-full flex-col items-center justify-center">
+              <Loader2 size={32} className="mb-3 animate-spin text-[color:var(--ds-text-muted)]" />
+              <p className="text-sm text-[color:var(--ds-text-muted)]">{t("graph.loading")}</p>
             </div>
-            <h3 className="mb-2 text-lg font-semibold tracking-tight text-[color:var(--ds-text)]">
-              {t("graph.empty_title")}
-            </h3>
-            <p className="mb-2 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-              {t("graph.empty_hint")}
-            </p>
-            {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
-          </div>
-        ) : (
-          <>
-            <canvas
-              ref={canvasRef}
-              className="h-full w-full cursor-crosshair"
-              style={{ width: "100%", height: "100%" }}
-            />
-
-            <div className="absolute top-4 left-4 flex items-center gap-2">
-              <div className="flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-1 backdrop-blur">
-                <button
-                  onClick={() => setZoom((z) => Math.min(z + 0.2, 3))}
-                  className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
-                >
-                  <ZoomIn size={14} />
-                </button>
-                <span className="px-2 font-mono text-xs text-[color:var(--ds-text-muted)]">
-                  {Math.round(zoom * 100)}%
-                </span>
-                <button
-                  onClick={() => setZoom((z) => Math.max(z - 0.2, 0.3))}
-                  className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
-                >
-                  <ZoomOut size={14} />
-                </button>
-                <button
-                  onClick={() => setZoom(1)}
-                  className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
-                >
-                  <Maximize2 size={14} />
-                </button>
+          ) : isEmpty ? (
+            <div className="flex h-full flex-col items-center justify-center text-center">
+              <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
+                <Network size={28} className="text-[color:var(--ds-border-strong)]" />
               </div>
-              <button
-                onClick={loadGraph}
-                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-2 text-[color:var(--ds-text-muted)] backdrop-blur transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-              >
-                <RefreshCw size={14} />
-              </button>
-            </div>
-
-            <div className="absolute bottom-4 left-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-4 backdrop-blur">
-              <p className="mb-3 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                Legende
+              <h3 className="mb-2 text-lg font-semibold tracking-tight text-[color:var(--ds-text)]">
+                {t("graph.empty_title")}
+              </h3>
+              <p className="mb-2 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+                {t("graph.empty_hint")}
               </p>
-              <div className="space-y-2">
-                {Object.entries(nodeColors)
-                  .slice(0, 4)
-                  .map(([type, color]) => (
-                    <div key={type} className="flex items-center gap-2">
-                      <div
-                        className="h-3 w-3 rounded-full border-2"
-                        style={{ borderColor: color, backgroundColor: color + "20" }}
-                      />
-                      <span className="text-xs text-[color:var(--ds-text-muted)] capitalize">
-                        {type}
-                      </span>
-                    </div>
-                  ))}
+              {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+            </div>
+          ) : (
+            <>
+              <canvas
+                ref={canvasRef}
+                className="h-full w-full cursor-crosshair"
+                style={{ width: "100%", height: "100%" }}
+              />
+
+              <div className="absolute top-4 left-4 flex items-center gap-2">
+                <div className="flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-1 backdrop-blur">
+                  <button
+                    onClick={() => setZoom((z) => Math.min(z + 0.2, 3))}
+                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
+                  >
+                    <ZoomIn size={14} />
+                  </button>
+                  <span className="px-2 font-mono text-xs text-[color:var(--ds-text-muted)]">
+                    {Math.round(zoom * 100)}%
+                  </span>
+                  <button
+                    onClick={() => setZoom((z) => Math.max(z - 0.2, 0.3))}
+                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
+                  >
+                    <ZoomOut size={14} />
+                  </button>
+                  <button
+                    onClick={() => setZoom(1)}
+                    className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
+                  >
+                    <Maximize2 size={14} />
+                  </button>
+                </div>
+                <button
+                  onClick={loadGraph}
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-2 text-[color:var(--ds-text-muted)] backdrop-blur transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                >
+                  <RefreshCw size={14} />
+                </button>
+              </div>
+
+              <div className="absolute bottom-4 left-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-4 backdrop-blur">
+                <p className="mb-3 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                  Legende
+                </p>
+                <div className="space-y-2">
+                  {Object.entries(nodeColors)
+                    .slice(0, 4)
+                    .map(([type, color]) => (
+                      <div key={type} className="flex items-center gap-2">
+                        <div
+                          className="h-3 w-3 rounded-full border-2"
+                          style={{ borderColor: color, backgroundColor: color + "20" }}
+                        />
+                        <span className="text-xs text-[color:var(--ds-text-muted)] capitalize">
+                          {type}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              <div className="absolute top-4 right-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-4 text-right backdrop-blur">
+                <div className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                  {t("graph.title")}
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono text-sm text-[color:var(--ds-text)]">
+                    {nodes.length}{" "}
+                    <span className="text-[color:var(--ds-text-muted)]">{t("graph.nodes")}</span>
+                  </div>
+                  <div className="font-mono text-sm text-[color:var(--ds-text)]">
+                    {links.length}{" "}
+                    <span className="text-[color:var(--ds-text-muted)]">{t("graph.edges")}</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {selected && (
+          <div className="w-72 shrink-0 overflow-y-auto border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+            <div className="mb-5 flex items-start gap-3">
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                style={{
+                  backgroundColor: (nodeColors[selected.type] || GRAPH_FALLBACK_HEX) + "20",
+                  border: `1px solid ${nodeColors[selected.type] || GRAPH_FALLBACK_HEX}40`,
+                }}
+              >
+                {(() => {
+                  const Icon = typeIconMap[selected.type] || FileText;
+                  return (
+                    <Icon
+                      size={17}
+                      style={{ color: nodeColors[selected.type] || GRAPH_FALLBACK_HEX }}
+                    />
+                  );
+                })()}
+              </div>
+              <div>
+                <h3 className="text-base font-semibold tracking-tight text-[color:var(--ds-text)]">
+                  {selected.name}
+                </h3>
+                <Badge
+                  variant={(selected.type as Parameters<typeof Badge>[0]["variant"]) || "default"}
+                  className="mt-1.5"
+                >
+                  {selected.type}
+                </Badge>
               </div>
             </div>
 
-            <div className="absolute top-4 right-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-4 text-right backdrop-blur">
-              <div className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                {t("graph.title")}
+            <div className="space-y-4">
+              <div>
+                <p className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                  Slug
+                </p>
+                <p className="brand-text brand-soft rounded-lg px-3 py-2 font-mono text-sm">
+                  {selected.id}
+                </p>
               </div>
-              <div className="space-y-1">
-                <div className="font-mono text-sm text-[color:var(--ds-text)]">
-                  {nodes.length}{" "}
-                  <span className="text-[color:var(--ds-text-muted)]">{t("graph.nodes")}</span>
-                </div>
-                <div className="font-mono text-sm text-[color:var(--ds-text)]">
-                  {links.length}{" "}
-                  <span className="text-[color:var(--ds-text-muted)]">{t("graph.edges")}</span>
-                </div>
+              <div>
+                <p className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                  Verbindungen
+                </p>
+                <p className="font-mono text-2xl font-bold text-[color:var(--ds-text)] tabular-nums">
+                  {selected.connections}
+                </p>
               </div>
+
+              <div>
+                <p className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                  Kanten
+                </p>
+                {links
+                  .filter((l) => {
+                    const src = typeof l.source === "string" ? l.source : l.source.id;
+                    const tgt = typeof l.target === "string" ? l.target : l.target.id;
+                    return src === selected.id || tgt === selected.id;
+                  })
+                  .map((link, i) => {
+                    const src = typeof link.source === "string" ? link.source : link.source.id;
+                    const tgt = typeof link.target === "string" ? link.target : link.target.id;
+                    const other = src === selected.id ? tgt : src;
+                    const otherNode = nodes.find((n) => n.id === other);
+                    return (
+                      <div key={i} className="mb-2 flex items-center gap-2 text-xs">
+                        <span className="brand-text brand-soft rounded px-2 py-0.5 font-mono">
+                          {link.type}
+                        </span>
+                        <span className="text-[color:var(--ds-text-muted)]">→</span>
+                        <span className="text-[color:var(--ds-text)]">
+                          {otherNode?.name || other}
+                        </span>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              <Button
+                variant="outline"
+                size="md"
+                className="w-full"
+                onClick={() => router.push(`/dashboard/brain/${encodeURIComponent(selected.id)}`)}
+              >
+                Seite öffnen
+              </Button>
             </div>
-          </>
+          </div>
         )}
       </div>
-
-      {selected && (
-        <div className="w-72 shrink-0 overflow-y-auto border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-          <div className="mb-5 flex items-start gap-3">
-            <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-              style={{
-                backgroundColor: (nodeColors[selected.type] || GRAPH_FALLBACK_HEX) + "20",
-                border: `1px solid ${nodeColors[selected.type] || GRAPH_FALLBACK_HEX}40`,
-              }}
-            >
-              {(() => {
-                const Icon = typeIconMap[selected.type] || FileText;
-                return (
-                  <Icon
-                    size={17}
-                    style={{ color: nodeColors[selected.type] || GRAPH_FALLBACK_HEX }}
-                  />
-                );
-              })()}
-            </div>
-            <div>
-              <h3 className="text-base font-semibold tracking-tight text-[color:var(--ds-text)]">
-                {selected.name}
-              </h3>
-              <Badge
-                variant={(selected.type as Parameters<typeof Badge>[0]["variant"]) || "default"}
-                className="mt-1.5"
-              >
-                {selected.type}
-              </Badge>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <p className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                Slug
-              </p>
-              <p className="brand-text brand-soft rounded-lg px-3 py-2 font-mono text-sm">
-                {selected.id}
-              </p>
-            </div>
-            <div>
-              <p className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                Verbindungen
-              </p>
-              <p className="font-mono text-2xl font-bold text-[color:var(--ds-text)] tabular-nums">
-                {selected.connections}
-              </p>
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                Kanten
-              </p>
-              {links
-                .filter((l) => {
-                  const src = typeof l.source === "string" ? l.source : l.source.id;
-                  const tgt = typeof l.target === "string" ? l.target : l.target.id;
-                  return src === selected.id || tgt === selected.id;
-                })
-                .map((link, i) => {
-                  const src = typeof link.source === "string" ? link.source : link.source.id;
-                  const tgt = typeof link.target === "string" ? link.target : link.target.id;
-                  const other = src === selected.id ? tgt : src;
-                  const otherNode = nodes.find((n) => n.id === other);
-                  return (
-                    <div key={i} className="mb-2 flex items-center gap-2 text-xs">
-                      <span className="brand-text brand-soft rounded px-2 py-0.5 font-mono">
-                        {link.type}
-                      </span>
-                      <span className="text-[color:var(--ds-text-muted)]">→</span>
-                      <span className="text-[color:var(--ds-text)]">
-                        {otherNode?.name || other}
-                      </span>
-                    </div>
-                  );
-                })}
-            </div>
-
-            <Button
-              variant="outline"
-              size="md"
-              className="w-full"
-              onClick={() => router.push(`/dashboard/brain/${encodeURIComponent(selected.id)}`)}
-            >
-              Seite öffnen
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
