@@ -76,6 +76,7 @@ import {
   detectParteirolle,
   type DraftPackage,
   type Parteirolle,
+  type Nebenverfahren,
 } from "../../legal/draft-packages.ts";
 import { runContradictionProbe } from "../../eval-contradictions/runner.ts";
 import { writeRunRow } from "../../eval-contradictions/trends.ts";
@@ -182,6 +183,23 @@ export interface LegalPipelineData {
    * Example: ["39-st-116-22v", "63-st-85-25s", "23-st-4-22f"]
    */
   linked_cases?: string[];
+  /**
+   * Phase A: Additional opponents for multi-track cases.
+   * When set, the draft resolver expands per-opponent packages (e.g. DSGVO-Beschwerde
+   * per datenverantwortlicher) and the limitation scanner attributes claims to specific opponents.
+   */
+  additional_opponents?: Array<{
+    name: string;
+    slug?: string;
+    rolle: string;
+    verfahrensschiene?: string;
+    haftungsgrund?: string;
+  }>;
+  /**
+   * Phase C: Active Nebenverfahren (side tracks) for this case.
+   * When set, the draft resolver appends the corresponding draft packages.
+   */
+  nebenverfahren?: string[];
 }
 
 interface PipelineState {
@@ -1416,6 +1434,8 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             data.verfahrenstyp ??
             (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
           parteirolle,
+          additionalOpponents: data.additional_opponents,
+          nebenverfahren: data.nebenverfahren,
           sourceStamp,
         });
         await updateLayerState(
@@ -1477,6 +1497,8 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
                 data.verfahrenstyp ??
                 (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
               parteirolle,
+              additionalOpponents: data.additional_opponents,
+              nebenverfahren: data.nebenverfahren,
               sourceStamp,
             });
             state.layers[6]!.output_slugs = revisedSlugs;
@@ -1784,6 +1806,7 @@ async function runMapReduceLayer(opts: {
         : userPrompt,
       subagent_def: specialistName,
       max_turns: def.maxTurns ?? MAX_TURNS_DEFAULT,
+      allowed_tools: [],
     };
     if (def.model) childData.model = def.model;
     if (sourceStamp) childData._source_id = sourceStamp;
@@ -2150,6 +2173,8 @@ async function runDraftRebuttalLayer(opts: {
   jurisdiction?: "at" | "de" | "ch" | "eu";
   verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   parteirolle?: Parteirolle;
+  additionalOpponents?: LegalPipelineData["additional_opponents"];
+  nebenverfahren?: string[];
   sourceStamp?: string;
 }): Promise<string[]> {
   const {
@@ -2162,11 +2187,19 @@ async function runDraftRebuttalLayer(opts: {
     jurisdiction = "at",
     verfahrenstyp = "sonstiges",
     parteirolle = "unbekannt",
+    additionalOpponents,
+    nebenverfahren,
     sourceStamp,
   } = opts;
   const def = resolveSpecialist("legal-drafter");
   if (!def) throw new Error("legal-pipeline: legal-drafter specialist not found");
-  const packages = resolveDraftPackages({ jurisdiction, verfahrenstyp, parteirolle });
+  const packages = resolveDraftPackages({
+    jurisdiction,
+    verfahrenstyp,
+    parteirolle,
+    additionalOpponents,
+    nebenverfahren: nebenverfahren as Nebenverfahren[] | undefined,
+  });
 
   // Group counter-arguments by target draft
   const byDraft = new Map<string, CounterArgument[]>();
@@ -2455,6 +2488,8 @@ async function runDraftLayer(opts: {
   jurisdiction?: "at" | "de" | "ch" | "eu";
   verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
   parteirolle?: Parteirolle;
+  additionalOpponents?: LegalPipelineData["additional_opponents"];
+  nebenverfahren?: string[];
   sourceStamp?: string;
 }): Promise<string[]> {
   const {
@@ -2472,12 +2507,20 @@ async function runDraftLayer(opts: {
     jurisdiction = "at",
     verfahrenstyp = "sonstiges",
     parteirolle = "unbekannt",
+    additionalOpponents,
+    nebenverfahren,
     sourceStamp,
   } = opts;
   const def = resolveSpecialist("legal-drafter");
   if (!def) throw new Error("legal-pipeline: legal-drafter specialist not found");
 
-  const packages = resolveDraftPackages({ jurisdiction, verfahrenstyp, parteirolle });
+  const packages = resolveDraftPackages({
+    jurisdiction,
+    verfahrenstyp,
+    parteirolle,
+    additionalOpponents,
+    nebenverfahren: nebenverfahren as Nebenverfahren[] | undefined,
+  });
 
   const contextJson = JSON.stringify({
     on_table: onTable,
@@ -5754,6 +5797,12 @@ async function runLimitationScannerLayer(opts: {
     "4. Verjährt? Restzeit in Tagen",
     "5. Hemmung/Unterbrechung vorhanden?",
     "6. Handlungsbedarf: URGENT / WARNUNG / OK",
+    "7. GEGNER: Gegen wen richtet sich dieser Anspruch? (PFLICHTFELD)",
+    "",
+    "WICHTIG: Bei mehreren Gegnern (additional_opponents im Case-Frontmatter)",
+    "kann derselbe Anspruchstyp gegen verschiedene Gegner unterschiedliche",
+    "Kenntnis-Anker und damit unterschiedliche Fristenden haben.",
+    "Prüfe JEDEN Anspruch gegen JEDEN relevanten Gegner separat.",
     "",
     'Gib JSON zurück: { ansprueche: [...], urgent_ansprueche: [...], verjaehrte_ansprueche: [...], hemmungen_aktiv: [...], overall_verjaehrung_risiko_score: 0-100, empfehlung: "..." }',
   ].join("\n");
@@ -5916,12 +5965,12 @@ async function writeLimitationScannerPage(
   if (urgent.length > 0) {
     lines.push("> 🚨 **DRINGEND — Ansprüche verjähren bald!**");
     lines.push("");
-    lines.push("| Anspruch | Restzeit | Handlungsbedarf | § |");
-    lines.push("|----------|----------|-----------------|---|");
+    lines.push("| Anspruch | Gegner | Restzeit | Handlungsbedarf | § |");
+    lines.push("|----------|--------|----------|-----------------|---|");
     for (const u of urgent) {
       const r = u as Record<string, unknown>;
       lines.push(
-        `| ${r.anspruch ?? ""} | ${r.restzeit_tage ?? ""} Tage | ${r.handlungsbedarf ?? ""} | ${r.paragraph ?? ""} |`
+        `| ${r.anspruch ?? ""} | ${r.gegner ?? "—"} | ${r.restzeit_tage ?? ""} Tage | ${r.handlungsbedarf ?? ""} | ${r.paragraph ?? ""} |`
       );
     }
     lines.push("");
@@ -5930,11 +5979,13 @@ async function writeLimitationScannerPage(
   if (verjaehrte.length > 0) {
     lines.push("> ⛔ **Verjährte Ansprüche — nicht mehr durchsetzbar!**");
     lines.push("");
-    lines.push("| Anspruch | § | Grund |");
-    lines.push("|----------|---|-------|");
+    lines.push("| Anspruch | Gegner | § | Grund |");
+    lines.push("|----------|--------|---|-------|");
     for (const v of verjaehrte) {
       const r = v as Record<string, unknown>;
-      lines.push(`| ${r.anspruch ?? ""} | ${r.paragraph ?? ""} | ${r.grund ?? ""} |`);
+      lines.push(
+        `| ${r.anspruch ?? ""} | ${r.gegner ?? "—"} | ${r.paragraph ?? ""} | ${r.grund ?? ""} |`
+      );
     }
     lines.push("");
   }
@@ -5943,10 +5994,10 @@ async function writeLimitationScannerPage(
     lines.push("### Alle Ansprüche im Überblick");
     lines.push("");
     lines.push(
-      "| Anspruch | Höhe | Frist | § | Beginn | Fristende | Verjährt | Restzeit | Status |"
+      "| Anspruch | Gegner | Höhe | Frist | § | Beginn | Fristende | Verjährt | Restzeit | Status |"
     );
     lines.push(
-      "|----------|------|-------|---|--------|-----------|----------|----------|--------|"
+      "|----------|--------|------|-------|---|--------|-----------|----------|----------|--------|"
     );
     for (const a of ansprueche) {
       const r = a as Record<string, unknown>;
@@ -5957,7 +6008,7 @@ async function writeLimitationScannerPage(
             ? "⚠️ WARNUNG"
             : "✅ OK";
       lines.push(
-        `| ${r.anspruch ?? ""} | €${Number(r.anspruchshoehe ?? 0).toLocaleString("de-DE")} | ${r.verjaehrungsfrist_jahre ?? ""}J | ${r.paragraph ?? ""} | ${r.beginn ?? ""} | ${r.frist_ende ?? ""} | ${r.verjaehrt ? "Ja" : "Nein"} | ${r.restzeit_tage ?? ""}T | ${statusStr} |`
+        `| ${r.anspruch ?? ""} | ${r.gegner ?? "—"} | €${Number(r.anspruchshoehe ?? 0).toLocaleString("de-DE")} | ${r.verjaehrungsfrist_jahre ?? ""}J | ${r.paragraph ?? ""} | ${r.beginn ?? ""} | ${r.frist_ende ?? ""} | ${r.verjaehrt ? "Ja" : "Nein"} | ${r.restzeit_tage ?? ""}T | ${statusStr} |`
       );
     }
     lines.push("");
@@ -5969,11 +6020,13 @@ async function writeLimitationScannerPage(
   if (hemmungen.length > 0) {
     lines.push("### Aktive Hemmungen");
     lines.push("");
-    lines.push("| Anspruch | Hemmungsgrund | Seit |");
-    lines.push("|----------|---------------|------|");
+    lines.push("| Anspruch | Gegner | Hemmungsgrund | Seit |");
+    lines.push("|----------|--------|---------------|------|");
     for (const h of hemmungen) {
       const r = h as Record<string, unknown>;
-      lines.push(`| ${r.anspruch ?? ""} | ${r.hemmung_grund ?? ""} | ${r.hemmung_seit ?? ""} |`);
+      lines.push(
+        `| ${r.anspruch ?? ""} | ${r.gegner ?? "—"} | ${r.hemmung_grund ?? ""} | ${r.hemmung_seit ?? ""} |`
+      );
     }
     lines.push("");
   }
@@ -6879,6 +6932,8 @@ async function rerunSpecificLayer(
         verfahrenstyp:
           data.verfahrenstyp ??
           (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
+        additionalOpponents: data.additional_opponents,
+        nebenverfahren: data.nebenverfahren,
         sourceStamp,
       });
       state.layers[6]!.output_slugs = draftSlugs;
@@ -6921,6 +6976,8 @@ async function rerunSpecificLayer(
             parteirolle:
               data.parteirolle ??
               detectParteirolle(entities, { client: data.manual_overrides?.client }),
+            additionalOpponents: data.additional_opponents,
+            nebenverfahren: data.nebenverfahren,
             sourceStamp,
           });
           state.layers[6]!.output_slugs = revisedSlugs;

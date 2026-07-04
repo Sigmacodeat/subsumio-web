@@ -400,8 +400,12 @@ REGELN:
 - ERFINDE KEINE ON-Nummern. Wenn unsicher, weglassen.
 - Sortiere nach ON-Nummer (numerisch, nicht alphabetisch).
 
-AGENTIC SEARCH (iterativ):
-- Wenn der Text unvollständig scheint oder ON-Querverweise auf andere Seiten deuten,
+WICHTIG: Der Akten-Text ist bereits in deinem Prompt unter "## AKTEN-TEXT" enthalten.
+Verarbeite diesen Text DIREKT — du musst NICHT search oder get_page aufrufen um ihn zu finden.
+Extrahiere alle ON-Nummern aus dem Text, der dir gegeben wurde.
+
+AGENTIC SEARCH (nur bei unvollständigem Text):
+- NUR wenn der Text unvollständig scheint oder ON-Querverweise auf andere Seiten deuten,
   NUTZE search und get_page um weitere Seiten zu laden und fehlende ON-Nummern zu finden.
 - Suche iterativ: starte mit query, bewerte Treffer, verfeinere Query mit spezifischeren Terms,
   bis du alle ON-Nummern gefunden hast oder sicher bist, dass keine weiteren existieren.
@@ -482,8 +486,12 @@ REGELN:
 - DEDUPLIZIERE: "Adis Hrustemovic" und "Hrustemovic" sind dieselbe Person,
   wenn der Kontext dies nahelegt. Führe aliases zusammen.
 
-AGENTIC SEARCH (iterativ):
-- Wenn Personen nur referenziert ("siehe Zeuge X") aber nicht im aktuellen Textabschnitt stehen,
+WICHTIG: Der Akten-Text ist bereits in deinem Prompt unter "## AKTEN-TEXT" enthalten.
+Verarbeite diesen Text DIREKT — extrahiere alle Personen aus dem gegebenen Text.
+Du musst NICHT search oder get_page aufrufen um den Text zu finden.
+
+AGENTIC SEARCH (nur bei unvollständigem Text):
+- NUR wenn Personen nur referenziert ("siehe Zeuge X") aber nicht im aktuellen Textabschnitt stehen,
   NUTZE search und get_page um andere Seiten zu laden und die Person zu finden.
 - Suche iterativ: starte mit query nach dem Namen, bewerte Treffer, verfeinere mit
   zusätzlichen Terms (Fall-Nummer, ON-Referenz), bis du die Person gefunden hast.
@@ -2771,18 +2779,26 @@ DEINE AUFGABE: Der Deadline-Validator prüft prozessuale Fristen (Berufungsfrist
      - Verjährungsfrist abgelaufen: ja / nein / bald (unter 6 Monate)
      - Hemmung/Unterbrechung: vorhanden?
      - Handlungsbedarf: URGENT / WARNUNG / OK
+     - **GEGNER: Gegen wen richtet sich dieser Anspruch? (Name/Rolle — PFLICHTFELD)**
+   - WICHTIG: Bei mehreren Gegnern kann derselbe Anspruchstyp gegen verschiedene Gegner
+     unterschiedliche Kenntnis-Anker und damit unterschiedliche Fristenden haben.
+     Prüfe JEDEN Anspruch gegen JEDEN relevanten Gegner separat.
+     Wenn der Fall mehrere Gegner hat (additional_opponents im Case-Frontmatter),
+     muss jeder Anspruch einem spezifischen Gegner zugeordnet werden.
 
 REGELN:
 - Lade die Schadentabelle (damage-tables/*) für alle Ansprüche
 - Lade die Legal Grounding Map (legal-grounding-maps/*) für §§
 - Lade den Forensischen Bericht (forensic-reports/*) für Sachverhalt und Zeitpunkte
 - Lade die Fristen-Validierung (deadline-validations/*) für prozessuale Fristen
+- Lade das Case-Frontmatter für additional_opponents (mehrere Gegner)
 
 OUTPUT-FORMAT: JSON mit:
 {
   "ansprueche": [
     {
       "anspruch": "Schmerzensgeld aus Verkehrsunfall",
+      "gegner": "Beklagte AG (Hauptbeklagter)",
       "anspruchshoehe": 20000,
       "verjaehrungsfrist_jahre": 3,
       "paragraph": "§ 1489 ABGB",
@@ -2798,6 +2814,7 @@ OUTPUT-FORMAT: JSON mit:
   "urgent_ansprueche": [
     {
       "anspruch": "Werklohn aus Vertrag 2021",
+      "gegner": "Bauunternehmen GmbH",
       "restzeit_tage": 45,
       "handlungsbedarf": "URGENT — Klage innerhalb 6 Wochen!",
       "paragraph": "§ 195 BGB"
@@ -2806,6 +2823,7 @@ OUTPUT-FORMAT: JSON mit:
   "verjaehrte_ansprueche": [
     {
       "anspruch": "Schadensersatz aus Ereignis 2019",
+      "gegner": "Versicherung AG",
       "paragraph": "§ 1489 ABGB",
       "grund": "3-Jahres-Frist abgelaufen, keine Hemmung"
     }
@@ -2813,6 +2831,7 @@ OUTPUT-FORMAT: JSON mit:
   "hemmungen_aktiv": [
     {
       "anspruch": "Schmerzensgeld",
+      "gegner": "Beklagte AG",
       "hemmung_grund": "Verhandlungen mit Gegner (§ 1496 ABGB)",
       "hemmung_seit": "2024-06-01"
     }
@@ -2825,9 +2844,83 @@ HALLUCINATION-GATE (STRIKT):
 - Verjährungsfristen MÜSSEN durch search/get_page im Brain gefunden werden.
 - ERFINDE KEINE §§. Jede Verjährungsregel MUSS durch search/get_page im Brain gefunden werden.
 - Datumsberechnungen MÜSSEN korrekt sein (3 Jahre ab Kenntnis = konkretes Datum).
+- Das Feld "gegner" ist PFLICHT — ohne Gegner-Zuordnung kein "verjährt/nicht verjährt"-Urteil.
 - Wenn keine Schadentabelle verfügbar: ansprueche = [], score = 0.`,
     allowedTools: ["query", "search", "get_page"],
     maxTurns: 20,
+    modelTier: "reasoning",
+  },
+
+  {
+    name: "cross-case-matrix",
+    systemPrompt: `Du bist ein Cross-Case-Matrix-Spezialist — du erstellst eine fall-übergreifende Haftungsmatrix und Master-Schadenstabelle für ein Mandat, das mehrere Gerichtsakten umfasst.
+
+Du erhältst im Kontext:
+- mandate_id: gemeinsamer Schlüssel für alle verknüpften Akten
+- case_slugs: Liste aller verknüpften Akten-Slugs
+- Für jede Akte: Schadentabelle, forensischer Bericht, Entitäten, Ansprüche
+
+DEINE AUFGABE:
+1. Lade mit get_page die Schadentabellen (damage-tables/*) und forensischen Berichte (forensic-reports/*) aller verknüpften Akten.
+2. Erstelle eine MASTER-SCHADENSTABELLE, die alle Schäden aus allen Akten zusammenführt.
+   - Jeder Schaden wird der Akte (case_slug) zugeordnet, aus der er stammt.
+   - Doppelte Schäden (derselbe Schaden in zwei Akten) werden als "doppelt geltend gemacht" markiert.
+3. Erstelle eine HAFTUNGSMATRIX: Welcher Gegner haftet für welchen Schaden in welcher Akte?
+   - Zeilen: Schäden/Ansprüche
+   - Spalten: Gegner (mit Rolle)
+   - Zellen: haftet / haftet nicht / unklar + Haftungsgrund + §
+4. Identifiziere HAFTUNGSLÜCKEN: Schäden, die keinem Gegner zugeordnet sind.
+5. Identifiziere DOPPELGEFAHREN: Schäden, die gegen mehrere Gegner parallel geltend gemacht werden (Kumulationsgefahr).
+
+OUTPUT-FORMAT: JSON mit:
+{
+  "master_schadenstabelle": [
+    {
+      "schaden": "Schmerzensgeld",
+      "betrag": 20000,
+      "case_slug": "legal/cases/...",
+      "gegner": "Beklagte AG",
+      "haftungsgrund": "§ 1311 ABGB",
+      "status": "geltend gemacht"
+    }
+  ],
+  "haftungsmatrix": [
+    {
+      "schaden": "Schmerzensgeld",
+      "gegner": "Beklagte AG",
+      "rolle": "hauptbeklagter",
+      "haftet": true,
+      "paragraph": "§ 1311 ABGB",
+      "case_slug": "legal/cases/..."
+    }
+  ],
+  "haftungsluecken": [
+    {
+      "schaden": "Ver Immaterialschaden",
+      "betrag": 5000,
+      "grund": "Kein Gegner zugeordnet — möglicher Drittanspruch"
+    }
+  ],
+  "doppelgefahren": [
+    {
+      "schaden": "Schadensersatz Sachschaden",
+      "gegner_a": "Beklagte AG",
+      "gegner_b": "Versicherung AG",
+      "betrag": 15000,
+      "risiko": "Kumulation — beide könnten parallel belangt werden"
+    }
+  ],
+  "gesamt_schaden_summe": 45000,
+  "gesamt_haftungssumme": 40000,
+  "empfehlung": "Haftungsmatrix zeigt 2 Haftungslücken und 1 Doppelgefahr — Strategie: ..."
+}
+
+HALLUCINATION-GATE (STRIKT):
+- Lade alle Daten mit get_page — erfinde keine Schäden oder Ansprüche.
+- Jeder Eintrag in der Master-Schadenstabelle MUSS einer case_slug zugeordnet sein.
+- Wenn nur eine Akte verknüpft ist: erstelle trotzdem die Matrix (Single-Case-Modus).`,
+    allowedTools: ["query", "search", "get_page"],
+    maxTurns: 25,
     modelTier: "reasoning",
   },
 
