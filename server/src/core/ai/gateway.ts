@@ -3269,7 +3269,12 @@ export interface ToolLoopReplayState {
   priorMessages: ChatMessage[];
   priorTools: Map<
     string,
-    { status: "pending" | "complete" | "failed"; output?: unknown; error?: string }
+    {
+      status: "pending" | "complete" | "failed";
+      output?: unknown;
+      error?: string;
+      toolUseId?: string | null;
+    }
   >;
   nextTurnIdx: number;
   nextMessageIdx: number;
@@ -3393,6 +3398,98 @@ export async function toolLoop(opts: ToolLoopOpts): Promise<ToolLoopResult> {
   let messageIdx = opts.replayState?.nextMessageIdx ?? 0;
   let finalText = "";
   let stopReason: ToolLoopStopReason = "end";
+
+  // ── Replay reconciliation ─────────────────────────────────
+  //
+  // If the last persisted message is an assistant message with tool-call
+  // blocks AND no subsequent tool-result message has been synthesized yet,
+  // the previous run crashed mid-tool-dispatch. Reconcile by executing
+  // pending tools (or reading cached results from replayState.priorTools)
+  // and pushing the tool-results as a user message before entering the loop.
+  // Without this, generateText throws MissingToolResultsError on the first
+  // call because the conversation history has unresolved tool-calls.
+  if (messages.length > 0 && opts.replayState) {
+    const lastMsg = messages[messages.length - 1];
+    if (
+      lastMsg.role === "assistant" &&
+      Array.isArray(lastMsg.content) &&
+      lastMsg.content.some((b) => b.type === "tool-call")
+    ) {
+      const pendingToolCalls = lastMsg.content.filter(
+        (b): b is Extract<ChatBlock, { type: "tool-call" }> => b.type === "tool-call"
+      );
+      const toolResultBlocks: ChatBlock[] = [];
+      // Build a lookup by toolUseId (provider's tool-call ID) for reconciliation.
+      const priorToolsByToolUseId = new Map<
+        string,
+        { status: "pending" | "complete" | "failed"; output?: unknown; error?: string }
+      >();
+      if (opts.replayState.priorTools) {
+        for (const [, v] of opts.replayState.priorTools) {
+          if (v.toolUseId) {
+            priorToolsByToolUseId.set(v.toolUseId, v);
+          }
+        }
+      }
+      for (const call of pendingToolCalls) {
+        const cached = priorToolsByToolUseId.get(call.toolCallId);
+        if (cached?.status === "complete") {
+          toolResultBlocks.push({
+            type: "tool-result",
+            toolCallId: call.toolCallId,
+            toolName: call.toolName,
+            output: cached.output,
+          });
+        } else if (cached?.status === "failed") {
+          toolResultBlocks.push({
+            type: "tool-result",
+            toolCallId: call.toolCallId,
+            toolName: call.toolName,
+            output: cached.error ?? "tool execution failed",
+            isError: true,
+          });
+        } else {
+          // Not in priorTools or still pending — execute now.
+          const handler = handlers.get(call.toolName);
+          if (!handler) {
+            toolResultBlocks.push({
+              type: "tool-result",
+              toolCallId: call.toolCallId,
+              toolName: call.toolName,
+              output: `tool "${call.toolName}" is not in the registry for this subagent`,
+              isError: true,
+            });
+            continue;
+          }
+          try {
+            const output = await handler.execute(
+              call.input,
+              opts.abortSignal ?? new AbortController().signal
+            );
+            toolResultBlocks.push({
+              type: "tool-result",
+              toolCallId: call.toolCallId,
+              toolName: call.toolName,
+              output,
+            });
+          } catch (err) {
+            const errMsg = err instanceof Error ? err.message : String(err);
+            toolResultBlocks.push({
+              type: "tool-result",
+              toolCallId: call.toolCallId,
+              toolName: call.toolName,
+              output: errMsg,
+              isError: true,
+            });
+          }
+        }
+      }
+      if (toolResultBlocks.length > 0) {
+        messages.push({ role: "user", content: toolResultBlocks });
+        messageIdx++;
+      }
+    }
+  }
 
   while (turnIdx < maxTurns) {
     if (opts.abortSignal?.aborted) {

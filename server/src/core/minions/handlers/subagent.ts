@@ -980,13 +980,19 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
   const priorTools = await loadPriorToolsV2(engine, ctx.id);
   const priorToolsByStableKey = new Map<
     string,
-    { status: "pending" | "complete" | "failed"; output?: unknown; error?: string }
+    {
+      status: "pending" | "complete" | "failed";
+      output?: unknown;
+      error?: string;
+      toolUseId?: string | null;
+    }
   >();
   for (const row of priorTools) {
     priorToolsByStableKey.set(row.stableKey, {
       status: row.status,
       output: row.output,
       error: row.error ?? undefined,
+      toolUseId: row.toolUseId,
     });
   }
 
@@ -1242,6 +1248,7 @@ function adaptContentBlocksToChatBlocks(blocks: unknown): ChatBlock[] | string {
 
 interface PriorToolV2Row {
   stableKey: string;
+  toolUseId: string | null;
   status: "pending" | "complete" | "failed";
   output: unknown;
   error: string | null;
@@ -1277,6 +1284,7 @@ async function loadPriorToolsV2(engine: BrainEngine, jobId: number): Promise<Pri
         `legacy:${jobId}:${r.message_idx}:${r.tool_use_id}:${r.tool_name}`;
     return {
       stableKey,
+      toolUseId: (r.tool_use_id as string | null) ?? null,
       status: r.status as "pending" | "complete" | "failed",
       output: r.output,
       error: (r.error as string | null) ?? null,
