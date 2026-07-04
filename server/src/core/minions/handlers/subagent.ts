@@ -189,7 +189,7 @@ export function makeSubagentHandler(deps: SubagentDeps) {
       const def = resolveSpecialist(data.subagent_def);
       if (def) {
         data.system = def.systemPrompt;
-        if (def.allowedTools && def.allowedTools.length > 0) {
+        if (!data.allowed_tools && def.allowedTools && def.allowedTools.length > 0) {
           data.allowed_tools = def.allowedTools;
         }
         if (def.maxTurns != null) {
