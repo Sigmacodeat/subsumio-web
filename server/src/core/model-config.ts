@@ -82,10 +82,10 @@ export const DEFAULT_ALIASES: Record<string, string> = {
  * Users override via `gbrain config set models.tier.<tier> <model>`.
  */
 export const TIER_DEFAULTS: Record<ModelTier, string> = {
-  utility: "anthropic:claude-haiku-4-5-20251001",
-  reasoning: "anthropic:claude-sonnet-4-6",
-  deep: "anthropic:claude-opus-4-7",
-  subagent: "anthropic:claude-sonnet-4-6",
+  utility: "openrouter:deepseek/deepseek-chat",
+  reasoning: "openrouter:deepseek/deepseek-chat",
+  deep: "openrouter:openai/gpt-4.1",
+  subagent: "openrouter:deepseek/deepseek-chat",
 };
 
 /**
