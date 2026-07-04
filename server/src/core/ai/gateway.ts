@@ -2644,6 +2644,7 @@ function instantiateChat(recipe: Recipe, modelId: string, cfg: AIGatewayConfig):
                   })
                   .join(" ");
                 console.error(`[openRouterTransform] msgs=${messages.length} [${summary}]`);
+                let injected = 0;
                 for (const msg of messages) {
                   if (
                     msg.role === "assistant" &&
@@ -2652,8 +2653,14 @@ function instantiateChat(recipe: Recipe, modelId: string, cfg: AIGatewayConfig):
                     !msg.reasoning_content &&
                     !msg.reasoning
                   ) {
-                    msg.reasoning_content = "\u200B";
+                    msg.reasoning_content = "Analysis complete. Proceeding with tool execution.";
+                    injected++;
                   }
+                }
+                if (injected > 0) {
+                  console.error(
+                    `[openRouterTransform] injected reasoning_content into ${injected} assistant msgs`
+                  );
                 }
               }
               return body;
