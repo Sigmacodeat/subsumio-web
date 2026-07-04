@@ -1275,6 +1275,11 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   const onDeadlineSubmit = useCallback(
     (data: DeadlineFormData) => {
       const date = data.due_date;
+      // P0: Vier-Augen defense-in-depth — block 'done' for Notfristen without second_check
+      const isNotfrist = data.is_notfrist === true;
+      const hasSecondCheck = !!(data as unknown as { second_check_at?: string }).second_check_at;
+      const effectiveStatus =
+        isNotfrist && data.status === "done" && !hasSecondCheck ? "pending" : data.status;
       const entry: DeadlineEntry = {
         ...withDeadlineAudit(
           data as DeadlineEntry,
@@ -1283,7 +1288,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
         id: data.id || `dl-${Date.now()}`,
         due_date: date,
         date,
-        status: computeDeadlineStatus(date, data.status, data.vorfrist_date),
+        status: computeDeadlineStatus(date, effectiveStatus, data.vorfrist_date),
         review_status: data.review_status ?? "unreviewed",
         vorfrist_date: data.vorfrist_date,
         is_notfrist: data.is_notfrist,

@@ -14,6 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
+import { csrfFetch } from "@/lib/csrf";
 import { useLang } from "@/lib/use-lang";
 
 interface EmailComposeDialogProps {
@@ -45,7 +46,7 @@ export function EmailComposeDialog({
     if (!to || !subject || !body) return;
     setSending(true);
     try {
-      const res = await fetch("/api/cases/send-email", {
+      const res = await csrfFetch("/api/cases/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ to, cc: cc || undefined, subject, body, caseSlug }),

@@ -31,6 +31,8 @@ export function DeadlinesTasksTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
   const [showDeadlineForm, setShowDeadlineForm] = useState(false);
+  const [secondCheckIndex, setSecondCheckIndex] = useState<number | null>(null);
+  const [secondCheckBusy, setSecondCheckBusy] = useState(false);
 
   // Auto-expand form when editing
   useEffect(() => {
@@ -126,6 +128,16 @@ export function DeadlinesTasksTab() {
                 </label>
                 <select
                   {...ctx.deadlineForm.register("status")}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const isNotfrist = ctx.deadlineForm.getValues("is_notfrist");
+                    if (val === "done" && isNotfrist) {
+                      const idx = ctx.editingDeadlineIndex;
+                      if (idx !== null) setSecondCheckIndex(idx);
+                      return;
+                    }
+                    ctx.deadlineForm.setValue("status", val as never);
+                  }}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
                   <option value="pending">{t("cases.detail_dl_status_pending")}</option>
@@ -835,6 +847,93 @@ export function DeadlinesTasksTab() {
           </div>
         )}
       </div>
+
+      {/* P0: Vier-Augen second-check confirmation modal for Notfristen */}
+      {secondCheckIndex !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => !secondCheckBusy && setSecondCheckIndex(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-[color:var(--ds-surface)] p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/15">
+                <ShieldCheck size={20} className="text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  {t("deadlines.second_check")}
+                </h3>
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  {t("deadlines.notfrist")} — {ctx.deadlinesList[secondCheckIndex]?.title ?? ""}
+                </p>
+              </div>
+            </div>
+            <p className="mb-4 text-sm text-[color:var(--ds-text-muted)]">
+              {lang === "en"
+                ? "This is a statutory deadline (Notfrist). Marking it as done requires a second confirmation (four-eyes principle). By confirming, you attest that you have verified the deadline completion."
+                : "Dies ist eine Notfrist. Die Erledigung erfordert eine zweite Bestätigung (Vier-Augen-Prinzip). Mit der Bestätigung belegen Sie, dass Sie die Fristwahrung geprüft haben."}
+            </p>
+            <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-700">
+              <strong>{t("deadlines.second_check_by")}:</strong> {ctx.currentUserName}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={secondCheckBusy}
+                onClick={() => setSecondCheckIndex(null)}
+                className="text-xs"
+              >
+                {lang === "en" ? "Cancel" : "Abbrechen"}
+              </Button>
+              <Button
+                size="sm"
+                disabled={secondCheckBusy}
+                onClick={async () => {
+                  if (secondCheckIndex === null) return;
+                  setSecondCheckBusy(true);
+                  const dl = ctx.deadlinesList[secondCheckIndex];
+                  if (!dl) {
+                    setSecondCheckBusy(false);
+                    setSecondCheckIndex(null);
+                    return;
+                  }
+                  const now = new Date().toISOString();
+                  const updated = ctx.deadlinesList.map((d, i) =>
+                    i === secondCheckIndex
+                      ? withDeadlineAudit(
+                          {
+                            ...d,
+                            status: "done",
+                            second_check_required: true,
+                            second_check_by: ctx.currentUserName,
+                            second_check_at: now,
+                          },
+                          "second_check"
+                        )
+                      : d
+                  );
+                  ctx.setDeadlinesList(updated);
+                  await ctx.saveCaseUpdate({ deadlines: updated });
+                  setSecondCheckBusy(false);
+                  setSecondCheckIndex(null);
+                }}
+                className="gap-1.5 bg-amber-600 text-xs text-white hover:bg-amber-500"
+              >
+                {secondCheckBusy ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <ShieldCheck size={13} />
+                )}
+                {t("deadlines.second_check_done")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

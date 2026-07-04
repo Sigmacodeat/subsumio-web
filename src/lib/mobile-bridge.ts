@@ -76,7 +76,11 @@ export async function detectCapabilities(): Promise<MobileCapabilities> {
   };
 }
 
-/** Request push notification permission and get token. */
+/**
+ * Request push permission and register for notifications.
+ * Returns the actual device token via the registration event listener.
+ * Resolves within 10s or times out with an error.
+ */
 export async function registerPush(): Promise<{ token?: string; error?: string }> {
   try {
     const mod = (await importPushNotifications()) as
@@ -84,15 +88,79 @@ export async function registerPush(): Promise<{ token?: string; error?: string }
       | null;
     if (!mod) return { error: "Push-Plugin nicht verfügbar. Nur in nativer App." };
     const { PushNotifications } = mod;
+
     const result = await PushNotifications.requestPermissions();
-    if (result.receive === "granted") {
-      await PushNotifications.register();
-      // Token comes via event listener; this is a simplified sync version
-      return { token: "pending" };
+    if (result.receive !== "granted") {
+      return { error: "Push-Benachrichtigungen abgelehnt" };
     }
-    return { error: "Push-Benachrichtigungen abgelehnt" };
+
+    // Token arrives asynchronously via the 'registration' event
+    const token = await new Promise<string>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("Push-Registrierung Timeout (10s)"));
+      }, 10_000);
+
+      const registrationHandler = (event: Record<string, unknown>) => {
+        clearTimeout(timeout);
+        PushNotifications.removeAllListeners().catch(() => {});
+        resolve(event.value as string);
+      };
+
+      const errorHandler = (event: Record<string, unknown>) => {
+        clearTimeout(timeout);
+        PushNotifications.removeAllListeners().catch(() => {});
+        reject(new Error((event.value as string) || "Push-Registrierung fehlgeschlagen"));
+      };
+
+      PushNotifications.addListener("registration", registrationHandler).catch(() => {});
+      PushNotifications.addListener("registrationError", errorHandler).catch(() => {});
+
+      PushNotifications.register().catch((err: unknown) => {
+        clearTimeout(timeout);
+        reject(err);
+      });
+    });
+
+    return { token };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Push-Plugin nicht verfügbar";
+    return { error: msg };
+  }
+}
+
+/**
+ * Subscribe to incoming push notifications while the app is open.
+ * Returns an unsubscribe function.
+ */
+export async function onPushNotification(
+  callback: (notification: {
+    title?: string;
+    body?: string;
+    data?: Record<string, unknown>;
+  }) => void
+): Promise<() => void> {
+  try {
+    const mod = (await importPushNotifications()) as
+      | typeof import("@capacitor/push-notifications")
+      | null;
+    if (!mod) return () => {};
+    const { PushNotifications } = mod;
+
+    const handler = (event: Record<string, unknown>) => {
+      callback(
+        event.notification as { title?: string; body?: string; data?: Record<string, unknown> }
+      );
+    };
+
+    await PushNotifications.addListener("pushNotificationReceived", handler);
+    return () => {
+      PushNotifications.removeListener(
+        "pushNotificationReceived",
+        handler as (event: unknown) => void
+      ).catch(() => {});
+    };
   } catch {
-    return { error: "Push-Plugin nicht verfügbar. Nur in nativer App." };
+    return () => {};
   }
 }
 

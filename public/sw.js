@@ -28,6 +28,13 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Handle SKIP_WAITING message from app update banner
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
 /** Stale-while-revalidate for Brain API GET calls */
 async function apiFetch(req) {
   const cache = await caches.open(API_CACHE);
@@ -131,6 +138,49 @@ self.addEventListener("fetch", (event) => {
     );
     return;
   }
+});
+
+// Push notification click — focus existing window or open new one with deep link
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || "/dashboard";
+  const targetPath = new URL(targetUrl, self.location.origin).href;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      // Focus existing window if found
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && "focus" in client) {
+          client.postMessage({ type: "push-click", url: targetUrl });
+          return client.focus();
+        }
+      }
+      // Open new window
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetPath);
+      }
+    })
+  );
+});
+
+// Push event — display notification (needed for Android/Chrome)
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch {
+    payload = { title: "Subsumio", body: event.data.text() };
+  }
+  const title = payload.title || "Subsumio";
+  const options = {
+    body: payload.body || "",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    data: payload.data || {},
+    vibrate: [80, 40, 80],
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 // Expose queueMutation globally for the app to call

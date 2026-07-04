@@ -67,6 +67,23 @@ jobs:
       - run: bun install
       - run: bun run test:unit
 
+  workflow-simulation:
+    name: E2E Workflow Simulation (42-step legal workflow)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - name: Run 42-step workflow simulation (mock engine)
+        run: bun run test:workflow
+      - name: Upload workflow report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-workflow-report
+          path: tests/e2e-workflow-report.json
+          retention-days: 14
+
   playwright-a11y:
     name: Playwright + axe Accessibility
     runs-on: ubuntu-latest
@@ -169,6 +186,7 @@ jobs:
         build,
         typecheck,
         test,
+        workflow-simulation,
         playwright-a11y,
         check-resolvable,
         server-verify,
@@ -186,7 +204,8 @@ jobs:
                 "${{ needs.build.result }}" != "success" || \
                 "${{ needs.typecheck.result }}" != "success" || \
                 "${{ needs.test.result }}" != "success" || \
-                "${{ needs.playwright-a11y.result }}" != "success" || \
+                "${{ needs.workflow-simulation.result }}" != "success" || \
+                "${{ needs.playwright-a11y.result }}" != "success" || "
                 "${{ needs.check-resolvable.result }}" != "success" || \
                 "${{ needs.server-verify.result }}" != "success" || \
                 "${{ needs.release-gate-eval.result }}" != "success" || \

@@ -60,6 +60,13 @@ interface QueueHealth {
   docsFailed: number | null;
   wedgeMinutes: number | null;
   engineReachable: boolean;
+  clamavReachable: boolean | null;
+  clamavHost: string | null;
+  clamavLatencyMs: number | null;
+  corpusTotalBooks: number | null;
+  corpusTotalPages: number | null;
+  corpusThinPages: number | null;
+  corpusCriticalBooks: string[];
 }
 
 // ── Default empty-state helpers ──────────────────────────────────────
@@ -231,6 +238,13 @@ export default function EngineAPMPage() {
           wedge?: { minutes_since_completion?: number | null } | null;
           dead_letter?: { outbox_exhausted?: number | null; docs_failed?: number | null };
           engine_reachable?: boolean;
+          clamav?: { reachable?: boolean; host?: string; latency_ms?: number; error?: string };
+          corpus_completeness?: {
+            total_books?: number;
+            total_pages?: number;
+            thin_pages?: number;
+            critical_books?: string[];
+          };
         };
         setQueueHealth({
           waiting: d.queue_health?.waiting ?? 0,
@@ -241,6 +255,13 @@ export default function EngineAPMPage() {
           docsFailed: d.dead_letter?.docs_failed ?? null,
           wedgeMinutes: d.wedge?.minutes_since_completion ?? null,
           engineReachable: d.engine_reachable ?? false,
+          clamavReachable: d.clamav?.reachable ?? null,
+          clamavHost: d.clamav?.host ?? null,
+          clamavLatencyMs: d.clamav?.latency_ms ?? null,
+          corpusTotalBooks: d.corpus_completeness?.total_books ?? null,
+          corpusTotalPages: d.corpus_completeness?.total_pages ?? null,
+          corpusThinPages: d.corpus_completeness?.thin_pages ?? null,
+          corpusCriticalBooks: d.corpus_completeness?.critical_books ?? [],
         });
       }
 
@@ -700,6 +721,66 @@ export default function EngineAPMPage() {
               {
                 label: "Engine erreichbar",
                 value: <StatusDot status={queueHealth?.engineReachable ? "healthy" : "loading"} />,
+              },
+              {
+                label: "ClamAV",
+                value: (
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      fontSize: 12,
+                    }}
+                  >
+                    <StatusDot
+                      status={
+                        queueHealth?.clamavReachable === null
+                          ? "loading"
+                          : queueHealth?.clamavReachable
+                            ? "healthy"
+                            : "down"
+                      }
+                    />
+                    {queueHealth?.clamavReachable === null
+                      ? "—"
+                      : queueHealth?.clamavReachable
+                        ? `${queueHealth.clamavLatencyMs ?? 0}ms`
+                        : "nicht erreichbar"}
+                  </span>
+                ),
+              },
+              {
+                label: "Normkorpus",
+                value: (
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      fontSize: 12,
+                    }}
+                  >
+                    <StatusDot
+                      status={
+                        queueHealth?.corpusTotalBooks === null
+                          ? "loading"
+                          : (queueHealth?.corpusCriticalBooks?.length ?? 0) > 0
+                            ? "down"
+                            : (queueHealth?.corpusThinPages ?? 0) > 0
+                              ? "degraded"
+                              : "healthy"
+                      }
+                    />
+                    {queueHealth?.corpusTotalBooks === null
+                      ? "—"
+                      : (queueHealth?.corpusCriticalBooks?.length ?? 0) > 0
+                        ? `${queueHealth?.corpusCriticalBooks?.length ?? 0} kritisch`
+                        : (queueHealth?.corpusThinPages ?? 0) > 0
+                          ? `${queueHealth?.corpusThinPages ?? 0} dünn`
+                          : `${queueHealth?.corpusTotalPages ?? 0} § ok`}
+                  </span>
+                ),
               },
             ].map((row) => (
               <div

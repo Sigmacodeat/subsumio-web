@@ -4,10 +4,18 @@
 // Glass card on the marketing background; full keyboard / screen-reader support.
 // v2: adds WorkOS SSO buttons (Microsoft, Google).
 
-import { useState, Suspense, useEffect } from "react";
+import { useState, Suspense, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Mail, Lock, User as UserIcon, ArrowRight, AlertCircle, Building2 } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  User as UserIcon,
+  ArrowRight,
+  AlertCircle,
+  Building2,
+  Fingerprint,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioLogo } from "@/components/brand/subsumio-logo";
 import { MarketingBackground } from "@/components/marketing/chrome";
@@ -53,6 +61,8 @@ const COPY = {
       generic: "Something went wrong. Please try again.",
     } as Record<string, string>,
     referralNote: "You were referred — your first month on a paid plan is free.",
+    biometric: "Sign in with Face ID / Touch ID",
+    biometricUnavailable: "Biometric not available",
   },
   de: {
     login: {
@@ -86,6 +96,8 @@ const COPY = {
       generic: "Etwas ist schiefgelaufen. Bitte versuch es erneut.",
     } as Record<string, string>,
     referralNote: "Du wurdest empfohlen — dein erster Monat auf einem Bezahlplan ist gratis.",
+    biometric: "Mit Face ID / Touch ID anmelden",
+    biometricUnavailable: "Biometrie nicht verfügbar",
   },
 } as const;
 
@@ -109,6 +121,8 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
   const [loading, setLoading] = useState(false);
   const [ssoLoading, setSsoLoading] = useState(false);
   const [ssoConfigured, setSsoConfigured] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
 
   useEffect(() => {
     // Probe whether WorkOS SSO is configured
@@ -117,6 +131,58 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
       .then((data: { configured?: boolean }) => setSsoConfigured(data.configured === true))
       .catch(() => setSsoConfigured(false));
   }, []);
+
+  // Detect biometric availability (native app only) — don't trigger verification on mount
+  useEffect(() => {
+    if (mode !== "login") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { detectCapabilities } = await import("@/lib/mobile-bridge");
+        const caps = await detectCapabilities();
+        if (cancelled || !caps.biometric) return;
+        // Only show button if biometric capability exists; actual verification happens on click
+        if (!cancelled) {
+          setBiometricAvailable(true);
+        }
+      } catch {
+        // Not available — silently skip
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mode]);
+
+  const handleBiometricLogin = useCallback(async () => {
+    setBiometricLoading(true);
+    setError(null);
+    try {
+      const { biometricAuth } = await import("@/lib/mobile-bridge");
+      const result = await biometricAuth();
+      if (!result.success) {
+        setError(result.error ?? t.errors.generic);
+        setBiometricLoading(false);
+        return;
+      }
+      // Biometric verified — check if there's a valid session cookie
+      const res = await fetch("/api/auth/me", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data.user) {
+          router.push(next);
+          router.refresh();
+          return;
+        }
+      }
+      // No valid session — need regular login
+      setError(t.errors.generic);
+      setBiometricLoading(false);
+    } catch {
+      setError(t.errors.generic);
+      setBiometricLoading(false);
+    }
+  }, [router, next, t.errors.generic]);
 
   async function startSso(provider: "MicrosoftOAuth" | "GoogleOAuth") {
     setSsoLoading(true);
@@ -187,7 +253,9 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
 
         <div className="glass rounded-2xl p-8 shadow-2xl shadow-black/50">
           <ClipReveal delay={0.1} duration={0.6} direction="up">
-            <h1 className="mb-1 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)]">{m.title}</h1>
+            <h1 className="mb-1 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)]">
+              {m.title}
+            </h1>
           </ClipReveal>
           <ClipReveal delay={0.2} duration={0.6} direction="up">
             <p className="mb-7 text-sm text-pretty [color:var(--mk-text-muted)]">{m.sub}</p>
@@ -293,6 +361,22 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
               </Button>
             </MagneticButton>
           </form>
+
+          {mode === "login" && biometricAvailable && (
+            <button
+              type="button"
+              onClick={handleBiometricLogin}
+              disabled={biometricLoading}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] py-2.5 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] disabled:opacity-50"
+            >
+              <Fingerprint size={16} className="text-[var(--brand-primary)]" />
+              {biometricLoading
+                ? lang !== "en"
+                  ? "Wird verifiziert…"
+                  : "Verifying…"
+                : t.biometric}
+            </button>
+          )}
 
           {ssoConfigured && (
             <div className="mt-5">

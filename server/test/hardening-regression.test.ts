@@ -58,7 +58,8 @@ describe("detectJurisdiction (C1 fix)", () => {
 
   it("close tie marks as unverified", () => {
     // Equal weight AT and DE — should be unverified
-    const text = "ABGB BGB StPO ZPO";
+    // AT: ABGB(1) + StPO(1) = 2; DE: BGB(1) + StPO(1) = 2
+    const text = "ABGB BGB StPO";
     const result = detectJurisdiction({}, text);
     expect(result.unverified).toBe(true);
   });

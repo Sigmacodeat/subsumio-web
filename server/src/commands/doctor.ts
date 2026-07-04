@@ -783,6 +783,9 @@ export async function doctorReportRemote(engine: BrainEngine): Promise<DoctorRep
   // File-plane only (no engine) — works on thin clients too.
   checks.push(checkSelfUpgradeHealth());
 
+  // B3: law_corpus_completeness — detects §-pages with word_count < 20
+  checks.push(await checkLawCorpusCompleteness(engine));
+
   return computeDoctorReport(checks);
 }
 
@@ -3421,6 +3424,109 @@ export async function computeExtractHealthCheck(engine: BrainEngine): Promise<Ch
       name,
       status: "warn",
       message: `rollup query failed: ${msg}`,
+    };
+  }
+}
+
+/**
+ * B3: law_corpus_completeness — detects statute §-pages with word_count < 20
+ * per statute book (ABGB, MRG, ZPO, StGB, etc.). Prevents silent re-occurrence
+ * of the "ABGB paragraphs with only headings, no norm text" incident.
+ *
+ * Scans pages whose slug matches `statutes/<jurisdiction>/<book>` and counts
+ * those with suspiciously low compiled_truth length. Warns when any book has
+ * >10% thin pages; fails when >30%.
+ */
+export async function checkLawCorpusCompleteness(engine: BrainEngine): Promise<Check> {
+  const name = "law_corpus_completeness";
+  try {
+    type Row = {
+      book: string;
+      total: string;
+      thin: string;
+      thin_pct: string;
+    };
+    const rows = await engine.executeRaw<Row>(
+      `SELECT
+         regexp_replace(slug, '^statutes/[^/]+/', '') AS book,
+         COUNT(*) AS total,
+         COUNT(*) FILTER (
+           WHERE length(coalesce(compiled_truth, '')) < 100
+              OR coalesce(frontmatter->>'word_count', '0')::int < 20
+         ) AS thin,
+         ROUND(
+           COUNT(*) FILTER (
+             WHERE length(coalesce(compiled_truth, '')) < 100
+                OR coalesce(frontmatter->>'word_count', '0')::int < 20
+           ) * 100.0 / NULLIF(COUNT(*), 0)
+         ) AS thin_pct
+       FROM pages
+       WHERE slug LIKE 'statutes/%'
+         AND deleted_at IS NULL
+       GROUP BY 1
+       HAVING COUNT(*) > 0
+       ORDER BY thin_pct DESC NULLS LAST
+       LIMIT 20`
+    );
+
+    if (rows.length === 0) {
+      return {
+        name,
+        status: "ok",
+        message: "No statute pages found (law corpus not yet imported)",
+      };
+    }
+
+    const thinBooks = rows.filter((r) => parseFloat(r.thin_pct) > 10 && parseInt(r.thin, 10) > 0);
+    const criticalBooks = rows.filter((r) => parseFloat(r.thin_pct) > 30);
+
+    if (criticalBooks.length > 0) {
+      const list = criticalBooks
+        .slice(0, 5)
+        .map((r) => `${r.book}: ${r.thin}/${r.total} (${r.thin_pct}%)`)
+        .join(", ");
+      return {
+        name,
+        status: "fail",
+        message:
+          `Critical: ${criticalBooks.length} statute book(s) with >30% thin pages (word_count < 20). ` +
+          `Layer-4 Law-Matcher cannot ground citations against empty paragraphs. ` +
+          `Fix: re-import law-corpus via \`POST /api/admin/law-sync\` or \`gbrain import-statutes-split\`. ` +
+          `Affected: ${list}`,
+        details: { books: rows },
+      };
+    }
+
+    if (thinBooks.length > 0) {
+      const list = thinBooks
+        .slice(0, 5)
+        .map((r) => `${r.book}: ${r.thin}/${r.total} (${r.thin_pct}%)`)
+        .join(", ");
+      return {
+        name,
+        status: "warn",
+        message:
+          `${thinBooks.length} statute book(s) with >10% thin pages (word_count < 20). ` +
+          `Some §-pages may contain only headings without norm text. ` +
+          `Affected: ${list}`,
+        details: { books: rows },
+      };
+    }
+
+    const totalBooks = rows.length;
+    const totalPages = rows.reduce((s, r) => s + parseInt(r.total, 10), 0);
+    return {
+      name,
+      status: "ok",
+      message: `${totalBooks} statute book(s), ${totalPages} §-pages — all have adequate content`,
+      details: { books: rows },
+    };
+  } catch (err) {
+    const msg = (err as Error).message || String(err);
+    return {
+      name,
+      status: "warn",
+      message: `law_corpus_completeness query failed: ${msg}`,
     };
   }
 }
@@ -7361,6 +7467,12 @@ export async function buildChecks(
     const { runAllOnboardChecks } = await import("../core/onboard/checks.ts");
     const onboardResults = await runAllOnboardChecks(engine);
     for (const r of onboardResults) checks.push(r.check);
+  }
+
+  // B3: law_corpus_completeness — detects §-pages with word_count < 20
+  if (engine) {
+    progress.heartbeat("law_corpus_completeness");
+    checks.push(await checkLawCorpusCompleteness(engine));
   }
 
   progress.finish();

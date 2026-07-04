@@ -1,39 +1,39 @@
 {
-  "timestamp": "2026-06-28T20:56:15.307Z",
+  "timestamp": "2026-07-04T08:57:10.062Z",
   "totalSteps": 48,
   "passed": 48,
   "failed": 0,
-  "durationMs": 284,
+  "durationMs": 253,
   "steps": [
     {
       "step": 1,
       "name": "Mock Engine starten",
       "status": "pass",
-      "durationMs": 248
+      "durationMs": 226
     },
     {
       "step": 2,
       "name": "Fixtures generieren",
       "status": "pass",
-      "durationMs": 6
+      "durationMs": 3
     },
     {
       "step": 3,
       "name": "Auth — Login",
       "status": "pass",
-      "durationMs": 3
+      "durationMs": 2
     },
     {
       "step": 4,
       "name": "Intake — Erstellen",
       "status": "pass",
-      "durationMs": 2
+      "durationMs": 1
     },
     {
       "step": 5,
       "name": "Intake — Conflict Check",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 0
     },
     {
       "step": 6,
@@ -57,7 +57,7 @@
       "step": 9,
       "name": "Upload — PDF (Vertrag)",
       "status": "pass",
-      "durationMs": 3
+      "durationMs": 1
     },
     {
       "step": 10,
@@ -69,7 +69,7 @@
       "step": 11,
       "name": "Upload — JPG (Scan Klage, OCR)",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 0
     },
     {
       "step": 12,
@@ -87,7 +87,7 @@
       "step": 14,
       "name": "Dokument-Analyse",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 15,
@@ -99,13 +99,13 @@
       "step": 16,
       "name": "Contradictions — Check",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 0
     },
     {
       "step": 17,
       "name": "Contract Draft — generieren (SSE)",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 18,
@@ -159,7 +159,7 @@
       "step": 26,
       "name": "Review Set — erstellen",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 0
     },
     {
       "step": 27,
@@ -201,7 +201,7 @@
       "step": 33,
       "name": "Analytics — erstellen",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 34,
@@ -213,7 +213,7 @@
       "step": 35,
       "name": "Case Strategy — generieren",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 36,
@@ -249,19 +249,19 @@
       "step": 41,
       "name": "Edge: Empty Search (keine Treffer)",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 42,
       "name": "Edge: Invalid Upload (leere Datei)",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 0
     },
     {
       "step": 43,
       "name": "Edge: Concurrent Uploads (3 parallel)",
       "status": "pass",
-      "durationMs": 2
+      "durationMs": 1
     },
     {
       "step": 44,
@@ -273,13 +273,13 @@
       "step": 45,
       "name": "Edge: Double Archive (409 Conflict)",
       "status": "pass",
-      "durationMs": 1
+      "durationMs": 0
     },
     {
       "step": 46,
       "name": "Case Restore — Akte wiederherstellen",
       "status": "pass",
-      "durationMs": 0
+      "durationMs": 1
     },
     {
       "step": 47,
@@ -345,17 +345,17 @@
     ]
   },
   "state": {
-    "caseSlug": "cases/1782680175283",
+    "caseSlug": "cases/1783155430041",
     "documentSlugs": [
-      "documents/1782680175286-sample-contract-pdf",
-      "documents/1782680175288-sample-letter-docx",
-      "documents/1782680175288-scan-klage-jpg",
-      "documents/1782680175289-scan-urteil-png"
+      "documents/1783155430043-sample-contract-pdf",
+      "documents/1783155430044-sample-letter-docx",
+      "documents/1783155430044-scan-klage-jpg",
+      "documents/1783155430044-scan-urteil-png"
     ],
-    "litigationSlug": "litigation/cases/1782680175283/1782680175294",
-    "reviewSetSlug": "review-sets/1782680175297",
-    "trustAccountSlug": "trust-accounts/1782680175298",
-    "analyticsSlug": "litigation-analytics/1782680175300",
-    "playbookSlug": "playbooks/1782680175293"
+    "litigationSlug": "litigation/cases/1783155430041/1783155430050",
+    "reviewSetSlug": "review-sets/1783155430052",
+    "trustAccountSlug": "trust-accounts/1783155430053",
+    "analyticsSlug": "litigation-analytics/1783155430056",
+    "playbookSlug": "playbooks/1783155430048"
   }
 }

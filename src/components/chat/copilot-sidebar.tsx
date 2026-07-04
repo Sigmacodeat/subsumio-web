@@ -29,6 +29,7 @@ import { useLang, type TFunc } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import { ChatPanel, type ChatPanelHandle } from "@/components/chat/chat-panel";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
+import { useMotionValue, useTransform } from "framer-motion";
 import type { ChatContextType } from "@/components/chat/chat-types";
 import { api } from "@/lib/api";
 import { caseFrontmatter } from "@/lib/legal-types";
@@ -1254,6 +1255,10 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   const quickActionNavRef = useRef(false);
   const onToggleRef = useRef(onToggle);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Swipe-to-close: track horizontal drag progress (0 = open, 1 = fully swiped away)
+  const swipeX = useMotionValue(0);
+  const swipeOpacity = useTransform(swipeX, [0, 0.5, 1], [1, 0.6, 0]);
+  const swipeScale = useTransform(swipeX, [0, 1], [1, 0.96]);
   const [actionsExpanded, setActionsExpanded] = useState(false);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [panelMode, setPanelMode] = useState<PanelMode>(() => {
@@ -1358,6 +1363,11 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       setMobileOpen(false);
     }
   }, [open, isMobile]);
+
+  // Reset swipe progress when drawer closes
+  useEffect(() => {
+    if (!mobileOpen) swipeX.set(0);
+  }, [mobileOpen, swipeX]);
 
   // Close mobile drawer on route change — but not if a quick action triggered the navigation
   useEffect(() => {
@@ -1589,6 +1599,27 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         initial={false}
         animate={{ x: mobileOpen ? 0 : "100%" }}
         transition={panelTransition}
+        drag={mobileOpen && !reduceMotion ? "x" : false}
+        dragDirectionLock
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={{ left: 0, right: 0.6 }}
+        onDrag={(_, info) => {
+          const drawerWidth = drawerRef.current?.offsetWidth ?? 390;
+          swipeX.set(Math.max(0, Math.min(1, info.offset.x / drawerWidth)));
+        }}
+        onDragEnd={(_, info) => {
+          swipeX.set(0);
+          if (info.offset.x > 120 || info.velocity.x > 500) {
+            setMobileOpen(false);
+            if (open) onToggle();
+            if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+              navigator.vibrate(8);
+            }
+          }
+        }}
+        style={
+          mobileOpen && !reduceMotion ? { opacity: swipeOpacity, scale: swipeScale } : undefined
+        }
         className="fixed top-0 right-0 z-50 h-full w-full max-w-md will-change-transform lg:hidden"
         role="dialog"
         aria-label={t("copilot.title")}
@@ -1596,6 +1627,13 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         {...(!mobileOpen ? { inert: true } : {})}
       >
         <div className="flex h-full flex-col bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] pb-[calc(3.75rem+env(safe-area-inset-bottom))] shadow-2xl">
+          {/* Swipe handle — visual affordance for swipe-to-close */}
+          {mobileOpen && !reduceMotion && (
+            <div
+              className="absolute top-1/2 left-0 z-10 flex h-12 w-1.5 -translate-y-1/2 cursor-ew-resize items-center justify-center rounded-r-full bg-[color:var(--ds-border-strong)] opacity-40"
+              aria-hidden="true"
+            />
+          )}
           {/* Mobile header bar — compact single-row */}
           <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">
             <div className="flex items-center gap-1.5">

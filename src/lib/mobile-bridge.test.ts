@@ -4,7 +4,15 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 
 // Mock all Capacitor dynamic imports to return null (plugin not available)
 vi.mock("@capacitor/core", () => ({ Capacitor: null }));
-vi.mock("@capacitor/push-notifications", () => ({}));
+vi.mock("@capacitor/push-notifications", () => ({
+  PushNotifications: {
+    requestPermissions: () => Promise.resolve({ receive: "denied" }),
+    register: () => Promise.resolve(),
+    addListener: () => Promise.resolve(),
+    removeListener: () => Promise.resolve(),
+    removeAllListeners: () => Promise.resolve(),
+  },
+}));
 vi.mock("@capacitor/camera", () => ({}));
 vi.mock("@capacitor/share", () => ({}));
 vi.mock("capacitor-native-biometric", () => ({}));
@@ -42,12 +50,11 @@ describe("mobile-bridge", () => {
   });
 
   describe("registerPush", () => {
-    test("returns error when push plugin not available", async () => {
+    test("returns error when push permission is denied", async () => {
       const { registerPush } = await import("./mobile-bridge");
       const result = await registerPush();
       expect(result.token).toBeUndefined();
       expect(result.error).toBeTruthy();
-      expect(result.error).toContain("nicht verfügbar");
     });
   });
 

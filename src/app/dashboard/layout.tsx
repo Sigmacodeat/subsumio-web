@@ -44,6 +44,9 @@ import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useBrainStats } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
 import { useIsMediumScreen } from "@/lib/use-media-query";
+import { useNativeFeatures } from "@/lib/use-native-features";
+import { useNativeBackButton } from "@/lib/use-native-back-button";
+import { useKeyboardAwareScroll } from "@/lib/use-mobile-keyboard";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 
@@ -86,6 +89,22 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(true);
   const isMediumScreen = useIsMediumScreen();
+  const nativeFeatures = useNativeFeatures();
+  useKeyboardAwareScroll();
+  useNativeBackButton({
+    isMobileOpen: mobileOpen,
+    isCopilotOpen: copilotOpen,
+    isCmdOpen: cmdOpen,
+    isGuideOpen: guideOpen,
+    isShortcutsOpen: shortcutsOpen,
+    closeAll: () => {
+      setMobileOpen(false);
+      setCopilotOpen(false);
+      setCmdOpen(false);
+      setGuideOpen(false);
+      setShortcutsOpen(false);
+    },
+  });
   const [globalQuickCreateOpen, setGlobalQuickCreateOpen] = useState(false);
   const [globalDeadlineCreateOpen, setGlobalDeadlineCreateOpen] = useState(false);
   const [globalInvoiceCreateOpen, setGlobalInvoiceCreateOpen] = useState(false);
@@ -424,9 +443,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         <main
           id="main-content"
           role="main"
-          className="dashboard-main-scroll flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-auto pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0"
+          className="dashboard-main-scroll flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip overflow-y-auto pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0"
         >
-          <div key={pathname} className="widget-fade-in flex min-h-0 flex-1 flex-col">
+          <div key={pathname} className="widget-fade-in flex min-h-0 min-w-0 flex-1 flex-col">
             {children}
           </div>
         </main>
@@ -443,6 +462,49 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       <KeyboardShortcuts open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <DashboardGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
       <CopilotSidebar open={copilotOpen} onToggle={() => setCopilotOpen((v) => !v)} />
+
+      {/* Push notification toast (native app only) */}
+      {nativeFeatures.pushNotification && (
+        <motion.div
+          initial={{ y: -80, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -80, opacity: 0 }}
+          transition={overlayTransition}
+          className="fixed top-[env(safe-area-inset-top)] left-1/2 z-[60] flex max-w-sm -translate-x-1/2 items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 shadow-2xl"
+          role="alert"
+        >
+          <div className="flex-1">
+            {nativeFeatures.pushNotification.title && (
+              <p className="text-sm font-semibold text-[color:var(--ds-text)]">
+                {nativeFeatures.pushNotification.title}
+              </p>
+            )}
+            {nativeFeatures.pushNotification.body && (
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                {nativeFeatures.pushNotification.body}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={nativeFeatures.clearPushNotification}
+            className="shrink-0 text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
+            aria-label="Schließen"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </motion.div>
+      )}
 
       {industry === "tax" ? (
         <TaxQuickCreateDialog

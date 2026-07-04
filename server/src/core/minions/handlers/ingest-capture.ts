@@ -34,6 +34,8 @@ import type { BrainEngine } from "../../engine.ts";
 import type { IngestionEvent } from "../../ingestion/types.ts";
 import { validateIngestionEvent } from "../../ingestion/types.ts";
 import { importFromContent } from "../../import-file.ts";
+import { classifyLegalDocument, legalDocTypeLabel } from "../../legal/doc-classifier.ts";
+import { MinionQueue } from "../queue.ts";
 
 export interface IngestCaptureResult {
   slug: string;
@@ -42,6 +44,7 @@ export interface IngestCaptureResult {
   untrusted_payload: boolean;
   source_kind: string;
   source_uri: string;
+  pipeline_queued: boolean;
 }
 
 /** Builds the default slug for an event when the caller didn't provide one. */
@@ -126,6 +129,57 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
       ingested_via: "ingest_capture",
     });
 
+    // E2: Trigger legal-pipeline for non-upload ingestion paths (email, portal,
+    // WhatsApp, beA, connectors). The upload path triggers it via
+    // runExtractionAndImport; ingest_capture must do the same so documents
+    // ingested through connectors get the same Layer 0-7 processing.
+    let pipeline_queued = false;
+    try {
+      const classification = classifyLegalDocument(event.content);
+      if (classification.type !== "legal_document") {
+        // Stamp frontmatter with doc_type like the upload path does
+        const page = await engine.getPage(slug);
+        if (page) {
+          const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+          await engine.putPage(
+            slug,
+            {
+              type: page.type,
+              title: page.title,
+              compiled_truth: page.compiled_truth ?? "",
+              frontmatter: {
+                ...fm,
+                doc_type: classification.type,
+                doc_type_label: legalDocTypeLabel(classification.type),
+                doc_type_confidence: classification.confidence.toFixed(2),
+              },
+            },
+            { sourceId: targetSource !== "default" ? targetSource : undefined }
+          );
+        }
+
+        // Enqueue legal-pipeline with the ingested slug
+        const queue = new MinionQueue(engine);
+        await queue.add(
+          "legal-pipeline",
+          {
+            case_slug: slug,
+            part_slugs: [slug],
+            ...(targetSource !== "default" ? { source_id: targetSource } : {}),
+            trigger: "ingest_capture",
+          },
+          { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+          { allowProtectedSubmit: true }
+        );
+        pipeline_queued = true;
+      }
+    } catch (pipelineErr) {
+      console.error(
+        `[ingest_capture] legal-pipeline trigger failed for ${slug}: ` +
+          (pipelineErr instanceof Error ? pipelineErr.message : String(pipelineErr))
+      );
+    }
+
     return {
       slug,
       status: result.status,
@@ -133,6 +187,7 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
       untrusted_payload: untrustedPayload,
       source_kind: event.source_kind,
       source_uri: event.source_uri,
+      pipeline_queued,
     };
   };
 }

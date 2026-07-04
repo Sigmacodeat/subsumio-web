@@ -162,9 +162,9 @@ export default function BrainDetailPage() {
   };
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex h-full min-w-0 overflow-hidden">
       {/* Main */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-w-0 flex-1 overflow-y-auto">
         {/* Breadcrumb + Actions */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-6 py-3">
           <div className="flex items-center gap-2">

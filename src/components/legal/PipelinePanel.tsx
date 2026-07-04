@@ -17,6 +17,11 @@ import {
   Activity,
   Play,
   Users,
+  AlertTriangle,
+  Link2,
+  Network,
+  TrendingUp,
+  Scale,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +40,27 @@ interface PipelinePanelProps {
   recipientName?: string;
 }
 
+interface CrossCaseFinding {
+  type: string;
+  severity: string;
+  description: string;
+  case_a: string;
+  case_b: string;
+  entity_name?: string;
+}
+
+interface EnsembleConsensus {
+  total_score: number;
+  recommendation: string;
+  narrative_coherence_score?: number;
+  central_thesis?: string;
+  coherence_violations?: string[];
+}
+
+interface EnsembleVerdict {
+  consensus: EnsembleConsensus;
+}
+
 interface PipelineState {
   case_slug: string;
   status: string;
@@ -49,6 +75,14 @@ interface PipelineState {
       error?: string;
     }
   >;
+  linked_cases?: string[];
+  cross_case_findings?: CrossCaseFinding[];
+  damage_overlap_warnings?: string[];
+  ensemble_verdict?: EnsembleVerdict;
+  warnings?: string[];
+  contradiction_findings?: number;
+  cost_spent_usd?: number;
+  total_duration_ms?: number;
 }
 
 const LAYER_INFO: Array<{
@@ -128,6 +162,10 @@ export function PipelinePanel({
   const [partyOverrides, setPartyOverrides] = useState<
     Array<{ name: string; role: string; corrected: boolean }>
   >([]);
+  const [showCrossCase, setShowCrossCase] = useState(false);
+  const [showDamageOverlaps, setShowDamageOverlaps] = useState(false);
+  const [showOnGraph, setShowOnGraph] = useState(false);
+  const [showCoherence, setShowCoherence] = useState(false);
 
   const fetchPipelineData = useCallback(async () => {
     setLoading(true);
@@ -148,11 +186,23 @@ export function PipelinePanel({
           current_layer: Number(fm.current_layer ?? 0),
           layers: {},
         };
-        // Parse layers from the page content (JSON in compiled_truth)
+        // Parse full state from the page content (JSON in compiled_truth)
         try {
           const raw = statePage.content || "";
           const parsed = JSON.parse(raw) as PipelineState;
           if (parsed.layers) state.layers = parsed.layers;
+          if (parsed.linked_cases) state.linked_cases = parsed.linked_cases;
+          if (parsed.cross_case_findings) state.cross_case_findings = parsed.cross_case_findings;
+          if (parsed.damage_overlap_warnings)
+            state.damage_overlap_warnings = parsed.damage_overlap_warnings;
+          if (parsed.ensemble_verdict) state.ensemble_verdict = parsed.ensemble_verdict;
+          if (parsed.warnings) state.warnings = parsed.warnings;
+          if (typeof parsed.contradiction_findings === "number")
+            state.contradiction_findings = parsed.contradiction_findings;
+          if (typeof parsed.cost_spent_usd === "number")
+            state.cost_spent_usd = parsed.cost_spent_usd;
+          if (typeof parsed.total_duration_ms === "number")
+            state.total_duration_ms = parsed.total_duration_ms;
         } catch {
           // Fallback: derive from frontmatter
         }
@@ -610,6 +660,378 @@ export function PipelinePanel({
           </div>
         )}
       </div>
+
+      {/* Cross-Case Analysis Panel */}
+      {pipelineState?.linked_cases && pipelineState.linked_cases.length > 0 && (
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Link2 size={18} className="text-blue-600" />
+              <div>
+                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  Cross-Case Analyse
+                </h3>
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  {pipelineState.linked_cases.length} verknüpfte(s) Verfahren ·{" "}
+                  {pipelineState.cross_case_findings?.length ?? 0} Finding(s)
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => setShowCrossCase(!showCrossCase)}
+            >
+              {showCrossCase ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              {showCrossCase ? "Ausblenden" : "Anzeigen"}
+            </Button>
+          </div>
+
+          {showCrossCase && (
+            <div className="mt-3 space-y-3">
+              {/* Linked Cases */}
+              <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] p-3">
+                <span className="text-xs font-semibold text-[color:var(--ds-text)]">
+                  Verknüpfte Verfahren
+                </span>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {pipelineState.linked_cases.map((lc) => (
+                    <Badge
+                      key={lc}
+                      variant="default"
+                      className="border border-blue-500/30 bg-blue-500/10 text-xs text-blue-600"
+                    >
+                      <Link2 size={10} className="mr-1" />
+                      {lc}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Cross-Case Findings */}
+              {pipelineState.cross_case_findings && pipelineState.cross_case_findings.length > 0 ? (
+                <div className="space-y-2">
+                  {pipelineState.cross_case_findings.map((finding, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "rounded-lg border p-3",
+                        finding.severity === "high"
+                          ? "border-red-500/30 bg-red-500/5"
+                          : finding.severity === "medium"
+                            ? "border-amber-500/30 bg-amber-500/5"
+                            : "border-[color:var(--ds-border)] bg-[color:var(--ds-bg)]"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle
+                          size={14}
+                          className={cn(
+                            "shrink-0",
+                            finding.severity === "high"
+                              ? "text-red-600"
+                              : finding.severity === "medium"
+                                ? "text-amber-600"
+                                : "text-[color:var(--ds-text-muted)]"
+                          )}
+                        />
+                        <span className="text-xs font-semibold text-[color:var(--ds-text)]">
+                          {finding.type === "role_conflict"
+                            ? "Rollenkonflikt"
+                            : finding.type === "accusation_contradiction"
+                              ? "Vorwurfswiderspruch"
+                              : finding.type === "mandate_conflict"
+                                ? "Mandatskonflikt"
+                                : finding.type}
+                        </span>
+                        <Badge
+                          variant="default"
+                          className={cn(
+                            "ml-auto border text-xs",
+                            finding.severity === "high"
+                              ? "border-red-500/30 bg-red-500/10 text-red-600"
+                              : finding.severity === "medium"
+                                ? "border-amber-500/30 bg-amber-500/10 text-amber-600"
+                                : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
+                          )}
+                        >
+                          {finding.severity}
+                        </Badge>
+                      </div>
+                      <p className="mt-1.5 text-xs text-[color:var(--ds-text)]">
+                        {finding.description}
+                      </p>
+                      {finding.entity_name && (
+                        <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                          Person: <span className="font-medium">{finding.entity_name}</span>
+                        </p>
+                      )}
+                      <div className="mt-1 flex gap-2 text-xs text-[color:var(--ds-text-muted)]">
+                        <span>{finding.case_a}</span>
+                        <span>↔</span>
+                        <span>{finding.case_b}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  Keine Cross-Case-Konflikte gefunden.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Damage Overlap Warnings Panel */}
+      {pipelineState?.damage_overlap_warnings &&
+        pipelineState.damage_overlap_warnings.length > 0 && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <AlertTriangle size={18} className="text-amber-600" />
+                <div>
+                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    Schadens-Doppelzählungs-Warnungen
+                  </h3>
+                  <p className="text-xs text-[color:var(--ds-text-muted)]">
+                    {pipelineState.damage_overlap_warnings.length} mögliche Doppelzählung(en)
+                    erkannt
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={() => setShowDamageOverlaps(!showDamageOverlaps)}
+              >
+                {showDamageOverlaps ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                {showDamageOverlaps ? "Ausblenden" : "Anzeigen"}
+              </Button>
+            </div>
+
+            {showDamageOverlaps && (
+              <div className="mt-3 space-y-2">
+                {pipelineState.damage_overlap_warnings.map((warning, i) => (
+                  <div key={i} className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle size={14} className="mt-0.5 shrink-0 text-amber-600" />
+                      <p className="text-xs leading-relaxed text-[color:var(--ds-text)]">
+                        {warning}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+      {/* ON-Querverweis-Graph Panel */}
+      {pipelineState?.layers?.[1]?.output_slugs &&
+        pipelineState.layers[1].output_slugs.length > 0 && (
+          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <Network size={18} className="text-purple-600" />
+                <div>
+                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    ON-Querverweis-Graph
+                  </h3>
+                  <p className="text-xs text-[color:var(--ds-text-muted)]">
+                    Querverweise zwischen ON-Nummern
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={() => setShowOnGraph(!showOnGraph)}
+              >
+                {showOnGraph ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                {showOnGraph ? "Ausblenden" : "Anzeigen"}
+              </Button>
+            </div>
+
+            {showOnGraph && (
+              <div className="mt-3">
+                {(() => {
+                  const onSlug = pipelineState.layers[1].output_slugs![0];
+                  const onPage = outputPages[onSlug];
+                  if (!onPage || !onPage.content) {
+                    return (
+                      <p className="text-xs text-[color:var(--ds-text-muted)]">
+                        ON-Index nicht verfügbar.
+                      </p>
+                    );
+                  }
+                  // Parse ON references from the page content
+                  const refSection = onPage.content.match(/## ON-Querverweise[\s\S]*$/);
+                  if (!refSection) {
+                    return (
+                      <p className="text-xs text-[color:var(--ds-text-muted)]">
+                        Keine Querverweise in der ON-Tabelle gefunden.
+                      </p>
+                    );
+                  }
+                  const refLines = refSection[0]
+                    .split("\n")
+                    .filter(
+                      (l) => l.startsWith("| ") && !l.includes("---") && !l.includes("ON-Nummer")
+                    );
+                  const refs = refLines
+                    .map((line) => {
+                      const cells = line
+                        .split("|")
+                        .map((c) => c.trim())
+                        .filter(Boolean);
+                      return { on: cells[0] ?? "", references: cells[1] ?? "" };
+                    })
+                    .filter((r) => r.on && r.references && r.references !== "—");
+
+                  if (refs.length === 0) {
+                    return (
+                      <p className="text-xs text-[color:var(--ds-text-muted)]">
+                        Keine ON-Querverweise in diesem Fall.
+                      </p>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        {refs.map((ref, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center gap-1.5 rounded-lg border border-purple-500/20 bg-purple-500/5 px-2.5 py-1.5"
+                          >
+                            <span className="font-mono text-xs font-semibold text-purple-600">
+                              {ref.on}
+                            </span>
+                            <ChevronRight size={10} className="text-[color:var(--ds-text-muted)]" />
+                            <span className="text-xs text-[color:var(--ds-text)]">
+                              {ref.references}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+        )}
+
+      {/* Narrative Coherence Panel */}
+      {pipelineState?.ensemble_verdict?.consensus && (
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Scale size={18} className="text-indigo-600" />
+              <div>
+                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  Narrative Kohärenz (Ensemble Critic)
+                </h3>
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  {pipelineState.ensemble_verdict.consensus.central_thesis
+                    ? `Zentrale These: ${pipelineState.ensemble_verdict.consensus.central_thesis.slice(0, 80)}...`
+                    : "Keine zentrale These erfasst"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {typeof pipelineState.ensemble_verdict.consensus.narrative_coherence_score ===
+                "number" && (
+                <Badge
+                  variant="default"
+                  className={cn(
+                    "border text-xs",
+                    pipelineState.ensemble_verdict.consensus.narrative_coherence_score >= 70
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+                      : pipelineState.ensemble_verdict.consensus.narrative_coherence_score >= 50
+                        ? "border-amber-500/30 bg-amber-500/10 text-amber-600"
+                        : "border-red-500/30 bg-red-500/10 text-red-600"
+                  )}
+                >
+                  <TrendingUp size={10} className="mr-1" />
+                  Kohärenz: {pipelineState.ensemble_verdict.consensus.narrative_coherence_score}
+                </Badge>
+              )}
+              <Button
+                variant="secondary"
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={() => setShowCoherence(!showCoherence)}
+              >
+                {showCoherence ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                {showCoherence ? "Ausblenden" : "Anzeigen"}
+              </Button>
+            </div>
+          </div>
+
+          {showCoherence && (
+            <div className="mt-3 space-y-3">
+              {pipelineState.ensemble_verdict.consensus.central_thesis && (
+                <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3">
+                  <span className="text-xs font-semibold text-indigo-600">Zentrale These</span>
+                  <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text)]">
+                    {pipelineState.ensemble_verdict.consensus.central_thesis}
+                  </p>
+                </div>
+              )}
+
+              {pipelineState.ensemble_verdict.consensus.coherence_violations &&
+              pipelineState.ensemble_verdict.consensus.coherence_violations.length > 0 ? (
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold text-[color:var(--ds-text)]">
+                    Kohärenz-Verletzungen (
+                    {pipelineState.ensemble_verdict.consensus.coherence_violations.length})
+                  </span>
+                  {pipelineState.ensemble_verdict.consensus.coherence_violations.map((v, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3"
+                    >
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle size={12} className="mt-0.5 shrink-0 text-amber-600" />
+                        <p className="text-xs leading-relaxed text-[color:var(--ds-text)]">{v}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  Keine Kohärenz-Verletzungen. Alle Layer-Outputs folgen derselben zentralen These.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Pipeline Warnings Summary */}
+      {pipelineState?.warnings && pipelineState.warnings.length > 0 && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={14} className="text-amber-600" />
+            <span className="text-xs font-semibold text-[color:var(--ds-text)]">
+              Pipeline-Warnings ({pipelineState.warnings.length})
+            </span>
+          </div>
+          <ul className="mt-2 space-y-1">
+            {pipelineState.warnings.map((w, i) => (
+              <li key={i} className="text-xs text-[color:var(--ds-text-muted)]">
+                · {w}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Legal Drafts with Editor */}
       {drafts.length > 0 && (

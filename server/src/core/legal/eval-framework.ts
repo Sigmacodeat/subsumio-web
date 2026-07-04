@@ -263,7 +263,7 @@ export async function leaveOneOutEval(
 
 export const ON_SCANNER_EVAL: EvalDataset = {
   specialist_name: "on-scanner",
-  version: "1.0.0",
+  version: "1.1.0",
   cases: [
     {
       id: "on-basic-1",
@@ -298,6 +298,73 @@ export const ON_SCANNER_EVAL: EvalDataset = {
       },
       checkFields: ["on_entries"],
       description: "ON with cross-reference to another ON",
+    },
+    // A4: GZ validation golden-set cases
+    {
+      id: "gz-ocr-confusable-O-as-0",
+      input: `Geschäftszahl: 1O C 125/95t - 1\nON 1\nEingang: 15.03.2023\n\nBeschluss vom 3.5.2024.`,
+      expected: {
+        on_entries: [
+          {
+            on_nummer: "ON 1",
+            gz_raw: "1O C 125/95t",
+          },
+        ],
+        gz_befunde: [{ code: "ocr_verdacht", schwere: "fehler" }],
+      },
+      checkFields: ["gz_befunde"],
+      description: "A4: OCR confusable O instead of 0 in GZ — must flag ocr_verdacht",
+    },
+    {
+      id: "gz-ocr-confusable-l-as-1",
+      input: `Geschäftszahl: l0 C 125/95t - 1\nON 1\nEingang: 15.03.2023\n\nBeschluss.`,
+      expected: {
+        gz_befunde: [{ code: "ocr_verdacht", schwere: "fehler" }],
+      },
+      checkFields: ["gz_befunde"],
+      description: "A4: OCR confusable l instead of 1 in GZ — must flag ocr_verdacht",
+    },
+    {
+      id: "gz-uppercase-pruefzeichen",
+      input: `Geschäftszahl: 10 C 125/95T - 1\nON 1\nEingang: 15.03.2023\n\nBeschluss.`,
+      expected: {
+        gz_befunde: [{ code: "pruefzeichen_grossbuchstabe", schwere: "warnung" }],
+      },
+      checkFields: ["gz_befunde"],
+      description: "A4: Uppercase Prüfzeichen T instead of t — must flag as OCR warning",
+    },
+    {
+      id: "gz-on-sub-order",
+      input: `Geschäftszahl: 10 C 125/95t - 40.2.6\nON 40.2.6\nVernehmung Protokoll\nSeiten: 50985-50991\n\nZeugenaussage.`,
+      expected: {
+        on_entries: [
+          {
+            on_nummer: "ON 40.2.6",
+            gz_raw: "10 C 125/95t - 40.2.6",
+          },
+        ],
+      },
+      checkFields: ["on_entries"],
+      description: "A4: ON sub-order numbering (40.2.6) — must parse correctly",
+    },
+    {
+      id: "gz-foreign-akt",
+      input: `Aktenzeichen: 4 O 123/22\nON 1\nEingang: 15.03.2023\n\nKlage gegen Beklagte.`,
+      expected: {
+        gz_befunde: [{ code: "gattung_unbekannt" }],
+      },
+      checkFields: ["gz_befunde"],
+      description: "A4: Foreign (DE) GZ with unknown Gattungszeichen — must flag gattung_unbekannt",
+    },
+    {
+      id: "gz-clean-civil",
+      input: `Geschäftszahl: 10 C 125/95t - 1\nON 1\nEingang: 15.03.2023\n\nKlage.`,
+      expected: {
+        gz_befunde: [],
+        gz_einheitlich: true,
+      },
+      checkFields: ["gz_befunde", "gz_einheitlich"],
+      description: "A4: Clean civil GZ — no befunde, einheitlich=true",
     },
   ],
 };

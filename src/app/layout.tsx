@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import ServiceWorkerRegister from "@/components/pwa/sw-register";
+import AppUpdateBanner from "@/components/pwa/app-update-banner";
 import RefConsentBanner from "@/components/marketing/ref-consent";
 import AnalyticsConsentBanner from "@/components/marketing/analytics-consent";
 import { MonitoringProvider } from "@/components/providers/monitoring-provider";
@@ -170,7 +171,13 @@ export default async function RootLayout({
     !pathname.startsWith("/en/forgot") &&
     !pathname.startsWith("/api");
 
-  const pageContent = hasOwnMain ? children : <main id="main-content" role="main">{children}</main>;
+  const pageContent = hasOwnMain ? (
+    children
+  ) : (
+    <main id="main-content" role="main">
+      {children}
+    </main>
+  );
 
   return (
     <html
@@ -219,8 +226,22 @@ export default async function RootLayout({
         {isMarketingPage && <RefConsentBanner />}
         {isMarketingPage && <AnalyticsConsentBanner />}
         <ServiceWorkerRegister />
+        <AppUpdateBanner />
         <noscript>
-          <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "12px 16px", background: "#1e40af", color: "#fff", fontSize: "14px", textAlign: "center", zIndex: 9999 }}>
+          <div
+            style={{
+              position: "fixed",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              padding: "12px 16px",
+              background: "#1e40af",
+              color: "#fff",
+              fontSize: "14px",
+              textAlign: "center",
+              zIndex: 9999,
+            }}
+          >
             {lang === "en"
               ? "JavaScript is disabled — some features may be unavailable. Content is still readable."
               : "JavaScript ist deaktiviert — einige Funktionen sind möglicherweise nicht verfügbar. Der Inhalt ist weiterhin lesbar."}

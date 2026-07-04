@@ -97,6 +97,13 @@ interface VaultDoc {
   isSplitParent?: boolean;
   partOf?: string;
   partCount?: number;
+  // D2: Recognition metadata — shown as badges in vault list
+  jurisdiction?: string;
+  jurisdictionConfidence?: number;
+  jurisdictionUnverified?: boolean;
+  gzValidated?: boolean;
+  gzBefundeCount?: number;
+  gzLeitzahl?: string;
 }
 
 function useTypeLabels(t: ReturnType<typeof useLang>["t"]): Record<string, string> {
@@ -152,6 +159,15 @@ function parseDoc(page: BrainPage): VaultDoc {
     isSplitParent: fm.is_split_parent === true || fm.is_split_parent === "true",
     partOf: (fm.part_of as string) || undefined,
     partCount: (fm.part_count as number) || undefined,
+    // D2: Recognition metadata from pipeline frontmatter
+    jurisdiction: (fm.jurisdiction as string) || undefined,
+    jurisdictionConfidence:
+      typeof fm.jurisdiction_confidence === "number" ? fm.jurisdiction_confidence : undefined,
+    jurisdictionUnverified:
+      fm.jurisdiction_unverified === true || fm.jurisdiction_unverified === "true",
+    gzValidated: fm.aktenzeichen_validated === true || fm.aktenzeichen_validated === "true",
+    gzBefundeCount: typeof fm.gz_befunde_count === "number" ? fm.gz_befunde_count : undefined,
+    gzLeitzahl: (fm.aktenzeichen as string) || (fm.gz_leitzahl as string) || undefined,
   };
 }
 
@@ -1013,6 +1029,52 @@ export default function VaultPage() {
                         className="border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
                       >
                         {doc.docTypeLabel}
+                      </Badge>
+                    )}
+                    {doc.jurisdiction && (
+                      <Badge
+                        variant="default"
+                        className={`border text-xs ${
+                          doc.jurisdictionUnverified
+                            ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                            : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+                        }`}
+                        title={
+                          doc.jurisdictionConfidence !== undefined
+                            ? `Confidence: ${Math.round(doc.jurisdictionConfidence * 100)}%`
+                            : undefined
+                        }
+                      >
+                        {doc.jurisdiction.toUpperCase()}
+                        {doc.jurisdictionUnverified && " ⚠"}
+                        {doc.jurisdictionConfidence !== undefined &&
+                          !doc.jurisdictionUnverified && (
+                            <span className="ml-0.5 opacity-60">
+                              {Math.round(doc.jurisdictionConfidence * 100)}%
+                            </span>
+                          )}
+                      </Badge>
+                    )}
+                    {doc.gzLeitzahl && (
+                      <Badge
+                        variant="default"
+                        className={`border font-mono text-xs ${
+                          doc.gzValidated === true
+                            ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+                            : doc.gzBefundeCount && doc.gzBefundeCount > 0
+                              ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                              : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
+                        }`}
+                        title={
+                          doc.gzValidated === true
+                            ? "GZ strukturell validiert"
+                            : doc.gzBefundeCount
+                              ? `${doc.gzBefundeCount} Befunde`
+                              : "GZ nicht validiert"
+                        }
+                      >
+                        {doc.gzValidated === true ? "✓ " : doc.gzBefundeCount ? "⚠ " : ""}
+                        {doc.gzLeitzahl}
                       </Badge>
                     )}
                     {doc.extractionStatus && doc.extractionStatus !== "ready" && (

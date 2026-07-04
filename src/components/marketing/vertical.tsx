@@ -351,7 +351,7 @@ export default function VerticalPage({
         className="relative overflow-hidden px-4 py-24 text-center sm:px-6 lg:px-8"
       >
         <div className="mx-auto max-w-3xl">
-          <SubsumioMark size={56} className="mx-auto mb-7" />
+          <SubsumioMark size={56} className="mx-auto mb-6" />
           <h2 className={`${H2_CTA_CLASS} mb-4`}>{t.ctaTitle}</h2>
           <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
             {t.ctaSub}

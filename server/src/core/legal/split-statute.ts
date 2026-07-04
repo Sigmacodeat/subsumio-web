@@ -211,6 +211,12 @@ const INLINE_MIN_MARKERS = 10;
  *  jumped-to run (a genuine large gap of repealed §§). */
 const INLINE_MAX_STEP = 50;
 
+/** Minimum span (chars between this § marker and the next) for a candidate to
+ *  be considered norm text rather than a ToC stub. ToC entries are typically
+ *  30-60 chars; real norm text is 200+. Matches below this threshold are only
+ *  kept as fallback when no above-threshold candidate exists for that §. */
+const NORM_MIN_SPAN = 100;
+
 /**
  * Recover per-§ sections from an unstructured statute dump (no `## §` headings)
  * by treating inline `§ N.` markers as paragraph starts.
@@ -236,11 +242,35 @@ const INLINE_MAX_STEP = 50;
  * either way.
  */
 export function splitStatuteInline(body: string): StatuteSection[] {
-  const matches: Array<{ index: number; num: number; suffix: string }> = [];
+  const allMatches: Array<{ index: number; num: number; suffix: string }> = [];
   for (const m of body.matchAll(INLINE_PARAGRAPH)) {
-    matches.push({ index: m.index ?? 0, num: parseInt(m[1], 10), suffix: m[2] });
+    allMatches.push({ index: m.index ?? 0, num: parseInt(m[1], 10), suffix: m[2] });
   }
-  if (matches.length < INLINE_MIN_MARKERS) return [];
+  if (allMatches.length < INLINE_MIN_MARKERS) return [];
+
+  // Deduplicate by § number: a statute dump often has a table of contents
+  // (ToC) where each § appears as a short stub ("§ 933. Gewährleistungsfrist"),
+  // followed by the actual norm text with the same § number. The advancing
+  // algorithm below would lock onto the ToC stubs (they appear first, in
+  // increasing order) and reject the real text. To fix this, we group all
+  // markers by (num, suffix) and keep the first one whose surrounding text
+  // (up to the next marker) meets the NORM_MIN_SPAN threshold — that's the
+  // norm text, not the ToC stub. If no candidate meets the threshold (short
+  // test fixtures, repealed §§), the longest is kept as fallback.
+  const byKey = new Map<string, { index: number; num: number; suffix: string; _span: number }>();
+  for (let i = 0; i < allMatches.length; i++) {
+    const mt = allMatches[i];
+    const key = `${mt.num}-${mt.suffix}`;
+    const nextIdx = i + 1 < allMatches.length ? allMatches[i + 1].index : body.length;
+    const span = nextIdx - mt.index;
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, { ...mt, _span: span });
+    } else if (existing._span < NORM_MIN_SPAN && span > existing._span) {
+      byKey.set(key, { ...mt, _span: span });
+    }
+  }
+  const matches = Array.from(byKey.values()).sort((a, b) => a.index - b.index);
 
   // Rule 1 — anchor: drop leading markers until the natural statute start (§ ≤ 2).
   let startIdx = matches.findIndex((m) => m.num <= 2);

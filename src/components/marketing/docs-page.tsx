@@ -98,7 +98,7 @@ function DocsProof({ lang }: { lang: Lang }) {
             {UI_STRINGS[lang].dashboardNotDatasheet}
           </p>
           <h2 className={`${H2_CTA_CLASS} mb-4`}>{UI_STRINGS[lang].docsTitle}</h2>
-          <p className="mb-7 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
+          <p className="mb-6 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
             {UI_STRINGS[lang].docsSub}
           </p>
           <div className="grid gap-3">

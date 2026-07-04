@@ -42,6 +42,20 @@ import { getRechtsraumParams } from "@/lib/legal/rechtsraum";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { csrfFetch } from "@/lib/csrf";
+
+interface ATFristResult {
+  fristbeginn: string;
+  fristende: string;
+  vorfrist: string;
+  hinweise: string[];
+  art: { key: string; bezeichnung: string; rechtsgrundlage: string; is_notfrist: boolean };
+}
+interface ATFristResponse {
+  ok: boolean;
+  result: ATFristResult;
+  availableArts: Array<{ key: string; bezeichnung: string; rechtsgrundlage: string }>;
+}
 
 interface DeadlineQuickCreateDialogProps {
   open: boolean;
@@ -85,6 +99,9 @@ export function DeadlineQuickCreateDialog({
   const [vorfristPreview, setVorfristPreview] = useState<string | null>(null);
   const [rechtsraum, setRechtsraum] = useState<{ state?: string; country?: string }>({});
   const [isErvDate, setIsErvDate] = useState(false);
+  const [atFristResult, setAtFristResult] = useState<ATFristResult | null>(null);
+  const [atFristLoading, setAtFristLoading] = useState(false);
+  const [atFristError, setAtFristError] = useState<string | null>(null);
 
   const { data: cases, loading: loadingCases } = useDialogFetch<CaseOption[]>(open, async () => {
     const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
@@ -102,11 +119,52 @@ export function DeadlineQuickCreateDialog({
       .catch(() => {});
   }, [open]);
 
+  // C2: When Rechtsraum is AT, delegate to the engine's frist-engine for
+  // correct Zustellfiktionen, verhandlungsfreie Zeit, AVG rules, etc.
   useEffect(() => {
-    if (!ruleKey) {
+    if (!ruleKey || !date) {
       setCalcPreview(null);
+      setAtFristResult(null);
       return;
     }
+    if (rechtsraum.country === "AT") {
+      const abort = new AbortController();
+      setAtFristLoading(true);
+      setAtFristError(null);
+      const artKey = ruleKey;
+      csrfFetch("/api/legal/frist/compute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ artKey, zustellungIso: date }),
+        signal: abort.signal,
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || "Engine not reachable");
+          }
+          const data = (await res.json()) as ATFristResponse;
+          setAtFristResult(data.result);
+          setCalcPreview(data.result.fristende);
+          // Auto-set Notfrist flag from engine result — ensures Vier-Augen
+          // enforcement and 7-day Vorfrist are applied for statutory deadlines.
+          if (data.result.art.is_notfrist) setIsNotfrist(true);
+        })
+        .catch((err) => {
+          if (err instanceof Error && err.name === "AbortError") return;
+          setAtFristError(err instanceof Error ? err.message : "Engine error");
+          // Fallback to web-lib calculation
+          const rule = DEADLINE_RULES.find((r) => r.key === ruleKey);
+          if (rule) {
+            const { dueDate } = computeDueDate(rule, date, undefined, "AT");
+            setCalcPreview(dueDate);
+          }
+        })
+        .finally(() => setAtFristLoading(false));
+      return () => abort.abort();
+    }
+    // Non-AT: use web-lib
+    setAtFristResult(null);
     const rule = DEADLINE_RULES.find((r) => r.key === ruleKey);
     if (!rule) {
       setCalcPreview(null);
@@ -391,6 +449,34 @@ export function DeadlineQuickCreateDialog({
                       )}{" "}
                       {t("deadlines.calc_remaining" as DashboardKey)}
                     </p>
+                  </div>
+                )}
+
+                {/* C2: AT frist-engine hints */}
+                {atFristLoading && (
+                  <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+                    <Loader2 size={12} className="animate-spin" />
+                    AT-Engine wird befragt…
+                  </div>
+                )}
+                {atFristError && (
+                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-700">
+                    ⚠ AT-Engine nicht erreichbar — Web-Lib als Fallback genutzt
+                  </div>
+                )}
+                {atFristResult && atFristResult.hinweise.length > 0 && (
+                  <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2">
+                    <p className="mb-1 text-xs font-medium text-blue-700">AT-Engine-Hinweise:</p>
+                    <ul className="space-y-0.5 text-xs text-blue-600">
+                      {atFristResult.hinweise.map((h, i) => (
+                        <li key={i}>• {h}</li>
+                      ))}
+                    </ul>
+                    {atFristResult.vorfrist && (
+                      <p className="mt-1.5 text-xs font-medium text-blue-700">
+                        Vorfrist (Engine): {atFristResult.vorfrist}
+                      </p>
+                    )}
                   </div>
                 )}
 

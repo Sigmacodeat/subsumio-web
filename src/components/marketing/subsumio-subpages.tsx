@@ -61,13 +61,13 @@ function Hero({
     <Section tone="light" className="px-6 pt-16 pb-20">
       <div className="mx-auto max-w-4xl text-center">
         <motion.div {...reveal}>
-          <BadgePill className="mb-7">{eyebrow}</BadgePill>
+          <BadgePill className="mb-6">{eyebrow}</BadgePill>
           <h1 className={`${H1_CLASS} mb-5`}>
             {title}
             <br />
             <span className="gradient-text">{claim}</span>
           </h1>
-          <p className="mx-auto mb-9 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
+          <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
             {sub}
           </p>
           <div className="flex flex-col justify-center gap-3 sm:flex-row">
@@ -103,9 +103,11 @@ function CtaClose({
   return (
     <Section tone="dark" className="px-4 py-24 text-center sm:px-6 lg:px-8">
       <Reveal variant="upLg" className="mx-auto max-w-3xl">
-        <SubsumioMark size={56} className="mx-auto mb-7" />
+        <SubsumioMark size={56} className="mx-auto mb-6" />
         <h2 className={`${H2_CTA_CLASS} mb-4`}>{title}</h2>
-        <p className="mb-9 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">{sub}</p>
+        <p className="mb-8 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
+          {sub}
+        </p>
         <Link href={href}>
           <Button size="xl" variant="primary">
             {label} <ArrowRight size={18} />

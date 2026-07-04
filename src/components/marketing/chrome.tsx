@@ -1649,7 +1649,7 @@ export function CTASection({
   return (
     <Section tone="dark" className="px-4 py-28 text-center sm:px-6 lg:px-8">
       <Reveal variant="upLg" className="mx-auto max-w-3xl">
-        {showLogo && <SubsumioMark size={56} className="mx-auto mb-7" />}
+        {showLogo && <SubsumioMark size={56} className="mx-auto mb-6" />}
         <h2 className={H2_CTA_CLASS}>{title}</h2>
         <p className="mx-auto mb-8 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
           {sub}

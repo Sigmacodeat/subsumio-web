@@ -634,7 +634,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         >
           <GradientMesh className="z-0" />
           <motion.div {...reveal} className="relative z-10 mx-auto max-w-3xl text-center">
-            <SubsumioMark size={48} className="mx-auto mb-7" />
+            <SubsumioMark size={48} className="mx-auto mb-6" />
             <h2 className={`${H2_CTA_CLASS} mb-4`}>{t.ctaTitle}</h2>
             <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
               {t.ctaSub}

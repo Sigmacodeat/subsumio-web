@@ -14,6 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
+import { csrfFetch } from "@/lib/csrf";
 import { useLang } from "@/lib/use-lang";
 
 interface DocuSignSendDialogProps {
@@ -87,7 +88,7 @@ export function DocuSignSendDialog({
         return;
       }
 
-      const res = await fetch("/api/docusign/send", {
+      const res = await csrfFetch("/api/docusign/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

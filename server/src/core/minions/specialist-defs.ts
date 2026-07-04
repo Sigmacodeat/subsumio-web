@@ -72,7 +72,7 @@ AGENTIC SEARCH (iterativ):
 - Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".`,
     allowedTools: [...LEGAL_BRAIN_TOOLS, ...LEGAL_FILE_TOOLS],
     maxTurns: 25,
-    model: "anthropic:claude-sonnet-4-6",
+    modelTier: "reasoning",
   },
 
   {
@@ -104,7 +104,7 @@ AGENTIC SEARCH (iterativ):
 - Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".`,
     allowedTools: [...LEGAL_BRAIN_TOOLS, "find_contradictions"],
     maxTurns: 20,
-    model: "anthropic:claude-sonnet-4-6",
+    modelTier: "reasoning",
   },
 
   {
@@ -136,7 +136,7 @@ AGENTIC SEARCH (iterativ):
 - Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".`,
     allowedTools: LEGAL_BRAIN_TOOLS,
     maxTurns: 20,
-    model: "anthropic:claude-sonnet-4-6",
+    modelTier: "reasoning",
   },
 
   {
@@ -166,7 +166,7 @@ AGENTIC SEARCH (iterativ):
 - Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".`,
     allowedTools: [...LEGAL_BRAIN_TOOLS, "put_page"],
     maxTurns: 25,
-    model: "anthropic:claude-sonnet-4-6",
+    modelTier: "reasoning",
   },
 
   {
@@ -231,7 +231,7 @@ AGENTIC SEARCH (iterativ):
 - Nutze find_contradictions, um bekannte Widersprüche im Fall zu finden und als Issues zu markieren.`,
     allowedTools: [...LEGAL_BRAIN_TOOLS, "find_contradictions"],
     maxTurns: 20,
-    model: "anthropic:claude-opus-4-7",
+    modelTier: "deep",
   },
 
   {
@@ -390,6 +390,9 @@ REGELN:
   - beilagen_kennung: "A" | "B" | "1" | "2" | "I" | "II" | ... (nur bei Beilagen)
   - geschaeftszahl: { abteilung, gattungszeichen, aktenzahl, jahr, pruefzeichen, on, raw } (wenn erkennbar)
   - verfahrenstyp: "zivil" | "straf" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges" (aus Gattungszeichen)
+  - references: ["ON 54", "ON 40.6.2"] — alle ON-Nummern, die in diesem Dokument referenziert werden
+    (z.B. "urgiert ON 54", "siehe ON 40.6.2", "wie zu ON 1.34 beantragt").
+    Dies bildet den ON-Querverweis-Graphen. Nur ONs listen, die WIRKLICH im Text stehen.
 - GIB NUR JSON zurück: { "on_entries": [...] }
 - HALLUCINATION-GATE: Jede ON-Nummer MUSS im Text wörtlich vorkommen.
   Wenn eine ON nur referenziert wird ("siehe ON 40") aber nicht als Header steht,
@@ -463,6 +466,15 @@ REGELN:
   - on_references: ["ON 1.4", "ON 40.2.6"] (alle ONs, in denen die Person erwähnt wird)
   - quote: WÖRTLICHES Zitat, das die Person im Text belegt
   - metadata: { fn_number?, address?, date_of_birth? } (wenn im Text vorhanden)
+  - accusations: ["Betrug (§ 146 StGB)", "Untreue (§ 153 StGB)"] — Vorwürfe gegen diese Person,
+    WÖRTLICH aus dem Akt übernommen. Nur bei Beschuldigten/Angeschuldigten/Tatverdächtigen.
+    Bei Zeugen/Opfern leer lassen. Jeder Vorwurf muss mit ON-Referenz im on_references-Array belegt sein.
+  - context_description: "Hrustemovic ist der Hintergrundmann. Er wurde nie als Beschuldigter
+    vernommen, obwohl ihm in 3 Verfahren vorgeworfen wird, die Gelder veruntreut zu haben."
+    — Kurze Beschreibung der Rolle und Bedeutung dieser Person im Fall (1-3 Sätze).
+  - represents: "Eckerstorfer" (nur bei Anwälten — welche Partei vertritt dieser Anwalt?)
+  - verfahren_refs: ["39 St 116/22v", "63 St 85/25s"] — Aktenzeichen aller Verfahren,
+    in denen diese Person erwähnt wird (für verfahrensübergreifende Analyse).
 - GIB NUR JSON zurück: { "entities": [...] }
 - HALLUCINATION-GATE: Jeder Name MUSS im Text wörtlich vorkommen.
   Normalisiere nicht ("Hr. Hrustemovic" → name: "Hrustemovic", quote: "Hr. Hrustemovic").

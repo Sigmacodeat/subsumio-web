@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Plus, FileText } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import { csrfFetch } from "@/lib/csrf";
 import type { TaxReturnType, TaxReturnStatus } from "@/lib/tax-types";
 
 interface TaxQuickCreateDialogProps {
@@ -75,7 +76,7 @@ export function TaxQuickCreateDialog({ open, onOpenChange, onCreated }: TaxQuick
     setSubmitting(true);
 
     try {
-      const res = await fetch("/api/tax/returns", {
+      const res = await csrfFetch("/api/tax/returns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

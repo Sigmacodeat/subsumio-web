@@ -542,16 +542,24 @@
    views are normalized to the dashboard's success/warning/danger/info tokens.
    This keeps contrast and meaning stable across light/dark, hover/focus and
    PWA/mobile shells without chasing color literals through every page. */
+[data-app="dashboard"] .text-emerald-100,
+[data-app="dashboard"] .text-emerald-200,
 [data-app="dashboard"] .text-emerald-300,
 [data-app="dashboard"] .text-emerald-400,
 [data-app="dashboard"] .text-emerald-500,
 [data-app="dashboard"] .text-emerald-600,
 [data-app="dashboard"] .text-emerald-700,
+[data-app="dashboard"] .text-emerald-800,
+[data-app="dashboard"] .text-emerald-900,
+[data-app="dashboard"] .text-green-100,
+[data-app="dashboard"] .text-green-200,
 [data-app="dashboard"] .text-green-300,
 [data-app="dashboard"] .text-green-400,
 [data-app="dashboard"] .text-green-500,
 [data-app="dashboard"] .text-green-600,
 [data-app="dashboard"] .text-green-700,
+[data-app="dashboard"] .text-green-800,
+[data-app="dashboard"] .text-green-900,
 [data-app="dashboard"] .hover\:text-emerald-300:hover,
 [data-app="dashboard"] .hover\:text-emerald-400:hover,
 [data-app="dashboard"] .hover\:text-emerald-500:hover,
@@ -563,6 +571,8 @@
   color: var(--ds-success-text);
 }
 
+[data-app="dashboard"] .text-amber-100,
+[data-app="dashboard"] .text-amber-200,
 [data-app="dashboard"] .text-amber-300,
 [data-app="dashboard"] .text-amber-400,
 [data-app="dashboard"] .text-amber-500,
@@ -570,16 +580,24 @@
 [data-app="dashboard"] .text-amber-700,
 [data-app="dashboard"] .text-amber-800,
 [data-app="dashboard"] .text-amber-900,
+[data-app="dashboard"] .text-yellow-100,
+[data-app="dashboard"] .text-yellow-200,
 [data-app="dashboard"] .text-yellow-300,
 [data-app="dashboard"] .text-yellow-400,
 [data-app="dashboard"] .text-yellow-500,
 [data-app="dashboard"] .text-yellow-600,
 [data-app="dashboard"] .text-yellow-700,
+[data-app="dashboard"] .text-yellow-800,
+[data-app="dashboard"] .text-yellow-900,
+[data-app="dashboard"] .text-orange-100,
+[data-app="dashboard"] .text-orange-200,
 [data-app="dashboard"] .text-orange-300,
 [data-app="dashboard"] .text-orange-400,
 [data-app="dashboard"] .text-orange-500,
 [data-app="dashboard"] .text-orange-600,
 [data-app="dashboard"] .text-orange-700,
+[data-app="dashboard"] .text-orange-800,
+[data-app="dashboard"] .text-orange-900,
 [data-app="dashboard"] .hover\:text-amber-300:hover,
 [data-app="dashboard"] .hover\:text-amber-400:hover,
 [data-app="dashboard"] .hover\:text-amber-500:hover,
@@ -589,16 +607,24 @@
   color: var(--ds-warning-text);
 }
 
+[data-app="dashboard"] .text-red-100,
+[data-app="dashboard"] .text-red-200,
 [data-app="dashboard"] .text-red-300,
 [data-app="dashboard"] .text-red-400,
 [data-app="dashboard"] .text-red-500,
 [data-app="dashboard"] .text-red-600,
 [data-app="dashboard"] .text-red-700,
+[data-app="dashboard"] .text-red-800,
+[data-app="dashboard"] .text-red-900,
+[data-app="dashboard"] .text-rose-100,
+[data-app="dashboard"] .text-rose-200,
 [data-app="dashboard"] .text-rose-300,
 [data-app="dashboard"] .text-rose-400,
 [data-app="dashboard"] .text-rose-500,
 [data-app="dashboard"] .text-rose-600,
 [data-app="dashboard"] .text-rose-700,
+[data-app="dashboard"] .text-rose-800,
+[data-app="dashboard"] .text-rose-900,
 [data-app="dashboard"] .hover\:text-red-300:hover,
 [data-app="dashboard"] .hover\:text-red-400:hover,
 [data-app="dashboard"] .hover\:text-red-500:hover,
@@ -608,21 +634,33 @@
   color: var(--ds-danger-text);
 }
 
+[data-app="dashboard"] .text-blue-100,
+[data-app="dashboard"] .text-blue-200,
 [data-app="dashboard"] .text-blue-300,
 [data-app="dashboard"] .text-blue-400,
 [data-app="dashboard"] .text-blue-500,
 [data-app="dashboard"] .text-blue-600,
 [data-app="dashboard"] .text-blue-700,
+[data-app="dashboard"] .text-blue-800,
+[data-app="dashboard"] .text-blue-900,
+[data-app="dashboard"] .text-sky-100,
+[data-app="dashboard"] .text-sky-200,
 [data-app="dashboard"] .text-sky-300,
 [data-app="dashboard"] .text-sky-400,
 [data-app="dashboard"] .text-sky-500,
 [data-app="dashboard"] .text-sky-600,
 [data-app="dashboard"] .text-sky-700,
+[data-app="dashboard"] .text-sky-800,
+[data-app="dashboard"] .text-sky-900,
+[data-app="dashboard"] .text-cyan-100,
+[data-app="dashboard"] .text-cyan-200,
 [data-app="dashboard"] .text-cyan-300,
 [data-app="dashboard"] .text-cyan-400,
 [data-app="dashboard"] .text-cyan-500,
 [data-app="dashboard"] .text-cyan-600,
 [data-app="dashboard"] .text-cyan-700,
+[data-app="dashboard"] .text-cyan-800,
+[data-app="dashboard"] .text-cyan-900,
 [data-app="dashboard"] .hover\:text-blue-500:hover,
 [data-app="dashboard"] .hover\:text-blue-600:hover,
 [data-app="dashboard"] .hover\:text-sky-500:hover,
@@ -632,26 +670,38 @@
   color: var(--ds-info-text);
 }
 
+[data-app="dashboard"] .text-teal-100,
+[data-app="dashboard"] .text-teal-200,
 [data-app="dashboard"] .text-teal-300,
 [data-app="dashboard"] .text-teal-400,
 [data-app="dashboard"] .text-teal-500,
 [data-app="dashboard"] .text-teal-600,
 [data-app="dashboard"] .text-teal-700,
+[data-app="dashboard"] .text-teal-800,
+[data-app="dashboard"] .text-teal-900,
 [data-app="dashboard"] .hover\:text-teal-500:hover,
 [data-app="dashboard"] .hover\:text-teal-600:hover {
   color: var(--ds-category-teal-text);
 }
 
+[data-app="dashboard"] .text-pink-100,
+[data-app="dashboard"] .text-pink-200,
 [data-app="dashboard"] .text-pink-300,
 [data-app="dashboard"] .text-pink-400,
 [data-app="dashboard"] .text-pink-500,
 [data-app="dashboard"] .text-pink-600,
 [data-app="dashboard"] .text-pink-700,
+[data-app="dashboard"] .text-pink-800,
+[data-app="dashboard"] .text-pink-900,
+[data-app="dashboard"] .text-fuchsia-100,
+[data-app="dashboard"] .text-fuchsia-200,
 [data-app="dashboard"] .text-fuchsia-300,
 [data-app="dashboard"] .text-fuchsia-400,
 [data-app="dashboard"] .text-fuchsia-500,
 [data-app="dashboard"] .text-fuchsia-600,
 [data-app="dashboard"] .text-fuchsia-700,
+[data-app="dashboard"] .text-fuchsia-800,
+[data-app="dashboard"] .text-fuchsia-900,
 [data-app="dashboard"] .hover\:text-pink-500:hover,
 [data-app="dashboard"] .hover\:text-pink-600:hover,
 [data-app="dashboard"] .hover\:text-fuchsia-500:hover,
@@ -659,27 +709,115 @@
   color: var(--ds-category-pink-text);
 }
 
+[data-app="dashboard"] .text-violet-100,
+[data-app="dashboard"] .text-violet-200,
+[data-app="dashboard"] .text-violet-300,
+[data-app="dashboard"] .text-violet-400,
 [data-app="dashboard"] .text-violet-500,
 [data-app="dashboard"] .text-violet-600,
 [data-app="dashboard"] .text-violet-700,
+[data-app="dashboard"] .text-violet-800,
+[data-app="dashboard"] .text-violet-900,
+[data-app="dashboard"] .text-purple-100,
+[data-app="dashboard"] .text-purple-200,
+[data-app="dashboard"] .text-purple-300,
+[data-app="dashboard"] .text-purple-400,
 [data-app="dashboard"] .text-purple-500,
 [data-app="dashboard"] .text-purple-600,
 [data-app="dashboard"] .text-purple-700,
+[data-app="dashboard"] .text-purple-800,
+[data-app="dashboard"] .text-purple-900,
+[data-app="dashboard"] .text-indigo-100,
+[data-app="dashboard"] .text-indigo-200,
+[data-app="dashboard"] .text-indigo-300,
+[data-app="dashboard"] .text-indigo-400,
 [data-app="dashboard"] .text-indigo-500,
 [data-app="dashboard"] .text-indigo-600,
-[data-app="dashboard"] .text-indigo-700 {
+[data-app="dashboard"] .text-indigo-700,
+[data-app="dashboard"] .text-indigo-800,
+[data-app="dashboard"] .text-indigo-900,
+[data-app="dashboard"] .hover\:text-indigo-600:hover,
+[data-app="dashboard"] .hover\:text-purple-600:hover,
+[data-app="dashboard"] .hover\:text-violet-600:hover {
   color: var(--brand-text);
 }
 
+/* Purple / violet / indigo — brand-tinted backgrounds and borders */
+[data-app="dashboard"] .bg-purple-100,
+[data-app="dashboard"] .bg-purple-500\/5,
+[data-app="dashboard"] .bg-purple-500\/10,
+[data-app="dashboard"] .bg-purple-950,
+[data-app="dashboard"] .bg-violet-500\/5,
+[data-app="dashboard"] .bg-violet-500\/10,
+[data-app="dashboard"] .bg-indigo-100,
+[data-app="dashboard"] .bg-indigo-500\/5,
+[data-app="dashboard"] .bg-indigo-500\/10,
+[data-app="dashboard"] .hover\:bg-indigo-500\/10:hover,
+[data-app="dashboard"] .hover\:bg-purple-500\/10:hover {
+  background-color: var(--accent-premium-soft);
+}
+
+[data-app="dashboard"] .border-purple-200,
+[data-app="dashboard"] .border-purple-500\/20,
+[data-app="dashboard"] .border-purple-500\/30,
+[data-app="dashboard"] .border-violet-500\/20,
+[data-app="dashboard"] .border-violet-500\/30,
+[data-app="dashboard"] .border-indigo-500\/20,
+[data-app="dashboard"] .border-indigo-500\/30,
+[data-app="dashboard"] .hover\:border-indigo-500\/30:hover {
+  border-color: var(--accent-premium-border);
+}
+
+/* Solid purple / violet / indigo — brand buttons and dots */
+[data-app="dashboard"] .bg-indigo-600,
+[data-app="dashboard"] .hover\:bg-indigo-500:hover {
+  background-color: var(--brand-primary);
+}
+
+[data-app="dashboard"] .bg-violet-500 {
+  background-color: var(--brand-tertiary);
+}
+
+[data-app="dashboard"] .text-slate-300,
 [data-app="dashboard"] .text-slate-400,
 [data-app="dashboard"] .text-slate-500,
 [data-app="dashboard"] .text-slate-600,
 [data-app="dashboard"] .text-slate-700,
+[data-app="dashboard"] .text-slate-800,
+[data-app="dashboard"] .text-slate-900,
+[data-app="dashboard"] .text-gray-300,
 [data-app="dashboard"] .text-gray-400,
 [data-app="dashboard"] .text-gray-500,
 [data-app="dashboard"] .text-gray-600,
-[data-app="dashboard"] .text-gray-700 {
+[data-app="dashboard"] .text-gray-700,
+[data-app="dashboard"] .text-gray-800,
+[data-app="dashboard"] .text-gray-900 {
   color: var(--ds-text-muted);
+}
+
+/* Gray / slate — neutral backgrounds and borders */
+[data-app="dashboard"] .bg-gray-100,
+[data-app="dashboard"] .bg-gray-500\/5,
+[data-app="dashboard"] .bg-gray-500\/10,
+[data-app="dashboard"] .bg-slate-100,
+[data-app="dashboard"] .bg-slate-500\/5,
+[data-app="dashboard"] .bg-slate-500\/10 {
+  background-color: var(--ds-surface-2);
+}
+
+[data-app="dashboard"] .border-gray-200,
+[data-app="dashboard"] .border-gray-300,
+[data-app="dashboard"] .border-slate-200,
+[data-app="dashboard"] .border-slate-500\/20 {
+  border-color: var(--ds-border);
+}
+
+/* Solid gray / slate — dots and dividers */
+[data-app="dashboard"] .bg-gray-400,
+[data-app="dashboard"] .bg-gray-500,
+[data-app="dashboard"] .bg-slate-400,
+[data-app="dashboard"] .bg-slate-500 {
+  background-color: var(--ds-border-strong);
 }
 
 [data-app="dashboard"] .bg-emerald-50,
@@ -690,13 +828,19 @@
 [data-app="dashboard"] .hover\:bg-emerald-500\/10:hover,
 [data-app="dashboard"] .hover\:bg-green-500\/10:hover,
 [data-app="dashboard"] .bg-green-50,
+[data-app="dashboard"] .bg-green-100,
 [data-app="dashboard"] .bg-green-500\/5,
-[data-app="dashboard"] .bg-green-500\/10 {
+[data-app="dashboard"] .bg-green-500\/10,
+[data-app="dashboard"] .bg-emerald-100 {
   background-color: var(--ds-success-bg);
 }
 
 [data-app="dashboard"] .bg-amber-50,
 [data-app="dashboard"] .bg-amber-100,
+[data-app="dashboard"] .bg-yellow-50,
+[data-app="dashboard"] .bg-yellow-100,
+[data-app="dashboard"] .bg-orange-50,
+[data-app="dashboard"] .bg-orange-100,
 [data-app="dashboard"] .bg-amber-50\/40,
 [data-app="dashboard"] .bg-amber-500\/5,
 [data-app="dashboard"] .bg-amber-500\/10,
@@ -719,6 +863,7 @@
 }
 
 [data-app="dashboard"] .bg-red-50,
+[data-app="dashboard"] .bg-red-100,
 [data-app="dashboard"] .bg-red-50\/40,
 [data-app="dashboard"] .bg-red-500\/5,
 [data-app="dashboard"] .bg-red-500\/10,
@@ -735,6 +880,7 @@
 }
 
 [data-app="dashboard"] .bg-blue-50,
+[data-app="dashboard"] .bg-blue-100,
 [data-app="dashboard"] .bg-blue-500\/5,
 [data-app="dashboard"] .bg-blue-500\/10,
 [data-app="dashboard"] .bg-blue-500\/\[0\.02\],
@@ -774,6 +920,7 @@
 [data-app="dashboard"] .border-green-200,
 [data-app="dashboard"] .border-green-500\/20,
 [data-app="dashboard"] .border-green-500\/30,
+[data-app="dashboard"] .border-green-300,
 [data-app="dashboard"] .focus\:border-emerald-500\/50:focus,
 [data-app="dashboard"] .focus\:border-green-500\/50:focus {
   border-color: var(--ds-success-border);
@@ -781,6 +928,8 @@
 
 [data-app="dashboard"] .border-amber-200,
 [data-app="dashboard"] .border-amber-200\/50,
+[data-app="dashboard"] .border-yellow-200,
+[data-app="dashboard"] .border-orange-200,
 [data-app="dashboard"] .border-amber-400\/60,
 [data-app="dashboard"] .border-amber-500\/20,
 [data-app="dashboard"] .border-amber-500\/30,
@@ -797,6 +946,7 @@
 
 [data-app="dashboard"] .border-red-200,
 [data-app="dashboard"] .border-red-200\/60,
+[data-app="dashboard"] .border-red-300,
 [data-app="dashboard"] .border-red-500,
 [data-app="dashboard"] .border-red-500\/20,
 [data-app="dashboard"] .border-red-500\/30,
@@ -808,6 +958,8 @@
   border-color: var(--ds-danger-border);
 }
 
+[data-app="dashboard"] .border-blue-200,
+[data-app="dashboard"] .border-blue-300,
 [data-app="dashboard"] .border-blue-500\/20,
 [data-app="dashboard"] .border-blue-500\/30,
 [data-app="dashboard"] .border-sky-500\/20,
@@ -916,6 +1068,7 @@
 [data-app="dashboard"][data-theme="dark"] .dark\:text-amber-300,
 [data-app="dashboard"][data-theme="dark"] .dark\:text-amber-400,
 [data-app="dashboard"][data-theme="dark"] .dark\:text-amber-500,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-amber-100,
 [data-app="dashboard"][data-theme="dark"] .dark\:text-orange-400 {
   color: var(--ds-warning-text);
 }
@@ -927,14 +1080,89 @@
   color: var(--ds-danger-text);
 }
 
+[data-app="dashboard"][data-theme="dark"] .dark\:text-purple-300,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-purple-400,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-violet-300,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-violet-400,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-indigo-300,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-indigo-400 {
+  color: var(--brand-text);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-purple-950,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-purple-950\/30,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-violet-950\/30,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-indigo-950\/30 {
+  background-color: var(--accent-premium-soft);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:border-purple-900,
+[data-app="dashboard"][data-theme="dark"] .dark\:border-purple-900\/40,
+[data-app="dashboard"][data-theme="dark"] .dark\:border-violet-900\/40 {
+  border-color: var(--accent-premium-border);
+}
+
 [data-app="dashboard"][data-theme="dark"] .dark\:bg-amber-950\/30,
-[data-app="dashboard"][data-theme="dark"] .dark\:hover\:bg-amber-950\/30:hover {
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-amber-950,
+[data-app="dashboard"][data-theme="dark"] .dark\:hover\:bg-amber-950\/30:hover,
+[data-app="dashboard"][data-theme="dark"] .dark\:hover\:bg-amber-950:hover {
   background-color: var(--ds-warning-bg);
 }
 
 [data-app="dashboard"][data-theme="dark"] .dark\:bg-red-950\/30,
-[data-app="dashboard"][data-theme="dark"] .dark\:hover\:bg-red-950\/30:hover {
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-red-950,
+[data-app="dashboard"][data-theme="dark"] .dark\:hover\:bg-red-950\/30:hover,
+[data-app="dashboard"][data-theme="dark"] .dark\:hover\:bg-red-950:hover {
   background-color: var(--ds-danger-bg);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-emerald-950\/30,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-emerald-950,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-green-950\/30,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-green-950 {
+  background-color: var(--ds-success-bg);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-blue-950\/30,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-blue-950,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-sky-950\/30,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-cyan-950\/30 {
+  background-color: var(--ds-info-bg);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-yellow-950\/30,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-yellow-950,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-orange-950\/30,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-orange-950 {
+  background-color: var(--ds-warning-bg);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:text-blue-300,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-blue-400,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-sky-300,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-sky-400,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-cyan-300,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-cyan-400 {
+  color: var(--ds-info-text);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:text-green-300,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-green-400 {
+  color: var(--ds-success-text);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:border-emerald-900,
+[data-app="dashboard"][data-theme="dark"] .dark\:border-emerald-900\/40,
+[data-app="dashboard"][data-theme="dark"] .dark\:border-green-900,
+[data-app="dashboard"][data-theme="dark"] .dark\:border-green-900\/40 {
+  border-color: var(--ds-success-border);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:border-blue-900,
+[data-app="dashboard"][data-theme="dark"] .dark\:border-blue-900\/40,
+[data-app="dashboard"][data-theme="dark"] .dark\:border-sky-900\/40,
+[data-app="dashboard"][data-theme="dark"] .dark\:border-cyan-900\/40 {
+  border-color: var(--ds-info-border);
 }
 
 [data-app="dashboard"][data-theme="dark"] .dark\:border-amber-900,
@@ -946,6 +1174,26 @@
 [data-app="dashboard"][data-theme="dark"] .dark\:border-red-900,
 [data-app="dashboard"][data-theme="dark"] .dark\:border-red-900\/40 {
   border-color: var(--ds-danger-border);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:text-gray-300,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-gray-400,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-slate-300,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-slate-400 {
+  color: var(--ds-text-muted);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-gray-950\/30,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-gray-950,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-gray-800,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-slate-950\/30,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-slate-800 {
+  background-color: var(--ds-surface-2);
+}
+
+[data-app="dashboard"] .bg-gray-50,
+[data-app="dashboard"] .bg-slate-50 {
+  background-color: var(--ds-surface);
 }
 
 /* Dashboard typography: calm legal-software hierarchy. Keep utility intent,
@@ -1918,8 +2166,13 @@ pre {
 }
 
 [data-app="dashboard"] .dashboard-main-scroll {
-  scrollbar-gutter: stable;
   scroll-behavior: auto;
+}
+
+@media (min-width: 1024px) {
+  [data-app="dashboard"] .dashboard-main-scroll {
+    scrollbar-gutter: stable;
+  }
 }
 
 [data-app="dashboard"] .dashboard-panel-surface {
@@ -2109,7 +2362,9 @@ pre {
   }
 
   /* Page breaks: avoid breaking inside legal sections */
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     break-after: avoid;
     page-break-after: avoid;
   }

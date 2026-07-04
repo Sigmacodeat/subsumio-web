@@ -120,14 +120,34 @@ const RULES: Array<{
       return { date: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}` };
     },
   },
-  // Absolute AT-Datum: "bis 30. 6. 2024"
+  // Absolute AT-Datum: "bis 30. 6. 2024", "längstens 31.12.2024", "spätestens 15. März 2024"
   {
     name: "absolute_date_at",
-    regex: /(?:bis|frist|termin)[\s:]*(\d{1,2})[.\s]\s*(\d{1,2})[.\s]\s*(\d{4})/i,
+    regex:
+      /(?:bis|frist|fristen|termin|längstens|spätestens|bis zum|bis spätestens)[\s:]*(\d{1,2})[.\s]\s*(\d{1,2}|Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez)[.\s]\s*(\d{4})/i,
     type: "absolute_deadline",
     extractDate: (m) => {
       const day = parseInt(m[1], 10);
-      const month = parseInt(m[2], 10);
+      let month: number;
+      const m2 = m[2];
+      if (/^\d+$/.test(m2)) month = parseInt(m2, 10);
+      else {
+        const months: Record<string, number> = {
+          jan: 1,
+          feb: 2,
+          mär: 3,
+          apr: 4,
+          mai: 5,
+          jun: 6,
+          jul: 7,
+          aug: 8,
+          sep: 9,
+          okt: 10,
+          nov: 11,
+          dez: 12,
+        };
+        month = months[m2!.toLowerCase()] || 1;
+      }
       const year = parseInt(m[3], 10);
       return { date: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}` };
     },

@@ -104,7 +104,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
                     {tier.blurb}
                   </p>
                 </div>
-                <ul className="mb-7 flex-1 space-y-2.5">
+                <ul className="mb-6 flex-1 space-y-2.5">
                   {tier.features.map((f) => (
                     <li
                       key={f}

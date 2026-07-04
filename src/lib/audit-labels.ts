@@ -136,7 +136,8 @@ export type AuditAction =
   | "litigation.delete"
   | "litigation.phase_advance"
   | "litigation.step_update"
-  | "legal.commentary_synthesize";
+  | "legal.commentary_synthesize"
+  | "share.receive";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -224,6 +225,7 @@ const ACTION_LABELS: Record<string, string> = {
   "litigation.phase_advance": "Phase gewechselt",
   "litigation.step_update": "Schritt aktualisiert",
   "legal.commentary_synthesize": "Kommentierung synthetisiert",
+  "share.receive": "Geteilte Inhalte empfangen",
   "tax.stbvv": "StBVV-Gebührenberechnung",
   "tax.elster_submit": "ELSTER-Übermittlung",
   "tax.analyze": "Steuerdokument-Analyse",

@@ -58,7 +58,7 @@ export default function CaseDetailPage() {
   const { caseData, activeTab } = ctx;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-w-0 flex-col">
       {/* Save errors / conflict warnings / archived banner */}
       <div aria-live="assertive">
         {ctx.saveError && (
@@ -125,7 +125,7 @@ export default function CaseDetailPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+      <div className="min-w-0 flex-1 overflow-x-auto overflow-y-auto p-4 md:p-6 lg:p-8">
         {activeTab === "overview" && <OverviewTab />}
         {activeTab === "activity" && <ActivityTab />}
         {activeTab === "documents" && <DocumentsTab />}

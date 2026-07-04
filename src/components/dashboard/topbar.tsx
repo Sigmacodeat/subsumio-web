@@ -818,9 +818,7 @@ export function Topbar({
         <div className="hidden md:block">
           <BrainSelector />
         </div>
-        <div className="hidden md:block">
-          <NetworkStatusBadge />
-        </div>
+        <NetworkStatusBadge />
         {/* User menu */}
         <div className="relative" ref={userMenuRef}>
           <button

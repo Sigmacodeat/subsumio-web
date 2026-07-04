@@ -69,3 +69,9 @@
 # Pulls /api/jobs/health; emails QUEUE_ALERT_EMAIL on dead-letters, a wedged
 # queue, backlog spikes, or piled-up outbox failures. Thresholds are env-tunable.
 */5 * * * *    curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/queue-alert || true
+
+# ── Every 10 minutes — Cron health monitor ──
+# Checks CRON_SECRET, database connectivity, deadline dedup table, and engine
+# reachability. External monitoring (Uptime Kuma / Better Stack) should also
+# poll /api/cron/health directly for HTTP 200 (all ok) vs 503 (degraded).
+*/10 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/health || true

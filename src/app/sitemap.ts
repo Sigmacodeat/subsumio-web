@@ -15,7 +15,6 @@ const PAGES = [
   "/partners",
   "/download",
   "/docs",
-  "/subsumio",
   "/whatsapp",
   "/about",
   "/contact",
@@ -26,6 +25,9 @@ const PAGES = [
   "/benchmark-methodology",
   "/blog",
 ];
+
+// Pages that only exist in German (DE root) — don't generate AT/CH/EN variants
+const DE_ONLY_PAGES = new Set(["/blog", "/benchmark-methodology"]);
 
 // hreflang locale codes for each route prefix
 const LOCALES = [
@@ -57,6 +59,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }
 
     const base = page === "" ? "/" : page;
+
+    // DE-only pages: just one entry at the root, no locale variants
+    if (DE_ONLY_PAGES.has(page)) {
+      entries.push({
+        url: `${BASE}${base}`,
+        lastModified: now,
+        changeFrequency: "weekly",
+        priority: 0.6,
+      });
+      continue;
+    }
 
     // Build hreflang alternates for all locales
     const alternates: Record<string, string> = {};

@@ -68,6 +68,11 @@ interface UploadFile {
   overrides?: FileOverrides;
   /** Auto-routing suggestion derived from the filename (informational). */
   routingHint?: string;
+  /** D2: Recognition results from pipeline — shown as badges after upload */
+  recognizedJurisdiction?: string;
+  recognizedDocType?: string;
+  gzValidated?: boolean;
+  gzLeitzahl?: string;
 }
 
 const FOLDER_MAX_BYTES = DIRECT_UPLOAD_MAX_SIZE;
@@ -477,6 +482,12 @@ function UploadPageInner() {
                   extractionWarning:
                     [extractionWarning, pipelineWarning].filter(Boolean).join(" ") || undefined,
                   error: extractionStatus === "failed" ? extractionWarning : undefined,
+                  // D2: Recognition metadata from engine response
+                  recognizedJurisdiction: (result as { jurisdiction?: string }).jurisdiction,
+                  recognizedDocType: (result as { doc_type?: string }).doc_type,
+                  gzValidated: (result as { aktenzeichen_validated?: boolean })
+                    .aktenzeichen_validated,
+                  gzLeitzahl: (result as { aktenzeichen?: string }).aktenzeichen,
                 }
               : f
           )
@@ -993,6 +1004,36 @@ function UploadPageInner() {
                           className="brand-soft brand-text brand-border gap-1 text-xs"
                         >
                           <Archive size={10} /> {t("upload.gobd_stamped")}
+                        </Badge>
+                      )}
+                      {f.recognizedJurisdiction && (
+                        <Badge
+                          variant="default"
+                          className="border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
+                        >
+                          {f.recognizedJurisdiction.toUpperCase()}
+                        </Badge>
+                      )}
+                      {f.recognizedDocType && (
+                        <Badge
+                          variant="default"
+                          className="border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
+                        >
+                          {f.recognizedDocType}
+                        </Badge>
+                      )}
+                      {f.gzLeitzahl && (
+                        <Badge
+                          variant="default"
+                          className={`border font-mono text-xs ${
+                            f.gzValidated === true
+                              ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+                              : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                          }`}
+                          title={f.gzValidated ? "GZ strukturell validiert" : "GZ nicht validiert"}
+                        >
+                          {f.gzValidated ? "✓ " : "⚠ "}
+                          {f.gzLeitzahl}
                         </Badge>
                       )}
                       {f.persistWarning && (

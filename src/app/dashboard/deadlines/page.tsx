@@ -51,6 +51,9 @@ import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { DeadlineQuickCreateDialog } from "@/components/legal/DeadlineQuickCreateDialog";
+import { useMe } from "@/lib/queries/auth";
+import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
+import { getRechtsraumParams } from "@/lib/legal/rechtsraum";
 
 interface DeadlineItem {
   id: string;
@@ -102,9 +105,11 @@ function getDaysUntil(dateStr: string): number {
 
 function calculateDeadline(
   rule: DeadlineRule,
-  startDate: string
+  startDate: string,
+  state?: string,
+  country?: string
 ): { dueDate: Date; label: string; law: string; note: string } {
-  const { dueDate, note } = computeDueDate(rule, startDate);
+  const { dueDate, note } = computeDueDate(rule, startDate, state as never, country as never);
   return { dueDate: new Date(`${dueDate}T12:00:00Z`), label: rule.label, law: rule.law, note };
 }
 
@@ -112,11 +117,15 @@ export default function DeadlinesPage() {
   const router = useRouter();
   const { addToast } = useToast();
   const { t, lang } = useLang();
+  const meQuery = useMe();
   const [deadlines, setDeadlines] = useState<DeadlineItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
+  const [rechtsraum, setRechtsraum] = useState<{ state?: string; country?: string }>({});
+  const [secondCheckTarget, setSecondCheckTarget] = useState<DeadlineItem | null>(null);
+  const [secondCheckBusy, setSecondCheckBusy] = useState(false);
   const [showCalc, setShowCalc] = useState(false);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [calcTemplate, setCalcTemplate] = useState<DeadlineRule>(DEADLINE_RULES[0]);
@@ -269,6 +278,46 @@ export default function DeadlinesPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // C1: Load rechtsraum settings for correct holiday-aware calculation
+  useEffect(() => {
+    loadKanzleiSettings()
+      .then((settings) => {
+        const rr = getRechtsraumParams(settings);
+        if (rr.country) setRechtsraum({ state: rr.state, country: rr.country });
+      })
+      .catch(() => {});
+  }, []);
+
+  // P0: Vier-Augen second-check confirmation handler
+  async function confirmSecondCheck(item: DeadlineItem) {
+    if (!item.slug) return;
+    const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? "Unknown";
+    const now = new Date().toISOString();
+    setSecondCheckBusy(true);
+    try {
+      await api.brain.updatePage({
+        slug: item.slug,
+        frontmatter: {
+          status: "done",
+          completed_at: now,
+          second_check_required: true,
+          second_check_by: userName,
+          second_check_at: now,
+        },
+      });
+      addToast({ type: "success", title: t("deadlines.second_check_done") });
+      await loadDeadlines();
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : t("deadlines.update_failed"),
+      });
+    } finally {
+      setSecondCheckBusy(false);
+      setSecondCheckTarget(null);
+    }
+  }
 
   async function updateDeadlinePage(item: DeadlineItem, frontmatter: Record<string, unknown>) {
     if (!item.slug) return;
@@ -609,7 +658,22 @@ export default function DeadlinesPage() {
                 {t("deadlines.approve")}
               </Button>
             )}
-            {d.status !== "done" && (
+            {d.status !== "done" && d.isNotfrist && !d.secondCheckAt && (
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={busy}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSecondCheckTarget(d);
+                }}
+                className="gap-1 border border-amber-500/30 bg-amber-500/10 text-xs text-amber-700 hover:bg-amber-500/20"
+              >
+                <ShieldCheck size={13} />
+                {t("deadlines.second_check")}
+              </Button>
+            )}
+            {d.status !== "done" && (!d.isNotfrist || d.secondCheckAt) && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -753,7 +817,11 @@ export default function DeadlinesPage() {
             </div>
             <div className="flex items-end">
               <button
-                onClick={() => setCalcResult(calculateDeadline(calcTemplate, calcDate))}
+                onClick={() =>
+                  setCalcResult(
+                    calculateDeadline(calcTemplate, calcDate, rechtsraum.state, rechtsraum.country)
+                  )
+                }
                 className="brand-bg flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white transition-colors"
               >
                 <Calculator size={14} />
@@ -1014,6 +1082,66 @@ export default function DeadlinesPage() {
         rowKey={(d) => d.id}
         pageSize={20}
       />
+
+      {/* P0: Vier-Augen second-check confirmation modal */}
+      {secondCheckTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => !secondCheckBusy && setSecondCheckTarget(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-[color:var(--ds-surface)] p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/15">
+                <ShieldCheck size={20} className="text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  {t("deadlines.second_check")}
+                </h3>
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  {t("deadlines.notfrist")} — {secondCheckTarget.description}
+                </p>
+              </div>
+            </div>
+            <p className="mb-4 text-sm text-[color:var(--ds-text-muted)]">
+              {lang === "en"
+                ? "This is a statutory deadline (Notfrist). Marking it as done requires a second confirmation by a different person (four-eyes principle). By confirming, you attest that you have verified the deadline completion."
+                : "Dies ist eine Notfrist. Die Erledigung erfordert eine zweite Bestätigung durch eine weitere Person (Vier-Augen-Prinzip). Mit der Bestätigung belegen Sie, dass Sie die Fristwahrung geprüft haben."}
+            </p>
+            <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-700">
+              <strong>{t("deadlines.second_check_by")}:</strong>{" "}
+              {meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? "—"}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={secondCheckBusy}
+                onClick={() => setSecondCheckTarget(null)}
+                className="text-xs"
+              >
+                {lang === "en" ? "Cancel" : "Abbrechen"}
+              </Button>
+              <Button
+                size="sm"
+                disabled={secondCheckBusy}
+                onClick={() => void confirmSecondCheck(secondCheckTarget)}
+                className="gap-1.5 bg-amber-600 text-xs text-white hover:bg-amber-500"
+              >
+                {secondCheckBusy ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <ShieldCheck size={13} />
+                )}
+                {t("deadlines.second_check_done")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1370,6 +1370,20 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       await markAction(ctx, action, "failed", "item not found");
       return `Kein Treffer mehr in "${casePage.title}" — evtl. bereits erledigt.`;
     }
+
+    // P0: Vier-Augen-Prinzip — Notfristen können nicht via WhatsApp als
+    // erledigt markiert werden. Erfordert zweite Prüfung im Dashboard.
+    if (
+      itemType === "deadlines" &&
+      items[matchIdx].is_notfrist === true &&
+      !items[matchIdx].second_check_at
+    ) {
+      await markAction(ctx, action, "blocked", "notfrist requires second check");
+      const dlTitle =
+        str(items[matchIdx].title) || str(items[matchIdx].description) || str(payload.query);
+      return `⚠️ Die Notfrist "${dlTitle}" in "${casePage.title}" ist eine gesetzliche Frist und erfordert die Vier-Augen-Kontrolle. Bitte im Dashboard unter Fristen → Zweiprüfung bestätigen.`;
+    }
+
     items[matchIdx].done = true;
     items[matchIdx].status = "done";
     items[matchIdx].completed_at = new Date().toISOString();

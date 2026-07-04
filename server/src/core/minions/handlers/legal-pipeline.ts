@@ -173,6 +173,15 @@ export interface LegalPipelineData {
    * Default: $50 per case (covers ~35 Sonnet batches + 6 drafts + 1 Opus critic).
    */
   max_cost_usd?: number;
+  /**
+   * Gap 3: Linked cases (Aktenzeichen) for cross-case analysis.
+   * When set, the pipeline will:
+   *   - Load entity pages from linked cases for cross-case entity matching
+   *   - Run cross-case contradiction probe after post-pipeline
+   *   - Flag entities that appear in multiple procedures with different roles
+   * Example: ["39-st-116-22v", "63-st-85-25s", "23-st-4-22f"]
+   */
+  linked_cases?: string[];
 }
 
 interface PipelineState {
@@ -222,6 +231,12 @@ interface PipelineState {
   jurisdiction?: "at" | "de" | "ch" | "eu";
   /** Verfahrenstyp persisted in state for resume operations */
   verfahrenstyp?: "straf" | "zivil" | "arbeitsrecht" | "verwaltungsrecht" | "sonstiges";
+  /** Gap 3: Linked cases for cross-case analysis */
+  linked_cases?: string[];
+  /** Gap 3: Cross-case findings (entities appearing in multiple cases, contradictions across cases) */
+  cross_case_findings?: CrossCaseFinding[];
+  /** Gap 4: Damage overlap warnings (potential double-counting) */
+  damage_overlap_warnings?: string[];
 }
 
 /** A counter-argument found by the opponent-simulator. */
@@ -255,6 +270,12 @@ interface EnsembleCriticVerdict {
     total_score: number;
     issues: string[];
     layer_scores: Record<string, number>;
+    /** Gap 5: Narrative coherence score (0-100) — do all outputs follow the same central thesis? */
+    narrative_coherence_score?: number;
+    /** Gap 5: The central thesis identified across all pipeline outputs */
+    central_thesis?: string;
+    /** Gap 5: Layers that deviate from the central thesis */
+    coherence_violations?: string[];
   };
   retry_count: number;
 }
@@ -371,7 +392,11 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
     };
 
     // ── Load all sub-page texts (haystack for validation) ────
-    const allTexts = await loadAllSubPages(engine, data.part_slugs, sourceStamp);
+    const rawTexts = await loadAllSubPages(engine, data.part_slugs, sourceStamp);
+    // Gap 2: Decode AB-Bogen handwritten abbreviations (post-OCR enrichment)
+    // This annotates known Austrian legal shorthand (e.g. "UH" → "UH [Untersuchungshaft]")
+    // so downstream agents can understand handwritten A-Mappe notations.
+    const allTexts = rawTexts.map((t) => decodeAbbBogenKuerzel(t));
     const allText = allTexts.join("\n\n");
 
     // ── Layer 0: Semantic document classification (heuristic, $0) ──
@@ -1030,6 +1055,18 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
           sourceStamp
         );
 
+        // ── Gap 4: Damage Overlap Detection ──────────────────
+        // Detect potential double-counting between damage positions.
+        // Non-blocking — warnings are stored in state and surfaced in the audit.
+        const overlapWarnings = detectDamageOverlaps(damageTable);
+        if (overlapWarnings.length > 0) {
+          state.damage_overlap_warnings = overlapWarnings;
+          state.warnings = [...(state.warnings ?? []), ...overlapWarnings];
+          console.warn(
+            `[legal-pipeline] Gap 4: ${overlapWarnings.length} potential damage overlap(s) detected`
+          );
+        }
+
         // ── Layer 5b: Deadline Validation ───────────────────
         // Validates extracted deadlines against statutory limitation rules
         // (§ 1489 ABGB, § 195 BGB, Art 82 DSGVO, etc.) to prevent
@@ -1604,6 +1641,37 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
         const msg = err instanceof Error ? err.message : String(err);
         state.warnings = [...(state.warnings ?? []), `Contradiction probe failed: ${msg}`];
         console.warn(`[legal-pipeline] Contradiction probe auto-trigger error: ${msg}`);
+      }
+
+      // ── Gap 3: Cross-Case Entity Analysis ──────────────────
+      // When linked_cases is provided, load entity pages from those cases
+      // and cross-reference: entities appearing in multiple cases with
+      // different roles, or with contradictory accusations.
+      if (data.linked_cases && data.linked_cases.length > 0) {
+        state.linked_cases = data.linked_cases;
+        try {
+          const crossCaseFindings = await runCrossCaseAnalysis({
+            engine,
+            caseSlug: data.case_slug,
+            currentEntities: entities,
+            linkedCases: data.linked_cases,
+            sourceStamp,
+          });
+          if (crossCaseFindings.length > 0) {
+            state.cross_case_findings = crossCaseFindings;
+            state.warnings = [
+              ...(state.warnings ?? []),
+              ...crossCaseFindings.map((f) => `[${f.type}] ${f.description}`),
+            ];
+            console.warn(
+              `[legal-pipeline] Gap 3: ${crossCaseFindings.length} cross-case finding(s)`
+            );
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          state.warnings = [...(state.warnings ?? []), `Cross-case analysis failed: ${msg}`];
+          console.warn(`[legal-pipeline] Cross-case analysis error: ${msg}`);
+        }
       }
 
       // ── Finalize ───────────────────────────────────────────
@@ -6203,12 +6271,16 @@ async function runEnsembleCriticLayer(opts: {
     "6. Keine Fristen wurden berechnet (alle verbatim)",
     "7. Legal Grounding Map: alle §§ wurden durch search/get_page verifiziert",
     "8. SUBSUMTION: Ist der juristische Syllogismus (Obersatz → Untersatz → Schluss) korrekt?",
+    "9. NARRATIVE KOHÄRENZ (Gap 5): Tragen alle Pipeline-Outputs dieselbe zentrale These?",
+    "   Identifiziere die zentrale These (z.B. 'Asymmetrie der Verfolgung: Opfer wird verfolgt, Täter nicht').",
+    "   Prüfe, ob forensischer Bericht, Legal Grounding, Damage Table, Drafts und Counter-Arguments",
+    "   alle diese These konsistent tragen. Flagge Layer, die von der These abweichen.",
     "",
     subsumptionContext
       ? `## SUBSUMPTIONS-PRÜFUNG (vorab durchgeführt):\n${subsumptionContext}\n`
       : "",
     "Gib ein JSON zurück:",
-    '{ "total_score": 0-100, "recommendation": "publish|revise|reject", "issues": [...], "layer_scores": { "1": 90, "2": 85, ... } }',
+    '{ "total_score": 0-100, "recommendation": "publish|revise|reject", "issues": [...], "layer_scores": { "1": 90, "2": 85, ... }, "narrative_coherence_score": 0-100, "central_thesis": "...", "coherence_violations": ["Layer 6 weicht ab: ..."] }',
   ].join("\n");
 
   // Submit all 3 critic models in parallel
@@ -6284,6 +6356,9 @@ function parseCriticVerdict(result: unknown): {
   recommendation: "publish" | "revise" | "reject";
   issues: string[];
   layer_scores: Record<string, number>;
+  narrative_coherence_score?: number;
+  central_thesis?: string;
+  coherence_violations?: string[];
 } {
   const text =
     typeof result === "string"
@@ -6306,7 +6381,24 @@ function parseCriticVerdict(result: unknown): {
     typeof json.layer_scores === "object" && json.layer_scores !== null
       ? (json.layer_scores as Record<string, number>)
       : {};
-  return { total_score: totalScore, recommendation, issues, layer_scores: layerScores };
+  // Gap 5: Narrative coherence fields
+  const narrativeCoherenceScore =
+    typeof json.narrative_coherence_score === "number"
+      ? clampScore(json.narrative_coherence_score)
+      : undefined;
+  const centralThesis = typeof json.central_thesis === "string" ? json.central_thesis : undefined;
+  const coherenceViolations = Array.isArray(json.coherence_violations)
+    ? json.coherence_violations.filter((v) => typeof v === "string")
+    : undefined;
+  return {
+    total_score: totalScore,
+    recommendation,
+    issues,
+    layer_scores: layerScores,
+    narrative_coherence_score: narrativeCoherenceScore,
+    central_thesis: centralThesis,
+    coherence_violations: coherenceViolations,
+  };
 }
 
 /**
@@ -6355,11 +6447,40 @@ function computeEnsembleConsensus(
     for (const issue of m.issues) issueSet.add(issue);
   }
 
+  // Gap 5: Narrative coherence — min() across models (conservative)
+  const coherenceScores = models
+    .map(
+      (m) =>
+        (m as CriticModelVerdict & { narrative_coherence_score?: number }).narrative_coherence_score
+    )
+    .filter((s): s is number => typeof s === "number");
+  const narrativeCoherenceScore =
+    coherenceScores.length > 0 ? Math.min(...coherenceScores) : undefined;
+
+  // Central thesis: pick the most common non-empty thesis across models
+  const theses = models
+    .map((m) => (m as CriticModelVerdict & { central_thesis?: string }).central_thesis)
+    .filter((t): t is string => typeof t === "string" && t.length > 0);
+  const centralThesis = theses.length > 0 ? theses[0] : undefined;
+
+  // Coherence violations: union across models
+  const violationSet = new Set<string>();
+  for (const m of models) {
+    const violations = (m as CriticModelVerdict & { coherence_violations?: string[] })
+      .coherence_violations;
+    if (Array.isArray(violations)) {
+      for (const v of violations) violationSet.add(v);
+    }
+  }
+
   return {
     recommendation,
     total_score: totalScore,
     issues: [...issueSet],
     layer_scores: layerScores,
+    narrative_coherence_score: narrativeCoherenceScore,
+    central_thesis: centralThesis,
+    coherence_violations: violationSet.size > 0 ? [...violationSet] : undefined,
   };
 }
 
@@ -6677,6 +6798,12 @@ async function rerunSpecificLayer(
         extracted.deadline_calendar,
         sourceStamp
       );
+      // Gap 4: Damage overlap detection in retry path
+      const retryOverlapWarnings = detectDamageOverlaps(extracted.damage_table);
+      if (retryOverlapWarnings.length > 0) {
+        state.damage_overlap_warnings = retryOverlapWarnings;
+        state.warnings = [...(state.warnings ?? []), ...retryOverlapWarnings];
+      }
       state.layers[5]!.output_slugs = [damageSlug, deadlineSlug];
 
       // Re-run Sub-Layer 5b: Deadline Validator
@@ -6864,6 +6991,27 @@ async function writeEnsembleQualityAuditPage(
   } else {
     for (const issue of verdict.consensus.issues) {
       lines.push(`- ${issue}`);
+    }
+  }
+
+  // ── Gap 5: Narrative Coherence ──
+  if (typeof verdict.consensus.narrative_coherence_score === "number") {
+    lines.push("");
+    lines.push("### Narrative Kohärenz (Gap 5)");
+    lines.push("");
+    lines.push(`**Coherence Score:** ${verdict.consensus.narrative_coherence_score}/100`);
+    if (verdict.consensus.central_thesis) {
+      lines.push(`**Central Thesis:** ${verdict.consensus.central_thesis}`);
+    }
+    if (
+      verdict.consensus.coherence_violations &&
+      verdict.consensus.coherence_violations.length > 0
+    ) {
+      lines.push("");
+      lines.push("**Kohärenz-Verletzungen:**");
+      for (const v of verdict.consensus.coherence_violations) {
+        lines.push(`- ${v}`);
+      }
     }
   }
 
@@ -7236,6 +7384,8 @@ interface OnEntry {
   geschaeftszahl?: Geschaeftszahl;
   /** Verfahrenstyp: zivil, straf, arbeitsrecht, verwaltungsrecht */
   verfahrenstyp?: VerfahrensTyp;
+  /** ON-Nummern, die in diesem Dokument referenziert werden (z.B. "ON 1.34 urgiert ON 54") — Gap 1: ON-Querverweis-Graph */
+  references?: string[];
 }
 
 interface EntityEntry {
@@ -7246,6 +7396,14 @@ interface EntityEntry {
   on_references: string[];
   quote: string;
   metadata?: Record<string, unknown>;
+  /** What is this person accused of? (Vorwürfe — verbatim from the act) */
+  accusations?: string[];
+  /** Brief description of the person's involvement in the case */
+  context_description?: string;
+  /** For lawyers: which person/party they represent */
+  represents?: string;
+  /** Which procedures (Aktenzeichen) this person appears in — for cross-case linking */
+  verfahren_refs?: string[];
 }
 
 interface ForensicReport {
@@ -7349,6 +7507,9 @@ function extractOnEntries(result: unknown): OnEntry[] {
           typeof raw.beilagen_kennung === "string" ? raw.beilagen_kennung : undefined,
         geschaeftszahl: gz,
         verfahrenstyp,
+        references: Array.isArray(raw.references)
+          ? raw.references.filter((r): r is string => typeof r === "string")
+          : undefined,
       } as OnEntry;
     });
 }
@@ -7613,6 +7774,79 @@ async function validateDamageTable(
   return errors;
 }
 
+/**
+ * Gap 4: Detect potential double-counting in damage positions.
+ *
+ * Compares all pairs of damage entries for:
+ * - Similar amounts (within 5% of each other) in the same topf
+ * - Overlapping ON references (same beleg_on)
+ * - Similar position descriptions (token overlap > 60%)
+ *
+ * Returns warnings (not errors — these are potential overlaps, not certain ones).
+ */
+function detectDamageOverlaps(entries: DamageEntry[]): string[] {
+  const warnings: string[] = [];
+  const seen = new Set<string>();
+
+  for (let i = 0; i < entries.length; i++) {
+    for (let j = i + 1; j < entries.length; j++) {
+      const a = entries[i];
+      const b = entries[j];
+      const key = `${i}-${j}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const reasons: string[] = [];
+
+      // Check 1: Same topf + similar amount (within 5%)
+      if (a.topf === b.topf && a.betrag > 0 && b.betrag > 0) {
+        const ratio = Math.min(a.betrag, b.betrag) / Math.max(a.betrag, b.betrag);
+        if (ratio > 0.95) {
+          reasons.push(
+            `ähnlicher Betrag: ${a.betrag} vs ${b.betrag} (${(ratio * 100).toFixed(0)}% overlap)`
+          );
+        }
+      }
+
+      // Check 2: Same beleg_on
+      if (a.beleg_on && b.beleg_on && a.beleg_on === b.beleg_on) {
+        reasons.push(`gleicher Beleg: ${a.beleg_on}`);
+      }
+
+      // Check 3: Token overlap in position description > 60%
+      const tokensA = new Set(
+        a.position
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((t) => t.length > 3)
+      );
+      const tokensB = new Set(
+        b.position
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((t) => t.length > 3)
+      );
+      if (tokensA.size > 0 && tokensB.size > 0) {
+        const intersection = [...tokensA].filter((t) => tokensB.has(t));
+        const union = new Set([...tokensA, ...tokensB]);
+        const overlap = intersection.length / union.size;
+        if (overlap > 0.6) {
+          reasons.push(
+            `ähnliche Beschreibung: "${a.position}" vs "${b.position}" (${(overlap * 100).toFixed(0)}% overlap)`
+          );
+        }
+      }
+
+      if (reasons.length > 0) {
+        warnings.push(
+          `Mögliche Doppelzählung: "${a.position}" (${a.topf}, ${a.betrag} ${a.waehrung}) ↔ "${b.position}" (${b.topf}, ${b.betrag} ${b.waehrung}) — ${reasons.join(", ")}`
+        );
+      }
+    }
+  }
+  return warnings;
+}
+
 async function validateDeadlineCalendar(
   entries: DeadlineEntry[],
   onTable: OnEntry[],
@@ -7709,6 +7943,18 @@ async function writeOnIndexPage(
       `| ${e.on_nummer} | ${e.datum} | ${e.typ} | ${e.seiten} | ${e.personen.join(", ")} | ${e.verfahren ?? ""} | ${(e.anwaelte ?? []).join(", ")} |`
     );
   }
+  // ── Gap 1: ON-Querverweis-Graph ──
+  const entriesWithRefs = entries.filter((e) => e.references && e.references.length > 0);
+  if (entriesWithRefs.length > 0) {
+    lines.push("");
+    lines.push("## ON-Querverweise");
+    lines.push("");
+    lines.push("| ON | Referenziert |");
+    lines.push("|---|---|");
+    for (const e of entriesWithRefs) {
+      lines.push(`| ${e.on_nummer} | ${(e.references ?? []).join(", ")} |`);
+    }
+  }
   // ── GZ validation report section ──
   if (gzKonsistenz && gzKonsistenz.befundeProGZ.length > 0) {
     lines.push("");
@@ -7779,11 +8025,41 @@ async function writeEntityPages(
     lines.push(`type: person`);
     lines.push(`case_ref: ${caseSlug}`);
     lines.push(`role: ${e.role}`);
+    lines.push(`entity_type: ${e.type}`);
     lines.push(`aliases: [${e.aliases.map((a) => `"${a}"`).join(", ")}]`);
     lines.push(`on_references: [${e.on_references.map((r) => `"${r}"`).join(", ")}]`);
+    if (e.accusations && e.accusations.length > 0) {
+      lines.push(
+        `accusations: [${e.accusations.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(", ")}]`
+      );
+    }
+    if (e.represents) {
+      lines.push(`represents: "${e.represents.replace(/"/g, '\\"')}"`);
+    }
+    if (e.verfahren_refs && e.verfahren_refs.length > 0) {
+      lines.push(`verfahren_refs: [${e.verfahren_refs.map((v) => `"${v}"`).join(", ")}]`);
+    }
     lines.push("---");
     lines.push("");
     lines.push(`> ${e.quote}`);
+    if (e.context_description) {
+      lines.push("");
+      lines.push("## Kontext");
+      lines.push("");
+      lines.push(e.context_description);
+    }
+    if (e.accusations && e.accusations.length > 0) {
+      lines.push("");
+      lines.push("## Vorwürfe");
+      lines.push("");
+      for (const a of e.accusations) {
+        lines.push(`- ${a}`);
+      }
+    }
+    if (e.represents) {
+      lines.push("");
+      lines.push(`**Vertritt:** ${e.represents}`);
+    }
     if (e.metadata) {
       lines.push("");
       lines.push("## Metadaten");
@@ -7810,6 +8086,30 @@ async function writeEntityPages(
               confidence: "1.0",
               visibility: "world",
               notability: "medium",
+              source: `ON ${e.on_references.join(", ")}`,
+              context: caseSlug,
+            },
+          ]
+        : []),
+      ...(e.accusations && e.accusations.length > 0
+        ? e.accusations.map((a) => ({
+            claim: `Vorwurf: ${a}`,
+            kind: "fact" as const,
+            confidence: "1.0",
+            visibility: "world" as const,
+            notability: "high" as const,
+            source: `ON ${e.on_references.join(", ")}`,
+            context: caseSlug,
+          }))
+        : []),
+      ...(e.represents
+        ? [
+            {
+              claim: `Vertritt: ${e.represents}`,
+              kind: "fact" as const,
+              confidence: "1.0",
+              visibility: "world" as const,
+              notability: "high" as const,
               source: `ON ${e.on_references.join(", ")}`,
               context: caseSlug,
             },
@@ -8223,6 +8523,12 @@ async function persistPipelineState(
   if (state.verfahrenstyp) fmLines.push(`verfahrenstyp: ${state.verfahrenstyp}`);
   if (typeof state.contradiction_findings === "number")
     fmLines.push(`contradiction_findings: ${state.contradiction_findings}`);
+  if (state.linked_cases && state.linked_cases.length > 0)
+    fmLines.push(`linked_cases: [${state.linked_cases.map((c) => `"${c}"`).join(", ")}]`);
+  if (state.cross_case_findings && state.cross_case_findings.length > 0)
+    fmLines.push(`cross_case_findings: ${state.cross_case_findings.length}`);
+  if (state.damage_overlap_warnings && state.damage_overlap_warnings.length > 0)
+    fmLines.push(`damage_overlap_warnings: ${state.damage_overlap_warnings.length}`);
   fmLines.push("---");
 
   const md = `${fmLines.join("\n")}\n\n${JSON.stringify(state, null, 2)}`;
@@ -8413,7 +8719,300 @@ async function loadEntitiesFromPages(
           .split("\n")
           .find((l) => l.startsWith("> "))
           ?.slice(2) ?? "",
+      accusations: Array.isArray(fm.accusations) ? (fm.accusations as string[]) : undefined,
+      context_description:
+        typeof fm.context_description === "string" ? fm.context_description : undefined,
+      represents: typeof fm.represents === "string" ? fm.represents : undefined,
+      verfahren_refs: Array.isArray(fm.verfahren_refs)
+        ? (fm.verfahren_refs as string[])
+        : undefined,
     });
   }
   return entities;
+}
+
+// ── Gap 3: Cross-Case Entity Analysis ───────────────────────
+
+/**
+ * Load entities from linked cases and cross-reference them with the current case.
+ *
+ * Detects:
+ * - Same person appearing in multiple cases with different roles (e.g. opfer in one, beschuldigter in another)
+ * - Same person with contradictory accusations across cases
+ * - Lawyers representing different parties in different cases (conflict of interest)
+ *
+ * Returns a list of human-readable findings (warnings).
+ */
+interface CrossCaseFinding {
+  type:
+    | "role_conflict"
+    | "role_difference"
+    | "accusation_contradiction"
+    | "mandate_conflict"
+    | "error";
+  severity: "high" | "medium" | "low";
+  description: string;
+  case_a: string;
+  case_b: string;
+  entity_name?: string;
+}
+
+async function runCrossCaseAnalysis(opts: {
+  engine: BrainEngine;
+  caseSlug: string;
+  currentEntities: EntityEntry[];
+  linkedCases: string[];
+  sourceStamp?: string;
+}): Promise<CrossCaseFinding[]> {
+  const { engine, caseSlug, currentEntities, linkedCases, sourceStamp } = opts;
+  const findings: CrossCaseFinding[] = [];
+
+  // Build a map of normalized name → current case entity
+  const normalizeName = (name: string) => name.toLowerCase().replace(/[^a-z0-9äöüß]/g, "");
+  const currentMap = new Map<string, EntityEntry>();
+  for (const e of currentEntities) {
+    const key = normalizeName(e.name);
+    currentMap.set(key, e);
+    for (const alias of e.aliases) {
+      const aliasKey = normalizeName(alias);
+      if (!currentMap.has(aliasKey)) currentMap.set(aliasKey, e);
+    }
+  }
+
+  // Load entities from each linked case
+  for (const linkedSlug of linkedCases) {
+    if (linkedSlug === caseSlug) continue; // skip self
+    try {
+      const linkedEntities = await loadEntitiesFromPages(engine, linkedSlug, sourceStamp);
+      for (const linked of linkedEntities) {
+        const key = normalizeName(linked.name);
+        const current = currentMap.get(key);
+        if (!current) continue;
+
+        // Same person found in linked case!
+        // Check for role conflicts
+        if (current.role && linked.role && current.role !== linked.role) {
+          // Define opposing roles
+          const opposingPairs: Array<[string, string]> = [
+            ["beschuldigter", "opfer"],
+            ["klaeger", "beklagter"],
+            ["arbeitnehmer", "arbeitgeber"],
+            ["beschwerdefuehrer", "behoerde"],
+          ];
+          const isOpposing = opposingPairs.some(
+            ([a, b]) =>
+              (current.role === a && linked.role === b) || (current.role === b && linked.role === a)
+          );
+          if (isOpposing) {
+            findings.push({
+              type: "role_conflict",
+              severity: "high",
+              description: `"${current.name}" ist "${current.role}" in Fall ${caseSlug}, aber "${linked.role}" in Fall ${linkedSlug} — Rollenkonflikt!`,
+              case_a: caseSlug,
+              case_b: linkedSlug,
+              entity_name: current.name,
+            });
+          } else {
+            findings.push({
+              type: "role_difference",
+              severity: "low",
+              description: `"${current.name}" hat unterschiedliche Rollen: "${current.role}" (${caseSlug}) vs "${linked.role}" (${linkedSlug})`,
+              case_a: caseSlug,
+              case_b: linkedSlug,
+              entity_name: current.name,
+            });
+          }
+        }
+
+        // Check for conflicting accusations
+        const currentAccusations = current.accusations ?? [];
+        const linkedAccusations = linked.accusations ?? [];
+        if (currentAccusations.length > 0 && linkedAccusations.length > 0) {
+          // Check if accusations contradict (one says X did Y, other says X is victim of Y)
+          const hasContradiction = currentAccusations.some((a) =>
+            linkedAccusations.some((la) => {
+              // Simple heuristic: if one mentions "Täter"/"Beschuldigter" and other "Opfer"/"Geschädigter"
+              const aLower = a.toLowerCase();
+              const laLower = la.toLowerCase();
+              return (
+                (aLower.includes("täter") && laLower.includes("opfer")) ||
+                (aLower.includes("opfer") && laLower.includes("täter")) ||
+                (aLower.includes("beschuldigter") && laLower.includes("geschädigter")) ||
+                (aLower.includes("geschädigter") && laLower.includes("beschuldigter"))
+              );
+            })
+          );
+          if (hasContradiction) {
+            findings.push({
+              type: "accusation_contradiction",
+              severity: "high",
+              description: `"${current.name}" hat widersprüchliche Vorwürfe: [${currentAccusations.join("; ")}] (${caseSlug}) vs [${linkedAccusations.join("; ")}] (${linkedSlug})`,
+              case_a: caseSlug,
+              case_b: linkedSlug,
+              entity_name: current.name,
+            });
+          }
+        }
+
+        // Check for lawyer conflict of interest
+        if (
+          current.type === "lawyer" &&
+          linked.type === "lawyer" &&
+          current.represents &&
+          linked.represents
+        ) {
+          const normRep = (r: string) => normalizeName(r);
+          if (normRep(current.represents) !== normRep(linked.represents)) {
+            findings.push({
+              type: "mandate_conflict",
+              severity: "medium",
+              description: `Anwalt "${current.name}" vertritt "${current.represents}" in ${caseSlug} aber "${linked.represents}" in ${linkedSlug} — möglicher Interessenkonflikt`,
+              case_a: caseSlug,
+              case_b: linkedSlug,
+              entity_name: current.name,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      findings.push({
+        type: "error",
+        severity: "low",
+        description: `Fehler beim Laden von Fall ${linkedSlug}: ${msg}`,
+        case_a: caseSlug,
+        case_b: linkedSlug,
+      });
+    }
+  }
+
+  return findings;
+}
+
+// ── Gap 2: AB-Bogen Kürzel-Dekodierung ───────────────────────
+
+/**
+ * Decode handwritten abbreviations commonly found in Austrian Anordnungsbogen (AB-Bogen).
+ *
+ * These are shorthand notations written by prosecutors/judges on the blue A-Mappe cover sheets.
+ * The decoder maps known abbreviations to their full meaning, preserving the original text.
+ *
+ * This is a post-OCR enrichment step: it takes raw extracted text and annotates
+ * recognized abbreviations with their decoded meaning in brackets.
+ *
+ * Example: "Kal 5 Wo" → "Kal 5 Wo [Kalkulation 5 Wochen]"
+ */
+const ABBOGEN_KUERZEL: Record<string, string> = {
+  // Haft-Abkürzungen
+  UH: "Untersuchungshaft",
+  "U-Haft": "Untersuchungshaft",
+  "UH-Vollzug": "Untersuchungshaft-Vollzug",
+  FA: "Fluchtgefahr/Auslieferung",
+  Vf: "Verfahren",
+  "Vf-Hindernis": "Verfahrenshindernis",
+  // Einstellungs-Abkürzungen
+  Einst: "Einstellung",
+  "Einst §": "Einstellung gemäß §",
+  "Einst.": "Einstellung",
+  Zurück: "Zurückgelegt",
+  "Zurückg.": "Zurückgelegt",
+  // Vernehmungs-Abkürzungen
+  "Vern.": "Vernehmung",
+  Vern: "Vernehmung",
+  BV: "Befragungsverbot",
+  AV: "Aussageverweigerungsrecht",
+  // Beweis-Abkürzungen
+  Beweis: "Beweismittel",
+  BwM: "Beweismittel",
+  Sich: "Sicherung",
+  "Sichg.": "Sicherung",
+  "Durchs.": "Durchsuchung",
+  Durchs: "Durchsuchung",
+  "Kontosp.": "Kontosperre",
+  Kontosp: "Kontosperre",
+  "FA-Verf.": "Finanzamt-Verfahren",
+  // Fristen-Abkürzungen
+  Frist: "Frist",
+  "Urg.": "Urgenz",
+  Urg: "Urgenz",
+  "Wied.": "Wiedereinsetzung",
+  Wied: "Wiedereinsetzung",
+  // Gebühren-Abkürzungen
+  "Geb.": "Gebühren",
+  Geb: "Gebühren",
+  KV: "Kostenverzeichnis",
+  "Vorsch.": "Vorschreibung",
+  Vorsch: "Vorschreibung",
+  // Sonstige
+  Kal: "Kalkulation",
+  Wo: "Wochen",
+  Mo: "Monate",
+  J: "Jahre",
+  Jahre: "Jahre",
+  Tg: "Tage",
+  Tage: "Tage",
+  "Stdl.": "Stundung",
+  "Erl.": "Erledigung",
+  Erl: "Erledigung",
+  Vst: "Vorstellung",
+  "Vstl.": "Vorstellung",
+  "Beschl.": "Beschluss",
+  Beschl: "Beschluss",
+  "Aufh.": "Aufhebung",
+  Aufh: "Aufhebung",
+  "Abg.": "Abgabe",
+  Abg: "Abgabe",
+  "Zust.": "Zustellung",
+  Zust: "Zustellung",
+  Akt: "Aktenstück",
+  AktE: "Akteneinsicht",
+  "AktE-G.": "Akteneinsichtsgesuch",
+  "Dring.": "Dringender Tatverdacht",
+  Dring: "Dringender Tatverdacht",
+  "Verd.": "Verdacht",
+  Verd: "Verdacht",
+  TV: "Tatverdächtiger",
+  PB: "Privatbeteiligter",
+  PBt: "Privatbeteiligter",
+  NHF: "Nebenkläger/Hinterbliebener/Familienangehöriger",
+  SchE: "Schuldeinsicht",
+  Gest: "Geständnis",
+  "Leug.": "Leugnung",
+  Leug: "Leugnung",
+  RA: "Rechtsanwalt",
+  RAin: "Rechtsanwältin",
+  Vtd: "Verteidiger",
+  StA: "Staatsanwalt",
+  StAin: "Staatsanwältin",
+  Ri: "Richter",
+  Riin: "Richterin",
+  "U-Ri": "Untersuchungsrichter",
+  Erm: "Ermittler",
+  "Erm.": "Ermittler",
+  Sachv: "Sachverhalt",
+  "Sachv.": "Sachverhalt",
+  Strfb: "Strafbar",
+  "Strfb.": "Strafbar",
+  Unstr: "Unstrafbar",
+  "Unstr.": "Unstrafbar",
+};
+
+/**
+ * Decode AB-Bogen abbreviations in extracted text.
+ * Returns the text with decoded annotations in brackets.
+ * Only annotates abbreviations that appear as standalone tokens (word-boundary match).
+ */
+function decodeAbbBogenKuerzel(text: string): string {
+  let result = text;
+  // Sort by length descending so longer abbreviations match first
+  const sortedKeys = Object.keys(ABBOGEN_KUERZEL).sort((a, b) => b.length - a.length);
+  for (const kuerzel of sortedKeys) {
+    // Escape regex special characters
+    const escaped = kuerzel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // Match as whole word, case-sensitive for abbreviations
+    // Only annotate if not already annotated (no [ already following)
+    const regex = new RegExp(`\\b${escaped}\\b(?!\\s*\\[)`, "g");
+    result = result.replace(regex, `${kuerzel} [${ABBOGEN_KUERZEL[kuerzel]}]`);
+  }
+  return result;
 }

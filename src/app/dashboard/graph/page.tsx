@@ -249,9 +249,9 @@ export default function GraphPage() {
   };
 
   return (
-    <div className="flex h-full flex-col p-4 md:p-6 lg:p-8">
-      <div className="flex h-full overflow-hidden">
-        <div className="relative flex-1 bg-[color:var(--ds-bg)]">
+    <div className="flex h-full min-w-0 flex-col p-4 md:p-6 lg:p-8">
+      <div className="flex h-full min-w-0 overflow-hidden">
+        <div className="relative min-w-0 flex-1 bg-[color:var(--ds-bg)]">
           {loading ? (
             <div className="flex h-full flex-col items-center justify-center">
               <Loader2 size={32} className="mb-3 animate-spin text-[color:var(--ds-text-muted)]" />

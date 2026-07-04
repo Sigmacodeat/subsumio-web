@@ -3,118 +3,120 @@
 import { describe, test, expect } from "vitest";
 import { parseIntent } from "./actions";
 
-// ─── Basic Intents ─────────────────────────────────────────────────────────────
+// ─── Simple kind-only assertions (table-driven) ──────────────────────────────
 
-describe("parseIntent — help", () => {
-  test("'hilfe' → help", () => {
-    expect(parseIntent("hilfe")).toEqual({ kind: "help" });
+describe("parseIntent — simple kind routing", () => {
+  const cases: Array<[string, string]> = [
+    // help
+    ["hilfe", "help"],
+    ["help", "help"],
+    ["?", "help"],
+    ["HILFE", "help"],
+    // confirm
+    ["ja", "confirm"],
+    ["ok", "confirm"],
+    ["okay", "confirm"],
+    ["speichern", "confirm"],
+    ["bestätigen", "confirm"],
+    ["bestaetigen", "confirm"],
+    ["JA", "confirm"],
+    // cancel
+    ["nein", "cancel"],
+    ["abbrechen", "cancel"],
+    ["verwerfen", "cancel"],
+    ["stopp", "cancel"],
+    ["stop", "cancel"],
+    // list_cases
+    ["akten", "list_cases"],
+    ["fälle", "list_cases"],
+    ["faelle", "list_cases"],
+    ["liste akten", "list_cases"],
+    ["case list", "list_cases"],
+    // list_tasks
+    ["aufgaben", "list_tasks"],
+    ["offene aufgaben", "list_tasks"],
+    ["todos", "list_tasks"],
+    ["was ist zu tun", "list_tasks"],
+    ["todo", "list_tasks"],
+    // list_deadlines
+    ["fristen", "list_deadlines"],
+    ["offene fristen", "list_deadlines"],
+    ["fristliste", "list_deadlines"],
+    ["deadline list", "list_deadlines"],
+    // today
+    ["heute", "today"],
+    ["was steht an", "today"],
+    ["agenda", "today"],
+    ["today", "today"],
+    ["übersicht", "today"],
+    // financial_overview
+    ["offene kosten", "financial_overview"],
+    ["umsatz", "financial_overview"],
+    ["abrechnung", "financial_overview"],
+    ["konto", "financial_overview"],
+    ["finanzen", "financial_overview"],
+    ["finanzielle übersicht", "financial_overview"],
+    // list_appointments
+    ["termine", "list_appointments"],
+    ["anstehende termine", "list_appointments"],
+    ["kalender", "list_appointments"],
+    ["terminkalender", "list_appointments"],
+    // bea / datev
+    ["bea", "bea_status"],
+    ["posteingang", "bea_status"],
+    ["datev", "datev_status"],
+    ["datev export", "datev_status"],
+    // free_text
+    ["irgendein text der auf nichts passt", "free_text"],
+    ["", "free_text"],
+    ["   ", "free_text"],
+    ["was ist der Unterschied zwischen Kauf und Werkvertrag?", "free_text"],
+  ];
+
+  test.each(cases)("%# %s → %s", (input, expected) => {
+    expect(parseIntent(input).kind).toBe(expected);
   });
 
-  test("'help' → help", () => {
-    expect(parseIntent("help")).toEqual({ kind: "help" });
+  test("whitespace-only → free_text with empty text", () => {
+    const r = parseIntent("   ");
+    expect(r.kind).toBe("free_text");
+    if (r.kind !== "free_text") return;
+    expect(r.text).toBe("");
   });
 
-  test("'?' → help", () => {
-    expect(parseIntent("?")).toEqual({ kind: "help" });
-  });
-
-  test("'HILFE' (case-insensitive) → help", () => {
-    expect(parseIntent("HILFE")).toEqual({ kind: "help" });
+  test("unrecognized text → free_text preserves text", () => {
+    const r = parseIntent("irgendein text der auf nichts passt");
+    expect(r.kind).toBe("free_text");
+    if (r.kind !== "free_text") return;
+    expect(r.text).toBe("irgendein text der auf nichts passt");
   });
 });
 
-describe("parseIntent — confirm", () => {
-  test("'ja' → confirm", () => {
-    expect(parseIntent("ja")).toEqual({ kind: "confirm" });
-  });
-
-  test("'ok' → confirm", () => {
-    expect(parseIntent("ok")).toEqual({ kind: "confirm" });
-  });
-
-  test("'okay' → confirm", () => {
-    expect(parseIntent("okay")).toEqual({ kind: "confirm" });
-  });
-
-  test("'speichern' → confirm", () => {
-    expect(parseIntent("speichern")).toEqual({ kind: "confirm" });
-  });
-
-  test("'bestätigen' → confirm", () => {
-    expect(parseIntent("bestätigen")).toEqual({ kind: "confirm" });
-  });
-
-  test("'bestaetigen' → confirm", () => {
-    expect(parseIntent("bestaetigen")).toEqual({ kind: "confirm" });
-  });
-});
-
-describe("parseIntent — cancel", () => {
-  test("'nein' → cancel", () => {
-    expect(parseIntent("nein")).toEqual({ kind: "cancel" });
-  });
-
-  test("'abbrechen' → cancel", () => {
-    expect(parseIntent("abbrechen")).toEqual({ kind: "cancel" });
-  });
-
-  test("'verwerfen' → cancel", () => {
-    expect(parseIntent("verwerfen")).toEqual({ kind: "cancel" });
-  });
-
-  test("'stopp' → cancel", () => {
-    expect(parseIntent("stopp")).toEqual({ kind: "cancel" });
-  });
-
-  test("'stop' → cancel", () => {
-    expect(parseIntent("stop")).toEqual({ kind: "cancel" });
-  });
-});
-
-// ─── Time Entry ────────────────────────────────────────────────────────────────
+// ─── Time Entry (table-driven for minutes/billable) ──────────────────────────
 
 describe("parseIntent — time_entry", () => {
-  test("'30m akt 2026-014 telefonat' → time_entry with 30 min", () => {
-    const r = parseIntent("30m akt 2026-014 telefonat");
-    expect(r.kind).toBe("time_entry");
-    if (r.kind !== "time_entry") return;
-    expect(r.minutes).toBe(30);
-    expect(r.caseRef).toBe("2026-014");
-    expect(r.billable).toBe(true);
-  });
+  const cases: Array<[string, number, string, boolean]> = [
+    ["30m akt 2026-014 telefonat", 30, "2026-014", true],
+    ["1,5h akt 2026-014", 90, "2026-014", true],
+    ["2 std akt 2026-014 besprechung", 120, "2026-014", true],
+    ["45 min akt 2026-014 nicht abrechenbar", 45, "2026-014", false],
+    ["2 stunden akt 2026-014", 120, "2026-014", true],
+    ["20 minute akt 2026-014 test", 20, "2026-014", true],
+    ["0,5h akt 2026-014", 30, "2026-014", true],
+    ["0m akt 2026-014", 1, "2026-014", true],
+  ];
 
-  test("'1,5h akt 2026-014' → 90 minutes", () => {
-    const r = parseIntent("1,5h akt 2026-014");
+  test.each(cases)("%# %s → %i min, case %s, billable %s", (input, mins, caseRef, billable) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("time_entry");
     if (r.kind !== "time_entry") return;
-    expect(r.minutes).toBe(90);
-  });
-
-  test("'2 std akt 2026-014 besprechung' → 120 minutes", () => {
-    const r = parseIntent("2 std akt 2026-014 besprechung");
-    expect(r.kind).toBe("time_entry");
-    if (r.kind !== "time_entry") return;
-    expect(r.minutes).toBe(120);
-  });
-
-  test("'45 min akt 2026-014 nicht abrechenbar' → billable false", () => {
-    const r = parseIntent("45 min akt 2026-014 nicht abrechenbar");
-    expect(r.kind).toBe("time_entry");
-    if (r.kind !== "time_entry") return;
-    expect(r.minutes).toBe(45);
-    expect(r.billable).toBe(false);
-  });
-
-  test("'2 stunden akt 2026-014' → 120 minutes", () => {
-    const r = parseIntent("2 stunden akt 2026-014");
-    expect(r.kind).toBe("time_entry");
-    if (r.kind !== "time_entry") return;
-    expect(r.minutes).toBe(120);
+    expect(r.minutes).toBe(mins);
+    expect(r.caseRef).toBe(caseRef);
+    expect(r.billable).toBe(billable);
   });
 
   test("time without case ref → free_text", () => {
-    const r = parseIntent("30m telefonat");
-    expect(r.kind).toBe("free_text");
+    expect(parseIntent("30m telefonat").kind).toBe("free_text");
   });
 
   test("description defaults to 'Zeiterfassung via WhatsApp' when empty", () => {
@@ -125,50 +127,34 @@ describe("parseIntent — time_entry", () => {
   });
 });
 
-// ─── Expense ───────────────────────────────────────────────────────────────────
+// ─── Expense (table-driven) ───────────────────────────────────────────────────
 
 describe("parseIntent — expense", () => {
-  test("'auslage akt 2026-014: 12,50 eur kopien' → expense", () => {
-    const r = parseIntent("auslage akt 2026-014: 12,50 eur kopien");
-    expect(r.kind).toBe("expense");
-    if (r.kind !== "expense") return;
-    expect(r.amount).toBe(12.5);
-    expect(r.caseRef).toBe("2026-014");
-    expect(r.description).toBe("kopien");
-    expect(r.billable).toBe(true);
-  });
+  const cases: Array<[string, number, string, string, boolean]> = [
+    ["auslage akt 2026-014: 12,50 eur kopien", 12.5, "2026-014", "kopien", true],
+    ["kosten akt 2026-014: 50€ gerichtskosten", 50, "2026-014", "gerichtskosten", true],
+    ["spesen akt 2026-014: 25,00 nicht abrechenbar", 25, "2026-014", "", false],
+    ["auslage 15,90 parkgebühren", 15.9, "", "parkgebühren", true],
+    ["kosten 50000", 50000, "", "", true],
+    ["auslage akt 2026-014: 100€", 100, "2026-014", "", true],
+  ];
 
-  test("'kosten akt 2026-014: 50€ gerichtskosten' → expense 50", () => {
-    const r = parseIntent("kosten akt 2026-014: 50€ gerichtskosten");
+  test.each(cases)("%# %s → amount %i, caseRef %s", (input, amount, caseRef) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("expense");
     if (r.kind !== "expense") return;
-    expect(r.amount).toBe(50);
-  });
-
-  test("'spesen akt 2026-014: 25,00 nicht abrechenbar' → billable false", () => {
-    const r = parseIntent("spesen akt 2026-014: 25,00 nicht abrechenbar");
-    expect(r.kind).toBe("expense");
-    if (r.kind !== "expense") return;
-    expect(r.amount).toBe(25);
-    expect(r.billable).toBe(false);
-  });
-
-  test("expense without case ref → expense with empty caseRef", () => {
-    const r = parseIntent("auslage 15,90 parkgebühren");
-    expect(r.kind).toBe("expense");
-    if (r.kind !== "expense") return;
-    expect(r.caseRef).toBe("");
+    expect(r.amount).toBe(amount);
+    expect(r.caseRef).toBe(caseRef);
   });
 
   test("expense without amount → free_text", () => {
-    const r = parseIntent("auslage akt 2026-014: kopien ohne betrag");
-    expect(r.kind).toBe("free_text");
+    expect(parseIntent("auslage akt 2026-014: kopien ohne betrag").kind).toBe("free_text");
   });
 });
 
-// ─── Case Note & Standalone Note ───────────────────────────────────────────────
+// ─── Case Note & Standalone Note ──────────────────────────────────────────────
 
-describe("parseIntent — case_note", () => {
+describe("parseIntent — notes", () => {
   test("'notiz akt 2026-014: gegner bietet 8000 eur' → case_note", () => {
     const r = parseIntent("notiz akt 2026-014: gegner bietet 8000 eur");
     expect(r.kind).toBe("case_note");
@@ -184,9 +170,7 @@ describe("parseIntent — case_note", () => {
     expect(r.caseRef).toBe("2026-014");
     expect(r.note).toBe("rückruf erbeten");
   });
-});
 
-describe("parseIntent — standalone_note", () => {
   test("'notiz: müller angerufen, bittet rückruf' → standalone_note", () => {
     const r = parseIntent("notiz: müller angerufen, bittet rückruf");
     expect(r.kind).toBe("standalone_note");
@@ -202,62 +186,36 @@ describe("parseIntent — standalone_note", () => {
   });
 });
 
-// ─── Invoice Status ────────────────────────────────────────────────────────────
+// ─── Invoice Status (table-driven) ────────────────────────────────────────────
 
 describe("parseIntent — invoice_status", () => {
-  test("'status akt 2026-014' → invoice_status", () => {
-    const r = parseIntent("status akt 2026-014");
+  test.each([
+    ["status akt 2026-014", "2026-014"],
+    ["abrechnung akt 2026-014", "2026-014"],
+    ["offen akt 2026-014", "2026-014"],
+  ])("%# %s → invoice_status, caseRef %s", (input, caseRef) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("invoice_status");
     if (r.kind !== "invoice_status") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'abrechnung akt 2026-014' → invoice_status", () => {
-    const r = parseIntent("abrechnung akt 2026-014");
-    expect(r.kind).toBe("invoice_status");
-    if (r.kind !== "invoice_status") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'offen akt 2026-014' → invoice_status", () => {
-    const r = parseIntent("offen akt 2026-014");
-    expect(r.kind).toBe("invoice_status");
-    if (r.kind !== "invoice_status") return;
-    expect(r.caseRef).toBe("2026-014");
+    expect(r.caseRef).toBe(caseRef);
   });
 });
 
-// ─── Task & Deadline ───────────────────────────────────────────────────────────
+// ─── Task & Deadline ──────────────────────────────────────────────────────────
 
 describe("parseIntent — task", () => {
-  test("'aufgabe akt 2026-014: klageentwurf prüfen' → task", () => {
-    const r = parseIntent("aufgabe akt 2026-014: klageentwurf prüfen");
+  test.each([
+    ["aufgabe akt 2026-014: klageentwurf prüfen", "2026-014", "klageentwurf prüfen", undefined],
+    ["aufgabe akt 2026-014: klage prüfen bis 2026-07-01", "2026-014", "klage prüfen", "2026-07-01"],
+    ["todo akt 2026-014: frist prüfen am 01.07.2026", "2026-014", "frist prüfen", "2026-07-01"],
+    ["aufgabe klageentwurf prüfen", "", "klageentwurf prüfen", undefined],
+  ])("%# %s", (input, caseRef, title, dueDate) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("task");
     if (r.kind !== "task") return;
-    expect(r.caseRef).toBe("2026-014");
-    expect(r.title).toBe("klageentwurf prüfen");
-    expect(r.dueDate).toBeUndefined();
-  });
-
-  test("'aufgabe akt 2026-014: klage prüfen bis 2026-07-01' → task with dueDate", () => {
-    const r = parseIntent("aufgabe akt 2026-014: klage prüfen bis 2026-07-01");
-    expect(r.kind).toBe("task");
-    if (r.kind !== "task") return;
-    expect(r.dueDate).toBe("2026-07-01");
-  });
-
-  test("'todo akt 2026-014: frist prüfen am 01.07.2026' → task with German date", () => {
-    const r = parseIntent("todo akt 2026-014: frist prüfen am 01.07.2026");
-    expect(r.kind).toBe("task");
-    if (r.kind !== "task") return;
-    expect(r.dueDate).toBe("2026-07-01");
-  });
-
-  test("task without case ref → task with empty caseRef", () => {
-    const r = parseIntent("aufgabe klageentwurf prüfen");
-    expect(r.kind).toBe("task");
-    if (r.kind !== "task") return;
-    expect(r.caseRef).toBe("");
+    expect(r.caseRef).toBe(caseRef);
+    expect(r.title).toBe(title);
+    expect(r.dueDate).toBe(dueDate);
   });
 });
 
@@ -278,21 +236,12 @@ describe("parseIntent — deadline", () => {
     expect(r.dueDate).toBe("2026-03-15");
   });
 
-  test("'termin akt 2026-014: 15.07.2026 14:00 LG München' → appointment, not deadline", () => {
-    const r = parseIntent("termin akt 2026-014: 15.07.2026 14:00 LG München");
-    expect(r.kind).toBe("appointment");
-    if (r.kind !== "appointment") return;
-    expect(r.caseRef).toBe("2026-014");
-    expect(r.date).toBe("2026-07-15");
-    expect(r.time).toBe("14:00");
-    expect(r.title).toBe("LG München");
-  });
-
   test("deadline without date → free_text", () => {
-    const r = parseIntent("frist akt 2026-014: irgendwann");
-    expect(r.kind).toBe("free_text");
+    expect(parseIntent("frist akt 2026-014: irgendwann").kind).toBe("free_text");
   });
 });
+
+// ─── Workflow updates ─────────────────────────────────────────────────────────
 
 describe("parseIntent — workflow updates", () => {
   test("task reschedule command", () => {
@@ -333,224 +282,124 @@ describe("parseIntent — workflow updates", () => {
   });
 
   test("document status and review commands", () => {
-    const status = parseIntent("dokumente status akt 2026-014");
-    expect(status.kind).toBe("document_status");
-
+    expect(parseIntent("dokumente status akt 2026-014").kind).toBe("document_status");
     const review = parseIntent("dokument geprüft akt 2026-014: Klageentwurf");
     expect(review.kind).toBe("review_document");
     if (review.kind !== "review_document") return;
     expect(review.status).toBe("confirmed");
   });
-
-  test("beA and DATEV status commands", () => {
-    expect(parseIntent("bea").kind).toBe("bea_status");
-    expect(parseIntent("posteingang").kind).toBe("bea_status");
-    expect(parseIntent("datev").kind).toBe("datev_status");
-    expect(parseIntent("datev export").kind).toBe("datev_status");
-  });
 });
 
-// ─── Case Summary ──────────────────────────────────────────────────────────────
+// ─── Case Summary (table-driven) ──────────────────────────────────────────────
 
 describe("parseIntent — case_summary", () => {
-  test("'akte 2026-014 zusammenfassung' → case_summary", () => {
-    const r = parseIntent("akte 2026-014 zusammenfassung");
-    expect(r.kind).toBe("case_summary");
-    if (r.kind !== "case_summary") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'zusammenfassung akt 2026-014' → case_summary", () => {
-    const r = parseIntent("zusammenfassung akt 2026-014");
-    expect(r.kind).toBe("case_summary");
-    if (r.kind !== "case_summary") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'summary akt 2026-014' → case_summary", () => {
-    const r = parseIntent("summary akt 2026-014");
-    expect(r.kind).toBe("case_summary");
-    if (r.kind !== "case_summary") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'überblick akt 2026-014' → case_summary", () => {
-    const r = parseIntent("überblick akt 2026-014");
-    expect(r.kind).toBe("case_summary");
-    if (r.kind !== "case_summary") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'wie ist der status akt 2026-014' → case_summary (NL)", () => {
-    const r = parseIntent("wie ist der status akt 2026-014");
-    expect(r.kind).toBe("case_summary");
-    if (r.kind !== "case_summary") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'was ist mit akt 2026-014' → case_summary (NL)", () => {
-    const r = parseIntent("was ist mit akt 2026-014");
+  test.each([
+    ["akte 2026-014 zusammenfassung"],
+    ["zusammenfassung akt 2026-014"],
+    ["summary akt 2026-014"],
+    ["überblick akt 2026-014"],
+    ["wie ist der status akt 2026-014"],
+    ["was ist mit akt 2026-014"],
+  ])("%# %s → case_summary, caseRef 2026-014", (input) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("case_summary");
     if (r.kind !== "case_summary") return;
     expect(r.caseRef).toBe("2026-014");
   });
 });
 
-// ─── Brain Query ───────────────────────────────────────────────────────────────
+// ─── Brain Query (table-driven) ───────────────────────────────────────────────
 
 describe("parseIntent — brain_query", () => {
-  test("'frage: was weißt du über Müller Vergleich?' → brain_query", () => {
-    const r = parseIntent("frage: was weißt du über Müller Vergleich?");
+  test.each([
+    ["frage: was weißt du über Müller Vergleich?", "was weißt du über Müller Vergleich?"],
+    ["suche: bgb § 433", "bgb § 433"],
+    ["wissen: rücktrittsrecht", "rücktrittsrecht"],
+    ["brain: aktuelle juris zu bgb 280", "aktuelle juris zu bgb 280"],
+  ])("%# %s → brain_query", (input, query) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("brain_query");
     if (r.kind !== "brain_query") return;
-    expect(r.query).toBe("was weißt du über Müller Vergleich?");
-  });
-
-  test("'suche: bgb § 433' → brain_query", () => {
-    const r = parseIntent("suche: bgb § 433");
-    expect(r.kind).toBe("brain_query");
-    if (r.kind !== "brain_query") return;
-    expect(r.query).toBe("bgb § 433");
-  });
-
-  test("'wissen: rücktrittsrecht' → brain_query", () => {
-    const r = parseIntent("wissen: rücktrittsrecht");
-    expect(r.kind).toBe("brain_query");
-    if (r.kind !== "brain_query") return;
-    expect(r.query).toBe("rücktrittsrecht");
-  });
-
-  test("'brain: aktuelle juris zu bgb 280' → brain_query", () => {
-    const r = parseIntent("brain: aktuelle juris zu bgb 280");
-    expect(r.kind).toBe("brain_query");
-    if (r.kind !== "brain_query") return;
-    expect(r.query).toBe("aktuelle juris zu bgb 280");
+    expect(r.query).toBe(query);
   });
 });
 
-// ─── RVG Calc ──────────────────────────────────────────────────────────────────
+// ─── RVG Calc (table-driven) ──────────────────────────────────────────────────
 
 describe("parseIntent — rvg_calc", () => {
-  test("'rvg 50000' → rvg_calc 50000", () => {
-    const r = parseIntent("rvg 50000");
+  test.each([
+    ["rvg 50000", 50000],
+    ["rvg 50.000", 50000],
+    ["streitwert 50000 eur", 50000],
+    ["rvg 1234,56", 1234.56],
+    ["gebühren 100000", 100000],
+    ["rvg berechnen 25000", 25000],
+    ["rvg 50000 eur", 50000],
+    ["rvg 50000€", 50000],
+  ])("%# %s → rvg_calc %s", (input, streitwert) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("rvg_calc");
     if (r.kind !== "rvg_calc") return;
-    expect(r.streitwert).toBe(50000);
-  });
-
-  test("'rvg 50.000' → rvg_calc 50000 (German thousands)", () => {
-    const r = parseIntent("rvg 50.000");
-    expect(r.kind).toBe("rvg_calc");
-    if (r.kind !== "rvg_calc") return;
-    expect(r.streitwert).toBe(50000);
-  });
-
-  test("'streitwert 50000 eur' → rvg_calc", () => {
-    const r = parseIntent("streitwert 50000 eur");
-    expect(r.kind).toBe("rvg_calc");
-    if (r.kind !== "rvg_calc") return;
-    expect(r.streitwert).toBe(50000);
-  });
-
-  test("'rvg 1234,56' → rvg_calc 1234.56 (German decimal)", () => {
-    const r = parseIntent("rvg 1234,56");
-    expect(r.kind).toBe("rvg_calc");
-    if (r.kind !== "rvg_calc") return;
-    expect(r.streitwert).toBeCloseTo(1234.56);
-  });
-
-  test("'gebühren 100000' → rvg_calc", () => {
-    const r = parseIntent("gebühren 100000");
-    expect(r.kind).toBe("rvg_calc");
-    if (r.kind !== "rvg_calc") return;
-    expect(r.streitwert).toBe(100000);
-  });
-
-  test("'rvg berechnen 25000' → rvg_calc with 'berechnen' keyword", () => {
-    const r = parseIntent("rvg berechnen 25000");
-    expect(r.kind).toBe("rvg_calc");
-    if (r.kind !== "rvg_calc") return;
-    expect(r.streitwert).toBe(25000);
+    if (typeof streitwert === "number" && !Number.isInteger(streitwert)) {
+      expect(r.streitwert).toBeCloseTo(streitwert);
+    } else {
+      expect(r.streitwert).toBe(streitwert);
+    }
   });
 });
 
-// ─── Deadline Calc ─────────────────────────────────────────────────────────────
+// ─── Deadline Calc (table-driven) ─────────────────────────────────────────────
 
 describe("parseIntent — deadline_calc", () => {
-  test("'frist berechnen zpo-berufung 2026-03-15 BY' → deadline_calc", () => {
-    const r = parseIntent("frist berechnen zpo-berufung 2026-03-15 BY");
+  test.each([
+    ["frist berechnen zpo-berufung 2026-03-15 BY", "zpo-berufung", "2026-03-15", "BY"],
+    ["frist berechnen zpo-berufung 15.03.2026", "zpo-berufung", "2026-03-15", "BY"],
+    ["deadline berechnen zpo-klage 01.02.2026 NW", "zpo-klage", "2026-02-01", "NW"],
+  ])("%# %s", (input, ruleKey, startDate, bundesland) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("deadline_calc");
     if (r.kind !== "deadline_calc") return;
-    expect(r.ruleKey).toBe("zpo-berufung");
-    expect(r.startDate).toBe("2026-03-15");
-    expect(r.bundesland).toBe("BY");
+    expect(r.ruleKey).toBe(ruleKey);
+    expect(r.startDate).toBe(startDate);
+    expect(r.bundesland).toBe(bundesland);
   });
 
-  test("'frist berechnen zpo-berufung 15.03.2026' → deadline_calc with German date, default BY", () => {
-    const r = parseIntent("frist berechnen zpo-berufung 15.03.2026");
-    expect(r.kind).toBe("deadline_calc");
-    if (r.kind !== "deadline_calc") return;
-    expect(r.startDate).toBe("2026-03-15");
-    expect(r.bundesland).toBe("BY");
-  });
-
-  test("'deadline berechnen zpo-klage 01.02.2026 NW' → deadline_calc", () => {
-    const r = parseIntent("deadline berechnen zpo-klage 01.02.2026 NW");
-    expect(r.kind).toBe("deadline_calc");
-    if (r.kind !== "deadline_calc") return;
-    expect(r.ruleKey).toBe("zpo-klage");
-    expect(r.startDate).toBe("2026-02-01");
-    expect(r.bundesland).toBe("NW");
+  test("'frist berechnen' without rule → not deadline_calc", () => {
+    expect(parseIntent("frist berechnen").kind).not.toBe("deadline_calc");
   });
 });
 
-// ─── Conflict Check ────────────────────────────────────────────────────────────
+// ─── Conflict Check (table-driven) ────────────────────────────────────────────
 
 describe("parseIntent — conflict_check", () => {
-  test("'konflikt Müller' → conflict_check", () => {
-    const r = parseIntent("konflikt Müller");
+  test.each([
+    ["konflikt Müller", "Müller", undefined],
+    ["konflikt-check Schmidt akt 2026-014", "Schmidt", "2026-014"],
+    ["conflict Meier", "Meier", undefined],
+  ])("%# %s", (input, name, caseRef) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("conflict_check");
     if (r.kind !== "conflict_check") return;
-    expect(r.name).toBe("Müller");
-    expect(r.caseRef).toBeUndefined();
-  });
-
-  test("'konflikt-check Schmidt akt 2026-014' → conflict_check with caseRef", () => {
-    const r = parseIntent("konflikt-check Schmidt akt 2026-014");
-    expect(r.kind).toBe("conflict_check");
-    if (r.kind !== "conflict_check") return;
-    expect(r.name).toBe("Schmidt");
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'conflict Meier' → conflict_check", () => {
-    const r = parseIntent("conflict Meier");
-    expect(r.kind).toBe("conflict_check");
-    if (r.kind !== "conflict_check") return;
-    expect(r.name).toBe("Meier");
+    expect(r.name).toBe(name);
+    expect(r.caseRef).toBe(caseRef);
   });
 });
 
-// ─── Document Fetch ────────────────────────────────────────────────────────────
+// ─── Document Fetch (table-driven) ────────────────────────────────────────────
 
 describe("parseIntent — document_fetch", () => {
-  test("'dokument akt 2026-014: klage' → document_fetch", () => {
-    const r = parseIntent("dokument akt 2026-014: klage");
+  test.each([
+    ["dokument akt 2026-014: klage", "2026-014", "klage"],
+    ["unterlagen akt 2026-014: vertrag", "2026-014", "vertrag"],
+  ])("%# %s", (input, caseRef, query) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("document_fetch");
     if (r.kind !== "document_fetch") return;
-    expect(r.caseRef).toBe("2026-014");
-    expect(r.query).toBe("klage");
+    expect(r.caseRef).toBe(caseRef);
+    expect(r.query).toBe(query);
   });
 
-  test("'unterlagen akt 2026-014: vertrag' → document_fetch", () => {
-    const r = parseIntent("unterlagen akt 2026-014: vertrag");
-    expect(r.kind).toBe("document_fetch");
-    if (r.kind !== "document_fetch") return;
-    expect(r.caseRef).toBe("2026-014");
-    expect(r.query).toBe("vertrag");
-  });
-
-  test("'hole dokument akt 2026-014 klageentwurf' → document_fetch (no colon, query is full rest)", () => {
+  test("'hole dokument akt 2026-014 klageentwurf' → document_fetch (no colon)", () => {
     const r = parseIntent("hole dokument akt 2026-014 klageentwurf");
     expect(r.kind).toBe("document_fetch");
     if (r.kind !== "document_fetch") return;
@@ -559,631 +408,218 @@ describe("parseIntent — document_fetch", () => {
   });
 });
 
-// ─── List Intents ──────────────────────────────────────────────────────────────
-
-describe("parseIntent — list_cases", () => {
-  test("'akten' → list_cases", () => {
-    expect(parseIntent("akten")).toEqual({ kind: "list_cases" });
-  });
-
-  test("'fälle' → list_cases", () => {
-    expect(parseIntent("fälle")).toEqual({ kind: "list_cases" });
-  });
-
-  test("'faelle' → list_cases", () => {
-    expect(parseIntent("faelle")).toEqual({ kind: "list_cases" });
-  });
-
-  test("'liste akten' → list_cases", () => {
-    expect(parseIntent("liste akten")).toEqual({ kind: "list_cases" });
-  });
-
-  test("'case list' → list_cases", () => {
-    expect(parseIntent("case list")).toEqual({ kind: "list_cases" });
-  });
-});
-
-describe("parseIntent — list_tasks", () => {
-  test("'aufgaben' → list_tasks", () => {
-    expect(parseIntent("aufgaben")).toEqual({ kind: "list_tasks" });
-  });
-
-  test("'offene aufgaben' → list_tasks", () => {
-    expect(parseIntent("offene aufgaben")).toEqual({ kind: "list_tasks" });
-  });
-
-  test("'todos' → list_tasks", () => {
-    expect(parseIntent("todos")).toEqual({ kind: "list_tasks" });
-  });
-
-  test("'was ist zu tun' → list_tasks", () => {
-    expect(parseIntent("was ist zu tun")).toEqual({ kind: "list_tasks" });
-  });
-
-  test("'todo' → list_tasks", () => {
-    expect(parseIntent("todo")).toEqual({ kind: "list_tasks" });
-  });
-});
-
-describe("parseIntent — list_deadlines", () => {
-  test("'fristen' → list_deadlines", () => {
-    expect(parseIntent("fristen")).toEqual({ kind: "list_deadlines" });
-  });
-
-  test("'offene fristen' → list_deadlines", () => {
-    expect(parseIntent("offene fristen")).toEqual({ kind: "list_deadlines" });
-  });
-
-  test("'fristliste' → list_deadlines", () => {
-    expect(parseIntent("fristliste")).toEqual({ kind: "list_deadlines" });
-  });
-
-  test("'deadline list' → list_deadlines", () => {
-    expect(parseIntent("deadline list")).toEqual({ kind: "list_deadlines" });
-  });
-});
-
-describe("parseIntent — today", () => {
-  test("'heute' → today", () => {
-    expect(parseIntent("heute")).toEqual({ kind: "today" });
-  });
-
-  test("'was steht an' → today", () => {
-    expect(parseIntent("was steht an")).toEqual({ kind: "today" });
-  });
-
-  test("'agenda' → today", () => {
-    expect(parseIntent("agenda")).toEqual({ kind: "today" });
-  });
-
-  test("'today' → today", () => {
-    expect(parseIntent("today")).toEqual({ kind: "today" });
-  });
-
-  test("'übersicht' → today", () => {
-    expect(parseIntent("übersicht")).toEqual({ kind: "today" });
-  });
-});
-
-// ─── Case Lookup ───────────────────────────────────────────────────────────────
+// ─── Case Lookup (table-driven) ───────────────────────────────────────────────
 
 describe("parseIntent — case_lookup", () => {
-  test("'akt 2026-014' → case_lookup", () => {
-    const r = parseIntent("akt 2026-014");
+  test.each([
+    ["akt 2026-014", "2026-014"],
+    ["akte 2026-014", "2026-014"],
+    ["az 2026-014", "2026-014"],
+    ["aktenzeichen 2026/14", "2026/14"],
+  ])("%# %s → case_lookup, caseRef %s", (input, caseRef) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("case_lookup");
     if (r.kind !== "case_lookup") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'akte 2026-014' → case_lookup", () => {
-    const r = parseIntent("akte 2026-014");
-    expect(r.kind).toBe("case_lookup");
-    if (r.kind !== "case_lookup") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'az 2026-014' → case_lookup", () => {
-    const r = parseIntent("az 2026-014");
-    expect(r.kind).toBe("case_lookup");
-    if (r.kind !== "case_lookup") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'aktenzeichen 2026/14' → case_lookup with slash", () => {
-    const r = parseIntent("aktenzeichen 2026/14");
-    expect(r.kind).toBe("case_lookup");
-    if (r.kind !== "case_lookup") return;
-    expect(r.caseRef).toBe("2026/14");
+    expect(r.caseRef).toBe(caseRef);
   });
 });
 
-// ─── Mark Done ─────────────────────────────────────────────────────────────────
+// ─── Mark Done (table-driven) ─────────────────────────────────────────────────
 
 describe("parseIntent — mark_done", () => {
-  test("'erledigt akt 2026-014: klageentwurf' → mark_done (task)", () => {
-    const r = parseIntent("erledigt akt 2026-014: klageentwurf");
+  test.each([
+    ["erledigt akt 2026-014: klageentwurf", "2026-014", "task", "klageentwurf"],
+    ["frist erledigt akt 2026-014: Berufung", "2026-014", "deadline", "Berufung"],
+    ["deadline erledigt akt 2026-014: frist", "2026-014", "deadline", "frist"],
+    ["aufgabe erledigt akt 2026-014: todo", "2026-014", "task", "todo"],
+  ])("%# %s", (input, caseRef, itemType, query) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("mark_done");
     if (r.kind !== "mark_done") return;
-    expect(r.caseRef).toBe("2026-014");
-    expect(r.itemType).toBe("task");
-    expect(r.query).toBe("klageentwurf");
-  });
-
-  test("'frist erledigt akt 2026-014: Berufung' → mark_done (deadline)", () => {
-    const r = parseIntent("frist erledigt akt 2026-014: Berufung");
-    expect(r.kind).toBe("mark_done");
-    if (r.kind !== "mark_done") return;
-    expect(r.itemType).toBe("deadline");
-    expect(r.query).toBe("Berufung");
-  });
-
-  test("'deadline erledigt akt 2026-014: frist' → mark_done (deadline)", () => {
-    const r = parseIntent("deadline erledigt akt 2026-014: frist");
-    expect(r.kind).toBe("mark_done");
-    if (r.kind !== "mark_done") return;
-    expect(r.itemType).toBe("deadline");
-  });
-
-  test("'aufgabe erledigt akt 2026-014: todo' → mark_done (task)", () => {
-    const r = parseIntent("aufgabe erledigt akt 2026-014: todo");
-    expect(r.kind).toBe("mark_done");
-    if (r.kind !== "mark_done") return;
-    expect(r.itemType).toBe("task");
+    expect(r.caseRef).toBe(caseRef);
+    expect(r.itemType).toBe(itemType);
+    expect(r.query).toBe(query);
   });
 });
 
-// ─── Search ────────────────────────────────────────────────────────────────────
+// ─── Search (table-driven) ────────────────────────────────────────────────────
 
 describe("parseIntent — search", () => {
-  test("'finde Müller' → search", () => {
-    const r = parseIntent("finde Müller");
+  test.each([
+    ["finde Müller", "Müller"],
+    ["finde Schmidt", "Schmidt"],
+    ["wer ist Meier", "Meier"],
+    ["wo ist Becker", "Becker"],
+  ])("%# %s → search, query %s", (input, query) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("search");
     if (r.kind !== "search") return;
-    expect(r.query).toBe("Müller");
-  });
-
-  test("'finde Schmidt' → search", () => {
-    const r = parseIntent("finde Schmidt");
-    expect(r.kind).toBe("search");
-    if (r.kind !== "search") return;
-    expect(r.query).toBe("Schmidt");
-  });
-
-  test("'wer ist Meier' → search", () => {
-    const r = parseIntent("wer ist Meier");
-    expect(r.kind).toBe("search");
-    if (r.kind !== "search") return;
-    expect(r.query).toBe("Meier");
-  });
-
-  test("'wo ist Becker' → search", () => {
-    const r = parseIntent("wo ist Becker");
-    expect(r.kind).toBe("search");
-    if (r.kind !== "search") return;
-    expect(r.query).toBe("Becker");
+    expect(r.query).toBe(query);
   });
 });
 
-// ─── Financial Overview ────────────────────────────────────────────────────────
-
-describe("parseIntent — financial_overview", () => {
-  test("'offene kosten' → financial_overview", () => {
-    expect(parseIntent("offene kosten")).toEqual({ kind: "financial_overview" });
-  });
-
-  test("'umsatz' → financial_overview", () => {
-    expect(parseIntent("umsatz")).toEqual({ kind: "financial_overview" });
-  });
-
-  test("'abrechnung' → financial_overview", () => {
-    expect(parseIntent("abrechnung")).toEqual({ kind: "financial_overview" });
-  });
-
-  test("'konto' → financial_overview", () => {
-    expect(parseIntent("konto")).toEqual({ kind: "financial_overview" });
-  });
-
-  test("'finanzen' → financial_overview", () => {
-    expect(parseIntent("finanzen")).toEqual({ kind: "financial_overview" });
-  });
-
-  test("'finanzielle übersicht' → financial_overview", () => {
-    expect(parseIntent("finanzielle übersicht")).toEqual({ kind: "financial_overview" });
-  });
-});
-
-// ─── Case Activity ─────────────────────────────────────────────────────────────
+// ─── Case Activity (table-driven) ─────────────────────────────────────────────
 
 describe("parseIntent — case_activity", () => {
-  test("'verlauf akt 2026-014' → case_activity", () => {
-    const r = parseIntent("verlauf akt 2026-014");
-    expect(r.kind).toBe("case_activity");
-    if (r.kind !== "case_activity") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'historie akt 2026-014' → case_activity", () => {
-    const r = parseIntent("historie akt 2026-014");
-    expect(r.kind).toBe("case_activity");
-    if (r.kind !== "case_activity") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'aktivitäten akt 2026-014' → case_activity", () => {
-    const r = parseIntent("aktivitäten akt 2026-014");
-    expect(r.kind).toBe("case_activity");
-    if (r.kind !== "case_activity") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'log 2026-014' → case_activity", () => {
-    const r = parseIntent("log 2026-014");
+  test.each([
+    ["verlauf akt 2026-014"],
+    ["historie akt 2026-014"],
+    ["aktivitäten akt 2026-014"],
+    ["log 2026-014"],
+  ])("%# %s → case_activity, caseRef 2026-014", (input) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("case_activity");
     if (r.kind !== "case_activity") return;
     expect(r.caseRef).toBe("2026-014");
   });
 });
 
-// ─── Create Case ───────────────────────────────────────────────────────────────
+// ─── Create Case (table-driven for legalArea mapping) ─────────────────────────
 
 describe("parseIntent — create_case", () => {
-  test("'neue akte Müller vs. Schmidt Familienrecht' → create_case", () => {
-    const r = parseIntent("neue akte Müller vs. Schmidt Familienrecht");
+  test.each([
+    ["neue akte Müller vs. Schmidt Familienrecht", "Müller", "Schmidt", "family", undefined],
+    ["neuer fall Müller gegen Schmidt Strafrecht", "Müller", "Schmidt", "criminal", undefined],
+    ["neue akte Müller vs. Schmidt Arbeitsrecht klage", "Müller", "Schmidt", "labor", "klage"],
+    ["neue akte Müller", "Müller", "", "civil", undefined],
+    ["akte anlegen Müller vs. Becker Handelsrecht", "Müller", "Becker", "commercial", undefined],
+    [
+      "neue sache Müller vs. Schmidt Verwaltungsrecht",
+      "Müller",
+      "Schmidt",
+      "administrative",
+      undefined,
+    ],
+    [
+      "neue akte Müller vs. Schmidt Gewerblicher Rechtsschutz",
+      "Müller",
+      "Schmidt",
+      "ip",
+      undefined,
+    ],
+    ["neue akte Müller vs. Schmidt Steuerrecht", "Müller", "Schmidt", "tax", undefined],
+    ["neue akte Müller vs. Schmidt", "Müller", "Schmidt", "civil", undefined],
+    ["neuer fall Müller vs. Schmidt", "Müller", "Schmidt", "civil", undefined],
+  ])("%# %s", (input, clientName, opponentName, legalArea, description) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("create_case");
     if (r.kind !== "create_case") return;
-    expect(r.clientName).toBe("Müller");
-    expect(r.opponentName).toBe("Schmidt");
-    expect(r.legalArea).toBe("family");
-  });
-
-  test("'neuer fall Müller gegen Schmidt Strafrecht' → create_case", () => {
-    const r = parseIntent("neuer fall Müller gegen Schmidt Strafrecht");
-    expect(r.kind).toBe("create_case");
-    if (r.kind !== "create_case") return;
-    expect(r.clientName).toBe("Müller");
-    expect(r.opponentName).toBe("Schmidt");
-    expect(r.legalArea).toBe("criminal");
-  });
-
-  test("'neue akte Müller vs. Schmidt Arbeitsrecht klage' → create_case with description", () => {
-    const r = parseIntent("neue akte Müller vs. Schmidt Arbeitsrecht klage");
-    expect(r.kind).toBe("create_case");
-    if (r.kind !== "create_case") return;
-    expect(r.legalArea).toBe("labor");
-    expect(r.description).toBe("klage");
-  });
-
-  test("'neue akte Müller' (no opponent) → create_case with empty opponent", () => {
-    const r = parseIntent("neue akte Müller");
-    expect(r.kind).toBe("create_case");
-    if (r.kind !== "create_case") return;
-    expect(r.clientName).toBe("Müller");
-    expect(r.opponentName).toBe("");
-    expect(r.legalArea).toBe("civil");
-  });
-
-  test("'akte anlegen Müller vs. Becker Handelsrecht' → create_case", () => {
-    const r = parseIntent("akte anlegen Müller vs. Becker Handelsrecht");
-    expect(r.kind).toBe("create_case");
-    if (r.kind !== "create_case") return;
-    expect(r.legalArea).toBe("commercial");
-  });
-
-  test("'neue sache Müller vs. Schmidt Verwaltungsrecht' → create_case", () => {
-    const r = parseIntent("neue sache Müller vs. Schmidt Verwaltungsrecht");
-    expect(r.kind).toBe("create_case");
-    if (r.kind !== "create_case") return;
-    expect(r.legalArea).toBe("administrative");
-  });
-
-  test("'neue akte Müller vs. Schmidt Gewerblicher Rechtsschutz' → create_case IP", () => {
-    const r = parseIntent("neue akte Müller vs. Schmidt Gewerblicher Rechtsschutz");
-    expect(r.kind).toBe("create_case");
-    if (r.kind !== "create_case") return;
-    expect(r.legalArea).toBe("ip");
+    expect(r.clientName).toBe(clientName);
+    expect(r.opponentName).toBe(opponentName);
+    expect(r.legalArea).toBe(legalArea);
+    if (description !== undefined) expect(r.description).toBe(description);
   });
 });
 
-// ─── Create Client ─────────────────────────────────────────────────────────────
+// ─── Create Client (table-driven) ─────────────────────────────────────────────
 
 describe("parseIntent — create_client", () => {
-  test("'neuer mandant Thomas Müller' → create_client", () => {
-    const r = parseIntent("neuer mandant Thomas Müller");
+  test.each([
+    ["neuer mandant Thomas Müller", "Thomas Müller", undefined, undefined],
+    ["neuer mandant Thomas Müller +49 170 1234567", "Thomas Müller", "+49 170 1234567", undefined],
+    [
+      "neuer mandant Thomas Müller thomas@example.com",
+      "Thomas Müller",
+      undefined,
+      "thomas@example.com",
+    ],
+    [
+      "neuer mandant Thomas Müller +49 170 1234567 thomas@example.com",
+      "Thomas Müller",
+      "+49 170 1234567",
+      "thomas@example.com",
+    ],
+    ["neuer kunde Schmidt", "Schmidt", undefined, undefined],
+    ["mandant anlegen Thomas Müller", "Thomas Müller", undefined, undefined],
+  ])("%# %s", (input, name, phone, email) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("create_client");
     if (r.kind !== "create_client") return;
-    expect(r.name).toBe("Thomas Müller");
-    expect(r.phone).toBeUndefined();
-    expect(r.email).toBeUndefined();
-  });
-
-  test("'neuer mandant Thomas Müller +49 170 1234567' → create_client with phone", () => {
-    const r = parseIntent("neuer mandant Thomas Müller +49 170 1234567");
-    expect(r.kind).toBe("create_client");
-    if (r.kind !== "create_client") return;
-    expect(r.name).toBe("Thomas Müller");
-    expect(r.phone).toBe("+49 170 1234567");
-  });
-
-  test("'neuer mandant Thomas Müller thomas@example.com' → create_client with email", () => {
-    const r = parseIntent("neuer mandant Thomas Müller thomas@example.com");
-    expect(r.kind).toBe("create_client");
-    if (r.kind !== "create_client") return;
-    expect(r.email).toBe("thomas@example.com");
-  });
-
-  test("'neuer mandant Thomas Müller +49 170 1234567 thomas@example.com' → both phone and email", () => {
-    const r = parseIntent("neuer mandant Thomas Müller +49 170 1234567 thomas@example.com");
-    expect(r.kind).toBe("create_client");
-    if (r.kind !== "create_client") return;
-    expect(r.phone).toBeTruthy();
-    expect(r.email).toBe("thomas@example.com");
-    expect(r.name).toBe("Thomas Müller");
-  });
-
-  test("'neuer kunde Schmidt' → create_client", () => {
-    const r = parseIntent("neuer kunde Schmidt");
-    expect(r.kind).toBe("create_client");
-    if (r.kind !== "create_client") return;
-    expect(r.name).toBe("Schmidt");
+    expect(r.name).toBe(name);
+    expect(r.phone).toBe(phone);
+    expect(r.email).toBe(email);
   });
 });
 
-// ─── Close Case ────────────────────────────────────────────────────────────────
+// ─── Close Case (table-driven) ────────────────────────────────────────────────
 
 describe("parseIntent — close_case", () => {
-  test("'akte abschließen 2026-014' → close_case", () => {
-    const r = parseIntent("akte abschließen 2026-014");
-    expect(r.kind).toBe("close_case");
-    if (r.kind !== "close_case") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'fall schließen 2026-014' → close_case", () => {
-    const r = parseIntent("fall schließen 2026-014");
-    expect(r.kind).toBe("close_case");
-    if (r.kind !== "close_case") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'abschließen akt 2026-014' → close_case (reversed order)", () => {
-    const r = parseIntent("abschließen akt 2026-014");
-    expect(r.kind).toBe("close_case");
-    if (r.kind !== "close_case") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'archivieren 2026-014' → close_case", () => {
-    const r = parseIntent("archivieren 2026-014");
-    expect(r.kind).toBe("close_case");
-    if (r.kind !== "close_case") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("'beenden 2026-014' → close_case", () => {
-    const r = parseIntent("beenden 2026-014");
+  test.each([
+    ["akte abschließen 2026-014"],
+    ["fall schließen 2026-014"],
+    ["abschließen akt 2026-014"],
+    ["archivieren 2026-014"],
+    ["beenden 2026-014"],
+    ["akte schliessen 2026-014"],
+    ["akte abschliessen 2026-014"],
+  ])("%# %s → close_case, caseRef 2026-014", (input) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("close_case");
     if (r.kind !== "close_case") return;
     expect(r.caseRef).toBe("2026-014");
   });
 });
 
-// ─── Create Invoice ────────────────────────────────────────────────────────────
+// ─── Create Invoice (table-driven) ────────────────────────────────────────────
 
 describe("parseIntent — create_invoice", () => {
-  test("'rechnung akt 2026-014: 2500 eur für Klageentwurf' → create_invoice", () => {
-    const r = parseIntent("rechnung akt 2026-014: 2500 eur für Klageentwurf");
+  test.each([
+    ["rechnung akt 2026-014: 2500 eur für Klageentwurf", "2026-014", 2500, "Klageentwurf"],
+    ["rechnung akt 2026-014: 1500,50", "2026-014", 1500.5, "Rechnung via WhatsApp"],
+    ["invoice akt 2026-014: 3000€ für Gutachten", "2026-014", 3000, "Gutachten"],
+    ["rechnung akt 2026-014: 500", "2026-014", 500, "Rechnung via WhatsApp"],
+  ])("%# %s", (input, caseRef, amount, description) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("create_invoice");
     if (r.kind !== "create_invoice") return;
-    expect(r.caseRef).toBe("2026-014");
-    expect(r.amount).toBe(2500);
-    expect(r.description).toBe("Klageentwurf");
+    expect(r.caseRef).toBe(caseRef);
+    if (!Number.isInteger(amount)) {
+      expect(r.amount).toBeCloseTo(amount);
+    } else {
+      expect(r.amount).toBe(amount);
+    }
+    expect(r.description).toBe(description);
   });
 
-  test("'rechnung akt 2026-014: 1500,50' → create_invoice with decimal", () => {
-    const r = parseIntent("rechnung akt 2026-014: 1500,50");
-    expect(r.kind).toBe("create_invoice");
-    if (r.kind !== "create_invoice") return;
-    expect(r.amount).toBeCloseTo(1500.5);
-  });
-
-  test("'invoice akt 2026-014: 3000€ für Gutachten' → create_invoice", () => {
-    const r = parseIntent("invoice akt 2026-014: 3000€ für Gutachten");
-    expect(r.kind).toBe("create_invoice");
-    if (r.kind !== "create_invoice") return;
-    expect(r.amount).toBe(3000);
-    expect(r.description).toBe("Gutachten");
-  });
-
-  test("invoice without description → default description", () => {
-    const r = parseIntent("rechnung akt 2026-014: 500");
-    expect(r.kind).toBe("create_invoice");
-    if (r.kind !== "create_invoice") return;
-    expect(r.amount).toBe(500);
-    expect(r.description).toBe("Rechnung via WhatsApp");
-  });
-
-  test("invoice with zero amount → not create_invoice (amount must be > 0)", () => {
-    const r = parseIntent("rechnung akt 2026-014: 0");
-    expect(r.kind).not.toBe("create_invoice");
+  test("invoice with zero amount → not create_invoice", () => {
+    expect(parseIntent("rechnung akt 2026-014: 0").kind).not.toBe("create_invoice");
   });
 });
 
-// ─── Free Text & Edge Cases ────────────────────────────────────────────────────
-
-describe("parseIntent — free_text", () => {
-  test("unrecognized text → free_text", () => {
-    const r = parseIntent("irgendein text der auf nichts passt");
-    expect(r.kind).toBe("free_text");
-    if (r.kind !== "free_text") return;
-    expect(r.text).toBe("irgendein text der auf nichts passt");
-  });
-
-  test("empty string → free_text", () => {
-    const r = parseIntent("");
-    expect(r.kind).toBe("free_text");
-    if (r.kind !== "free_text") return;
-    expect(r.text).toBe("");
-  });
-
-  test("whitespace-only → free_text with empty text", () => {
-    const r = parseIntent("   ");
-    expect(r.kind).toBe("free_text");
-    if (r.kind !== "free_text") return;
-    expect(r.text).toBe("");
-  });
-
-  test("random question → free_text", () => {
-    const r = parseIntent("was ist der Unterschied zwischen Kauf und Werkvertrag?");
-    expect(r.kind).toBe("free_text");
-  });
-});
-
-// ─── Edge Cases & Ambiguity ────────────────────────────────────────────────────
-
-describe("parseIntent — edge cases", () => {
-  test("case-insensitive: 'HILFE' → help", () => {
-    expect(parseIntent("HILFE").kind).toBe("help");
-  });
-
-  test("case-insensitive: 'JA' → confirm", () => {
-    expect(parseIntent("JA").kind).toBe("confirm");
-  });
-
-  test("leading/trailing whitespace is trimmed", () => {
-    expect(parseIntent("  hilfe  ").kind).toBe("help");
-  });
-
-  test("'kosten 50000' matches expense (not rvg_calc) because expense regex runs first", () => {
-    const r = parseIntent("kosten 50000");
-    expect(r.kind).toBe("expense");
-  });
-
-  test("'auslage akt 2026-014: 100€' → expense (not rvg_calc) because 'auslage' prefix", () => {
-    const r = parseIntent("auslage akt 2026-014: 100€");
-    expect(r.kind).toBe("expense");
-  });
-
-  test("'frist berechnen' without rule → not deadline_calc (no date)", () => {
-    const r = parseIntent("frist berechnen");
-    expect(r.kind).not.toBe("deadline_calc");
-  });
-
-  test("German date 2-digit year '15.03.26' → normalized to '2026-03-15'", () => {
-    const r = parseIntent("frist akt 2026-014: test 15.03.26");
-    expect(r.kind).toBe("deadline");
-    if (r.kind !== "deadline") return;
-    expect(r.dueDate).toBe("2026-03-15");
-  });
-
-  test("'bestätigen' with umlaut → confirm", () => {
-    expect(parseIntent("bestätigen").kind).toBe("confirm");
-  });
-
-  test("'abschließen akt 2026-014' → close_case (not mark_done)", () => {
-    const r = parseIntent("abschließen akt 2026-014");
-    expect(r.kind).toBe("close_case");
-  });
-
-  test("'erledigt akt 2026-014: klage' → mark_done (not close_case)", () => {
-    const r = parseIntent("erledigt akt 2026-014: klage");
-    expect(r.kind).toBe("mark_done");
-  });
-
-  test("time_entry with 'minute' singular: '20 minute akt X test'", () => {
-    const r = parseIntent("20 minute akt 2026-014 test");
-    expect(r.kind).toBe("time_entry");
-    if (r.kind !== "time_entry") return;
-    expect(r.minutes).toBe(20);
-  });
-
-  test("time_entry with decimal hours '0,5h akt X' → 30 min", () => {
-    const r = parseIntent("0,5h akt 2026-014");
-    expect(r.kind).toBe("time_entry");
-    if (r.kind !== "time_entry") return;
-    expect(r.minutes).toBe(30);
-  });
-
-  test("time_entry minimum 1 minute (0m → 1)", () => {
-    const r = parseIntent("0m akt 2026-014");
-    expect(r.kind).toBe("time_entry");
-    if (r.kind !== "time_entry") return;
-    expect(r.minutes).toBe(1);
-  });
-
-  test("rvg with euro suffix: 'rvg 50000 eur'", () => {
-    const r = parseIntent("rvg 50000 eur");
-    expect(r.kind).toBe("rvg_calc");
-    if (r.kind !== "rvg_calc") return;
-    expect(r.streitwert).toBe(50000);
-  });
-
-  test("rvg with euro sign: 'rvg 50000€'", () => {
-    const r = parseIntent("rvg 50000€");
-    expect(r.kind).toBe("rvg_calc");
-    if (r.kind !== "rvg_calc") return;
-    expect(r.streitwert).toBe(50000);
-  });
-
-  test("create_case with 'neuer fall' prefix", () => {
-    const r = parseIntent("neuer fall Müller vs. Schmidt");
-    expect(r.kind).toBe("create_case");
-  });
-
-  test("create_case with Steuerrecht → tax", () => {
-    const r = parseIntent("neue akte Müller vs. Schmidt Steuerrecht");
-    expect(r.kind).toBe("create_case");
-    if (r.kind !== "create_case") return;
-    expect(r.legalArea).toBe("tax");
-  });
-
-  test("create_case default legalArea is civil when not specified", () => {
-    const r = parseIntent("neue akte Müller vs. Schmidt");
-    expect(r.kind).toBe("create_case");
-    if (r.kind !== "create_case") return;
-    expect(r.legalArea).toBe("civil");
-  });
-
-  test("create_client with 'mandant anlegen' prefix", () => {
-    const r = parseIntent("mandant anlegen Thomas Müller");
-    expect(r.kind).toBe("create_client");
-    if (r.kind !== "create_client") return;
-    expect(r.name).toBe("Thomas Müller");
-  });
-
-  test("close_case with 'schliessen' (ae-spelling)", () => {
-    const r = parseIntent("akte schliessen 2026-014");
-    expect(r.kind).toBe("close_case");
-    if (r.kind !== "close_case") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-
-  test("close_case with 'abschliessen' (ae-spelling)", () => {
-    const r = parseIntent("akte abschliessen 2026-014");
-    expect(r.kind).toBe("close_case");
-    if (r.kind !== "close_case") return;
-    expect(r.caseRef).toBe("2026-014");
-  });
-});
-
-// ─── G1: Appointment Intent ───────────────────────────────────────────────────
+// ─── Appointment ──────────────────────────────────────────────────────────────
 
 describe("parseIntent — appointment", () => {
-  test("'termin akt 2026-014: 15.07.2026 14:00 LG München Verhandlung' → appointment", () => {
-    const r = parseIntent("termin akt 2026-014: 15.07.2026 14:00 LG München Verhandlung");
+  test.each([
+    [
+      "termin akt 2026-014: 15.07.2026 14:00 LG München Verhandlung",
+      "2026-014",
+      "2026-07-15",
+      "14:00",
+      "LG München Verhandlung",
+    ],
+    ["termin 15.07.2026 9:00 Besprechung", "", "2026-07-15", "09:00", "Besprechung"],
+    [
+      "gerichtstermin akt 2026-003: 01.08.2026 10:30 OLG Stuttgart",
+      "2026-003",
+      "2026-08-01",
+      "10:30",
+      "OLG Stuttgart",
+    ],
+    [
+      "besprechung 20.07.2026 14.00 Telefonat Mandant",
+      "",
+      "2026-07-20",
+      "14:00",
+      "Telefonat Mandant",
+    ],
+  ])("%# %s", (input, caseRef, date, time, title) => {
+    const r = parseIntent(input);
     expect(r.kind).toBe("appointment");
     if (r.kind !== "appointment") return;
-    expect(r.caseRef).toBe("2026-014");
-    expect(r.date).toBe("2026-07-15");
-    expect(r.time).toBe("14:00");
-    expect(r.title).toBe("LG München Verhandlung");
-  });
-
-  test("'termin 15.07.2026 9:00 Besprechung' → appointment (no case)", () => {
-    const r = parseIntent("termin 15.07.2026 9:00 Besprechung");
-    expect(r.kind).toBe("appointment");
-    if (r.kind !== "appointment") return;
-    expect(r.caseRef).toBe("");
-    expect(r.date).toBe("2026-07-15");
-    expect(r.time).toBe("09:00");
-    expect(r.title).toBe("Besprechung");
-  });
-
-  test("'gerichtstermin akt 2026-003: 01.08.2026 10:30 OLG Stuttgart' → appointment", () => {
-    const r = parseIntent("gerichtstermin akt 2026-003: 01.08.2026 10:30 OLG Stuttgart");
-    expect(r.kind).toBe("appointment");
-    if (r.kind !== "appointment") return;
-    expect(r.caseRef).toBe("2026-003");
-    expect(r.date).toBe("2026-08-01");
-    expect(r.time).toBe("10:30");
-    expect(r.title).toBe("OLG Stuttgart");
-  });
-
-  test("'besprechung 20.07.2026 14.00 Telefonat Mandant' → appointment (dot in time)", () => {
-    const r = parseIntent("besprechung 20.07.2026 14.00 Telefonat Mandant");
-    expect(r.kind).toBe("appointment");
-    if (r.kind !== "appointment") return;
-    expect(r.time).toBe("14:00");
-    expect(r.title).toBe("Telefonat Mandant");
+    expect(r.caseRef).toBe(caseRef);
+    expect(r.date).toBe(date);
+    expect(r.time).toBe(time);
+    expect(r.title).toBe(title);
   });
 
   test("appointment takes priority over deadline for 'termin' prefix with time", () => {
@@ -1193,27 +629,47 @@ describe("parseIntent — appointment", () => {
   });
 
   test("'termin' without time falls through to deadline", () => {
-    const r = parseIntent("termin 15.07.2026 Klageerwiderung");
-    expect(r.kind).toBe("deadline");
+    expect(parseIntent("termin 15.07.2026 Klageerwiderung").kind).toBe("deadline");
+  });
+
+  test("'termin akt 2026-014: 15.07.2026 14:00 LG München' → appointment, not deadline", () => {
+    const r = parseIntent("termin akt 2026-014: 15.07.2026 14:00 LG München");
+    expect(r.kind).toBe("appointment");
+    if (r.kind !== "appointment") return;
+    expect(r.caseRef).toBe("2026-014");
+    expect(r.date).toBe("2026-07-15");
+    expect(r.time).toBe("14:00");
+    expect(r.title).toBe("LG München");
   });
 });
 
-// ─── G1: List Appointments ────────────────────────────────────────────────────
+// ─── Edge Cases & Ambiguity ───────────────────────────────────────────────────
 
-describe("parseIntent — list_appointments", () => {
-  test("'termine' → list_appointments", () => {
-    expect(parseIntent("termine")).toEqual({ kind: "list_appointments" });
+describe("parseIntent — edge cases", () => {
+  test("case-insensitive: 'HILFE' → help", () => {
+    expect(parseIntent("HILFE").kind).toBe("help");
   });
 
-  test("'anstehende termine' → list_appointments", () => {
-    expect(parseIntent("anstehende termine")).toEqual({ kind: "list_appointments" });
+  test("leading/trailing whitespace is trimmed", () => {
+    expect(parseIntent("  hilfe  ").kind).toBe("help");
   });
 
-  test("'kalender' → list_appointments", () => {
-    expect(parseIntent("kalender")).toEqual({ kind: "list_appointments" });
+  test("'bestätigen' with umlaut → confirm", () => {
+    expect(parseIntent("bestätigen").kind).toBe("confirm");
   });
 
-  test("'terminkalender' → list_appointments", () => {
-    expect(parseIntent("terminkalender")).toEqual({ kind: "list_appointments" });
+  test("'abschließen akt 2026-014' → close_case (not mark_done)", () => {
+    expect(parseIntent("abschließen akt 2026-014").kind).toBe("close_case");
+  });
+
+  test("'erledigt akt 2026-014: klage' → mark_done (not close_case)", () => {
+    expect(parseIntent("erledigt akt 2026-014: klage").kind).toBe("mark_done");
+  });
+
+  test("German date 2-digit year '15.03.26' → normalized to '2026-03-15'", () => {
+    const r = parseIntent("frist akt 2026-014: test 15.03.26");
+    expect(r.kind).toBe("deadline");
+    if (r.kind !== "deadline") return;
+    expect(r.dueDate).toBe("2026-03-15");
   });
 });

@@ -97,7 +97,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
                   <p className="mb-6 text-sm leading-relaxed [color:var(--mk-text-muted)]">
                     {tier.desc}
                   </p>
-                  <ul className="mb-7 flex-1 space-y-2.5">
+                  <ul className="mb-6 flex-1 space-y-2.5">
                     {tier.points.map((point) => (
                       <li
                         key={point}

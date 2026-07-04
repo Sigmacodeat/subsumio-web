@@ -783,8 +783,7 @@ export function detectJurisdiction(
     }
   }
 
-  const lower = text.toLowerCase();
-  const sample = lower.slice(0, 5000);
+  const sample = text.slice(0, 5000);
 
   // AT indicators: ABGB, AHG, GVgo, ON-Nummern, RIS, österreichische Gerichte.
   // StPO is ambiguous (also DE) — counted for both AT and DE.
@@ -1001,6 +1000,10 @@ export async function runExtractionAndImport(
     const pipelineSlugs = partSlugs.length > 0 ? partSlugs : [slug];
     const jurResult = detectJurisdiction(uploadFrontmatter, markdown);
     const jurisdiction = jurResult.jurisdiction;
+    // Update uploadFrontmatter so the upload response can include recognition metadata
+    uploadFrontmatter.jurisdiction = jurisdiction;
+    uploadFrontmatter.jurisdiction_confidence = jurResult.confidence;
+    if (jurResult.unverified) uploadFrontmatter.jurisdiction_unverified = true;
 
     // Persist jurisdiction confidence + unverified flag on all parts
     for (const s of [slug, ...partSlugs]) {
@@ -2052,6 +2055,29 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                     });
                 });
               }
+              // E2: Trigger legal-pipeline for beA XML imports — same as
+              // regular upload path does via runExtractionAndImport.
+              try {
+                const beaQueue = new MinionQueue(engine);
+                await beaQueue.add(
+                  "legal-pipeline",
+                  {
+                    case_slug: beaSlug,
+                    part_slugs: [beaSlug],
+                    ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
+                    trigger: "bea_import",
+                  },
+                  { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+                  { allowProtectedSubmit: true }
+                );
+              } catch (beaPipelineErr) {
+                console.error(
+                  `[direct-upload] legal-pipeline trigger failed for beA import ${beaSlug}: ` +
+                    (beaPipelineErr instanceof Error
+                      ? beaPipelineErr.message
+                      : String(beaPipelineErr))
+                );
+              }
               res.json({
                 slug: beaSlug,
                 title: beaPage?.title ?? item.title,
@@ -2241,6 +2267,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           extraction_status: page?.frontmatter?.extraction_status,
           extraction_method: page?.frontmatter?.extraction_method,
           extraction_warnings: page?.frontmatter?.extraction_warnings,
+          // D2: Recognition metadata for upload result badges
+          jurisdiction: uploadFrontmatter.jurisdiction,
+          doc_type: uploadFrontmatter.doc_type,
+          aktenzeichen_validated: uploadFrontmatter.aktenzeichen_validated,
+          aktenzeichen: uploadFrontmatter.aktenzeichen,
           ...(partSlugs.length > 0
             ? { split: true, part_count: partSlugs.length, part_slugs: partSlugs }
             : {}),
@@ -2344,9 +2375,99 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         );
       }
 
+      // D5: ClamAV reachability check — ping the scanner socket and report status
+      let clamav: { reachable: boolean; host?: string; latency_ms?: number; error?: string } = {
+        reachable: false,
+      };
+      const clamAvHost = process.env.CLAMAV_HOST?.trim();
+      if (clamAvHost) {
+        const { connect: netConnect } = await import("node:net");
+        const start = Date.now();
+        clamav = await new Promise<{
+          reachable: boolean;
+          host?: string;
+          latency_ms?: number;
+          error?: string;
+        }>((resolve) => {
+          const [hostname, portText] = clamAvHost.split(":");
+          const port = Number(portText || "3310");
+          const socket = netConnect(port, hostname);
+          const timer = setTimeout(() => {
+            socket.destroy();
+            resolve({ reachable: false, host: clamAvHost, error: "timeout" });
+          }, 3000);
+          socket.on("connect", () => {
+            clearTimeout(timer);
+            socket.destroy();
+            resolve({ reachable: true, host: clamAvHost, latency_ms: Date.now() - start });
+          });
+          socket.on("error", (err) => {
+            clearTimeout(timer);
+            resolve({
+              reachable: false,
+              host: clamAvHost,
+              error: err instanceof Error ? err.message : String(err),
+            });
+          });
+        });
+      } else {
+        clamav = { reachable: false, error: "CLAMAV_HOST not configured" };
+      }
+
+      // B3: Law corpus completeness — count thin §-pages (word_count < 20)
+      let corpus_completeness: {
+        total_books: number;
+        total_pages: number;
+        thin_pages: number;
+        critical_books: string[];
+      } = { total_books: 0, total_pages: 0, thin_pages: 0, critical_books: [] };
+      try {
+        const corpusRows = await engine.executeRaw<{
+          book: string;
+          total: string;
+          thin: string;
+          thin_pct: string;
+        }>(
+          `SELECT
+             regexp_replace(slug, '^statutes/[^/]+/', '') AS book,
+             COUNT(*) AS total,
+             COUNT(*) FILTER (
+               WHERE length(coalesce(compiled_truth, '')) < 100
+                  OR coalesce(frontmatter->>'word_count', '0')::int < 20
+             ) AS thin,
+             ROUND(
+               COUNT(*) FILTER (
+                 WHERE length(coalesce(compiled_truth, '')) < 100
+                    OR coalesce(frontmatter->>'word_count', '0')::int < 20
+               ) * 100.0 / NULLIF(COUNT(*), 0)
+             ) AS thin_pct
+           FROM pages
+           WHERE slug LIKE 'statutes/%'
+             AND deleted_at IS NULL
+           GROUP BY 1
+           HAVING COUNT(*) > 0`
+        );
+        corpus_completeness = {
+          total_books: corpusRows.length,
+          total_pages: corpusRows.reduce((s, r) => s + parseInt(r.total, 10), 0),
+          thin_pages: corpusRows.reduce((s, r) => s + parseInt(r.thin, 10), 0),
+          critical_books: corpusRows
+            .filter((r) => parseFloat(r.thin_pct) > 30)
+            .map((r) => `${r.book} (${r.thin_pct}%)`)
+            .slice(0, 5),
+        };
+      } catch (e) {
+        console.error(
+          "[jobs/health] corpus_completeness query failed:",
+          e instanceof Error ? e.message : String(e)
+        );
+      }
+
       res.json({
         ...stats,
         dead_letter: { outbox_exhausted, docs_failed },
+        clamav,
+        corpus_completeness,
         generated_at: new Date().toISOString(),
       });
     } catch (e) {
@@ -3909,6 +4030,28 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               }
               assertMatterScope(req.matterScope, beaSlug);
               const beaPage = await engine.getPage(beaSlug, { sourceId: opCtx.sourceId });
+              // E2: Trigger legal-pipeline for beA XML imports
+              try {
+                const beaQueue2 = new MinionQueue(engine);
+                await beaQueue2.add(
+                  "legal-pipeline",
+                  {
+                    case_slug: beaSlug,
+                    part_slugs: [beaSlug],
+                    ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
+                    trigger: "bea_import",
+                  },
+                  { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+                  { allowProtectedSubmit: true }
+                );
+              } catch (beaPipelineErr) {
+                console.error(
+                  `[web-api] legal-pipeline trigger failed for beA import ${beaSlug}: ` +
+                    (beaPipelineErr instanceof Error
+                      ? beaPipelineErr.message
+                      : String(beaPipelineErr))
+                );
+              }
               res.json({
                 slug: beaSlug,
                 title: beaPage?.title ?? item.title,
@@ -4048,6 +4191,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           extraction_status: page?.frontmatter?.extraction_status,
           extraction_method: page?.frontmatter?.extraction_method,
           extraction_warnings: page?.frontmatter?.extraction_warnings,
+          // D2: Recognition metadata for upload result badges
+          jurisdiction: uploadFrontmatter.jurisdiction,
+          doc_type: uploadFrontmatter.doc_type,
+          aktenzeichen_validated: uploadFrontmatter.aktenzeichen_validated,
+          aktenzeichen: uploadFrontmatter.aktenzeichen,
           ...(partSlugs.length > 0
             ? { split: true, part_count: partSlugs.length, part_slugs: partSlugs }
             : {}),
@@ -5805,6 +5953,62 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   });
 
+  // C2: AT frist-engine computation endpoint — allows the web app to delegate
+  // Austrian deadline calculation to the deterministic frist-engine, which
+  // handles Zustellfiktionen (§ 89a GOG, § 17 ZustG, § 26 ZustG), verhandlungsfreie
+  // Zeit (§ 222 ZPO), AVG-specific rules (§ 33 Abs 2), and Vorfrist.
+  app.post(
+    "/api/legal/frist/compute",
+    express.json({ limit: "64kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const b = req.body as {
+          artKey?: string;
+          zustellungIso?: string;
+          ferialsache?: boolean;
+          vorfristTage?: number;
+        };
+        if (!b.artKey || !b.zustellungIso) {
+          res
+            .status(400)
+            .json({ error: "missing_params", message: "artKey and zustellungIso required" });
+          return;
+        }
+        const { berechneFristAuto, FRISTEN_REGISTRY } =
+          await import("../core/legal/frist-engine.ts");
+        const result = berechneFristAuto(b.artKey, b.zustellungIso, {
+          ferialsache: b.ferialsache,
+          vorfristTage: b.vorfristTage,
+        });
+        res.json({
+          ok: true,
+          result: {
+            fristbeginn: result.fristbeginn,
+            fristende: result.fristende,
+            fristendeRoh: result.fristendeRoh,
+            vorfrist: result.vorfrist,
+            kalendertage: result.kalendertage,
+            hinweise: result.hinweise,
+            art: {
+              key: result.art.key,
+              bezeichnung: result.art.bezeichnung,
+              rechtsgrundlage: result.art.rechtsgrundlage,
+              is_notfrist: result.art.notfrist ?? false,
+            },
+          },
+          availableArts: FRISTEN_REGISTRY.map((a) => ({
+            key: a.key,
+            bezeichnung: a.bezeichnung,
+            rechtsgrundlage: a.rechtsgrundlage,
+          })),
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        res.status(500).json({ error: "frist_compute_failed", message: msg });
+      }
+    }
+  );
+
   // v0.44 — Legal Commentaries API: list, get, synthesize, delete.
   // The commentary synthesis phase runs in the dream cycle, but these
   // endpoints allow the dashboard to browse, trigger on-demand, and
@@ -6618,6 +6822,91 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       res.status(500).json({ error: "contradiction_probe_failed", message: msg });
     }
   });
+
+  // E1: Backfill — reclassify documents without doc_type using the heuristic
+  // classifier ($0, no LLM). Scans all pages of type "document" or "legal_document"
+  // whose frontmatter lacks doc_type (or has it set to "legal_document") and
+  // stamps the classified type + label. Returns a summary of reclassified pages.
+  app.post(
+    "/api/admin/backfill-doc-type",
+    express.json({ limit: "64kb" }),
+    async (req: Request, res: Response) => {
+      if (rejectSharedSourceActionInTenantMode(req, res)) return;
+      try {
+        const { classifyLegalDocument, legalDocTypeLabel } =
+          await import("../core/legal/doc-classifier.ts");
+        const tenantSource = requestSourceId(req);
+
+        // List all document-type pages
+        const pages = await engine.listPages({
+          type: "document",
+          limit: 5000,
+          sourceId: tenantSource,
+        });
+        const legalPages = await engine.listPages({
+          type: "legal_document",
+          limit: 5000,
+          sourceId: tenantSource,
+        });
+        const allPages = [...pages, ...legalPages];
+
+        let reclassified = 0;
+        let skipped = 0;
+        const errors: string[] = [];
+
+        for (const page of allPages) {
+          const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+          // Skip pages that already have a meaningful doc_type
+          if (fm.doc_type && fm.doc_type !== "legal_document") {
+            skipped++;
+            continue;
+          }
+          // Need content to classify
+          if (!page.compiled_truth || page.compiled_truth.trim().length < 10) {
+            skipped++;
+            continue;
+          }
+          try {
+            const classification = classifyLegalDocument(page.compiled_truth);
+            if (classification.type === "legal_document") {
+              skipped++;
+              continue; // No pattern matched — leave as-is
+            }
+            await engine.putPage(
+              page.slug,
+              {
+                type: page.type,
+                title: page.title,
+                compiled_truth: page.compiled_truth ?? "",
+                frontmatter: {
+                  ...fm,
+                  doc_type: classification.type,
+                  doc_type_label: legalDocTypeLabel(classification.type),
+                  doc_type_confidence: classification.confidence.toFixed(2),
+                },
+              },
+              { sourceId: tenantSource }
+            );
+            reclassified++;
+          } catch (e) {
+            errors.push(`${page.slug}: ${e instanceof Error ? e.message : String(e)}`);
+          }
+        }
+
+        res.json({
+          ok: true,
+          scanned: allPages.length,
+          reclassified,
+          skipped,
+          errors: errors.slice(0, 20),
+          total_errors: errors.length,
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        res.status(500).json({ error: "backfill_failed", message: msg });
+      }
+    }
+  );
 
   console.error(
     `[web-api] Subsumio dashboard REST API mounted at /api/* (engine: ${config.engine})`

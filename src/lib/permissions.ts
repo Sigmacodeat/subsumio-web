@@ -104,6 +104,7 @@ export type RouteAction =
   | "copilot.tool" // POST /api/copilot/tools — all authenticated roles
   | "push.register" // POST /api/push/register — all authenticated roles
   | "push.unregister" // DELETE /api/push/register — all authenticated roles
+  | "share.receive" // POST /api/share — all authenticated roles
   | "presence.update" // POST /api/realtime/presence — all authenticated roles
   | "presence.list" // GET /api/realtime/presence — all authenticated roles
   | "admin.*" // nur admin
@@ -162,6 +163,7 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "copilot.tool": ["admin", "lawyer", "assistant"],
   "push.register": ["admin", "lawyer", "assistant", "client_viewer"],
   "push.unregister": ["admin", "lawyer", "assistant", "client_viewer"],
+  "share.receive": ["admin", "lawyer", "assistant", "client_viewer"],
   "presence.update": ["admin", "lawyer", "assistant", "client_viewer"],
   "presence.list": ["admin", "lawyer", "assistant", "client_viewer"],
   "admin.*": ["admin"],
@@ -271,6 +273,7 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "copilot.tool": "query.submit",
     "push.register": "settings.update",
     "push.unregister": "settings.update",
+    "share.receive": "share.receive",
     "presence.update": "case.view",
     "presence.list": "case.view",
     "admin.*": "settings.update",
