@@ -422,11 +422,17 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
 
     // ── Load all sub-page texts (haystack for validation) ────
     const rawTexts = await loadAllSubPages(engine, data.part_slugs, sourceStamp);
+    console.log(
+      `[legal-pipeline] sourceStamp=${sourceStamp ?? "undefined"}, part_slugs=${JSON.stringify(data.part_slugs)}, rawTexts.length=${rawTexts.length}, rawTexts[0]?.length=${rawTexts[0]?.length ?? 0}`
+    );
     // Gap 2: Decode AB-Bogen handwritten abbreviations (post-OCR enrichment)
     // This annotates known Austrian legal shorthand (e.g. "UH" → "UH [Untersuchungshaft]")
     // so downstream agents can understand handwritten A-Mappe notations.
     const allTexts = rawTexts.map((t) => decodeAbbBogenKuerzel(t));
     const allText = allTexts.join("\n\n");
+    console.log(
+      `[legal-pipeline] allTexts.length=${allTexts.length}, allText.length=${allText.length}`
+    );
 
     // ── Layer 0: Semantic document classification (heuristic, $0) ──
     // Classify each sub-page and stamp frontmatter with doc_type.
@@ -1848,6 +1854,9 @@ async function runMapReduceLayer(opts: {
 
   // ── Map phase: batch sub-pages and submit ALL in parallel ─────
   const batches = batchTexts(allTexts, batchSize);
+  console.log(
+    `[legal-pipeline] runMapReduceLayer: specialist=${specialistName}, allTexts.length=${allTexts.length}, batchSize=${batchSize}, batches.length=${batches.length}, batch[0].text.length=${batches[0]?.text.length ?? 0}`
+  );
   const childIds: number[] = [];
 
   for (let i = 0; i < batches.length; i++) {
