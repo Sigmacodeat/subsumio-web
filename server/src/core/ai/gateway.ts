@@ -2340,31 +2340,45 @@ export interface ChatToolDef {
  * schema" the moment the model calls a tool. Surfaced by the SkillOpt eval.
  */
 export function toModelMessages(messages: ChatMessage[]): unknown[] {
-  return messages.map((m) => {
-    if (typeof m.content === "string") return { role: m.role, content: m.content };
+  const result: unknown[] = [];
+  for (const m of messages) {
+    if (typeof m.content === "string") {
+      result.push({ role: m.role, content: m.content });
+      continue;
+    }
     const blocks = m.content;
     if (blocks.some((b) => b.type === "tool-result")) {
       // v6: tool results ride on a dedicated `tool` role with structured output.
-      return {
-        role: "tool" as const,
-        content: blocks
-          .filter((b): b is Extract<ChatBlock, { type: "tool-result" }> => b.type === "tool-result")
-          .map((b) => ({
-            type: "tool-result" as const,
-            toolCallId: b.toolCallId,
-            toolName: b.toolName,
-            output: b.isError
-              ? {
-                  type: "error-text" as const,
-                  value: typeof b.output === "string" ? b.output : JSON.stringify(b.output),
-                }
-              : typeof b.output === "string"
-                ? { type: "text" as const, value: b.output }
-                : { type: "json" as const, value: (b.output ?? null) as never },
-          })),
-      };
+      // Split into one message per tool-call — OpenAI-compatible APIs (DeepSeek
+      // via OpenRouter) require a separate role:'tool' message per tool_call_id.
+      // Bundling multiple tool-results in one message causes "Tool results are
+      // missing for tool calls" errors.
+      const toolResults = blocks.filter(
+        (b): b is Extract<ChatBlock, { type: "tool-result" }> => b.type === "tool-result"
+      );
+      for (const b of toolResults) {
+        result.push({
+          role: "tool" as const,
+          content: [
+            {
+              type: "tool-result" as const,
+              toolCallId: b.toolCallId,
+              toolName: b.toolName,
+              output: b.isError
+                ? {
+                    type: "error-text" as const,
+                    value: typeof b.output === "string" ? b.output : JSON.stringify(b.output),
+                  }
+                : typeof b.output === "string"
+                  ? { type: "text" as const, value: b.output }
+                  : { type: "json" as const, value: (b.output ?? null) as never },
+            },
+          ],
+        });
+      }
+      continue;
     }
-    return {
+    result.push({
       role: m.role,
       content: blocks.map((b) => {
         if (b.type === "text") return { type: "text" as const, text: b.text };
@@ -2377,8 +2391,9 @@ export function toModelMessages(messages: ChatMessage[]): unknown[] {
           };
         return b;
       }),
-    };
-  });
+    });
+  }
+  return result;
 }
 
 export interface ChatResult {

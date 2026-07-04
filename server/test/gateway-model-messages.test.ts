@@ -166,4 +166,34 @@ describe("toModelMessages — v6 ModelMessage shape", () => {
     expect((out[2] as any).role).toBe("tool");
     expect((out[2] as any).content[0].output).toEqual({ type: "json", value: { hits: 0 } });
   });
+
+  test("multiple tool-results in one message are split into separate role:tool messages", () => {
+    const msgs: ChatMessage[] = [
+      { role: "user", content: "search and echo" },
+      {
+        role: "assistant",
+        content: [
+          { type: "tool-call", toolCallId: "c1", toolName: "search", input: { query: "x" } },
+          { type: "tool-call", toolCallId: "c2", toolName: "echo", input: { text: "hi" } },
+        ],
+      },
+      {
+        role: "user",
+        content: [
+          { type: "tool-result", toolCallId: "c1", toolName: "search", output: { hits: 1 } },
+          { type: "tool-result", toolCallId: "c2", toolName: "echo", output: "echoed" },
+        ],
+      },
+    ];
+    const out = toModelMessages(msgs);
+    expect(out).toHaveLength(4);
+    expect((out[0] as any).role).toBe("user");
+    expect((out[1] as any).role).toBe("assistant");
+    expect((out[2] as any).role).toBe("tool");
+    expect((out[2] as any).content).toHaveLength(1);
+    expect((out[2] as any).content[0].toolCallId).toBe("c1");
+    expect((out[3] as any).role).toBe("tool");
+    expect((out[3] as any).content).toHaveLength(1);
+    expect((out[3] as any).content[0].toolCallId).toBe("c2");
+  });
 });
