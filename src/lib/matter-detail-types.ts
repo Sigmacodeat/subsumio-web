@@ -8,6 +8,7 @@ import type {
   DeadlineEntry,
   ExpenseEntry,
   AuditLogEntry,
+  AdditionalOpponent,
 } from "@/lib/legal-types";
 import type { BrainPage } from "@/lib/types";
 
@@ -56,6 +57,9 @@ export interface CaseDetail {
   clientName?: string;
   clientSlug?: string;
   opponentSlugs?: string[];
+  additionalOpponents?: AdditionalOpponent[];
+  relatedCaseSlugs?: string[];
+  mandateId?: string;
   courtSlug?: string;
   conflictStatus?: string;
   facts: string;
@@ -146,6 +150,13 @@ export function parseCaseDetail(page: BrainPage): CaseDetail {
     clientName: (fm.client_name as string) || undefined,
     clientSlug: (fm.client_slug as string) || undefined,
     opponentSlugs: (fm.opponent_slugs as string[]) || undefined,
+    additionalOpponents: Array.isArray(fm.additional_opponents)
+      ? (fm.additional_opponents as AdditionalOpponent[])
+      : undefined,
+    relatedCaseSlugs: Array.isArray(fm.related_case_slugs)
+      ? (fm.related_case_slugs as string[])
+      : undefined,
+    mandateId: (fm.mandate_id as string) || undefined,
     courtSlug: (fm.court_slug as string) || undefined,
     conflictStatus:
       typeof fm.conflict_status === "string" ? (fm.conflict_status as string) : undefined,

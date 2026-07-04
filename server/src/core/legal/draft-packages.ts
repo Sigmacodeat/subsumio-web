@@ -37,11 +37,28 @@ export type PipelineVerfahrenstyp =
   | "sonstiges";
 export type Parteirolle = "klaeger" | "beklagter" | "unbekannt";
 
+/** Phase C: Nebenverfahren-Schienen, die zusätzlich zum Hauptverfahren laufen können. */
+export type Nebenverfahren =
+  | "disziplinar"
+  | "dienstaufsicht"
+  | "befangenheit"
+  | "verfahrenshilfe"
+  | "haftantrag"
+  | "dsb_beschwerde"
+  | "finanzstrafanzeige";
+
 export interface DraftPackage {
   type: string;
   title: string;
   /** Extra instruction appended to the drafter prompt for this package. */
   hinweis?: string;
+  /** Phase A: Wenn gesetzt, wird dieses Paket pro Gegner mit dieser Rolle einmal generiert. */
+  perOpponentRolle?:
+    | "datenverantwortlicher"
+    | "beamter"
+    | "hauptbeklagter"
+    | "nebenbeklagter"
+    | "privatperson";
 }
 
 // ── Legacy sets (unchanged — backward compatibility) ────────
@@ -51,10 +68,69 @@ export const LEGACY_AT_PACKAGE: DraftPackage[] = [
   { type: "ahg_antrag", title: "AHG-Antrag (§ 8 AHG an Finanzprokuratur)" },
   { type: "strafantrag", title: "Strafantrag (§ 28 StPO an STA)" },
   { type: "einspruch", title: "Einspruch (§ 106 StPO)" },
-  { type: "dsgvo_beschwerde", title: "DSGVO-Beschwerde (Art 82 DSGVO)" },
+  {
+    type: "dsgvo_beschwerde",
+    title: "DSGVO-Beschwerde (Art 82 DSGVO)",
+    perOpponentRolle: "datenverantwortlicher",
+  },
   { type: "klage_entwurf", title: "Klageentwurf (AHG-Klage LG ZRS)" },
   { type: "versand_checkliste", title: "Versand-Checkliste" },
 ];
+
+// ── Phase C: Nebenverfahren-Draft-Pakete ─────────────────────
+
+export const NEBENVERFAHREN_PACKAGES: Record<Nebenverfahren, DraftPackage> = {
+  disziplinar: {
+    type: "disziplinarantrag",
+    title: "Disziplinarantrag (parametrisiert nach Ressort/Behörde)",
+    hinweis:
+      "Disziplinarantrag gegen beamtete Bedienstete — parametrisiere nach zuständiger Disziplinarbehörde " +
+      "(Bundes- oder Landesdisziplinarbehörde). Beziehe dich auf die konkreten Dienstpflichtverletzungen " +
+      "aus dem forensischen Bericht.",
+  },
+  dienstaufsicht: {
+    type: "dienstaufsichtsbeschwerde",
+    title: "Dienstaufsichtsbeschwerde",
+    hinweis:
+      "Dienstaufsichtsbeschwerde an die vorgesetzte Dienstbehörde — formal kein Rechtsbehelf, " +
+      "aber Dokumentation des Vorwurfs. Adresse aus den Entitäten extrahieren.",
+  },
+  befangenheit: {
+    type: "befangenheitsantrag",
+    title: "Befangenheitsantrag (§ 47 StPO / § 19 RPlG)",
+    hinweis:
+      "Ablehnungsantrag wegen Befangenheit gegen Richter/Beamte — benenne konkretes Verhalten " +
+      "aus dem forensischen Bericht, das die Befangenheit begründet.",
+  },
+  verfahrenshilfe: {
+    type: "verfahrenshilfe_antrag",
+    title: "Verfahrenshilfeantrag (§ 63 ff. ZPO / § 42 StPO)",
+    hinweis:
+      "Verfahrenshilfe bei Bedürftigkeit — erfordert Bedürftigkeitsprüfung (Einkommen, Vermögen). " +
+      "Verweise auf die Bestimmungen der jeweiligen Verfahrensordnung.",
+  },
+  haftantrag: {
+    type: "haftantrag",
+    title: "Haftantrag / Fortführungsantrag (§ 195 StPO)",
+    hinweis:
+      "Antrag auf Untersuchungshaft oder Fortführung der Untersuchungshaft — " +
+      "nur bei dringendem Tatverdacht + Flucht-/Verdunkelungsgefahr.",
+  },
+  dsb_beschwerde: {
+    type: "dsb_beschwerde",
+    title: "Aufsichtsbeschwerde an Datenschutzbehörde (Art. 77 DSGVO)",
+    hinweis:
+      "Beschwerde an die Datenschutzbehörde (DSB) — getrennt von der zivilrechtlichen DSGVO-Klage " +
+      "(Art. 82 DSGVO). Die Aufsichtsbeschwerde zielt auf behördliches Einschreiten, nicht auf Schadensersatz.",
+  },
+  finanzstrafanzeige: {
+    type: "finanzstrafanzeige",
+    title: "Finanzstrafanzeige (§ 120 FinStrG)",
+    hinweis:
+      "Finanzstrafrechtliche Anzeige an das zuständige Finanzamt / Finanzstrafamt — " +
+      "bei Verdacht auf Abgabenhinterziehung oder andere Finanzstrafdelikte.",
+  },
+};
 
 export const STATIC_PACKAGES_DE: DraftPackage[] = [
   { type: "amtshaftung_anspruch", title: "Amtshaftungsanspruch (§ 839 BGB i.V.m. Art 34 GG)" },
@@ -157,17 +233,67 @@ const AT_VERWALTUNGSRECHT: DraftPackage[] = [
   {
     type: "revision_vwgh_vorpruefung",
     title: "VwGH-Revisions-Vorprüfung (Art 133 Abs 4 B-VG)",
-    hinweis: "Prüfe die Zulässigkeitsvoraussetzungen (grundsätzliche Rechtsfrage) und dokumentiere sie.",
+    hinweis:
+      "Prüfe die Zulässigkeitsvoraussetzungen (grundsätzliche Rechtsfrage) und dokumentiere sie.",
   },
   VERSAND,
 ];
 
 // ── Resolution ──────────────────────────────────────────────
 
+export interface AdditionalOpponentLike {
+  name: string;
+  slug?: string;
+  rolle: string;
+  verfahrensschiene?: string;
+  haftungsgrund?: string;
+}
+
 export interface ResolveDraftPackagesOpts {
   jurisdiction?: Jurisdiction;
   verfahrenstyp?: PipelineVerfahrenstyp;
   parteirolle?: Parteirolle;
+  /** Phase A: Additional opponents for multi-track cases. */
+  additionalOpponents?: AdditionalOpponentLike[];
+  /** Phase C: Active Nebenverfahren (side tracks) for this case. */
+  nebenverfahren?: Nebenverfahren[];
+}
+
+/**
+ * Expand packages with `perOpponentRolle` into one package per matching opponent.
+ * Packages without `perOpponentRolle` are kept as-is.
+ */
+function expandPerOpponentPackages(
+  packages: DraftPackage[],
+  additionalOpponents: AdditionalOpponentLike[]
+): DraftPackage[] {
+  const result: DraftPackage[] = [];
+  for (const pkg of packages) {
+    if (!pkg.perOpponentRolle) {
+      result.push(pkg);
+      continue;
+    }
+    // Find all opponents matching the role
+    const matching = additionalOpponents.filter((o) => o.rolle === pkg.perOpponentRolle);
+    if (matching.length === 0) {
+      // No matching opponent — keep the package once (backward compat)
+      result.push(pkg);
+      continue;
+    }
+    // Generate one package per matching opponent
+    for (const opp of matching) {
+      result.push({
+        ...pkg,
+        type: `${pkg.type}__${opp.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+        title: `${pkg.title} — ${opp.name}`,
+        hinweis:
+          (pkg.hinweis ? pkg.hinweis + " " : "") +
+          `Adressat: ${opp.name}` +
+          (opp.haftungsgrund ? ` (Haftungsgrund: ${opp.haftungsgrund})` : ""),
+      });
+    }
+  }
+  return result;
 }
 
 /**
@@ -184,26 +310,46 @@ export function resolveDraftPackages(opts: ResolveDraftPackagesOpts = {}): Draft
   const verfahrenstyp = opts.verfahrenstyp ?? "sonstiges";
   const rolle = opts.parteirolle ?? "unbekannt";
 
+  let basePackages: DraftPackage[];
   switch (verfahrenstyp) {
     case "zivil":
-      if (rolle === "beklagter") return AT_ZIVIL_BEKLAGTER;
-      if (rolle === "klaeger") return AT_ZIVIL_KLAEGER;
-      // Rolle unbekannt: Kläger-Set + Klagebeantwortung, damit beide
-      // Richtungen vorbereitet sind (der Anwalt streicht, was nicht passt).
-      return [
-        ...AT_ZIVIL_KLAEGER.filter((p) => p.type !== "versand_checkliste"),
-        { type: "klagebeantwortung", title: "Klagebeantwortung (§ 230 ZPO)" },
-        VERSAND,
-      ];
+      if (rolle === "beklagter") basePackages = AT_ZIVIL_BEKLAGTER;
+      else if (rolle === "klaeger") basePackages = AT_ZIVIL_KLAEGER;
+      else
+        basePackages = [
+          ...AT_ZIVIL_KLAEGER.filter((p) => p.type !== "versand_checkliste"),
+          { type: "klagebeantwortung", title: "Klagebeantwortung (§ 230 ZPO)" },
+          VERSAND,
+        ];
+      break;
     case "arbeitsrecht":
-      return rolle === "beklagter" ? AT_ARBEITSRECHT_BEKLAGTER : AT_ARBEITSRECHT_KLAEGER;
+      basePackages = rolle === "beklagter" ? AT_ARBEITSRECHT_BEKLAGTER : AT_ARBEITSRECHT_KLAEGER;
+      break;
     case "verwaltungsrecht":
-      return AT_VERWALTUNGSRECHT;
+      basePackages = AT_VERWALTUNGSRECHT;
+      break;
     case "straf":
     case "sonstiges":
     default:
-      return LEGACY_AT_PACKAGE;
+      basePackages = LEGACY_AT_PACKAGE;
+      break;
   }
+
+  // Phase A: Expand per-opponent packages
+  const additionalOpponents = opts.additionalOpponents ?? [];
+  const expanded = expandPerOpponentPackages(basePackages, additionalOpponents);
+
+  // Phase C: Append Nebenverfahren packages
+  const nebenverfahren = opts.nebenverfahren ?? [];
+  const extraPackages: DraftPackage[] = nebenverfahren
+    .map((nv) => NEBENVERFAHREN_PACKAGES[nv])
+    .filter(Boolean);
+
+  // Deduplicate by type (a Nebenverfahren package might already exist)
+  const seen = new Set(expanded.map((p) => p.type));
+  const deduped = extraPackages.filter((p) => !seen.has(p.type));
+
+  return [...expanded, ...deduped];
 }
 
 // ── Parteirollen-Auto-Detection ─────────────────────────────
@@ -214,7 +360,8 @@ export interface EntityLike {
   role: string;
 }
 
-const KLAEGER_ROLES = /kläger|klaeger|antragsteller|betreib|opfer|privatbeteiligt|geschädigt|geschaedigt/i;
+const KLAEGER_ROLES =
+  /kläger|klaeger|antragsteller|betreib|opfer|privatbeteiligt|geschädigt|geschaedigt/i;
 const BEKLAGTER_ROLES = /beklagte|antragsgegner|verpflichtete|beschuldigt|angeklagt/i;
 
 /**
