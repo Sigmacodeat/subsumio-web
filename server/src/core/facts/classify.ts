@@ -109,7 +109,7 @@ export async function classifyAgainstCandidates(
   let classifierResult: ChatResult | null = null;
   try {
     classifierResult = await chat({
-      model: opts.model ?? "anthropic:claude-haiku-4-5-20251001",
+      model: opts.model ?? "openrouter:deepseek/deepseek-chat",
       system: CLASSIFIER_SYSTEM,
       messages: [
         {

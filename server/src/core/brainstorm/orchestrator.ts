@@ -574,7 +574,7 @@ async function _runBrainstormInner(
   const embedFn = opts.embedQueryFn ?? embedQuery;
 
   // ---- Phase 0: cost preview + TTY grace ----
-  const modelStr = opts.modelOverride ?? "anthropic:claude-sonnet-4-6";
+  const modelStr = opts.modelOverride ?? "openrouter:deepseek/deepseek-chat";
   const { aborted, estimate } = await previewCostAndWait({
     profile,
     model: modelStr,

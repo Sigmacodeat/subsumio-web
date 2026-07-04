@@ -179,6 +179,33 @@ export interface PermissionInfo {
   visibility?: "full" | "restricted" | "confidential";
 }
 
+/** Phase A: Zusätzlicher Gegner für mehrgleisige Fälle (Amtshaftung mit mehreren Verantwortlichen). */
+export interface AdditionalOpponent {
+  /** Anzeigename des Gegners. */
+  name: string;
+  /** Slug des verknüpften Kontakts (role=opponent), optional. */
+  slug?: string;
+  /** Rolle des Gegners im Verfahren. */
+  rolle:
+    | "hauptbeklagter"
+    | "nebenbeklagter"
+    | "drittbeteiligter"
+    | "datenverantwortlicher"
+    | "beamter"
+    | "privatperson";
+  /** Welche Verfahrensschiene betrifft dieser Gegner? (z.B. "zivil", "dsgvo", "straf", "disziplinar") */
+  verfahrensschiene?:
+    | "zivil"
+    | "dsgvo"
+    | "straf"
+    | "disziplinar"
+    | "verwaltungsrecht"
+    | "finanzstraf"
+    | "sonstiges";
+  /** Kurze Beschreibung des Haftungsgrunds gegenüber diesem Gegner. */
+  haftungsgrund?: string;
+}
+
 export interface CaseFrontmatter {
   type?: string;
   case_number?: string;
@@ -195,6 +222,12 @@ export interface CaseFrontmatter {
   opponent_name?: string;
   /** Slugs der verknüpften Gegner (role=opponent). */
   opponent_slugs?: string[];
+  /** Phase A: Zusätzliche Gegner für mehrgleisige Fälle (mehrere Beklagte unterschiedlicher Rolle). */
+  additional_opponents?: AdditionalOpponent[];
+  /** Phase B: Verknüpfte Akten desselben Mandats (mehrere Gerichtsakten unter einem Mandat). */
+  related_case_slugs?: string[];
+  /** Phase B: Mandats-ID — gemeinsamer Schlüssel für mehrere Akten. Wenn gesetzt, können Akten darüber gefunden werden. */
+  mandate_id?: string;
   conflict_status?: "conflict_pending" | "conflict_clear" | "conflict_waived" | string;
   conflict_waiver_reason?: string;
   conflict_waived_at?: string;

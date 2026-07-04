@@ -181,7 +181,7 @@ export async function extractTakesFromPages(
     let response: { text: string };
     try {
       response = await chat({
-        model: opts.model ?? "anthropic:claude-haiku-4-5",
+        model: opts.model ?? "openrouter:deepseek/deepseek-chat",
         system: CLASSIFIER_SYSTEM,
         messages: [
           {

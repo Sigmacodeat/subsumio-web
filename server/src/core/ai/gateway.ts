@@ -113,8 +113,8 @@ const MAX_CHARS = 8000;
 // don't transitively load every provider SDK just to read the defaults.
 export { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from "./defaults.ts";
 import { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from "./defaults.ts";
-const DEFAULT_EXPANSION_MODEL = "anthropic:claude-haiku-4-5-20251001";
-const DEFAULT_CHAT_MODEL = "anthropic:claude-sonnet-4-6";
+const DEFAULT_EXPANSION_MODEL = "openrouter:deepseek/deepseek-chat";
+const DEFAULT_CHAT_MODEL = "openrouter:deepseek/deepseek-chat";
 // v0.35.0.0+: reranker default. Used only when search.reranker.enabled is set
 // AND no explicit reranker_model is configured. Mode bundles' per-mode
 // `reranker_model` default to this same value but can be overridden.

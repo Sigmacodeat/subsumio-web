@@ -2530,9 +2530,9 @@ async function runDraftLayer(opts: {
 
 /** Models for the ensemble critic — diverse perspectives for robust quality gate. */
 const ENSEMBLE_CRITIC_MODELS = [
-  "anthropic:claude-opus-4-7", // Highest legal quality (BenGER 82.2)
-  "deepseek:deepseek-chat", // Different training, cost-effective (LEXam 57.42)
-  "xai:grok-4.3", // Different perspective, fast (HAQQ 29.0)
+  "openrouter:openai/gpt-4.1", // Strong legal reasoning (LEXam 57.50)
+  "openrouter:deepseek/deepseek-chat", // Different training, cost-effective (LEXam 57.42)
+  "openrouter:google/gemini-3-flash-preview", // Different perspective, fast
 ];
 
 /** Score threshold below which a layer should be retried. */

@@ -42,7 +42,7 @@ import { sanitizeSynopsis } from "./embedding-context.ts";
 const HAIKU_MAX_TOKENS = 200;
 
 /** Default model when caller doesn't override. Resolves through the gateway. */
-const DEFAULT_SYNOPSIS_MODEL = "anthropic:claude-haiku-4-5-20251001";
+const DEFAULT_SYNOPSIS_MODEL = "openrouter:deepseek/deepseek-chat";
 
 /**
  * Synopsis prompt version. Folded into corpus_generation so prompt edits

@@ -194,7 +194,7 @@ export interface ReembedPageArgs {
   releaseSynopsisLease?: () => Promise<void>;
 }
 
-const DEFAULT_HAIKU_MODEL = "anthropic:claude-haiku-4-5-20251001";
+const DEFAULT_HAIKU_MODEL = "openrouter:deepseek/deepseek-chat";
 
 /**
  * Re-embed one page through the active CR mode. Implements the D26 P0-2

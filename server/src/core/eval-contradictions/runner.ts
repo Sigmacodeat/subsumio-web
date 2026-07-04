@@ -53,7 +53,7 @@ import {
 } from "./types.ts";
 
 const DEFAULT_TOP_K = 5;
-const DEFAULT_JUDGE_MODEL = "anthropic:claude-haiku-4-5";
+const DEFAULT_JUDGE_MODEL = "openrouter:deepseek/deepseek-chat";
 const DEFAULT_MAX_PAIR_CHARS = 1500;
 
 /** Caller-supplied judge function signature; defaults to judgeContradiction. */

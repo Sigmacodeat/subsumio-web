@@ -5827,15 +5827,15 @@ const run_skillopt: Operation = {
     }
     const optimizerModel = await resolveModel(ctx.engine, {
       tier: "deep",
-      fallback: "anthropic:claude-opus-4-7",
+      fallback: "openrouter:openai/gpt-4.1",
     });
     const targetModel = await resolveModel(ctx.engine, {
       tier: "subagent",
-      fallback: "anthropic:claude-sonnet-4-6",
+      fallback: "openrouter:deepseek/deepseek-chat",
     });
     const judgeModel = await resolveModel(ctx.engine, {
       tier: "reasoning",
-      fallback: "anthropic:claude-sonnet-4-6",
+      fallback: "openrouter:deepseek/deepseek-chat",
     });
     const skillName = p.skill_name as string;
     const benchmarkPath =

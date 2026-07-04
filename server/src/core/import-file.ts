@@ -758,7 +758,7 @@ export async function importFromContent(
       ? null
       : computeCorpusGeneration({
           crMode: effectiveCRMode,
-          haikuModel: "anthropic:claude-haiku-4-5-20251001",
+          haikuModel: "openrouter:deepseek/deepseek-chat",
         });
 
   // Transaction wraps all DB writes. Every per-page tx call carries the

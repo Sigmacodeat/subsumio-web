@@ -853,6 +853,25 @@ async function buildParties(
     });
   }
 
+  // Additional opponents (Phase A: mehrgleisige Fälle)
+  const additionalOpponents = fm.additional_opponents ?? [];
+  for (const opp of additionalOpponents) {
+    const contact = opp.slug ? await fetchContact(engineUrl, headers, opp.slug) : null;
+    parties.push({
+      slug: opp.slug ?? `opponent-extra-${opp.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      name: contact?.name ?? opp.name,
+      role: "opponent",
+      contact_info: contact
+        ? {
+            email: contact.email,
+            phone: contact.phone,
+            company: contact.company,
+            address: contact.address,
+          }
+        : undefined,
+    });
+  }
+
   // Own lawyer
   if (fm.own_lawyer_slug || fm.own_lawyer_name) {
     const contact = fm.own_lawyer_slug

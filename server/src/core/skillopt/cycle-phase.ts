@@ -119,15 +119,15 @@ export async function runPhaseSkillopt(opts: SkilloptPhaseOpts): Promise<Skillop
   // Resolve models once. Tiers default to deep/subagent/reasoning.
   const optimizerModel = await resolveModel(engine, {
     tier: "deep",
-    fallback: "anthropic:claude-opus-4-7",
+    fallback: "openrouter:openai/gpt-4.1",
   });
   const targetModel = await resolveModel(engine, {
     tier: "subagent",
-    fallback: "anthropic:claude-sonnet-4-6",
+    fallback: "openrouter:deepseek/deepseek-chat",
   });
   const judgeModel = await resolveModel(engine, {
     tier: "reasoning",
-    fallback: "anthropic:claude-sonnet-4-6",
+    fallback: "openrouter:deepseek/deepseek-chat",
   });
 
   // Run per-skill. Each invocation gets its own per-skill cap; we track

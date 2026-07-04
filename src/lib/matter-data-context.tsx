@@ -79,6 +79,15 @@ export interface MatterData {
   priority: string;
   opponentName?: string;
   opponentSlugs?: string[];
+  additionalOpponents?: Array<{
+    name: string;
+    slug?: string;
+    rolle: string;
+    verfahrensschiene?: string;
+    haftungsgrund?: string;
+  }>;
+  relatedCaseSlugs?: string[];
+  mandateId?: string;
   ownLawyerName?: string;
   ownLawyerSlug?: string;
   courtName?: string;
@@ -187,6 +196,9 @@ function parseMatterData(page: BrainPage): MatterData {
     priority: fm.priority || "medium",
     opponentName: fm.opponent_name || undefined,
     opponentSlugs: fm.opponent_slugs || undefined,
+    additionalOpponents: fm.additional_opponents || undefined,
+    relatedCaseSlugs: fm.related_case_slugs || undefined,
+    mandateId: fm.mandate_id || undefined,
     ownLawyerName: fm.own_lawyer_name || undefined,
     ownLawyerSlug: fm.own_lawyer_slug || undefined,
     courtName: fm.court_name || undefined,

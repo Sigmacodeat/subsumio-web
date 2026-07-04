@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+/// <reference types="bun" />
 /**
  * run-toni-gericht-pipeline.ts
  *
@@ -49,7 +50,7 @@ async function putPage(page: {
       slug: page.slug,
       title: page.title,
       type: page.type,
-      compiled_truth: page.content ?? "",
+      content: page.content ?? "",
       frontmatter: page.frontmatter ?? {},
     }),
   });
@@ -97,7 +98,8 @@ async function getPipelineState(caseSlug: string): Promise<Record<string, unknow
   if (!page) return null;
   // Try to parse the compiled_truth as JSON (full pipeline state)
   try {
-    const raw = page.content || ((page as Record<string, unknown>).compiled_truth as string) || "";
+    const raw =
+      page.content || ((page as unknown as Record<string, unknown>).compiled_truth as string) || "";
     if (raw.trim().startsWith("{")) {
       return JSON.parse(raw);
     }

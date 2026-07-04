@@ -14,6 +14,8 @@ import {
   ChevronRight,
   Briefcase,
   FileText,
+  Trash2,
+  Link2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +37,11 @@ import type { ContactFrontmatter } from "@/lib/legal-types";
 import { useDashboardForm } from "@/lib/hooks/use-dashboard-form";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
-import { caseFormSchema, type CaseFormData } from "@/lib/schemas/case";
+import {
+  caseFormSchema,
+  type CaseFormData,
+  type AdditionalOpponentFormData,
+} from "@/lib/schemas/case";
 import {
   checkInternalConflict,
   type ContactRef,
@@ -210,6 +216,9 @@ export default function NewCasePage() {
       clientSlug: "",
       opponentName: "",
       opponentSlug: "",
+      additionalOpponents: [],
+      relatedCaseSlugs: [],
+      mandateId: "",
       courtName: "",
       courtSlug: "",
       lawyerName: "",
@@ -237,6 +246,15 @@ export default function NewCasePage() {
           client_slug: data.clientSlug || undefined,
           opponent_name: data.opponentName || undefined,
           opponent_slugs: data.opponentSlug ? [data.opponentSlug] : undefined,
+          additional_opponents:
+            data.additionalOpponents && data.additionalOpponents.length > 0
+              ? data.additionalOpponents
+              : undefined,
+          related_case_slugs:
+            data.relatedCaseSlugs && data.relatedCaseSlugs.length > 0
+              ? data.relatedCaseSlugs
+              : undefined,
+          mandate_id: data.mandateId || undefined,
           court_name: data.courtName || undefined,
           court_slug: data.courtSlug || undefined,
           own_lawyer_name: data.lawyerName || undefined,
@@ -349,6 +367,9 @@ export default function NewCasePage() {
   const courtSlug = watch("courtSlug");
   const lawyerSlug = watch("lawyerSlug");
   const portalEnabled = watch("portalEnabled");
+  const additionalOpponents = watch("additionalOpponents") ?? [];
+  const relatedCaseSlugs = watch("relatedCaseSlugs") ?? [];
+  const mandateId = watch("mandateId");
 
   useEffect(() => {
     const refs: ContactRef[] = [];
@@ -380,6 +401,71 @@ export default function NewCasePage() {
   }
 
   const canAdvanceStep0 = (title ?? "").trim().length > 0;
+
+  // ── Additional Opponents management ──
+  const [newOpponentName, setNewOpponentName] = useState("");
+  const [newOpponentRolle, setNewOpponentRolle] =
+    useState<AdditionalOpponentFormData["rolle"]>("nebenbeklagter");
+  const [newOpponentSchiene, setNewOpponentSchiene] =
+    useState<AdditionalOpponentFormData["verfahrensschiene"]>("zivil");
+  const [newOpponentGrund, setNewOpponentGrund] = useState("");
+  const [newRelatedCaseSlug, setNewRelatedCaseSlug] = useState("");
+
+  function addAdditionalOpponent() {
+    if (!newOpponentName.trim()) return;
+    const next: AdditionalOpponentFormData = {
+      name: newOpponentName.trim(),
+      rolle: newOpponentRolle,
+      verfahrensschiene: newOpponentSchiene,
+    };
+    if (newOpponentGrund.trim()) next.haftungsgrund = newOpponentGrund.trim();
+    setValue("additionalOpponents", [...additionalOpponents, next]);
+    setNewOpponentName("");
+    setNewOpponentGrund("");
+  }
+
+  function removeAdditionalOpponent(idx: number) {
+    setValue(
+      "additionalOpponents",
+      additionalOpponents.filter((_, i) => i !== idx)
+    );
+  }
+
+  function addRelatedCase() {
+    const slug = newRelatedCaseSlug.trim();
+    if (!slug || relatedCaseSlugs.includes(slug)) return;
+    setValue("relatedCaseSlugs", [...relatedCaseSlugs, slug]);
+    setNewRelatedCaseSlug("");
+  }
+
+  function removeRelatedCase(idx: number) {
+    setValue(
+      "relatedCaseSlugs",
+      relatedCaseSlugs.filter((_, i) => i !== idx)
+    );
+  }
+
+  const ROLLE_LABELS: Record<AdditionalOpponentFormData["rolle"], string> = {
+    hauptbeklagter: "Hauptbeklagter",
+    nebenbeklagter: "Nebenbeklagter",
+    drittbeteiligter: "Drittbeteiligter",
+    datenverantwortlicher: "Datenverantwortlicher",
+    beamter: "Beamter",
+    privatperson: "Privatperson",
+  };
+
+  const SCHIENE_LABELS: Record<
+    NonNullable<AdditionalOpponentFormData["verfahrensschiene"]>,
+    string
+  > = {
+    zivil: "Zivil",
+    dsgvo: "DSGVO",
+    straf: "Straf",
+    disziplinar: "Disziplinar",
+    verwaltungsrecht: "Verwaltungsrecht",
+    finanzstraf: "Finanzstraf",
+    sonstiges: "Sonstiges",
+  };
 
   return (
     <div className="mx-auto max-w-[900px] space-y-6 p-4 md:p-6 lg:p-8">
@@ -743,6 +829,203 @@ export default function NewCasePage() {
                   onChange={(slug) => applyContact(slug, "lawyer")}
                   disabled={lawyers.length === 0}
                 />
+              </div>
+            </div>
+
+            {/* Additional Opponents — Mehrgleisige Fälle */}
+            <div className="space-y-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-hover)] p-3">
+              <div className="flex items-center gap-2">
+                <Users size={14} className="text-[color:var(--ds-text-muted)]" />
+                <h3 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+                  Weitere Gegner (mehrgleisiger Fall)
+                </h3>
+              </div>
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                Für Amtshaftungsfälle mit mehreren Verantwortlichen, DSGVO-Verfahren gegen
+                verschiedene Datenverantwortliche, etc.
+              </p>
+
+              {additionalOpponents.length > 0 && (
+                <div className="space-y-2">
+                  {additionalOpponents.map((opp, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-start justify-between gap-2 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2"
+                    >
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                          {opp.name}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className="rounded bg-[color:var(--brand-glow)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--ds-text)]">
+                            {ROLLE_LABELS[opp.rolle]}
+                          </span>
+                          {opp.verfahrensschiene && (
+                            <span className="rounded bg-[color:var(--ds-surface-hover)] px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text-muted)]">
+                              {SCHIENE_LABELS[opp.verfahrensschiene]}
+                            </span>
+                          )}
+                        </div>
+                        {opp.haftungsgrund && (
+                          <p className="truncate text-xs text-[color:var(--ds-text-subtle)]">
+                            {opp.haftungsgrund}
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeAdditionalOpponent(idx)}
+                        className="shrink-0 text-[color:var(--ds-text-muted)] hover:text-red-600"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Input
+                  value={newOpponentName}
+                  onChange={(e) => setNewOpponentName(e.target.value)}
+                  placeholder="Name des weiteren Gegners"
+                  className="text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addAdditionalOpponent();
+                    }
+                  }}
+                />
+                <Select
+                  value={newOpponentRolle}
+                  onValueChange={(v) =>
+                    setNewOpponentRolle(v as AdditionalOpponentFormData["rolle"])
+                  }
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(ROLLE_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={newOpponentSchiene}
+                  onValueChange={(v) =>
+                    setNewOpponentSchiene(v as AdditionalOpponentFormData["verfahrensschiene"])
+                  }
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(SCHIENE_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  value={newOpponentGrund}
+                  onChange={(e) => setNewOpponentGrund(e.target.value)}
+                  placeholder="Haftungsgrund (optional)"
+                  className="text-sm"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addAdditionalOpponent}
+                disabled={!newOpponentName.trim()}
+                className="w-full gap-1.5 text-sm"
+              >
+                <Plus size={14} />
+                Weiteren Gegner hinzufügen
+              </Button>
+            </div>
+
+            {/* Related Cases — Mehr-Akten-Klammer */}
+            <div className="space-y-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-hover)] p-3">
+              <div className="flex items-center gap-2">
+                <Link2 size={14} className="text-[color:var(--ds-text-muted)]" />
+                <h3 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+                  Verknüpfte Akten (Mandats-Klammer)
+                </h3>
+              </div>
+              <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                Mehrere Gerichtsakten desselben Mandats — für fall-übergreifende Haftungsmatrix und
+                Master-Schadenstabelle.
+              </p>
+
+              <div>
+                <Label htmlFor="mandate-id" className="mb-1 block text-xs">
+                  Mandats-ID (optional, gemeinsamer Schlüssel)
+                </Label>
+                <Input
+                  id="mandate-id"
+                  value={mandateId ?? ""}
+                  onChange={(e) => setValue("mandateId", e.target.value)}
+                  placeholder="z.B. MANDAT-2026-001"
+                  className="text-sm"
+                />
+              </div>
+
+              {relatedCaseSlugs.length > 0 && (
+                <div className="space-y-1.5">
+                  {relatedCaseSlugs.map((slug, idx) => (
+                    <div
+                      key={slug}
+                      className="flex items-center justify-between gap-2 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5"
+                    >
+                      <span className="truncate font-mono text-xs text-[color:var(--ds-text)]">
+                        {slug}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeRelatedCase(idx)}
+                        className="shrink-0 text-[color:var(--ds-text-muted)] hover:text-red-600"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Input
+                  value={newRelatedCaseSlug}
+                  onChange={(e) => setNewRelatedCaseSlug(e.target.value)}
+                  placeholder="legal/cases/... (Slug der verknüpften Akte)"
+                  className="text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addRelatedCase();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addRelatedCase}
+                  disabled={!newRelatedCaseSlug.trim()}
+                  className="shrink-0 gap-1.5 text-sm"
+                >
+                  <Plus size={14} />
+                </Button>
               </div>
             </div>
           </div>

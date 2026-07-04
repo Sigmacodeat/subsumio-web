@@ -74,10 +74,10 @@ export const DEFAULT_ALIASES: Record<string, string> = {
 
 /**
  * Default model for each tier. Used as the hardcoded fallback when no
- * `models.tier.<tier>` config + no `models.default` is set. Subagent gets
- * Sonnet (Anthropic Messages API tool-loop shape required); reasoning gets
- * Sonnet (default workhorse); deep gets Opus 4.7 (expensive reasoning);
- * utility gets Haiku (fast classification).
+ * `models.tier.<tier>` config + no `models.default` is set. All tiers
+ * route through OpenRouter (single API key for all providers).
+ * DeepSeek V3.2: LEXam 57.42, supports tool-calling, $0.14/$0.28 per 1M.
+ * GPT-4.1: LEXam 57.50, highest quality for deep reasoning.
  *
  * Users override via `gbrain config set models.tier.<tier> <model>`.
  */
