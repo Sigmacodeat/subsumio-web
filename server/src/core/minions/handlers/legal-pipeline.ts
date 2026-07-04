@@ -314,10 +314,10 @@ interface MapResult {
 
 // ── Batching constants ──────────────────────────────────────
 
-const HAIKU_BATCH_SIZE = 12; // ~600K tokens per batch
+const HAIKU_BATCH_SIZE = 4; // ~200K tokens per batch (reduced for DeepSeek)
 const SONNET_BATCH_SIZE = 4; // ~200K tokens per batch
 const MAX_TURNS_DEFAULT = 20;
-const CHILD_TIMEOUT_MS = 30 * 60 * 1000; // 30 min per child
+const CHILD_TIMEOUT_MS = 60 * 60 * 1000; // 60 min per child (DeepSeek is slower than Anthropic)
 const DEFAULT_COST_CAP_USD = 50; // Gap 17: $50 default cost cap per case
 
 // ── Handler factory ─────────────────────────────────────────
