@@ -1154,15 +1154,31 @@ const openRouterCompatFetch = (async (input: RequestInfo | URL, init?: RequestIn
       if (parsed.messages && Array.isArray(parsed.messages)) {
         let modified = false;
         for (const msg of parsed.messages) {
-          if (
-            msg.role === "assistant" &&
-            Array.isArray(msg.tool_calls) &&
-            msg.tool_calls.length > 0
-          ) {
-            if (!msg.reasoning_content && !msg.reasoning) {
+          if (msg.role === "assistant") {
+            const hasToolCalls = Array.isArray(msg.tool_calls) && msg.tool_calls.length > 0;
+            const hasContentArray = Array.isArray(msg.content);
+            const hasReasoning = !!msg.reasoning_content || !!msg.reasoning;
+            const toolCallBlocks = hasContentArray
+              ? msg.content.filter((b: any) => b.type === "tool-call" || b.type === "tool_call")
+              : [];
+            console.error(
+              `[openRouterFetch] assistant: tool_calls=${hasToolCalls} content_array=${hasContentArray} reasoning=${hasReasoning} tool_call_blocks=${toolCallBlocks.length} keys=${Object.keys(msg).join(",")}`
+            );
+            // Standard OpenAI format: tool_calls array on message
+            if (hasToolCalls && !msg.reasoning_content && !msg.reasoning) {
               msg.reasoning_content = "\u200B";
               modified = true;
             }
+            // AI SDK v6 content-block format: tool-call blocks inside content array
+            if (toolCallBlocks.length > 0 && !msg.reasoning_content && !msg.reasoning) {
+              msg.reasoning_content = "\u200B";
+              modified = true;
+            }
+          }
+          if (msg.role === "tool") {
+            console.error(
+              `[openRouterFetch] tool: tool_call_id=${msg.tool_call_id} content_type=${typeof msg.content}`
+            );
           }
         }
         if (modified) {
