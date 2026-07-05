@@ -136,7 +136,12 @@ export const POST = createPublicHandler(
       );
     }
 
-    const duplicateStore = brainDuplicateStore(engineHeadersForBrain(payload.brain_id));
+    // Scope dedup to this portal case so a client can send the same document to
+    // different matters without a false "already exists" block (P1-1).
+    const duplicateStore = brainDuplicateStore(
+      engineHeadersForBrain(payload.brain_id),
+      payload.case_slug || undefined
+    );
     const scan = await scanUploadWithDuplicateCheck(file, duplicateStore);
     if (!scan.ok) {
       return Response.json({ error: scan.error, message: scan.message }, { status: scan.status });

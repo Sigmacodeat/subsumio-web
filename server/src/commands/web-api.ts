@@ -791,9 +791,13 @@ export function detectJurisdiction(
 
   // AT indicators: ABGB, AHG, GVgo, ON-Nummern, RIS, österreichische Gerichte.
   // StPO is ambiguous (also DE) — counted for both AT and DE.
-  // GZ pattern (e.g. "10 C 125/95t") is a strong AT-only signal.
+  // GZ pattern (e.g. "10 C 125/95t"): the trailing Prüfbuchstabe after the year
+  // is MANDATORY here — it is the feature that makes an Austrian Geschäftszahl
+  // AT-exclusive. A German Aktenzeichen has the identical "num letters num/year"
+  // shape ("8 O 123/24") but NO check letter, so requiring `[a-z]` stops German
+  // civil case numbers from being scored as a strong AT signal (P1-3).
   const gzPatternMatches =
-    sample.match(/\b\d{1,3}\s+[A-Za-z]{1,4}\s+\d{1,5}\s*\/\s*\d{2}[a-z]?/g)?.length ?? 0;
+    sample.match(/\b\d{1,3}\s+[A-Za-z]{1,4}\s+\d{1,5}\s*\/\s*\d{2}[a-z]\b/g)?.length ?? 0;
   const atScore =
     (sample.match(/\bABGB\b/g)?.length ?? 0) +
     (sample.match(/\bStPO\b/g)?.length ?? 0) +

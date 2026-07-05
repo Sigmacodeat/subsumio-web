@@ -117,7 +117,21 @@ describe("sanitizeFilename", () => {
     expect(sanitizeFilename(long).length).toBe(200);
   });
 
-  test("handles umlauts", () => {
-    expect(sanitizeFilename("Verträge_ärztlich.pdf")).toBe("Vertr_ge_rztlich.pdf");
+  test("preserves German umlauts and ß (DACH client/case names)", () => {
+    expect(sanitizeFilename("Verträge_ärztlich.pdf")).toBe("Verträge_ärztlich.pdf");
+    expect(sanitizeFilename("Müller_Klageschrift.pdf")).toBe("Müller_Klageschrift.pdf");
+    expect(sanitizeFilename("Schöffengericht_Maßnahme.docx")).toBe("Schöffengericht_Maßnahme.docx");
+  });
+
+  test("neutralizes path separators (traversal defense)", () => {
+    const out = sanitizeFilename("../../etc/passwd");
+    expect(out).not.toContain("/");
+    expect(out).not.toContain("\\");
+  });
+
+  test("neutralizes control and bidi/zero-width chars", () => {
+    // U+202E RTL-override + a zero-width space must not survive.
+    expect(sanitizeFilename("inv‮oice.pdf")).not.toContain("‮");
+    expect(sanitizeFilename("a​b.pdf")).not.toContain("​");
   });
 });

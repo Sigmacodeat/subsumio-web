@@ -55,4 +55,35 @@ describe("brainDuplicateStore", () => {
     const result = await store.lookup("xyz789");
     expect(result).toBeNull();
   });
+
+  it("scopes dedup per case: same hash in a DIFFERENT case is not a duplicate (P1-1)", async () => {
+    const pages: Record<string, PageResponse> = {};
+    global.fetch = createFakeFetch(pages);
+    const h = { "x-subsumio-source": "brain-1" };
+    const caseA = brainDuplicateStore(h, "cases/mueller");
+    const caseB = brainDuplicateStore(h, "cases/schmidt");
+
+    await caseA.record("hash-shared", "documents/a", "gutachten.pdf");
+
+    // Same file, same case → duplicate (accidental re-upload).
+    expect(await caseA.lookup("hash-shared")).toEqual({
+      slug: "documents/a",
+      name: "gutachten.pdf",
+    });
+    // Same file, different case → NOT a duplicate (legit multi-matter filing).
+    expect(await caseB.lookup("hash-shared")).toBeNull();
+  });
+
+  it("caseless (knowledge-source) uploads keep brain-wide dedup", async () => {
+    const pages: Record<string, PageResponse> = {};
+    global.fetch = createFakeFetch(pages);
+    const h = { "x-subsumio-source": "brain-1" };
+    const globalStore = brainDuplicateStore(h);
+    const caseStore = brainDuplicateStore(h, "cases/mueller");
+
+    await globalStore.record("hash-wiki", "wiki/page", "note.md");
+    // Brain-wide record is not visible under a case scope and vice-versa.
+    expect(await globalStore.lookup("hash-wiki")).toEqual({ slug: "wiki/page", name: "note.md" });
+    expect(await caseStore.lookup("hash-wiki")).toBeNull();
+  });
 });

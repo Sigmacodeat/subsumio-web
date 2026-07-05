@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isStuck, GRACE_MINUTES, type DocPage } from "./route";
+import { isStuck, GRACE_MINUTES, type DocPage } from "./helpers";
 
 const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000).toISOString();
 const OLD = minutesAgo(GRACE_MINUTES + 5);

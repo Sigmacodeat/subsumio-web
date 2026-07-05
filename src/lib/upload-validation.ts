@@ -77,8 +77,15 @@ export function validateUpload(file: unknown): UploadValidation {
 }
 
 export function sanitizeFilename(name: string): string {
+  // Replace anything that is not a Unicode letter/number, dot, underscore or
+  // hyphen with "_". The u-flag \p{L}\p{N} classes are Unicode-aware, so DACH
+  // umlauts (ä ö ü ß) and accented client/case names SURVIVE instead of being
+  // mangled to "_". Everything unsafe is still neutralized: path separators
+  // (/ \), control chars (Cc), and bidi/zero-width format chars (Cf) are none of
+  // letter/number/./_/-, so they all collapse to "_" (defeats ../ traversal and
+  // RTL-override filename spoofing).
   return name
-    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .replace(/[^\p{L}\p{N}._-]/gu, "_")
     .replace(/^\.+/, "")
     .replace(/_{2,}/g, "_")
     .slice(0, 200);

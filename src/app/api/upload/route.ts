@@ -112,7 +112,9 @@ export const POST = createHandler(
         }
       }
 
-      const duplicateStore = brainDuplicateStore(ctx.headers);
+      // Scope dedup to the case: the same file may legitimately be filed in
+      // multiple matters. Caseless (knowledge-source) uploads stay brain-wide.
+      const duplicateStore = brainDuplicateStore(ctx.headers, caseSlugStr || undefined);
       const result = await scanUploadWithDuplicateCheck(file, duplicateStore);
       if (!result.ok) {
         return Response.json(
