@@ -76,6 +76,10 @@ function shouldRetry(doc: FailedDoc): { retry: boolean; attempt: number; waitHou
 export const GET = createCronHandler(async (_req: NextRequest) => {
   const recipientsByBrain = await getRecipientsByBrain();
   const internalSecret = env("SUBSUMIO_INTERNAL_SECRET");
+  // The analysis endpoint is a Next.js route; server-side fetch needs an
+  // absolute URL (Node's global fetch throws "Failed to parse URL" on a
+  // relative path). Mirror the post-upload-drain cron's origin resolution.
+  const origin = env("NEXTAUTH_URL") ?? env("NEXT_PUBLIC_APP_URL") ?? "http://localhost:3000";
 
   let brainsChecked = 0;
   let retried = 0;
@@ -147,7 +151,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
       // Fire the analysis endpoint — this is a Next.js route, not an engine route
       try {
-        const res = await fetch("/api/legal/analyze", {
+        const res = await fetch(`${origin}/api/legal/analyze`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

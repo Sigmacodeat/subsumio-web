@@ -1039,289 +1039,272 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                 </button>
               </div>
             </div>
-
-            {/* Mobile full-screen drawer */}
-            <AnimatePresence>
-              {mobileOpen && (
-                <>
-                  {/* Backdrop overlay — stronger blur + gradient for depth */}
-                  <motion.div
-                    initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
-                    animate={reduceMotion ? { opacity: 1 } : { opacity: 1 }}
-                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
-                    transition={
-                      reduceMotion ? { duration: 0 } : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
-                    }
-                    className="fixed inset-0 z-40 bg-black/50 backdrop-blur-md lg:hidden"
-                    onClick={() => setMobileOpen(false)}
-                  />
-                  {/* Drawer panel — modern spring animation with safe-area support */}
-                  <motion.div
-                    ref={mobileMenuRef}
-                    id="mobile-nav-menu"
-                    aria-label="Mobile navigation"
-                    aria-labelledby="mobile-nav-trigger"
-                    role="dialog"
-                    aria-modal="true"
-                    initial={
-                      reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: "100%", scale: 0.98 }
-                    }
-                    animate={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0, scale: 1 }}
-                    exit={
-                      reduceMotion ? { opacity: 0, x: 0 } : { opacity: 0, x: "100%", scale: 0.98 }
-                    }
-                    transition={
-                      reduceMotion
-                        ? { duration: 0 }
-                        : { type: "spring", stiffness: 400, damping: 38, mass: 0.8 }
-                    }
-                    style={{ paddingTop: "env(safe-area-inset-top)" }}
-                    className="fixed top-0 right-0 bottom-0 z-50 flex w-full max-w-[400px] flex-col overflow-y-auto border-l [border-color:var(--mk-border)] shadow-2xl [background:var(--mk-bg)] lg:hidden"
-                  >
-                    {/* Drawer header — sticky with blur backdrop */}
-                    <div className="sticky top-0 z-10 flex items-center justify-between border-b [border-color:var(--mk-border)] bg-[color:var(--mk-bg)]/95 px-5 py-4 backdrop-blur-xl">
-                      <Link
-                        href={p(lang, "")}
-                        onClick={() => setMobileOpen(false)}
-                        className="shrink-0"
-                      >
-                        <BrandLogo />
-                      </Link>
-                      <button
-                        className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2 [color:var(--mk-text)] transition-all duration-200 hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-90"
-                        onClick={() => {
-                          setMobileOpen(false);
-                          if (typeof navigator !== "undefined" && navigator.vibrate)
-                            navigator.vibrate(8);
-                        }}
-                        aria-label="Close menu"
-                      >
-                        <span className="relative flex h-5 w-5 items-center justify-center">
-                          <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 rotate-45 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
-                          <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 -rotate-45 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
-                        </span>
-                      </button>
-                    </div>
-
-                    {/* Quick CTA row */}
-                    <div className="flex gap-2.5 border-b [border-color:var(--mk-border)] px-5 py-4">
-                      <Link
-                        href={p(lang, "/signup")}
-                        onClick={() => setMobileOpen(false)}
-                        className="flex-1"
-                      >
-                        <Button size="sm" variant="primary" className="group min-h-[44px] w-full">
-                          {nav.cta}
-                          <ChevronRight
-                            size={14}
-                            className="transition-transform duration-200 group-hover:translate-x-0.5"
-                          />
-                        </Button>
-                      </Link>
-                      <Link
-                        href={p(lang, "/login")}
-                        onClick={() => setMobileOpen(false)}
-                        className="flex-1"
-                      >
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="min-h-[44px] w-full [color:var(--mk-text)]"
-                        >
-                          {nav.signIn}
-                        </Button>
-                      </Link>
-                    </div>
-
-                    {/* Expandable sections */}
-                    <div className="flex-1 px-3 py-3">
-                      {nav.sections.map((section, sIdx) => {
-                        const expanded = mobileExpanded === sIdx;
-                        const sectionActive = isSectionActive(sIdx);
-                        return (
-                          <div key={section.label}>
-                            <button
-                              ref={sIdx === 0 ? firstMobileLinkRef : undefined}
-                              className={`flex min-h-[48px] w-full items-center justify-between rounded-lg px-3 py-3 text-base font-medium transition-colors ${NAV_LINK_FOCUS} ${
-                                sectionActive ? "brand-text" : "[color:var(--mk-text)]"
-                              } hover:[background:var(--mk-hover)] ${expanded ? "brand-text [background:color-mix(in_srgb,var(--brand-primary)_6%,var(--mk-hover))]" : ""}`}
-                              onClick={() => setMobileExpanded(expanded ? null : sIdx)}
-                              aria-expanded={expanded}
-                            >
-                              <span className="flex items-center gap-2">
-                                {expanded && <span className="brand-bg h-1.5 w-1.5 rounded-full" />}
-                                {section.label}
-                              </span>
-                              <ChevronDown
-                                size={18}
-                                className={`shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""} [color:var(--mk-text-subtle)]`}
-                              />
-                            </button>
-                            <AnimatePresence>
-                              {expanded && (
-                                <motion.div
-                                  initial={
-                                    reduceMotion ? { opacity: 1 } : { opacity: 0, height: 0 }
-                                  }
-                                  animate={
-                                    reduceMotion ? { opacity: 1 } : { opacity: 1, height: "auto" }
-                                  }
-                                  exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
-                                  transition={
-                                    reduceMotion
-                                      ? { duration: 0 }
-                                      : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
-                                  }
-                                  className="overflow-hidden"
-                                >
-                                  <div className="mt-1 ml-3 space-y-0.5 border-l-2 [border-color:color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))] pl-3">
-                                    {/* Featured content card */}
-                                    {section.featuredContent && (
-                                      <Link
-                                        href={p(lang, section.featuredContent.href)}
-                                        onClick={() => setMobileOpen(false)}
-                                        className="group mb-1 flex items-start gap-3 rounded-xl border [border-color:color-mix(in_srgb,var(--brand-primary)_15%,var(--mk-border))] p-3 transition-colors hover:[background:color-mix(in_srgb,var(--brand-primary)_4%,var(--mk-hover))]"
-                                      >
-                                        <div className="brand-soft brand-border flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
-                                          {(() => {
-                                            const FIcon =
-                                              ICONS[section.featuredContent.icon ?? "Sparkles"] ??
-                                              Sparkles;
-                                            return <FIcon size={16} className="brand-text" />;
-                                          })()}
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                          <div className="flex items-center gap-1.5 text-sm font-semibold [color:var(--mk-text)]">
-                                            {section.featuredContent.title}
-                                            {section.featuredContent.badge && (
-                                              <NavBadge label={section.featuredContent.badge} />
-                                            )}
-                                          </div>
-                                          <div className="mt-0.5 text-xs leading-snug [color:var(--mk-text-subtle)]">
-                                            {section.featuredContent.description}
-                                          </div>
-                                        </div>
-                                        <ChevronRight
-                                          size={14}
-                                          className="brand-text mt-1 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
-                                        />
-                                      </Link>
-                                    )}
-                                    {section.items.map((item, iIdx) => {
-                                      const active = isActive(item.href);
-                                      const Icon = ICONS[item.icon] ?? Layers;
-                                      return (
-                                        <motion.div
-                                          key={item.href + item.label}
-                                          initial={
-                                            reduceMotion
-                                              ? { opacity: 1, x: 0 }
-                                              : { opacity: 0, x: -8 }
-                                          }
-                                          animate={
-                                            reduceMotion
-                                              ? { opacity: 1, x: 0 }
-                                              : { opacity: 1, x: 0 }
-                                          }
-                                          transition={
-                                            reduceMotion
-                                              ? { duration: 0 }
-                                              : {
-                                                  duration: 0.2,
-                                                  delay: iIdx * 0.03,
-                                                  ease: [0.22, 1, 0.36, 1],
-                                                }
-                                          }
-                                        >
-                                          <Link
-                                            href={p(lang, item.href)}
-                                            className={mobileLinkCls(active)}
-                                            aria-current={active ? "page" : undefined}
-                                            onClick={() => setMobileOpen(false)}
-                                          >
-                                            <span className="flex w-full items-start gap-2.5">
-                                              <Icon
-                                                size={16}
-                                                className={`mt-0.5 shrink-0 ${active ? "brand-text" : "[color:var(--mk-text-subtle)]"}`}
-                                              />
-                                              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                                <span className="flex items-center gap-1.5">
-                                                  <span>{item.label}</span>
-                                                  {item.badge && <NavBadge label={item.badge} />}
-                                                </span>
-                                                <span className="text-xs leading-snug font-normal [color:var(--mk-text-subtle)]">
-                                                  {item.description}
-                                                </span>
-                                              </span>
-                                            </span>
-                                          </Link>
-                                        </motion.div>
-                                      );
-                                    })}
-                                    {/* Mobile footer CTA */}
-                                    {section.ctaBottom && (
-                                      <Link
-                                        href={p(lang, section.ctaBottom.href)}
-                                        className={`${mobileLinkCls(false)} brand-text font-medium`}
-                                        onClick={() => setMobileOpen(false)}
-                                      >
-                                        <span className="flex items-center gap-1.5">
-                                          {section.ctaBottom.label}
-                                          <ChevronRight size={12} />
-                                        </span>
-                                      </Link>
-                                    )}
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        );
-                      })}
-
-                      {/* Standalone pricing link */}
-                      <Link
-                        href={p(lang, nav.pricingHref)}
-                        className={mobileLinkCls(isActive(nav.pricingHref))}
-                        aria-current={isActive(nav.pricingHref) ? "page" : undefined}
-                        onClick={() => setMobileOpen(false)}
-                      >
-                        {nav.pricingLabel}
-                      </Link>
-                    </div>
-
-                    {/* Language switcher — bottom of drawer with safe-area padding */}
-                    <div className="border-t [border-color:var(--mk-border)] px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-                      <div className="mb-2 flex items-center gap-1.5 text-xs font-medium [color:var(--mk-text-subtle)]">
-                        <Globe size={12} /> {UI_STRINGS[lang].languageLabel}
-                      </div>
-                      <div className="grid grid-cols-3 gap-1">
-                        {SUPPORTED_LANGS.map((l) => (
-                          <Link
-                            key={l}
-                            href={p(l, pathname.replace(/^\/(en|at|ch|it|es|pl|fr|nl)/, ""))}
-                            className={`flex items-center justify-center rounded-lg px-2 py-2 text-xs transition-colors ${
-                              l === lang
-                                ? "brand-soft brand-border brand-text border font-medium"
-                                : "[color:var(--mk-text-muted)] hover:[background:var(--mk-hover)]"
-                            }`}
-                            onClick={() => {
-                              setMobileOpen(false);
-                              setLangPref(l);
-                            }}
-                          >
-                            {JURISDICTION_LABEL[l]}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
           </nav>
         </header>
       </div>
+
+      {/* Mobile full-screen drawer — rendered OUTSIDE sticky header to escape transform containing block */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            {/* Backdrop overlay — stronger blur + gradient for depth */}
+            <motion.div
+              initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+              transition={
+                reduceMotion ? { duration: 0 } : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
+              }
+              className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-md lg:hidden"
+              onClick={() => setMobileOpen(false)}
+            />
+            {/* Drawer panel — modern spring animation with safe-area support */}
+            <motion.div
+              ref={mobileMenuRef}
+              id="mobile-nav-menu"
+              aria-label="Mobile navigation"
+              aria-labelledby="mobile-nav-trigger"
+              role="dialog"
+              aria-modal="true"
+              initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: "100%", scale: 0.98 }}
+              animate={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0, scale: 1 }}
+              exit={reduceMotion ? { opacity: 0, x: 0 } : { opacity: 0, x: "100%", scale: 0.98 }}
+              transition={
+                reduceMotion
+                  ? { duration: 0 }
+                  : { type: "spring", stiffness: 400, damping: 38, mass: 0.8 }
+              }
+              style={{ paddingTop: "env(safe-area-inset-top)" }}
+              className="fixed top-0 right-0 bottom-0 z-[101] flex w-full max-w-[400px] flex-col overflow-y-auto border-l [border-color:var(--mk-border)] shadow-2xl [background:var(--mk-bg)] lg:hidden"
+            >
+              {/* Drawer header — sticky with blur backdrop */}
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b [border-color:var(--mk-border)] bg-[color:var(--mk-bg)]/95 px-5 py-4 backdrop-blur-xl">
+                <Link href={p(lang, "")} onClick={() => setMobileOpen(false)} className="shrink-0">
+                  <BrandLogo />
+                </Link>
+                <button
+                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2 [color:var(--mk-text)] transition-all duration-200 hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-90"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
+                  }}
+                  aria-label="Close menu"
+                >
+                  <span className="relative flex h-5 w-5 items-center justify-center">
+                    <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 rotate-45 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+                    <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 -rotate-45 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+                  </span>
+                </button>
+              </div>
+
+              {/* Quick CTA row */}
+              <div className="flex gap-2.5 border-b [border-color:var(--mk-border)] px-5 py-4">
+                <Link
+                  href={p(lang, "/signup")}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex-1"
+                >
+                  <Button size="sm" variant="primary" className="group min-h-[44px] w-full">
+                    {nav.cta}
+                    <ChevronRight
+                      size={14}
+                      className="transition-transform duration-200 group-hover:translate-x-0.5"
+                    />
+                  </Button>
+                </Link>
+                <Link
+                  href={p(lang, "/login")}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex-1"
+                >
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="min-h-[44px] w-full [color:var(--mk-text)]"
+                  >
+                    {nav.signIn}
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Expandable sections */}
+              <div className="flex-1 px-3 py-3">
+                {nav.sections.map((section, sIdx) => {
+                  const expanded = mobileExpanded === sIdx;
+                  const sectionActive = isSectionActive(sIdx);
+                  return (
+                    <div key={section.label}>
+                      <button
+                        ref={sIdx === 0 ? firstMobileLinkRef : undefined}
+                        className={`flex min-h-[48px] w-full items-center justify-between rounded-lg px-3 py-3 text-base font-medium transition-colors ${NAV_LINK_FOCUS} ${
+                          sectionActive ? "brand-text" : "[color:var(--mk-text)]"
+                        } hover:[background:var(--mk-hover)] ${expanded ? "brand-text [background:color-mix(in_srgb,var(--brand-primary)_6%,var(--mk-hover))]" : ""}`}
+                        onClick={() => setMobileExpanded(expanded ? null : sIdx)}
+                        aria-expanded={expanded}
+                      >
+                        <span className="flex items-center gap-2">
+                          {expanded && <span className="brand-bg h-1.5 w-1.5 rounded-full" />}
+                          {section.label}
+                        </span>
+                        <ChevronDown
+                          size={18}
+                          className={`shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""} [color:var(--mk-text-subtle)]`}
+                        />
+                      </button>
+                      <AnimatePresence>
+                        {expanded && (
+                          <motion.div
+                            initial={reduceMotion ? { opacity: 1 } : { opacity: 0, height: 0 }}
+                            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, height: "auto" }}
+                            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                            transition={
+                              reduceMotion
+                                ? { duration: 0 }
+                                : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
+                            }
+                            className="overflow-hidden"
+                          >
+                            <div className="mt-1 ml-3 space-y-0.5 border-l-2 [border-color:color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))] pl-3">
+                              {/* Featured content card */}
+                              {section.featuredContent && (
+                                <Link
+                                  href={p(lang, section.featuredContent.href)}
+                                  onClick={() => setMobileOpen(false)}
+                                  className="group mb-1 flex items-start gap-3 rounded-xl border [border-color:color-mix(in_srgb,var(--brand-primary)_15%,var(--mk-border))] p-3 transition-colors hover:[background:color-mix(in_srgb,var(--brand-primary)_4%,var(--mk-hover))]"
+                                >
+                                  <div className="brand-soft brand-border flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
+                                    {(() => {
+                                      const FIcon =
+                                        ICONS[section.featuredContent.icon ?? "Sparkles"] ??
+                                        Sparkles;
+                                      return <FIcon size={16} className="brand-text" />;
+                                    })()}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5 text-sm font-semibold [color:var(--mk-text)]">
+                                      {section.featuredContent.title}
+                                      {section.featuredContent.badge && (
+                                        <NavBadge label={section.featuredContent.badge} />
+                                      )}
+                                    </div>
+                                    <div className="mt-0.5 text-xs leading-snug [color:var(--mk-text-subtle)]">
+                                      {section.featuredContent.description}
+                                    </div>
+                                  </div>
+                                  <ChevronRight
+                                    size={14}
+                                    className="brand-text mt-1 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
+                                  />
+                                </Link>
+                              )}
+                              {section.items.map((item, iIdx) => {
+                                const active = isActive(item.href);
+                                const Icon = ICONS[item.icon] ?? Layers;
+                                return (
+                                  <motion.div
+                                    key={item.href + item.label}
+                                    initial={
+                                      reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -8 }
+                                    }
+                                    animate={
+                                      reduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }
+                                    }
+                                    transition={
+                                      reduceMotion
+                                        ? { duration: 0 }
+                                        : {
+                                            duration: 0.2,
+                                            delay: iIdx * 0.03,
+                                            ease: [0.22, 1, 0.36, 1],
+                                          }
+                                    }
+                                  >
+                                    <Link
+                                      href={p(lang, item.href)}
+                                      className={mobileLinkCls(active)}
+                                      aria-current={active ? "page" : undefined}
+                                      onClick={() => setMobileOpen(false)}
+                                    >
+                                      <span className="flex w-full items-start gap-2.5">
+                                        <Icon
+                                          size={16}
+                                          className={`mt-0.5 shrink-0 ${active ? "brand-text" : "[color:var(--mk-text-subtle)]"}`}
+                                        />
+                                        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                          <span className="flex items-center gap-1.5">
+                                            <span>{item.label}</span>
+                                            {item.badge && <NavBadge label={item.badge} />}
+                                          </span>
+                                          <span className="text-xs leading-snug font-normal [color:var(--mk-text-subtle)]">
+                                            {item.description}
+                                          </span>
+                                        </span>
+                                      </span>
+                                    </Link>
+                                  </motion.div>
+                                );
+                              })}
+                              {/* Mobile footer CTA */}
+                              {section.ctaBottom && (
+                                <Link
+                                  href={p(lang, section.ctaBottom.href)}
+                                  className={`${mobileLinkCls(false)} brand-text font-medium`}
+                                  onClick={() => setMobileOpen(false)}
+                                >
+                                  <span className="flex items-center gap-1.5">
+                                    {section.ctaBottom.label}
+                                    <ChevronRight size={12} />
+                                  </span>
+                                </Link>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+
+                {/* Standalone pricing link */}
+                <Link
+                  href={p(lang, nav.pricingHref)}
+                  className={mobileLinkCls(isActive(nav.pricingHref))}
+                  aria-current={isActive(nav.pricingHref) ? "page" : undefined}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {nav.pricingLabel}
+                </Link>
+              </div>
+
+              {/* Language switcher — bottom of drawer with safe-area padding */}
+              <div className="border-t [border-color:var(--mk-border)] px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+                <div className="mb-2 flex items-center gap-1.5 text-xs font-medium [color:var(--mk-text-subtle)]">
+                  <Globe size={12} /> {UI_STRINGS[lang].languageLabel}
+                </div>
+                <div className="grid grid-cols-3 gap-1">
+                  {SUPPORTED_LANGS.map((l) => (
+                    <Link
+                      key={l}
+                      href={p(l, pathname.replace(/^\/(en|at|ch|it|es|pl|fr|nl)/, ""))}
+                      className={`flex items-center justify-center rounded-lg px-2 py-2 text-xs transition-colors ${
+                        l === lang
+                          ? "brand-soft brand-border brand-text border font-medium"
+                          : "[color:var(--mk-text-muted)] hover:[background:var(--mk-hover)]"
+                      }`}
+                      onClick={() => {
+                        setMobileOpen(false);
+                        setLangPref(l);
+                      }}
+                    >
+                      {JURISDICTION_LABEL[l]}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }

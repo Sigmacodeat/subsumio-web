@@ -67,6 +67,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let done = 0;
   let failed = 0;
   let exhausted = 0;
+  let blocked = 0;
 
   for (const page of pending) {
     const fm = page.frontmatter as PostUploadTask;
@@ -96,42 +97,64 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
     let success = false;
     let errorMsg = "";
+    // A missing internal secret is a CONFIG error, not a real skip. Analyze +
+    // contradiction tasks that can't run because of it must NOT be marked done
+    // (that silently drops analysis) — they stay pending so they run the moment
+    // the secret is configured. Tracked separately from success/failure.
+    let configBlocked = false;
 
     try {
-      if (task_type === "reconcile_case" && case_slug) {
-        await reconcileCaseDocuments(headers, case_slug, {
-          id: doc_slug,
-          slug: doc_slug,
-          name: fm.doc_title ?? doc_slug.split("/").pop() ?? doc_slug,
-          url: `/api/files/${doc_slug}`,
-          uploadedAt: fm.uploaded_at ?? new Date().toISOString(),
-          size: fm.doc_size ?? 0,
-          kind: "document",
-        });
-        success = true;
-      } else if (task_type === "analyze" && internalSecret) {
-        const res = await fetch(`${origin}/api/legal/analyze`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-internal-secret": internalSecret },
-          body: JSON.stringify({ document_slug: doc_slug, brain_id }),
-          signal: AbortSignal.timeout(300_000),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        success = true;
-      } else if (task_type === "contradiction" && case_slug && internalSecret) {
-        if (!internalSecret) throw new Error("internal_secret_missing");
-        const res = await fetch(`${origin}/api/legal/contradictions`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-internal-secret": internalSecret },
-          body: JSON.stringify({ case_slug, brain_id }),
-          signal: AbortSignal.timeout(30_000),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        success = true;
+      if (task_type === "reconcile_case") {
+        if (!case_slug) {
+          success = true;
+          errorMsg = "skipped_no_case_slug";
+        } else {
+          await reconcileCaseDocuments(headers, case_slug, {
+            id: doc_slug,
+            slug: doc_slug,
+            name: fm.doc_title ?? doc_slug.split("/").pop() ?? doc_slug,
+            url: `/api/files/${doc_slug}`,
+            uploadedAt: fm.uploaded_at ?? new Date().toISOString(),
+            size: fm.doc_size ?? 0,
+            kind: "document",
+          });
+          success = true;
+        }
+      } else if (task_type === "analyze") {
+        if (!internalSecret) {
+          configBlocked = true;
+          errorMsg = "internal_secret_missing";
+        } else {
+          const res = await fetch(`${origin}/api/legal/analyze`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-internal-secret": internalSecret },
+            body: JSON.stringify({ document_slug: doc_slug, brain_id }),
+            signal: AbortSignal.timeout(300_000),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          success = true;
+        }
+      } else if (task_type === "contradiction") {
+        if (!case_slug) {
+          success = true;
+          errorMsg = "skipped_no_case_slug";
+        } else if (!internalSecret) {
+          configBlocked = true;
+          errorMsg = "internal_secret_missing";
+        } else {
+          const res = await fetch(`${origin}/api/legal/contradictions`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-internal-secret": internalSecret },
+            body: JSON.stringify({ case_slug, brain_id }),
+            signal: AbortSignal.timeout(30_000),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          success = true;
+        }
       } else {
-        // Skip — missing secrets or case_slug — mark done to avoid looping
+        // Unknown task type — mark done to avoid an infinite retry loop.
         success = true;
-        errorMsg = "skipped_missing_context";
+        errorMsg = "skipped_unknown_task_type";
       }
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : String(err);
@@ -141,14 +164,41 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       );
     }
 
-    if (success) {
+    if (configBlocked) {
+      // Keep the task pending WITHOUT burning an attempt or marking it done, so
+      // analysis runs as soon as the secret is configured. Short backoff + a
+      // clear last_error make the misconfiguration visible in the outbox.
+      const patch = await enginePatchPage(headers, {
+        slug: page.slug,
+        frontmatter: {
+          status: "pending",
+          next_attempt_at: new Date(Date.now() + 15 * 60_000).toISOString(),
+          last_error: errorMsg,
+        },
+      });
+      if (!patch.ok) {
+        console.error(`[post-upload-drain] failed to defer blocked ${page.slug}: ${patch.status}`);
+      }
+      console.error(
+        `[post-upload-drain] ${task_type} blocked for ${doc_slug}: ${errorMsg} — kept pending`
+      );
+      blocked++;
+    } else if (success) {
       // Mark done
       const patch = await enginePatchPage(headers, {
         slug: page.slug,
         type: "post_upload_task_done",
         frontmatter: { status: "done", attempts: attempt, done_at: new Date().toISOString() },
       });
-      if (!patch.ok) throw new Error(`task_mark_done_failed_${patch.status}`);
+      // The task's work already completed; only the status write failed. Log and
+      // continue instead of throwing (a throw here aborts the whole drain run and
+      // strands every remaining task). The next drain re-runs this task, so the
+      // analyze/contradiction endpoints MUST be idempotent by doc_slug/case_slug.
+      if (!patch.ok) {
+        console.error(
+          `[post-upload-drain] work completed but mark-done failed for ${page.slug}: HTTP ${patch.status} — will re-run next drain`
+        );
+      }
       done++;
     } else if (attempt >= MAX_ATTEMPTS) {
       // Exhausted — give up
@@ -184,6 +234,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     done,
     retrying: failed,
     exhausted,
+    blocked,
     skipped: allPages.length - pending.length,
   });
 });
