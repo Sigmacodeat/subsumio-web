@@ -25,7 +25,7 @@ import {
   Database,
   FileText,
 } from "lucide-react";
-import type { Lang } from "@/content/site";
+import { UI_STRINGS, type Lang } from "@/content/site";
 
 interface MarqueeItem {
   icon: typeof ShieldCheck;
@@ -149,9 +149,8 @@ export default function LogoMarquee({ lang }: { lang: Lang }) {
   const topItems = ROW_TOP[lang] ?? ROW_TOP.de;
   const bottomItems = ROW_BOTTOM[lang] ?? ROW_BOTTOM.de;
 
-  const eyebrow =
-    lang !== "en" ? "Zertifizierungen & Integrationen" : "Certifications & Integrations";
-  const heading = lang !== "en" ? "Vertrauen, das man belegen kann" : "Trust you can verify";
+  const eyebrow = UI_STRINGS[lang].certificationsEyebrow;
+  const heading = UI_STRINGS[lang].trustHeading;
 
   return (
     <section

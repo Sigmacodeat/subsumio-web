@@ -231,7 +231,7 @@ export default function ScrollPinnedDashboard({
           className="absolute bottom-8 left-1/2 -translate-x-1/2 text-xs [color:var(--mk-text-subtle)]"
         >
           <span className="flex items-center gap-1.5">
-            {lang === "en" ? "Scroll to explore" : "Scrollen zum Erkunden"}
+            {UI_STRINGS[lang].scrollToExplore}
             <motion.span
               animate={{ y: [0, 4, 0] }}
               transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}

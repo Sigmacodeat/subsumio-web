@@ -5,6 +5,7 @@ import { inferInitialExtractionStatus, createInitialMetadata } from "@/lib/extra
 import { brainDuplicateStore } from "@/lib/duplicate-store";
 import { MAX_FILE_SIZE } from "@/lib/upload-validation";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
+import { reconcileCaseDocuments } from "@/lib/case-documents";
 
 // Hetzner/self-hosted agency uploads can be scanned + proxied synchronously up
 // to MAX_FILE_SIZE. If this route runs behind a stricter web host/proxy, that
@@ -15,20 +16,34 @@ function encodeSlug(slug: string): string {
   return slug.split("/").map(encodeURIComponent).join("/");
 }
 
+// "exists"      → the case page exists and is a legal_case
+// "not_found"   → the engine authoritatively says it isn't there (404 / wrong type)
+// "unavailable" → transient (engine 5xx, timeout, network) — the case may well
+//                 exist; we must NOT tell the user it's missing (P1-4).
+type CaseSlugCheck = "exists" | "not_found" | "unavailable";
+
 async function validateCaseSlug(
   headers: Record<string, string>,
   caseSlug: string
-): Promise<boolean> {
+): Promise<CaseSlugCheck> {
+  let res: Response;
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(caseSlug)}`, {
+    res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(caseSlug)}`, {
       headers,
       signal: AbortSignal.timeout(10_000),
     });
-    if (!res.ok) return false;
-    const page = (await res.json()) as { type?: string };
-    return page.type === "legal_case";
   } catch {
-    return false;
+    // Timeout / network error — transient, not a real "missing case".
+    return "unavailable";
+  }
+  if (res.status === 404) return "not_found";
+  // Any other non-OK (5xx, 429, 401 from an engine hiccup) is transient.
+  if (!res.ok) return "unavailable";
+  try {
+    const page = (await res.json()) as { type?: string };
+    return page.type === "legal_case" ? "exists" : "not_found";
+  } catch {
+    return "unavailable";
   }
 }
 
@@ -106,9 +121,17 @@ export const POST = createHandler(
       }
 
       if (requiresCase && caseSlugStr) {
-        const caseExists = await validateCaseSlug(ctx.headers, caseSlugStr);
-        if (!caseExists) {
+        const caseCheck = await validateCaseSlug(ctx.headers, caseSlugStr);
+        if (caseCheck === "not_found") {
           return apiError("case_not_found", "Die angegebene Akte existiert nicht.", 404);
+        }
+        if (caseCheck === "unavailable") {
+          // Don't claim the case is missing on a transient engine problem.
+          return apiError(
+            "case_check_unavailable",
+            "Die Akte konnte gerade nicht geprüft werden. Bitte in einem Moment erneut versuchen.",
+            503
+          );
         }
       }
 
@@ -317,55 +340,6 @@ export const POST = createHandler(
     }
   }
 );
-
-/**
- * P1.2/P0-1: After a successful upload, add the document to the case's frontmatter
- * documents array. Fetches the current case page, appends the new document
- * (deduplicated by slug), and writes it back via the engine's merge-update.
- *
- * The engine has no PATCH/If-Match route, so there is no optimistic locking:
- * concurrent uploads to the SAME case race last-writer-wins on this array.
- * That's acceptable because the array is SECONDARY truth — the authoritative
- * case↔document link is the `case_slug` stamp on the document page, which
- * matter-context uses for discovery. Dedup-by-slug keeps retried uploads
- * idempotent.
- */
-async function reconcileCaseDocuments(
-  headers: Record<string, string>,
-  caseSlug: string,
-  docEntry: {
-    id: string;
-    slug: string;
-    name: string;
-    url: string;
-    uploadedAt: string;
-    size: number;
-    kind?: string;
-  }
-): Promise<void> {
-  const encodedSlug = caseSlug.split("/").map(encodeURIComponent).join("/");
-
-  const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
-    headers,
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!getRes.ok) throw new Error(`case_fetch_failed_${getRes.status}`);
-  const casePage = (await getRes.json()) as {
-    frontmatter?: Record<string, unknown>;
-  };
-  const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
-  const existingDocs = Array.isArray(fm.documents) ? fm.documents : [];
-  if (existingDocs.some((d) => (d as Record<string, unknown>).slug === docEntry.slug)) return;
-  const updatedDocs = [...existingDocs, docEntry];
-
-  // merge:true overlays only the keys we send, so passing just `documents`
-  // leaves the rest of the case frontmatter untouched.
-  const patchRes = await enginePatchPage(headers, {
-    slug: caseSlug,
-    frontmatter: { documents: updatedDocs },
-  });
-  if (!patchRes.ok) throw new Error(`case_patch_failed_${patchRes.status}`);
-}
 
 /**
  * Patch a document's frontmatter on the engine. Best-effort with proper logging

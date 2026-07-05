@@ -734,10 +734,14 @@ export function MarketingNav({ lang }: { lang: Lang }) {
           <nav
             ref={navRef}
             className="mx-auto max-w-7xl px-4 py-2.5 sm:px-6 lg:px-8"
-            aria-label="Main navigation"
+            aria-label={UI_STRINGS[lang].ariaMainNav}
           >
             <div className="flex items-center justify-between gap-4">
-              <Link href={p(lang, "")} aria-label="Subsumio home" className="shrink-0">
+              <Link
+                href={p(lang, "")}
+                aria-label={UI_STRINGS[lang].ariaLanguage}
+                className="shrink-0"
+              >
                 <BrandLogo />
               </Link>
 
@@ -921,7 +925,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                 <div ref={langRef} className="relative hidden lg:block">
                   <button
                     className="flex min-h-[36px] items-center gap-1.5 rounded-full px-3 py-1.5 text-xs [color:var(--mk-text-muted)] transition-colors duration-200 [background:var(--mk-surface)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
-                    aria-label="Language"
+                    aria-label={UI_STRINGS[lang].ariaLanguage}
                     aria-haspopup="true"
                     aria-expanded={langOpen}
                     onClick={() => setLangOpen(!langOpen)}
@@ -946,7 +950,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                         <div
                           className="overflow-hidden rounded-xl border [border-color:var(--mk-border)] p-1.5 shadow-xl shadow-black/10 [background:var(--mk-surface)]"
                           role="menu"
-                          aria-label="Language"
+                          aria-label={UI_STRINGS[lang].ariaLanguage}
                         >
                           {SUPPORTED_LANGS.map((l) => (
                             <Link
@@ -1062,7 +1066,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
             <motion.div
               ref={mobileMenuRef}
               id="mobile-nav-menu"
-              aria-label="Mobile navigation"
+              aria-label={UI_STRINGS[lang].ariaMobileNav}
               aria-labelledby="mobile-nav-trigger"
               role="dialog"
               aria-modal="true"
@@ -1088,7 +1092,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                     setMobileOpen(false);
                     if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
                   }}
-                  aria-label="Close menu"
+                  aria-label={UI_STRINGS[lang].ariaCloseMenu}
                 >
                   <span className="relative flex h-5 w-5 items-center justify-center">
                     <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 rotate-45 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
@@ -1346,11 +1350,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
             <div className="mb-3">
               <SubsumioLogo size={28} />
             </div>
-            <p className="mb-4 text-sm [color:var(--mk-text-muted)]">
-              {lang === "en"
-                ? "The firm brain that never forgets — built for AT, DE and CH."
-                : "Das Kanzlei-Brain, das nie vergisst — für AT, DE und CH."}
-            </p>
+            <p className="mb-4 text-sm [color:var(--mk-text-muted)]">{footer.tagline}</p>
             <p className="max-w-xs text-xs leading-relaxed [color:var(--mk-text-subtle)]">
               {footer.note}
             </p>
@@ -1419,15 +1419,10 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
         </div>
         <div className="flex flex-col items-center justify-between gap-2 border-t [border-color:var(--mk-border)] pt-6 sm:flex-row">
           <p className="text-xs [color:var(--mk-text-subtle)]">
-            © 2026 Subsumio ·{" "}
-            {lang !== "en"
-              ? "Legal Intelligence für Kanzleien"
-              : "Legal intelligence for law firms"}
+            © 2026 Subsumio · {UI_STRINGS[lang].footerLegalTagline}
           </p>
           <p className="text-xs [color:var(--mk-text-subtle)]">
-            {lang === "en"
-              ? "EU-hosted or self-hosted · GDPR-ready · confidentiality-first"
-              : "EU-gehostet oder self-hosted · DSGVO-konform · vertraulichkeitskritisch"}
+            {UI_STRINGS[lang].footerHostingLine}
           </p>
         </div>
       </div>

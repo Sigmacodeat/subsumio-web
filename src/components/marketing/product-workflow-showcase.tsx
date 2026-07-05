@@ -150,10 +150,13 @@ export default function ProductWorkflowShowcase({
                   <Brain size={17} className="brand-text" />
                   <span className="text-sm font-semibold [color:var(--mk-text)]">{brand}</span>
                 </div>
-                {(lang !== "en"
-                  ? ["Übersicht", "Akten", "Fristen", "Intake", "Chat"]
-                  : ["Overview", "Matters", "Deadlines", "Intake", "Chat"]
-                ).map((item, i) => (
+                {[
+                  UI_STRINGS[lang].navOverview,
+                  UI_STRINGS[lang].navMatters,
+                  UI_STRINGS[lang].navDeadlines,
+                  UI_STRINGS[lang].navIntake,
+                  UI_STRINGS[lang].navChat,
+                ].map((item, i) => (
                   <div
                     key={item}
                     className={`mb-2 rounded-lg px-3 py-2 text-xs ${i === 1 ? "brand-soft brand-text" : "[color:var(--mk-text-muted)]"}`}
@@ -235,11 +238,11 @@ export default function ProductWorkflowShowcase({
                     </div>
                     <div className="relative h-44">
                       {[
-                        ["left-4 top-8", lang !== "en" ? "Akte" : "Matter"],
+                        ["left-4 top-8", UI_STRINGS[lang].workflowMatter],
                         ["left-28 top-2", "Person"],
-                        ["right-8 top-16", lang !== "en" ? "Dok" : "Doc"],
-                        ["left-20 bottom-4", lang !== "en" ? "Risiko" : "Risk"],
-                        ["right-16 bottom-8", lang !== "en" ? "Aufgabe" : "Task"],
+                        ["right-8 top-16", UI_STRINGS[lang].workflowDoc],
+                        ["left-20 bottom-4", UI_STRINGS[lang].workflowRisk],
+                        ["right-16 bottom-8", UI_STRINGS[lang].workflowTask],
                       ].map(([pos, label], i) => (
                         <motion.div
                           key={label}

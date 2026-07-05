@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Star, Quote } from "lucide-react";
-import type { Lang } from "@/content/site";
+import { UI_STRINGS, type Lang } from "@/content/site";
 import { EASE } from "./motion-system";
 import { H2_CTA_CLASS } from "./chrome";
 import { TESTIMONIALS } from "./testimonials-data";
@@ -11,7 +11,7 @@ export function TestimonialsSection({ lang }: { lang?: Lang } = {}) {
   // No fabricated social proof: render nothing until real, consented
   // testimonials exist in testimonials-data.ts.
   if (TESTIMONIALS.length === 0) return null;
-  const isDE = lang !== "en";
+  const ui = UI_STRINGS[lang ?? "de"];
   return (
     <section
       data-tone="light"
@@ -35,13 +35,9 @@ export function TestimonialsSection({ lang }: { lang?: Lang } = {}) {
               />
             ))}
           </div>
-          <h2 className={`${H2_CTA_CLASS} mb-4`}>
-            {isDE ? "Was Anwälte über Subsumio sagen" : "What lawyers say about Subsumio"}
-          </h2>
+          <h2 className={`${H2_CTA_CLASS} mb-4`}>{ui.testimonialsTitle}</h2>
           <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
-            {isDE
-              ? "Echte Stimmen aus Kanzleien in AT, DE und CH."
-              : "Real voices from law firms in AT, DE and CH."}
+            {ui.testimonialsSub}
           </p>
         </motion.div>
 

@@ -16,7 +16,7 @@ import {
   Globe,
   Server,
 } from "lucide-react";
-import type { Lang } from "@/content/site";
+import { UI_STRINGS, type Lang } from "@/content/site";
 import { profileForIndustry } from "@/lib/industry-pack";
 import { GlowCard, EASE } from "./motion-system";
 import { H2_CTA_CLASS } from "./chrome";
@@ -134,7 +134,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
   return (
     <section
       data-tone="light"
-      aria-label={lang !== "en" ? "Sicherheit & Vertrauen" : "Security & Trust"}
+      aria-label={UI_STRINGS[lang].ariaSecurityTrust}
       className="relative z-10 px-4 py-24 sm:px-6 lg:px-8"
       style={{ background: "var(--mk-bg)" }}
     >

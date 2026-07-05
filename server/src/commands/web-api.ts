@@ -549,7 +549,19 @@ export async function buildMarkdownFromUpload(
   }
 
   if (ext === ".json") {
-    const parsed = JSON.parse(data.toString("utf8"));
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(data.toString("utf8"));
+    } catch (err) {
+      // Malformed JSON is a TERMINAL error — retrying re-parses the same bytes
+      // to the same failure. Throw UnsupportedUploadError so the async handler
+      // marks it failed(unsupported_format) instead of burning transient retries.
+      throw new UnsupportedUploadError(
+        `Die JSON-Datei ${filename} ist nicht wohlgeformt und konnte nicht gelesen werden: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
+    }
     const body = "```json\n" + JSON.stringify(parsed, null, 2) + "\n```";
     return withUploadFrontmatter(body, {
       title: t,

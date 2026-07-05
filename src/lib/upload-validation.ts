@@ -7,9 +7,12 @@ import { SUPPORTED_UPLOAD_MIME_TYPES, isSupportedUploadName } from "@/lib/upload
 
 /**
  * Upload size limits. Agency-level deployments (Hetzner self-hosted, no platform
- * body cap) accept files up to 1 GB by default. Override per-environment with
- * MAX_UPLOAD_BYTES / MAX_IMAGE_BYTES. Large uploads are throttled client-side by
- * the staggered upload pool (src/lib/upload-queue.ts), so RAM stays bounded.
+ * body cap) accept files up to the defaults below — 500 MB for documents,
+ * 200 MB for images, 20 MB for spreadsheets. Override per-environment with
+ * MAX_UPLOAD_BYTES / MAX_IMAGE_BYTES / MAX_TABULAR_UPLOAD_BYTES (Next.js
+ * serverActions.bodySizeLimit is set to 1 GB to leave transport headroom).
+ * Large uploads are throttled client-side by the staggered upload pool
+ * (src/lib/upload-queue.ts), so RAM stays bounded.
  */
 function resolveLimit(key: string, fallback: number): number {
   const raw = env(key);

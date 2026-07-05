@@ -41,7 +41,8 @@ export type ScanResult =
   | { ok: false; reason: "executable_detected"; label: string }
   | { ok: false; reason: "mime_mismatch"; expected: string }
   | { ok: false; reason: "clamav_infected"; signature: string }
-  | { ok: false; reason: "clamav_unreachable" };
+  | { ok: false; reason: "clamav_unreachable" }
+  | { ok: false; reason: "clamav_size_limit" };
 
 /**
  * Scan a file buffer for known malware signatures and MIME-type mismatches.
@@ -155,6 +156,12 @@ async function scanWithClamav(buffer: ArrayBuffer, host: string): Promise<ScanRe
       if (response.includes("INFECTED")) {
         const signature = response.replace(/^.*INFECTED:\s*/, "").trim();
         resolve({ ok: false, reason: "clamav_infected", signature });
+      } else if (/size limit exceeded/i.test(response)) {
+        // clamd rejected the stream because it exceeds StreamMaxLength (default
+        // 25 MB). This is NOT "scanner down" — surfacing it as unreachable makes
+        // operators restart a healthy ClamAV. Distinct reason so the caller can
+        // give an accurate message and ops can raise StreamMaxLength.
+        resolve({ ok: false, reason: "clamav_size_limit" });
       } else if (response.includes("OK")) {
         resolve({ ok: true });
       } else {

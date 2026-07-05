@@ -345,7 +345,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           <Section
             tone="light"
             className="px-4 py-24 sm:px-6 lg:px-8"
-            aria-label={lang === "en" ? "The cost of doing nothing" : "Was es dich kostet"}
+            aria-label={ui.ariaCostOfInaction}
           >
             <motion.div {...reveal} className="mx-auto max-w-5xl">
               <SectionHeading
@@ -534,22 +534,18 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             <div className="overflow-x-auto">
               <table
                 className="mt-10 w-full border-collapse text-sm"
-                aria-label={
-                  lang !== "en"
-                    ? "Vergleich: Subsumio vs. andere KI-Tools"
-                    : "Comparison: Subsumio vs. other AI tools"
-                }
+                aria-label={ui.comparisonTableLabel}
               >
                 <thead>
                   <tr className="border-b border-[color:var(--mk-border)]">
                     <th className="py-3 pr-4 text-left font-semibold text-[color:var(--mk-text)]">
-                      {lang !== "en" ? "Funktion" : "Feature"}
+                      {ui.comparisonFeature}
                     </th>
                     <th className="px-4 py-3 text-left font-semibold text-[color:var(--brand-text)]">
                       Subsumio
                     </th>
                     <th className="py-3 pl-4 text-left font-semibold text-[color:var(--mk-text-subtle)]">
-                      {lang !== "en" ? "Andere KI-Tools" : "Other AI tools"}
+                      {ui.comparisonOthers}
                     </th>
                   </tr>
                 </thead>

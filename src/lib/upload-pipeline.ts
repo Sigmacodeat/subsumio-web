@@ -107,6 +107,11 @@ export async function scanUpload(file: unknown): Promise<UploadPipelineResult> {
       case "clamav_unreachable":
         message = "Virenscanner nicht erreichbar — bitte erneut versuchen.";
         break;
+      case "clamav_size_limit":
+        message =
+          "Datei ist zu groß für den Virenscan. Bitte die Datei verkleinern oder aufteilen " +
+          "(oder die Kanzlei-IT bitten, das Scanner-Limit StreamMaxLength zu erhöhen).";
+        break;
     }
     return {
       ok: false,

@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import type { PostUploadTask } from "@/lib/post-upload-outbox";
 import { MAX_ATTEMPTS } from "@/lib/post-upload-outbox";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
+import { reconcileCaseDocuments } from "@/lib/case-documents";
 
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
@@ -269,33 +270,4 @@ async function documentReadiness(
   } catch {
     return { ready: false, reason: "document_unreachable" };
   }
-}
-
-async function reconcileCaseDocuments(
-  headers: Record<string, string>,
-  caseSlug: string,
-  docEntry: {
-    id: string;
-    slug: string;
-    name: string;
-    url: string;
-    uploadedAt: string;
-    size: number;
-    kind?: string;
-  }
-): Promise<void> {
-  const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(caseSlug)}`, {
-    headers,
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!getRes.ok) throw new Error(`case_fetch_failed_${getRes.status}`);
-  const casePage = (await getRes.json()) as { frontmatter?: Record<string, unknown> };
-  const fm = casePage.frontmatter ?? {};
-  const existing = Array.isArray(fm.documents) ? fm.documents : [];
-  if (existing.some((d) => (d as Record<string, unknown>).slug === docEntry.slug)) return;
-  const patchRes = await enginePatchPage(headers, {
-    slug: caseSlug,
-    frontmatter: { documents: [...existing, docEntry] },
-  });
-  if (!patchRes.ok) throw new Error(`case_patch_failed_${patchRes.status}`);
 }

@@ -10,7 +10,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { CheckCircle2, FileText } from "lucide-react";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
-import type { Lang } from "@/content/site";
+import { UI_STRINGS, type Lang } from "@/content/site";
 
 export interface HeroQAProps {
   question: string;
@@ -35,9 +35,10 @@ export default function HeroQACard({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const youLabel = lang === "en" ? "You" : "Du";
-  const sourcesLabel = lang === "en" ? "Sources:" : "Quellen:";
-  const thinkingLabel = lang === "en" ? "Searching knowledge graph…" : "Durchsuche Wissensgraph…";
+  const ui = UI_STRINGS[lang];
+  const youLabel = ui.youLabel;
+  const sourcesLabel = ui.sourcesLabel;
+  const thinkingLabel = ui.thinkingLabel;
 
   useEffect(() => {
     if (reduce) {

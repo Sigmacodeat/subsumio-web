@@ -214,9 +214,7 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
           </div>
           <p className="mx-auto mt-8 inline-flex w-full max-w-2xl items-center justify-center gap-2 text-center text-sm [color:var(--mk-text-subtle)]">
             <MessageSquare size={14} className="brand-text shrink-0" />
-            {lang !== "en"
-              ? "Alles bestätigungspflichtig — nichts landet ungesehen in der Akte."
-              : "Everything confirmation-gated — nothing reaches the matter unseen."}
+            {UI_STRINGS[lang].subpagesConfirmationNote}
           </p>
         </div>
       </Section>

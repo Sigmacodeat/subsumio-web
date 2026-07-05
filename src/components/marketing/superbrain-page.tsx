@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Brain, CheckCircle2, RefreshCw, TrendingUp, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { p, type Lang } from "@/content/site";
+import { p, UI_STRINGS, type Lang } from "@/content/site";
 import {
   EASE,
   GlowCard,
@@ -808,11 +808,7 @@ function PrivacySection({ t }: { t: SuperbrainCopyDe }) {
 
 function UseCasesSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
   return (
-    <Section
-      tone="light"
-      className="px-6 py-24"
-      aria-label={lang === "en" ? "Use cases" : "Anwendungsfälle"}
-    >
+    <Section tone="light" className="px-6 py-24" aria-label={UI_STRINGS[lang].ariaUseCases}>
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -854,8 +850,7 @@ function UseCasesSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
             href={p(lang, "/features")}
             className="brand-text inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
           >
-            {lang === "en" ? "Explore all features" : "Alle Features ansehen"}
-            <ArrowRight size={14} />
+            {UI_STRINGS[lang].exploreAllFeatures} <ArrowRight size={14} />
           </Link>
         </motion.div>
       </div>
@@ -865,11 +860,7 @@ function UseCasesSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
 
 function TrustSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
   return (
-    <Section
-      tone="light"
-      className="px-6 py-24"
-      aria-label={lang === "en" ? "Compliance & integrations" : "Compliance & Integrationen"}
-    >
+    <Section tone="light" className="px-6 py-24" aria-label={UI_STRINGS[lang].ariaCompliance}>
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -935,8 +926,7 @@ function TrustSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
             href={p(lang, "/security")}
             className="brand-text inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
           >
-            {lang === "en" ? "Read security details" : "Security-Details ansehen"}
-            <ArrowRight size={14} />
+            {UI_STRINGS[lang].readSecurityDetails} <ArrowRight size={14} />
           </Link>
         </motion.div>
       </div>
@@ -947,21 +937,17 @@ function TrustSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
 function FAQSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
   const faqItems = t.faq.map((item) => ({ q: item.q, a: item.a }));
   return (
-    <Section tone="light" className="px-6 py-24" aria-label="FAQ">
+    <Section tone="light" className="px-6 py-24" aria-label={UI_STRINGS[lang].ariaFaq}>
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2 className={`mb-4 ${H2_CTA_CLASS}`}>
-              {lang === "en" ? "Frequently asked questions" : "Häufig gestellte Fragen"}
-            </h2>
+            <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{UI_STRINGS[lang].faqSuperbrainTitle}</h2>
           </ClipReveal>
           <motion.p
             {...reveal}
             className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
           >
-            {lang === "en"
-              ? "Everything you need to know about the SuperBrain, the Dream Cycle and the 5-layer architecture."
-              : "Alles, was du über das SuperBrain, den Dream Cycle und die 5-Ebenen-Architektur wissen musst."}
+            {UI_STRINGS[lang].faqSuperbrainSub}
           </motion.p>
         </div>
 
@@ -978,8 +964,7 @@ function FAQSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
             href={p(lang, "/pricing")}
             className="brand-text inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
           >
-            {lang === "en" ? "See pricing plans" : "Preise ansehen"}
-            <ArrowRight size={14} />
+            {UI_STRINGS[lang].seePricingPlans} <ArrowRight size={14} />
           </Link>
         </motion.div>
       </div>

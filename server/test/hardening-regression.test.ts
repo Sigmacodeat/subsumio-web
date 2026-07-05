@@ -30,6 +30,22 @@ describe("detectJurisdiction (C1 fix)", () => {
     expect(result.confidence).toBeGreaterThan(0.5);
   });
 
+  it("German Aktenzeichen (no Prüfbuchstabe) is not pulled to AT by the GZ pattern (P1-3)", () => {
+    // "8 O 123/24" is a German LG civil case number — same shape as an Austrian
+    // Geschäftszahl but WITHOUT the trailing check letter. With German-only
+    // indicators present it must classify DE, not get boosted to AT.
+    const text = "In der Sache 8 O 123/24 wird gemäß § 823 BGB Klage erhoben. Landgericht Hamburg.";
+    const result = detectJurisdiction({}, text);
+    expect(result.jurisdiction).toBe("de");
+  });
+
+  it("Austrian GZ WITH Prüfbuchstabe still scores as a strong AT signal", () => {
+    // Regression guard for P1-3: the check-letter form must keep matching.
+    const text = "Zur GZ 3 Cg 45/23h ergeht folgender Beschluss.";
+    const result = detectJurisdiction({}, text);
+    expect(result.jurisdiction).toBe("at");
+  });
+
   it("OWiG is counted as DE-only indicator", () => {
     const text = "Gemäß § 24 OWiG wird Bußgeld verhängt. Das Amtsgericht München entscheidet.";
     const result = detectJurisdiction({}, text);

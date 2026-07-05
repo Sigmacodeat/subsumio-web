@@ -33,7 +33,7 @@ function SignatureBand({ industry, lang }: { industry: string; lang: Lang }) {
   if (!profile) return null;
 
   const signature = profile.signature;
-  const locale = lang !== "en" ? "de" : "en";
+  const locale = lang === "en" ? "en" : "de";
 
   return (
     <Section tone="light" className="px-6 pb-20">
@@ -131,24 +131,14 @@ export default function VerticalPage({
               <a href={isSubsumio ? "#pricing" : "#demo"}>
                 <Button size="xl" variant="ghost" className="min-w-[200px]">
                   {isSubsumio
-                    ? lang !== "en"
-                      ? "Preise ansehen"
-                      : "See pricing"
-                    : lang !== "en"
-                      ? "Live ansehen"
-                      : "See it live"}{" "}
+                    ? UI_STRINGS[lang].verticalSeePricing
+                    : UI_STRINGS[lang].verticalSeeLive}{" "}
                   <ArrowRight size={18} />
                 </Button>
               </a>
             </div>
             <p className="mb-4 text-xs [color:var(--mk-text-subtle)]">
-              {isSubsumio
-                ? lang !== "en"
-                  ? "14 Tage Reverse Trial · 14 Tage Geld-zurück-Garantie · Keine Kreditkarte erforderlich"
-                  : "14-day reverse trial · 14-day money-back guarantee · No credit card required"
-                : lang !== "en"
-                  ? "Self-hosted · EU-Cloud · DSGVO-konform · § 203 StGB im Blick"
-                  : "Self-hosted · EU cloud · GDPR-ready · professional secrecy by design"}
+              {isSubsumio ? UI_STRINGS[lang].verticalTrialNote : UI_STRINGS[lang].verticalTrustNote}
             </p>
             {/* The live demo is a dark spotlight floating on the slate hero */}
             <div
@@ -220,11 +210,7 @@ export default function VerticalPage({
             <SectionHeading
               badge={UI_STRINGS[lang].capabilitiesBadge}
               title={t.featuresTitle}
-              sub={
-                lang !== "en"
-                  ? "Von Fristenkontrolle bis Widerspruchserkennung — alles auf deiner Infrastruktur, jede Antwort mit Fundstelle."
-                  : "From deadline control to contradiction detection — all on your infrastructure, every answer cited."
-              }
+              sub={UI_STRINGS[lang].verticalFeaturesSub}
             />
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {t.features.slice(0, 6).map((f, i) => {

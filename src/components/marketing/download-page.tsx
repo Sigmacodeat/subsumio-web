@@ -103,9 +103,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
             className="mx-4 mt-3 rounded-xl border border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/[0.05] p-3"
           >
             <p className="mb-2 text-xs leading-relaxed [color:var(--mk-text-muted)]">
-              {lang === "en"
-                ? "3 open commitments across 4 meetings this week —"
-                : "3 offene Zusagen in 4 Meetings diese Woche —"}
+              {UI_STRINGS[lang].downloadHint}
             </p>
             {[0, 1, 2].map((i) => (
               <motion.div
