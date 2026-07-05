@@ -1,6 +1,36 @@
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler, recordQuota } from "@/lib/api-handler";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
+
+/**
+ * Stamp analysis_status=pending on the freshly-confirmed document BEFORE (or
+ * alongside) enqueueing its analysis task. This makes the document visible to
+ * the upload-reconcile sweeper even if this request's enqueue never completes
+ * (e.g. the client disconnects mid-SSE). Best-effort — a failed stamp is logged
+ * but never fails the upload.
+ */
+async function stampAnalysisPending(
+  headers: Record<string, string>,
+  docSlug: string
+): Promise<void> {
+  try {
+    const res = await enginePatchPage(headers, {
+      slug: docSlug,
+      frontmatter: {
+        analysis_status: "pending",
+        analysis_queued_at: new Date().toISOString(),
+      },
+    });
+    if (!res.ok) {
+      console.error(`[upload/confirm] analysis_status stamp failed for ${docSlug}: ${res.status}`);
+    }
+  } catch (err) {
+    console.error(
+      `[upload/confirm] analysis_status stamp error for ${docSlug}:`,
+      err instanceof Error ? err.message : String(err)
+    );
+  }
+}
 
 export const maxDuration = 600;
 
@@ -76,6 +106,7 @@ export const POST = createHandler(
                     typeof (body as unknown as Record<string, unknown>)?.case_slug === "string"
                       ? ((body as unknown as Record<string, unknown>).case_slug as string)
                       : "";
+                  await stampAnalysisPending(ctx.headers, result.slug);
                   await enqueueAllPostUploadTasks({
                     doc_slug: result.slug,
                     case_slug: caseSlugRaw || undefined,
@@ -127,6 +158,7 @@ export const POST = createHandler(
             typeof (body as unknown as Record<string, unknown>)?.case_slug === "string"
               ? ((body as unknown as Record<string, unknown>).case_slug as string)
               : "";
+          await stampAnalysisPending(ctx.headers, result.slug);
           await enqueueAllPostUploadTasks({
             doc_slug: result.slug,
             case_slug: caseSlugRaw || undefined,

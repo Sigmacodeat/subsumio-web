@@ -80,6 +80,14 @@
 # case reconciliation. Tasks survive container restarts; retried with backoff.
 */2 * * * *    curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/post-upload-drain || true
 
+# ── Every 10 minutes — Upload reconcile sweeper ──
+# Safety net for the upload chain: finds extraction-ready documents whose
+# analysis task was never created (client disconnect mid-confirm, enqueue
+# timeout) or that are stuck on "pending" past the grace window, and re-injects
+# them into the outbox (idempotent). Closes the silent "uploaded but never
+# analyzed and never flagged" gap.
+*/10 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/upload-reconcile || true
+
 # ── Every 5 minutes — Pipeline queue-health watchdog ──
 # Pulls /api/jobs/health; emails QUEUE_ALERT_EMAIL on dead-letters, a wedged
 # queue, backlog spikes, or piled-up outbox failures. Thresholds are env-tunable.
