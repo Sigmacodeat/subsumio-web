@@ -410,12 +410,32 @@ export function Topbar({
     >
       <div className="flex max-w-xs min-w-0 flex-1 items-center gap-3 md:max-w-sm lg:max-w-lg">
         <button
-          onClick={mobileOpen ? onMobileMenuClose : onMobileMenuOpen}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none md:hidden"
+          onClick={() => {
+            if (mobileOpen) onMobileMenuClose();
+            else onMobileMenuOpen();
+            if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
+          }}
+          className="group flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-90 md:hidden"
           aria-label={mobileOpen ? t("topbar.close_menu") : t("topbar.open_menu")}
           aria-expanded={mobileOpen}
         >
-          {mobileOpen ? <X size={18} /> : <Menu size={18} />}
+          <span className="relative flex h-4 w-4 items-center justify-center">
+            <span
+              className={`absolute h-0.5 w-4 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                mobileOpen ? "top-1/2 -translate-y-1/2 rotate-45" : "top-[2px]"
+              }`}
+            />
+            <span
+              className={`absolute h-0.5 w-4 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                mobileOpen ? "top-1/2 -translate-y-1/2 opacity-0" : "top-1/2 -translate-y-1/2"
+              }`}
+            />
+            <span
+              className={`absolute h-0.5 w-4 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                mobileOpen ? "top-1/2 -translate-y-1/2 -rotate-45" : "bottom-[2px]"
+              }`}
+            />
+          </span>
         </button>
         {/* Palette trigger — a button styled as a search field so Tab focus
             doesn't open the palette involuntarily (only click/Enter/Space). */}

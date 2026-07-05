@@ -133,6 +133,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [copilotOpen]);
   const drawerRef = useRef<HTMLElement>(null);
+  const touchStartX = useRef<number | null>(null);
+  const touchCurrentX = useRef<number | null>(null);
   const { t } = useLang();
   const pathname = usePathname();
   const router = useRouter();
@@ -236,6 +238,48 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     };
     drawer.addEventListener("keydown", handler);
     return () => drawer.removeEventListener("keydown", handler);
+  }, [mobileOpen]);
+
+  // Swipe-to-close for mobile sidebar drawer
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const drawer = drawerRef.current;
+    if (!drawer) return;
+
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartX.current = e.touches[0]?.clientX ?? null;
+      touchCurrentX.current = touchStartX.current;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchStartX.current === null) return;
+      touchCurrentX.current = e.touches[0]?.clientX ?? touchStartX.current;
+      const delta = touchCurrentX.current - touchStartX.current;
+      if (delta < 0 && drawer) {
+        drawer.style.transform = `translateX(${delta}px)`;
+        drawer.style.transition = "none";
+      }
+    };
+    const onTouchEnd = () => {
+      if (touchStartX.current === null || touchCurrentX.current === null) return;
+      const delta = touchCurrentX.current - touchStartX.current;
+      drawer.style.transition = "";
+      drawer.style.transform = "";
+      if (delta < -80) {
+        setMobileOpen(false);
+        if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
+      }
+      touchStartX.current = null;
+      touchCurrentX.current = null;
+    };
+
+    drawer.addEventListener("touchstart", onTouchStart, { passive: true });
+    drawer.addEventListener("touchmove", onTouchMove, { passive: true });
+    drawer.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      drawer.removeEventListener("touchstart", onTouchStart);
+      drawer.removeEventListener("touchmove", onTouchMove);
+      drawer.removeEventListener("touchend", onTouchEnd);
+    };
   }, [mobileOpen]);
 
   useEffect(() => {
@@ -406,18 +450,23 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         {t("layout.skip_to_content")}
       </a>
       <motion.div
-        className={cn(
-          "fixed inset-0 z-[45] bg-black/60 md:hidden",
-          !mobileOpen && "pointer-events-none"
-        )}
+        className={cn("fixed inset-0 z-[45] md:hidden", !mobileOpen && "pointer-events-none")}
         initial={false}
         animate={{
           opacity: mobileOpen ? 1 : 0,
-          backdropFilter: mobileOpen && !reduceMotion ? "blur(8px)" : "blur(0px)",
+          backdropFilter: mobileOpen && !reduceMotion ? "blur(12px)" : "blur(0px)",
         }}
         transition={overlayTransition}
-        onClick={() => setMobileOpen(false)}
+        onClick={() => {
+          setMobileOpen(false);
+          if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
+        }}
         aria-hidden="true"
+        style={{
+          background: mobileOpen
+            ? "linear-gradient(90deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.6) 100%)"
+            : "rgba(0,0,0,0)",
+        }}
       />
 
       <MobileSyncBanner />

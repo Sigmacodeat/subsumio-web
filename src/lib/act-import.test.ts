@@ -39,4 +39,46 @@ describe("act import metrics", () => {
     expect(safeImportId(" Akt 2026/01 ")).toBe("akt-2026-01");
     expect(() => safeImportId("///")).toThrow("invalid_import_id");
   });
+
+  it("counts failed items for retry button visibility", () => {
+    const metrics = computeActImportMetrics([
+      item("ready"),
+      item("failed", { filename: "b.pdf" }),
+      item("failed", { filename: "c.pdf" }),
+    ]);
+    expect(metrics.failed).toBe(2);
+    expect(metrics.canFinalize).toBe(false);
+  });
+
+  it("allows finalize after all failed items are retried to ready", () => {
+    const before = computeActImportMetrics([item("ready"), item("failed", { filename: "b.pdf" })]);
+    expect(before.canFinalize).toBe(false);
+
+    const after = computeActImportMetrics([
+      item("ready"),
+      item("ready", { filename: "b.pdf", attempts: 2 }),
+    ]);
+    expect(after.canFinalize).toBe(true);
+    expect(after.ready).toBe(2);
+  });
+
+  it("handles 84-item bulk import readiness", () => {
+    const items84 = Array.from({ length: 84 }, (_, i) =>
+      item("ready", { filename: `doc-${i}.heic` })
+    );
+    const metrics = computeActImportMetrics(items84);
+    expect(metrics.total).toBe(84);
+    expect(metrics.ready).toBe(84);
+    expect(metrics.canFinalize).toBe(true);
+    expect(metrics.readinessPercent).toBe(100);
+  });
+
+  it("blocks finalize if any item is still processing in 84-item bulk", () => {
+    const items84 = Array.from({ length: 84 }, (_, i) =>
+      item(i < 82 ? "ready" : "processing", { filename: `doc-${i}.heic` })
+    );
+    const metrics = computeActImportMetrics(items84);
+    expect(metrics.canFinalize).toBe(false);
+    expect(metrics.processing).toBe(2);
+  });
 });

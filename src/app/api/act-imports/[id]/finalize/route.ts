@@ -33,6 +33,13 @@ export const POST = createHandler(
       );
     }
     const sfm = (session.frontmatter ?? {}) as Record<string, unknown>;
+    const currentStatus = String(sfm.status ?? "");
+    if (currentStatus === "analyzing") {
+      return apiError("already_analyzing", "Für diese Session läuft bereits eine Pipeline.", 409, {
+        snapshot_id: sfm.snapshot_id,
+        pipeline_job_id: sfm.pipeline_job_id,
+      });
+    }
     const caseSlug = String(sfm.case_slug ?? "");
     if (!caseSlug) return apiError("case_missing", "Import besitzt keine Aktenzuordnung", 409);
     const snapshotId = `${id}-${new Date().toISOString().replace(/[:.]/g, "-")}`;

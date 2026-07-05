@@ -217,41 +217,55 @@ export const POST = createHandler(
               reconciliation = { attempted: true, ok: false, error: message };
             }
           }
-          let analysisStatus: "pending" | "queued" | "failed" = "pending";
+          const isDeferred = deferPipeline === "true";
+          let analysisStatus: "pending" | "queued" | "failed" | "deferred" = isDeferred
+            ? "deferred"
+            : "pending";
           if (uploadResult.slug) {
             const docSlug = uploadResult.slug;
-            analysisStatus = "queued";
-            // Mark analysis pending on the document so the cockpit can surface it.
-            const pendingPatched = await patchDocFrontmatter(ctx.headers, docSlug, {
-              analysis_status: "pending",
-              analysis_queued_at: new Date().toISOString(),
-            });
-            if (!pendingPatched) analysisStatus = "failed";
-            // Enqueue analysis + contradiction probe to the persistent outbox.
-            // The drain cron (/api/cron/post-upload-drain, every 2 min) picks these
-            // up with retry-backoff so tasks survive container restarts.
-            try {
-              await enqueueAllPostUploadTasks({
-                doc_slug: docSlug,
-                case_slug: caseSlugStr || undefined,
-                brain_id: ctx.brainId,
-                doc_title: uploadResult.title ?? result.cleanName,
-                doc_size: result.buffer.byteLength,
-                uploaded_at: new Date().toISOString(),
+            if (!isDeferred) {
+              analysisStatus = "queued";
+              // Mark analysis pending on the document so the cockpit can surface it.
+              const pendingPatched = await patchDocFrontmatter(ctx.headers, docSlug, {
+                analysis_status: "pending",
+                analysis_queued_at: new Date().toISOString(),
               });
-            } catch (err) {
-              analysisStatus = "failed";
-              console.error(
-                "[upload] outbox enqueue failed:",
-                err instanceof Error ? err.message : String(err)
-              );
+              if (!pendingPatched) analysisStatus = "failed";
+              // Enqueue analysis + contradiction probe to the persistent outbox.
+              // The drain cron (/api/cron/post-upload-drain, every 2 min) picks these
+              // up with retry-backoff so tasks survive container restarts.
+              // SKIPPED when defer_pipeline=true: bulk imports defer all analysis
+              // to the single case-level legal-pipeline triggered by finalize.
+              try {
+                await enqueueAllPostUploadTasks({
+                  doc_slug: docSlug,
+                  case_slug: caseSlugStr || undefined,
+                  brain_id: ctx.brainId,
+                  doc_title: uploadResult.title ?? result.cleanName,
+                  doc_size: result.buffer.byteLength,
+                  uploaded_at: new Date().toISOString(),
+                });
+              } catch (err) {
+                analysisStatus = "failed";
+                console.error(
+                  "[upload] outbox enqueue failed:",
+                  err instanceof Error ? err.message : String(err)
+                );
+                await patchDocFrontmatter(ctx.headers, docSlug, {
+                  analysis_status: "failed",
+                  analysis_error:
+                    `outbox_enqueue_failed: ${err instanceof Error ? err.message : String(err)}`.slice(
+                      0,
+                      500
+                    ),
+                });
+              }
+            } else {
+              // Bulk import: mark as deferred so the cockpit knows analysis
+              // will come from the shared pipeline, not the outbox drain.
               await patchDocFrontmatter(ctx.headers, docSlug, {
-                analysis_status: "failed",
-                analysis_error:
-                  `outbox_enqueue_failed: ${err instanceof Error ? err.message : String(err)}`.slice(
-                    0,
-                    500
-                  ),
+                analysis_status: "deferred",
+                pipeline_deferred: true,
               });
             }
           }

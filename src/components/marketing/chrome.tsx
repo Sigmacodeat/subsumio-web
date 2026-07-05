@@ -502,6 +502,9 @@ export function MarketingNav({ lang }: { lang: Lang }) {
   const langRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastScrollY = useRef(0);
+  const scrollYRef = useRef(0);
+  const touchStartX = useRef<number | null>(null);
+  const touchCurrentX = useRef<number | null>(null);
 
   const isActive = (href: string) => pathname === p(lang, href) || pathname === href;
 
@@ -535,16 +538,69 @@ export function MarketingNav({ lang }: { lang: Lang }) {
   }, [pathname]);
 
   // Body scroll lock + focus management when mobile menu is open.
+  // Also preserves scroll position for restoration on close.
   useEffect(() => {
     if (mobileOpen) {
+      scrollYRef.current = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollYRef.current}px`;
+      document.body.style.left = "0";
+      document.body.style.right = "0";
       document.body.style.overflow = "hidden";
       const t = setTimeout(() => firstMobileLinkRef.current?.focus(), 50);
       return () => {
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.left = "";
+        document.body.style.right = "";
         document.body.style.overflow = "";
+        window.scrollTo(0, scrollYRef.current);
         clearTimeout(t);
       };
     }
     document.body.style.overflow = "";
+  }, [mobileOpen]);
+
+  // Swipe-to-close gesture for mobile drawer.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const drawer = mobileMenuRef.current;
+    if (!drawer) return;
+
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartX.current = e.touches[0]?.clientX ?? null;
+      touchCurrentX.current = touchStartX.current;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchStartX.current === null) return;
+      touchCurrentX.current = e.touches[0]?.clientX ?? touchStartX.current;
+      const delta = touchCurrentX.current - touchStartX.current;
+      if (delta > 0 && drawer) {
+        drawer.style.transform = `translateX(${delta}px)`;
+        drawer.style.transition = "none";
+      }
+    };
+    const onTouchEnd = () => {
+      if (touchStartX.current === null || touchCurrentX.current === null) return;
+      const delta = touchCurrentX.current - touchStartX.current;
+      drawer.style.transition = "";
+      drawer.style.transform = "";
+      if (delta > 80) {
+        setMobileOpen(false);
+        if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
+      }
+      touchStartX.current = null;
+      touchCurrentX.current = null;
+    };
+
+    drawer.addEventListener("touchstart", onTouchStart, { passive: true });
+    drawer.addEventListener("touchmove", onTouchMove, { passive: true });
+    drawer.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      drawer.removeEventListener("touchstart", onTouchStart);
+      drawer.removeEventListener("touchmove", onTouchMove);
+      drawer.removeEventListener("touchend", onTouchEnd);
+    };
   }, [mobileOpen]);
 
   // Escape closes mobile menu and returns focus to hamburger.
@@ -951,14 +1007,35 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                 </Link>
                 <button
                   ref={hamburgerRef}
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 [color:var(--mk-text)] transition-colors hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none lg:hidden"
-                  onClick={() => setMobileOpen(!mobileOpen)}
+                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 [color:var(--mk-text)] transition-colors hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none lg:hidden"
+                  onClick={() => {
+                    setMobileOpen(!mobileOpen);
+                    if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
+                  }}
                   aria-label={UI_STRINGS[lang].menuAria}
                   aria-expanded={mobileOpen}
                   aria-controls="mobile-nav-menu"
                   id="mobile-nav-trigger"
                 >
-                  {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+                  <span className="relative flex h-5 w-5 items-center justify-center">
+                    <span
+                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                        mobileOpen ? "top-1/2 -translate-y-1/2 rotate-45" : "top-[3px]"
+                      }`}
+                    />
+                    <span
+                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                        mobileOpen
+                          ? "top-1/2 -translate-y-1/2 opacity-0"
+                          : "top-1/2 -translate-y-1/2"
+                      }`}
+                    />
+                    <span
+                      className={`absolute h-0.5 w-5 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                        mobileOpen ? "top-1/2 -translate-y-1/2 -rotate-45" : "bottom-[3px]"
+                      }`}
+                    />
+                  </span>
                 </button>
               </div>
             </div>
@@ -967,16 +1044,18 @@ export function MarketingNav({ lang }: { lang: Lang }) {
             <AnimatePresence>
               {mobileOpen && (
                 <>
-                  {/* Backdrop overlay */}
+                  {/* Backdrop overlay — stronger blur + gradient for depth */}
                   <motion.div
                     initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
                     animate={reduceMotion ? { opacity: 1 } : { opacity: 1 }}
                     exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
-                    transition={reduceMotion ? { duration: 0 } : { duration: 0.2 }}
-                    className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden"
+                    transition={
+                      reduceMotion ? { duration: 0 } : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
+                    }
+                    className="fixed inset-0 z-40 bg-black/50 backdrop-blur-md lg:hidden"
                     onClick={() => setMobileOpen(false)}
                   />
-                  {/* Drawer panel */}
+                  {/* Drawer panel — modern spring animation with safe-area support */}
                   <motion.div
                     ref={mobileMenuRef}
                     id="mobile-nav-menu"
@@ -984,16 +1063,23 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                     aria-labelledby="mobile-nav-trigger"
                     role="dialog"
                     aria-modal="true"
-                    initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: "100%" }}
-                    animate={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }}
-                    exit={reduceMotion ? { opacity: 0, x: 0 } : { opacity: 0, x: "100%" }}
-                    transition={
-                      reduceMotion ? { duration: 0 } : { duration: 0.25, ease: [0.22, 1, 0.36, 1] }
+                    initial={
+                      reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: "100%", scale: 0.98 }
                     }
-                    className="fixed top-0 right-0 bottom-0 z-50 flex w-full max-w-[420px] flex-col overflow-y-auto border-l [border-color:var(--mk-border)] [background:var(--mk-bg)] lg:hidden"
+                    animate={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0, scale: 1 }}
+                    exit={
+                      reduceMotion ? { opacity: 0, x: 0 } : { opacity: 0, x: "100%", scale: 0.98 }
+                    }
+                    transition={
+                      reduceMotion
+                        ? { duration: 0 }
+                        : { type: "spring", stiffness: 400, damping: 38, mass: 0.8 }
+                    }
+                    style={{ paddingTop: "env(safe-area-inset-top)" }}
+                    className="fixed top-0 right-0 bottom-0 z-50 flex w-full max-w-[400px] flex-col overflow-y-auto border-l [border-color:var(--mk-border)] shadow-2xl [background:var(--mk-bg)] lg:hidden"
                   >
-                    {/* Drawer header */}
-                    <div className="flex items-center justify-between border-b [border-color:var(--mk-border)] px-4 py-3">
+                    {/* Drawer header — sticky with blur backdrop */}
+                    <div className="sticky top-0 z-10 flex items-center justify-between border-b [border-color:var(--mk-border)] bg-[color:var(--mk-bg)]/95 px-5 py-4 backdrop-blur-xl">
                       <Link
                         href={p(lang, "")}
                         onClick={() => setMobileOpen(false)}
@@ -1002,16 +1088,23 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                         <BrandLogo />
                       </Link>
                       <button
-                        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 [color:var(--mk-text)] transition-colors hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
-                        onClick={() => setMobileOpen(false)}
+                        className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2 [color:var(--mk-text)] transition-all duration-200 hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-90"
+                        onClick={() => {
+                          setMobileOpen(false);
+                          if (typeof navigator !== "undefined" && navigator.vibrate)
+                            navigator.vibrate(8);
+                        }}
                         aria-label="Close menu"
                       >
-                        <X size={20} />
+                        <span className="relative flex h-5 w-5 items-center justify-center">
+                          <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 rotate-45 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+                          <span className="absolute top-1/2 h-0.5 w-5 -translate-y-1/2 -rotate-45 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+                        </span>
                       </button>
                     </div>
 
                     {/* Quick CTA row */}
-                    <div className="flex gap-2 border-b [border-color:var(--mk-border)] px-4 py-3">
+                    <div className="flex gap-2.5 border-b [border-color:var(--mk-border)] px-5 py-4">
                       <Link
                         href={p(lang, "/signup")}
                         onClick={() => setMobileOpen(false)}
@@ -1041,7 +1134,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                     </div>
 
                     {/* Expandable sections */}
-                    <div className="flex-1 px-2 py-2">
+                    <div className="flex-1 px-3 py-3">
                       {nav.sections.map((section, sIdx) => {
                         const expanded = mobileExpanded === sIdx;
                         const sectionActive = isSectionActive(sIdx);
@@ -1197,8 +1290,8 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                       </Link>
                     </div>
 
-                    {/* Language switcher — bottom of drawer */}
-                    <div className="border-t [border-color:var(--mk-border)] px-4 py-3">
+                    {/* Language switcher — bottom of drawer with safe-area padding */}
+                    <div className="border-t [border-color:var(--mk-border)] px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
                       <div className="mb-2 flex items-center gap-1.5 text-xs font-medium [color:var(--mk-text-subtle)]">
                         <Globe size={12} /> {UI_STRINGS[lang].languageLabel}
                       </div>

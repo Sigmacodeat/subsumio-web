@@ -1799,9 +1799,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
       }}
       transition={sidebarShellTransition}
       className={cn(
-        "sidebar-shadow z-50 shrink-0 overflow-hidden border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-transform duration-[var(--ds-duration-panel)] ease-[var(--ds-ease-panel)] will-change-[width,transform] motion-reduce:transition-none",
+        "sidebar-shadow z-50 shrink-0 overflow-hidden border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-transform duration-[var(--ds-duration-panel)] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width,transform] motion-reduce:transition-none",
         "fixed inset-y-0 left-0 md:static",
-        mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        mobileOpen
+          ? "translate-x-0 shadow-2xl"
+          : "-translate-x-full md:translate-x-0 md:shadow-none"
       )}
       onKeyDown={(e) => {
         if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
@@ -1833,11 +1835,17 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           )}
         >
           <button
-            onClick={() => setMobileOpen(false)}
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:hidden"
+            onClick={() => {
+              setMobileOpen(false);
+              if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
+            }}
+            className="group flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-all duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-90 md:hidden"
             aria-label={t("sidebar.close_menu")}
           >
-            <X size={18} />
+            <span className="relative flex h-4 w-4 items-center justify-center">
+              <span className="absolute top-1/2 h-0.5 w-4 -translate-y-1/2 rotate-45 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+              <span className="absolute top-1/2 h-0.5 w-4 -translate-y-1/2 -rotate-45 rounded-full bg-current transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+            </span>
           </button>
           <Link
             href="/dashboard"

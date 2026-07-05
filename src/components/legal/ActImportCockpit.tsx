@@ -9,6 +9,7 @@ import {
   Loader2,
   Play,
   RefreshCw,
+  RotateCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,7 @@ const EMPTY: ActImportMetrics = {
 
 export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const retryInputRef = useRef<HTMLInputElement>(null);
   const storageKey = `subsumio:act-import:${caseSlug}`;
   const [sessionId, setSessionId] = useState("");
   const [summary, setSummary] = useState<ImportSummary | null>(null);
@@ -192,6 +194,97 @@ export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
     }
   };
 
+  const retryFailed = async (selected: FileList | null) => {
+    if (!selected?.length || !sessionId) return;
+    const files = Array.from(selected).filter((file) => isSupportedUploadName(file.name));
+    if (!files.length) {
+      setMessage("Keine unterstützten Aktenformate für Retry gefunden.");
+      return;
+    }
+    setBusy(true);
+    setMessage("");
+    try {
+      const failedFilenames = new Set(
+        items.filter((i) => i.status === "failed").map((i) => i.filename)
+      );
+      const retryFiles = files.filter((f) => failedFilenames.has(f.name));
+      if (!retryFiles.length) {
+        setMessage("Keine der ausgewählten Dateien entsprechen fehlgeschlagenen Uploads.");
+        return;
+      }
+      const jobs = retryFiles.map((file) => ({
+        file,
+        size: file.size,
+        id: crypto.randomUUID(),
+        relativePath:
+          (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name,
+      }));
+      await runUploadPool(
+        jobs,
+        async (job) => {
+          const existingItem = items.find(
+            (i) => i.filename === job.file.name && i.status === "failed"
+          );
+          const base = {
+            item_id: existingItem?.id ?? job.id,
+            case_slug: caseSlug,
+            relative_path: job.relativePath,
+            filename: job.file.name,
+            size: job.file.size,
+            mime_type: job.file.type || undefined,
+          };
+          await writeItem(sessionId, {
+            ...base,
+            status: "uploading",
+            attempts: (existingItem?.attempts ?? 0) + 1,
+          });
+          try {
+            const bytes = await job.file.arrayBuffer();
+            const sha256 = await sha256HexBytes(bytes);
+            const result = await api.upload.file(job.file, {
+              title: job.file.name.replace(/\.[^.]+$/, ""),
+              source: "documents",
+              case_slug: caseSlug,
+              defer_pipeline: true,
+            });
+            await writeItem(sessionId, {
+              ...base,
+              sha256,
+              document_slug: result.slug,
+              part_slugs: (result as unknown as { part_slugs?: string[] }).part_slugs ?? [],
+              status: result.extraction_status === "processing" ? "processing" : "ready",
+              extraction_status: result.extraction_status,
+              extraction_method: result.extraction_method,
+              warning_count: result.extraction_warnings ? 1 : 0,
+              attempts: (existingItem?.attempts ?? 0) + 1,
+              error: undefined,
+              error_code: undefined,
+            });
+          } catch (error) {
+            await writeItem(sessionId, {
+              ...base,
+              status: "failed",
+              error_code: "upload_failed",
+              error: error instanceof Error ? error.message : String(error),
+              attempts: (existingItem?.attempts ?? 0) + 1,
+            });
+          }
+        },
+        { smallParallel: 4, largeParallel: 1 }
+      );
+      await csrfFetch(`/api/act-imports/${encodeURIComponent(sessionId)}/refresh`, {
+        method: "POST",
+      });
+      await load();
+      setMessage("Retry abgeschlossen.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Retry fehlgeschlagen");
+    } finally {
+      setBusy(false);
+      if (retryInputRef.current) retryInputRef.current.value = "";
+    }
+  };
+
   const finalize = async () => {
     if (!sessionId) return;
     setBusy(true);
@@ -263,6 +356,25 @@ export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
             <Button size="sm" variant="outline" disabled={busy} onClick={() => void refresh()}>
               <RefreshCw size={14} /> Prüfen
             </Button>
+          )}
+          {sessionId && metrics.failed > 0 && (
+            <>
+              <input
+                ref={retryInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => void retryFailed(e.target.files)}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => retryInputRef.current?.click()}
+              >
+                <RotateCw size={14} /> Retry ({metrics.failed})
+              </Button>
+            </>
           )}
           {sessionId && (
             <Button
