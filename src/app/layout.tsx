@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
+import { headers } from "next/headers";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import ServiceWorkerRegister from "@/components/pwa/sw-register";
 import AppUpdateBanner from "@/components/pwa/app-update-banner";
@@ -133,11 +135,13 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang="de"
@@ -158,6 +162,11 @@ export default function RootLayout({
         className="noise min-h-full [color:var(--color-light-text)] antialiased [background:var(--color-light-bg)]"
         suppressHydrationWarning
       >
+        {/* The nonce prop on Script triggers Next.js to inject the nonce into
+            ALL inline scripts (RSC payload, boot scripts, etc.) when CSP
+            strict-dynamic is used. Without this, inline scripts are blocked
+            by the CSP policy set in middleware. */}
+        <Script id="csp-nonce-bootstrap" nonce={nonce} strategy="beforeInteractive" />
         <LangSetter />
         <SubsumioTheme />
         <QueryProvider>
