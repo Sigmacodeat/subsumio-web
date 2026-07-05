@@ -238,7 +238,10 @@ async function main() {
   // Verify engine reachable
   if (!DRY_RUN) {
     try {
-      const health = await fetch(`${ENGINE}/api/health`);
+      const healthHeaders: Record<string, string> = {};
+      if (API_KEY) healthHeaders["x-subsumio-api-key"] = API_KEY;
+      if (BRAIN) healthHeaders["x-subsumio-source"] = BRAIN;
+      const health = await fetch(`${ENGINE}/health`, { headers: healthHeaders });
       if (!health.ok) throw new Error(`HTTP ${health.status}`);
       console.log("Engine: reachable\n");
     } catch {

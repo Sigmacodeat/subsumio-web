@@ -18,6 +18,8 @@ import {
   FileSpreadsheet,
   BarChart3,
   MoreVertical,
+  FileCode2,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -89,6 +91,7 @@ interface Invoice {
   invoiceType?: "standard" | "teilrechnung" | "sammelrechnung" | "gutschrift";
   parentInvoiceId?: string;
   caseSlugs?: string[];
+  leitwegId?: string;
 }
 
 interface InvoiceCase {
@@ -207,6 +210,7 @@ export default function InvoicingPage() {
             invoiceType: fm.invoice_type,
             parentInvoiceId: fm.parent_invoice_id,
             caseSlugs: fm.case_slugs,
+            leitwegId: fm.leitweg_id,
           };
         });
         const [returns, assessments] = await Promise.all([
@@ -278,6 +282,7 @@ export default function InvoicingPage() {
             invoiceType: fm.invoice_type,
             parentInvoiceId: fm.parent_invoice_id,
             caseSlugs: fm.case_slugs,
+            leitwegId: fm.leitweg_id,
           };
         });
         const loadedCases: InvoiceCase[] = casePages.map((p) => {
@@ -514,6 +519,229 @@ export default function InvoicingPage() {
     pdf.save(`Rechnung_${inv.number}.pdf`);
   }
 
+  async function downloadXRechnung(inv: Invoice) {
+    const settings = kanzlei ?? (await loadKanzleiSettings());
+    try {
+      const res = await csrfFetch("/api/e-invoice/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          format: "xrechnung",
+          invoice: {
+            invoice_number: inv.number,
+            client: inv.client,
+            client_address: inv.clientAddress,
+            case_number: inv.caseNumber,
+            date: inv.date,
+            due_date: inv.dueDate,
+            items: inv.items,
+            expenses: inv.expenses,
+            subtotal: inv.subtotal,
+            expense_total: inv.expenseTotal,
+            advance_payment: inv.advancePayment,
+            vat_rate: inv.vatRate,
+            tax: inv.tax,
+            total: inv.total,
+            payment_terms: inv.paymentTerms,
+            bank: inv.bank,
+            notes: inv.notes,
+            invoice_type: inv.invoiceType,
+            leitweg_id: inv.leitwegId,
+          },
+          settings,
+          options: {
+            leitwegId: inv.leitwegId,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setStatusMessage(
+          data.error === "validation_failed"
+            ? `E-Rechnung Validierung fehlgeschlagen: ${data.validation?.errors?.[0]?.message ?? "Unbekannt"}`
+            : `${t("inv.error_prefix")}: ${data.error ?? data.message ?? "Unknown"}`
+        );
+        setTimeout(() => setStatusMessage(null), 5000);
+        return;
+      }
+      const blob = new Blob([data.xml], { type: "application/xml" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = data.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatusMessage("XRechnung XML heruntergeladen");
+      setTimeout(() => setStatusMessage(null), 3000);
+    } catch (err) {
+      setStatusMessage("E-Rechnung Generierung fehlgeschlagen");
+      console.error("[e-invoice] generate failed:", err);
+      setTimeout(() => setStatusMessage(null), 5000);
+    }
+  }
+
+  async function downloadZugferdPdf(inv: Invoice) {
+    const settings = kanzlei ?? (await loadKanzleiSettings());
+    setStatusMessage("ZUGFeRD PDF wird generiert...");
+    try {
+      const res = await csrfFetch("/api/e-invoice/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          format: "zugferd_scratch",
+          invoice: {
+            invoice_number: inv.number,
+            client: inv.client,
+            client_address: inv.clientAddress,
+            case_number: inv.caseNumber,
+            date: inv.date,
+            due_date: inv.dueDate,
+            items: inv.items,
+            expenses: inv.expenses,
+            subtotal: inv.subtotal,
+            expense_total: inv.expenseTotal,
+            advance_payment: inv.advancePayment,
+            vat_rate: inv.vatRate,
+            tax: inv.tax,
+            total: inv.total,
+            payment_terms: inv.paymentTerms,
+            bank: inv.bank,
+            notes: inv.notes,
+            invoice_type: inv.invoiceType,
+            leitweg_id: inv.leitwegId,
+          },
+          settings,
+          options: {
+            leitwegId: inv.leitwegId,
+          },
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setStatusMessage(
+          data.error === "validation_failed"
+            ? `Validierung fehlgeschlagen: ${data.validation?.errors?.[0]?.message ?? "Unbekannt"}`
+            : `${t("inv.error_prefix")}: ${data.error ?? data.message ?? "Unknown"}`
+        );
+        setTimeout(() => setStatusMessage(null), 5000);
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `zugferd_${inv.number}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatusMessage("ZUGFeRD PDF heruntergeladen");
+      setTimeout(() => setStatusMessage(null), 3000);
+    } catch (err) {
+      setStatusMessage("ZUGFeRD PDF Generierung fehlgeschlagen");
+      console.error("[e-invoice] zugferd failed:", err);
+      setTimeout(() => setStatusMessage(null), 5000);
+    }
+  }
+
+  async function importEInvoice(file: File) {
+    setStatusMessage("E-Rechnung wird importiert...");
+    try {
+      let parsed: import("@/lib/e-invoice/types").ParsedEInvoice | null = null;
+      let sourceFormat: "xml" | "pdf" = "xml";
+
+      if (file.name.endsWith(".xml")) {
+        const xml = await file.text();
+        const res = await csrfFetch("/api/e-invoice/parse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ xml }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          setStatusMessage(
+            data.error === "xml_not_wellformed"
+              ? `XML ungültig: ${data.validation?.errors?.[0]?.message ?? ""}`
+              : `Import fehlgeschlagen: ${data.error ?? data.message ?? ""}`
+          );
+          setTimeout(() => setStatusMessage(null), 5000);
+          return;
+        }
+        parsed = data.parsed;
+        sourceFormat = "xml";
+      } else if (file.name.endsWith(".pdf")) {
+        const arrayBuffer = await file.arrayBuffer();
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+        const res = await csrfFetch("/api/e-invoice/parse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pdfBase64: base64 }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          setStatusMessage(`Import fehlgeschlagen: ${data.error ?? data.message ?? ""}`);
+          setTimeout(() => setStatusMessage(null), 5000);
+          return;
+        }
+        parsed = data.parsed;
+        sourceFormat = "pdf";
+      } else {
+        setStatusMessage("Bitte XML- oder PDF-Datei hochladen");
+        setTimeout(() => setStatusMessage(null), 3000);
+        return;
+      }
+
+      if (!parsed) return;
+
+      // Persist as incoming_invoice brain page
+      const now = new Date().toISOString();
+      const slug = `legal/incoming-invoices/${now.slice(0, 10)}/${parsed.invoiceNumber || Date.now()}`;
+      try {
+        await api.brain.createPage({
+          slug,
+          title: `Eingehende Rechnung: ${parsed.invoiceNumber} — ${parsed.seller?.name ?? ""}`,
+          type: "incoming_invoice",
+          frontmatter: {
+            type: "incoming_invoice",
+            invoice_number: parsed.invoiceNumber,
+            invoice_date: parsed.invoiceDate,
+            due_date: parsed.dueDate,
+            delivery_date: parsed.deliveryDate,
+            invoice_type_code: parsed.invoiceTypeCode,
+            currency: parsed.currency,
+            profile: parsed.profile,
+            seller: parsed.seller,
+            buyer: parsed.buyer,
+            line_items: parsed.lineItems,
+            allowance_charges: parsed.allowanceCharges,
+            tax_rate: parsed.taxRate,
+            total_net: parsed.totalNet,
+            total_tax: parsed.totalTax,
+            total_gross: parsed.totalGross,
+            advance_payment: parsed.advancePayment,
+            bank: parsed.bank,
+            payment_terms: parsed.paymentTerms,
+            notes: parsed.notes,
+            case_reference: parsed.caseReference,
+            source_format: sourceFormat,
+            source_filename: file.name,
+            imported_at: now,
+            status: "new",
+          },
+        });
+      } catch {
+        // Storage failure is non-fatal — user still sees the parsed result
+      }
+
+      setStatusMessage(
+        `E-Rechnung importiert: ${parsed.invoiceNumber} — ${parsed.seller?.name ?? ""}`
+      );
+      setTimeout(() => setStatusMessage(null), 5000);
+    } catch (err) {
+      setStatusMessage("E-Rechnung Import fehlgeschlagen");
+      console.error("[e-invoice] import failed:", err);
+      setTimeout(() => setStatusMessage(null), 5000);
+    }
+  }
+
   async function sendInvoiceEmail(inv: Invoice) {
     setStatusMessage(t("inv.email_sending"));
     try {
@@ -647,14 +875,36 @@ export default function InvoicingPage() {
         description={t("inv.desc")}
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("inv.title") }]}
         actions={
-          <Button
-            variant="primary"
-            className="gap-2 bg-emerald-600 text-sm text-white hover:bg-emerald-500"
-            onClick={() => setQuickCreateOpen(true)}
-          >
-            <Plus size={14} />
-            {t("inv.create")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <input
+              type="file"
+              accept=".xml,.pdf"
+              className="hidden"
+              id="e-invoice-import"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void importEInvoice(file);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 text-sm"
+              onClick={() => document.getElementById("e-invoice-import")?.click()}
+            >
+              <Upload size={14} />
+              E-Rechnung Import
+            </Button>
+            <Button
+              variant="primary"
+              className="gap-2 bg-emerald-600 text-sm text-white hover:bg-emerald-500"
+              onClick={() => setQuickCreateOpen(true)}
+            >
+              <Plus size={14} />
+              {t("inv.create")}
+            </Button>
+          </div>
         }
       />
 
@@ -907,6 +1157,20 @@ export default function InvoicingPage() {
                       >
                         <FileText size={13} />
                         {t("inv.download_pdf")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => void downloadXRechnung(inv)}
+                        className="gap-2 text-xs"
+                      >
+                        <FileCode2 size={13} />
+                        XRechnung XML
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => void downloadZugferdPdf(inv)}
+                        className="gap-2 text-xs"
+                      >
+                        <FileText size={13} />
+                        ZUGFeRD PDF
                       </DropdownMenuItem>
                       {(userRole === "admin" ||
                         userRole === "lawyer" ||

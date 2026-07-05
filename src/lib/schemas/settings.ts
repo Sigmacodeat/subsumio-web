@@ -26,6 +26,8 @@ export const kanzleiSettingsSchema = z.object({
   smtpSecure: z.boolean().optional().default(false),
   emailFrom: z.string().max(200).optional().default(""),
   rechtsgebietSaetze: z.record(z.string(), z.number()).optional().default({}),
+  kleinunternehmer: z.boolean().optional().default(false),
+  eInvoiceProfile: z.enum(["BASIC", "COMFORT", "EXTENDED"]).optional().default("BASIC"),
 });
 
 export type KanzleiSettingsFormData = z.infer<typeof kanzleiSettingsSchema>;

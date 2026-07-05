@@ -34,6 +34,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 
@@ -80,6 +81,7 @@ function parseTemplate(page: BrainPage): TemplateItem {
 export default function TemplateLibraryPage() {
   const { t } = useLang();
   const confirm = useConfirm();
+  const { addToast } = useToast();
 
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -220,6 +222,7 @@ export default function TemplateLibraryPage() {
       }
       setCreating(false);
       resetForm();
+      addToast({ type: "success", title: t("templates.toast_saved" as DashboardKey) });
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : t("templates.toast_error"));
     } finally {
@@ -239,6 +242,7 @@ export default function TemplateLibraryPage() {
       await api.legal.templates.delete(slug);
       setTemplates((prev) => prev.filter((t) => t.slug !== slug));
       if (selectedTemplate?.slug === slug) setSelectedTemplate(null);
+      addToast({ type: "success", title: t("templates.toast_deleted" as DashboardKey) });
     } catch {
       // best-effort
     }

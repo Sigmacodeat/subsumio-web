@@ -146,6 +146,8 @@ export const POST = createHandler(
       const docTypeOverride = formData.get("doc_type");
       if (typeof docTypeOverride === "string" && docTypeOverride)
         cleanForm.append("doc_type", docTypeOverride);
+      const deferPipeline = formData.get("defer_pipeline");
+      if (deferPipeline === "true") cleanForm.append("defer_pipeline", "true");
 
       const upstream = await fetch(`${ENGINE_URL}/api/upload`, {
         method: "POST",

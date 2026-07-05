@@ -174,6 +174,9 @@ export interface LegalPipelineData {
    * Default: $50 per case (covers ~35 Sonnet batches + 6 drafts + 1 Opus critic).
    */
   max_cost_usd?: number;
+  /** Immutable act snapshot and import provenance for large forensic imports. */
+  snapshot_id?: string;
+  import_session_id?: string;
   /**
    * Gap 3: Linked cases (Aktenzeichen) for cross-case analysis.
    * When set, the pipeline will:
@@ -263,6 +266,8 @@ interface PipelineState {
   cross_case_matrix_slug?: string;
   /** Phase D1: Institution checklist page slug */
   institution_checklist_slug?: string;
+  snapshot_id?: string;
+  import_session_id?: string;
 }
 
 /** A counter-argument found by the opponent-simulator. */
@@ -409,6 +414,8 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
         cost_cap_usd: costCap,
         jurisdiction: data.jurisdiction ?? "at",
         verfahrenstyp: data.verfahrenstyp ?? "sonstiges",
+        snapshot_id: data.snapshot_id,
+        import_session_id: data.import_session_id,
       };
     }
 
@@ -8667,6 +8674,8 @@ async function persistPipelineState(
     fmLines.push(`cost_spent_usd: ${state.cost_spent_usd.toFixed(4)}`);
   if (state.jurisdiction) fmLines.push(`jurisdiction: ${state.jurisdiction}`);
   if (state.verfahrenstyp) fmLines.push(`verfahrenstyp: ${state.verfahrenstyp}`);
+  if (state.snapshot_id) fmLines.push(`snapshot_id: "${state.snapshot_id}"`);
+  if (state.import_session_id) fmLines.push(`import_session_id: "${state.import_session_id}"`);
   if (typeof state.contradiction_findings === "number")
     fmLines.push(`contradiction_findings: ${state.contradiction_findings}`);
   if (state.linked_cases && state.linked_cases.length > 0)

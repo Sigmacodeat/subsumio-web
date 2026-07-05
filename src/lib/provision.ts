@@ -13,6 +13,13 @@
 
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { packForIndustry } from "@/lib/industry-pack";
+import {
+  WORKFLOW_TEMPLATES,
+  buildWorkflowSteps,
+  buildWorkflowFrontmatter,
+  buildWorkflowSlug,
+  buildWorkflowTitle,
+} from "@/lib/workflow";
 
 export interface ProvisionResult {
   ok: boolean;
@@ -72,6 +79,13 @@ export async function provisionBrain(
         }
       }
 
+      // 3. Seed default workflow instances so the workflows page isn't empty
+      try {
+        await seedWorkflows(headers, opts?.industry);
+      } catch {
+        // Seeding is optional — brain still works without it
+      }
+
       return { ok: true, brainId };
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
@@ -98,4 +112,46 @@ export function provisionBrainAsync(brainId: string, opts?: { industry?: string 
       err instanceof Error ? err.message : String(err)
     );
   });
+}
+
+const SEED_TEMPLATE_IDS_LEGAL = ["due_diligence", "contract_review", "fristen_management"];
+const SEED_TEMPLATE_IDS_TAX = ["tax_appeal", "tax_assessment_review", "tax_return_prep"];
+
+async function seedWorkflows(
+  headers: Record<string, string>,
+  industry?: string | null
+): Promise<void> {
+  const templateIds = industry === "tax" ? SEED_TEMPLATE_IDS_TAX : SEED_TEMPLATE_IDS_LEGAL;
+
+  for (const templateId of templateIds) {
+    const template = WORKFLOW_TEMPLATES.find((t) => t.id === templateId);
+    if (!template) continue;
+
+    const slug = buildWorkflowSlug(templateId);
+    const steps = buildWorkflowSteps(template);
+    const fm = buildWorkflowFrontmatter({
+      template_id: templateId,
+      prompt: template.prompt,
+      started_by: "system",
+      case_slug: undefined,
+    });
+    fm.steps = steps;
+    fm.status = "draft";
+
+    try {
+      await fetch(`${ENGINE_URL}/api/pages`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug,
+          title: buildWorkflowTitle(template),
+          type: "workflow",
+          frontmatter: fm,
+        }),
+        signal: AbortSignal.timeout(5_000),
+      });
+    } catch {
+      // Individual workflow creation failure is non-fatal
+    }
+  }
 }

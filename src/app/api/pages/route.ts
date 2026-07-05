@@ -106,6 +106,8 @@ export const POST = createHandler(
         type: body.type,
         conflict_status: body.frontmatter?.conflict_status,
         conflict_waiver_reason: body.frontmatter?.conflict_waiver_reason,
+        conflict_waived_by: body.frontmatter?.conflict_waived_by,
+        conflict_waived_by_role: body.frontmatter?.conflict_waived_by_role,
       },
     }),
   },
@@ -142,6 +144,29 @@ export const POST = createHandler(
             },
             { status: 409 }
           );
+        }
+
+        // E9: Enforce partner-level approval for conflict waivers
+        if (conflictWarning.matches?.length && waiverReason.length > 0) {
+          const approverRole = ctx.user.role;
+          const allowedWaiverRoles = ["admin", "lawyer"];
+          if (!allowedWaiverRoles.includes(approverRole)) {
+            return Response.json(
+              {
+                error: "conflict_waiver_unauthorized",
+                message: "Konflikt-Waiver erfordert Partner-Freigabe (Rolle: admin oder lawyer).",
+              },
+              { status: 403 }
+            );
+          }
+          // Stamp waiver with approver info for audit trail
+          body.frontmatter = {
+            ...body.frontmatter,
+            conflict_waived_by: ctx.user.email,
+            conflict_waived_by_role: approverRole,
+            conflict_waived_at: new Date().toISOString(),
+            conflict_status: "conflict_waived",
+          };
         }
 
         if (conflictWarning.checked && !conflictWarning.matches?.length) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { api } from "@/lib/api";
+import { useLang } from "@/lib/use-lang";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -202,6 +203,7 @@ function StatCard({
 // ── Main ──────────────────────────────────────────────────────────────
 
 export default function LitigationAnalyticsPage() {
+  const { t } = useLang();
   const [decisions, setDecisions] = useState<NormalizedDecision[]>([]);
   const [loading, setLoading] = useState(true);
   const [jurisdiction, setJurisdiction] = useState<"all" | "at" | "de" | "ch">("all");
@@ -291,10 +293,7 @@ export default function LitigationAnalyticsPage() {
     <div
       style={{ minHeight: "100vh", background: "#0a0a18", color: "#e8e8f0", padding: "0 0 40px" }}
     >
-      <PageHeader
-        title="Judikatur-Analytics"
-        description="Rechtsprechungsanalyse aus dem Kanzlei-Brain"
-      />
+      <PageHeader title={t("rs_analytics.title")} description={t("rs_analytics.description")} />
 
       <div style={{ padding: "0 24px" }}>
         {/* Filters */}

@@ -21,9 +21,7 @@ import {
   EvidenceTab,
   StrategyTab,
   BillingTab,
-  CommunicationsTab,
   ContactsTab,
-  AiTab,
 } from "@/components/legal/matter-tabs";
 
 export type { CaseDetail } from "@/lib/matter-detail-types";
@@ -129,24 +127,20 @@ export default function CaseDetailPage() {
         {activeTab === "overview" && <OverviewTab />}
         {activeTab === "activity" && <ActivityTab />}
         {activeTab === "documents" && <DocumentsTab />}
-        {activeTab === "deadlines_tasks" && <DeadlinesTasksTab />}
+        {activeTab === "deadlines" && <DeadlinesTasksTab />}
         {activeTab === "evidence" && <EvidenceTab />}
         {activeTab === "strategy" && <StrategyTab />}
         {activeTab === "billing" && <BillingTab />}
-        {activeTab === "communications" && <CommunicationsTab />}
         {activeTab === "contacts" && <ContactsTab />}
-        {activeTab === "ai" && <AiTab />}
         {![
           "overview",
           "activity",
           "documents",
-          "deadlines_tasks",
+          "deadlines",
           "evidence",
           "strategy",
           "billing",
-          "communications",
           "contacts",
-          "ai",
         ].includes(activeTab) && (
           <div className="flex h-full flex-col items-center justify-center space-y-3 py-20">
             <AlertTriangle size={32} className="text-[color:var(--ds-border)]" />

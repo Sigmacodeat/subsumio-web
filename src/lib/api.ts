@@ -152,6 +152,7 @@ export const api = {
       tag?: string;
       q?: string;
       cursor?: string;
+      slugPrefix?: string;
     }): Promise<BrainPage[]> {
       const params = new URLSearchParams();
       if (options?.limit) params.set("limit", String(options.limit));
@@ -161,6 +162,7 @@ export const api = {
       if (options?.tag) params.set("tag", options.tag);
       if (options?.q) params.set("q", options.q);
       if (options?.cursor) params.set("cursor", options.cursor);
+      if (options?.slugPrefix) params.set("slug_prefix", options.slugPrefix);
       return request(`/api/pages?${params.toString()}`);
     },
 
@@ -294,6 +296,47 @@ export const api = {
   },
 
   legal: {
+    fristen(params?: { case?: string; status?: string; heute?: string }): Promise<{
+      fristen: Array<{
+        id: string;
+        case_slug?: string;
+        case_title?: string;
+        title: string;
+        description?: string;
+        due_date: string;
+        status: string;
+        type: string;
+        law?: string;
+        court?: string;
+        source: string;
+        source_slug?: string;
+        vorfrist_date?: string;
+        is_notfrist?: boolean;
+        second_check_required?: boolean;
+        second_check_by?: string;
+        second_check_at?: string;
+        erv_zustelldatum?: string;
+        review_status?: string;
+        reminder_sent_at?: string;
+        calculation_note?: string;
+      }>;
+      zusammenfassung: {
+        gesamt: number;
+        overdue: number;
+        critical: number;
+        warning: number;
+        vorfrist: number;
+        pending: number;
+        done: number;
+      };
+    }> {
+      const qs = new URLSearchParams();
+      if (params?.case) qs.set("case", params.case);
+      if (params?.status) qs.set("status", params.status);
+      if (params?.heute) qs.set("heute", params.heute);
+      return request(`/api/legal/fristen${qs.toString() ? `?${qs}` : ""}`);
+    },
+
     conflictCheck(name: string): Promise<ConflictCheckResponse> {
       return request("/api/legal/conflict-check", {
         method: "POST",
@@ -1719,6 +1762,70 @@ export const api = {
     },
   },
 
+  backup: {
+    list(): Promise<{
+      backups: Array<{
+        id: string;
+        filename: string;
+        createdAt: string;
+        createdBy: string;
+        totalPages: number;
+        totalSize: number;
+        pageTypes: Record<string, number>;
+        status: string;
+      }>;
+      stats: {
+        totalBackups: number;
+        totalSize: number;
+        lastBackupAt: string | null;
+        oldestBackupAt: string | null;
+      };
+    }> {
+      return request("/api/admin/backup");
+    },
+
+    create(): Promise<{ ok: boolean; backup: Record<string, unknown> }> {
+      return request("/api/admin/backup", {
+        method: "POST",
+        body: JSON.stringify({ confirm: true }),
+      });
+    },
+
+    preview(id: string): Promise<{
+      metadata: Record<string, unknown>;
+      preview: Array<{ slug: string; title: string; type: string }>;
+      totalPages: number;
+    }> {
+      return request(`/api/admin/backup/${encodeURIComponent(id)}?action=preview`);
+    },
+
+    download(id: string): string {
+      return `/api/admin/backup/${encodeURIComponent(id)}?action=download`;
+    },
+
+    restore(
+      id: string,
+      pageTypes?: string[]
+    ): Promise<{
+      ok: boolean;
+      restored: number;
+      skipped: number;
+      failed: number;
+      errors: string[];
+    }> {
+      return request(`/api/admin/backup/${encodeURIComponent(id)}`, {
+        method: "POST",
+        body: JSON.stringify({ confirm: true, pageTypes }),
+      });
+    },
+
+    delete(id: string): Promise<{ ok: boolean }> {
+      return request(`/api/admin/backup/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+    },
+  },
+
   intake: {
     list(params?: { status?: string; limit?: number }): Promise<Record<string, unknown>> {
       const searchParams = new URLSearchParams();
@@ -1729,7 +1836,7 @@ export const api = {
     },
 
     create(input: {
-      source?: "whatsapp" | "portal" | "web" | "email" | "manual";
+      source?: "whatsapp" | "portal" | "web" | "email" | "bea" | "scan" | "manual";
       summary: string;
       client_name?: string;
       phone_hash?: string;
@@ -1761,6 +1868,121 @@ export const api = {
       portal_enabled?: boolean;
     }): Promise<Record<string, unknown>> {
       return request("/api/intake/convert", { method: "POST", body: JSON.stringify(input) });
+    },
+  },
+
+  inbox: {
+    list(params?: {
+      channel?: "all" | "bea" | "whatsapp" | "email" | "portal";
+      unread_only?: boolean;
+      limit?: number;
+      triage?: boolean;
+    }): Promise<Record<string, unknown>> {
+      const searchParams = new URLSearchParams();
+      if (params?.channel) searchParams.set("channel", params.channel);
+      if (params?.unread_only) searchParams.set("unread_only", "true");
+      if (params?.limit) searchParams.set("limit", String(params.limit));
+      if (params?.triage) searchParams.set("triage", "true");
+      const qs = searchParams.toString();
+      return request(`/api/inbox${qs ? `?${qs}` : ""}`);
+    },
+
+    markRead(input: { slug: string; read?: boolean }): Promise<Record<string, unknown>> {
+      return request("/api/inbox/read", {
+        method: "PATCH",
+        body: JSON.stringify({ slug: input.slug, read: input.read ?? true }),
+      });
+    },
+  },
+
+  triage: {
+    action(input: {
+      slug: string;
+      action: "accept" | "reject" | "assign" | "create_deadline" | "dismiss";
+      case_slug?: string;
+      deadline_date?: string;
+      deadline_label?: string;
+    }): Promise<Record<string, unknown>> {
+      return request("/api/triage/action", { method: "POST", body: JSON.stringify(input) });
+    },
+  },
+
+  bea: {
+    send(input: {
+      filing_slug: string;
+      draft_slug: string;
+      court: string;
+      case_number?: string;
+      subject: string;
+      sender_name: string;
+      sender_id?: string;
+      priority?: "normal" | "urgent" | "fristgebunden";
+      deadline_date?: string;
+      deadline_id?: string;
+      documents: Array<{
+        title: string;
+        file_path: string;
+        mime_type: string;
+        size_bytes: number;
+        file_hash: string;
+        is_main_document?: boolean;
+      }>;
+    }): Promise<Record<string, unknown>> {
+      return request("/api/bea/send", { method: "POST", body: JSON.stringify(input) });
+    },
+
+    retry(input: {
+      filing_slug: string;
+      draft_slug: string;
+      court: string;
+      case_number?: string;
+      subject: string;
+      sender_name: string;
+      sender_id?: string;
+      priority?: "normal" | "urgent" | "fristgebunden";
+      deadline_date?: string;
+      deadline_id?: string;
+    }): Promise<Record<string, unknown>> {
+      return request("/api/bea/send/retry", { method: "POST", body: JSON.stringify(input) });
+    },
+  },
+
+  outlook: {
+    calendar: {
+      list(params?: { since?: string; maxResults?: number }): Promise<Record<string, unknown>> {
+        const searchParams = new URLSearchParams();
+        if (params?.since) searchParams.set("since", params.since);
+        if (params?.maxResults) searchParams.set("maxResults", String(params.maxResults));
+        const qs = searchParams.toString();
+        return request(`/api/outlook/calendar${qs ? `?${qs}` : ""}`);
+      },
+
+      create(input: {
+        subject: string;
+        start: string;
+        end: string;
+        timeZone?: string;
+        location?: string;
+        body?: string;
+        attendees?: Array<{ name: string; email: string }>;
+        categories?: string[];
+        caseSlug?: string;
+      }): Promise<Record<string, unknown>> {
+        return request("/api/outlook/calendar/create", {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
+      },
+    },
+
+    mail: {
+      list(params?: { deltaLink?: string; maxResults?: number }): Promise<Record<string, unknown>> {
+        const searchParams = new URLSearchParams();
+        if (params?.deltaLink) searchParams.set("deltaLink", params.deltaLink);
+        if (params?.maxResults) searchParams.set("maxResults", String(params.maxResults));
+        const qs = searchParams.toString();
+        return request(`/api/outlook/mail${qs ? `?${qs}` : ""}`);
+      },
     },
   },
 
@@ -1853,6 +2075,7 @@ export const api = {
         pause_for_review?: boolean;
         jurisdiction?: string;
         doc_type?: string;
+        defer_pipeline?: boolean;
       },
       onProgress?: (
         progress: number,
@@ -1878,6 +2101,7 @@ export const api = {
       if (options?.pause_for_review) formData.append("pause_for_review", "true");
       if (options?.jurisdiction) formData.append("jurisdiction", options.jurisdiction);
       if (options?.doc_type) formData.append("doc_type", options.doc_type);
+      if (options?.defer_pipeline) formData.append("defer_pipeline", "true");
 
       const MAX_RETRIES = 2;
       const RETRYABLE_STATUS = new Set([502, 503, 504]);
@@ -1912,6 +2136,7 @@ export const api = {
             pause_for_review: options?.pause_for_review,
             jurisdiction: options?.jurisdiction,
             doc_type: options?.doc_type,
+            defer_pipeline: options?.defer_pipeline,
           }),
         });
         if (tokenRes.ok) {
@@ -2141,6 +2366,230 @@ export const api = {
         method: "POST",
         body: JSON.stringify(input),
       });
+    },
+
+    unbill(input: {
+      entry_ids: string[];
+      case_slug: string;
+    }): Promise<{ updated: number; not_found: string[] }> {
+      return request("/api/time/unbill", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+
+    markBilled(input: {
+      entry_ids: string[];
+      invoice_number: string;
+      case_slug: string;
+    }): Promise<{ updated: number; not_found: string[]; invoice_number: string }> {
+      return request("/api/time/mark-billed", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+
+    update(input: {
+      case_slug: string;
+      id: string;
+      description?: string;
+      minutes?: number;
+      date?: string;
+      rate?: number;
+      billable?: boolean;
+      activity_type?: string;
+      lawyer?: string;
+    }): Promise<{
+      entry: {
+        id: string;
+        description: string;
+        minutes: number;
+        date: string;
+        rate?: number;
+        billable: boolean;
+        billed: boolean;
+        activity_type?: string;
+        lawyer?: string;
+      };
+    }> {
+      return request("/api/time", {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      });
+    },
+
+    delete(input: { case_slug: string; id: string }): Promise<{ ok: boolean }> {
+      return request("/api/time", {
+        method: "DELETE",
+        body: JSON.stringify(input),
+      });
+    },
+  },
+
+  notifications: {
+    list(params?: { unread?: boolean; limit?: number }): Promise<{
+      notifications: Array<{
+        id: string;
+        type: string;
+        data: Record<string, unknown>;
+        readAt: string | null;
+        createdAt: string;
+      }>;
+      total: number;
+    }> {
+      const searchParams = new URLSearchParams();
+      if (params?.unread) searchParams.set("unread", "true");
+      if (params?.limit) searchParams.set("limit", String(params.limit));
+      const qs = searchParams.toString();
+      return request(`/api/notifications${qs ? `?${qs}` : ""}`);
+    },
+
+    markRead(id: string): Promise<{ ok: boolean }> {
+      return request("/api/notifications", {
+        method: "PATCH",
+        body: JSON.stringify({ id }),
+      });
+    },
+
+    markAllRead(): Promise<{ ok: boolean }> {
+      return request("/api/notifications", {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+    },
+
+    delete(id: string): Promise<{ ok: boolean }> {
+      return request("/api/notifications", {
+        method: "DELETE",
+        body: JSON.stringify({ id }),
+      });
+    },
+
+    deleteAllRead(): Promise<{ ok: boolean; deleted: number }> {
+      return request("/api/notifications", {
+        method: "DELETE",
+        body: JSON.stringify({ deleteAllRead: true }),
+      });
+    },
+  },
+
+  autonomous: {
+    getQueueStats(): Promise<{
+      pending: number;
+      running: number;
+      completed: number;
+      failed: number;
+      requires_approval: number;
+      by_priority: Record<"urgent" | "normal" | "low", number>;
+    }> {
+      return request("/api/autonomous/queue-stats");
+    },
+
+    listTasks(params?: { status?: string; limit?: number }): Promise<
+      Array<{
+        id: string;
+        task_type: string;
+        priority: "urgent" | "normal" | "low";
+        title: string;
+        status: string;
+        case_slug?: string;
+        payload: Record<string, unknown>;
+        created_at: string;
+        started_at?: string;
+        completed_at?: string;
+      }>
+    > {
+      const searchParams = new URLSearchParams();
+      if (params?.status) searchParams.set("status", params.status);
+      if (params?.limit) searchParams.set("limit", String(params.limit));
+      const qs = searchParams.toString();
+      return request(`/api/autonomous/tasks${qs ? `?${qs}` : ""}`);
+    },
+  },
+
+  workflows: {
+    approveStep(input: {
+      workflowSlug: string;
+      stepId: string;
+      action: "approve" | "reject";
+      comment?: string;
+    }): Promise<{
+      ok: boolean;
+      workflowSlug: string;
+      stepId: string;
+      action: string;
+      approvalStatus: string;
+    }> {
+      return request("/api/workflows/approve", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+  },
+
+  featureFlags: {
+    list(): Promise<{
+      flags: Array<{
+        key: string;
+        name: string;
+        description: string;
+        enabled: boolean;
+        rolloutPercentage: number;
+        allowedPlans: string[];
+        allowedRoles: string[];
+        updatedAt: string;
+        updatedBy: string;
+      }>;
+    }> {
+      return request("/api/admin/feature-flags");
+    },
+
+    create(input: {
+      key: string;
+      name: string;
+      description?: string;
+      enabled?: boolean;
+      rolloutPercentage?: number;
+      allowedPlans?: string[];
+      allowedRoles?: string[];
+    }): Promise<{ ok: boolean; flag: Record<string, unknown> }> {
+      return request("/api/admin/feature-flags", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+
+    update(
+      key: string,
+      input: {
+        name?: string;
+        description?: string;
+        enabled?: boolean;
+        rolloutPercentage?: number;
+        allowedPlans?: string[];
+        allowedRoles?: string[];
+      }
+    ): Promise<{ ok: boolean; flag: Record<string, unknown> }> {
+      return request("/api/admin/feature-flags", {
+        method: "PATCH",
+        body: JSON.stringify({ key, ...input }),
+      });
+    },
+
+    delete(key: string): Promise<{ ok: boolean }> {
+      return request("/api/admin/feature-flags", {
+        method: "DELETE",
+        body: JSON.stringify({ key }),
+      });
+    },
+
+    check(key?: string): Promise<{
+      key?: string;
+      enabled: boolean;
+      flags?: Array<{ key: string; name: string; enabled: boolean }>;
+    }> {
+      const qs = key ? `?key=${encodeURIComponent(key)}` : "";
+      return request(`/api/feature-flags${qs}`);
     },
   },
 };

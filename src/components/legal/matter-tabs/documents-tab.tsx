@@ -24,6 +24,7 @@ import { isOnline } from "@/lib/offline-store";
 import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
 import { csrfFetch } from "@/lib/csrf";
 import { api } from "@/lib/api";
+import { ActImportCockpit } from "@/components/legal/ActImportCockpit";
 
 export function DocumentsTab() {
   const ctx = useMatterDetail();
@@ -33,6 +34,7 @@ export function DocumentsTab() {
 
   return (
     <div className="space-y-4 p-4 md:p-6">
+      <ActImportCockpit caseSlug={caseData.slug} />
       {/* Upload zone */}
       <div
         onDragOver={(e) => {

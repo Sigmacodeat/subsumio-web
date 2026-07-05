@@ -206,7 +206,7 @@ export function CaseOverviewWidgets({ caseData, onTabChange }: CaseOverviewWidge
       <WidgetCard
         icon={CalendarClock}
         title={t("cases.widget.deadlines" as DashboardKey)}
-        onClick={() => onTabChange?.("deadlines_tasks")}
+        onClick={() => onTabChange?.("deadlines")}
       >
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">

@@ -300,6 +300,51 @@ describe("computeDeadlineStatus", () => {
   test("done stays done", () => {
     expect(computeDeadlineStatus("2020-01-01", "done")).toBe("done");
   });
+
+  test("ERV-Zustelldatum in future → pending even if deadline is near", () => {
+    const soon = new Date();
+    soon.setUTCDate(soon.getUTCDate() + 2);
+    const futureErv = new Date();
+    futureErv.setUTCDate(futureErv.getUTCDate() + 5);
+    expect(
+      computeDeadlineStatus(
+        soon.toISOString().split("T")[0],
+        undefined,
+        undefined,
+        futureErv.toISOString().split("T")[0]
+      )
+    ).toBe("pending");
+  });
+
+  test("ERV-Zustelldatum in past → normal status computation", () => {
+    const soon = new Date();
+    soon.setUTCDate(soon.getUTCDate() + 2);
+    const pastErv = new Date();
+    pastErv.setUTCDate(pastErv.getUTCDate() - 10);
+    expect(
+      computeDeadlineStatus(
+        soon.toISOString().split("T")[0],
+        undefined,
+        undefined,
+        pastErv.toISOString().split("T")[0]
+      )
+    ).toBe("critical");
+  });
+
+  test("ERV-Zustelldatum today → normal status computation (not future)", () => {
+    const soon = new Date();
+    soon.setUTCDate(soon.getUTCDate() + 2);
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    expect(
+      computeDeadlineStatus(
+        soon.toISOString().split("T")[0],
+        undefined,
+        undefined,
+        today.toISOString().split("T")[0]
+      )
+    ).toBe("critical");
+  });
 });
 
 // ── Swiss (CH) holiday + deadline tests ───────────────────────────────
@@ -744,7 +789,6 @@ describe("timelineToDeadline", () => {
     const deadline = timelineToDeadline(entry, "manual");
     expect(deadline.id).toBe("tl-1");
     expect(deadline.title).toBe("Gerichtstermin");
-    expect(deadline.date).toBe("2026-07-15");
     expect(deadline.due_date).toBe("2026-07-15");
     expect(deadline.type).toBe("meeting");
     expect(deadline.source).toBe("manual");

@@ -123,28 +123,35 @@ export interface HandlerOptions<
 }
 
 export type ValidatedBody<B> = B extends z.ZodTypeAny ? z.infer<B> : undefined;
-export type ValidatedQuery<Q> = Q extends z.ZodTypeAny ? z.infer<Q> : undefined;
+export type ValidatedQuery<Q> = Q extends z.ZodTypeAny ? z.infer<Q> : Record<string, string>;
 
 // ── CORS helper ───────────────────────────────────────────────────────
 
-const CORS_HEADERS: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-csrf-token",
-  "Access-Control-Max-Age": "86400",
-};
+const CORS_ALLOWED_HEADERS = ["Content-Type", "Authorization", "x-csrf-token"];
+
+function buildCorsHeaders(req: NextRequest): Record<string, string> {
+  const origin = req.headers.get("origin");
+  return {
+    "Access-Control-Allow-Origin": origin ?? "*",
+    Vary: "Origin",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": CORS_ALLOWED_HEADERS.join(", "),
+    "Access-Control-Max-Age": "86400",
+  };
+}
 
 function handleCors(req: NextRequest, cors: boolean): Response | null {
   if (!cors) return null;
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+    return new Response(null, { status: 204, headers: buildCorsHeaders(req) });
   }
   return null;
 }
 
-function withCorsHeaders(response: Response, cors: boolean): Response {
-  if (!cors) return response;
-  for (const [key, value] of Object.entries(CORS_HEADERS)) {
+function withCorsHeaders(response: Response, cors: boolean, req?: NextRequest): Response {
+  if (!cors || !req) return response;
+  const headers = buildCorsHeaders(req);
+  for (const [key, value] of Object.entries(headers)) {
     response.headers.set(key, value);
   }
   return response;
@@ -251,7 +258,7 @@ export function createHandler<
     //    engine is temporarily unreachable.
     if (isStateChanging(req.method)) {
       const configError = engineConfigurationResponse();
-      if (configError) return withCorsHeaders(configError, options.cors ?? false);
+      if (configError) return withCorsHeaders(configError, options.cors ?? false, req);
     }
 
     // 1b. Internal service bypass (x-internal-secret)
@@ -293,7 +300,7 @@ export function createHandler<
       // Use custom auth guard (e.g., SCIM Bearer token)
       const customResult = options.customAuth(req);
       if (customResult instanceof Response) {
-        return withCorsHeaders(customResult, options.cors ?? false);
+        return withCorsHeaders(customResult, options.cors ?? false, req);
       }
       customContext = customResult.context;
       // For custom auth, we don't have a full EngineContext, so create a minimal one
@@ -351,7 +358,7 @@ export function createHandler<
           ctx = apiKeyResult.ctx;
           isApiKeyAuth = true;
         } else {
-          return withCorsHeaders(authCtx, options.cors ?? false);
+          return withCorsHeaders(authCtx, options.cors ?? false, req);
         }
       } else {
         ctx = authCtx;
@@ -361,23 +368,32 @@ export function createHandler<
     // 3. CSRF (state-changing methods only, skip for internal, API key, and custom auth)
     if (!internalContext && !isApiKeyAuth && !customContext) {
       const csrfError = checkCsrf(req, options.skipCsrf ?? false);
-      if (csrfError) return withCorsHeaders(csrfError, options.cors ?? false);
+      if (csrfError) return withCorsHeaders(csrfError, options.cors ?? false, req);
     }
 
     // 4. Input validation
     let body: ValidatedBody<B> = undefined as ValidatedBody<B>;
-    let query: ValidatedQuery<Q> = undefined as ValidatedQuery<Q>;
+    let query: ValidatedQuery<Q> = undefined as unknown as ValidatedQuery<Q>;
 
     if (options.body && isStateChanging(req.method)) {
       const result = await parseAndValidateBody(options.body, req);
-      if ("error" in result) return withCorsHeaders(result.error, options.cors ?? false);
+      if ("error" in result) return withCorsHeaders(result.error, options.cors ?? false, req);
       body = result.data as ValidatedBody<B>;
     }
 
     if (options.query && req.method === "GET") {
       const result = await parseAndValidateQuery(options.query, req);
-      if ("error" in result) return withCorsHeaders(result.error, options.cors ?? false);
+      if ("error" in result) return withCorsHeaders(result.error, options.cors ?? false, req);
       query = result.data as ValidatedQuery<Q>;
+    } else if (!options.query) {
+      try {
+        const sp = new URL(req.url).searchParams;
+        const raw: Record<string, string> = {};
+        for (const [k, v] of sp.entries()) raw[k] = v;
+        query = raw as ValidatedQuery<Q>;
+      } catch {
+        query = {} as ValidatedQuery<Q>;
+      }
     }
 
     // 5. Handler execution
@@ -417,7 +433,7 @@ export function createHandler<
       response.headers.set("Cache-Control", `private, max-age=${options.cacheMaxAge}`);
     }
 
-    return withCorsHeaders(response, options.cors ?? false);
+    return withCorsHeaders(response, options.cors ?? false, req);
   };
 }
 
@@ -534,7 +550,7 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
     let body: ValidatedBody<B> = undefined as ValidatedBody<B>;
     if (options.body) {
       const result = await parseAndValidateBody(options.body, req);
-      if ("error" in result) return withCorsHeaders(result.error, options.cors ?? false);
+      if ("error" in result) return withCorsHeaders(result.error, options.cors ?? false, req);
       body = result.data as ValidatedBody<B>;
     }
 
@@ -570,7 +586,7 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
       }
     }
 
-    return withCorsHeaders(response, options.cors ?? false);
+    return withCorsHeaders(response, options.cors ?? false, req);
   };
 }
 

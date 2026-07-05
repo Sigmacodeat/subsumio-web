@@ -55,9 +55,18 @@ describe("validateCronAuth", () => {
 describe("cron route coverage guard", () => {
   it("every /api/cron/* route imports and calls validateCronAuth", () => {
     const cronDir = join(process.cwd(), "src/app/api/cron");
-    const routeFiles = readdirSync(cronDir, { withFileTypes: true })
-      .filter((d) => d.isDirectory())
-      .map((d) => join(cronDir, d.name, "route.ts"));
+    const routeFiles: string[] = [];
+    function scan(dir: string) {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const fullPath = join(dir, entry.name);
+        if (entry.isDirectory()) {
+          scan(fullPath);
+        } else if (entry.isFile() && entry.name === "route.ts") {
+          routeFiles.push(fullPath);
+        }
+      }
+    }
+    scan(cronDir);
 
     expect(routeFiles.length).toBeGreaterThan(0);
 

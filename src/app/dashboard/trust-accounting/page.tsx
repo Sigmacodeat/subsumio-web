@@ -30,13 +30,20 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   Wallet,
+  FileBarChart,
+  Scale,
+  Lock,
+  CheckCircle2,
 } from "lucide-react";
 import {
   TRANSACTION_TYPE_LABELS_DE,
   TRANSACTION_TYPE_COLORS,
+  RECONCILIATION_STATUS_LABELS_DE,
   exportTransactionsCsv,
+  generateQuarterlyReport,
   type TrustTransaction,
   type TrustTransactionType,
+  type ReconciliationStatus,
 } from "@/lib/trust-accounting";
 
 interface TrustAccount {
@@ -104,6 +111,12 @@ export default function TrustAccountingPage() {
   const [txAmount, setTxAmount] = useState(0);
   const [txDescription, setTxDescription] = useState("");
   const [txReference, setTxReference] = useState("");
+
+  // Reconciliation form
+  const [showReconcile, setShowReconcile] = useState(false);
+  const [reconcileBankBalance, setReconcileBankBalance] = useState(0);
+  const [reconcileNotes, setReconcileNotes] = useState("");
+  const [reconcileStep, setReconcileStep] = useState<"input" | "review" | "done">("input");
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -199,6 +212,79 @@ export default function TrustAccountingPage() {
       setTxAmount(0);
       setTxDescription("");
       setTxReference("");
+      await loadAccounts();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const reconciliations = useMemo(() => {
+    if (!selectedAccount?.frontmatter) return [];
+    const raw = (selectedAccount.frontmatter as Record<string, unknown>).reconciliations as
+      | Array<{
+          id: string;
+          date: string;
+          bankBalance: number;
+          bookBalance: number;
+          difference: number;
+          status: ReconciliationStatus;
+          reconciledBy?: string;
+          notes?: string;
+        }>
+      | undefined;
+    return raw ?? [];
+  }, [selectedAccount]);
+
+  const overdueReconciliation = useMemo(() => {
+    if (!selectedAccount?.frontmatter?.transactions) return false;
+    const now = new Date();
+    const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
+    const currentYear = now.getFullYear();
+    const hasCurrentQuarter = reconciliations.some((r) => {
+      const rDate = new Date(r.date);
+      return (
+        Math.floor(rDate.getMonth() / 3) + 1 === currentQuarter &&
+        rDate.getFullYear() === currentYear
+      );
+    });
+    // Show warning if we're past month 1 of the quarter and no reconciliation exists
+    const quarterStartMonth = (currentQuarter - 1) * 3;
+    const isPastGracePeriod = now.getMonth() > quarterStartMonth;
+    return isPastGracePeriod && !hasCurrentQuarter;
+  }, [selectedAccount, reconciliations]);
+
+  async function handleReconcile() {
+    if (!selectedAccount) return;
+    setSaving(true);
+    try {
+      const now = new Date().toISOString();
+      const bookBalance = selectedAccount.frontmatter?.current_balance ?? 0;
+      const difference = reconcileBankBalance - bookBalance;
+      const status: ReconciliationStatus = Math.abs(difference) < 0.01 ? "balanced" : "discrepancy";
+      const newRec = {
+        id: `rec-${Date.now()}`,
+        date: now,
+        bankBalance: reconcileBankBalance,
+        bookBalance,
+        difference,
+        status,
+        reconciledBy: "kanzlei-os",
+        notes: reconcileNotes || undefined,
+      };
+      const existingRecs = (selectedAccount.frontmatter as Record<string, unknown>)
+        .reconciliations as unknown[] | undefined;
+      const updatedRecs = [...(existingRecs ?? []), newRec];
+      await api.legal.trustAccounts.update(selectedAccount.slug, {
+        reconciliations: updatedRecs,
+      } as never);
+      showToast(
+        status === "balanced"
+          ? "Quartalsabstimmung erfolgreich — Saldo ausgeglichen."
+          : `Quartalsabstimmung gespeichert — Differenz: ${formatCurrency(Math.abs(difference), selectedAccount.frontmatter?.currency)}`
+      );
+      setReconcileStep("done");
       await loadAccounts();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -429,6 +515,20 @@ export default function TrustAccountingPage() {
               <Button
                 variant="ghost"
                 size="sm"
+                className="gap-1.5 text-xs"
+                onClick={() => {
+                  setReconcileBankBalance(selectedAccount.frontmatter?.current_balance ?? 0);
+                  setReconcileNotes("");
+                  setReconcileStep("input");
+                  setShowReconcile(true);
+                }}
+              >
+                <Scale size={14} />
+                Quartalsabstimmung
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 className="ml-auto gap-1.5 text-xs text-red-400 hover:text-red-500"
                 onClick={handleDelete}
                 disabled={saving}
@@ -490,6 +590,165 @@ export default function TrustAccountingPage() {
                 ))
               )}
             </div>
+
+            {/* Overdue Reconciliation Warning */}
+            {overdueReconciliation && (
+              <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-600">
+                <AlertCircle size={16} />
+                <span>Quartalsabstimmung für dieses Konto ist überfällig (§ 51a BRAO).</span>
+              </div>
+            )}
+
+            {/* Reconciliation History */}
+            {reconciliations.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  Abstimmungen (Reconciliation)
+                </h4>
+                {reconciliations
+                  .slice()
+                  .reverse()
+                  .map((rec) => (
+                    <div
+                      key={rec.id}
+                      className="flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3"
+                    >
+                      <div className="shrink-0">
+                        {rec.status === "balanced" ? (
+                          <CheckCircle2 size={16} className="text-emerald-500" />
+                        ) : rec.status === "discrepancy" ? (
+                          <AlertCircle size={16} className="text-amber-500" />
+                        ) : (
+                          <Scale size={16} className="text-[color:var(--ds-text-muted)]" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                            {new Date(rec.date).toLocaleDateString("de-DE")}
+                          </span>
+                          <Badge
+                            variant="default"
+                            className={`text-[10px] ${
+                              rec.status === "balanced"
+                                ? "border-emerald-500/30 text-emerald-600"
+                                : rec.status === "discrepancy"
+                                  ? "border-amber-500/30 text-amber-600"
+                                  : ""
+                            }`}
+                          >
+                            {RECONCILIATION_STATUS_LABELS_DE[rec.status]}
+                          </Badge>
+                          {rec.notes && (
+                            <span className="truncate text-xs text-[color:var(--ds-text-muted)]">
+                              {rec.notes}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                          Bank:{" "}
+                          {formatCurrency(rec.bankBalance, selectedAccount?.frontmatter?.currency)}
+                          {" · "}
+                          Buch:{" "}
+                          {formatCurrency(rec.bookBalance, selectedAccount?.frontmatter?.currency)}
+                          {" · "}
+                          Differenz:{" "}
+                          {formatCurrency(rec.difference, selectedAccount?.frontmatter?.currency)}
+                        </div>
+                      </div>
+                      <Lock size={12} className="shrink-0 text-[color:var(--ds-text-muted)]" />
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            {/* Quarterly Report (§ 51a BRAO) */}
+            {selectedAccount.frontmatter?.transactions &&
+              (() => {
+                const now = new Date();
+                const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
+                const currentYear = now.getFullYear();
+                const report = generateQuarterlyReport(
+                  {
+                    slug: selectedAccount.slug,
+                    accountName:
+                      selectedAccount.frontmatter.account_name ?? selectedAccount.title ?? "",
+                    accountNumber: selectedAccount.frontmatter.account_number ?? "",
+                    openingBalance: selectedAccount.frontmatter.opening_balance ?? 0,
+                    currentBalance: selectedAccount.frontmatter.current_balance ?? 0,
+                    currency: selectedAccount.frontmatter.currency ?? "EUR",
+                    transactions: selectedAccount.frontmatter.transactions,
+                    reconciliations: [],
+                    status: selectedAccount.frontmatter.status ?? "active",
+                    createdAt: selectedAccount.frontmatter.created_at ?? "",
+                    updatedAt: selectedAccount.frontmatter.updated_at ?? "",
+                  },
+                  currentQuarter,
+                  currentYear
+                );
+                return (
+                  <div className="space-y-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
+                    <div className="flex items-center gap-2">
+                      <FileBarChart size={14} className="text-[color:var(--brand-primary)]" />
+                      <h4 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                        Quartalsbericht Q{currentQuarter} {currentYear} (§ 51a BRAO)
+                      </h4>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                      <div>
+                        <span className="text-[color:var(--ds-text-muted)]">Eröffnungssaldo</span>
+                        <p className="font-semibold text-[color:var(--ds-text)]">
+                          {formatCurrency(
+                            report.openingBalance,
+                            selectedAccount.frontmatter.currency
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-[color:var(--ds-text-muted)]">Einzahlungen</span>
+                        <p className="font-semibold text-emerald-600">
+                          +
+                          {formatCurrency(
+                            report.totalDeposits,
+                            selectedAccount.frontmatter.currency
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-[color:var(--ds-text-muted)]">Auszahlungen</span>
+                        <p className="font-semibold text-red-600">
+                          -
+                          {formatCurrency(
+                            report.totalWithdrawals,
+                            selectedAccount.frontmatter.currency
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-[color:var(--ds-text-muted)]">Endsaldo</span>
+                        <p className="font-semibold text-[color:var(--ds-text)]">
+                          {formatCurrency(
+                            report.closingBalance,
+                            selectedAccount.frontmatter.currency
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 border-t border-[color:var(--ds-border)] pt-2 text-xs text-[color:var(--ds-text-muted)]">
+                      <span>
+                        Gebühren:{" "}
+                        {formatCurrency(report.totalFees, selectedAccount.frontmatter.currency)}
+                      </span>
+                      <span>
+                        Zinsen:{" "}
+                        {formatCurrency(report.totalInterest, selectedAccount.frontmatter.currency)}
+                      </span>
+                      <span>Transaktionen: {report.transactionCount}</span>
+                      {report.matters.length > 0 && <span>Akten: {report.matters.length}</span>}
+                    </div>
+                  </div>
+                );
+              })()}
           </DialogContent>
         </Dialog>
       )}
@@ -558,6 +817,229 @@ export default function TrustAccountingPage() {
                   t("trust.save" as DashboardKey)
                 )}
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Reconciliation Dialog */}
+      {showReconcile && selectedAccount && (
+        <Dialog open={showReconcile} onOpenChange={setShowReconcile}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Scale size={18} />
+                Quartalsabstimmung
+              </DialogTitle>
+              <DialogDescription>
+                {selectedAccount.frontmatter?.account_name ?? selectedAccount.title}
+                {" · "}
+                Buchsaldo:{" "}
+                {formatCurrency(
+                  selectedAccount.frontmatter?.current_balance ?? 0,
+                  selectedAccount.frontmatter?.currency
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            {reconcileStep === "input" && (
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+                    Bankbestand (Kontoauszug) *
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={reconcileBankBalance}
+                    onChange={(e) => setReconcileBankBalance(Number(e.target.value))}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+                    Notiz (optional)
+                  </label>
+                  <Input
+                    value={reconcileNotes}
+                    onChange={(e) => setReconcileNotes(e.target.value)}
+                    placeholder="z.B. Kontoauszug vom ..."
+                  />
+                </div>
+                <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-[color:var(--ds-text-muted)]">Buchsaldo</span>
+                    <span className="font-medium text-[color:var(--ds-text)]">
+                      {formatCurrency(
+                        selectedAccount.frontmatter?.current_balance ?? 0,
+                        selectedAccount.frontmatter?.currency
+                      )}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex justify-between">
+                    <span className="text-[color:var(--ds-text-muted)]">Bankbestand</span>
+                    <span className="font-medium text-[color:var(--ds-text)]">
+                      {formatCurrency(reconcileBankBalance, selectedAccount.frontmatter?.currency)}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex justify-between border-t border-[color:var(--ds-border)] pt-1">
+                    <span className="text-[color:var(--ds-text-muted)]">Differenz</span>
+                    <span
+                      className={`font-bold ${
+                        Math.abs(
+                          reconcileBankBalance - (selectedAccount.frontmatter?.current_balance ?? 0)
+                        ) < 0.01
+                          ? "text-emerald-500"
+                          : "text-amber-500"
+                      }`}
+                    >
+                      {formatCurrency(
+                        reconcileBankBalance - (selectedAccount.frontmatter?.current_balance ?? 0),
+                        selectedAccount.frontmatter?.currency
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+            {reconcileStep === "review" && (
+              <div className="space-y-3">
+                <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    {Math.abs(
+                      reconcileBankBalance - (selectedAccount.frontmatter?.current_balance ?? 0)
+                    ) < 0.01 ? (
+                      <CheckCircle2 size={18} className="text-emerald-500" />
+                    ) : (
+                      <AlertCircle size={18} className="text-amber-500" />
+                    )}
+                    <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+                      {Math.abs(
+                        reconcileBankBalance - (selectedAccount.frontmatter?.current_balance ?? 0)
+                      ) < 0.01
+                        ? "Saldo ausgeglichen"
+                        : "Differenz festgestellt"}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-[color:var(--ds-text-muted)]">Buchsaldo (System)</span>
+                      <span className="font-medium text-[color:var(--ds-text)]">
+                        {formatCurrency(
+                          selectedAccount.frontmatter?.current_balance ?? 0,
+                          selectedAccount.frontmatter?.currency
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[color:var(--ds-text-muted)]">
+                        Bankbestand (Kontoauszug)
+                      </span>
+                      <span className="font-medium text-[color:var(--ds-text)]">
+                        {formatCurrency(
+                          reconcileBankBalance,
+                          selectedAccount.frontmatter?.currency
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-t border-[color:var(--ds-border)] pt-1.5">
+                      <span className="font-medium text-[color:var(--ds-text)]">Differenz</span>
+                      <span
+                        className={`font-bold ${
+                          Math.abs(
+                            reconcileBankBalance -
+                              (selectedAccount.frontmatter?.current_balance ?? 0)
+                          ) < 0.01
+                            ? "text-emerald-500"
+                            : "text-amber-500"
+                        }`}
+                      >
+                        {formatCurrency(
+                          reconcileBankBalance -
+                            (selectedAccount.frontmatter?.current_balance ?? 0),
+                          selectedAccount.frontmatter?.currency
+                        )}
+                      </span>
+                    </div>
+                    {reconcileNotes && (
+                      <div className="flex justify-between border-t border-[color:var(--ds-border)] pt-1.5">
+                        <span className="text-[color:var(--ds-text-muted)]">Notiz</span>
+                        <span className="text-[color:var(--ds-text)]">{reconcileNotes}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-700">
+                  <Lock size={14} className="mt-0.5 shrink-0" />
+                  <span>
+                    Nach Bestätigung wird die Abstimmung unwiderruflich gesperrt (§ 51a BRAO).
+                  </span>
+                </div>
+              </div>
+            )}
+            {reconcileStep === "done" && (
+              <div className="flex flex-col items-center gap-3 py-4 text-center">
+                <CheckCircle2 size={32} className="text-emerald-500" />
+                <p className="text-sm text-[color:var(--ds-text)]">
+                  Abstimmung gespeichert und gesperrt.
+                </p>
+              </div>
+            )}
+            <DialogFooter>
+              {reconcileStep === "input" && (
+                <>
+                  <Button variant="ghost" onClick={() => setShowReconcile(false)}>
+                    {t("trust.cancel" as DashboardKey)}
+                  </Button>
+                  <Button
+                    variant="primary"
+                    className="brand-bg text-white"
+                    onClick={() => setReconcileStep("review")}
+                    disabled={saving}
+                  >
+                    Weiter zur Prüfung
+                  </Button>
+                </>
+              )}
+              {reconcileStep === "review" && (
+                <>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setReconcileStep("input")}
+                    disabled={saving}
+                  >
+                    Zurück
+                  </Button>
+                  <Button
+                    variant="primary"
+                    className="brand-bg text-white"
+                    onClick={handleReconcile}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <>
+                        <Lock size={14} className="mr-1" />
+                        Abstimmung bestätigen & sperren
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
+              {reconcileStep === "done" && (
+                <Button
+                  variant="primary"
+                  className="brand-bg text-white"
+                  onClick={() => {
+                    setShowReconcile(false);
+                    setReconcileStep("input");
+                    setReconcileBankBalance(0);
+                    setReconcileNotes("");
+                  }}
+                >
+                  Schließen
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>

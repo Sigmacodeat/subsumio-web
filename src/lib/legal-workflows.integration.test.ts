@@ -49,7 +49,7 @@ describe("Integration: Deadline calculation workflow", () => {
 
     const deadline = calculateDeadline(rule, "2026-03-15", "BY");
     expect(deadline).toBeDefined();
-    expect(deadline.date).toBeDefined();
+    expect(deadline.due_date).toBeDefined();
     expect(deadline.rule_key).toBe(rule.key);
   });
 
@@ -119,6 +119,6 @@ describe("Integration: Case workflow — deadline + cost calculation", () => {
     if (!rule) return;
     const deadline = calculateDeadline(rule, "2026-01-15", "BY");
     expect(deadline).toBeDefined();
-    expect(deadline.date).toBeDefined();
+    expect(deadline.due_date).toBeDefined();
   });
 });

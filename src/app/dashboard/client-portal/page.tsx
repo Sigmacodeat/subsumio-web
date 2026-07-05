@@ -71,16 +71,14 @@ export default function ClientPortalPage() {
             ? fm.deadlines
             : (fm.timeline_events ?? fm.timeline ?? []).map((entry) => ({
                 title: entry.title,
-                date: entry.date,
-                status: entry.status,
+                due_date: entry.date ?? "",
+                status: entry.status as DeadlineEntry["status"],
                 type: entry.type,
               }));
           const nextDl = deadlines
-            .filter((d) => new Date(d.due_date || d.date || 0) >= new Date())
+            .filter((d) => new Date(d.due_date || 0) >= new Date())
             .sort(
-              (a, b) =>
-                new Date(a.due_date || a.date || 0).getTime() -
-                new Date(b.due_date || b.date || 0).getTime()
+              (a, b) => new Date(a.due_date || 0).getTime() - new Date(b.due_date || 0).getTime()
             )[0];
 
           return {
@@ -90,7 +88,7 @@ export default function ClientPortalPage() {
             status: fm.status || "open",
             lastUpdate: p.updated_at || p.created_at,
             nextStep: nextDl
-              ? `${nextDl.title ?? t("client_portal.deadline_label")} ${t("client_portal.deadline_until")} ${new Date(nextDl.due_date || nextDl.date || Date.now()).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}`
+              ? `${nextDl.title ?? t("client_portal.deadline_label")} ${t("client_portal.deadline_until")} ${new Date(nextDl.due_date || Date.now()).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}`
               : t("client_portal.no_deadline"),
             documents: Array.isArray(docs) ? docs.length : 0,
             messages: 0,

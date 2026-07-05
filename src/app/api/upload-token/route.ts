@@ -22,6 +22,7 @@ const uploadTokenSchema = z.object({
   pause_for_review: z.boolean().optional(),
   jurisdiction: z.string().max(10).optional(),
   doc_type: z.string().max(100).optional(),
+  defer_pipeline: z.boolean().optional(),
 });
 
 const ALLOWED_SOURCES = new Set([
@@ -52,6 +53,7 @@ interface UploadTokenPayload {
   pause_for_review?: boolean;
   jurisdiction?: string;
   doc_type?: string;
+  defer_pipeline?: boolean;
   exp: number;
 }
 
@@ -160,6 +162,7 @@ export const POST = createHandler(
       ...(b.pause_for_review ? { pause_for_review: true } : {}),
       ...(b.jurisdiction ? { jurisdiction: b.jurisdiction } : {}),
       ...(b.doc_type ? { doc_type: b.doc_type } : {}),
+      ...(b.defer_pipeline ? { defer_pipeline: true } : {}),
       exp: Math.floor(Date.now() / 1000) + 600, // 10 minutes
     };
 

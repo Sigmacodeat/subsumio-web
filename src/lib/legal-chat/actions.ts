@@ -1,9 +1,6 @@
 import { randomUUID } from "node:crypto";
-import {
-  ENGINE_URL,
-  engineHeadersForBrain,
-  engineHeadersForBrainWithMatterScope,
-} from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrainWithMatterScope } from "@/lib/engine";
+import { engineRequest, listPages, think, type EnginePageInput } from "@/lib/engine-client";
 import type { BrainPage } from "@/lib/types";
 import type { StoredWhatsAppMedia } from "@/lib/whatsapp/media";
 import type { WhatsAppIdentity } from "@/lib/whatsapp/types";
@@ -13,7 +10,6 @@ import { logAudit } from "@/lib/audit";
 import { naturalWhatsAppReply } from "@/lib/whatsapp-natural-chat";
 import { calculateRvg } from "@/lib/rvg";
 import { calculateDeadline, DEADLINE_RULES, type Bundesland } from "@/lib/legal-deadlines";
-import { collectSSEChunks } from "@/lib/sse-stream";
 
 interface ChatContext {
   sender: WhatsAppIdentity;
@@ -84,54 +80,6 @@ type ParsedIntent =
   | { kind: "list_appointments" }
   | { kind: "free_text"; text: string }
   | { kind: "unknown"; message: string };
-
-interface EnginePageInput {
-  slug: string;
-  title: string;
-  type?: string;
-  content?: string;
-  frontmatter?: Record<string, unknown>;
-  merge?: boolean;
-}
-
-async function engineRequest<T>(
-  brainId: string,
-  path: string,
-  init?: RequestInit,
-  matterScope?: string[] | "all"
-): Promise<T> {
-  const headers = matterScope
-    ? engineHeadersForBrainWithMatterScope(brainId, matterScope)
-    : engineHeadersForBrain(brainId);
-  const res = await fetch(`${ENGINE_URL}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...headers,
-      ...(init?.headers ?? {}),
-    },
-    signal: init?.signal ?? AbortSignal.timeout(30_000),
-  });
-  if (!res.ok) {
-    const error = await res.text().catch(() => "");
-    throw new Error(error || `Engine HTTP ${res.status}`);
-  }
-  const text = await res.text();
-  if (!text) return undefined as unknown as T;
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    throw new Error(`Engine returned non-JSON response: ${text.slice(0, 200)}`);
-  }
-}
-
-async function listPages(brainId: string, type: string, limit = 200): Promise<BrainPage[]> {
-  const result = await engineRequest<BrainPage[]>(
-    brainId,
-    `/api/pages?type=${encodeURIComponent(type)}&limit=${limit}`
-  );
-  return Array.isArray(result) ? result : [];
-}
 
 async function batchListPages(
   brainId: string,
@@ -1911,34 +1859,6 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
   throw new Error(`unsupported action intent: ${String(front.intent)}`);
 }
 
-async function think(
-  brainId: string,
-  query: string,
-  matterScope?: string[] | "all"
-): Promise<string> {
-  const headers = matterScope
-    ? engineHeadersForBrainWithMatterScope(brainId, matterScope)
-    : engineHeadersForBrain(brainId);
-  const res = await fetch(`${ENGINE_URL}/api/think`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...headers,
-    },
-    body: JSON.stringify({ query, mode: "conservative" }),
-    signal: AbortSignal.timeout(60_000),
-  });
-  if (!res.ok) throw new Error(`Brain-Q&A fehlgeschlagen: HTTP ${res.status}`);
-  const contentType = res.headers.get("Content-Type") || "";
-  if (!contentType.includes("text/event-stream")) {
-    const data = (await res.json().catch(() => ({}))) as { answer?: string };
-    return data.answer || "Keine Antwort erhalten.";
-  }
-  if (!res.body) return "Keine Antwort erhalten.";
-  const answer = await collectSSEChunks(res.body);
-  return answer.trim() || "Keine Antwort erhalten.";
-}
-
 function summarizeCase(casePage: BrainPage): string {
   const front = fm(casePage);
   const deadlines = Array.isArray(front.deadlines)
@@ -2272,7 +2192,7 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
       `Fristberechnung: ${rule.label}`,
       `Startdatum: ${intent.startDate}`,
       `Bundesland: ${intent.bundesland}`,
-      `Enddatum: ${result.date}`,
+      `Enddatum: ${result.due_date}`,
       // Followup D.14: rule.law already carries the precise statutory basis
       // (calculateDeadline returns it too, as result.law) — was computed but
       // never surfaced in the WhatsApp reply text.

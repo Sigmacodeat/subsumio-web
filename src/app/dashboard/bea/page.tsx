@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Save, FileText, Info, Loader2, Inbox, Send } from "lucide-react";
+import {
+  Save,
+  FileText,
+  Info,
+  Loader2,
+  Inbox,
+  Send,
+  Download,
+  CheckCircle2,
+  AlertTriangle,
+  RotateCcw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -56,19 +67,43 @@ export default function BeaPage() {
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [exportingSlug, setExportingSlug] = useState<string | null>(null);
+  const [receiptBusy, setReceiptBusy] = useState<string | null>(null);
+  const [receipts, setReceipts] = useState<
+    Record<string, { confirmationCode: string; receivedAt: string; isSuccess: boolean }>
+  >({});
+  const [sendingSlug, setSendingSlug] = useState<string | null>(null);
+  const [retryingSlug, setRetryingSlug] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const batch = await api.brain.batchListPages(
-          ["bea_draft", "bea_message", "filing_package"],
+          ["bea_draft", "bea_message", "filing_package", "bea_receipt"],
           50
         );
         if (cancelled) return;
         const draftPages = batch["bea_draft"] ?? [];
         const importedPages = batch["bea_message"] ?? [];
         const filingPages = batch["filing_package"] ?? [];
+        const receiptPages = batch["bea_receipt"] ?? [];
+        const receiptsByFiling: Record<
+          string,
+          { confirmationCode: string; receivedAt: string; isSuccess: boolean }
+        > = {};
+        for (const p of receiptPages) {
+          const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+          const filingId = String(fm.filing_id ?? "");
+          if (filingId) {
+            receiptsByFiling[filingId] = {
+              confirmationCode: String(fm.confirmation_code ?? ""),
+              receivedAt: String(fm.received_at ?? ""),
+              isSuccess: fm.is_success === true,
+            };
+          }
+        }
+        setReceipts(receiptsByFiling);
         const filingsBySlug: Record<string, FilingPackage> = {};
         for (const p of filingPages) {
           const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
@@ -216,6 +251,214 @@ export default function BeaPage() {
       setStatusMessage(e instanceof Error ? e.message : t("bea.filing_update_failed"));
     } finally {
       setFilingBusy(null);
+    }
+  }
+
+  async function exportXJustiz(draft: BeaDraft): Promise<void> {
+    setExportingSlug(draft.slug);
+    setStatusMessage(null);
+    try {
+      const res = await fetch("/api/bea/export", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(await getCsrfHeaders()),
+        },
+        body: JSON.stringify({
+          case_slug: draft.slug,
+          court: draft.recipient || "Amtsgericht",
+          case_number: draft.caseNumber,
+          subject: draft.subject,
+          sender_name: "Kanzlei",
+          priority: "normal",
+          documents: [
+            {
+              title: draft.subject,
+              file_path: draft.slug,
+              mime_type: "application/pdf",
+              size_bytes: 0,
+              file_hash: "pending",
+              is_main_document: true,
+            },
+          ],
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      const blob = new Blob([data.xml], { type: "application/xml" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `xjustiz-${data.filingId}.xml`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatusMessage("XJustiz-Paket heruntergeladen. Im beA-Portal hochladen.");
+    } catch (e) {
+      setStatusMessage(e instanceof Error ? e.message : "Export fehlgeschlagen");
+    } finally {
+      setExportingSlug(null);
+    }
+  }
+
+  async function sendViaMiddleware(draft: BeaDraft): Promise<void> {
+    const pkg = filings[draft.slug];
+    if (!pkg) return;
+    setSendingSlug(draft.slug);
+    setStatusMessage(null);
+    try {
+      const res = await api.bea.send({
+        filing_slug: filingSlugForDraft(draft.slug),
+        draft_slug: draft.slug,
+        court: draft.recipient || "Amtsgericht",
+        case_number: draft.caseNumber,
+        subject: draft.subject,
+        sender_name: "Kanzlei",
+        priority: pkg.priority ?? "normal",
+        deadline_date: pkg.deadline_date,
+        deadline_id: pkg.deadline_id,
+        documents: pkg.documents.map((d) => ({
+          title: d.title,
+          file_path: d.file_path,
+          mime_type: d.mime_type,
+          size_bytes: d.size_bytes,
+          file_hash: d.file_hash,
+          is_main_document: d.is_main_document,
+        })),
+      });
+      const data = res as Record<string, unknown>;
+      if (data.status === "sent") {
+        setStatusMessage(`beA-Versand erfolgreich. Bestätigungscode: ${data.confirmation_code}`);
+      } else if (data.status === "sending" && !data.middleware_configured) {
+        const xml = data.xml as string;
+        const blob = new Blob([xml], { type: "application/xml" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `xjustiz-${data.filing_id}.xml`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setStatusMessage(
+          "Keine Middleware konfiguriert — XJustiz-XML heruntergeladen. Bitte manuell im beA-Portal hochladen."
+        );
+      } else {
+        setStatusMessage(`Versand-Status: ${data.status}`);
+      }
+      // Reload filings to get updated state
+      const batch = await api.brain.batchListPages(["filing_package"], 50);
+      const filingPages = batch["filing_package"] ?? [];
+      const filingsBySlug: Record<string, FilingPackage> = {};
+      for (const p of filingPages) {
+        const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+        if (fm.draft_slug && typeof fm.draft_slug === "string") {
+          filingsBySlug[fm.draft_slug] = fm.package as FilingPackage;
+        }
+      }
+      setFilings(filingsBySlug);
+    } catch (e) {
+      setStatusMessage(e instanceof Error ? e.message : "Versand fehlgeschlagen");
+    } finally {
+      setSendingSlug(null);
+    }
+  }
+
+  async function retrySend(draft: BeaDraft): Promise<void> {
+    const pkg = filings[draft.slug];
+    if (!pkg) return;
+    setRetryingSlug(draft.slug);
+    setStatusMessage(null);
+    try {
+      const res = await api.bea.retry({
+        filing_slug: filingSlugForDraft(draft.slug),
+        draft_slug: draft.slug,
+        court: draft.recipient || "Amtsgericht",
+        case_number: draft.caseNumber,
+        subject: draft.subject,
+        sender_name: "Kanzlei",
+        priority: pkg.priority ?? "normal",
+        deadline_date: pkg.deadline_date,
+        deadline_id: pkg.deadline_id,
+      });
+      const data = res as Record<string, unknown>;
+      if (data.is_success) {
+        setStatusMessage(`Retry erfolgreich. Bestätigungscode: ${data.confirmation_code}`);
+      } else {
+        setStatusMessage(`Retry fehlgeschlagen: ${data.status}`);
+      }
+      const batch = await api.brain.batchListPages(["filing_package"], 50);
+      const filingPages = batch["filing_package"] ?? [];
+      const filingsBySlug: Record<string, FilingPackage> = {};
+      for (const p of filingPages) {
+        const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+        if (fm.draft_slug && typeof fm.draft_slug === "string") {
+          filingsBySlug[fm.draft_slug] = fm.package as FilingPackage;
+        }
+      }
+      setFilings(filingsBySlug);
+    } catch (e) {
+      setStatusMessage(e instanceof Error ? e.message : "Retry fehlgeschlagen");
+    } finally {
+      setRetryingSlug(null);
+    }
+  }
+
+  async function getCsrfHeaders(): Promise<Record<string, string>> {
+    const match = document.cookie.match(/sb_csrf=([^;]+)/);
+    return match ? { "x-csrf-token": match[1] } : {};
+  }
+
+  async function confirmReceipt(draft: BeaDraft): Promise<void> {
+    const pkg = filings[draft.slug];
+    if (!pkg) return;
+    const confirmationCode = prompt("Empfangsbestätigungs-Code eingeben:")?.trim();
+    if (!confirmationCode) return;
+    setReceiptBusy(draft.slug);
+    setStatusMessage(null);
+    try {
+      const res = await fetch("/api/bea/receipt", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(await getCsrfHeaders()),
+        },
+        body: JSON.stringify({
+          filing_id: pkg.id,
+          case_slug: draft.caseNumber ?? draft.slug,
+          receipt_id: `receipt-${Date.now()}`,
+          received_at: new Date().toISOString(),
+          confirmation_code: confirmationCode,
+          is_success: true,
+          deadline_id: pkg.deadline_id,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setReceipts((prev) => ({
+        ...prev,
+        [pkg.id]: {
+          confirmationCode,
+          receivedAt: new Date().toISOString(),
+          isSuccess: true,
+        },
+      }));
+      setStatusMessage(
+        data.deadline_updated
+          ? `Empfangsbestätigung gespeichert. Frist als erledigt markiert.`
+          : `Empfangsbestätigung gespeichert.`
+      );
+    } catch (e) {
+      setStatusMessage(e instanceof Error ? e.message : "Bestätigung fehlgeschlagen");
+    } finally {
+      setReceiptBusy(null);
     }
   }
 
@@ -456,9 +699,133 @@ export default function BeaPage() {
                               </>
                             )}
                             {filings[msg.slug].status === "approved" && (
-                              <span className="text-xs text-[color:var(--ds-text-muted)]">
-                                {t("bea.approved_send_hint")}
-                              </span>
+                              <>
+                                <span className="text-xs text-[color:var(--ds-text-muted)]">
+                                  {t("bea.approved_send_hint")}
+                                </span>
+                                <Button
+                                  variant="primary"
+                                  className="h-7 gap-1 bg-blue-600 px-2 text-xs text-white hover:bg-blue-500"
+                                  disabled={sendingSlug === msg.slug || exportingSlug === msg.slug}
+                                  onClick={() => void sendViaMiddleware(msg)}
+                                >
+                                  {sendingSlug === msg.slug ? (
+                                    <Loader2
+                                      size={12}
+                                      className="animate-spin"
+                                      aria-hidden="true"
+                                    />
+                                  ) : (
+                                    <Send size={12} aria-hidden="true" />
+                                  )}
+                                  {t("bea.send_via_middleware")}
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  className="h-7 gap-1 px-2 text-xs"
+                                  disabled={exportingSlug === msg.slug || sendingSlug === msg.slug}
+                                  onClick={() => void exportXJustiz(msg)}
+                                >
+                                  {exportingSlug === msg.slug ? (
+                                    <Loader2
+                                      size={12}
+                                      className="animate-spin"
+                                      aria-hidden="true"
+                                    />
+                                  ) : (
+                                    <Download size={12} aria-hidden="true" />
+                                  )}
+                                  XJustiz-Export
+                                </Button>
+                                {receipts[filings[msg.slug].id] ? (
+                                  <Badge
+                                    variant="default"
+                                    className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+                                  >
+                                    <CheckCircle2 size={10} className="mr-1" aria-hidden="true" />
+                                    {receipts[filings[msg.slug].id].confirmationCode}
+                                  </Badge>
+                                ) : (
+                                  <Button
+                                    variant="secondary"
+                                    className="h-7 gap-1 px-2 text-xs"
+                                    disabled={receiptBusy === msg.slug}
+                                    onClick={() => void confirmReceipt(msg)}
+                                  >
+                                    {receiptBusy === msg.slug ? (
+                                      <Loader2
+                                        size={12}
+                                        className="animate-spin"
+                                        aria-hidden="true"
+                                      />
+                                    ) : (
+                                      <CheckCircle2 size={12} aria-hidden="true" />
+                                    )}
+                                    {t("bea.confirm_receipt")}
+                                  </Button>
+                                )}
+                              </>
+                            )}
+                            {(filings[msg.slug].status === "sending" ||
+                              filings[msg.slug].status === "retrying") && (
+                              <Badge
+                                variant="default"
+                                className="border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
+                              >
+                                <Loader2
+                                  size={10}
+                                  className="mr-1 animate-spin"
+                                  aria-hidden="true"
+                                />
+                                {getFilingStatusLabel(filings[msg.slug].status)}
+                              </Badge>
+                            )}
+                            {filings[msg.slug].status === "sent" && (
+                              <Badge
+                                variant="default"
+                                className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+                              >
+                                <CheckCircle2 size={10} className="mr-1" aria-hidden="true" />
+                                {getFilingStatusLabel(filings[msg.slug].status)}
+                              </Badge>
+                            )}
+                            {filings[msg.slug].status === "failed" && (
+                              <>
+                                <Badge
+                                  variant="default"
+                                  className="border-red-500/20 bg-red-500/10 text-xs text-red-600"
+                                >
+                                  <AlertTriangle size={10} className="mr-1" aria-hidden="true" />
+                                  {getFilingStatusLabel(filings[msg.slug].status)}
+                                </Badge>
+                                {filings[msg.slug].last_error && (
+                                  <span
+                                    className="text-xs text-red-600"
+                                    title={filings[msg.slug].last_error}
+                                  >
+                                    {filings[msg.slug].last_error!.slice(0, 80)}
+                                  </span>
+                                )}
+                                {filings[msg.slug].retry_count < filings[msg.slug].max_retries && (
+                                  <Button
+                                    variant="secondary"
+                                    className="h-7 gap-1 px-2 text-xs"
+                                    disabled={retryingSlug === msg.slug}
+                                    onClick={() => void retrySend(msg)}
+                                  >
+                                    {retryingSlug === msg.slug ? (
+                                      <Loader2
+                                        size={12}
+                                        className="animate-spin"
+                                        aria-hidden="true"
+                                      />
+                                    ) : (
+                                      <RotateCcw size={12} aria-hidden="true" />
+                                    )}
+                                    {t("bea.retry_send")}
+                                  </Button>
+                                )}
+                              </>
                             )}
                           </>
                         ) : (

@@ -13,7 +13,7 @@ const intakeQuerySchema = z.object({
 });
 
 const intakePostSchema = z.object({
-  source: z.enum(["whatsapp", "portal", "web", "email", "manual"]).default("manual"),
+  source: z.enum(["whatsapp", "portal", "web", "email", "bea", "scan", "manual"]).default("manual"),
   summary: z.string().min(1, "summary_required").max(10_000, "summary_too_long"),
   client_name: z.string().max(200).optional(),
   phone_hash: z.string().max(128).optional(),
@@ -114,6 +114,21 @@ export const POST = createHandler(
       return apiError("intake_create_failed", "Intake konnte nicht erstellt werden", 502);
 
     broadcastSseEvent(ctx.brainId, "intake.created", { slug: intake.slug, by: ctx.user.email });
+
+    // Fire outgoing webhook for intake.new event
+    try {
+      const { dispatchWebhookEvent } = await import("@/lib/webhook-dispatch");
+      await dispatchWebhookEvent("intake.new", {
+        slug: intake.slug,
+        client_name: body.client_name,
+        legal_area: body.legal_area,
+        source: body.source,
+        summary: body.summary,
+      });
+    } catch {
+      // best-effort — webhook delivery should not block intake creation
+    }
+
     return Response.json({ intake }, { status: 201 });
   }
 );

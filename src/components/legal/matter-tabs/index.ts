@@ -5,6 +5,4 @@ export { ActivityTab } from "./activity-tab";
 export { EvidenceTab } from "./evidence-tab";
 export { StrategyTab } from "./strategy-tab";
 export { BillingTab } from "./billing-tab";
-export { CommunicationsTab } from "./communications-tab";
 export { ContactsTab } from "./contacts-tab";
-export { AiTab } from "./ai-tab";

@@ -193,7 +193,7 @@ export function DeadlineQuickCreateDialog({
       rechtsraum.country as never
     );
     setVorfristPreview(vf);
-  }, [calcPreview, date, isNotfrist]);
+  }, [calcPreview, date, isNotfrist, rechtsraum.country, rechtsraum.state]);
 
   const resetForm = useCallback(() => {
     setDescription("");

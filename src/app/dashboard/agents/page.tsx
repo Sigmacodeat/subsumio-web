@@ -963,7 +963,47 @@ export default function AgentsPage() {
             </div>
 
             <div className="flex-1 overflow-auto">
-              <AgentDAG jobs={jobs} selectedJob={selectedJob} onSelectJob={setSelectedJob} />
+              {jobs.length === 0 && !loading ? (
+                <div className="flex h-full items-center justify-center p-8">
+                  <div className="max-w-md space-y-5 text-center">
+                    <div className="brand-soft brand-border mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border">
+                      <Bot size={24} className="brand-text" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-[color:var(--ds-text)]">
+                        {t("agents.seed_title")}
+                      </h3>
+                      <p className="mt-1.5 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+                        {t("agents.seed_desc")}
+                      </p>
+                    </div>
+                    <div className="space-y-2 text-left">
+                      {[
+                        { n: 1, key: "agents.seed_step_1" as const },
+                        { n: 2, key: "agents.seed_step_2" as const },
+                        { n: 3, key: "agents.seed_step_3" as const },
+                      ].map((step) => (
+                        <div
+                          key={step.n}
+                          className="flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2"
+                        >
+                          <span className="brand-soft brand-text flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold">
+                            {step.n}
+                          </span>
+                          <span className="text-sm text-[color:var(--ds-text-muted)]">
+                            {t(step.key)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                      {t("agents.seed_empty_dag")}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <AgentDAG jobs={jobs} selectedJob={selectedJob} onSelectJob={setSelectedJob} />
+              )}
             </div>
           </div>
 

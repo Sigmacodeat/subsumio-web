@@ -25,6 +25,8 @@ import { caseFrontmatter } from "@/lib/legal-types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
 type WizardStep = "select" | "analyze" | "strategy" | "drafts";
 
@@ -80,6 +82,16 @@ export default function ProcessStrategyPage() {
   const [strategy, setStrategy] = useState<StrategyResult | null>(null);
   const [drafts, setDrafts] = useState<DraftSuggestion[]>([]);
   const [analysisText, setAnalysisText] = useState("");
+  const {
+    grounding: analysisGrounding,
+    groundAnswer: groundAnalysis,
+    reset: resetAnalysisGrounding,
+  } = useGroundedAnswer();
+  const {
+    grounding: draftsGrounding,
+    groundAnswer: groundDrafts,
+    reset: resetDraftsGrounding,
+  } = useGroundedAnswer();
   const [saving, setSaving] = useState(false);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
 
@@ -122,6 +134,8 @@ export default function ProcessStrategyPage() {
     setAnalyzing(true);
     setError(null);
     setAnalysisText("");
+    resetAnalysisGrounding();
+    resetDraftsGrounding();
     try {
       const prompt = `Analysiere die folgende Akte strukturiert für die Prozessvorbereitung. Identifiziere Stärken, Schwächen, Chancen, Risiken (SWOT), Beweislücken und empfohlene nächste Schritte.
 
@@ -193,13 +207,14 @@ Erstelle eine strukturierte Analyse im JSON-Format mit folgenden Feldern:
           riskAssessment: { overall: "medium", factors: [] },
         });
       }
+      groundAnalysis(accumulated).catch(() => {});
       setStep("strategy");
     } catch (e) {
       setError(e instanceof Error ? e.message : t("strategy.error_analyze"));
     } finally {
       setAnalyzing(false);
     }
-  }, [selectedCase, t]);
+  }, [selectedCase, t, groundAnalysis, resetAnalysisGrounding, resetDraftsGrounding]);
 
   const generateDrafts = useCallback(async () => {
     if (!selectedCase || !strategy) return;
@@ -256,13 +271,14 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
           ]);
         }
       }
+      groundDrafts(accumulated).catch(() => {});
       setStep("drafts");
     } catch (e) {
       setError(e instanceof Error ? e.message : t("strategy.error_drafts"));
     } finally {
       setGeneratingDrafts(false);
     }
-  }, [selectedCase, strategy, t]);
+  }, [selectedCase, strategy, t, groundDrafts]);
 
   async function saveStrategyToCase() {
     if (!selectedCase || !strategy) return;
@@ -464,9 +480,20 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
             )}
           </div>
           {analysisText ? (
-            <div className="prose prose-sm max-w-none rounded-lg bg-[color:var(--ds-hover)] p-3 text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
-              {analysisText}
-            </div>
+            <>
+              <div className="prose prose-sm max-w-none rounded-lg bg-[color:var(--ds-hover)] p-3 text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
+                {analysisText}
+              </div>
+              <CitationPanel
+                data={
+                  {
+                    grounding: analysisGrounding ?? null,
+                    isStreaming: analyzing,
+                  } satisfies CitationPanelData
+                }
+                compact
+              />
+            </>
           ) : (
             <div className="py-8 text-center text-sm text-[color:var(--ds-text-muted)]">
               {t("strategy.analysis_running")}
@@ -736,6 +763,17 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
                   </div>
                 )}
               </div>
+              {draftsGrounding !== undefined && (
+                <CitationPanel
+                  data={
+                    {
+                      grounding: draftsGrounding ?? null,
+                      isStreaming: generatingDrafts,
+                    } satisfies CitationPanelData
+                  }
+                  compact
+                />
+              )}
               <div className="mt-3 flex gap-2">
                 <Button
                   variant="outline"

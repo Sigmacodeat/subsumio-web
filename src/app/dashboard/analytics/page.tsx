@@ -1,299 +1,147 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import {
-  Users,
-  Activity,
   TrendingUp,
-  TrendingDown,
-  Minus,
-  Loader2,
-  AlertCircle,
   BarChart3,
-  Zap,
-  Clock,
+  FileBarChart,
+  Activity,
+  ChartNoAxesColumn,
+  ArrowUpRight,
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useApiQuery } from "@/lib/use-api-query";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
+import type { Lang } from "@/content/site";
 
-interface UserUsage {
-  user_id: string;
-  user_name: string;
-  role: string;
-  total_requests: number;
-  queries: number;
-  documents_analyzed: number;
-  contracts_reviewed: number;
-  agents_run: number;
-  last_active: string;
-}
-
-interface FeatureUsage {
-  feature: string;
-  count: number;
-  unique_users: number;
-  trend: string;
-}
-
-interface UsageTrend {
-  date: string;
-  total_requests: number;
-  unique_users: number;
-  queries: number;
-  analyses: number;
-}
-
-interface AdoptionAnalytics {
-  total_users: number;
-  active_users_30d: number;
-  active_users_7d: number;
-  total_requests_30d: number;
-  avg_requests_per_user: number;
-  top_features: FeatureUsage[];
-  user_breakdown: UserUsage[];
-  usage_trends: UsageTrend[];
-  adoption_rate: number;
-  warnings: string[];
-  generated_at: string;
-}
-
-const trendIcon: Record<string, typeof TrendingUp> = {
-  up: TrendingUp,
-  down: TrendingDown,
-  stable: Minus,
+const I18N: Record<string, { de: string; en: string }> = {
+  title: { de: "Berichte & Insights", en: "Reports & Insights" },
+  description: {
+    de: "Alle Kennzahlen, Berichte und Analysen an einem Ort — Prozessergebnisse, Portfolio, Kanzlei-Reports und KI-Nutzung.",
+    en: "All metrics, reports and analytics in one place — litigation outcomes, portfolio, firm reports and AI usage.",
+  },
+  litigation_analytics: { de: "Prozessanalyse", en: "Litigation Analytics" },
+  litigation_analytics_desc: {
+    de: "Gerichtsstatistiken, Erfolgsquoten, Richter-Analysen",
+    en: "Court statistics, success rates, judge analytics",
+  },
+  portfolio_insights: { de: "Portfolio-Insights", en: "Portfolio Insights" },
+  portfolio_insights_desc: {
+    de: "Akten-Portfolio, Kennzahlen, Trends",
+    en: "Case portfolio, KPIs, trends",
+  },
+  reports: { de: "Kanzlei-Berichte", en: "Firm Reports" },
+  reports_desc: {
+    de: "Umsatz, Auslastung, Produktivität der Kanzlei",
+    en: "Revenue, utilization, firm productivity",
+  },
+  adoption: { de: "Nutzungs-Analyse", en: "Adoption Analytics" },
+  adoption_desc: {
+    de: "KI-Nutzung, Feature-Adoption, Team-Aktivität",
+    en: "AI usage, feature adoption, team activity",
+  },
+  chat_analytics: { de: "Chat-Analytics", en: "Chat Analytics" },
+  chat_analytics_desc: {
+    de: "Copilot-Nutzung, Modellvergleich, Token-Verbrauch",
+    en: "Copilot usage, model comparison, token consumption",
+  },
 };
 
-const trendColor: Record<string, string> = {
-  up: "text-green-600",
-  down: "text-red-600",
-  stable: "text-[color:var(--ds-text-muted)]",
-};
+function tr(key: string, lang: Lang): string {
+  const entry = I18N[key];
+  return entry ? (lang === "en" ? entry.en : entry.de) : key;
+}
 
-export default function AdoptionAnalyticsPage() {
-  const [daysBack, setDaysBack] = useState(30);
+const CARDS = [
+  {
+    href: "/dashboard/litigation-analytics",
+    icon: TrendingUp,
+    titleKey: "litigation_analytics",
+    descKey: "litigation_analytics_desc",
+    color: "text-blue-600",
+    bg: "bg-blue-500/10",
+    border: "border-blue-500/20",
+  },
+  {
+    href: "/dashboard/portfolio-insights",
+    icon: BarChart3,
+    titleKey: "portfolio_insights",
+    descKey: "portfolio_insights_desc",
+    color: "text-violet-600",
+    bg: "bg-violet-500/10",
+    border: "border-violet-500/20",
+  },
+  {
+    href: "/dashboard/reports",
+    icon: FileBarChart,
+    titleKey: "reports",
+    descKey: "reports_desc",
+    color: "text-emerald-600",
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+  },
+  {
+    href: "/dashboard/adoption-analytics",
+    icon: Activity,
+    titleKey: "adoption",
+    descKey: "adoption_desc",
+    color: "text-amber-600",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
+  },
+  {
+    href: "/dashboard/chat/analytics",
+    icon: ChartNoAxesColumn,
+    titleKey: "chat_analytics",
+    descKey: "chat_analytics_desc",
+    color: "text-rose-600",
+    bg: "bg-rose-500/10",
+    border: "border-rose-500/20",
+  },
+];
 
-  const { data, loading, error, refetch } = useApiQuery<AdoptionAnalytics>(async () => {
-    const res = await fetch(`/api/analytics/adoption?daysBack=${daysBack}`, {
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return (await res.json()) as AdoptionAnalytics;
-  }, [daysBack]);
-
-  if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <AlertCircle className="h-12 w-12 text-red-600" />
-        <p className="text-[color:var(--ds-text-muted)]">
-          Fehler beim Laden der Analytics: {error}
-        </p>
-        <Button onClick={refetch} variant="outline">
-          Erneut versuchen
-        </Button>
-      </div>
-    );
-  }
-
-  if (!data) return null;
+export default function AnalyticsHubPage() {
+  const { lang } = useLang();
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="flex items-center gap-2 text-xl font-bold md:text-2xl">
-            <BarChart3 className="h-5 w-5 shrink-0 md:h-6 md:w-6" />
-            Adoption Analytics
-          </h1>
-          <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-            Stand: {new Date(data.generated_at).toLocaleString("de-DE")}
-          </p>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {[7, 30, 90, 180].map((d) => (
-            <Button
-              key={d}
-              onClick={() => setDaysBack(d)}
-              variant={daysBack === d ? "primary" : "outline"}
-              size="sm"
+    <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
+      <PageHeader
+        title={tr("title", lang)}
+        description={tr("description", lang)}
+        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: tr("title", lang) }]}
+      />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {CARDS.map((card) => {
+          const Icon = card.icon;
+          return (
+            <Link
+              key={card.href}
+              href={card.href}
+              className={`group flex items-start gap-4 rounded-xl border ${card.border} bg-[color:var(--ds-surface)] p-5 transition-[border-color,background-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-lg`}
             >
-              {d}d
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {data.warnings.length > 0 && (
-        <Card className="border-yellow-200 bg-yellow-50 p-4">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-yellow-600" />
-            <div className="text-sm">
-              <ul className="space-y-1 text-yellow-700">
-                {data.warnings.map((w, i) => (
-                  <li key={i}>{w}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-[color:var(--ds-text-muted)]">Aktive Nutzer (30d)</p>
-              <p className="text-2xl font-bold">{data.active_users_30d}</p>
-              <p className="text-xs text-[color:var(--ds-text-muted)]">
-                von {data.total_users} gesamt
-              </p>
-            </div>
-            <Users className="h-8 w-8 text-blue-500" />
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-[color:var(--ds-text-muted)]">Aktive Nutzer (7d)</p>
-              <p className="text-2xl font-bold">{data.active_users_7d}</p>
-            </div>
-            <Activity className="h-8 w-8 text-green-500" />
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-[color:var(--ds-text-muted)]">Anfragen (30d)</p>
-              <p className="text-2xl font-bold">{data.total_requests_30d}</p>
-            </div>
-            <Zap className="h-8 w-8 text-orange-500" />
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-[color:var(--ds-text-muted)]">Adoption Rate</p>
-              <p className="text-2xl font-bold">{data.adoption_rate}%</p>
-              <p className="text-xs text-[color:var(--ds-text-muted)]">
-                Ø {data.avg_requests_per_user} Anfragen/Nutzer
-              </p>
-            </div>
-            <TrendingUp className="h-8 w-8 text-purple-500" />
-          </div>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Feature Usage */}
-        <Card className="p-6">
-          <h2 className="mb-4 text-lg font-semibold">Feature-Nutzung</h2>
-          {data.top_features.length === 0 ? (
-            <p className="text-sm text-[color:var(--ds-text-muted)]">
-              Keine Nutzungsdaten verfügbar.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {data.top_features.map((f, i) => {
-                const Icon = trendIcon[f.trend] ?? Minus;
-                return (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between border-b py-2 last:border-0"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium capitalize">{f.feature}</p>
-                      <p className="text-xs text-[color:var(--ds-text-muted)]">
-                        {f.unique_users} eindeutige Nutzer
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium">{f.count}</span>
-                      <Icon className={`h-4 w-4 ${trendColor[f.trend]}`} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </Card>
-
-        {/* User Breakdown */}
-        <Card className="p-6">
-          <h2 className="mb-4 text-lg font-semibold">Nutzer-Übersicht</h2>
-          {data.user_breakdown.length === 0 ? (
-            <p className="text-sm text-[color:var(--ds-text-muted)]">
-              Keine Nutzer-Daten verfügbar.
-            </p>
-          ) : (
-            <div className="max-h-96 space-y-2 overflow-y-auto">
-              {data.user_breakdown.map((u, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between border-b py-2 last:border-0"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{u.user_name || u.user_id}</p>
-                    <div className="mt-0.5 flex items-center gap-2">
-                      <Badge variant="default" className="text-xs">
-                        {u.role}
-                      </Badge>
-                      <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-                        <Clock className="h-3 w-3" />
-                        {new Date(u.last_active).toLocaleDateString("de-DE")}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">{u.total_requests}</p>
-                    <p className="text-xs text-[color:var(--ds-text-muted)]">Anfragen</p>
-                  </div>
+              <div
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${card.bg}`}
+              >
+                <Icon size={20} className={card.color} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    {tr(card.titleKey, lang)}
+                  </h3>
+                  <ArrowUpRight
+                    size={14}
+                    className="text-[color:var(--ds-text-subtle)] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  />
                 </div>
-              ))}
-            </div>
-          )}
-        </Card>
+                <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                  {tr(card.descKey, lang)}
+                </p>
+              </div>
+            </Link>
+          );
+        })}
       </div>
-
-      {/* Usage Trends Chart */}
-      {data.usage_trends.length > 0 && (
-        <Card className="p-6">
-          <h2 className="mb-4 text-lg font-semibold">Nutzungs-Trends</h2>
-          <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-7 md:grid-cols-14 lg:grid-cols-30">
-            {data.usage_trends
-              .slice(0, 30)
-              .reverse()
-              .map((t, i) => {
-                const maxRequests = Math.max(...data.usage_trends.map((d) => d.total_requests), 1);
-                const height = Math.max(4, Math.round((t.total_requests / maxRequests) * 60));
-                return (
-                  <div
-                    key={i}
-                    className="flex flex-col items-center gap-1"
-                    title={`${t.date}: ${t.total_requests} Anfragen, ${t.unique_users} Nutzer`}
-                  >
-                    <div
-                      className="w-full rounded-t bg-blue-500 transition-all hover:bg-blue-600"
-                      style={{ height: `${height}px` }}
-                    />
-                    <span className="text-xs text-[color:var(--ds-text-muted)]">
-                      {new Date(t.date).toLocaleDateString("de-DE", { day: "numeric" })}
-                    </span>
-                  </div>
-                );
-              })}
-          </div>
-        </Card>
-      )}
     </div>
   );
 }

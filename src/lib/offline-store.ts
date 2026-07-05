@@ -145,6 +145,7 @@ export const OFFLINE_KEYS = {
   taxReturns: "dashboard:tax-returns",
   taxAssessments: "dashboard:tax-assessments",
   taxAudits: "dashboard:tax-audits",
+  mobileDocPrefix: "mobile:doc:",
 } as const;
 
 // --- Mutation Queue ---

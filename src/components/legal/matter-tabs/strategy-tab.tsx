@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useCallback, useEffect } from "react";
 import {
   Loader2,
   AlertTriangle,
@@ -10,12 +10,25 @@ import {
   Send,
   Copy,
   Check,
+  Sparkles,
+  Scale,
+  CalendarClock,
+  FileText,
+  Lightbulb,
+  ClipboardList,
+  AlertCircle,
+  UserPlus,
+  CalendarPlus,
+  Plus,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import { RetrievalFeedbackButtons } from "@/components/legal/RetrievalFeedbackButtons";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import { api } from "@/lib/api";
 
 const ChatPanel = lazy(() =>
@@ -27,15 +40,256 @@ const MatterContextPanel = lazy(() =>
 const PipelinePanel = lazy(() =>
   import("@/components/legal/PipelinePanel").then((m) => ({ default: m.PipelinePanel }))
 );
+const ActIntelligencePanel = lazy(() =>
+  import("@/components/legal/ActIntelligencePanel").then((m) => ({
+    default: m.ActIntelligencePanel,
+  }))
+);
+const CaseInsightsPanel = lazy(() =>
+  import("@/components/legal/CaseInsightsPanel").then((m) => ({ default: m.CaseInsightsPanel }))
+);
 
 export function StrategyTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
+  const [initialQuery, setInitialQuery] = useState<string | undefined>(undefined);
+  const [queryNonce, setQueryNonce] = useState(0);
+  const { grounding, groundAnswer, reset } = useGroundedAnswer();
+
+  const handleQuickAction = useCallback(
+    (action: { key: string; queryDe: string; queryEn: string }) => {
+      const query = lang === "en" ? action.queryEn : action.queryDe;
+      setInitialQuery(query);
+      setQueryNonce((n) => n + 1);
+    },
+    [lang]
+  );
+
+  // A.3: Ground AI query results — run corpus grounding when queryResult changes
+  useEffect(() => {
+    if (ctx.queryResult && !ctx.queryLoading) {
+      groundAnswer(ctx.queryResult);
+    } else if (!ctx.queryResult) {
+      reset();
+    }
+  }, [ctx.queryResult, ctx.queryLoading, groundAnswer, reset]);
+
   if (!ctx.caseData) return null;
   const caseData = ctx.caseData;
+  const isArchived = caseData.status === "archived";
+
+  const QUICK_ACTIONS = [
+    {
+      key: "strategy",
+      icon: Lightbulb,
+      labelDe: "Strategie empfehlen",
+      labelEn: "Recommend strategy",
+      queryDe: "Welche Strategie empfiehlst du für diese Akte?",
+      queryEn: "What strategy do you recommend for this case?",
+    },
+    {
+      key: "chances",
+      icon: Scale,
+      labelDe: "Prozessaussichten bewerten",
+      labelEn: "Assess chances",
+      queryDe: "Wie stehen die Prozessaussichten in dieser Akte?",
+      queryEn: "What are the chances of success in this case?",
+    },
+    {
+      key: "timeline",
+      icon: CalendarClock,
+      labelDe: "Timeline generieren",
+      labelEn: "Generate timeline",
+      queryDe: "Erstelle eine Timeline der wichtigsten Ereignisse dieser Akte.",
+      queryEn: "Create a timeline of the key events in this case.",
+    },
+    {
+      key: "summary",
+      icon: FileText,
+      labelDe: "Aktenzusammenfassung",
+      labelEn: "Case summary",
+      queryDe: "Fasse diese Akte prägnant zusammen.",
+      queryEn: "Summarize this case concisely.",
+    },
+    {
+      key: "contradictions",
+      icon: AlertCircle,
+      labelDe: "Widersprüche finden",
+      labelEn: "Find contradictions",
+      queryDe: "Gibt es Widersprüche in den Aussagen oder Dokumenten dieser Akte?",
+      queryEn: "Are there contradictions in the statements or documents of this case?",
+    },
+    {
+      key: "deadlines",
+      icon: ClipboardList,
+      labelDe: "Fristen prüfen",
+      labelEn: "Check deadlines",
+      queryDe: "Welche Fristen sind in dieser Akte aktuell und welche drohen zu verstreichen?",
+      queryEn: "Which deadlines are current in this case and which are at risk?",
+    },
+  ];
 
   return (
     <div className="space-y-4 p-4 md:p-6">
+      {/* Proactive Case Insights + Brain Quality (migrated from former AI-Tab) */}
+      <div className="max-w-3xl">
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" />
+            </div>
+          }
+        >
+          <CaseInsightsPanel caseSlug={caseData.slug} />
+        </Suspense>
+      </div>
+
+      {/* AI-Suggested Deadlines & Parties — Partner-Cockpit proactive cards */}
+      {((caseData.suggestedDeadlines && caseData.suggestedDeadlines.some((sd) => !sd.confirmed)) ||
+        (caseData.suggestedParties && caseData.suggestedParties.some((sp) => !sp.confirmed))) && (
+        <div className="max-w-3xl rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Sparkles size={16} className="text-amber-500" />
+            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {lang === "en" ? "AI Suggestions" : "KI-Vorschläge"}
+            </h3>
+          </div>
+
+          <div className="space-y-2">
+            {/* Suggested Deadlines */}
+            {caseData.suggestedDeadlines
+              ?.filter((sd) => !sd.confirmed)
+              .map((sd, i) => (
+                <div
+                  key={`sd-${i}`}
+                  className="flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5"
+                >
+                  <CalendarPlus size={14} className="mt-0.5 shrink-0 text-amber-600" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                        {sd.title}
+                      </span>
+                      <Badge
+                        variant={
+                          sd.urgency === "high"
+                            ? "danger"
+                            : sd.urgency === "medium"
+                              ? "warning"
+                              : "default"
+                        }
+                        className="text-[10px]"
+                      >
+                        {sd.urgency}
+                      </Badge>
+                    </div>
+                    <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                      {sd.due_date}
+                      {sd.source_quote && (
+                        <span className="ml-1 italic">
+                          — &quot;{sd.source_quote.slice(0, 120)}&quot;
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={isArchived}
+                      onClick={async () => {
+                        const entry = {
+                          title: sd.title,
+                          due_date: sd.due_date,
+                          status: "pending" as const,
+                          type: "deadline",
+                          source: sd.source,
+                        };
+                        const updated = [...ctx.deadlinesList, entry];
+                        ctx.setDeadlinesList(updated);
+                        await ctx.saveCaseUpdate({ deadlines: updated });
+                        await ctx.confirmSuggestedDeadline(i, true);
+                      }}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <Check size={12} />
+                      {t("casesdetail.accept")}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={isArchived}
+                      onClick={() => ctx.confirmSuggestedDeadline(i, false)}
+                      className="h-7 px-2 text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
+                    >
+                      <X size={12} />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+
+            {/* Suggested Parties */}
+            {caseData.suggestedParties
+              ?.filter((sp) => !sp.confirmed)
+              .map((sp, i) => (
+                <div
+                  key={`sp-${i}`}
+                  className="flex items-start gap-3 rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2.5"
+                >
+                  <UserPlus size={14} className="mt-0.5 shrink-0 text-blue-600" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                        {sp.name}
+                      </span>
+                      <Badge variant="info" className="text-[10px]">
+                        {sp.role}
+                      </Badge>
+                    </div>
+                    <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                      {lang === "en" ? "Source:" : "Quelle:"} {sp.source}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={isArchived}
+                      onClick={() => {
+                        ctx.setContactDialogRole(
+                          sp.role === "mandant" || sp.role === "client"
+                            ? "client"
+                            : sp.role === "gegner" || sp.role === "opponent"
+                              ? "opponent"
+                              : sp.role === "gericht" || sp.role === "court"
+                                ? "court"
+                                : "other"
+                        );
+                        ctx.setContactDialogName(sp.name);
+                        ctx.setContactDialogOpen(true);
+                        ctx.setPendingSuggestedPartyIndex(i);
+                      }}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <Plus size={12} />
+                      {lang === "en" ? "Add" : "Anlegen"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={isArchived}
+                      onClick={() => ctx.confirmSuggestedParty(i, false)}
+                      className="h-7 px-2 text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
+                    >
+                      <X size={12} />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
       {/* Semantic Contradictions */}
       <div className="max-w-3xl space-y-4">
         <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -207,6 +461,7 @@ export function StrategyTab() {
 
       {/* Pipeline Panel */}
       <div className="max-w-4xl space-y-4">
+        <ActIntelligencePanel caseSlug={caseData.slug} />
         <Suspense
           fallback={
             <div className="flex items-center justify-center py-8">
@@ -234,6 +489,40 @@ export function StrategyTab() {
         >
           <MatterContextPanel caseSlug={caseData.slug} defaultOpen={true} />
         </Suspense>
+
+        {/* Quick Actions Bar (migrated from former AI-Tab) */}
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-[color:var(--ds-text-muted)]">
+              <Sparkles size={12} className="text-blue-600" />
+              {t("aitab.quick_actions")}
+            </div>
+            {QUICK_ACTIONS.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Button
+                  key={action.key}
+                  variant="ghost"
+                  size="sm"
+                  disabled={isArchived}
+                  onClick={() => handleQuickAction(action)}
+                  className="gap-1.5 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                >
+                  <Icon size={12} />
+                  {lang === "en" ? action.labelEn : action.labelDe}
+                </Button>
+              );
+            })}
+          </div>
+          {isArchived && (
+            <p className="mt-2 text-xs text-amber-600">
+              {lang === "en"
+                ? "AI features are disabled for archived cases."
+                : "KI-Funktionen sind für archivierte Akten deaktiviert."}
+            </p>
+          )}
+        </div>
+
         <div className="h-[500px]">
           <Suspense
             fallback={
@@ -243,7 +532,10 @@ export function StrategyTab() {
             }
           >
             <ChatPanel
+              key={queryNonce}
               context={{ type: "case", caseSlug: caseData.slug }}
+              initialQuery={initialQuery}
+              persistHistory
               features={{
                 caseSelector: false,
                 jurisdictionSelector: true,
@@ -317,6 +609,16 @@ export function StrategyTab() {
             <div className="text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
               {ctx.queryResult}
             </div>
+            {/* A.3: CitationPanel with grounding for strategy-tab AI query results — mandatory */}
+            <CitationPanel
+              data={
+                {
+                  grounding: grounding ?? null,
+                  isStreaming: false,
+                } satisfies CitationPanelData
+              }
+              compact
+            />
             <div className="flex items-center justify-end pt-1">
               <RetrievalFeedbackButtons
                 query={ctx.query}

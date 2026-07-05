@@ -32,9 +32,7 @@ export const MATTER_TABS = [
   "activity",
   "evidence",
   "billing",
-  "communications",
   "contacts",
-  "ai",
 ] as const;
 
 export type MatterTab = (typeof MATTER_TABS)[number];
@@ -46,13 +44,7 @@ export const PRIMARY_TABS: MatterTab[] = [
   "strategy",
   "evidence",
 ];
-export const SECONDARY_TABS: MatterTab[] = [
-  "activity",
-  "billing",
-  "communications",
-  "contacts",
-  "ai",
-];
+export const SECONDARY_TABS: MatterTab[] = ["activity", "billing", "contacts"];
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -132,6 +124,12 @@ const MatterDataContext = createContext<MatterDataContextValue | null>(null);
  * If the last segment is NOT a known tab, the entire slug is the case slug
  * and the active tab defaults to "overview".
  */
+const LEGACY_TAB_REDIRECT: Record<string, MatterTab> = {
+  ai: "strategy",
+  communications: "activity",
+  deadlines_tasks: "deadlines",
+};
+
 export function parseMatterSlug(slugSegments: string[]): {
   caseSlug: string;
   activeTab: MatterTab;
@@ -148,6 +146,16 @@ export function parseMatterSlug(slugSegments: string[]): {
     return {
       caseSlug: caseSegments.join("/"),
       activeTab: lastSegment as MatterTab,
+    };
+  }
+
+  // Legacy tab redirect — old URLs still work, redirect to folded target
+  const legacyTarget = LEGACY_TAB_REDIRECT[lastSegment];
+  if (legacyTarget && slugSegments.length > 1) {
+    const caseSegments = slugSegments.slice(0, -1);
+    return {
+      caseSlug: caseSegments.join("/"),
+      activeTab: legacyTarget,
     };
   }
 
@@ -168,12 +176,10 @@ function parseMatterData(page: BrainPage): MatterData {
   const expenses = fm.expenses || [];
   const evidence = fm.evidence || [];
 
-  const openDeadlines = deadlines.filter(
-    (d: DeadlineEntry) => d.status !== "done" && d.status !== "completed"
-  );
+  const openDeadlines = deadlines.filter((d: DeadlineEntry) => d.status !== "done");
   const openTasks = tasks.filter((t: TaskEntry) => !t.done);
   const nextDeadline = openDeadlines
-    .map((d: DeadlineEntry) => d.due_date || d.date || "")
+    .map((d: DeadlineEntry) => d.due_date || "")
     .filter(Boolean)
     .sort()[0];
 

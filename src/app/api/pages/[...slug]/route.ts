@@ -104,6 +104,63 @@ export const PATCH = createHandler(
       const fm = patchBody.frontmatter as Record<string, unknown>;
       const isRestore = !!fm.restored_at && fm.status !== "archived";
 
+      // E2: Notfrist Vier-Augen-Kontrolle — reject status:done without second_check
+      // Case 1: standalone legal_deadline page with top-level status:done
+      if (fm.status === "done") {
+        try {
+          const checkRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
+            headers: ctx.headers,
+            signal: AbortSignal.timeout(10_000),
+          });
+          if (checkRes.ok) {
+            const currentPage = (await checkRes.json()) as {
+              frontmatter?: Record<string, unknown>;
+            };
+            const curFm = currentPage.frontmatter ?? {};
+            const isNotfrist = curFm.is_notfrist === true || curFm.second_check_required === true;
+            const hasSecondCheck =
+              !!fm.second_check_by ||
+              !!curFm.second_check_by ||
+              !!fm.second_check_at ||
+              !!curFm.second_check_at;
+            if (isNotfrist && !hasSecondCheck) {
+              return Response.json(
+                {
+                  error: "notfrist_second_check_required",
+                  message:
+                    "Notfrist erfordert Vier-Augen-Kontrolle — zweite Prüfung muss vor Erledigung bestätigt werden.",
+                },
+                { status: 403 }
+              );
+            }
+          }
+        } catch {
+          // If we can't check, proceed (fail-open)
+        }
+      }
+
+      // E2: Notfrist Vier-Augen-Kontrolle — Case 2: deadlines array within a legal_case page
+      // When a deadline's status is set to "done", verify second_check for notfrist items
+      if (Array.isArray(fm.deadlines)) {
+        const incomingDeadlines = fm.deadlines as Array<Record<string, unknown>>;
+        const violatingDeadline = incomingDeadlines.find(
+          (dl) =>
+            dl.status === "done" &&
+            (dl.is_notfrist === true || dl.second_check_required === true) &&
+            !dl.second_check_by &&
+            !dl.second_check_at
+        );
+        if (violatingDeadline) {
+          return Response.json(
+            {
+              error: "notfrist_second_check_required",
+              message: `Notfrist "${violatingDeadline.title ?? "unbenannt"}" erfordert Vier-Augen-Kontrolle — zweite Prüfung muss vor Erledigung bestätigt werden.`,
+            },
+            { status: 403 }
+          );
+        }
+      }
+
       // RBAC: Restore requires admin or lawyer role (brain.delete level)
       if (isRestore && ctx.user.role !== "admin" && ctx.user.role !== "lawyer") {
         return Response.json(
@@ -432,6 +489,18 @@ export const DELETE = createHandler(
         );
       }
 
+      // Guard: legal hold — block deletion/archiving when legal_hold is active
+      if (pageType === "legal_case" && fm.legal_hold === true) {
+        return Response.json(
+          {
+            error: "legal_hold_active",
+            message:
+              "Akte steht unter Legal Hold und kann nicht gelöscht oder archiviert werden. Heben Sie den Legal Hold zuerst auf.",
+          },
+          { status: 423 }
+        );
+      }
+
       // Set of slug forms that documents may reference as their case_slug.
       const caseSlugForms = new Set(
         [casePage.slug, decodedSlug, path].filter((s): s is string => !!s)
@@ -583,6 +652,35 @@ export const DELETE = createHandler(
           };
         }
       } else {
+        // Non-case pages: check if document belongs to a case with legal_hold
+        const docCaseSlug = fm.case_slug as string | undefined;
+        if (docCaseSlug) {
+          try {
+            const caseRes = await fetch(
+              `${ENGINE_URL}/api/pages/${encodeURIComponent(docCaseSlug)}`,
+              {
+                headers: ctx.headers,
+                signal: AbortSignal.timeout(5_000),
+              }
+            );
+            if (caseRes.ok) {
+              const caseData = (await caseRes.json()) as { frontmatter?: Record<string, unknown> };
+              const caseFm = caseData.frontmatter ?? {};
+              if (caseFm.legal_hold === true) {
+                return Response.json(
+                  {
+                    error: "legal_hold_active",
+                    message:
+                      "Dokument gehört zu einer Akte mit Legal Hold und kann nicht gelöscht werden.",
+                  },
+                  { status: 423 }
+                );
+              }
+            }
+          } catch {
+            // If case lookup fails, proceed with deletion
+          }
+        }
         // Non-case pages: the engine exposes no DELETE route, so soft-delete by
         // tombstoning via merge-update (the document then drops out of every
         // case_slug-scoped listing, which filters `status !== "tombstoned"`).

@@ -377,7 +377,6 @@ export function DeadlinesTasksTab() {
                         const entry: DeadlineEntry = {
                           id: `dl-${Date.now()}`,
                           title: d.title,
-                          date: d.date,
                           due_date: d.date,
                           type: d.type as DeadlineEntry["type"],
                           status: "pending",
@@ -432,7 +431,6 @@ export function DeadlinesTasksTab() {
                         const entry: DeadlineEntry = {
                           id: `dl-${Date.now()}`,
                           title: sd.title,
-                          date: sd.due_date,
                           due_date: sd.due_date,
                           type: "custom" as DeadlineEntry["type"],
                           status: "pending",
@@ -475,7 +473,7 @@ export function DeadlinesTasksTab() {
         ) : (
           <div className="space-y-2">
             {ctx.deadlinesList.map((dl, i) => {
-              const dlDate = new Date(dl.due_date || dl.date || Date.now());
+              const dlDate = new Date(dl.due_date || Date.now());
               const today = new Date();
               today.setHours(0, 0, 0, 0);
               const daysUntil = Math.ceil(

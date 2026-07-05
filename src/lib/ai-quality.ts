@@ -11,7 +11,7 @@
  * Diese Metriken sind die Grundlage für das Release-Gate (kein Release bei Regression).
  */
 
-import type { GroundingMetadata } from "@/lib/citation-gate";
+import type { GroundingMetadata } from "@/lib/citation-gate-client";
 import type { DetectedDeadline } from "@/lib/ai-deadline-detect";
 import type { GroundedCitation } from "@/lib/types";
 

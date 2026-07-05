@@ -112,7 +112,7 @@ export default function LitigationAnalyticsPage() {
       }
       setDeleting(null);
     },
-    [confirm, t]
+    [confirm, t, addToast]
   );
 
   const fmtCurrency = (n: number) =>

@@ -11,6 +11,8 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  Undo2,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +20,8 @@ import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import type { TimeEntry } from "@/lib/legal-types";
 import type { DashboardKey } from "@/content/dashboard";
+import { api } from "@/lib/api";
+import { useToast } from "@/components/ui/toast";
 
 const ACTIVITY_TYPES: Array<{ value: string; key: string }> = [
   { value: "consultation", key: "cases.detail_time_act_consultation" },
@@ -32,7 +36,9 @@ const ACTIVITY_TYPES: Array<{ value: string; key: string }> = [
 export function BillingTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
+  const { addToast } = useToast();
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [unbillingId, setUnbillingId] = useState<string | null>(null);
   const [newEntry, setNewEntry] = useState({
     description: "",
     minutes: "",
@@ -110,6 +116,33 @@ export function BillingTab() {
       void ctx.saveCaseUpdate({ expenses: updated });
     },
     [ctx]
+  );
+
+  const handleUnbillTimeEntry = useCallback(
+    async (entryId: string) => {
+      if (!ctx.caseData || ctx.caseData.status === "archived") return;
+      if (!confirm(t("billingtab.unbill_confirm"))) return;
+      setUnbillingId(entryId);
+      try {
+        const res = await api.time.unbill({
+          entry_ids: [entryId],
+          case_slug: ctx.caseData.slug,
+        });
+        if (res && res.updated > 0) {
+          const updatedEntries = ctx.timeEntries.map((e) =>
+            e.id === entryId ? { ...e, billed: false, invoice_number: undefined } : e
+          );
+          ctx.setTimeEntries(updatedEntries);
+          void ctx.saveCaseUpdate({ timeEntries: updatedEntries });
+          addToast({ type: "success", title: t("billingtab.unbilled_ok") });
+        }
+      } catch {
+        addToast({ type: "error", title: t("billingtab.unbill_failed") });
+      } finally {
+        setUnbillingId(null);
+      }
+    },
+    [ctx, t, addToast]
   );
 
   if (!ctx.caseData) return null;
@@ -345,6 +378,31 @@ export function BillingTab() {
                         ? t("cases.detail_time_internal")
                         : t("cases.detail_time_billable")}
                   </Badge>
+                  {entry.billed && entry.invoice_number && (
+                    <a
+                      href={`/dashboard/invoicing?invoice=${encodeURIComponent(entry.invoice_number)}`}
+                      className="flex shrink-0 items-center gap-1 text-xs text-violet-600 hover:underline"
+                      title={`${t("billingtab.invoice_link")} ${entry.invoice_number}`}
+                    >
+                      <FileText size={12} />
+                      {entry.invoice_number}
+                      <ExternalLink size={10} />
+                    </a>
+                  )}
+                  {entry.billed && !isArchived && (
+                    <button
+                      disabled={unbillingId === entry.id}
+                      onClick={() => handleUnbillTimeEntry(entry.id)}
+                      className="shrink-0 text-[color:var(--ds-text-muted)] transition-colors hover:text-amber-600"
+                      title={t("billingtab.unbill")}
+                    >
+                      {unbillingId === entry.id ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Undo2 size={14} />
+                      )}
+                    </button>
+                  )}
                   <button
                     disabled={isArchived}
                     onClick={() => handleDeleteTimeEntry(entry.id)}
@@ -449,6 +507,17 @@ export function BillingTab() {
                         ? t("cases.detail_exp_internal")
                         : t("cases.detail_exp_billable")}
                   </Badge>
+                  {expense.billed && expense.invoice_number && (
+                    <a
+                      href={`/dashboard/invoicing?invoice=${encodeURIComponent(expense.invoice_number)}`}
+                      className="flex shrink-0 items-center gap-1 text-xs text-violet-600 hover:underline"
+                      title={`${t("billingtab.invoice_link")} ${expense.invoice_number}`}
+                    >
+                      <FileText size={12} />
+                      {expense.invoice_number}
+                      <ExternalLink size={10} />
+                    </a>
+                  )}
                   <button
                     disabled={isArchived}
                     onClick={() => handleDeleteExpense(expense.id)}

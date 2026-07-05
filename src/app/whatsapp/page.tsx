@@ -8,7 +8,15 @@ export const metadata: Metadata = {
   description:
     "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Copilot versteht die Akte und legt alles bestätigungspflichtig ins Brain. GoBD-konform dokumentiert.",
   keywords: keywordsFor("whatsapp"),
-  alternates: { canonical: "/whatsapp", languages: { de: "/whatsapp", en: "/en/whatsapp" } },
+  alternates: {
+    canonical: "/whatsapp",
+    languages: {
+      "de-DE": "/whatsapp",
+      "de-AT": "/at/whatsapp",
+      "de-CH": "/ch/whatsapp",
+      en: "/en/whatsapp",
+    },
+  },
   openGraph: {
     title: "Subsumio WhatsApp-Copilot — die Kanzlei in der Hosentasche",
     description:

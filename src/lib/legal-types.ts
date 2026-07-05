@@ -4,13 +4,15 @@
  * Datenvertrag statt `(page as any).frontmatter` in jeder Seite.
  */
 
+import type { DeadlineStatus } from "@/lib/legal-deadlines";
+
 export interface DeadlineEntry {
   id?: string;
   title?: string;
   description?: string;
-  date?: string;
-  due_date?: string;
-  status?: string;
+  /** Canonical deadline date. The only date field — no legacy `date` fallback. */
+  due_date: string;
+  status?: DeadlineStatus;
   type?: string;
   source?: string;
   court?: string;
@@ -337,6 +339,8 @@ export interface InvoiceFrontmatter {
   invoice_type?: "standard" | "teilrechnung" | "sammelrechnung" | "gutschrift";
   parent_invoice_id?: string;
   case_slugs?: string[];
+  // E-Rechnung
+  leitweg_id?: string;
 }
 
 export interface ContactFrontmatter {
@@ -349,6 +353,7 @@ export interface ContactFrontmatter {
   address?: string;
   notes?: string;
   tags?: string[];
+  leitwegId?: string;
 }
 
 export interface NormFrontmatter {
@@ -407,4 +412,16 @@ export function invoiceFrontmatter(page: {
   frontmatter?: Record<string, unknown>;
 }): InvoiceFrontmatter {
   return (page.frontmatter ?? {}) as InvoiceFrontmatter;
+}
+
+/**
+ * Canonical deadline date accessor.
+ * Returns `due_date` if present, falls back to `date` for raw frontmatter backward compat.
+ * Use this when reading from untyped frontmatter; typed DeadlineEntry always has due_date.
+ */
+export function canonicalDeadlineDate(entry: {
+  due_date?: string;
+  date?: string;
+}): string | undefined {
+  return entry.due_date ?? entry.date;
 }

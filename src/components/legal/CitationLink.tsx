@@ -21,7 +21,7 @@ export function CitationLink({ citation, className, grounding }: CitationLinkPro
 
   const linkContent = (
     <Link
-      href={`/dashboard/norms?citation=${encodeURIComponent(normalized)}`}
+      href={`/dashboard/research?tab=normen&citation=${encodeURIComponent(normalized)}`}
       className={cn(
         "brand-text hover:brand-text inline-flex cursor-pointer items-center gap-1 underline decoration-[color:var(--brand-primary)]/30 underline-offset-2 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:decoration-[color:var(--brand-primary)]",
         className

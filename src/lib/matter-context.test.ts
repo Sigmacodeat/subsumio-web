@@ -688,17 +688,15 @@ describe("inferSourceType — additional slugs", () => {
 // ── buildDeadlineSummaries — additional edge cases ─────────────────────
 
 describe("buildDeadlineSummaries — additional edge cases", () => {
-  it("uses date field when due_date is not present", () => {
-    const deadlines: DeadlineEntry[] = [{ title: "Using date", date: "2025-06-01" }];
+  it("uses due_date field when present", () => {
+    const deadlines: DeadlineEntry[] = [{ title: "Using due_date", due_date: "2025-06-01" }];
     const result = buildDeadlineSummaries(deadlines);
     expect(result).toHaveLength(1);
     expect(result[0].date).toBe("2025-06-01");
   });
 
-  it("prefers due_date over date when both are present", () => {
-    const deadlines: DeadlineEntry[] = [
-      { title: "Both dates", date: "2025-01-01", due_date: "2025-12-01" },
-    ];
+  it("prefers due_date as canonical date", () => {
+    const deadlines: DeadlineEntry[] = [{ title: "Due date", due_date: "2025-12-01" }];
     const result = buildDeadlineSummaries(deadlines);
     expect(result[0].date).toBe("2025-12-01");
   });
@@ -717,10 +715,8 @@ describe("buildDeadlineSummaries — additional edge cases", () => {
     expect(result[0].urgency).toBe("upcoming");
   });
 
-  it("marks completed status as done urgency", () => {
-    const deadlines: DeadlineEntry[] = [
-      { title: "Completed", due_date: "2025-12-01", status: "completed" },
-    ];
+  it("marks done status as done urgency", () => {
+    const deadlines: DeadlineEntry[] = [{ title: "Done", due_date: "2025-12-01", status: "done" }];
     const result = buildDeadlineSummaries(deadlines);
     expect(result[0].urgency).toBe("done");
   });

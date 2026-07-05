@@ -48,6 +48,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { triageBatch, type TriageInput } from "@/lib/triage";
+import { Zap, AlertTriangle, Calendar, Euro, Info, ShieldAlert } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -55,10 +57,11 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { tracking } from "@/lib/tracking";
 
 type IntakeStatus = "new" | "needs_info" | "conflict_check" | "accepted" | "rejected" | "converted";
 
-type IntakeSource = "whatsapp" | "portal" | "web" | "email" | "manual";
+type IntakeSource = "whatsapp" | "portal" | "web" | "email" | "bea" | "scan" | "manual";
 
 interface IntakeRecord {
   slug: string;
@@ -106,6 +109,8 @@ const SOURCE_ICON: Record<IntakeSource, React.ElementType> = {
   portal: User,
   web: Search,
   email: Mail,
+  bea: Landmark,
+  scan: FileText,
   manual: FileText,
 };
 
@@ -182,6 +187,7 @@ export default function IntakePage() {
   const convertMutation = useMutation({
     mutationFn: api.intake.convert,
     onSuccess: () => {
+      tracking.intake.approved("converted");
       qc.invalidateQueries({ queryKey: ["intake", "list"] });
       qc.invalidateQueries({ queryKey: ["brain", "pages"] });
       addToast({ type: "success", title: t("intake.toast_converted") });
@@ -352,6 +358,9 @@ export default function IntakePage() {
         <p className="brand-text/90 text-xs leading-relaxed">{t("intake.info_banner")}</p>
       </div>
 
+      {/* KI-Triage Panel */}
+      {!loading && items.length > 0 && <TriagePanel items={items} />}
+
       {/* Stats bar */}
       {!loading && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
@@ -389,6 +398,7 @@ export default function IntakePage() {
               { key: "whatsapp", icon: MessageSquareText, label: "WhatsApp" },
               { key: "email", icon: Mail, label: "E-Mail" },
               { key: "bea", icon: Landmark, label: "beA", href: "/dashboard/bea" },
+              { key: "scan", icon: FileText, label: t("intake.source_scan") },
               { key: "portal", icon: User, label: "Portal" },
               { key: "web", icon: Search, label: "Web" },
               { key: "manual", icon: FileText, label: t("intake.source_manual") },
@@ -865,6 +875,8 @@ export default function IntakePage() {
                 <option value="manual">{t("intake.source_manual")}</option>
                 <option value="whatsapp">WhatsApp</option>
                 <option value="email">E-Mail</option>
+                <option value="bea">beA</option>
+                <option value="scan">{t("intake.source_scan")}</option>
                 <option value="portal">Portal</option>
                 <option value="web">Web</option>
               </select>
@@ -1034,6 +1046,153 @@ function EmptyState({
         {hint}
       </p>
       {cta && <div className="mt-5">{cta}</div>}
+    </div>
+  );
+}
+
+const URGENCY_STYLES: Record<string, string> = {
+  critical: "border-red-500/20 bg-red-500/10 text-red-600",
+  high: "border-orange-500/20 bg-orange-500/10 text-orange-600",
+  medium: "border-amber-500/20 bg-amber-500/10 text-amber-600",
+  low: "border-slate-500/20 bg-slate-500/10 text-slate-600",
+};
+
+const ACTION_ICONS: Record<string, React.ElementType> = {
+  frist: AlertTriangle,
+  termin: Calendar,
+  antwort: Mail,
+  dokument: FileText,
+  zahlung: Euro,
+  info: Info,
+  konflikt: ShieldAlert,
+};
+
+function TriagePanel({ items }: { items: IntakeRecord[] }) {
+  const [expanded, setExpanded] = useState(true);
+
+  const triageCards = useMemo(() => {
+    const inputs: TriageInput[] = items
+      .filter((item) => item.frontmatter.status === "new")
+      .map((item) => ({
+        source: (item.frontmatter.source === "web"
+          ? "portal"
+          : item.frontmatter.source) as TriageInput["source"],
+        subject: item.title,
+        body: item.frontmatter.summary,
+        sender: item.frontmatter.email,
+        date: item.frontmatter.created_at,
+        rawSlug: item.slug,
+      }));
+    return triageBatch(inputs).sort((a, b) => {
+      const order = { critical: 0, high: 1, medium: 2, low: 3 };
+      return order[a.urgency] - order[b.urgency];
+    });
+  }, [items]);
+
+  if (triageCards.length === 0) return null;
+
+  const criticalCount = triageCards.filter((c) => c.urgency === "critical").length;
+  const highCount = triageCards.filter((c) => c.urgency === "high").length;
+
+  return (
+    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between px-4 py-3 text-left"
+      >
+        <div className="flex items-center gap-2">
+          <Zap size={16} className="brand-text" />
+          <span className="text-sm font-semibold text-[color:var(--ds-text)]">KI-Triage</span>
+          {criticalCount > 0 && (
+            <Badge
+              variant="default"
+              className="border border-red-500/20 bg-red-500/10 text-xs text-red-600"
+            >
+              {criticalCount} kritisch
+            </Badge>
+          )}
+          {highCount > 0 && (
+            <Badge
+              variant="default"
+              className="border border-orange-500/20 bg-orange-500/10 text-xs text-orange-600"
+            >
+              {highCount} hoch
+            </Badge>
+          )}
+        </div>
+        <ChevronRight
+          size={16}
+          className={cn(
+            "text-[color:var(--ds-text-muted)] transition-transform",
+            expanded && "rotate-90"
+          )}
+        />
+      </button>
+
+      {expanded && (
+        <div className="space-y-2 border-t border-[color:var(--ds-border)] px-4 py-3">
+          {triageCards.slice(0, 10).map((card) => {
+            const ActionIcon = ACTION_ICONS[card.actionType] || Info;
+            return (
+              <div
+                key={card.id}
+                className="flex items-start gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)]">
+                  <ActionIcon size={14} className="text-[color:var(--ds-text-muted)]" />
+                </div>
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge
+                      variant="default"
+                      className={cn("border text-xs", URGENCY_STYLES[card.urgency])}
+                    >
+                      {card.urgency}
+                    </Badge>
+                    <Badge
+                      variant="default"
+                      className="brand-soft brand-border brand-text border text-xs"
+                    >
+                      {card.actionType}
+                    </Badge>
+                    {card.legalArea && (
+                      <span className="text-xs text-[color:var(--ds-text-muted)]">
+                        {card.legalArea}
+                      </span>
+                    )}
+                    {card.deadline && (
+                      <span className="flex items-center gap-1 text-xs text-red-600">
+                        <AlertTriangle size={10} />
+                        Frist: {card.deadline}
+                      </span>
+                    )}
+                  </div>
+                  <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                    {card.title}
+                  </p>
+                  <p className="line-clamp-1 text-xs text-[color:var(--ds-text-muted)]">
+                    {card.summary}
+                  </p>
+                </div>
+                {card.rawSlug && (
+                  <Link
+                    href={`/dashboard/brain/${encodeURIComponent(card.rawSlug)}`}
+                    className="shrink-0 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                    title="Details öffnen"
+                  >
+                    <ChevronRight size={14} />
+                  </Link>
+                )}
+              </div>
+            );
+          })}
+          {triageCards.length > 10 && (
+            <p className="pt-1 text-center text-xs text-[color:var(--ds-text-muted)]">
+              +{triageCards.length - 10} weitere
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

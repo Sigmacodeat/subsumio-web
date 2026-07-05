@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { useToast } from "@/components/ui/toast";
+import type { DashboardKey } from "@/content/dashboard";
 import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
 
@@ -56,6 +58,7 @@ const STATUS_ICONS: Record<string, typeof FileText> = {
 export default function WhatsAppTemplatesPage() {
   const { t } = useLang();
   const confirm = useConfirm();
+  const { addToast } = useToast();
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -99,6 +102,7 @@ export default function WhatsAppTemplatesPage() {
       setCreating(false);
       setNewTemplate({ name: "", language: "de", category: "UTILITY", body: "" });
       await reload();
+      addToast({ type: "success", title: t("wamplates.toast_created" as DashboardKey) });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("wamplates.error_create"));
     }
@@ -115,6 +119,7 @@ export default function WhatsAppTemplatesPage() {
       if (!res.ok) throw new Error("Failed to update template");
       setEditing(null);
       await reload();
+      addToast({ type: "success", title: t("wamplates.toast_saved" as DashboardKey) });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("wamplates.error_save"));
     }
@@ -130,6 +135,7 @@ export default function WhatsAppTemplatesPage() {
         body: JSON.stringify({ slug }),
       });
       await reload();
+      addToast({ type: "success", title: t("wamplates.toast_deleted" as DashboardKey) });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("wamplates.error_delete"));
     }

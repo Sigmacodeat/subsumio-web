@@ -10,6 +10,7 @@ export const contactFormSchema = z.object({
   phone: z.string().max(50).optional(),
   address: z.string().max(1000).optional(),
   notes: z.string().max(5000).optional(),
+  leitwegId: z.string().max(200).optional(),
 });
 
 export type ContactFormData = z.infer<typeof contactFormSchema>;

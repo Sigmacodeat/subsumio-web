@@ -1741,6 +1741,8 @@ const list_pages: Operation = {
     type: { type: "string", description: "Filter by page type" },
     tag: { type: "string", description: "Filter by tag" },
     limit: { type: "number", description: "Max results (default 50)" },
+    offset: { type: "number", description: "Pagination offset (default 0)" },
+    slug_prefix: { type: "string", description: "Literal slug prefix filter" },
     // v0.29 — surface filter that already exists on PageFilters.
     updated_after: {
       type: "string",
@@ -1783,6 +1785,8 @@ const list_pages: Operation = {
       type: p.type as any,
       tag: p.tag as string,
       limit: clampSearchLimit(p.limit as number | undefined, 50, 100),
+      offset: Math.max(0, Number(p.offset ?? 0) || 0),
+      slugPrefix: typeof p.slug_prefix === "string" ? p.slug_prefix : undefined,
       includeDeleted: (p.include_deleted as boolean) === true,
       updated_after: typeof p.updated_after === "string" ? p.updated_after : undefined,
       sort,

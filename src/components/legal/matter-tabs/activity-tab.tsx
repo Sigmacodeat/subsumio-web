@@ -281,7 +281,7 @@ export function ActivityTab() {
                 return citations.map((c, i) => (
                   <Link
                     key={i}
-                    href={`/dashboard/norms?citation=${encodeURIComponent(c)}`}
+                    href={`/dashboard/research?tab=normen&citation=${encodeURIComponent(c)}`}
                     className="brand-soft brand-text brand-border hover:brand-soft rounded-lg border px-2.5 py-1 text-xs transition-colors"
                   >
                     {c}

@@ -6,7 +6,7 @@ import { createCronHandler } from "@/lib/api-handler";
 import type { BrainPage } from "@/lib/types";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
 import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
-import { createDeadlineNotification } from "@/lib/comments";
+import { createDeadlineNotification, createNotificationFailureNotification } from "@/lib/comments";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
 import { normalizePhone } from "@/lib/whatsapp/types";
@@ -103,8 +103,18 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   const identityStore = getWhatsAppIdentityStore();
 
   let brainsChecked = 0;
-  let totalSent = 0;
+  let total = 0;
+  let emailed = 0;
+  let whatsapped = 0;
+  let pushSent = 0;
+  let inAppSent = 0;
   const errors: string[] = [];
+  const failed: Array<{
+    deadline_id: string;
+    case_slug: string;
+    channels: string[];
+    reason: string;
+  }> = [];
 
   for (const [brainId, recipients] of recipientsByBrain) {
     brainsChecked++;
@@ -158,6 +168,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         );
 
       if (due.length === 0) continue;
+      total += due.length;
 
       const esc = (s: unknown) =>
         String(s).replace(
@@ -187,16 +198,55 @@ ${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist"
         let notificationSent = false;
 
         // B2: Send email only when SMTP is configured — to ALL recipients
+        const emailChannels: string[] = [];
         if (transporter && toEmails) {
-          await transporter.sendMail({ from: fromAddr, to: toEmails, subject, html });
-          notificationSent = true;
+          try {
+            await transporter.sendMail({ from: fromAddr, to: toEmails, subject, html });
+            notificationSent = true;
+            emailed++;
+            emailChannels.push("email");
 
-          // Log tracking event for the outbound email
-          void logTrackingEvent({
-            trackingId,
-            eventType: "delivered",
-            raw: { source: "smtp", route: "deadline-reminders", recipients: toEmails },
-          });
+            // Log tracking event for the outbound email
+            void logTrackingEvent({
+              trackingId,
+              eventType: "delivered",
+              raw: { source: "smtp", route: "deadline-reminders", recipients: toEmails },
+            });
+          } catch (err) {
+            const reason = err instanceof Error ? err.message : String(err);
+            errors.push(`Email deadline reminder failed: ${reason}`);
+            for (const { d, dd } of due) {
+              failed.push({
+                deadline_id: `${page.slug}_${d.title ?? "Frist"}_${dd}`,
+                case_slug: page.slug,
+                channels: ["email"],
+                reason,
+              });
+              for (const recipient of recipients) {
+                await createNotificationFailureNotification({
+                  userId: recipient.id,
+                  brainId,
+                  caseSlug: page.slug,
+                  caseTitle: String(fm.case_number ?? page.title ?? page.slug),
+                  deadlineTitle: d.title ?? "Frist",
+                  deadlineDate: dd,
+                  channels: ["email"],
+                  reason,
+                });
+              }
+            }
+          }
+        } else if (!smtpConfigured) {
+          // SMTP not configured at all — visible warning per deadline
+          for (const { d, dd } of due) {
+            const reason = "smtp_not_configured";
+            failed.push({
+              deadline_id: `${page.slug}_${d.title ?? "Frist"}_${dd}`,
+              case_slug: page.slug,
+              channels: ["email"],
+              reason,
+            });
+          }
         }
 
         // P3-1: Send WhatsApp reminder to all recipients with a linked identity
@@ -211,22 +261,44 @@ ${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist"
           "Bitte rechtzeitig prüfen.",
         ];
         const waBody = waBodyLines.join("\n");
+        let waSentAny = false;
+        let waFailedAny = false;
         for (const recipient of recipients) {
           const identityEntry = allIdentities.find((id) => id.userId === recipient.id);
           if (!identityEntry) continue;
           try {
-            await sendProactiveMessage({
+            const waResult = await sendProactiveMessage({
               to: normalizePhone(identityEntry.phone),
               brainId,
               scope: "deadline_alert",
               freeform: waBody,
               urgent: true,
             });
-            notificationSent = true;
+            if (waResult.sent) {
+              notificationSent = true;
+              waSentAny = true;
+            } else {
+              waFailedAny = true;
+              errors.push(
+                `WhatsApp deadline reminder blocked for ${recipient.id}: ${waResult.decision.reason}`
+              );
+            }
           } catch (err) {
+            waFailedAny = true;
             errors.push(
               `WhatsApp deadline reminder failed for ${recipient.id}: ${err instanceof Error ? err.message : String(err)}`
             );
+          }
+        }
+        if (waSentAny) whatsapped++;
+        if (waFailedAny) {
+          for (const { d, dd } of due) {
+            failed.push({
+              deadline_id: `${page.slug}_${d.title ?? "Frist"}_${dd}`,
+              case_slug: page.slug,
+              channels: ["whatsapp"],
+              reason: "send_failed_or_blocked",
+            });
           }
         }
 
@@ -246,11 +318,13 @@ ${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist"
             });
           }
           notificationSent = true;
+          inAppSent++;
         }
 
         // P1-4: Send push notification to all recipients with registered devices
         const pushTitle = `⚖️ Frist: ${due[0].d.title ?? "Frist"} ${stageLabel(due[0].stage, due[0].vfReached)}`;
         const pushBody = `Akte ${fm.case_number ?? page.slug} — ${due.length} Frist(en) anstehend`;
+        let pushSentAny = false;
         for (const recipient of recipients) {
           try {
             const pushed = await sendPushToUser(recipient.id, {
@@ -258,11 +332,17 @@ ${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist"
               body: pushBody,
               data: { case_slug: page.slug, type: "deadline_reminder" },
             });
-            if (pushed > 0) notificationSent = true;
-          } catch {
-            // Non-blocking
+            if (pushed > 0) {
+              notificationSent = true;
+              pushSentAny = true;
+            }
+          } catch (err) {
+            errors.push(
+              `Push notification failed for ${recipient.id}: ${err instanceof Error ? err.message : String(err)}`
+            );
           }
         }
+        if (pushSentAny) pushSent++;
 
         // FIX: Only mark stages as sent when at least one notification
         // was actually delivered. Otherwise the reminder is silently lost.
@@ -286,7 +366,6 @@ ${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist"
         });
 
         await updatePageDeadlines(brainId, page.slug, { ...fm, deadlines: updatedDeadlines });
-        totalSent += due.length;
       } catch (err) {
         errors.push(String(err instanceof Error ? err.message : err));
       }
@@ -296,8 +375,13 @@ ${due.map(({ d, dd, stage, vfReached }) => `<li><strong>${esc(d.title ?? "Frist"
   return NextResponse.json({
     ok: true,
     brains_checked: brainsChecked,
-    sent: totalSent,
+    total,
+    emailed,
+    whatsapped,
+    push_sent: pushSent,
+    in_app: inAppSent,
     smtp_configured: smtpConfigured,
+    failed: failed.length > 0 ? failed : undefined,
     errors: errors.length > 0 ? errors : undefined,
   });
 });

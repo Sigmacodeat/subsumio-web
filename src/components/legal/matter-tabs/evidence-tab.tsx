@@ -1,6 +1,16 @@
 "use client";
 
-import { Loader2, FileText, Plus, Trash2, ShieldAlert, Sparkles } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  Loader2,
+  FileText,
+  Plus,
+  Trash2,
+  ShieldAlert,
+  Sparkles,
+  Search,
+  ArrowUpDown,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,9 +20,42 @@ import { useMatterDetail } from "@/lib/matter-detail-context";
 import CommentThread from "@/components/legal/CommentThread";
 import type { EvidenceFormData } from "@/lib/schemas/case-detail";
 
+type SortKey = "weight-desc" | "weight-asc" | "title";
+
 export function EvidenceTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
+  const [typeFilter, setTypeFilter] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortKey>("weight-desc");
+
+  const filteredEvidence = useMemo(() => {
+    let list = [...ctx.evidenceList];
+    if (typeFilter) {
+      list = list.filter((ev) => ev.type === typeFilter);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (ev) =>
+          (ev.title ?? "").toLowerCase().includes(q) ||
+          (ev.description ?? "").toLowerCase().includes(q) ||
+          (ev.source ?? "").toLowerCase().includes(q)
+      );
+    }
+    list.sort((a, b) => {
+      if (sortBy === "weight-desc") return (b.weight ?? 0) - (a.weight ?? 0);
+      if (sortBy === "weight-asc") return (a.weight ?? 0) - (b.weight ?? 0);
+      return (a.title ?? "").localeCompare(b.title ?? "");
+    });
+    return list;
+  }, [ctx.evidenceList, typeFilter, searchQuery, sortBy]);
+
+  const availableTypes = useMemo(() => {
+    const types = new Set(ctx.evidenceList.map((ev) => ev.type).filter(Boolean));
+    return Array.from(types);
+  }, [ctx.evidenceList]);
+
   if (!ctx.caseData) return null;
   const caseData = ctx.caseData;
   const slug = ctx.slug;
@@ -426,90 +469,164 @@ export function EvidenceTab() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {ctx.evidenceList.map((ev, i) => (
-              <div
-                key={i}
-                className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {ev.type && (
-                      <Badge
-                        variant="default"
-                        className="brand-soft brand-border/10 brand-text text-xs"
-                      >
-                        {ev.type}
-                      </Badge>
-                    )}
-                    <span className="text-sm font-medium text-[color:var(--ds-text)]">
-                      {ev.title || t("cases.detail_ev_default_title")}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button
-                      disabled={caseData?.status === "archived"}
-                      onClick={() => {
-                        ctx.setEditingEvidenceIndex(i);
-                        ctx.setShowEvidenceForm(true);
-                        ctx.evidenceForm.reset(ev as EvidenceFormData);
-                      }}
-                      className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors"
-                    >
-                      {t("cases.detail_ev_edit_btn")}
-                    </button>
-                    <button
-                      disabled={caseData?.status === "archived"}
-                      onClick={() => {
-                        const updated = ctx.evidenceList.filter((_, idx) => idx !== i);
-                        ctx.setEvidenceList(updated);
-                        ctx.saveCaseUpdate({ evidence: updated });
-                      }}
-                      className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-colors hover:text-red-600"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-                {ev.description && (
-                  <p className="mb-2 text-sm text-[color:var(--ds-text-muted)]">{ev.description}</p>
-                )}
-                <div className="flex items-center gap-3">
-                  {ev.source && (
-                    <span className="text-xs text-[color:var(--ds-text-muted)]">
-                      {t("cases.detail_ev_source_label")} {ev.source}
-                    </span>
-                  )}
-                  <div className="flex-1">
-                    <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
-                      <div
-                        className={cn(
-                          "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                          (ev.weight || 0) >= 0.7
-                            ? "bg-emerald-500"
-                            : (ev.weight || 0) >= 0.4
-                              ? "bg-amber-500"
-                              : "bg-red-500"
-                        )}
-                        style={{ width: `${Math.round((ev.weight || 0) * 100)}%` }}
-                      />
-                    </div>
-                    <div className="mt-0.5 text-right text-xs text-[color:var(--ds-text-muted)]">
-                      {t("cases.detail_ev_weight_label")} {Math.round((ev.weight || 0) * 100)}%
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-3 border-t border-[color:var(--ds-border)] pt-3">
-                  <CommentThread
-                    parentSlug={`${slug}/evidence/${i}`}
-                    parentType="evidence"
-                    currentUserId={ctx.currentUserId}
-                    currentUserName={ctx.currentUserName}
+          <>
+            {/* Filter & Sort Bar */}
+            {ctx.evidenceList.length > 1 && (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2">
+                <div className="relative min-w-[180px] flex-1">
+                  <Search
+                    size={13}
+                    className="absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)]"
+                  />
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={lang === "en" ? "Search evidence…" : "Beweise durchsuchen…"}
+                    className="w-full rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-1.5 pr-3 pl-8 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                   />
                 </div>
+                {availableTypes.length > 1 && (
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  >
+                    <option value="">{lang === "en" ? "All types" : "Alle Typen"}</option>
+                    {availableTypes.map((tp) => (
+                      <option key={tp} value={tp}>
+                        {tp}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <div className="flex items-center gap-1">
+                  <ArrowUpDown size={12} className="text-[color:var(--ds-text-muted)]" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortKey)}
+                    className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  >
+                    <option value="weight-desc">
+                      {lang === "en" ? "Weight (high→low)" : "Gewicht (hoch→niedrig)"}
+                    </option>
+                    <option value="weight-asc">
+                      {lang === "en" ? "Weight (low→high)" : "Gewicht (niedrig→hoch)"}
+                    </option>
+                    <option value="title">{lang === "en" ? "Title (A→Z)" : "Titel (A→Z)"}</option>
+                  </select>
+                </div>
+                {(typeFilter || searchQuery) && (
+                  <button
+                    onClick={() => {
+                      setTypeFilter("");
+                      setSearchQuery("");
+                    }}
+                    className="text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+                  >
+                    {lang === "en" ? "Clear" : "Zurücksetzen"}
+                  </button>
+                )}
+                <span className="ml-auto text-xs text-[color:var(--ds-text-muted)]">
+                  {filteredEvidence.length} / {ctx.evidenceList.length}
+                </span>
               </div>
-            ))}
-          </div>
+            )}
+
+            {filteredEvidence.length === 0 ? (
+              <div className="py-8 text-center text-sm text-[color:var(--ds-text-muted)]">
+                {lang === "en"
+                  ? "No evidence matches your filters."
+                  : "Keine Beweise entsprechen den Filtern."}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredEvidence.map((ev, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {ev.type && (
+                          <Badge
+                            variant="default"
+                            className="brand-soft brand-border/10 brand-text text-xs"
+                          >
+                            {ev.type}
+                          </Badge>
+                        )}
+                        <span className="text-sm font-medium text-[color:var(--ds-text)]">
+                          {ev.title || t("cases.detail_ev_default_title")}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          disabled={caseData?.status === "archived"}
+                          onClick={() => {
+                            ctx.setEditingEvidenceIndex(i);
+                            ctx.setShowEvidenceForm(true);
+                            ctx.evidenceForm.reset(ev as EvidenceFormData);
+                          }}
+                          className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors"
+                        >
+                          {t("cases.detail_ev_edit_btn")}
+                        </button>
+                        <button
+                          disabled={caseData?.status === "archived"}
+                          onClick={() => {
+                            const updated = ctx.evidenceList.filter((_, idx) => idx !== i);
+                            ctx.setEvidenceList(updated);
+                            ctx.saveCaseUpdate({ evidence: updated });
+                          }}
+                          className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-colors hover:text-red-600"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    {ev.description && (
+                      <p className="mb-2 text-sm text-[color:var(--ds-text-muted)]">
+                        {ev.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-3">
+                      {ev.source && (
+                        <span className="text-xs text-[color:var(--ds-text-muted)]">
+                          {t("cases.detail_ev_source_label")} {ev.source}
+                        </span>
+                      )}
+                      <div className="flex-1">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
+                          <div
+                            className={cn(
+                              "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                              (ev.weight || 0) >= 0.7
+                                ? "bg-emerald-500"
+                                : (ev.weight || 0) >= 0.4
+                                  ? "bg-amber-500"
+                                  : "bg-red-500"
+                            )}
+                            style={{ width: `${Math.round((ev.weight || 0) * 100)}%` }}
+                          />
+                        </div>
+                        <div className="mt-0.5 text-right text-xs text-[color:var(--ds-text-muted)]">
+                          {t("cases.detail_ev_weight_label")} {Math.round((ev.weight || 0) * 100)}%
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 border-t border-[color:var(--ds-border)] pt-3">
+                      <CommentThread
+                        parentSlug={`${slug}/evidence/${i}`}
+                        parentType="evidence"
+                        currentUserId={ctx.currentUserId}
+                        currentUserName={ctx.currentUserName}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

@@ -16,9 +16,7 @@ import {
   Activity,
   ShieldAlert,
   CircleDollarSign,
-  Mail,
   Users,
-  Brain,
   MoreHorizontal,
 } from "lucide-react";
 import {
@@ -39,9 +37,7 @@ const TAB_ICONS: Record<MatterTab, typeof FileText> = {
   activity: Activity,
   evidence: ShieldAlert,
   billing: CircleDollarSign,
-  communications: Mail,
   contacts: Users,
-  ai: Brain,
 };
 
 const TAB_LABELS_DE: Record<MatterTab, string> = {
@@ -52,9 +48,7 @@ const TAB_LABELS_DE: Record<MatterTab, string> = {
   activity: "Verlauf",
   evidence: "Beweise",
   billing: "Kosten",
-  communications: "Kommunikation",
   contacts: "Kontakte",
-  ai: "Assistent",
 };
 
 const TAB_LABELS_EN: Record<MatterTab, string> = {
@@ -65,9 +59,7 @@ const TAB_LABELS_EN: Record<MatterTab, string> = {
   activity: "Activity",
   evidence: "Evidence",
   billing: "Billing",
-  communications: "Messages",
   contacts: "Contacts",
-  ai: "Assistant",
 };
 
 export function MatterTabBar() {

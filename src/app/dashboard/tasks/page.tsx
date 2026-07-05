@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CheckSquare, Square, CalendarClock, Briefcase, Loader2, CheckCircle2 } from "lucide-react";
+import { CheckSquare, CalendarClock, Briefcase, CheckCircle2 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -11,7 +10,6 @@ import { useLang } from "@/lib/use-lang";
 import { cn, encodeSlugPath } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import type { BrainPage } from "@/lib/types";
 
 type Filter = "all" | "open" | "done";
 

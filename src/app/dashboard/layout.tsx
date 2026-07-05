@@ -39,6 +39,7 @@ const CopilotSidebar = dynamic(
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar, type Theme } from "@/components/dashboard/topbar";
 import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
+import { MobileSyncBanner } from "@/components/mobile/mobile-sync-banner";
 import { TourProvider, useAutoStartTour } from "@/components/dashboard/guided-tour";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useBrainStats } from "@/lib/queries/brain";
@@ -49,6 +50,7 @@ import { useNativeBackButton } from "@/lib/use-native-back-button";
 import { useKeyboardAwareScroll } from "@/lib/use-mobile-keyboard";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
+import { identifyUser } from "@/lib/tracking";
 
 function useTheme(): [Theme, () => void] {
   const [theme, setTheme] = useState<Theme>("light");
@@ -140,6 +142,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const isOnboardingPage = pathname === "/dashboard/onboarding";
   const industry = meQuery.data?.user?.industry ?? null;
   const role = meQuery.data?.user?.role ?? null;
+  const plan = meQuery.data?.user?.plan ?? null;
   const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? null;
   const userEmail = meQuery.data?.user?.email ?? null;
 
@@ -148,6 +151,14 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (meQuery.isLoading || !meQuery.data?.user) return;
+    const u = meQuery.data.user;
+    identifyUser(u.id, {
+      email: u.email,
+      name: u.name,
+      role: u.role,
+      plan: u.plan,
+      industry: u.industry,
+    });
     if (!onboardingCompleted && !isOnboardingPage) {
       router.replace("/dashboard/onboarding");
     }
@@ -409,6 +420,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         aria-hidden="true"
       />
 
+      <MobileSyncBanner />
+
       <Sidebar
         ref={drawerRef}
         collapsed={collapsed}
@@ -423,6 +436,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         brainReachable={brainReachable}
         industry={industry}
         role={role}
+        plan={plan}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">

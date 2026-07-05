@@ -57,6 +57,7 @@ import {
 } from "./widget-dashboard";
 import dynamic from "next/dynamic";
 import { RundownWidget } from "./rundown-widget";
+import { InsightsWidget } from "./insights-widget";
 
 const KanzleiInsights = dynamic(() => import("./kanzlei-insights").then((m) => m.KanzleiInsights), {
   loading: () => (
@@ -346,6 +347,7 @@ export function WidgetBoard() {
             documentRequestCount={data.openDocumentRequests.length}
             signatureCount={data.pendingSignatures.length}
             gapsCount={data.unassignedDocs.length + data.reviewGaps.length}
+            overdueReconciliations={data.overdueReconciliations}
           />
         );
       case "secondary-stats":
@@ -401,6 +403,8 @@ export function WidgetBoard() {
         return <RecentQueriesPanel data={data} />;
       case "activity-feed":
         return <ActivityFeedWidget data={data} />;
+      case "insights":
+        return <InsightsWidget />;
       default:
         return null;
     }

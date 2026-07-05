@@ -10,6 +10,9 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { frontmatterOf, type DecisionFrontmatter } from "@/lib/legal-types";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
+import type { GroundingMetadata } from "@/lib/citation-gate-client";
 
 interface JudgementResult {
   id: string;
@@ -27,17 +30,22 @@ interface JudgementResult {
 
 export default function RechtsprechungPage() {
   const { t, lang } = useLang();
+  const { groundAnswer } = useGroundedAnswer();
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<JudgementResult[]>([]);
   const [jurisdiction, setJurisdiction] = useState<"at" | "de" | "ch" | "all">("at");
   const [searched, setSearched] = useState(false);
+  const [aiGrounding, setAiGrounding] = useState<GroundingMetadata | null>(null);
+  const [hasAiResults, setHasAiResults] = useState(false);
 
   async function handleSearch() {
     if (!query.trim()) return;
     setSearching(true);
     setSearched(true);
     setResults([]);
+    setAiGrounding(null);
+    setHasAiResults(false);
 
     try {
       const judgements: JudgementResult[] = [];
@@ -85,71 +93,89 @@ export default function RechtsprechungPage() {
         // Externe Quellen können offline sein — Brain-Treffer + AI-Fallback bleiben
       }
 
-      // 3. AI fallback if no results at all
+      // 3. AI fallback if no results at all — structured JSON prompt
       if (judgements.length === 0) {
+        setHasAiResults(false);
         const thinkResult = await api.query.think(
-          `Suche nach Rechtsprechung zu "${query}" in ${jurisdiction === "at" ? "Österreich" : jurisdiction === "de" ? "Deutschland" : jurisdiction === "ch" ? "der Schweiz" : "Deutschland, Österreich und der Schweiz"}. Liste relevante Urteile mit Gericht, Datum, Aktenzeichen und Leitsatz.`,
+          `Suche nach Rechtsprechung zu "${query}" in ${jurisdiction === "at" ? "Österreich" : jurisdiction === "de" ? "Deutschland" : jurisdiction === "ch" ? "der Schweiz" : "Deutschland, Österreich und der Schweiz"}.
+
+Antworte AUSSCHLIESSLICH als JSON-Array mit maximal 10 relevanten Urteilen. Kein Markdown, kein Text vor oder nach dem JSON.
+
+Format pro Eintrag:
+{
+  "title": "Kurzer Titel des Urteils",
+  "court": "Gericht (z.B. OGH, BGH, BVerfG, BGer)",
+  "date": "YYYY-MM-DD",
+  "az": "Aktenzeichen (z.B. 6 Ob 123/24a)",
+  "ecli": "ECLI falls bekannt, sonst leerer String",
+  "legalArea": "Rechtsgebiet (z.B. Zivilrecht, Strafrecht)",
+  "keywords": ["Schlagwort1", "Schlagwort2"],
+  "summary": "Kurze Zusammenfassung des Leitsatzes (max 300 Zeichen)",
+  "url": "URL zum Urteil falls bekannt, sonst leerer String"
+}`,
           {
             mode: "balanced",
             queryMode: "conservative",
           }
         );
-        const lines = thinkResult.answer.split("\n").filter((l) => l.trim());
-        let current: Partial<JudgementResult> = {};
-        for (const line of lines) {
-          if (line.startsWith("##") || line.match(/^\d+\.\s/)) {
-            if (current.title) {
+
+        // Parse structured JSON response
+        const raw = thinkResult.answer.trim();
+        // Extract JSON array from response (handles cases where AI wraps in markdown code block)
+        const jsonMatch = raw.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          try {
+            const parsed = JSON.parse(jsonMatch[0]) as Array<{
+              title?: string;
+              court?: string;
+              date?: string;
+              az?: string;
+              ecli?: string;
+              legalArea?: string;
+              keywords?: string[];
+              summary?: string;
+              url?: string;
+            }>;
+            for (const entry of parsed) {
+              if (!entry.title) continue;
               judgements.push({
-                id: String(judgements.length),
-                title: current.title || line.replace(/^\d+\.\s*/, "").replace(/^##\s*/, ""),
-                court: current.court || "Unbekannt",
-                date: current.date || new Date().toISOString(),
-                ecli: current.ecli,
-                az: current.az,
-                legalArea: current.legalArea || "Allgemein",
-                keywords: [],
-                summary: current.summary || "",
-                url: current.url || "#",
+                id: `ai-${judgements.length}`,
+                title: entry.title,
+                court: entry.court || "Unbekannt",
+                date: entry.date || new Date().toISOString(),
+                ecli: entry.ecli || undefined,
+                az: entry.az || undefined,
+                legalArea: entry.legalArea || "Allgemein",
+                keywords: Array.isArray(entry.keywords) ? entry.keywords : [],
+                summary: entry.summary || "",
+                url: entry.url || "#",
                 source: "ai",
               });
             }
-            current = { title: line.replace(/^\d+\.\s*/, "").replace(/^##\s*/, "") };
-          } else if (
-            line.toLowerCase().includes("gericht") ||
-            line.toLowerCase().includes("court")
-          ) {
-            current.court = line.split(":")[1]?.trim() || line;
-          } else if (line.toLowerCase().includes("datum") || line.toLowerCase().includes("date")) {
-            current.date = line.split(":")[1]?.trim() || line;
-          } else if (
-            line.toLowerCase().includes("aktenzeichen") ||
-            line.toLowerCase().includes("az")
-          ) {
-            current.az = line.split(":")[1]?.trim() || line;
-          } else if (line.toLowerCase().includes("ecli")) {
-            current.ecli = line.split(":")[1]?.trim() || line;
-          } else {
-            current.summary = (current.summary || "") + " " + line;
+            if (judgements.length > 0) setHasAiResults(true);
+          } catch {
+            // JSON parse failed — no fallback to regex
           }
-        }
-        if (current.title) {
-          judgements.push({
-            id: String(judgements.length),
-            title: current.title,
-            court: current.court || "Unbekannt",
-            date: current.date || new Date().toISOString(),
-            ecli: current.ecli,
-            az: current.az,
-            legalArea: current.legalArea || "Allgemein",
-            keywords: [],
-            summary: current.summary || "",
-            url: current.url || "#",
-            source: "ai",
-          });
         }
       }
 
       setResults(judgements);
+
+      // A.4: Ground AI fallback results — run corpus grounding on AI summaries
+      if (hasAiResults) {
+        const aiText = judgements
+          .filter((j) => j.source === "ai")
+          .map((j) => j.summary)
+          .join(" ");
+        if (aiText.trim()) {
+          try {
+            const grounding = await groundAnswer(aiText);
+            setAiGrounding(grounding);
+          } catch {
+            setAiGrounding(null);
+          }
+        }
+      }
     } catch {
       setResults([]);
     } finally {
@@ -253,9 +279,11 @@ export default function RechtsprechungPage() {
                         "border text-xs",
                         r.source === "brain"
                           ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-600"
-                          : r.source === "ris-ogd"
-                            ? "border-blue-500/20 bg-blue-500/5 text-blue-600"
-                            : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
+                          : r.source === "ai"
+                            ? "border-amber-500/30 bg-amber-500/10 text-amber-700"
+                            : r.source === "ris-ogd"
+                              ? "border-blue-500/20 bg-blue-500/5 text-blue-600"
+                              : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
                       )}
                     >
                       {r.source === "brain"
@@ -267,7 +295,7 @@ export default function RechtsprechungPage() {
                             : r.source === "openlegaldata"
                               ? "OpenLegalData"
                               : r.source === "ai"
-                                ? "KI"
+                                ? "KI ⚠️ Verifizieren"
                                 : r.source}
                     </Badge>
                   </div>
@@ -314,6 +342,19 @@ export default function RechtsprechungPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* A.4: Grounding panel for AI-sourced results — mandatory for every AI output */}
+      {hasAiResults && (
+        <CitationPanel
+          data={
+            {
+              grounding: aiGrounding ?? null,
+              isStreaming: false,
+            } satisfies CitationPanelData
+          }
+          compact
+        />
       )}
     </div>
   );

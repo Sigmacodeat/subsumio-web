@@ -57,6 +57,7 @@ import { ChatHeader } from "@/components/chat/chat-header";
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessageBubble } from "@/components/chat/chat-message";
 import { ChatEmptyState } from "@/components/chat/chat-empty-state";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import type { TFunc } from "@/content/dashboard";
 
 interface ChatPanelProps {
@@ -554,6 +555,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   const { t, lang } = useLang();
   const confirm = useConfirm();
   const meQuery = useMe();
+  const { groundAnswer } = useGroundedAnswer();
 
   const resolvedFeatures = useMemo(() => ({ ...DEFAULT_FEATURES, ...features }), [features]);
 
@@ -653,12 +655,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             const documents = fm.documents || [];
             const timeEntries = fm.time_entries || [];
             const expenses = fm.expenses || [];
-            const openDeadlines = deadlines.filter(
-              (d) => d.status !== "done" && d.status !== "completed"
-            );
+            const openDeadlines = deadlines.filter((d) => d.status !== "done");
             const openTasks = tasks.filter((t) => !t.done);
             const nextDeadline = openDeadlines
-              .map((d) => d.due_date || d.date || "")
+              .map((d) => d.due_date || "")
               .filter(Boolean)
               .sort()[0];
             const totalHours = timeEntries.reduce(
@@ -913,6 +913,33 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           setSessionTokens((prev) => prev + result.tokens_used!);
         }
 
+        // ── Progressive Grounding ──
+        // Run corpus grounding on the answer text after the response is displayed.
+        // This is non-blocking — the user sees the answer immediately, and the
+        // grounding metadata (verified/unverified citations) appears shortly after.
+        // Uses the /api/legal/ground server route via useGroundedAnswer hook.
+        groundAnswer(cleanAnswer)
+          .then((grounding) => {
+            if (!grounding) return;
+            setMessages((m) => {
+              const last = m[m.length - 1];
+              if (!last || last.role !== "assistant" || last.id !== assistantMsg.id) return m;
+              const updated = { ...last, grounding };
+              return [...m.slice(0, -1), updated];
+            });
+            if (persistHistory && activeSessionId) {
+              setMessages((m) => {
+                const last = m[m.length - 1];
+                if (!last || last.id !== assistantMsg.id) return m;
+                saveMessage(activeSessionId, { ...last, grounding });
+                return m;
+              });
+            }
+          })
+          .catch(() => {
+            // Grounding failure is non-fatal — the answer is still displayed
+          });
+
         // ── Copilot Tool Detection ──
         // Detect tool-use intent from the AI response and execute tools
         const toolCalls = await detectAndExecuteTools(result.answer, {
@@ -985,6 +1012,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       setMessages,
       userContext,
       matterVitals,
+      groundAnswer,
     ]
   );
 

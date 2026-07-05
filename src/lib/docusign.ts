@@ -328,6 +328,39 @@ export async function getEnvelopeStatus(
   return { status: data.status, signers: data.recipients?.signers ?? [] };
 }
 
+/**
+ * Download the combined signed PDF document from a completed envelope.
+ * Returns the PDF as a Buffer (base64-decoded).
+ * Uses the "combined" option to get a single PDF with all documents.
+ */
+export async function downloadEnvelopeDocuments(
+  envelopeId: string,
+  opts?: { userId?: string }
+): Promise<Buffer> {
+  const token = opts?.userId
+    ? await getUserAccessToken(opts.userId)
+    : await getServiceAccessToken();
+
+  const url = `${BASE}/accounts/${ACCOUNT}/envelopes/${encodeURIComponent(envelopeId)}/documents?combined=true`;
+  const res = await withRetry(() =>
+    fetch(url, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/pdf" },
+      signal: externalFetchTimeout(),
+    })
+  );
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new DocusignError(
+      `Document download failed: HTTP ${res.status} ${detail.slice(0, 200)}`,
+      { code: "DOCUSIGN_DOWNLOAD_FAILED", details: { envelopeId, status: res.status } }
+    );
+  }
+
+  const arrayBuffer = await res.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
+
 export async function listEnvelopes(
   userId: string,
   opts?: { fromDate?: string; status?: string; limit?: number; page?: number }

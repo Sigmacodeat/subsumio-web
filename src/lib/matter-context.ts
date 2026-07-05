@@ -948,15 +948,15 @@ async function fetchContact(
 export function buildDeadlineSummaries(deadlines: DeadlineEntry[]): MatterDeadlineSummary[] {
   const now = new Date();
   return deadlines
-    .filter((d) => d.date || d.due_date)
+    .filter((d) => d.due_date)
     .map((d) => {
-      const dateStr = d.due_date ?? d.date ?? "";
+      const dateStr = d.due_date ?? "";
       const date = new Date(dateStr);
       const diffMs = date.getTime() - now.getTime();
       const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
       let urgency: MatterDeadlineSummary["urgency"] = "normal";
-      if (d.status === "done" || d.status === "completed") {
+      if (d.status === "done") {
         urgency = "done";
       } else if (diffDays < 0) {
         urgency = "overdue";

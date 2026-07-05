@@ -108,7 +108,9 @@ export default function JoinForm({
 
         <div className="glass rounded-2xl p-8 shadow-2xl shadow-black/50">
           <Users size={22} className="mb-4 text-[var(--brand-primary)]" aria-hidden />
-          <h1 className="mb-1 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)]">{t.title}</h1>
+          <h1 className="mb-1 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)]">
+            {t.title}
+          </h1>
           <p className="mb-6 text-sm text-pretty [color:var(--mk-text-muted)]">{t.sub}</p>
 
           {doneName ? (

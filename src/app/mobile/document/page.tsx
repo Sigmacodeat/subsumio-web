@@ -7,8 +7,19 @@
  */
 
 import { useState, useEffect } from "react";
-import { Search, FileText, Share2, ChevronLeft, Loader2, ExternalLink } from "lucide-react";
+import {
+  Search,
+  FileText,
+  Share2,
+  ChevronLeft,
+  Loader2,
+  ExternalLink,
+  FileWarning,
+  WifiOff,
+} from "lucide-react";
 import { api } from "@/lib/api";
+import { PdfViewer } from "@/components/mobile/pdf-viewer";
+import { getCache, setCache, OFFLINE_KEYS, isOnline } from "@/lib/offline-store";
 
 interface BrainPage {
   slug: string;
@@ -27,6 +38,11 @@ export default function MobileDocumentPage() {
   const [loading, setLoading] = useState(false);
   const [fullContent, setFullContent] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [pdfFilename, setPdfFilename] = useState("");
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [fromCache, setFromCache] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,13 +70,47 @@ export default function MobileDocumentPage() {
   const openDocument = async (page: BrainPage) => {
     setSelected(page);
     setFullContent(null);
+    setLoadError(null);
+    setFromCache(false);
+
+    // Try cache first (offline support)
+    const cacheKey = `${OFFLINE_KEYS.mobileDocPrefix}${page.slug}`;
+    const cached = await getCache<{ content: string; title: string }>(cacheKey);
+    if (cached) {
+      setFromCache(true);
+      setFullContent(cached.content);
+    }
+
+    if (!isOnline()) {
+      if (!cached) {
+        setLoadError("offline_no_cache");
+      }
+      return;
+    }
+
     try {
       const detail = await api.brain.getPage(page.slug);
-      setFullContent(
-        (detail as unknown as BrainPage).content ?? page.snippet ?? "Kein Inhalt verfügbar."
-      );
+      const content =
+        (detail as unknown as BrainPage).content ?? page.snippet ?? "Kein Inhalt verfügbar.";
+      setFullContent(content);
+      setFromCache(false);
+
+      // Cache for offline access
+      await setCache(cacheKey, { content, title: page.title });
+
+      // Check if this is a PDF document
+      const fm = (detail as unknown as { frontmatter?: Record<string, unknown> }).frontmatter;
+      const fileUrl = fm?.file_url as string | undefined;
+      const mimeType = fm?.mime_type as string | undefined;
+      if (fileUrl && (mimeType === "application/pdf" || fileUrl.toLowerCase().endsWith(".pdf"))) {
+        setPdfUrl(fileUrl);
+        setPdfFilename(page.title);
+      }
     } catch {
-      setFullContent(page.snippet ?? "Kein Inhalt verfügbar.");
+      if (!cached) {
+        setLoadError("load_failed");
+        setFullContent(page.snippet ?? "Kein Inhalt verfügbar.");
+      }
     }
   };
 
@@ -138,6 +188,27 @@ export default function MobileDocumentPage() {
             )}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
+            {pdfUrl && (
+              <button
+                onClick={() => setPdfOpen(true)}
+                style={{
+                  background: "#6366f1",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "7px 10px",
+                  cursor: "pointer",
+                  color: "#fff",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <FileText size={14} />
+                PDF
+              </button>
+            )}
             <button
               onClick={share}
               disabled={sharing}
@@ -173,7 +244,43 @@ export default function MobileDocumentPage() {
 
         {/* Content */}
         <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
-          {!fullContent ? (
+          {fromCache && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 12px",
+                marginBottom: 12,
+                background: "#f59e0b20",
+                border: "1px solid #f59e0b30",
+                borderRadius: 8,
+                fontSize: 12,
+                color: "#f59e0b",
+              }}
+            >
+              <WifiOff size={13} />
+              Offline-Cache — Inhalt vom letzten Aufruf
+            </div>
+          )}
+          {loadError === "offline_no_cache" && (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 12,
+                padding: 40,
+                textAlign: "center",
+              }}
+            >
+              <FileWarning size={40} style={{ color: "#6a6a8a", opacity: 0.5 }} />
+              <div style={{ fontSize: 14, color: "#8a8aa8" }}>
+                Offline — dieses Dokument wurde noch nicht geöffnet.
+              </div>
+            </div>
+          )}
+          {!loadError && !fullContent ? (
             <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
               <Loader2
                 size={24}
@@ -194,6 +301,10 @@ export default function MobileDocumentPage() {
             </div>
           )}
         </div>
+
+        {pdfOpen && (
+          <PdfViewer url={pdfUrl} filename={pdfFilename} open={pdfOpen} onOpenChange={setPdfOpen} />
+        )}
       </div>
     );
   }

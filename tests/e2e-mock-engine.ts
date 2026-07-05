@@ -125,6 +125,31 @@ function parseUrl(url: string): { path: string; query: URLSearchParams } {
   return { path, query: new URLSearchParams(qs || "") };
 }
 
+function computeMockDeadlineStatus(
+  dueDate: string,
+  existingStatus?: string,
+  vorfristDate?: string,
+  heute?: string
+): string {
+  if (existingStatus === "done" || existingStatus === "completed") return "done";
+  const today = heute || new Date().toISOString().slice(0, 10);
+  const due = dueDate.slice(0, 10);
+  const diffDays = Math.ceil(
+    (new Date(due).getTime() - new Date(today).getTime()) / (1000 * 60 * 60 * 24)
+  );
+  if (diffDays < 0) return "overdue";
+  if (diffDays <= 3) return "critical";
+  if (vorfristDate) {
+    const vfDiff = Math.ceil(
+      (new Date(vorfristDate.slice(0, 10)).getTime() - new Date(today).getTime()) /
+        (1000 * 60 * 60 * 24)
+    );
+    if (vfDiff <= 0 && diffDays > 3) return "vorfrist";
+  }
+  if (diffDays <= 7) return "warning";
+  return "pending";
+}
+
 // ── Route handler ─────────────────────────────────────────────────────
 
 async function handleReq(req: IncomingMessage, res: ServerResponse) {
@@ -170,6 +195,25 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     const body = JSON.parse(raw || "{}");
     const slug = body.slug || `test/page-${Date.now()}`;
     const now = new Date().toISOString();
+
+    // Support merge:true (used by enginePatchPage) — merge frontmatter into existing page
+    if (body.merge && pages.has(slug)) {
+      const existing = pages.get(slug)!;
+      const updated: MockPage = {
+        ...existing,
+        title: body.title || existing.title,
+        content: body.content ?? existing.content,
+        type: body.type || existing.type,
+        frontmatter: {
+          ...existing.frontmatter,
+          ...(body.frontmatter || {}),
+        },
+        updated_at: now,
+      };
+      pages.set(slug, updated);
+      return sendJson(res, 200, updated);
+    }
+
     const page: MockPage = {
       slug,
       title: body.title || "Untitled",
@@ -310,16 +354,29 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
   if (path === "/api/search" && req.method === "GET") {
     const q = query.get("q") || "";
     const limit = parseInt(query.get("limit") || "10", 10);
-    const matched = Array.from(pages.values()).filter(
-      (p) =>
-        p.title.toLowerCase().includes(q.toLowerCase()) ||
-        p.content.toLowerCase().includes(q.toLowerCase()) ||
-        p.slug.toLowerCase().includes(q.toLowerCase())
-    );
+
+    // Support frontmatter field:value query syntax (e.g. "docusign_envelope_id:abc123")
+    const fieldMatch = q.match(/^(\w+):(.+)$/);
+    let matched: MockPage[];
+    if (fieldMatch) {
+      const [, field, value] = fieldMatch;
+      matched = Array.from(pages.values()).filter((p) => {
+        const fm = p.frontmatter || {};
+        return String(fm[field] ?? "") === value;
+      });
+    } else {
+      matched = Array.from(pages.values()).filter(
+        (p) =>
+          p.title.toLowerCase().includes(q.toLowerCase()) ||
+          p.content.toLowerCase().includes(q.toLowerCase()) ||
+          p.slug.toLowerCase().includes(q.toLowerCase())
+      );
+    }
     const results = matched.slice(0, limit).map((p) => ({
       slug: p.slug,
       title: p.title,
       type: p.type,
+      frontmatter: p.frontmatter,
       snippet: p.content.slice(0, 200),
       score: 0.9,
     }));
@@ -512,6 +569,210 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
   // ── Clause annotations ──────────────────────────────────────────────
   if (path === "/api/clause-annotations" && req.method === "GET") {
     return sendJson(res, 200, { items: [], stats: { total: 0, by_risk: {}, by_status: {} } });
+  }
+
+  // ── Pages: batch-list (used by /api/legal/fristen) ──────────────────
+  if (path === "/api/pages/batch-list" && req.method === "GET") {
+    const types = (query.get("types") || "").split(",").filter(Boolean);
+    const limit = parseInt(query.get("limit") || "300", 10);
+    const results: Record<string, MockPage[]> = {};
+    for (const t of types) {
+      results[t] = Array.from(pages.values())
+        .filter((p) => p.type === t)
+        .slice(0, limit);
+    }
+    return sendJson(res, 200, { results });
+  }
+
+  // ── Legal: fristenbuch ──────────────────────────────────────────────
+  if (path === "/api/legal/fristenbuch" && req.method === "GET") {
+    const caseFilter = query.get("case");
+    const heute = query.get("heute") || new Date().toISOString().slice(0, 10);
+    const eintraege: Array<Record<string, unknown>> = [];
+    for (const p of pages.values()) {
+      if (p.type === "legal_case") {
+        const fm = p.frontmatter || {};
+        const deadlines = Array.isArray(fm.deadlines) ? fm.deadlines : [];
+        for (const d of deadlines as Array<Record<string, unknown>>) {
+          if (caseFilter && p.slug !== caseFilter) continue;
+          const dueDate = String(d.due_date || d.date || "");
+          if (!dueDate) continue;
+          const status = computeMockDeadlineStatus(
+            dueDate,
+            d.status as string | undefined,
+            d.vorfrist_date as string | undefined,
+            heute
+          );
+          eintraege.push({
+            case_slug: p.slug,
+            datum: dueDate.slice(0, 10),
+            frist: d.title || d.description || "Frist",
+            rechtsgrundlage: d.law || "",
+            folge_bei_versaeumnis: "",
+            beleg_on: "",
+            ampel: status,
+            status,
+            vorfrist: d.vorfrist_date || "",
+            eskalation: status === "overdue" || status === "critical",
+          });
+        }
+      }
+      if (p.type === "legal_deadline") {
+        if (caseFilter && p.frontmatter?.case_slug !== caseFilter) continue;
+        const fm = p.frontmatter || {};
+        const dueDate = String(fm.due_date || fm.date || "");
+        if (!dueDate) continue;
+        const status = computeMockDeadlineStatus(
+          dueDate,
+          fm.status as string | undefined,
+          fm.vorfrist_date as string | undefined,
+          heute
+        );
+        eintraege.push({
+          case_slug: fm.case_slug || p.slug,
+          datum: dueDate.slice(0, 10),
+          frist: fm.description || fm.title || p.title || "Frist",
+          rechtsgrundlage: fm.law || "",
+          folge_bei_versaeumnis: "",
+          beleg_on: "",
+          ampel: status,
+          status,
+          vorfrist: fm.vorfrist_date || "",
+          eskalation: status === "overdue" || status === "critical",
+        });
+      }
+    }
+    return sendJson(res, 200, {
+      heute,
+      eintraege,
+      zusammenfassung: {
+        gesamt: eintraege.length,
+        ueberfaellig: eintraege.filter((e) => e.status === "overdue").length,
+        kritisch: eintraege.filter((e) => e.status === "critical").length,
+        vorfrist: eintraege.filter((e) => e.status === "vorfrist").length,
+        ok: eintraege.filter((e) => e.status === "pending" || e.status === "ok").length,
+        warning: eintraege.filter((e) => e.status === "warning").length,
+        done: eintraege.filter((e) => e.status === "done").length,
+        unparsebar: 0,
+      },
+    });
+  }
+
+  // ── Legal: deadlines.ics ────────────────────────────────────────────
+  if (path === "/api/legal/deadlines.ics" && req.method === "GET") {
+    const caseFilter = query.get("case");
+    const heute = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const lines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Subsumio//Mock//DE",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      "X-WR-CALNAME:Subsumio Kanzlei-Fristen",
+      "X-WR-TIMEZONE:Europe/Berlin",
+    ];
+    for (const p of pages.values()) {
+      if (p.type === "legal_case") {
+        if (caseFilter && p.slug !== caseFilter) continue;
+        const fm = p.frontmatter || {};
+        const deadlines = Array.isArray(fm.deadlines) ? fm.deadlines : [];
+        for (const d of deadlines) {
+          const dueDate = String(d.due_date || d.date || "");
+          if (!dueDate) continue;
+          const dateStr = dueDate.slice(0, 10).replace(/-/g, "");
+          lines.push("BEGIN:VEVENT");
+          lines.push(`UID:${p.slug}-${dueDate}@subsumio.local`);
+          lines.push(`DTSTART;VALUE=DATE:${dateStr}`);
+          lines.push(`DTEND;VALUE=DATE:${dateStr}`);
+          lines.push(`SUMMARY:${d.title || d.description || "Frist"}`);
+          lines.push("BEGIN:VALARM");
+          lines.push("TRIGGER:-P2DT8H");
+          lines.push("ACTION:DISPLAY");
+          lines.push(`DESCRIPTION:Frist: ${d.title || d.description || ""}`);
+          lines.push("END:VALARM");
+          lines.push(`DTSTAMP:${heute}T000000Z`);
+          lines.push("END:VEVENT");
+        }
+      }
+    }
+    lines.push("END:VCALENDAR");
+    const ics = lines.join("\r\n");
+    res.writeHead(200, {
+      "Content-Type": "text/calendar; charset=utf-8",
+      "Content-Disposition": 'attachment; filename="fristenbuch.ics"',
+      "Cache-Control": "no-store, max-age=0",
+      "Access-Control-Allow-Origin": "*",
+    });
+    return res.end(ics);
+  }
+
+  // ── Upload (multipart) — used by portal upload flow ────────────────
+  if (path === "/api/upload" && req.method === "POST") {
+    const contentType = req.headers["content-type"] || "";
+    if (!contentType.includes("multipart/form-data")) {
+      return sendJson(res, 400, { error: "invalid_content_type" });
+    }
+    // Parse multipart form data
+    const boundary = contentType.match(/boundary=(.+)/)?.[1]?.trim();
+    if (!boundary) {
+      return sendJson(res, 400, { error: "no_boundary" });
+    }
+    const raw = await readBody(req);
+    const buffer = Buffer.from(raw || "");
+    const boundaryBuf = Buffer.from(`--${boundary}`);
+    const parts: Array<{ name: string; filename?: string; data: Buffer; type?: string }> = [];
+    let start = buffer.indexOf(boundaryBuf);
+    while (start !== -1) {
+      const nextStart = buffer.indexOf(boundaryBuf, start + boundaryBuf.length);
+      if (nextStart === -1) break;
+      const partData = buffer.slice(start + boundaryBuf.length + 2, nextStart - 2);
+      const headerEnd = partData.indexOf("\r\n\r\n");
+      if (headerEnd === -1) {
+        start = nextStart;
+        continue;
+      }
+      const headerStr = partData.slice(0, headerEnd).toString("utf-8");
+      const bodyData = partData.slice(headerEnd + 4);
+      const nameMatch = headerStr.match(/name="([^"]+)"/);
+      const filenameMatch = headerStr.match(/filename="([^"]+)"/);
+      const typeMatch = headerStr.match(/Content-Type:\s*(.+)/i);
+      if (nameMatch) {
+        parts.push({
+          name: nameMatch[1],
+          filename: filenameMatch?.[1],
+          data: bodyData,
+          type: typeMatch?.[1]?.trim(),
+        });
+      }
+      start = nextStart;
+    }
+    const filePart = parts.find((p) => p.name === "file");
+    const titlePart = parts.find((p) => p.name === "title");
+    const caseSlugPart = parts.find((p) => p.name === "case_slug");
+    const sourcePart = parts.find((p) => p.name === "source");
+    if (!filePart || !filePart.filename) {
+      return sendJson(res, 400, { error: "file_required" });
+    }
+    const now = new Date().toISOString();
+    const docSlug = `legal/documents/${filePart.filename.replace(/[^a-zA-Z0-9._-]/g, "_")}_${Date.now()}`;
+    const docPage: MockPage = {
+      slug: docSlug,
+      title: titlePart?.data.toString("utf-8").trim() || filePart.filename,
+      content: "",
+      type: "document",
+      frontmatter: {
+        filename: filePart.filename,
+        mime_type: filePart.type || "application/octet-stream",
+        source: sourcePart?.data.toString("utf-8").trim() || "upload",
+        case_slug: caseSlugPart?.data.toString("utf-8").trim() || "",
+        uploaded_at: now,
+        size: filePart.data.length,
+      },
+      created_at: now,
+      updated_at: now,
+    };
+    pages.set(docSlug, docPage);
+    return sendJson(res, 200, { ok: true, slug: docSlug, page: docPage });
   }
 
   // ── Generic fallback: try to return reasonable response ─────────────

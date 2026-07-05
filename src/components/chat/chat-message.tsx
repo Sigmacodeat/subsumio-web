@@ -18,13 +18,8 @@ import { cn } from "@/lib/utils";
 import { renderMarkdown } from "@/lib/markdown";
 import { useLang } from "@/lib/use-lang";
 import { AIBadge, GroundingStatus } from "@/components/legal/CitationLink";
-import { CitationBadgesInline } from "@/components/legal/CitationPanel";
-import {
-  GAP_ICONS,
-  GAP_LABELS,
-  GAP_LABELS_EN,
-  type ChatMessage,
-} from "@/components/chat/chat-types";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { type ChatMessage } from "@/components/chat/chat-types";
 import { ToolCallBubble } from "@/components/chat/tool-call-bubble";
 
 interface ChatMessageBubbleProps {
@@ -43,14 +38,6 @@ interface ChatMessageBubbleProps {
   onToolRetry?: (toolCallId: string) => void;
 }
 
-function parseGapType(gap: string): string | null {
-  const lower = gap.toLowerCase().replace(/[^a-z_]/g, "_");
-  for (const key of Object.keys(GAP_LABELS)) {
-    if (lower.includes(key)) return key;
-  }
-  return null;
-}
-
 function ChatMessageBubbleInner({
   message,
   features,
@@ -66,7 +53,6 @@ function ChatMessageBubbleInner({
   const { t, lang } = useLang();
   const isUser = message.role === "user";
   const hasCitations = (message.citations?.length ?? 0) > 0;
-  const hasGaps = (message.gaps?.length ?? 0) > 0;
   const hasAttachments = (message.attachments?.length ?? 0) > 0;
 
   async function handleCopy() {
@@ -149,91 +135,19 @@ function ChatMessageBubbleInner({
           </div>
         )}
 
-        {/* Citations + Gaps (assistant only) */}
-        {!isUser && !message.isStreaming && (hasCitations || hasGaps) && (
-          <div className="space-y-1.5">
-            {hasCitations && (
-              <div className="flex flex-wrap items-center gap-1.5">
-                <CitationBadgesInline
-                  data={{
-                    citations: message.citations,
-                    gaps: message.gaps,
-                    isStreaming: false,
-                  }}
-                />
-                {message.citations!.map((c) => (
-                  <div key={c.slug} className="group/citation inline-flex items-center">
-                    <a
-                      href={`/dashboard/brain/${encodeURIComponent(c.slug)}`}
-                      className="hover:brand-text hover:brand-border inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color] duration-200"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={
-                        c.quote
-                          ? `"${c.quote.slice(0, 120)}${c.quote.length > 120 ? "…" : ""}"`
-                          : c.title
-                      }
-                    >
-                      <FileText size={9} />
-                      {c.title}
-                      {c.page_number && (
-                        <span className="ml-0.5 rounded bg-[color:var(--ds-surface-3)] px-1 py-0.5 text-xs font-medium text-[color:var(--ds-text-subtle)]">
-                          S. {c.page_number}
-                        </span>
-                      )}
-                    </a>
-                    <button
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        try {
-                          await navigator.clipboard.writeText(c.slug);
-                          const btn = e.currentTarget;
-                          btn.classList.add("text-emerald-500");
-                          setTimeout(() => btn.classList.remove("text-emerald-500"), 1500);
-                        } catch {
-                          // Clipboard API may be unavailable
-                        }
-                      }}
-                      className="ml-0.5 inline-flex items-center justify-center text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover/citation:opacity-100 hover:text-[color:var(--ds-text)]"
-                      aria-label={`${t("chat.copy_slug_aria")} ${c.slug}`}
-                      title={t("chat.copy_slug_title")}
-                    >
-                      <Copy size={10} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {hasGaps && (
-              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-2.5">
-                <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-500">
-                  <AlertTriangle size={12} />
-                  {t("chat.gaps_in_brain")} ({message.gaps!.length})
-                </div>
-                <ul className="space-y-0.5">
-                  {message.gaps!.map((gap, i) => {
-                    const gapType = parseGapType(gap);
-                    const icon = gapType ? GAP_ICONS[gapType] : "⚠";
-                    const labels = lang === "en" ? GAP_LABELS_EN : GAP_LABELS;
-                    const label = gapType ? labels[gapType] : null;
-                    return (
-                      <li
-                        key={i}
-                        className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-500"
-                      >
-                        <span className="shrink-0">{icon}</span>
-                        <span>
-                          {label && <strong className="font-medium">{label}: </strong>}
-                          {gap}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-          </div>
+        {/* Citations + Grounding panel (assistant only) — mandatory for every AI output */}
+        {!isUser && !message.isStreaming && !message.error && (
+          <CitationPanel
+            data={
+              {
+                citations: message.citations?.map((c) => ({ slug: c.slug, title: c.title })),
+                gaps: message.gaps,
+                grounding: message.grounding,
+                isStreaming: false,
+              } satisfies CitationPanelData
+            }
+            compact
+          />
         )}
 
         {/* Metadata row (assistant only) */}

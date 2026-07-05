@@ -24,6 +24,9 @@ export type AuditAction =
   | "invoice.delete"
   | "invoice.send"
   | "invoice.remind"
+  | "invoice.e_invoice_generate"
+  | "invoice.e_invoice_parse"
+  | "invoice.e_invoice_validate"
   | "document.upload"
   | "document.download"
   | "document.delete"
@@ -45,6 +48,10 @@ export type AuditAction =
   | "legal.deep_analysis"
   | "legal.due_diligence"
   | "legal.risk_analysis"
+  | "workflow.approve"
+  | "workflow.start"
+  | "workflow.update"
+  | "workflow.delete"
   | "legal.memo"
   | "legal.redline"
   | "legal.anonymize"
@@ -137,7 +144,14 @@ export type AuditAction =
   | "litigation.phase_advance"
   | "litigation.step_update"
   | "legal.commentary_synthesize"
-  | "share.receive";
+  | "share.receive"
+  | "intake.scan_upload"
+  | "intake.convert"
+  | "inbox.mark_read"
+  | "triage.action"
+  | "bea.send"
+  | "bea.retry"
+  | "autopilot.run";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -153,6 +167,9 @@ const ACTION_LABELS: Record<string, string> = {
   "invoice.delete": "Rechnung gelöscht",
   "invoice.send": "Rechnung versendet",
   "invoice.remind": "Zahlungserinnerung",
+  "invoice.e_invoice_generate": "E-Rechnung generiert",
+  "invoice.e_invoice_parse": "E-Rechnung importiert",
+  "invoice.e_invoice_validate": "E-Rechnung validiert",
   "document.upload": "Dokument hochgeladen",
   "document.download": "Dokument heruntergeladen",
   "document.delete": "Dokument gelöscht",
@@ -248,6 +265,10 @@ const ACTION_LABELS: Record<string, string> = {
   "tax.appeal_generator": "Einspruchsgenerator",
   "tax.bfh_feed": "BFH-Rechtsprechung-Feed",
   "tax.client_letter": "Mandantenbrief generiert",
+  "inbox.mark_read": "Nachricht als gelesen markiert",
+  "triage.action": "Triage-Aktion ausgeführt",
+  "bea.send": "beA-Versand gestartet",
+  "bea.retry": "beA-Versand Retry",
 };
 
 export function auditLabel(action: string): string {

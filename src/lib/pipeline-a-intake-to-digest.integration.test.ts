@@ -19,12 +19,7 @@ import { describe, test, expect } from "vitest";
 import { buildIntakeRequest, type IntakeRequestInput } from "@/lib/intake";
 import { buildCaseFromIntake } from "@/lib/intake-conversion";
 import { detectDeadlines } from "@/lib/ai-deadline-detect";
-import {
-  calculateDeadline,
-  computeDeadlineStatus,
-  DEADLINE_RULES,
-  type DeadlineEntry,
-} from "@/lib/legal-deadlines";
+import { calculateDeadline, computeDeadlineStatus, DEADLINE_RULES } from "@/lib/legal-deadlines";
 import { computeVorfrist, isVorfristReached, daysUntilVorfrist } from "@/lib/legal/vorfrist";
 
 // ── Fixtures ───────────────────────────────────────────────────────────

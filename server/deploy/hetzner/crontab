@@ -8,18 +8,28 @@
 # ── 03:30 UTC (05:30 CEST) — Judgements sync ──
 30 3 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/judgements-sync || true
 
-# ── DISABLED: Daily Rundown agent — was spawning 666 Claude subagents (~$5/day).
-# The deterministic daily-briefing cron at 06:30 UTC covers the same need at $0.
-# Re-enable manually only with budget_remaining_cents set in the route.
-# 0 5 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/rundown || true
+# ── 05:00 UTC (07:00 CEST) — Daily Rundown agent ──
+# Submits a supervisor job with the Rundown prompt, polls for completion,
+# emails + WhatsApps the result. Result stored as agent job (name=rundown)
+# so the dashboard RundownWidget picks it up automatically.
+# Budget cap: $0.30/brain. No force_specialists (prevents subagent spawning).
+# Opt-out: set DISABLE_RUNDOWN_CRON=true in env.
+0 5 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/rundown || true
 
 # ── 06:00 UTC (08:00 CEST) — Daily deadlines digest ──
+# Fristen-Kette: syncs pipeline-extracted deadline_calendar pages → legal_deadline
+# pages (A1), then collects all deadlines (legal_case + legal_deadline) and sends
+# a digest email per brain. Includes Vorfrist section (B3) and pipeline_synced
+# count in the response JSON.
 0 6 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadlines || true
 
 # ── 06:30 UTC (08:30 CEST) — Daily briefing ──
 30 6 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/daily-briefing || true
 
 # ── 07:00 UTC (09:00 CEST) — Deadline reminders ──
+# Sends staged email/WhatsApp/push reminders for approaching deadlines.
+# Tracks reminder_sent_at + reminder_stages_sent per deadline in frontmatter.
+# Also sends Vorfrist-specific reminders (B3) when vorfrist_date is reached.
 0 7 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadline-reminders || true
 
 # ── 06:30 UTC (08:30 CEST) — Case law monitoring ──
@@ -45,6 +55,11 @@
 
 # ── 08:00 UTC (10:00 CEST) — Retention policy check ──
 0 8 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/retention || true
+
+# ── 08:30 UTC (10:30 CEST) — Document request reminders ──
+# Sends reminders for sent/partially_fulfilled document requests after 7 days.
+# Max 3 reminders, then escalates as in-app notification to the responsible lawyer.
+30 8 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/document-request-reminders || true
 
 # ── 09:00 UTC (11:00 CEST) — Auto-playbook update ──
 # Scans all executed contracts (frontmatter.status=executed) and updates
@@ -75,3 +90,29 @@
 # reachability. External monitoring (Uptime Kuma / Better Stack) should also
 # poll /api/cron/health directly for HTTP 200 (all ok) vs 503 (degraded).
 */10 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/health || true
+
+# ── 04:00 UTC (06:00 CEST) — Autopilot (autonomous case processing) ──
+# Runs BEFORE the rundown. Processes unmatched intake items per AutoPilotPolicy:
+# analyze → deadline suggestions (unreviewed) → draft response (agent_action approval-gate).
+# Opt-out: set DISABLE_AUTOPILOT_CRON=true in env.
+0 4 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/autopilot || true
+
+# ── 09:00 UTC (11:00 CEST) — Invoice dunning run (FiBu) ──
+# Processes sent invoices past zahlungszielTage: reminder → Mahnung 1 → Mahnung 2,
+# with Verzugszinsen per § 288 BGB. Escalates after max stages.
+0 9 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/dunning-run || true
+
+# ── 19:00 UTC (21:00 CEST) — Time suggestions (passive time tracking) ──
+# Aggregates today's activity_event pages per user into draft time_suggestion pages.
+0 19 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/time-suggestions || true
+
+# ── Every 15 minutes — Outlook/M365 calendar + mail sync ──
+# Two-way calendar sync + mail delta sync via Microsoft Graph. No-op if MS Graph not configured.
+*/15 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/outlook-sync || true
+
+# ── Every 30 minutes — Deadline alerts (realtime escalation) ──
+# Broadcasts realtime alerts for deadlines crossing urgency thresholds.
+*/30 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadline-alerts || true
+
+# ── Every hour — Time tracking inactivity check ──
+0 * * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/time-tracking/inactivity-check || true

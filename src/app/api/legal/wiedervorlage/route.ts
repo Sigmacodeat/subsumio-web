@@ -7,12 +7,16 @@ export const maxDuration = 30;
 const schema = z.object({
   case_slug: z.string().min(1),
   verjaehrung_score: z.number().min(0).max(100),
-  urgent_ansprueche: z.array(z.object({
-    anspruch: z.string(),
-    restzeit_tage: z.number(),
-    paragraph: z.string().optional(),
-    handlungsbedarf: z.string().optional(),
-  })).min(1),
+  urgent_ansprueche: z
+    .array(
+      z.object({
+        anspruch: z.string(),
+        restzeit_tage: z.number(),
+        paragraph: z.string().optional(),
+        handlungsbedarf: z.string().optional(),
+      })
+    )
+    .min(1),
 });
 
 export const POST = createHandler(
@@ -33,7 +37,9 @@ export const POST = createHandler(
       const dueDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
       const dueIso = dueDate.toISOString().split("T")[0]!;
 
-      const slug = `deadlines/wiedervorlage-${body.case_slug}-${anspruch.anspruch}`.replace(/[^a-z0-9/-]/gi, "-").toLowerCase();
+      const slug = `deadlines/wiedervorlage-${body.case_slug}-${anspruch.anspruch}`
+        .replace(/[^a-z0-9/-]/gi, "-")
+        .toLowerCase();
 
       const frontmatter: Record<string, unknown> = {
         type: "deadline",
@@ -51,17 +57,20 @@ export const POST = createHandler(
       };
 
       try {
-        const pageRes = await fetch(`${ENGINE_URL}/api/pages/${slug.split("/").map(encodeURIComponent).join("/")}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", ...headers },
-          body: JSON.stringify({
-            type: "deadline",
-            title: frontmatter.title as string,
-            compiled_truth: `## Wiedervorlage\n\n**Akte:** ${body.case_slug}\n**Anspruch:** ${anspruch.anspruch}\n**Restzeit:** ${days} Tage\n**§:** ${anspruch.paragraph ?? ""}\n**Handlungsbedarf:** ${anspruch.handlungsbedarf ?? ""}\n\n> ⚠️ Verjährung droht — sofortige Maßnahme erforderlich!`,
-            frontmatter,
-          }),
-          signal: AbortSignal.timeout(15_000),
-        });
+        const pageRes = await fetch(
+          `${ENGINE_URL}/api/pages/${slug.split("/").map(encodeURIComponent).join("/")}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", ...headers },
+            body: JSON.stringify({
+              type: "deadline",
+              title: frontmatter.title as string,
+              compiled_truth: `## Wiedervorlage\n\n**Akte:** ${body.case_slug}\n**Anspruch:** ${anspruch.anspruch}\n**Restzeit:** ${days} Tage\n**§:** ${anspruch.paragraph ?? ""}\n**Handlungsbedarf:** ${anspruch.handlungsbedarf ?? ""}\n\n> ⚠️ Verjährung droht — sofortige Maßnahme erforderlich!`,
+              frontmatter,
+            }),
+            signal: AbortSignal.timeout(15_000),
+          }
+        );
 
         if (pageRes.ok) {
           results.push({ slug, status: "created", due_date: dueIso });

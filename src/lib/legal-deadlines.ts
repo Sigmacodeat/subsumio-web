@@ -2,6 +2,28 @@ import type { DeadlineAuditEntry, DeadlineEntry, TimelineEntry } from "@/lib/leg
 
 export type DeadlineStatus = "pending" | "warning" | "critical" | "overdue" | "done" | "vorfrist";
 
+/**
+ * E1: Map engine Fristenbuch status (old German enum) to unified DeadlineStatus.
+ * Engine returns: "ok" | "vorfrist" | "kritisch" | "ueberfaellig"
+ * Unified enum:   "pending" | "warning" | "critical" | "overdue" | "done" | "vorfrist"
+ */
+const FRISTENBUCH_STATUS_MAP: Record<string, DeadlineStatus> = {
+  ok: "pending",
+  vorfrist: "vorfrist",
+  kritisch: "critical",
+  ueberfaellig: "overdue",
+  // Also handle already-unified values passthrough
+  pending: "pending",
+  warning: "warning",
+  critical: "critical",
+  overdue: "overdue",
+  done: "done",
+};
+
+export function normalizeFristenbuchStatus(raw: string): DeadlineStatus {
+  return FRISTENBUCH_STATUS_MAP[raw] ?? "pending";
+}
+
 // ── Feiertags-Kalkulator (DE + AT + CH) ──────────────────────────────────
 //
 // Bundesland-Codes (ISO 3166-2:DE): BB BE BW BY HB HE HH MV NI NW RP SH SL SN ST TH
@@ -719,9 +741,14 @@ export function computeDueDate(
   rule: DeadlineRule,
   startDate: string,
   state?: Bundesland | Canton,
-  country?: "DE" | "AT" | "CH"
+  country?: "DE" | "AT" | "CH",
+  ervZustelldatum?: string
 ): DueDateResult {
-  const start = parseISODate(startDate);
+  // TODO 4: If ERV-Zustelldatum is set, it becomes the Fristbeginn
+  // (§ 173 ZPO: elektronischer Zustellungstag gilt als Zustelltag).
+  // The caller's startDate may be the manual/processing date; ERV overrides it.
+  const effectiveStart = ervZustelldatum ?? startDate;
+  const start = parseISODate(effectiveStart);
   let due: Date;
   let durationLabel: string;
   if (rule.years || rule.months) {
@@ -760,7 +787,13 @@ export function computeDueDate(
     ? ""
     : " Gesetzliche Feiertage manuell prüfen (kein Bundesland gesetzt).";
 
-  const note = `${durationLabel} ab ${startDate} (${rule.law})${shiftReason}.${holidayNote}`;
+  const ervNote = ervZustelldatum
+    ? ervZustelldatum !== startDate
+      ? ` (Fristbeginn ab ERV-Zustelldatum ${ervZustelldatum} statt ${startDate}, § 173 ZPO)`
+      : ` (Fristbeginn ab ERV-Zustelldatum ${ervZustelldatum}, § 173 ZPO)`
+    : "";
+
+  const note = `${durationLabel} ab ${effectiveStart} (${rule.law})${shiftReason}.${holidayNote}${ervNote}`;
 
   return { dueDate: toISODateString(due), rolledForward, holidayName, note };
 }
@@ -777,7 +810,6 @@ export function calculateDeadline(
     id: `dl-${Date.now()}`,
     title: rule.label,
     description: rule.description,
-    date: dueDate,
     due_date: dueDate,
     type: "deadline",
     status: computeDeadlineStatus(dueDate),
@@ -796,18 +828,27 @@ export function calculateDeadline(
  * E1: Unified status vocabulary across frontend, cron, and engine.
  * Returns 'vorfrist' when the Vorfrist date has been reached but the main
  * deadline is still > 7 days away.
+ * E3: When ervZustelldatum is provided and in the future, the deadline
+ * is not yet "active" (service not effected) → always 'pending'.
  */
 export function computeDeadlineStatus(
   dateStr: string,
   existingStatus?: string,
-  vorfristDate?: string
+  vorfristDate?: string,
+  ervZustelldatum?: string
 ): DeadlineStatus {
   if (existingStatus === "done") return "done";
   // Normalize both to midnight UTC to avoid DST / timezone skew.
-  const target = new Date(dateStr);
-  target.setUTCHours(0, 0, 0, 0);
   const now = new Date();
   now.setUTCHours(0, 0, 0, 0);
+  // E3: If ERV-Zustelldatum is in the future, the deadline hasn't started yet
+  if (ervZustelldatum) {
+    const erv = new Date(ervZustelldatum);
+    erv.setUTCHours(0, 0, 0, 0);
+    if (erv.getTime() > now.getTime()) return "pending";
+  }
+  const target = new Date(dateStr);
+  target.setUTCHours(0, 0, 0, 0);
   const diff = target.getTime() - now.getTime();
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
   if (days < 0) return "overdue";
@@ -827,10 +868,9 @@ export function timelineToDeadline(entry: TimelineEntry, source?: string): Deadl
     id: entry.id,
     title: entry.title,
     description: entry.description,
-    date: entry.date,
-    due_date: entry.date,
+    due_date: entry.date ?? "",
     type: entry.type === "event" ? "meeting" : entry.type,
-    status: entry.status,
+    status: entry.status ? normalizeFristenbuchStatus(entry.status) : undefined,
     source,
     review_status: "unreviewed",
   };

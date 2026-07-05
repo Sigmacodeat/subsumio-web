@@ -254,7 +254,7 @@ function MatterSwitcherItem({
   isPinned,
   onNavigate,
   onTogglePin,
-  lang,
+  lang: _lang,
 }: MatterSwitcherItemProps) {
   const { t } = useLang();
   return (

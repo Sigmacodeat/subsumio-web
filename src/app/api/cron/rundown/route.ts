@@ -7,6 +7,9 @@ import { renderMarkdown } from "@/lib/markdown";
 import { loadAllowedSenders } from "@/lib/whatsapp/verify";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
+
+const log = logger("cron/rundown");
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -45,10 +48,11 @@ async function submitAndWait(
       prompt: RUNDOWN_PROMPT,
       name: "rundown",
       role: "planning",
-      force_specialists: ["legal-analyst", "legal-deadline-extractor"],
-      // Hard budget cap: aborts the entire tree once $0.50 is spent.
-      // Prevents runaway subagent spawning from burning through credits.
-      budget_remaining_cents: 50,
+      // No force_specialists — let the supervisor route efficiently.
+      // Previously forced legal-analyst + legal-deadline-extractor which
+      // caused 666 subagent spawns. The supervisor can still use them
+      // if needed, but won't be forced to spawn them for every brain.
+      budget_remaining_cents: 30,
     }),
     signal: AbortSignal.timeout(30_000),
   });
@@ -115,31 +119,44 @@ function buildEmailHtml(result: string): string {
 
 const RUNDOWN_PROMPT = `Du bist der Subsumio Rundown-Agent. Erstelle das tägliche Kanzlei-Briefing.
 
-## Aufgabe
-1. **Fristen-Check**: Durchsuche alle legal_case Pages nach Fristen der nächsten 7 Tage. Priorisiere nach Dringlichkeit (gerichtlich > vertraglich > intern).
-2. **Offene Tasks**: Liste alle ausstehenden Freigaben (agent_actions mit status=pending) und Review-Lücken auf.
-3. **Akten-Progress**: Fasse zusammen, welche Akten in den letzten 24 Stunden aktiv waren (neue Dokumente, Queries, Agenten-Läufe).
-4. **Empfehlungen**: Gib 3-5 priorisierte Handlungsempfehlungen für den Tag, basierend auf Fristen, Offenem und Akten-Status.
+## Datenquellen
+- Fristen-Read-Model: Verwende die unified Fristen-Daten (legal_case frontmatter + legal_deadline pages + Fristenbuch). Die Fristen sind bereits klassifiziert mit Status (overdue, critical, warning, vorfrist, pending, done).
+- Vier-Augen-Prüfung: Suche nach Fristen mit second_check_required=true, die noch nicht bestätigt sind (second_check_at fehlt).
+- Agent-Inbox: Liste alle ausstehenden agent_actions mit status=pending.
+- Gestrige Aktivität: Akten, die in den letzten 24 Stunden aktualisiert wurden (neue Dokumente, Queries, Agenten-Läufe).
 
-## Format
-Strukturiere als:
-### 📅 Fristen diese Woche
-### ✅ Offene Freigaben
-### 📁 Kürzlich aktive Akten
+## Pflicht-Abschnitte (in dieser Reihenfolge)
+### 🔴 Fristen heute & kritisch
+Heute fällige Fristen (Status overdue/critical) mit Akten-Slug und Frist-Typ. Markiere Notfristen explizit.
+### 🔍 Vier-Augen-Kontrollen offen
+Fristen mit second_check_required=true, die noch nicht bestätigt wurden. Nenne Akte, Frist-Datum und wer prüfen muss.
+### ✅ Agent-Inbox / Freigaben
+Ausstehende agent_actions (status=pending) mit Kurzbeschreibung und Akten-Bezug.
+### 🤖 Über Nacht vorbereitet
+Autopilot-Entwürfe und Analysen der letzten Nacht. Verlinke den Entwurf und nenne jede noch ausstehende Freigabe ausdrücklich. Autopilot-Ergebnisse sind niemals bereits final.
+### 📬 Posteingang
+N uneingeordnete Eingänge (intake_request mit status=new), falls vorhanden. Nenne Quelle (beA, E-Mail, WhatsApp, Scan, Portal) und Kurzbeschreibung.
+### ⚖️ Neue Rechtsprechung
+(Leer falls keine neuen Urteile vorliegen — Abschnitt weglassen wenn leer.)
+### 📁 Gestrige Aktivität
+Akten, die in den letzten 24 Stunden aktualisiert wurden. Kurz: was passierte (Dokument, Query, Agent-Lauf).
 ### 🎯 Empfehlungen für heute
+3-5 priorisierte Handlungsempfehlungen, abgeleitet aus Fristen, offenen Kontrollen und Aktivität.
 
-Sei präzise und kurz. Verweise auf Akten-Slugs wo möglich.`;
+## Regeln
+- Sei präzise und kurz. Verweise immer auf Akten-Slugs.
+- Wenn ein Abschnitt leer ist, lasse ihn weg (nicht "nichts zu berichten" schreiben).
+- Priorisiere gerichtliche Fristen über vertragliche über interne.
+- Markiere Notfristen (is_notfrist=true) mit ⚠️.
+- Sprache: Deutsch.`;
 
 export const GET = createCronHandler(async (_req: NextRequest): Promise<Response> => {
-  if (env("ENABLE_RUNDOWN_CRON") !== "true") {
-    console.info(
-      "[cron/rundown] DISABLED — set ENABLE_RUNDOWN_CRON=true to re-enable. Use daily-briefing cron instead ($0 vs ~$5/day)."
-    );
+  if (env("DISABLE_RUNDOWN_CRON") === "true") {
+    log.info("DISABLED via DISABLE_RUNDOWN_CRON=true. Set to false or unset to re-enable.");
     return Response.json({
       ok: false,
       disabled: true,
-      reason:
-        "Rundown cron disabled — use /api/cron/daily-briefing instead. Set ENABLE_RUNDOWN_CRON=true to override.",
+      reason: "Rundown cron disabled via DISABLE_RUNDOWN_CRON=true. Unset to re-enable.",
     });
   }
 
@@ -209,17 +226,22 @@ export const GET = createCronHandler(async (_req: NextRequest): Promise<Response
         failed++;
       }
     } catch (err) {
-      console.error(
-        `[cron/rundown] brain ${brainId} error:`,
-        err instanceof Error ? err.message : String(err)
-      );
+      log.error("brain rundown error", {
+        brainId,
+        error: err instanceof Error ? err.message : String(err),
+      });
       failed++;
     }
   }
 
-  console.info(
-    `[cron/rundown] submitted=${submitted} completed=${completed} emailed=${emailed} whatsapped=${whatsapped} failed=${failed} brains=${brainIds.size}`
-  );
+  log.info("rundown complete", {
+    submitted,
+    completed,
+    emailed,
+    whatsapped,
+    failed,
+    brains: brainIds.size,
+  });
 
   return Response.json({
     submitted,

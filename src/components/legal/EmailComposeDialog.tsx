@@ -124,7 +124,7 @@ export function EmailComposeDialog({
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={10}
-              placeholder="Sehr geehrte/r..."
+              placeholder={t("email.body_placeholder")}
             />
           </div>
         </div>

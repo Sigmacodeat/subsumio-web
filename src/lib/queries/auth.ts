@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { csrfFetch } from "@/lib/csrf";
 import { api } from "@/lib/api";
+import { tracking, resetUser } from "@/lib/tracking";
 
 export interface LoginInput {
   email: string;
@@ -83,6 +84,8 @@ export function useLogout() {
   return useMutation({
     mutationFn: () => api.auth.logout(),
     onSuccess: () => {
+      tracking.auth.logout();
+      resetUser();
       qc.removeQueries({ queryKey: ["auth", "me"] });
       qc.clear();
       router.push("/login");

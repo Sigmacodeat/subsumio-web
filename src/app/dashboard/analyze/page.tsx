@@ -314,21 +314,25 @@ export default function AnalyzePage() {
             </div>
           ) : null}
 
-          {/* Citation Panel — unified grounding + AI Act badge */}
-          {result._grounding && (
-            <CitationPanel
-              data={{
-                grounding: {
-                  citations_verified: result._grounding.citations_verified,
-                  citations_unverified: result._grounding.citations_unverified,
-                  corpus_checked: result._grounding.corpus_checked,
-                  grounded_citations: [],
-                  analyzed_at: result._grounding.analyzed_at,
-                },
-                isStreaming: false,
-              }}
-            />
-          )}
+          {/* Citation Panel — unified grounding + AI Act badge (mandatory for every AI output) */}
+          <CitationPanel
+            data={{
+              citations: (result.cited_statutes ?? []).map((s) => ({
+                slug: `legal/norms/${s.code.toLowerCase()}/${s.paragraph}`,
+                title: `${s.paragraph} ${s.code}`,
+              })),
+              grounding: result._grounding
+                ? {
+                    citations_verified: result._grounding.citations_verified,
+                    citations_unverified: result._grounding.citations_unverified,
+                    corpus_checked: result._grounding.corpus_checked,
+                    grounded_citations: [],
+                    analyzed_at: result._grounding.analyzed_at,
+                  }
+                : null,
+              isStreaming: false,
+            }}
+          />
 
           {/* Actions */}
           {(result.action_items ?? result.recommended_actions ?? []).length > 0 && (

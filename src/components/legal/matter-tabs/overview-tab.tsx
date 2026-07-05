@@ -17,6 +17,10 @@ import {
   Copy,
   Trash2,
   MoreHorizontal,
+  Briefcase,
+  Link2,
+  Building2,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -129,10 +133,11 @@ export function OverviewTab() {
                 <Scale size={14} className="shrink-0" />
                 {t("cases.detail_btn_assess")}
               </button>
-              {/* DocuSign → Communications tab */}
+              {/* DocuSign → open DocuSign send dialog */}
               <button
+                disabled={caseData?.status === "archived"}
                 onClick={() => {
-                  ctx.navigateToTab("communications");
+                  ctx.setShowDocuSignDialog(true);
                   setMoreActionsOpen(false);
                 }}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:text-sm"
@@ -948,6 +953,89 @@ export function OverviewTab() {
         </div>
       )}
 
+      {/* Mandat & Related Cases (Phase B3) */}
+      {(caseData.mandateId ||
+        (caseData.relatedCaseSlugs && caseData.relatedCaseSlugs.length > 0)) && (
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Link2 size={14} className="brand-text" />
+            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {lang === "en" ? "Mandate & Related Cases" : "Mandat & Verknüpfte Akten"}
+            </h3>
+          </div>
+          {caseData.mandateId && (
+            <div className="mb-3 flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+              <span className="font-medium text-[color:var(--ds-text)]">
+                {lang === "en" ? "Mandate ID:" : "Mandats-ID:"}
+              </span>
+              <code className="rounded bg-[color:var(--ds-hover)] px-2 py-0.5 font-mono text-xs">
+                {caseData.mandateId}
+              </code>
+            </div>
+          )}
+          {caseData.relatedCaseSlugs && caseData.relatedCaseSlugs.length > 0 && (
+            <div className="space-y-1.5">
+              {caseData.relatedCaseSlugs.map((slug) => (
+                <Link
+                  key={slug}
+                  href={`/dashboard/cases/${slug.split("/").map(encodeURIComponent).join("/")}`}
+                  className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-2 text-sm transition-colors hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-active)]"
+                >
+                  <Briefcase size={14} className="text-[color:var(--ds-text-muted)]" />
+                  <span className="font-mono text-xs text-[color:var(--ds-text)]">{slug}</span>
+                  <ChevronRight size={14} className="ml-auto text-[color:var(--ds-text-subtle)]" />
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Additional Opponents (Phase A) */}
+      {caseData.additionalOpponents && caseData.additionalOpponents.length > 0 && (
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Users size={14} className="brand-text" />
+            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {lang === "en" ? "Additional Opponents" : "Zusätzliche Gegner"}
+            </h3>
+          </div>
+          <div className="space-y-2">
+            {caseData.additionalOpponents.map((opp, i) => (
+              <div
+                key={i}
+                className="flex items-start justify-between gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-[color:var(--ds-text)]">{opp.name}</div>
+                  <div className="mt-0.5 flex flex-wrap gap-1.5">
+                    <Badge variant="default" className="text-xs">
+                      {opp.rolle}
+                    </Badge>
+                    {opp.verfahrensschiene && (
+                      <Badge
+                        variant="default"
+                        className="text-xs text-[color:var(--ds-text-muted)]"
+                      >
+                        {opp.verfahrensschiene}
+                      </Badge>
+                    )}
+                  </div>
+                  {opp.haftungsgrund && (
+                    <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                      {opp.haftungsgrund}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Institutionen-Checkliste (Phase D2) */}
+      <InstitutionChecklistCard caseSlug={caseData.slug} lang={lang as "de" | "en"} />
+
       {/* Overview widgets */}
       <CaseOverviewWidgets
         caseData={caseData}
@@ -979,6 +1067,183 @@ export function OverviewTab() {
             })) ?? []
           }
         />
+      )}
+    </div>
+  );
+}
+
+// ── Phase D2: Institutionen-Checkliste Card ────────────────────
+
+function InstitutionChecklistCard({ caseSlug, lang }: { caseSlug: string; lang: "de" | "en" }) {
+  const [institutions, setInstitutions] = useState<Array<{
+    name: string;
+    reason?: string;
+    priority?: string;
+    deadline?: string;
+    draft_type?: string;
+    address?: string;
+  }> | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const page = await api.brain.getPage(`institution-checklists/${caseSlug}`);
+        if (cancelled) return;
+        if (page && page.content) {
+          const text = page.content;
+          const lines = text.split("\n");
+          const parsed: Array<{
+            name: string;
+            reason?: string;
+            priority?: string;
+            deadline?: string;
+            draft_type?: string;
+            address?: string;
+          }> = [];
+          for (const line of lines) {
+            const m = line.match(
+              /^\|\s*([^|]+)\|\s*([^|]*)\|\s*([^|]*)\|\s*([^|]*)\|\s*([^|]*)\|\s*([^|]*)\|$/
+            );
+            if (m && !m[1].includes("Institution") && !m[1].includes("---")) {
+              parsed.push({
+                name: m[1].trim(),
+                priority: m[2]
+                  .trim()
+                  .replace(/[🚨⚠️ℹ️]/g, "")
+                  .trim(),
+                reason: m[3].trim(),
+                deadline: m[4].trim() || undefined,
+                draft_type: m[5].trim() === "—" ? undefined : m[5].trim(),
+                address: m[6].trim() === "—" ? undefined : m[6].trim(),
+              });
+            }
+          }
+          setInstitutions(parsed.length > 0 ? parsed : []);
+        } else {
+          setInstitutions(null);
+        }
+      } catch {
+        if (!cancelled) setInstitutions(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [caseSlug]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm text-[color:var(--ds-text-muted)]">
+        <Loader2 size={14} className="animate-spin" />
+        {lang === "en"
+          ? "Loading institution checklist..."
+          : "Institutionen-Checkliste wird geladen..."}
+      </div>
+    );
+  }
+
+  if (!institutions) return null;
+
+  const urgent = institutions.filter((i) => i.priority?.includes("URGENT"));
+  const warnings = institutions.filter((i) => i.priority?.includes("WARNUNG"));
+  const infos = institutions.filter((i) => i.priority?.includes("INFO"));
+
+  return (
+    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <Building2 size={14} className="brand-text" />
+        <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+          {lang === "en" ? "Institution Checklist" : "Institutionen-Checkliste"}
+        </h3>
+        {(urgent.length > 0 || warnings.length > 0) && (
+          <div className="ml-auto flex items-center gap-1.5">
+            {urgent.length > 0 && (
+              <Badge variant="danger" className="text-xs">
+                🚨 {urgent.length} {lang === "en" ? "urgent" : "dringend"}
+              </Badge>
+            )}
+            {warnings.length > 0 && (
+              <Badge variant="warning" className="text-xs">
+                ⚠️ {warnings.length} {lang === "en" ? "warning" : "Warnung"}
+              </Badge>
+            )}
+            {infos.length > 0 && (
+              <Badge variant="default" className="text-xs">
+                ℹ️ {infos.length}
+              </Badge>
+            )}
+          </div>
+        )}
+      </div>
+      {institutions.length === 0 ? (
+        <p className="text-sm text-[color:var(--ds-text-muted)]">
+          {lang === "en"
+            ? "No institutions need to be notified for this case."
+            : "Keine Institutionen-Meldung für diesen Fall erforderlich."}
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {institutions.map((inst, i) => (
+            <div
+              key={i}
+              className={cn(
+                "flex items-start gap-3 rounded-lg border px-3 py-2",
+                inst.priority?.includes("URGENT")
+                  ? "border-red-500/20 bg-red-500/5"
+                  : inst.priority?.includes("WARNUNG")
+                    ? "border-amber-500/20 bg-amber-500/5"
+                    : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]"
+              )}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-[color:var(--ds-text)]">
+                    {inst.name}
+                  </span>
+                  {inst.priority && (
+                    <Badge
+                      variant={
+                        inst.priority.includes("URGENT")
+                          ? "danger"
+                          : inst.priority.includes("WARNUNG")
+                            ? "warning"
+                            : "default"
+                      }
+                      className="text-xs"
+                    >
+                      {inst.priority}
+                    </Badge>
+                  )}
+                </div>
+                {inst.reason && (
+                  <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">{inst.reason}</p>
+                )}
+                <div className="mt-1 flex flex-wrap gap-3 text-xs text-[color:var(--ds-text-subtle)]">
+                  {inst.deadline && (
+                    <span>
+                      <span className="font-medium">⏰</span> {inst.deadline}
+                    </span>
+                  )}
+                  {inst.draft_type && (
+                    <span>
+                      <span className="font-medium">📄</span> {inst.draft_type}
+                    </span>
+                  )}
+                  {inst.address && (
+                    <span>
+                      <span className="font-medium">📍</span> {inst.address}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

@@ -1,13 +1,8 @@
-import {
-  ENGINE_URL,
-  engineHeadersForBrain,
-  engineHeadersForBrainWithMatterScope,
-} from "@/lib/engine";
+import { listPages, think } from "@/lib/engine-client";
 import { parseIntent, processIntent } from "@/lib/legal-chat/actions";
 import type { BrainPage } from "@/lib/types";
 import type { WhatsAppIdentity } from "@/lib/whatsapp/types";
 import { phoneHash } from "@/lib/whatsapp/verify";
-import { collectSSEChunks } from "@/lib/sse-stream";
 
 interface NaturalChatContext {
   sender: WhatsAppIdentity;
@@ -85,45 +80,6 @@ function classifyIntent(text: string): ChatIntent {
   if (LEGAL_RESEARCH_KEYWORDS.some((rx) => rx.test(trimmed))) return "legal_research";
   if (DAILY_OPS_KEYWORDS.some((rx) => rx.test(trimmed))) return "daily_ops";
   return "general";
-}
-
-async function engineRequest<T>(
-  brainId: string,
-  path: string,
-  init?: RequestInit,
-  matterScope?: string[] | "all"
-): Promise<T> {
-  const headers = matterScope
-    ? engineHeadersForBrainWithMatterScope(brainId, matterScope)
-    : engineHeadersForBrain(brainId);
-  const res = await fetch(`${ENGINE_URL}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...headers,
-      ...(init?.headers ?? {}),
-    },
-    signal: init?.signal ?? AbortSignal.timeout(30_000),
-  });
-  if (!res.ok) {
-    const error = await res.text().catch(() => "");
-    throw new Error(error || `Engine HTTP ${res.status}`);
-  }
-  const text = await res.text();
-  if (!text) return undefined as unknown as T;
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    throw new Error(`Engine returned non-JSON response: ${text.slice(0, 200)}`);
-  }
-}
-
-async function listPages(brainId: string, type: string, limit = 200): Promise<BrainPage[]> {
-  const result = await engineRequest<BrainPage[]>(
-    brainId,
-    `/api/pages?type=${encodeURIComponent(type)}&limit=${limit}`
-  );
-  return Array.isArray(result) ? result : [];
 }
 
 function fm(page: BrainPage): Record<string, unknown> {
@@ -258,34 +214,6 @@ function formatDashboardContext(ctx: DashboardContext): string {
     }
   }
   return parts.join("\n");
-}
-
-async function think(
-  brainId: string,
-  query: string,
-  matterScope?: string[] | "all"
-): Promise<string> {
-  const headers = matterScope
-    ? engineHeadersForBrainWithMatterScope(brainId, matterScope)
-    : engineHeadersForBrain(brainId);
-  const res = await fetch(`${ENGINE_URL}/api/think`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...headers,
-    },
-    body: JSON.stringify({ query, mode: "balanced" }),
-    signal: AbortSignal.timeout(60_000),
-  });
-  if (!res.ok) throw new Error(`Brain-Q&A fehlgeschlagen: HTTP ${res.status}`);
-  const contentType = res.headers.get("Content-Type") || "";
-  if (!contentType.includes("text/event-stream")) {
-    const data = (await res.json().catch(() => ({}))) as { answer?: string };
-    return data.answer || "Keine Antwort erhalten.";
-  }
-  if (!res.body) return "Keine Antwort erhalten.";
-  const answer = await collectSSEChunks(res.body);
-  return answer.trim() || "Keine Antwort erhalten.";
 }
 
 function cleanEngineAnswer(raw: string): string {
@@ -450,7 +378,12 @@ export async function naturalWhatsAppReply(ctx: NaturalChatContext): Promise<str
     .join("\n\n");
 
   try {
-    const rawAnswer = await think(ctx.sender.brainId, enrichedQuery, ctx.sender.matterScope);
+    const rawAnswer = await think(
+      ctx.sender.brainId,
+      enrichedQuery,
+      ctx.sender.matterScope,
+      "balanced"
+    );
     const cleaned = cleanEngineAnswer(rawAnswer);
     const withDisclaimer = addDisclaimer(intent, cleaned);
     return withDisclaimer.slice(0, 3500);

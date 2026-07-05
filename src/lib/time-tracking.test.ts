@@ -11,7 +11,9 @@ import {
   createTimeEntry,
   updateEntry,
   deleteEntry,
+  unbillEntries,
   type TimeEntryWithCase,
+  type BillingSummaryEntry,
 } from "@/lib/time-tracking";
 
 // ── Fixtures ──
@@ -156,7 +158,7 @@ describe("filterEntries", () => {
   test("filter billable only", () => {
     const filtered = filterEntries(FIXTURE_ENTRIES, { billable: true });
     expect(filtered).toHaveLength(4);
-    expect(filtered.every((e) => e.billable)).toBe(true);
+    expect(filtered.every((e: TimeEntryWithCase) => e.billable)).toBe(true);
   });
 
   test("filter non-billable only", () => {
@@ -168,7 +170,7 @@ describe("filterEntries", () => {
   test("filter unbilled only", () => {
     const filtered = filterEntries(FIXTURE_ENTRIES, { unbilled: true });
     expect(filtered).toHaveLength(4);
-    expect(filtered.every((e) => !e.billed)).toBe(true);
+    expect(filtered.every((e: TimeEntryWithCase) => !e.billed)).toBe(true);
   });
 
   test("filter by date range", () => {
@@ -179,7 +181,7 @@ describe("filterEntries", () => {
   test("filter by lawyer (case-insensitive)", () => {
     const filtered = filterEntries(FIXTURE_ENTRIES, { lawyer: "schmidt" });
     expect(filtered).toHaveLength(3);
-    expect(filtered.every((e) => e.lawyer === "Dr. Schmidt")).toBe(true);
+    expect(filtered.every((e: TimeEntryWithCase) => e.lawyer === "Dr. Schmidt")).toBe(true);
   });
 
   test("combined filters: billable + unbilled + lawyer", () => {
@@ -414,13 +416,13 @@ describe("computeBillingSummary", () => {
     const summary = computeBillingSummary(FIXTURE_ENTRIES);
     expect(summary.by_case).toHaveLength(2);
 
-    const case1 = summary.by_case.find((c) => c.case_slug === "case-1");
+    const case1 = summary.by_case.find((c: BillingSummaryEntry) => c.case_slug === "case-1");
     expect(case1).toBeDefined();
     expect(case1!.entry_count).toBe(2);
     expect(case1!.total_minutes).toBe(180);
     expect(case1!.billable_amount).toBe(700);
 
-    const case2 = summary.by_case.find((c) => c.case_slug === "case-2");
+    const case2 = summary.by_case.find((c: BillingSummaryEntry) => c.case_slug === "case-2");
     expect(case2).toBeDefined();
     expect(case2!.entry_count).toBe(1);
     expect(case2!.billable_amount).toBe(900);
@@ -433,8 +435,8 @@ describe("computeBillingSummary", () => {
 
   test("excludes non-billable entries", () => {
     const summary = computeBillingSummary(FIXTURE_ENTRIES);
-    const case1 = summary.by_case.find((c) => c.case_slug === "case-1");
-    expect(case1!.entries.every((e) => e.billable !== false)).toBe(true);
+    const case1 = summary.by_case.find((c: BillingSummaryEntry) => c.case_slug === "case-1");
+    expect(case1!.entries.every((e: TimeEntryWithCase) => e.billable !== false)).toBe(true);
   });
 
   test("calculates totals correctly", () => {
@@ -576,8 +578,8 @@ describe("markEntriesBilled", () => {
     expect(result.updated).toBe(2);
     expect(result.not_found).toHaveLength(0);
 
-    const t1 = result.entries.find((e) => e.id === "t1");
-    const t2 = result.entries.find((e) => e.id === "t2");
+    const t1 = result.entries.find((e: TimeEntryWithCase) => e.id === "t1");
+    const t2 = result.entries.find((e: TimeEntryWithCase) => e.id === "t2");
     expect(t1?.billed).toBe(true);
     expect(t1?.invoice_number).toBe("INV-2026-001");
     expect(t2?.billed).toBe(true);
@@ -586,7 +588,7 @@ describe("markEntriesBilled", () => {
 
   test("does not modify non-specified entries", () => {
     const result = markEntriesBilled(FIXTURE_ENTRIES, ["t1"], "INV-2026-001");
-    const t5 = result.entries.find((e) => e.id === "t5");
+    const t5 = result.entries.find((e: TimeEntryWithCase) => e.id === "t5");
     expect(t5?.billed).toBe(false);
     expect(t5?.invoice_number).toBeUndefined();
   });
@@ -611,7 +613,7 @@ describe("markEntriesBilled", () => {
 
   test("preserves entry fields other than billed/invoice_number", () => {
     const result = markEntriesBilled(FIXTURE_ENTRIES, ["t1"], "INV-2026-001");
-    const t1 = result.entries.find((e) => e.id === "t1");
+    const t1 = result.entries.find((e: TimeEntryWithCase) => e.id === "t1");
     expect(t1?.description).toBe("Recherche");
     expect(t1?.minutes).toBe(60);
     expect(t1?.rate).toBe(200);
@@ -620,7 +622,7 @@ describe("markEntriesBilled", () => {
 
   test("already billed entry can be re-marked", () => {
     const result = markEntriesBilled(FIXTURE_ENTRIES, ["t3"], "INV-2026-002");
-    const t3 = result.entries.find((e) => e.id === "t3");
+    const t3 = result.entries.find((e: TimeEntryWithCase) => e.id === "t3");
     expect(t3?.billed).toBe(true);
     expect(t3?.invoice_number).toBe("INV-2026-002");
     expect(result.updated).toBe(1);
@@ -646,7 +648,7 @@ describe("groupByCase", () => {
   test("strips case_slug from grouped entries", () => {
     const grouped = groupByCase(FIXTURE_ENTRIES);
     const case1Entries = grouped.get("case-1")!;
-    expect(case1Entries.every((e) => !("case_slug" in e))).toBe(true);
+    expect(case1Entries.every((e: TimeEntry) => !("case_slug" in e))).toBe(true);
   });
 
   test("entries without case_slug → _unknown", () => {
@@ -726,5 +728,67 @@ describe("TimeEntry type contract", () => {
     expect(entry.billed).toBeUndefined();
     expect(entry.lawyer).toBeUndefined();
     expect(entry.invoice_number).toBeUndefined();
+  });
+});
+
+// ── unbillEntries ──
+
+describe("unbillEntries", () => {
+  test("unbills specified entries by setting billed=false and removing invoice_number", () => {
+    const result = unbillEntries(FIXTURE_ENTRIES, ["t3"]);
+    expect(result.updated).toBe(1);
+    expect(result.not_found).toHaveLength(0);
+
+    const t3 = result.entries.find((e: TimeEntryWithCase) => e.id === "t3");
+    expect(t3?.billed).toBe(false);
+    expect(t3?.invoice_number).toBeUndefined();
+  });
+
+  test("does not modify non-specified entries", () => {
+    const result = unbillEntries(FIXTURE_ENTRIES, ["t3"]);
+    const t1 = result.entries.find((e: TimeEntryWithCase) => e.id === "t1");
+    expect(t1?.billed).toBe(false);
+    expect(t1?.invoice_number).toBeUndefined();
+  });
+
+  test("preserves entry fields other than billed/invoice_number", () => {
+    const result = unbillEntries(FIXTURE_ENTRIES, ["t3"]);
+    const t3 = result.entries.find((e: TimeEntryWithCase) => e.id === "t3");
+    expect(t3?.description).toBe("Mandantengespräch");
+    expect(t3?.minutes).toBe(30);
+    expect(t3?.rate).toBe(200);
+    expect(t3?.lawyer).toBe("Dr. Müller");
+  });
+
+  test("reports not_found for non-existent ids", () => {
+    const result = unbillEntries(FIXTURE_ENTRIES, ["t3", "nonexistent"]);
+    expect(result.updated).toBe(1);
+    expect(result.not_found).toContain("nonexistent");
+  });
+
+  test("all ids not found → updated=0", () => {
+    const result = unbillEntries(FIXTURE_ENTRIES, ["x1", "x2"]);
+    expect(result.updated).toBe(0);
+    expect(result.not_found).toHaveLength(2);
+  });
+
+  test("empty id list → updated=0, no changes", () => {
+    const result = unbillEntries(FIXTURE_ENTRIES, []);
+    expect(result.updated).toBe(0);
+    expect(result.entries).toEqual(FIXTURE_ENTRIES);
+  });
+
+  test("unbilled entry can be re-billed", () => {
+    const unbilled = unbillEntries(FIXTURE_ENTRIES, ["t3"]);
+    const reBilled = markEntriesBilled(unbilled.entries, ["t3"], "INV-2026-NEW");
+    const t3 = reBilled.entries.find((e: TimeEntryWithCase) => e.id === "t3");
+    expect(t3?.billed).toBe(true);
+    expect(t3?.invoice_number).toBe("INV-2026-NEW");
+  });
+
+  test("empty entries array → updated=0", () => {
+    const result = unbillEntries([], ["t1"]);
+    expect(result.updated).toBe(0);
+    expect(result.not_found).toContain("t1");
   });
 });

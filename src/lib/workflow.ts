@@ -60,6 +60,16 @@ export interface WorkflowStep {
   /** Branch: next step ID if condition fails. Falls through to sequential
    *  next if not set. */
   else_step_id?: string;
+  /** Approval gate: if true, this step requires human approval before execution. */
+  requires_approval?: boolean;
+  /** Approval status (only relevant when requires_approval is true). */
+  approval_status?: "pending" | "approved" | "rejected";
+  /** User who approved/rejected this step. */
+  approved_by?: string;
+  /** Timestamp of approval/rejection. */
+  approved_at?: string;
+  /** Comment from approver. */
+  approval_comment?: string;
 }
 
 export interface WorkflowFrontmatter {

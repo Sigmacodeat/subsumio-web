@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLang } from "@/lib/use-lang";
+import type { DashboardKey } from "@/content/dashboard";
 import {
   Users,
   Mail,
@@ -195,45 +196,53 @@ export default function TeamPage() {
               {state.isOwner && <Badge>Inhaber</Badge>}
             </div>
             <ul className="divide-y divide-[color:var(--ds-border)]">
-              {(state.members ?? []).map((m) => (
-                <li key={m.id} className="flex items-center justify-between gap-4 px-6 py-3.5">
-                  <div className="min-w-0">
-                    <p className="flex items-center gap-1.5 truncate text-sm text-[color:var(--ds-text)]">
-                      {m.name}
-                      {m.isOwner && (
-                        <Crown
-                          size={12}
-                          className="shrink-0 text-amber-600"
-                          aria-label={t("aria.owner")}
-                        />
-                      )}
-                    </p>
-                    <p className="truncate text-xs text-[color:var(--ds-text-muted)]">{m.email}</p>
-                  </div>
-                  {state.isOwner && !m.isOwner && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={busy}
-                      aria-label={`${m.name} entfernen`}
-                      onClick={async () => {
-                        setError(null);
-                        setNotice(null);
-                        try {
-                          await removeMutation.mutateAsync(m.id);
-                          setNotice(
-                            "Mitglied entfernt — es arbeitet ab sofort wieder im eigenen Brain."
-                          );
-                        } catch (err) {
-                          handleErr(err);
-                        }
-                      }}
-                    >
-                      <Trash2 size={14} aria-hidden />
-                    </Button>
-                  )}
+              {(state.members ?? []).length === 0 ? (
+                <li className="px-6 py-12 text-center text-sm text-[color:var(--ds-text-muted)]">
+                  {t("team.empty" as DashboardKey)}
                 </li>
-              ))}
+              ) : (
+                (state.members ?? []).map((m) => (
+                  <li key={m.id} className="flex items-center justify-between gap-4 px-6 py-3.5">
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-1.5 truncate text-sm text-[color:var(--ds-text)]">
+                        {m.name}
+                        {m.isOwner && (
+                          <Crown
+                            size={12}
+                            className="shrink-0 text-amber-600"
+                            aria-label={t("aria.owner")}
+                          />
+                        )}
+                      </p>
+                      <p className="truncate text-xs text-[color:var(--ds-text-muted)]">
+                        {m.email}
+                      </p>
+                    </div>
+                    {state.isOwner && !m.isOwner && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={busy}
+                        aria-label={`${m.name} entfernen`}
+                        onClick={async () => {
+                          setError(null);
+                          setNotice(null);
+                          try {
+                            await removeMutation.mutateAsync(m.id);
+                            setNotice(
+                              "Mitglied entfernt — es arbeitet ab sofort wieder im eigenen Brain."
+                            );
+                          } catch (err) {
+                            handleErr(err);
+                          }
+                        }}
+                      >
+                        <Trash2 size={14} aria-hidden />
+                      </Button>
+                    )}
+                  </li>
+                ))
+              )}
             </ul>
           </Card>
 

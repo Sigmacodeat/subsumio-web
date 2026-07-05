@@ -139,7 +139,7 @@ export default function CalendarExportPage() {
             );
         if (rawDeadlines.length) {
           for (const dl of rawDeadlines) {
-            const date = dl.due_date || dl.date;
+            const date = dl.due_date;
             if (!date) continue;
             loaded.push({
               id: `deadline-${String(cp.slug)}-${String(dl.title || "")}`,

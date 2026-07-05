@@ -11,12 +11,16 @@ import {
   Loader2,
   CalendarClock,
   Upload,
+  Bot,
+  Send,
+  ArrowUpCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
+import type { DashboardKey } from "@/content/dashboard";
 
 interface PortalCase {
   slug: string;
@@ -53,14 +57,32 @@ interface PortalDocumentRequest {
   };
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  open: { label: "Offen", color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
-  pending: { label: "Anhängig", color: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
-  settled: { label: "Erledigt", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
-  won: { label: "Gewonnen", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
-  lost: { label: "Verloren", color: "text-red-400 bg-red-500/10 border-red-500/20" },
-  appealed: { label: "Berufung", color: "text-orange-400 bg-orange-500/10 border-orange-500/20" },
-  dormant: { label: "Ruhend", color: "text-gray-400 bg-gray-500/10 border-gray-500/20" },
+const STATUS_CONFIG: Record<string, { labelKey: DashboardKey; color: string }> = {
+  open: {
+    labelKey: "portal.status.open",
+    color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+  },
+  pending: {
+    labelKey: "portal.status.pending",
+    color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+  },
+  settled: {
+    labelKey: "portal.status.settled",
+    color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+  },
+  won: {
+    labelKey: "portal.status.won",
+    color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+  },
+  lost: { labelKey: "portal.status.lost", color: "text-red-400 bg-red-500/10 border-red-500/20" },
+  appealed: {
+    labelKey: "portal.status.appealed",
+    color: "text-orange-400 bg-orange-500/10 border-orange-500/20",
+  },
+  dormant: {
+    labelKey: "portal.status.dormant",
+    color: "text-gray-400 bg-gray-500/10 border-gray-500/20",
+  },
 };
 
 const DEADLINE_STATUS: Record<string, string> = {
@@ -72,7 +94,7 @@ const DEADLINE_STATUS: Record<string, string> = {
 };
 
 export default function PortalPage() {
-  const { lang } = useLang();
+  const { lang, t, setLang } = useLang();
   const params = useParams();
   const token = decodeURIComponent(params.token as string);
   const [verifying, setVerifying] = useState(true);
@@ -88,6 +110,13 @@ export default function PortalPage() {
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [documentPassword, setDocumentPassword] = useState("");
   const [documentRequests, setDocumentRequests] = useState<PortalDocumentRequest[]>([]);
+  const [activeTab, setActiveTab] = useState<"info" | "chat">("info");
+  const [chatMessages, setChatMessages] = useState<
+    Array<{ role: "user" | "bot"; text: string; grounded?: boolean }>
+  >([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [escalating, setEscalating] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,8 +129,8 @@ export default function PortalPage() {
         if (!res.ok) {
           setError(
             verifyData.error === "invalid_or_expired_token"
-              ? "Dieser Link ist abgelaufen oder ungültig. Bitte kontaktieren Sie Ihren Anwalt."
-              : "Zugriff verweigert."
+              ? t("portal.link_expired")
+              : t("portal.access_forbidden")
           );
           return;
         }
@@ -113,7 +142,7 @@ export default function PortalPage() {
         }
       } catch (err) {
         console.error("[portal] verify failed:", err instanceof Error ? err.message : String(err));
-        setError("Verbindungsfehler. Bitte versuchen Sie es später erneut.");
+        setError(t("portal.connection_error"));
       }
     })();
     return () => {
@@ -189,15 +218,15 @@ export default function PortalPage() {
       if (!res.ok) {
         setError(
           data.error === "new_portal_link_required"
-            ? "Dieser Portal-Link muss erneuert werden. Bitte kontaktieren Sie Ihre Kanzlei."
-            : data.message || "Akte konnte nicht geladen werden."
+            ? t("portal.link_renewal_required")
+            : data.message || t("portal.case_load_failed")
         );
         return;
       }
       const page = data.page;
       const fm = caseFrontmatter(page);
       if (!fm.portal_enabled) {
-        setError("Diese Akte ist derzeit nicht für das Mandantenportal freigegeben.");
+        setError(t("portal.case_not_enabled"));
         return;
       }
       setCaseData({
@@ -213,7 +242,6 @@ export default function PortalPage() {
         claims: fm.claims || [],
         deadlines: (fm.deadlines || []).map((d) => ({
           title: d.title,
-          date: d.date,
           due_date: d.due_date,
           status: d.status,
         })),
@@ -228,7 +256,7 @@ export default function PortalPage() {
       });
     } catch (err) {
       console.error("[portal] load case failed:", err instanceof Error ? err.message : String(err));
-      setError("Akte konnte nicht geladen werden.");
+      setError(t("portal.case_load_failed"));
     } finally {
       setLoadingCase(false);
     }
@@ -254,23 +282,86 @@ export default function PortalPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setUploadError(data.message || "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.");
+        setUploadError(data.message || t("portal.upload_failed"));
         return;
       }
       setUploadMessage(
         data.documentRequestStatus === "fulfilled"
-          ? "Dokument hochgeladen. Die Dokumentenanfrage ist vollständig erfüllt."
-          : "Dokument hochgeladen und an die Akte übermittelt."
+          ? t("portal.upload_success_fulfilled")
+          : t("portal.upload_success")
       );
       setDocumentPassword("");
       await loadCase();
       await loadDocumentRequests();
     } catch (err) {
       console.error("[portal] upload failed:", err instanceof Error ? err.message : String(err));
-      setUploadError("Upload fehlgeschlagen. Bitte versuchen Sie es erneut.");
+      setUploadError(t("portal.upload_failed"));
     } finally {
       setUploading(false);
       setUploadingKey(null);
+    }
+  }
+
+  async function sendChatMessage() {
+    if (!chatInput.trim() || chatLoading) return;
+    const userMsg = chatInput.trim();
+    setChatInput("");
+    setChatMessages((prev) => [...prev, { role: "user", text: userMsg }]);
+    setChatLoading(true);
+    try {
+      const res = await fetch("/api/portal/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, message: userMsg }),
+        signal: AbortSignal.timeout(60_000),
+      });
+      const data = await res.json();
+      setChatMessages((prev) => [
+        ...prev,
+        { role: "bot", text: data.answer || "Keine Antwort verfügbar.", grounded: data.grounded },
+      ]);
+    } catch {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "bot",
+          text: "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut.",
+        },
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
+  }
+
+  async function escalateToLawyer() {
+    if (!caseData || escalating) return;
+    setEscalating(true);
+    try {
+      const summary = chatMessages
+        .map((m) => `${m.role === "user" ? "Mandant" : "Bot"}: ${m.text}`)
+        .join("\n");
+      const res = await fetch("/api/portal/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          message: `[Eskalation aus Portal-Chat]\n\n${summary}`,
+        }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (res.ok) {
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            role: "bot",
+            text: "Ihre Nachricht wurde an die Kanzlei weitergeleitet. Sie erhalten eine Rückmeldung über den Nachrichten-Tab.",
+          },
+        ]);
+      }
+    } catch {
+      // silent fail
+    } finally {
+      setEscalating(false);
     }
   }
 
@@ -282,7 +373,7 @@ export default function PortalPage() {
       >
         <div className="space-y-3 text-center">
           <Loader2 size={32} className="mx-auto animate-spin text-violet-400" />
-          <p className="text-sm [color:var(--mk-text-muted)]">Portal wird geladen…</p>
+          <p className="text-sm [color:var(--mk-text-muted)]">{t("portal.loading")}</p>
         </div>
       </div>
     );
@@ -298,11 +389,9 @@ export default function PortalPage() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10">
             <AlertTriangle size={28} className="text-red-400" />
           </div>
-          <h1 className="text-xl font-bold [color:var(--mk-text)]">Zugriff nicht möglich</h1>
+          <h1 className="text-xl font-bold [color:var(--mk-text)]">{t("portal.access_denied")}</h1>
           <p className="text-sm [color:var(--mk-text-muted)]">{error}</p>
-          <p className="text-xs [color:var(--mk-text-subtle)]">
-            Bei Fragen wenden Sie sich bitte an Ihre Kanzlei.
-          </p>
+          <p className="text-xs [color:var(--mk-text-subtle)]">{t("portal.contact_firm")}</p>
         </div>
       </div>
     );
@@ -323,297 +412,419 @@ export default function PortalPage() {
             <Users size={20} className="text-violet-400" />
           </div>
           <div>
-            <h1 className="text-lg font-bold">Mandanten-Portal</h1>
-            <p className="text-xs [color:var(--mk-text-muted)]">Übersicht über Ihre Akte</p>
+            <h1 className="text-lg font-bold">{t("portal.header_title")}</h1>
+            <p className="text-xs [color:var(--mk-text-muted)]">{t("portal.header_subtitle")}</p>
           </div>
+          <button
+            onClick={() => setLang(lang === "en" ? "de" : "en")}
+            className="ml-auto rounded-lg border [border-color:var(--mk-border)] px-2.5 py-1 text-xs font-medium [color:var(--mk-text-muted)] transition-colors hover:bg-[color:var(--mk-surface-2)]"
+          >
+            {t("portal.lang_toggle")}
+          </button>
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
-        {/* Case header */}
-        <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-semibold">{caseData.title}</h2>
-              <p className="font-mono text-xs [color:var(--mk-text-subtle)]">
-                {caseData.caseNumber}
-              </p>
-            </div>
-            <Badge variant="default" className={cn("border text-xs", statusCfg.color)}>
-              {statusCfg.label}
-            </Badge>
-          </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs [color:var(--mk-text-subtle)]">
-            {caseData.clientName && (
-              <span className="flex items-center gap-1">
-                <Users size={10} />
-                Mandant: {caseData.clientName}
-              </span>
-            )}
-            {caseData.opponentName && (
-              <span className="flex items-center gap-1">
-                <ShieldAlert size={10} />
-                Gegner: {caseData.opponentName}
-              </span>
-            )}
-            {caseData.courtName && (
-              <span className="flex items-center gap-1">
-                <Landmark size={10} />
-                Gericht: {caseData.courtName}
-              </span>
-            )}
-            {caseData.legalArea && (
-              <span className="flex items-center gap-1">
-                <FileText size={10} />
-                {caseData.legalArea}
-              </span>
-            )}
-          </div>
+        {/* Tab Navigation */}
+        <div className="flex gap-1 rounded-xl border [border-color:var(--mk-border)] p-1 [background:var(--mk-surface)]">
+          <button
+            onClick={() => setActiveTab("info")}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              activeTab === "info"
+                ? "bg-violet-600/15 text-violet-300"
+                : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
+            }`}
+          >
+            <FileText size={14} />
+            {t("portal.tab_info")}
+          </button>
+          <button
+            onClick={() => setActiveTab("chat")}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              activeTab === "chat"
+                ? "bg-violet-600/15 text-violet-300"
+                : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
+            }`}
+          >
+            <Bot size={14} />
+            {t("portal.tab_chat")}
+          </button>
         </div>
-
-        {/* Facts */}
-        {caseData.facts && (
-          <div className="rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
-            <h3 className="mb-2 text-sm font-semibold">Sachverhalt</h3>
-            <p className="text-sm leading-relaxed whitespace-pre-wrap [color:var(--mk-text-muted)]">
-              {caseData.facts}
-            </p>
-          </div>
-        )}
-
-        {/* Claims */}
-        {caseData.claims.length > 0 && (
-          <div className="rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
-            <h3 className="mb-2 text-sm font-semibold">Ansprüche</h3>
-            <ul className="space-y-1.5">
-              {caseData.claims.map((claim, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm [color:var(--mk-text-muted)]">
-                  <span className="mt-0.5 text-violet-400">•</span>
-                  {claim}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Deadlines */}
-        {caseData.deadlines.length > 0 && (
-          <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
-            <h3 className="text-sm font-semibold">Fristen</h3>
-            <div className="space-y-2">
-              {caseData.deadlines.map((dl, i) => {
-                const due = dl.due_date || dl.date || "";
-                const status = dl.status || "pending";
-                const statusClass = DEADLINE_STATUS[status] || "text-blue-400";
-                return (
-                  <div key={i} className="flex items-center gap-3 text-sm">
-                    <CalendarClock size={14} className={statusClass} />
-                    <div className="flex-1">
-                      <div className="[color:var(--mk-text)]">{dl.title || "Frist"}</div>
-                      <div className="text-xs [color:var(--mk-text-subtle)]">
-                        {due
-                          ? new Date(due).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")
-                          : "—"}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+        {activeTab === "info" && (
+          <>
+            {/* Case header */}
+            <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-lg font-semibold">{caseData.title}</h2>
+                  <p className="font-mono text-xs [color:var(--mk-text-subtle)]">
+                    {caseData.caseNumber}
+                  </p>
+                </div>
+                <Badge variant="default" className={cn("border text-xs", statusCfg.color)}>
+                  {t(statusCfg.labelKey)}
+                </Badge>
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs [color:var(--mk-text-subtle)]">
+                {caseData.clientName && (
+                  <span className="flex items-center gap-1">
+                    <Users size={10} />
+                    {t("portal.client_label")} {caseData.clientName}
+                  </span>
+                )}
+                {caseData.opponentName && (
+                  <span className="flex items-center gap-1">
+                    <ShieldAlert size={10} />
+                    {t("portal.opponent_label")} {caseData.opponentName}
+                  </span>
+                )}
+                {caseData.courtName && (
+                  <span className="flex items-center gap-1">
+                    <Landmark size={10} />
+                    {t("portal.court_label")} {caseData.courtName}
+                  </span>
+                )}
+                {caseData.legalArea && (
+                  <span className="flex items-center gap-1">
+                    <FileText size={10} />
+                    {caseData.legalArea}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        )}
 
-        {/* Requested documents */}
-        {documentRequests.some((request) => request.frontmatter.status !== "fulfilled") && (
-          <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
-            <h3 className="text-sm font-semibold">Angeforderte Unterlagen</h3>
-            <div className="space-y-2">
-              {documentRequests
-                .filter((request) => request.frontmatter.status !== "fulfilled")
-                .flatMap((request) => request.frontmatter.items.map((item) => ({ request, item })))
-                .map(({ request, item }) => {
-                  const done = Boolean(item.received_document_slug);
-                  const key = `${request.slug}:${item.key}`;
-                  return (
-                    <div
-                      key={key}
-                      className="flex items-center gap-3 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 [background:var(--mk-surface-2)]"
+            {/* Facts */}
+            {caseData.facts && (
+              <div className="rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+                <h3 className="mb-2 text-sm font-semibold">{t("portal.facts_title")}</h3>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap [color:var(--mk-text-muted)]">
+                  {caseData.facts}
+                </p>
+              </div>
+            )}
+
+            {/* Claims */}
+            {caseData.claims.length > 0 && (
+              <div className="rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+                <h3 className="mb-2 text-sm font-semibold">{t("portal.claims_title")}</h3>
+                <ul className="space-y-1.5">
+                  {caseData.claims.map((claim, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-sm [color:var(--mk-text-muted)]"
                     >
-                      <FileText
-                        size={14}
-                        className={done ? "text-emerald-400" : "text-amber-400"}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm [color:var(--mk-text)]">{item.label}</div>
-                        <div className="text-xs [color:var(--mk-text-subtle)]">
-                          {done ? "Eingereicht" : item.required ? "Erforderlich" : "Optional"}
+                      <span className="mt-0.5 text-violet-400">•</span>
+                      {claim}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Deadlines */}
+            {caseData.deadlines.length > 0 && (
+              <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+                <h3 className="text-sm font-semibold">{t("portal.deadlines_title")}</h3>
+                <div className="space-y-2">
+                  {caseData.deadlines.map((dl, i) => {
+                    const due = dl.due_date || dl.date || "";
+                    const status = dl.status || "pending";
+                    const statusClass = DEADLINE_STATUS[status] || "text-blue-400";
+                    return (
+                      <div key={i} className="flex items-center gap-3 text-sm">
+                        <CalendarClock size={14} className={statusClass} />
+                        <div className="flex-1">
+                          <div className="[color:var(--mk-text)]">
+                            {dl.title || t("portal.deadline_default")}
+                          </div>
+                          <div className="text-xs [color:var(--mk-text-subtle)]">
+                            {due
+                              ? new Date(due).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")
+                              : "—"}
+                          </div>
                         </div>
                       </div>
-                      {!done && (
-                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-violet-500">
-                          <input
-                            type="file"
-                            accept={UPLOAD_ACCEPT_ATTRIBUTE}
-                            className="hidden"
-                            disabled={uploading}
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              e.currentTarget.value = "";
-                              if (file) void uploadDocument(file, request.slug, item.key);
-                            }}
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Requested documents */}
+            {documentRequests.some((request) => request.frontmatter.status !== "fulfilled") && (
+              <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+                <h3 className="text-sm font-semibold">{t("portal.doc_requests_title")}</h3>
+                <div className="space-y-2">
+                  {documentRequests
+                    .filter((request) => request.frontmatter.status !== "fulfilled")
+                    .flatMap((request) =>
+                      request.frontmatter.items.map((item) => ({ request, item }))
+                    )
+                    .map(({ request, item }) => {
+                      const done = Boolean(item.received_document_slug);
+                      const key = `${request.slug}:${item.key}`;
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-center gap-3 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 [background:var(--mk-surface-2)]"
+                        >
+                          <FileText
+                            size={14}
+                            className={done ? "text-emerald-400" : "text-amber-400"}
                           />
-                          {uploadingKey === key ? (
-                            <Loader2 size={13} className="animate-spin" />
-                          ) : (
-                            <Upload size={13} />
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm [color:var(--mk-text)]">
+                              {item.label}
+                            </div>
+                            <div className="text-xs [color:var(--mk-text-subtle)]">
+                              {done
+                                ? t("portal.doc_request.submitted")
+                                : item.required
+                                  ? t("portal.doc_request.required")
+                                  : t("portal.doc_request.optional")}
+                            </div>
+                          </div>
+                          {!done && (
+                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-violet-500">
+                              <input
+                                type="file"
+                                accept={UPLOAD_ACCEPT_ATTRIBUTE}
+                                className="hidden"
+                                disabled={uploading}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  e.currentTarget.value = "";
+                                  if (file) void uploadDocument(file, request.slug, item.key);
+                                }}
+                              />
+                              {uploadingKey === key ? (
+                                <Loader2 size={13} className="animate-spin" />
+                              ) : (
+                                <Upload size={13} />
+                              )}
+                              {t("portal.upload")}
+                            </label>
                           )}
-                          Hochladen
-                        </label>
-                      )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
+            {/* Documents */}
+            <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold">{t("portal.documents_title")}</h3>
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50">
+                  <input
+                    type="file"
+                    accept={UPLOAD_ACCEPT_ATTRIBUTE}
+                    className="hidden"
+                    disabled={uploading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.currentTarget.value = "";
+                      if (file) void uploadDocument(file);
+                    }}
+                  />
+                  {uploading ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Upload size={14} />
+                  )}
+                  {uploading ? t("portal.uploading") : t("portal.upload")}
+                </label>
+              </div>
+              <div>
+                <label
+                  htmlFor="portal-document-password"
+                  className="mb-1 block text-xs [color:var(--mk-text-subtle)]"
+                >
+                  {t("portal.doc_password_label")}
+                </label>
+                <input
+                  id="portal-document-password"
+                  type="password"
+                  autoComplete="off"
+                  maxLength={255}
+                  value={documentPassword}
+                  onChange={(event) => setDocumentPassword(event.target.value)}
+                  disabled={uploading}
+                  className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] outline-none [background:var(--mk-surface-2)]"
+                  placeholder={t("portal.doc_password_placeholder")}
+                />
+              </div>
+              {uploadError && (
+                <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                  {uploadError}
+                </div>
+              )}
+              {uploadMessage && (
+                <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+                  {uploadMessage}
+                </div>
+              )}
+              {caseData.documents.length === 0 ? (
+                <p className="text-xs [color:var(--mk-text-subtle)]">{t("portal.no_documents")}</p>
+              ) : (
+                <div className="space-y-2">
+                  {caseData.documents.map((doc, i) => (
+                    <div key={i} className="flex items-center gap-3 text-sm">
+                      <FileText size={14} className="[color:var(--mk-text-subtle)]" />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate [color:var(--mk-text)]">
+                          {doc.name || t("portal.document_default")}
+                        </div>
+                        {doc.url && (doc.url.startsWith("http") || doc.url.startsWith("/")) && (
+                          <a
+                            href={doc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-violet-400 hover:underline"
+                          >
+                            {t("portal.download")}
+                          </a>
+                        )}
+                      </div>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
+
+            {/* Messages */}
+            <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+              <h3 className="text-sm font-semibold">{t("portal.messages_title")}</h3>
+              {messages.length === 0 ? (
+                <p className="text-xs [color:var(--mk-text-subtle)]">{t("portal.no_messages")}</p>
+              ) : (
+                <div className="max-h-64 space-y-3 overflow-y-auto">
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${msg.sender === "client" ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${msg.sender === "client" ? "border border-violet-500/20 bg-violet-600/15 text-violet-200" : "border [border-color:var(--mk-border)] [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"}`}
+                      >
+                        <p>{msg.text}</p>
+                        <p className="mt-1 text-xs [color:var(--mk-text-subtle)]">
+                          {new Date(msg.createdAt).toLocaleDateString(
+                            lang === "en" ? "en-GB" : "de-DE"
+                          )}{" "}
+                          ·{" "}
+                          {new Date(msg.createdAt).toLocaleTimeString(
+                            lang === "en" ? "en-GB" : "de-DE",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !sendingMessage) void sendMessage(caseData.slug);
+                  }}
+                  placeholder={t("portal.message_placeholder")}
+                  className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-violet-500/50 focus:outline-none"
+                />
+                <button
+                  onClick={() => void sendMessage(caseData.slug)}
+                  disabled={sendingMessage || !newMessage.trim()}
+                  className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
+                >
+                  {sendingMessage ? "…" : t("portal.send")}
+                </button>
+              </div>
+            </div>
+          </>
         )}
 
-        {/* Documents */}
-        <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold">Dokumente</h3>
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50">
-              <input
-                type="file"
-                accept={UPLOAD_ACCEPT_ATTRIBUTE}
-                className="hidden"
-                disabled={uploading}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  e.currentTarget.value = "";
-                  if (file) void uploadDocument(file);
-                }}
-              />
-              {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-              {uploading ? "Lädt…" : "Hochladen"}
-            </label>
-          </div>
-          <div>
-            <label
-              htmlFor="portal-document-password"
-              className="mb-1 block text-xs [color:var(--mk-text-subtle)]"
-            >
-              Dokumentkennwort (nur falls geschützt)
-            </label>
-            <input
-              id="portal-document-password"
-              type="password"
-              autoComplete="off"
-              maxLength={255}
-              value={documentPassword}
-              onChange={(event) => setDocumentPassword(event.target.value)}
-              disabled={uploading}
-              className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] outline-none [background:var(--mk-surface-2)]"
-              placeholder="Wird nicht gespeichert"
-            />
-          </div>
-          {uploadError && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-200">
-              {uploadError}
+        {activeTab === "chat" && (
+          <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+            <div className="flex items-center gap-2">
+              <Bot size={16} className="text-violet-400" />
+              <h3 className="text-sm font-semibold">{t("portal.tab_chat")}</h3>
             </div>
-          )}
-          {uploadMessage && (
-            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
-              {uploadMessage}
-            </div>
-          )}
-          {caseData.documents.length === 0 ? (
-            <p className="text-xs [color:var(--mk-text-subtle)]">
-              Noch keine Dokumente hinterlegt.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {caseData.documents.map((doc, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm">
-                  <FileText size={14} className="[color:var(--mk-text-subtle)]" />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate [color:var(--mk-text)]">{doc.name || "Dokument"}</div>
-                    {doc.url && (doc.url.startsWith("http") || doc.url.startsWith("/")) && (
-                      <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-violet-400 hover:underline"
-                      >
-                        Herunterladen →
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Messages */}
-        <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
-          <h3 className="text-sm font-semibold">Nachrichten an Ihre Kanzlei</h3>
-          {messages.length === 0 ? (
-            <p className="text-xs [color:var(--mk-text-subtle)]">
-              Noch keine Nachrichten. Schreiben Sie Ihrer Kanzlei unten.
-            </p>
-          ) : (
-            <div className="max-h-64 space-y-3 overflow-y-auto">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.sender === "client" ? "justify-end" : "justify-start"}`}
-                >
+            <p className="text-xs [color:var(--mk-text-subtle)]">{t("portal.chat_disclaimer")}</p>
+            {chatMessages.length > 0 && (
+              <div className="max-h-96 space-y-3 overflow-y-auto">
+                {chatMessages.map((msg, i) => (
                   <div
-                    className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${msg.sender === "client" ? "border border-violet-500/20 bg-violet-600/15 text-violet-200" : "border [border-color:var(--mk-border)] [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"}`}
+                    key={i}
+                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    <p>{msg.text}</p>
-                    <p className="mt-1 text-xs [color:var(--mk-text-subtle)]">
-                      {new Date(msg.createdAt).toLocaleDateString(
-                        lang === "en" ? "en-GB" : "de-DE"
-                      )}{" "}
-                      ·{" "}
-                      {new Date(msg.createdAt).toLocaleTimeString(
-                        lang === "en" ? "en-GB" : "de-DE",
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      )}
-                    </p>
+                    <div
+                      className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${msg.role === "user" ? "border border-violet-500/20 bg-violet-600/15 text-violet-200" : "border [border-color:var(--mk-border)] [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"}`}
+                    >
+                      <p className="whitespace-pre-wrap">{msg.text}</p>
+                      {msg.grounded && <p className="mt-1 text-xs text-emerald-400/70">grounded</p>}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+                {chatLoading && (
+                  <div className="flex justify-start">
+                    <div className="rounded-xl border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]">
+                      <Loader2 size={14} className="animate-spin" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {chatMessages.length === 0 && !chatLoading && (
+              <p className="py-4 text-center text-sm [color:var(--mk-text-subtle)]">
+                {t("portal.chat_empty")}
+              </p>
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !chatLoading) void sendChatMessage();
+                }}
+                placeholder={t("portal.chat_placeholder")}
+                className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-violet-500/50 focus:outline-none"
+              />
+              <button
+                onClick={() => void sendChatMessage()}
+                disabled={chatLoading || !chatInput.trim()}
+                className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
+              >
+                {chatLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+              </button>
             </div>
-          )}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !sendingMessage) void sendMessage(caseData.slug);
-              }}
-              placeholder="Nachricht an Ihre Kanzlei…"
-              className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-violet-500/50 focus:outline-none"
-            />
-            <button
-              onClick={() => void sendMessage(caseData.slug)}
-              disabled={sendingMessage || !newMessage.trim()}
-              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
-            >
-              {sendingMessage ? "…" : "Senden"}
-            </button>
+            {chatMessages.length > 0 && (
+              <button
+                onClick={() => void escalateToLawyer()}
+                disabled={escalating}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-xs font-medium [color:var(--mk-text-muted)] transition-colors hover:bg-[color:var(--mk-surface-2)] disabled:opacity-50"
+              >
+                {escalating ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <ArrowUpCircle size={12} />
+                )}
+                {t("portal.chat_escalate")}
+              </button>
+            )}
           </div>
-        </div>
+        )}
 
         {/* Footer */}
         <div className="pt-6 pb-8 text-center text-xs [color:var(--mk-text-subtle)]">
-          <p>Diese Ansicht ist nur für Sie bestimmt. Bitte teilen Sie den Link nicht.</p>
+          <p>{t("portal.footer")}</p>
         </div>
       </main>
     </div>

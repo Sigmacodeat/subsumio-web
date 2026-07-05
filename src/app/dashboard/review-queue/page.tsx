@@ -20,6 +20,8 @@ import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { useToast } from "@/components/ui/toast";
+import type { DashboardKey } from "@/content/dashboard";
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-amber-500/10 border-amber-500/20 text-amber-600",
@@ -54,6 +56,7 @@ const REVIEWABLE_TYPES = [
 
 export default function ReviewQueuePage() {
   const { t, lang } = useLang();
+  const { addToast } = useToast();
   const STATUS_LABELS = useStatusLabels(t);
   const [pages, setPages] = useState<BrainPage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,6 +173,7 @@ export default function ReviewQueuePage() {
         },
       });
       await loadPages();
+      addToast({ type: "success", title: t("review_queue.toast_status_updated" as DashboardKey) });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Status konnte nicht aktualisiert werden.");
     } finally {
@@ -188,6 +192,7 @@ export default function ReviewQueuePage() {
         },
       });
       await loadPages();
+      addToast({ type: "success", title: t("review_queue.toast_assigned" as DashboardKey) });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Zuweisung fehlgeschlagen.");
     } finally {
@@ -205,6 +210,10 @@ export default function ReviewQueuePage() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       await loadPages();
+      addToast({
+        type: "success",
+        title: t("review_queue.toast_pipeline_resumed" as DashboardKey),
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Pipeline konnte nicht fortgesetzt werden.");
     } finally {

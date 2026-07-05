@@ -82,7 +82,7 @@ export function ContractQuickCreateDialog({
   onCreated,
   presetCaseSlug,
 }: ContractQuickCreateDialogProps) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { addToast } = useToast();
   const [title, setTitle] = useState("");
   const [type, setType] = useState("Kaufvertrag");

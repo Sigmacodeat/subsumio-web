@@ -22,6 +22,7 @@ import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
 import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
 import { maxUploadSizeFor } from "@/lib/upload-validation";
 import { VoiceToPromptButton } from "@/components/dashboard/voice-to-prompt-button";
+import { tracking } from "@/lib/tracking";
 
 interface ChatInputProps {
   onSend: (text: string, attachments?: Array<{ name: string; slug: string }>) => void;
@@ -108,6 +109,7 @@ export function ChatInput({
   function handleSubmit() {
     const trimmed = text.trim();
     if (!trimmed || isStreaming || disabled || overLimit) return;
+    tracking.chat.messageSent(trimmed.length);
     onSend(trimmed, attachments.length > 0 ? attachments : undefined);
     setText("");
     setAttachments([]);

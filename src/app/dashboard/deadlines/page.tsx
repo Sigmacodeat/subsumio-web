@@ -34,13 +34,11 @@ import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { cn, encodeSlugPath } from "@/lib/utils";
 import { STATUS_TEXT, STATUS_BG, STATUS_BORDER, type StatusColor } from "@/lib/status-colors";
-import { caseFrontmatter } from "@/lib/legal-types";
 import { OFFLINE_KEYS, getCache, setCache } from "@/lib/offline-store";
 import {
   DEADLINE_RULES,
   computeDeadlineStatus,
   computeDueDate,
-  timelineToDeadline,
   type DeadlineRule,
 } from "@/lib/legal-deadlines";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -62,7 +60,7 @@ interface DeadlineItem {
   caseSlug?: string;
   caseTitle?: string;
   source?: string;
-  status: "pending" | "warning" | "critical" | "overdue" | "done" | "vorfrist";
+  status: "pending" | "warning" | "critical" | "overdue" | "done" | "completed" | "vorfrist";
   type: "deadline" | "event" | "hearing" | "filing";
   reviewStatus?: string;
   law?: string;
@@ -149,99 +147,34 @@ export default function DeadlinesPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const batch = await api.brain.batchListPages(
-        ["legal_deadline", "legal_case", "appointment"],
-        300
-      );
-      const deadlinePages = batch["legal_deadline"] ?? [];
-      const casePages = batch["legal_case"] ?? [];
+      // Unified fristen API merges fristenbuch + legal_deadline + legal_case
+      const fristenData = await api.legal.fristen();
+      const items: DeadlineItem[] = fristenData.fristen.map((f) => ({
+        id: f.id,
+        slug: f.source_slug,
+        date: f.due_date,
+        description: f.title,
+        caseSlug: f.case_slug,
+        caseTitle: f.case_title,
+        source: f.source,
+        status: f.status as DeadlineItem["status"],
+        type: (["deadline", "event", "hearing", "filing"].includes(f.type)
+          ? f.type
+          : "deadline") as DeadlineItem["type"],
+        reviewStatus: f.review_status,
+        law: f.law,
+        reminderSentAt: f.reminder_sent_at,
+        vorfristDate: f.vorfrist_date,
+        isNotfrist: f.is_notfrist,
+        secondCheckRequired: f.second_check_required,
+        secondCheckBy: f.second_check_by,
+        secondCheckAt: f.second_check_at,
+        ervZustelldatum: f.erv_zustelldatum,
+      }));
+
+      // Appointments are not part of the fristen read-model — load separately
+      const batch = await api.brain.batchListPages(["appointment"], 300);
       const appointmentPages = batch["appointment"] ?? [];
-      const items: DeadlineItem[] = [];
-
-      for (const page of deadlinePages) {
-        const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
-        const date = String(fm.due_date ?? fm.date ?? page.created_at?.split("T")[0] ?? "");
-        if (!date) continue;
-        const eventType = String(fm.event_type ?? fm.type ?? "deadline");
-        items.push({
-          id: page.slug || `deadline-${date}`,
-          slug: page.slug,
-          date,
-          description: String(fm.description ?? page.title ?? t("deadlines.untitled")),
-          caseSlug: typeof fm.case_slug === "string" ? fm.case_slug : undefined,
-          caseTitle: typeof fm.case_title === "string" ? fm.case_title : undefined,
-          source: String(fm.source ?? page.slug ?? ""),
-          status: computeDeadlineStatus(
-            date,
-            typeof fm.status === "string" ? fm.status : undefined,
-            typeof fm.vorfrist_date === "string" ? fm.vorfrist_date : undefined
-          ),
-          type: (["deadline", "event", "hearing", "filing"].includes(eventType)
-            ? eventType
-            : "deadline") as DeadlineItem["type"],
-          reviewStatus: typeof fm.review_status === "string" ? fm.review_status : undefined,
-          law: typeof fm.law === "string" ? fm.law : undefined,
-          reminderSentAt: typeof fm.reminder_sent_at === "string" ? fm.reminder_sent_at : undefined,
-          confidence: typeof fm.confidence === "string" ? fm.confidence : undefined,
-          vorfristDate: typeof fm.vorfrist_date === "string" ? fm.vorfrist_date : undefined,
-          isNotfrist: fm.is_notfrist === true,
-          secondCheckRequired: fm.second_check_required === true,
-          secondCheckBy: typeof fm.second_check_by === "string" ? fm.second_check_by : undefined,
-          secondCheckAt: typeof fm.second_check_at === "string" ? fm.second_check_at : undefined,
-          ervZustelldatum:
-            typeof fm.erv_zustelldatum === "string" ? fm.erv_zustelldatum : undefined,
-        });
-      }
-
-      for (const page of casePages) {
-        const fm = caseFrontmatter(page);
-        const rawDeadlines = fm.deadlines || [];
-        for (const d of rawDeadlines) {
-          const date = d.due_date || d.date;
-          if (!date) continue;
-          items.push({
-            id: d.id || `${page.slug}-${date}`,
-            date,
-            description: d.description || d.title || "",
-            caseSlug: page.slug,
-            caseTitle: page.title,
-            source: d.source || page.slug,
-            status: computeDeadlineStatus(date, d.status, d.vorfrist_date),
-            type: (d.type as DeadlineItem["type"]) || "deadline",
-            reviewStatus: d.review_status,
-            law: d.law,
-            reminderSentAt: d.reminder_sent_at,
-            vorfristDate: d.vorfrist_date,
-            isNotfrist: d.is_notfrist,
-            secondCheckRequired: d.second_check_required,
-            secondCheckBy: d.second_check_by,
-            secondCheckAt: d.second_check_at,
-            ervZustelldatum: d.erv_zustelldatum,
-          });
-        }
-        const timeline = [...(fm.timeline ?? []), ...(fm.timeline_events ?? [])];
-        for (const entry of timeline) {
-          if (
-            entry.date &&
-            (entry.type === "deadline" || entry.type === "event" || entry.type === "hearing")
-          ) {
-            const d = timelineToDeadline(entry, page.slug);
-            items.push({
-              id: d.id || `${page.slug}-${entry.date}`,
-              date: entry.date,
-              description: d.description || d.title || "",
-              caseSlug: page.slug,
-              caseTitle: page.title,
-              source: page.slug,
-              status: computeDeadlineStatus(entry.date, d.status),
-              type: (d.type as DeadlineItem["type"]) || "event",
-              reviewStatus: d.review_status,
-              reminderSentAt: d.reminder_sent_at,
-            });
-          }
-        }
-      }
-
       for (const page of appointmentPages) {
         const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
         const date = String(fm.date ?? "");

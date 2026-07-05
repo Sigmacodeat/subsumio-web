@@ -46,6 +46,10 @@ import {
 } from "../core/archive-upload.ts";
 import { inspectUploadBytes } from "../core/upload-security.ts";
 import { FILE_MIME_TYPES } from "../core/file-store.ts";
+import {
+  shouldAutoTriggerUploadPipeline,
+  uploadPipelineCaseSlug,
+} from "../core/upload-pipeline-routing.ts";
 
 export interface WebApiOptions {
   /** When set, require matching X-Subsumio-Api-Key or Authorization: Bearer header. */
@@ -871,7 +875,7 @@ export function detectJurisdiction(
 /**
  * Shared extraction + import orchestrator. Turns an uploaded file into
  * searchable brain pages: extract → markdown → split/import → stamp case_slug →
- * tag → auto-trigger legal-pipeline for split docs.
+ * tag → optionally auto-trigger the legal pipeline.
  *
  * Used by BOTH the synchronous /api/upload path (small files) and the async
  * `extract-document` minion handler (large files), so both paths produce
@@ -893,6 +897,8 @@ export async function runExtractionAndImport(
     password?: string;
     matterScope?: string[] | "all";
     aclGroups?: string[] | "all";
+    /** Bulk-act imports defer analysis until every raw document is ready. */
+    autoTriggerLegalPipeline?: boolean;
   }
 ): Promise<{ partSlugs: string[] }> {
   const {
@@ -908,6 +914,7 @@ export async function runExtractionAndImport(
     password,
     matterScope,
     aclGroups,
+    autoTriggerLegalPipeline = true,
   } = params;
 
   const markdown = await buildMarkdownFromUpload(engine, filename, data, title, uploadFrontmatter, {
@@ -988,51 +995,55 @@ export async function runExtractionAndImport(
     }
   }
 
-  // Auto-trigger the 6-layer legal pipeline for ALL uploaded documents.
+  // Auto-trigger the legal pipeline for regular single-document uploads.
+  // Bulk-act imports explicitly defer this step, then submit one case-level
+  // job with all extracted document/part slugs. This prevents partial jobs
+  // from racing and overwriting the same case pipeline state.
   // Previously only triggered for split (large) documents — but 95%+ of legal
   // documents are under the 4MB split threshold and were never classified,
   // entity-extracted, or analyzed. Now every document gets the full pipeline.
   // For non-split documents, part_slugs is empty and the pipeline processes
   // the single parent slug directly.
-  try {
-    const { MinionQueue } = await import("../core/minions/queue.ts");
-    const queue = new MinionQueue(engine);
-    const pipelineSlugs = partSlugs.length > 0 ? partSlugs : [slug];
-    const jurResult = detectJurisdiction(uploadFrontmatter, markdown);
-    const jurisdiction = jurResult.jurisdiction;
-    // Update uploadFrontmatter so the upload response can include recognition metadata
-    uploadFrontmatter.jurisdiction = jurisdiction;
-    uploadFrontmatter.jurisdiction_confidence = jurResult.confidence;
-    if (jurResult.unverified) uploadFrontmatter.jurisdiction_unverified = true;
+  if (autoTriggerLegalPipeline)
+    try {
+      const { MinionQueue } = await import("../core/minions/queue.ts");
+      const queue = new MinionQueue(engine);
+      const pipelineSlugs = partSlugs.length > 0 ? partSlugs : [slug];
+      const jurResult = detectJurisdiction(uploadFrontmatter, markdown);
+      const jurisdiction = jurResult.jurisdiction;
+      // Update uploadFrontmatter so the upload response can include recognition metadata
+      uploadFrontmatter.jurisdiction = jurisdiction;
+      uploadFrontmatter.jurisdiction_confidence = jurResult.confidence;
+      if (jurResult.unverified) uploadFrontmatter.jurisdiction_unverified = true;
 
-    // Persist jurisdiction confidence + unverified flag on all parts
-    for (const s of [slug, ...partSlugs]) {
-      await patchPageFrontmatter(engine, s, tenantSource, {
-        jurisdiction,
-        jurisdiction_confidence: jurResult.confidence,
-        ...(jurResult.unverified ? { jurisdiction_unverified: true } : {}),
-      });
+      // Persist jurisdiction confidence + unverified flag on all parts
+      for (const s of [slug, ...partSlugs]) {
+        await patchPageFrontmatter(engine, s, tenantSource, {
+          jurisdiction,
+          jurisdiction_confidence: jurResult.confidence,
+          ...(jurResult.unverified ? { jurisdiction_unverified: true } : {}),
+        });
+      }
+
+      await queue.add(
+        "legal-pipeline",
+        {
+          case_slug: uploadPipelineCaseSlug(slug, caseSlug),
+          part_slugs: pipelineSlugs,
+          ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
+          trigger: "post_upload",
+          ...(jurisdiction !== "at" ? { jurisdiction } : {}),
+          ...(uploadFrontmatter.pause_for_review ? { pause_for_review: true } : {}),
+        },
+        { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+        { allowProtectedSubmit: true }
+      );
+    } catch (pipelineErr) {
+      console.error(
+        `[web-api] legal-pipeline auto-trigger failed for ${slug}: ` +
+          (pipelineErr instanceof Error ? pipelineErr.message : String(pipelineErr))
+      );
     }
-
-    await queue.add(
-      "legal-pipeline",
-      {
-        case_slug: slug,
-        part_slugs: pipelineSlugs,
-        ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
-        trigger: "post_upload",
-        ...(jurisdiction !== "at" ? { jurisdiction } : {}),
-        ...(uploadFrontmatter.pause_for_review ? { pause_for_review: true } : {}),
-      },
-      { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
-      { allowProtectedSubmit: true }
-    );
-  } catch (pipelineErr) {
-    console.error(
-      `[web-api] legal-pipeline auto-trigger failed for ${slug}: ` +
-        (pipelineErr instanceof Error ? pipelineErr.message : String(pipelineErr))
-    );
-  }
 
   return { partSlugs };
 }
@@ -1682,6 +1693,7 @@ interface UploadTokenPayload {
   pause_for_review?: boolean;
   jurisdiction?: string;
   doc_type?: string;
+  defer_pipeline?: boolean;
   exp: number; // Unix seconds
 }
 
@@ -2107,6 +2119,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           ...(payload.pause_for_review ? { pause_for_review: true } : {}),
           ...(payload.jurisdiction ? { jurisdiction: payload.jurisdiction } : {}),
           ...(payload.doc_type ? { doc_type: payload.doc_type } : {}),
+          ...(payload.defer_pipeline ? { pipeline_deferred: true } : {}),
         };
         // Never persist a document password in Minion job JSON. Password-bearing
         // uploads are processed in the request and the secret dies with it.
@@ -2179,6 +2192,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               no_embed: noEmbed,
               password: suppliedPassword,
               upload_frontmatter: uploadFrontmatter,
+              auto_trigger_legal_pipeline: !payload.defer_pipeline,
             },
             { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
             { allowProtectedSubmit: true }
@@ -2195,6 +2209,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             tenantSource,
             noEmbed,
             password: suppliedPassword,
+            autoTriggerLegalPipeline: !payload.defer_pipeline,
           });
           partSlugs = result.partSlugs;
         }
@@ -2526,6 +2541,20 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const msg = e instanceof Error ? e.message : "unknown";
       res.status(503).json({ error: "service_unavailable", message: msg });
     }
+  });
+
+  // Deployment gate for large forensic imports. Acceptance runners refuse to
+  // upload when this capability is absent, preventing an older engine from
+  // spawning one legal pipeline per document.
+  app.get("/api/capabilities/act-import", (_req: Request, res: Response) => {
+    res.json({
+      version: 1,
+      canonical_upload: true,
+      deferred_document_pipeline: true,
+      case_snapshot_pipeline: true,
+      manifest_pages: true,
+      max_manifest_items: 10_000,
+    });
   });
 
   app.get("/api/search", async (req: Request, res: Response) => {
@@ -3261,15 +3290,19 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   app.get("/api/pages", async (req: Request, res: Response) => {
     try {
       const limit = Math.min(parseInt(String(req.query.limit ?? "50"), 10) || 50, 200);
+      const offset = Math.max(parseInt(String(req.query.offset ?? "0"), 10) || 0, 0);
       const type = req.query.type ? String(req.query.type) : undefined;
       const tag = req.query.tag ? String(req.query.tag) : undefined;
+      const slugPrefix = req.query.slug_prefix ? String(req.query.slug_prefix) : undefined;
       const raw = await invokeOp(
         engine,
         "list_pages",
         {
           limit,
+          offset,
           ...(type ? { type } : {}),
           ...(tag ? { tag } : {}),
+          ...(slugPrefix ? { slug_prefix: slugPrefix } : {}),
           sort: "updated_desc",
           include_frontmatter: true,
         },
@@ -4082,6 +4115,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           ...(fields.pause_for_review === "true" ? { pause_for_review: true } : {}),
           ...(fields.jurisdiction ? { jurisdiction: fields.jurisdiction } : {}),
           ...(fields.doc_type ? { doc_type: fields.doc_type } : {}),
+          ...(fields.defer_pipeline === "true" ? { pipeline_deferred: true } : {}),
         };
         // Passwords are request-scoped secrets and must never be serialized into
         // the persistent Minion queue. Process encrypted documents synchronously.
@@ -4156,6 +4190,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               no_embed: noEmbed,
               password: fields.password || undefined,
               upload_frontmatter: uploadFrontmatter,
+              auto_trigger_legal_pipeline: shouldAutoTriggerUploadPipeline(fields.defer_pipeline),
               matter_scope: req.matterScope ?? "all",
               acl_groups: req.aclGroups ?? "all",
             },
@@ -4176,6 +4211,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             password: fields.password || undefined,
             matterScope: req.matterScope ?? "all",
             aclGroups: req.aclGroups ?? "all",
+            autoTriggerLegalPipeline: shouldAutoTriggerUploadPipeline(fields.defer_pipeline),
           });
           partSlugs = result.partSlugs;
         }

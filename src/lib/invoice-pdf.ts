@@ -24,6 +24,10 @@ export interface InvoicePdfData {
   paymentTerms?: string;
   bank?: { name?: string; iban?: string; bic?: string };
   notes?: string;
+  /** Pre-generated EPC-QR data URL — generate with generateEpcQrCode() */
+  epcQrDataUrl?: string;
+  /** Pre-generated Swiss QR-Bill data URL — generate with generateSwissQrCode() */
+  swissQrDataUrl?: string;
   kanzlei: {
     name: string;
     anwaltName?: string;
@@ -229,6 +233,36 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
     const bankLine = [data.bank.name, data.bank.iban, data.bank.bic].filter(Boolean).join(" · ");
     doc.text(bankLine, margin, y);
     y += 4;
+  }
+
+  // --- EPC-QR (GiroCode) ---
+  if (data.epcQrDataUrl) {
+    try {
+      const qrSize = 30;
+      const qrX = pageW - margin - qrSize;
+      doc.addImage(data.epcQrDataUrl, "PNG", qrX, y, qrSize, qrSize);
+      doc.setFontSize(7);
+      doc.setTextColor(lightText);
+      doc.text("GiroCode / EPC-QR", qrX, y + qrSize + 4);
+      y += qrSize + 8;
+    } catch {
+      // QR code embedding is optional — skip if it fails
+    }
+  }
+
+  // --- Swiss QR-Bill ---
+  if (data.swissQrDataUrl) {
+    try {
+      const qrSize = 35;
+      const qrX = pageW - margin - qrSize;
+      doc.addImage(data.swissQrDataUrl, "PNG", qrX, y, qrSize, qrSize);
+      doc.setFontSize(7);
+      doc.setTextColor(lightText);
+      doc.text("Swiss QR-Bill", qrX, y + qrSize + 4);
+      y += qrSize + 8;
+    } catch {
+      // QR code embedding is optional — skip if it fails
+    }
   }
   if (data.notes) {
     y += 3;

@@ -65,7 +65,7 @@ export const INDUSTRY_PROFILES = {
     signature: {
       title: {
         en: "Matter memory with procedural discipline",
-        de: "Aktegedaechtnis mit Verfahrensdisziplin",
+        de: "Aktengedächtnis mit Verfahrensdisziplin",
       },
       proof: {
         en: "Cases, deadlines, actors and documents stay connected as a legal graph.",

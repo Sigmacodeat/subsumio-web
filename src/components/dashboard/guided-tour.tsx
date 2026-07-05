@@ -108,6 +108,28 @@ const TOUR_STEPS: TourStep[] = [
     route: "/dashboard/cases",
   },
   {
+    target: '[data-tour="workflows-intro"]',
+    title: "Workflows",
+    body: "Abläufe verketten wiederkehrende Kanzlei-Schritte wie Dokumentanalyse, Fristnotierung, Versand oder Abrechnung. Risikoreiche Aktionen laufen über Freigaben.",
+    placement: "bottom",
+    route: "/dashboard/workflows",
+  },
+  {
+    target: '[data-tour="workflows-templates"]',
+    title: "Vorlagen starten",
+    body: "Wähle eine Vorlage, um einen Workflow zu starten. Jeder Workflow führt mehrere Schritte automatisch aus — von der Recherche bis zum Versand. Du kannst jeden Schritt nachverfolgen und Freigaben erteilen.",
+    placement: "top",
+    route: "/dashboard/workflows",
+  },
+  {
+    target: '[data-tour="workflows-list"]',
+    title: "Laufende Abläufe",
+    body: "Hier siehst du alle aktiven und abgeschlossenen Workflows. Filtere nach Status, klappe Details auf und verfolge den Fortschritt jedes Schritts in Echtzeit.",
+    placement: "top",
+    route: "/dashboard/workflows",
+    waitFor: '[data-tour="workflows-list"]',
+  },
+  {
     target: '[data-tour="copilot-panel"]',
     title: "Copilot-Panel",
     body: "Der Copilot bleibt geöffnet während du arbeitest. Stelle Fragen, lasse analysieren oder entwerfen — kontextbezogen zur aktuellen Akte.",

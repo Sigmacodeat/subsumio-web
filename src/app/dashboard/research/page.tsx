@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import {
   Search,
@@ -15,9 +15,8 @@ import {
   X,
   FolderOpen,
   BookOpen,
-  Bell,
   Brain,
-  ClipboardList,
+  MessageSquareText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,10 +39,72 @@ interface ResearchSession {
   createdAt: string;
 }
 
-export default function ResearchPage() {
+import dynamic from "next/dynamic";
+
+const RechtsprechungTab = dynamic(() => import("@/app/dashboard/rechtsprechung/page"), {
+  loading: () => (
+    <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
+      Laden…
+    </div>
+  ),
+});
+const NormsTab = dynamic(() => import("@/app/dashboard/norms/page"), {
+  loading: () => (
+    <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
+      Laden…
+    </div>
+  ),
+});
+const JudgementsDbTab = dynamic(() => import("@/app/dashboard/judgements-db/page"), {
+  loading: () => (
+    <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
+      Laden…
+    </div>
+  ),
+});
+const PrecedentSearchTab = dynamic(() => import("@/app/dashboard/precedent-search/page"), {
+  loading: () => (
+    <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
+      Laden…
+    </div>
+  ),
+});
+const CommentariesTab = dynamic(() => import("@/app/dashboard/commentaries/page"), {
+  loading: () => (
+    <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
+      Laden…
+    </div>
+  ),
+});
+
+type ResearchTab =
+  | "recherche"
+  | "rechtsprechung"
+  | "normen"
+  | "judgements-db"
+  | "precedent-search"
+  | "commentaries";
+
+const TABS: Array<{ id: ResearchTab; icon: typeof Search; labelDe: string; labelEn: string }> = [
+  { id: "recherche", icon: Brain, labelDe: "Recherche", labelEn: "Research" },
+  { id: "rechtsprechung", icon: Landmark, labelDe: "Rechtsprechung", labelEn: "Case Law" },
+  { id: "normen", icon: BookOpen, labelDe: "Normen", labelEn: "Statutes" },
+  { id: "judgements-db", icon: Scale, labelDe: "Urteils-DB", labelEn: "Judgements DB" },
+  { id: "precedent-search", icon: Search, labelDe: "Präzedenzfälle", labelEn: "Precedent Search" },
+  {
+    id: "commentaries",
+    icon: MessageSquareText,
+    labelDe: "Kommentierungen",
+    labelEn: "Commentaries",
+  },
+];
+
+function ResearchPageInner() {
   const { t, lang } = useLang();
   const confirm = useConfirm();
   const { addToast } = useToast();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [sessions, setSessions] = useState<ResearchSession[]>([]);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
@@ -57,7 +118,18 @@ export default function ResearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [savedPages, setSavedPages] = useState<BrainPage[]>([]);
   const [savedLoading, setSavedLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"new" | "saved">("new");
+  const tabFromUrl = searchParams.get("tab") as ResearchTab | null;
+  const [activeTab, setActiveTabState] = useState<ResearchTab>(
+    tabFromUrl && TABS.some((tab) => tab.id === tabFromUrl) ? tabFromUrl : "recherche"
+  );
+
+  const setActiveTab = (tab: ResearchTab) => {
+    setActiveTabState(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    router.replace(`/dashboard/research?${params.toString()}`, { scroll: false });
+  };
+  const [subTab, setSubTab] = useState<"new" | "saved">("new");
   const [savedSearch, setSavedSearch] = useState("");
   // Supervisor job tracking
   const [researchJobId, setResearchJobId] = useState<number | null>(null);
@@ -295,6 +367,187 @@ export default function ResearchPage() {
     }
   }
 
+  // Non-recherche tabs: render embedded page content
+  if (activeTab === "rechtsprechung") {
+    return (
+      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+        <PageHeader
+          title={t("research.title")}
+          description={t("research.description")}
+          breadcrumbs={[
+            { label: t("nav.overview"), href: "/dashboard" },
+            { label: t("research.title") },
+          ]}
+        />
+        <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "brand-solid text-white"
+                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                }`}
+              >
+                <Icon size={14} />
+                {lang === "en" ? tab.labelEn : tab.labelDe}
+              </button>
+            );
+          })}
+        </div>
+        <RechtsprechungTab />
+      </div>
+    );
+  }
+
+  if (activeTab === "normen") {
+    return (
+      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+        <PageHeader
+          title={t("research.title")}
+          description={t("research.description")}
+          breadcrumbs={[
+            { label: t("nav.overview"), href: "/dashboard" },
+            { label: t("research.title") },
+          ]}
+        />
+        <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "brand-solid text-white"
+                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                }`}
+              >
+                <Icon size={14} />
+                {lang === "en" ? tab.labelEn : tab.labelDe}
+              </button>
+            );
+          })}
+        </div>
+        <NormsTab />
+      </div>
+    );
+  }
+
+  if (activeTab === "judgements-db") {
+    return (
+      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+        <PageHeader
+          title={t("research.title")}
+          description={t("research.description")}
+          breadcrumbs={[
+            { label: t("nav.overview"), href: "/dashboard" },
+            { label: t("research.title") },
+          ]}
+        />
+        <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "brand-solid text-white"
+                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                }`}
+              >
+                <Icon size={14} />
+                {lang === "en" ? tab.labelEn : tab.labelDe}
+              </button>
+            );
+          })}
+        </div>
+        <JudgementsDbTab />
+      </div>
+    );
+  }
+
+  if (activeTab === "precedent-search") {
+    return (
+      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+        <PageHeader
+          title={t("research.title")}
+          description={t("research.description")}
+          breadcrumbs={[
+            { label: t("nav.overview"), href: "/dashboard" },
+            { label: t("research.title") },
+          ]}
+        />
+        <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "brand-solid text-white"
+                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                }`}
+              >
+                <Icon size={14} />
+                {lang === "en" ? tab.labelEn : tab.labelDe}
+              </button>
+            );
+          })}
+        </div>
+        <PrecedentSearchTab />
+      </div>
+    );
+  }
+
+  if (activeTab === "commentaries") {
+    return (
+      <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+        <PageHeader
+          title={t("research.title")}
+          description={t("research.description")}
+          breadcrumbs={[
+            { label: t("nav.overview"), href: "/dashboard" },
+            { label: t("research.title") },
+          ]}
+        />
+        <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "brand-solid text-white"
+                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                }`}
+              >
+                <Icon size={14} />
+                {lang === "en" ? tab.labelEn : tab.labelDe}
+              </button>
+            );
+          })}
+        </div>
+        <CommentariesTab />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
@@ -306,18 +559,26 @@ export default function ResearchPage() {
         ]}
       />
 
-      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-7">
-        <HubLink href="/dashboard/rechtsprechung" icon={Landmark} label={t("nav.rechtsprechung")} />
-        <HubLink href="/dashboard/norms" icon={BookOpen} label={t("nav.norms")} />
-        <HubLink
-          href="/dashboard/precedent-search"
-          icon={Search}
-          label={t("nav.precedent_search")}
-        />
-        <HubLink href="/dashboard/commentaries" icon={BookOpen} label={t("nav.commentaries")} />
-        <HubLink href="/dashboard/playbooks" icon={ClipboardList} label={t("nav.playbooks")} />
-        <HubLink href="/dashboard/brain" icon={Brain} label={t("nav.brain")} />
-        <HubLink href="/dashboard/monitoring" icon={Bell} label={t("nav.monitoring")} />
+      {/* Tab Bar — 5 Screens als eine Route */}
+      <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1">
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                isActive
+                  ? "brand-solid text-white"
+                  : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              }`}
+            >
+              <Icon size={14} />
+              {lang === "en" ? tab.labelEn : tab.labelDe}
+            </button>
+          );
+        })}
       </div>
 
       {/* Research Input */}
@@ -383,9 +644,9 @@ export default function ResearchPage() {
       {/* Tabs */}
       <div className="flex gap-1 border-b border-[color:var(--ds-border)]">
         <button
-          onClick={() => setActiveTab("new")}
+          onClick={() => setSubTab("new")}
           className={`border-b-2 px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-            activeTab === "new"
+            subTab === "new"
               ? "brand-border brand-text"
               : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
           }`}
@@ -395,9 +656,9 @@ export default function ResearchPage() {
           </span>
         </button>
         <button
-          onClick={() => setActiveTab("saved")}
+          onClick={() => setSubTab("saved")}
           className={`border-b-2 px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-            activeTab === "saved"
+            subTab === "saved"
               ? "brand-border brand-text"
               : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
           }`}
@@ -413,8 +674,8 @@ export default function ResearchPage() {
         </button>
       </div>
 
-      {activeTab === "new" && (
-        <>
+      {subTab === "new" && (
+        <div className="space-y-4">
           {/* Current Result */}
           {currentAnswer && (
             <div className="brand-border space-y-4 rounded-xl border bg-[color:var(--ds-surface)] p-5">
@@ -493,10 +754,10 @@ export default function ResearchPage() {
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
-      {activeTab === "saved" && (
+      {subTab === "saved" && (
         <div className="space-y-4">
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-3">
@@ -679,22 +940,16 @@ export default function ResearchPage() {
   );
 }
 
-function HubLink({
-  href,
-  icon: Icon,
-  label,
-}: {
-  href: string;
-  icon: typeof Search;
-  label: string;
-}) {
+export default function ResearchPage() {
   return (
-    <Link
-      href={href}
-      className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      }
     >
-      <Icon size={15} className="shrink-0" />
-      <span className="truncate">{label}</span>
-    </Link>
+      <ResearchPageInner />
+    </Suspense>
   );
 }

@@ -23,6 +23,8 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { caseFrontmatter, type DocumentEntry } from "@/lib/legal-types";
 import { AI_NOTICE, AI_BADGE_LABEL, AI_FRONTMATTER } from "@/lib/ai-act";
+import { CitationPanel } from "@/components/legal/CitationPanel";
+import type { Citation } from "@/lib/types";
 import { agentActionFrontmatter } from "@/lib/approval";
 import type { BrainPage } from "@/lib/types";
 import { useDashboardForm } from "@/lib/hooks/use-dashboard-form";
@@ -133,6 +135,8 @@ export default function DraftingPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<string>("klage");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [resultCitations, setResultCitations] = useState<Citation[]>([]);
+  const [resultGaps, setResultGaps] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
   const [docxReady, setDocxReady] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
@@ -156,6 +160,8 @@ export default function DraftingPage() {
     onSubmit: async (data: DraftingFormData) => {
       setGenerating(true);
       setResult(null);
+      setResultCitations([]);
+      setResultGaps([]);
       try {
         const res = await api.query.think(
           template.prompt(data as unknown as Record<string, string>),
@@ -166,6 +172,8 @@ export default function DraftingPage() {
           }
         );
         setResult(res.answer);
+        setResultCitations(res.citations ?? []);
+        setResultGaps(res.gaps ?? []);
         setDraftSaved(null);
       } catch {
         setResult(t("drafting.error_generate"));
@@ -385,6 +393,8 @@ export default function DraftingPage() {
               onClick={() => {
                 setSelectedTemplate(t.key);
                 setResult(null);
+                setResultCitations([]);
+                setResultGaps([]);
               }}
               className={cn(
                 "flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
@@ -573,6 +583,14 @@ export default function DraftingPage() {
           <div className="max-h-[600px] overflow-y-auto text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
             {result}
           </div>
+          <CitationPanel
+            data={{
+              citations: resultCitations,
+              gaps: resultGaps,
+              isStreaming: false,
+            }}
+            compact
+          />
           <p className="border-t border-[color:var(--ds-border)] pt-2 text-xs leading-relaxed text-amber-700/70">
             {AI_NOTICE}
           </p>

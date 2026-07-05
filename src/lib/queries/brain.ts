@@ -81,6 +81,8 @@ export function useCockpitData(opts?: { types?: string; recentLimit?: number; en
     queryKey: ["brain", "cockpit", opts],
     queryFn: () => api.brain.cockpit(opts),
     enabled: opts?.enabled ?? true,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
   });
 }
 

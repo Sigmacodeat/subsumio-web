@@ -7,6 +7,7 @@
 import { useState, Suspense, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { tracking } from "@/lib/tracking";
 import {
   Mail,
   Lock,
@@ -219,8 +220,14 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(t.errors[data.error] ?? t.errors.generic);
+        if (mode === "login") tracking.auth.loginFailed(data.error ?? "unknown");
         setLoading(false);
         return;
+      }
+      if (mode === "login") {
+        tracking.auth.loginSuccess("password");
+      } else {
+        tracking.auth.signupSuccess("password");
       }
       router.push(next);
       router.refresh();
@@ -338,7 +345,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
               {mode === "login" && (
                 <Link
                   href={p(lang, "/forgot")}
-                  className="mt-1.5 inline-block text-xs text-[var(--brand-primary)] hover:underline"
+                  className="mt-1.5 inline-block text-xs text-[var(--brand-text)] hover:underline"
                 >
                   {lang !== "en" ? "Passwort vergessen?" : "Forgot password?"}
                 </Link>

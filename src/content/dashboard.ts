@@ -43,7 +43,53 @@ export const D = {
     en: "Billing, Compliance & Operations",
   },
   "nav.section.contracts": { de: "Verträge", en: "Contracts" },
-  "nav.section.firm_ops": { de: "Kanzlei", en: "Firm" },
+  "nav.section.firm_ops": { de: "Kanzlei-Betrieb", en: "Operations" },
+
+  // ── Sidebar: section descriptions ──
+  "nav.section.desc.clients_comm": {
+    de: "Mandanten, Kontakte und gesamte Kommunikation an einem Ort",
+    en: "Clients, contacts and all communication in one place",
+  },
+  "nav.section.desc.schedule": {
+    de: "Fristen, Termine und Aufgaben — das Fristenbuch führt alle Deadlines kanonisch",
+    en: "Deadlines, appointments and tasks — the deadline book is the canonical source",
+  },
+  "nav.section.desc.docs_drafting": {
+    de: "Dokumente, Schriftsätze und Vorlagen — KI-gestützt mit Citations",
+    en: "Documents, drafts and templates — AI-assisted with citations",
+  },
+  "nav.section.desc.contracts": {
+    de: "Vertragsanalyse, Klausel-Bibliothek und Playbooks",
+    en: "Contract analysis, clause library and playbooks",
+  },
+  "nav.section.desc.knowledge": {
+    de: "Kanzlei-Wissen (Brain) und Rechtsrecherche — zwei getrennte Domänen",
+    en: "Firm knowledge (Brain) and legal research — two separate domains",
+  },
+  "nav.section.desc.litigation": {
+    de: "Prozessführung, Strategie und Gerichts-Analytics",
+    en: "Litigation, strategy and court analytics",
+  },
+  "nav.section.desc.billing": {
+    de: "Rechnungen, Gebühren, Kosten und Controlling",
+    en: "Invoices, fees, costs and controlling",
+  },
+  "nav.section.desc.firm_ops": {
+    de: "Workflows, Freigaben und Kanzlei-Automatisierung",
+    en: "Workflows, approvals and firm automation",
+  },
+  "nav.section.desc.compliance": {
+    de: "DSGVO, GoBD, Kollisionsprüfung und Verfahrensdokumentation",
+    en: "GDPR, GoBD, conflict checks and procedure documentation",
+  },
+  "nav.section.desc.admin": {
+    de: "Team, Plan, API-Keys und Systemeinstellungen",
+    en: "Team, plan, API keys and system settings",
+  },
+  "nav.section.desc.tax_returns": {
+    de: "Steuererklärungen, Bescheide und Finanzamt-Übermittlung",
+    en: "Tax returns, assessments and tax office submission",
+  },
 
   // ── Sidebar: nav items (brain) ──
   "nav.overview": { de: "Übersicht", en: "Overview" },
@@ -60,21 +106,25 @@ export const D = {
   "nav.upload": { de: "Upload", en: "Upload" },
   "nav.rag_eval": { de: "RAG-Eval", en: "RAG Eval" },
   "nav.portfolio_insights": { de: "Portfolio Insights", en: "Portfolio Insights" },
+  "nav.analytics_hub": { de: "Berichte & Insights", en: "Reports & Insights" },
   "nav.deep_analysis": { de: "Cross-Doc Analyse", en: "Cross-Doc Analysis" },
   "nav.adoption_analytics": { de: "Adoption Analytics", en: "Adoption Analytics" },
-  "nav.analytics": { de: "Analytics", en: "Analytics" },
   "nav.shared_spaces": { de: "Geteilte Räume", en: "Shared Spaces" },
 
   // ── Sidebar: nav items (cases & deadlines) ──
+  "nav.search": { de: "Suche", en: "Search" },
   "nav.cases": { de: "Akten", en: "Cases" },
-  "nav.altlasten": { de: "Altlasten", en: "Backlog" },
+  "nav.altlasten": { de: "Verjährungs-Radar", en: "Limitation Radar" },
   "nav.contacts": { de: "Kontakte", en: "Contacts" },
   "nav.contracts": { de: "Verträge", en: "Contracts" },
   "nav.vault": { de: "Dokumente", en: "Documents" },
   "nav.deadlines": { de: "Fristen", en: "Deadlines" },
+  "nav.fristenbuch": { de: "Fristenbuch", en: "Deadline Register" },
   "nav.calendar": { de: "Kalender", en: "Calendar" },
   "nav.tasks": { de: "Aufgaben", en: "Tasks" },
   "nav.time_tracking": { de: "Zeiterfassung", en: "Time Tracking" },
+  "nav.time": { de: "Zeiten", en: "Times" },
+  "nav.notifications": { de: "Benachrichtigungen", en: "Notifications" },
   "nav.opponents": { de: "Gegner", en: "Opponents" },
   "nav.client_portal": { de: "Mandanten-Portal", en: "Client Portal" },
 
@@ -95,7 +145,7 @@ export const D = {
   "nav.clause_library": { de: "Klausel-Bibliothek", en: "Clause Library" },
   "nav.templates": { de: "Vorlagen", en: "Templates" },
   "nav.litigation": { de: "Prozessführung", en: "Litigation" },
-  "nav.review_queue": { de: "Freigaben", en: "Approvals" },
+  "nav.review_queue": { de: "Review-Warteschlange", en: "Review Queue" },
   "nav.version_history": { de: "Versionshistorie", en: "Version History" },
   "nav.monitoring": { de: "Monitoring", en: "Monitoring" },
   "nav.sources": { de: "Rechtsquellen", en: "Legal Sources" },
@@ -105,24 +155,185 @@ export const D = {
   "nav.cost_calculator": { de: "Kostenrechner", en: "Cost Calculator" },
   "nav.invoicing": { de: "Rechnungen", en: "Invoices" },
   "nav.datev_export": { de: "DATEV-Export", en: "DATEV Export" },
-  "nav.signature": { de: "e-Signatur", en: "e-Signature" },
+  "nav.signature": { de: "Signaturanfragen", en: "Signature Requests" },
 
   // ── Sidebar: nav items (data & integration) ──
   "nav.connectors": { de: "Konnektoren", en: "Connectors" },
   "nav.whatsapp": { de: "WhatsApp", en: "WhatsApp" },
   "nav.whatsapp_templates": { de: "WhatsApp-Vorlagen", en: "WhatsApp Templates" },
-  "nav.intake": { de: "Mandatsaufnahme", en: "Intake" },
+  "nav.intake": { de: "Posteingang", en: "Inbox" },
   "nav.document_requests": { de: "Dokumentenanfragen", en: "Document Requests" },
   "nav.import_kanzlei": { de: "Kanzlei-Import", en: "Firm Import" },
+  "nav.backup_restore": { de: "Backup & Restore", en: "Backup & Restore" },
+  "nav.feature_flags": { de: "Feature Flags", en: "Feature Flags" },
   "nav.bea": { de: "beA", en: "beA" },
+  "nav.communications": { de: "Kommunikation", en: "Communications" },
   "nav.email_import": { de: "E-Mail-Import", en: "Email Import" },
-  "nav.calendar_export": { de: "Kalender", en: "Calendar" },
+  "nav.calendar_export": { de: "Kalender-Export", en: "Calendar Export" },
   "nav.compliance": { de: "Compliance", en: "Compliance" },
   "nav.retention": { de: "Löschfristen", en: "Retention Rules" },
   "nav.anonymize": { de: "Anonymisierung", en: "Anonymization" },
   "nav.word_addin": { de: "Word Add-in", en: "Word Add-in" },
   "nav.verfahrensdoku": { de: "Verfahrensdoku", en: "Process Documentation" },
   "nav.data_export": { de: "Datenexport", en: "Data Export" },
+
+  // ── Sidebar: nav tooltips ──
+  "nav.tooltip.search": {
+    de: "Volltextsuche über alle Akten, Dokumente, Notizen und Rechnungen mit Scope-Filter",
+    en: "Full-text search across all cases, documents, notes and invoices with scope filters",
+  },
+  "nav.tooltip.bea": {
+    de: "beA-Entwürfe verwalten und Filing-Pakete erstellen (österreichischer elektronischer anwaltlicher Austausch)",
+    en: "Manage beA drafts and create filing packages (Austrian electronic legal communication)",
+  },
+  "nav.tooltip.communications": {
+    de: "Unified Inbox für beA, WhatsApp, E-Mail und Mandantenportal-Nachrichten",
+    en: "Unified inbox for beA, WhatsApp, email and client portal messages",
+  },
+  "nav.tooltip.deep_analysis": {
+    de: "Cross-Dokument-Analyse mit KI: Themen, Risiken und Muster über mehrere Dokumente hinweg erkennen",
+    en: "AI-powered cross-document analysis: detect themes, risks and patterns across multiple documents",
+  },
+  "nav.tooltip.translate": {
+    de: "Juristische Texte mit fachsprachlicher Genauigkeit übersetzen",
+    en: "Translate legal texts with specialized terminology accuracy",
+  },
+  "nav.tooltip.contacts": {
+    de: "Mandanten und Kontaktpersonen verwalten",
+    en: "Manage clients and contact persons",
+  },
+  "nav.tooltip.cases": {
+    de: "Akten und Rechtssachen verwalten",
+    en: "Manage cases and legal matters",
+  },
+  "nav.tooltip.deadlines": {
+    de: "Fristen und Termine im Überblick",
+    en: "Track deadlines and appointments",
+  },
+  "nav.tooltip.brain": {
+    de: "Kanzleiwissen durchsuchen und verwalten",
+    en: "Search and manage firm knowledge base",
+  },
+  "nav.tooltip.vault": {
+    de: "Dokumente speichern, durchsuchen und analysieren",
+    en: "Store, search and analyze documents",
+  },
+  "nav.tooltip.drafting": {
+    de: "Juristische Dokumente mit KI-Unterstützung entwerfen",
+    en: "Draft legal documents with AI assistance",
+  },
+  "nav.tooltip.research": {
+    de: "Rechtsprechung, Gesetze und Normen recherchieren",
+    en: "Research case law, statutes and regulations",
+  },
+  "nav.tooltip.intake": {
+    de: "Neue Mandanten und Eingänge erfassen",
+    en: "Capture new clients and incoming items",
+  },
+  "nav.tooltip.settings": {
+    de: "Persönliche und Kanzlei-Einstellungen verwalten",
+    en: "Manage personal and firm settings",
+  },
+  "nav.tooltip.litigation": {
+    de: "Prozessfluss mit Phasen und Schritten verwalten",
+    en: "Manage litigation flow with phases and steps",
+  },
+  "nav.tooltip.review_sets": {
+    de: "Defensible Review-Sets mit Privilege Log und Redactions",
+    en: "Defensible review sets with privilege log and redactions",
+  },
+  "nav.tooltip.trust_accounting": {
+    de: "Treuhandkonten und Klientengelder verwalten",
+    en: "Manage trust accounts and client funds",
+  },
+  "nav.tooltip.fibu": {
+    de: "Finanzbuchhaltung: Bank-Feed, OPOS, Mahnläufe, Zahlungslinks",
+    en: "Accounting: Bank feed, open items, dunning runs, payment links",
+  },
+  "nav.tooltip.compliance": {
+    de: "DSGVO, BRAO und Compliance-Vorgaben verwalten",
+    en: "Manage GDPR, professional rules and compliance requirements",
+  },
+  "nav.tooltip.invoicing": {
+    de: "Rechnungen erstellen und RVG-Gebühren berechnen",
+    en: "Create invoices and calculate legal fees",
+  },
+  "nav.tooltip.controlling": {
+    de: "Kanzlei-Kennzahlen: Umsatz, Auslastung, Produktivität und KI-Nutzung",
+    en: "Firm KPIs: revenue, utilization, productivity and AI usage",
+  },
+  "nav.tooltip.calendar": {
+    de: "Termine und Fristen im Kalender verwalten",
+    en: "Manage appointments and deadlines in calendar",
+  },
+  "nav.tooltip.tasks": {
+    de: "Aufgaben und To-Dos verwalten",
+    en: "Manage tasks and to-dos",
+  },
+  "nav.tooltip.graph": {
+    de: "Wissensgraph: Entitäten und Beziehungen visualisieren",
+    en: "Knowledge graph: visualize entities and relationships",
+  },
+  "nav.tooltip.sources": {
+    de: "Datenquellen und Connectors verwalten",
+    en: "Manage data sources and connectors",
+  },
+  "nav.tooltip.opponents": {
+    de: "Processgegner und gegnerische Parteien verwalten — nur relevant bei DACH-Praxis",
+    en: "Manage opposing parties and opponents — only relevant for DACH practice",
+  },
+  "nav.tooltip.word_addin": {
+    de: "Word-Add-In für direkte Dokument-Erstellung aus Microsoft Office — nur relevant bei Word-Nutzung",
+    en: "Word Add-In for direct document creation from Microsoft Office — only relevant when using Word",
+  },
+  "nav.tooltip.datev_export": {
+    de: "Buchhaltungsdaten im DATEV-Format exportieren — nur relevant, wenn Ihre Kanzlei DATEV nutzt",
+    en: "Export accounting data in DATEV format — only relevant if your firm uses DATEV",
+  },
+  "nav.tooltip.retention": {
+    de: "Aufbewahrungsfristen und Löschrichtlinien nach DSGVO/BRAO verwalten — nur relevant bei DACH-Praxis",
+    en: "Manage retention periods and deletion policies per GDPR/professional rules — only relevant for DACH practice",
+  },
+  "nav.tooltip.anonymize": {
+    de: "Personenbezogene Daten in Dokumenten anonymisieren — nur relevant bei DSGVO-Pflicht",
+    en: "Anonymize personal data in documents — only relevant under GDPR obligations",
+  },
+  "nav.tooltip.verfahrensdoku": {
+    de: "Verfahrensdokumentation nach GoBD führen — nur relevant bei deutscher Buchhaltungspflicht",
+    en: "Maintain procedure documentation per GoBD — only relevant for German accounting requirements",
+  },
+  "nav.tooltip.data_export": {
+    de: "Vollständiger Datenexport für DSGVO-Auskünfte oder Mandantenübergabe",
+    en: "Complete data export for GDPR requests or client handover",
+  },
+  "nav.tooltip.kanzlei_settings": {
+    de: "Kanzlei-Stammdaten, Verrechnung und Tarifmodell konfigurieren — nur relevant bei deutscher Praxis",
+    en: "Configure firm master data, billing and tariff model — only relevant for German practice",
+  },
+  "nav.tooltip.import_kanzlei": {
+    de: "Bestehende Kanzleidaten aus anderem System importieren — nur relevant bei Migration",
+    en: "Import existing firm data from another system — only relevant during migration",
+  },
+  "nav.tooltip.whatsapp_templates": {
+    de: "Vorlagen für WhatsApp-Mandantenkommunikation verwalten — nur relevant bei WhatsApp-Nutzung",
+    en: "Manage WhatsApp templates for client communication — only relevant when using WhatsApp",
+  },
+  "nav.tooltip.calendar_export": {
+    de: "Kalender als ICS exportieren für Outlook/Google Sync — nur relevant bei externem Kalender",
+    en: "Export calendar as ICS for Outlook/Google sync — only relevant with external calendar",
+  },
+  "nav.tooltip.judgements_sync": {
+    de: "Urteils-Datenbank mit externen Quellen synchronisieren — nur relevant bei DACH-Rechtsprechung",
+    en: "Sync judgement database with external sources — only relevant for DACH case law",
+  },
+  "nav.tooltip.audit_log": {
+    de: "Vollständiger Audit-Trail aller Systemaktionen (nur Lesezugriff) — Transparenz & Compliance",
+    en: "Complete audit trail of all system actions (read-only) — transparency & compliance",
+  },
+  "nav.tooltip.ai_model": {
+    de: "KI-Modell-Auswahl und Provider-Konfiguration — selten geändert, bewusst im System-Tier",
+    en: "AI model selection and provider configuration — rarely changed, intentionally in system tier",
+  },
 
   // ── Sidebar: nav items (industries — coming soon) ──
   "nav.consulting": { de: "Consulting", en: "Consulting" },
@@ -736,9 +947,9 @@ export const D = {
   "tax.clients.label_country": { de: "Land", en: "Country" },
 
   // ── Sidebar: bottom items ──
-  "nav.admin": { de: "Verwaltung", en: "Administration" },
+  "nav.admin": { de: "Team", en: "Team" },
   "nav.team": { de: "Team", en: "Team" },
-  "nav.controlling": { de: "Controlling", en: "Controlling" },
+  "nav.controlling": { de: "Kanzlei-Kennzahlen", en: "Firm Analytics" },
   "nav.audit_log": { de: "Audit-Log", en: "Audit Log" },
   "nav.directory": { de: "Alle Funktionen", en: "All Features" },
   "nav.api_keys": { de: "API-Keys", en: "API Keys" },
@@ -747,7 +958,7 @@ export const D = {
   "nav.onboarding": { de: "Onboarding", en: "Onboarding" },
   "nav.scim": { de: "SCIM", en: "SCIM" },
   "nav.experience": { de: "Erfahrung & Profil", en: "Experience & Profile" },
-  "nav.settings": { de: "Settings", en: "Settings" },
+  "nav.settings": { de: "Einstellungen", en: "Settings" },
   "nav.kanzlei": { de: "Kanzlei", en: "Firm" },
   "nav.security": { de: "Sicherheit", en: "Security" },
 
@@ -764,6 +975,31 @@ export const D = {
     de: "Offline — Änderungen werden lokal zwischengespeichert",
     en: "Offline — changes are cached locally",
   },
+  "mobile.sync_error": { de: "Sync-Fehler", en: "Sync error" },
+  "mobile.sync_complete": { de: "Alle Änderungen synchronisiert", en: "All changes synced" },
+  "mobile.changes_offline": {
+    de: "Änderung(en) offline gespeichert",
+    en: "change(s) saved offline",
+  },
+  "mobile.changes_pending": {
+    de: "Änderung(en) ausstehend",
+    en: "change(s) pending",
+  },
+  "mobile.syncing": { de: "Synchronisiere…", en: "Syncing…" },
+  "mobile.sync_now": { de: "Jetzt syncen", en: "Sync now" },
+  "mobile.zoom_in": { de: "Vergrößern", en: "Zoom in" },
+  "mobile.zoom_out": { de: "Verkleinern", en: "Zoom out" },
+  "mobile.download": { de: "Herunterladen", en: "Download" },
+  "mobile.close": { de: "Schließen", en: "Close" },
+  "mobile.pdf_error": {
+    de: "PDF konnte nicht geladen werden",
+    en: "PDF could not be loaded",
+  },
+  "mobile.pdf_not_supported": {
+    de: "Ihr Browser unterstützt keine eingebettete PDF-Anzeige.",
+    en: "Your browser does not support embedded PDF viewing.",
+  },
+  "mobile.download_fallback": { de: "PDF herunterladen", en: "Download PDF" },
   "sidebar.offline": { de: "Offline", en: "Offline" },
   "sidebar.checking": { de: "Prüfe…", en: "Checking…" },
   "sidebar.filter_placeholder": { de: "Navigation filtern…", en: "Filter navigation…" },
@@ -780,6 +1016,13 @@ export const D = {
   "sidebar.collapse_aria": { de: "Sidebar einklappen", en: "Collapse sidebar" },
   "sidebar.close_menu": { de: "Menü schließen", en: "Close menu" },
   "sidebar.coming_soon": { de: "bald", en: "soon" },
+  "sidebar.core_mode": { de: "Kernfunktionen", en: "Core" },
+  "sidebar.extended_mode": { de: "Alle Funktionen", en: "Extended" },
+  "sidebar.show_all_functions": { de: "Alle Funktionen anzeigen", en: "Show all functions" },
+  "sidebar.show_core_functions": {
+    de: "Nur Kernfunktionen anzeigen",
+    en: "Show core functions only",
+  },
   "sidebar.user": { de: "Benutzer", en: "User" },
   "sidebar.main_nav": { de: "Hauptnavigation", en: "Main navigation" },
 
@@ -1189,6 +1432,58 @@ export const D = {
     de: 'Akte „{{name}}" archivieren? Alle verknüpften Dokumente werden als tombstoned markiert.',
     en: 'Archive case "{{name}}"? All linked documents will be tombstoned.',
   },
+  "cases.close_checklist_title": {
+    de: "Abschluss-Checkliste",
+    en: "Close Checklist",
+  },
+  "cases.close_checklist_desc": {
+    de: "Vor dem Archivieren müssen folgende Punkte geklärt sein:",
+    en: "The following items must be resolved before archiving:",
+  },
+  "cases.close_checklist_has_blockers": {
+    de: "Archivierung blockiert — offene Punkte müssen zuerst geklärt werden.",
+    en: "Archive blocked — open items must be resolved first.",
+  },
+  "cases.close_checklist_warnings": {
+    de: "Warnungen — bitte vor dem Archivieren prüfen.",
+    en: "Warnings — please review before archiving.",
+  },
+  "cases.close_checklist_all_passed": {
+    de: "Alle Prüfungen bestanden — die Akte kann archiviert werden.",
+    en: "All checks passed — the case can be archived.",
+  },
+  "cases.close_checklist_force": {
+    de: "Trotzdem archivieren",
+    en: "Archive anyway",
+  },
+  "checklist.unbilled_time_label": { de: "Offene Zeiteinträge", en: "Unbilled time entries" },
+  "checklist.unbilled_time_desc": {
+    de: "Alle abrechenbaren Zeiteinträge müssen abgerechnet sein.",
+    en: "All billable time entries must be billed.",
+  },
+  "checklist.unbilled_expenses_label": { de: "Offene Auslagen", en: "Unbilled expenses" },
+  "checklist.unbilled_expenses_desc": {
+    de: "Alle abrechenbaren Auslagen müssen abgerechnet sein.",
+    en: "All billable expenses must be billed.",
+  },
+  "checklist.open_deadlines_label": { de: "Offene Fristen", en: "Open deadlines" },
+  "checklist.open_deadlines_desc": {
+    de: "Keine offenen, überfälligen oder kritischen Fristen.",
+    en: "No open, overdue, or critical deadlines.",
+  },
+  "checklist.open_doc_requests_label": {
+    de: "Offene Dokumentenanfragen",
+    en: "Open document requests",
+  },
+  "checklist.open_doc_requests_desc": {
+    de: "Alle Dokumentenanfragen sollten erfüllt oder abgelaufen sein.",
+    en: "All document requests should be fulfilled or expired.",
+  },
+  "checklist.unpaid_invoices_label": { de: "Offene Rechnungen", en: "Unpaid invoices" },
+  "checklist.unpaid_invoices_desc": {
+    de: "Alle Rechnungen müssen bezahlt oder storniert sein.",
+    en: "All invoices must be paid or cancelled.",
+  },
   "cases.confirm_bulk_archive_title": { de: "Akten archivieren", en: "Archive cases" },
   "cases.confirm_bulk_archive_msg": {
     de: "{{count}} Akte(n) archivieren? Alle verknüpften Dokumente werden als tombstoned markiert.",
@@ -1325,6 +1620,36 @@ export const D = {
   },
   "calendar.deadline": { de: "Frist", en: "Deadline" },
   "calendar.task": { de: "Aufgabe", en: "Task" },
+  "calendar.new": { de: "Neuer Termin", en: "New Appointment" },
+  "calendar.edit": { de: "Termin bearbeiten", en: "Edit Appointment" },
+  "calendar.save": { de: "Speichern", en: "Save" },
+  "calendar.cancel": { de: "Abbrechen", en: "Cancel" },
+  "calendar.create": { de: "Erstellen", en: "Create" },
+  "calendar.delete": { de: "Löschen", en: "Delete" },
+  "calendar.title_label": { de: "Titel", en: "Title" },
+  "calendar.title_placeholder": { de: "Termin-Titel", en: "Appointment title" },
+  "calendar.date": { de: "Datum", en: "Date" },
+  "calendar.time": { de: "Uhrzeit", en: "Time" },
+  "calendar.duration": { de: "Dauer", en: "Duration" },
+  "calendar.type": { de: "Typ", en: "Type" },
+  "calendar.type_meeting": { de: "Besprechung", en: "Meeting" },
+  "calendar.type_hearing": { de: "Verhandlung", en: "Hearing" },
+  "calendar.type_consultation": { de: "Beratung", en: "Consultation" },
+  "calendar.type_internal": { de: "Intern", en: "Internal" },
+  "calendar.location": { de: "Ort", en: "Location" },
+  "calendar.location_placeholder": { de: "Gericht, Büro, Video…", en: "Court, office, video…" },
+  "calendar.case": { de: "Akte", en: "Case" },
+  "calendar.no_case": { de: "Keine Akte", en: "No case" },
+  "calendar.description_label": { de: "Beschreibung", en: "Description" },
+  "calendar.description_placeholder": { de: "Agenda, Notizen…", en: "Agenda, notes…" },
+  "calendar.save_error": { de: "Speichern fehlgeschlagen", en: "Save failed" },
+  "calendar.delete_error": { de: "Löschen fehlgeschlagen", en: "Delete failed" },
+  "calendar.created": { de: "Termin erstellt", en: "Appointment created" },
+  "calendar.updated": { de: "Termin aktualisiert", en: "Appointment updated" },
+  "calendar.deleted": { de: "Termin gelöscht", en: "Appointment deleted" },
+  "calendar.more": { de: "weitere", en: "more" },
+  "calendar.upcoming": { de: "Anstehende Termine", en: "Upcoming appointments" },
+  "calendar.no_appointments": { de: "Keine anstehenden Termine", en: "No upcoming appointments" },
 
   // ── Tasks page ──
   "tasks.title": { de: "Aufgaben", en: "Tasks" },
@@ -1461,6 +1786,28 @@ export const D = {
   },
   "deadlines.fristenbuch_print": { de: "Drucken", en: "Print" },
   "deadlines.fristenbuch_empty": { de: "Keine Fristen vorhanden", en: "No deadlines found" },
+  "deadlines.fristenbuch_loading": {
+    de: "Fristenbuch wird geladen …",
+    en: "Loading deadline register …",
+  },
+  "deadlines.fristenbuch_gesamt": { de: "Gesamt", en: "Total" },
+  "deadlines.fristenbuch_ok": { de: "In Ordnung", en: "OK" },
+  "deadlines.fristenbuch_vorfrist": { de: "Vorfrist", en: "Pre-deadline" },
+  "deadlines.fristenbuch_folge": { de: "Folge bei Versäumnis", en: "Consequence if missed" },
+  "deadlines.fristenbuch_search": { de: "Fristen durchsuchen …", en: "Search deadlines …" },
+  "deadlines.fristenbuch_all_cases": { de: "Alle Akten", en: "All cases" },
+  "deadlines.fristenbuch_csv": { de: "CSV-Export", en: "CSV export" },
+  "deadlines.fristenbuch_ics": { de: "ICS-Abo kopieren", en: "Copy ICS subscription" },
+  "deadlines.fristenbuch_ics_copied": {
+    de: "ICS-Abo-URL in Zwischenablage kopiert",
+    en: "ICS subscription URL copied to clipboard",
+  },
+  "deadlines.fristenbuch_kritisch_hint": {
+    de: "kritische Fristen (≤ 2 Werktage)",
+    en: "critical deadlines (≤ 2 workdays)",
+  },
+  "deadlines.fristenbuch_print_footer": { de: "Erstellt am", en: "Generated on" },
+  "deadlines.col_status": { de: "Status", en: "Status" },
   "deadlines.erv_date": { de: "ERV-Zustelldatum", en: "ERV service date" },
   "deadlines.erv_date_hint": {
     de: "Beginn der Frist ab elektronischer Zustellung",
@@ -1563,6 +1910,17 @@ export const D = {
     de: "Rechnung konnte nicht erstellt werden",
     en: "Invoice could not be created",
   },
+  "inv.leitweg_id": { de: "Leitweg-ID", en: "Leitweg ID" },
+  "inv.e_invoice_format": { de: "E-Rechnung Format", en: "E-invoice format" },
+  "inv.e_invoice_none": { de: "Keine (nur klassisch)", en: "None (classic only)" },
+  "inv.e_invoice_auto_generated": {
+    de: "E-Rechnung automatisch generiert",
+    en: "E-invoice automatically generated",
+  },
+  "inv.e_invoice_auto_failed": {
+    de: "E-Rechnung Generierung fehlgeschlagen",
+    en: "E-invoice generation failed",
+  },
   "inv.admin_lawyer_only": { de: "Nur Admin oder Anwalt", en: "Admin or lawyer only" },
   "inv.days_net": { de: "Tage netto", en: "days net" },
   "inv.invoice_for_case": { de: "Rechnung für Akte", en: "Invoice for case" },
@@ -1576,13 +1934,266 @@ export const D = {
     de: "Subsumio Engine & Dashboard konfigurieren",
     en: "Configure Subsumio engine & dashboard",
   },
+  "settings.hub_desc": {
+    de: "Verwalten Sie Ihr Konto, Ihre Kanzlei und Ihre Sicherheitseinstellungen",
+    en: "Manage your account, firm and security settings",
+  },
+  "settings.hub_back": { de: "← Zurück zur Übersicht", en: "← Back to overview" },
+  "settings.tile_account_desc": {
+    de: "Plan, Sprache, Datenexport und Empfehlungen",
+    en: "Plan, language, data export and referrals",
+  },
+  "settings.tile_brain_desc": {
+    de: "Engine-URL, Verbindungsstatus und Suchmodus",
+    en: "Engine URL, connection status and search mode",
+  },
+  "settings.tile_dream_desc": {
+    de: "Nächtliche Konsolidierung & Enrichment",
+    en: "Nightly consolidation & enrichment",
+  },
+  "settings.tile_kanzlei_desc": {
+    de: "Verrechnung, Stundensatz & Abrechnung",
+    en: "Billing, hourly rate & invoicing",
+  },
+  "settings.tile_e_invoice_desc": {
+    de: "XRechnung / ZUGFeRD / Kleinunternehmer",
+    en: "XRechnung / ZUGFeRD / small business",
+  },
+  "settings.notification_warning_label": {
+    de: "Benachrichtigung fehlt",
+    en: "Notifications missing",
+  },
+  "settings.notification_warning_tooltip": {
+    de: "E-Mail/SMTP nicht konfiguriert — Fristen-Erinnerungen werden nur im Dashboard angezeigt. Bitte in den Kanzlei-Einstellungen konfigurieren.",
+    en: "Email/SMTP not configured — deadline reminders will only show in the dashboard. Please configure in firm settings.",
+  },
+  "settings.tile_team_desc": {
+    de: "Kanzlei-Mitarbeiter und Rollen",
+    en: "Firm staff and roles",
+  },
+  "settings.tile_api_desc": {
+    de: "Keys werden lokal gespeichert und nie an Server gesendet",
+    en: "Keys are stored locally and never sent to the server",
+  },
+  "settings.tile_acls_desc": {
+    de: "Dokument-Level Zugriffskontrolle und Ethical Walls",
+    en: "Document-level access control and ethical walls",
+  },
+  "settings.tile_scim_desc": {
+    de: "Automatische Benutzerbereitstellung über Identity Provider",
+    en: "Automated user provisioning via Identity Provider",
+  },
+  "settings.tile_security_desc": {
+    de: "2FA, Passwort-Richtlinien und Sitzungsverwaltung",
+    en: "2FA, password policies and session management",
+  },
+  "settings.tile_ai_model_desc": {
+    de: "KI-Modell-Auswahl und Provider-Konfiguration",
+    en: "AI model selection and provider configuration",
+  },
+  "settings.tier_quick_start": {
+    de: "Schnellstart — ab Tag 1",
+    en: "Quick Start — from day 1",
+  },
+  "settings.tier_erweitert": {
+    de: "Erweitert — ab ~10 Personen",
+    en: "Advanced — for ~10+ users",
+  },
+  "settings.tier_dach_integration": {
+    de: "DACH-Integration — regional spezifisch",
+    en: "DACH Integration — region-specific",
+  },
+  "settings.tier_system": {
+    de: "System — Transparenz & Audit",
+    en: "System — transparency & audit",
+  },
+  "settings.hub_search_placeholder": {
+    de: "Einstellungen durchsuchen …",
+    en: "Search settings …",
+  },
+  "settings.hub_all_settings": {
+    de: "Alle Einstellungen",
+    en: "All Settings",
+  },
+  "settings.hub_no_results": {
+    de: "Keine Einstellungen gefunden",
+    en: "No settings found",
+  },
+  "settings.tile_billing_desc": {
+    de: "Abo, Zahlungsmethode und Rechnungen verwalten",
+    en: "Manage subscription, payment method and invoices",
+  },
+  "settings.tile_team_mgmt_desc": {
+    de: "Mitarbeiter, Rollen und Berechtigungen verwalten",
+    en: "Manage staff, roles and permissions",
+  },
+  "settings.tile_onboarding_desc": {
+    de: "Geführte Ersteinrichtung der Kanzlei",
+    en: "Guided initial setup of your firm",
+  },
+  "settings.tile_api_keys_desc": {
+    de: "API-Schlüssel für externe Integrationen",
+    en: "API keys for external integrations",
+  },
+  "settings.tile_security_desc_full": {
+    de: "2FA, Passwort-Richtlinien und Sitzungsverwaltung",
+    en: "2FA, password policies and session management",
+  },
+  "settings.tile_directory_desc": {
+    de: "Alle Funktionen und Seiten im Überblick",
+    en: "Overview of all features and pages",
+  },
+  "settings.tile_connectors_desc": {
+    de: "Externe Integrationen und Schnittstellen konfigurieren",
+    en: "Configure external integrations and connectors",
+  },
+  "settings.tile_agents_desc": {
+    de: "KI-Agenten und Automatisierungen verwalten",
+    en: "Manage AI agents and automations",
+  },
+  "settings.tile_scim_desc_full": {
+    de: "Automatische Benutzerbereitstellung über SAML/SCIM",
+    en: "Automated user provisioning via SAML/SCIM",
+  },
+  "settings.tile_monitoring_desc": {
+    de: "System-Überwachung und Alerts",
+    en: "System monitoring and alerts",
+  },
+  "settings.tile_rag_eval_desc": {
+    de: "Qualitätsbewertung der KI-Antworten",
+    en: "Quality evaluation of AI responses",
+  },
+  "settings.tile_chat_analytics_desc": {
+    de: "Nutzungsstatistiken der KI-Chat-Funktion",
+    en: "Usage statistics for AI chat features",
+  },
+  "settings.tile_chat_compare_desc": {
+    de: "Modellvergleich und Benchmarks",
+    en: "Model comparison and benchmarks",
+  },
+  "settings.tile_reports_desc": {
+    de: "Berichte und Statistiken exportieren",
+    en: "Export reports and statistics",
+  },
+  "settings.tile_adoption_analytics_desc": {
+    de: "Nutzungs- und Adoptionskennzahlen",
+    en: "Usage and adoption metrics",
+  },
+  "settings.tile_shared_spaces_desc": {
+    de: "Gemeinsame Arbeitsbereiche für Teams",
+    en: "Shared workspaces for teams",
+  },
+  "settings.tile_mobile_desc": {
+    de: "Mobile App installieren und konfigurieren",
+    en: "Install and configure mobile app",
+  },
+  "settings.tile_experience_desc": {
+    de: "Berufserfahrung und Experten-Profil",
+    en: "Professional experience and expert profile",
+  },
+  "settings.tile_portfolio_insights_desc": {
+    de: "Portfolio-Analyse und Akten-Kennzahlen",
+    en: "Portfolio analysis and case metrics",
+  },
+  "settings.tile_process_strategy_desc": {
+    de: "Prozessstrategie und Fall-Analyse",
+    en: "Litigation strategy and case analysis",
+  },
+  "settings.tile_client_portal_desc": {
+    de: "Mandantenportal für externen Zugriff",
+    en: "Client portal for external access",
+  },
+  "settings.tile_version_history_desc": {
+    de: "Dokumentversionen und Änderungsverlauf",
+    en: "Document versions and change history",
+  },
+  "settings.tile_signature_desc": {
+    de: "Elektronische Unterschriften und DocuSign",
+    en: "Electronic signatures and DocuSign",
+  },
+  "settings.tile_vault_desc": {
+    de: "Dokumenten-Ablage und Archivierung",
+    en: "Document vault and archiving",
+  },
+  "settings.tile_cost_calculator_desc": {
+    de: "RVG-Kostenrechner für Streitwerte",
+    en: "RVG cost calculator for dispute values",
+  },
+  "settings.tile_kanzlei_settings_desc": {
+    de: "Kanzlei-Stammdaten, DATEV und Tarifmodell — nur relevant bei deutscher Praxis",
+    en: "Firm master data, DATEV and tariff model — only relevant for German practice",
+  },
+  "settings.tile_datev_export_desc": {
+    de: "DATEV-Export — nur relevant, wenn Ihre Kanzlei DATEV nutzt",
+    en: "DATEV export — only relevant if your firm uses DATEV",
+  },
+  "settings.tile_bea_desc": {
+    de: "beA-Integration für elektronischen anwaltlichen Austausch — nur relevant in Deutschland",
+    en: "beA integration for electronic lawyer communication — only relevant in Germany",
+  },
+  "settings.tile_word_addin_desc": {
+    de: "Word-Add-In für Office-Integration — nur relevant bei Microsoft-Nutzung",
+    en: "Word Add-In for Office integration — only relevant when using Microsoft",
+  },
+  "settings.tile_compliance_desc": {
+    de: "DSGVO, BRAO und Compliance-Richtlinien — nur relevant bei DACH-Praxis",
+    en: "GDPR, BRAO and compliance policies — only relevant for DACH practice",
+  },
+  "settings.tile_retention_desc": {
+    de: "Aufbewahrungsfristen und Löschrichtlinien — nur relevant bei DACH-Praxis",
+    en: "Retention periods and deletion policies — only relevant for DACH practice",
+  },
+  "settings.tile_anonymize_desc": {
+    de: "Datenanonymisierung für Datenschutz — nur relevant bei DSGVO-Pflicht",
+    en: "Data anonymization for privacy — only relevant under GDPR",
+  },
+  "settings.tile_verfahrensdoku_desc": {
+    de: "Verfahrensdokumentation (GoBD) — nur relevant bei deutscher Buchhaltungspflicht",
+    en: "Procedure documentation (GoBD) — only relevant for German accounting requirements",
+  },
+  "settings.tile_data_export_desc": {
+    de: "Vollständiger Datenexport für DSGVO/Mandantenübergabe",
+    en: "Complete data export for GDPR/client handover",
+  },
+  "settings.tile_import_kanzlei_desc": {
+    de: "Kanzlei-Daten importieren — nur relevant bei Migration von anderem System",
+    en: "Import firm data — only relevant when migrating from another system",
+  },
+  "settings.tile_whatsapp_templates_desc": {
+    de: "WhatsApp-Vorlagen für Mandantenkommunikation — nur relevant bei WhatsApp-Nutzung",
+    en: "WhatsApp templates for client communication — only relevant when using WhatsApp",
+  },
+  "settings.tile_calendar_export_desc": {
+    de: "Kalender-Export (ICS) für Outlook/Google — nur relevant bei externem Kalender",
+    en: "Calendar export (ICS) for Outlook/Google — only relevant with external calendar",
+  },
+  "settings.tile_judgements_sync_desc": {
+    de: "Urteils-Datenbank synchronisieren — nur relevant bei DACH-Rechtsprechung",
+    en: "Judgement database sync — only relevant for DACH case law",
+  },
+  "settings.tile_opponents_desc": {
+    de: "Processgegner-Verwaltung — nur relevant bei DACH-Praxis",
+    en: "Opponent management — only relevant for DACH practice",
+  },
+  "settings.tile_audit_desc": {
+    de: "Audit-Log und Nachverfolgung aller Aktionen (nur Lesezugriff)",
+    en: "Audit log and tracking of all actions (read-only)",
+  },
+  "settings.tile_ai_model_desc_full": {
+    de: "KI-Modell-Auswahl — selten geändert, bewusst im System-Tier",
+    en: "AI model selection — rarely changed, intentionally in system tier",
+  },
   "settings.tab_brain": { de: "Wissensbasis", en: "Knowledge Base" },
   "settings.tab_api": { de: "API Keys", en: "API Keys" },
   "settings.tab_dream": { de: "Dream Cycle", en: "Dream Cycle" },
   "settings.tab_kanzlei": { de: "Kanzlei", en: "Firm" },
+  "settings.tab_e_invoice": { de: "E-Rechnung", en: "E-Invoice" },
   "settings.tab_team": { de: "Team", en: "Team" },
   "settings.tab_acls": { de: "Berechtigungen", en: "Permissions" },
   "settings.tab_account": { de: "Account", en: "Account" },
+  "settings.group_personal": { de: "Persönlich", en: "Personal" },
+  "settings.group_firm": { de: "Kanzlei", en: "Firm" },
+  "settings.group_security": { de: "Sicherheit", en: "Security" },
   "settings.brain_config": { de: "Wissensbasis-Konfiguration", en: "Knowledge base configuration" },
   "settings.engine_url": { de: "Engine-URL", en: "Engine URL" },
   "settings.engine_url_desc": {
@@ -1887,9 +2498,9 @@ export const D = {
   "layout.skip_to_content": { de: "Zum Inhalt springen", en: "Skip to content" },
 
   // ── Sidebar: additional nav items ──
-  "nav.playbooks": { de: "Vorlagen & Standards", en: "Playbooks & Standards" },
-  "nav.process_strategy": { de: "Prozessstrategie", en: "Case Strategy" },
-  "nav.ai_model": { de: "Modell", en: "Model" },
+  "nav.playbooks": { de: "Playbooks", en: "Playbooks" },
+  "nav.process_strategy": { de: "Prozessstrategie", en: "Process Strategy" },
+  "nav.ai_model": { de: "KI-Modell", en: "AI Model" },
 
   // ── Topbar: additional strings ──
   "topbar.close_menu": { de: "Menü schließen", en: "Close menu" },
@@ -1935,6 +2546,7 @@ export const D = {
   },
   "cmd.section.actions": { de: "Aktionen", en: "Actions" },
   "cmd.section.create": { de: "Erstellen", en: "Create" },
+  "cmd.ask_copilot": { de: "Copilot fragen", en: "Ask Copilot" },
   "cmd.action.new_case": { de: "Neue Akte", en: "New case" },
   "cmd.action.new_deadline": { de: "Neue Frist", en: "New deadline" },
   "cmd.action.new_invoice": { de: "Neue Rechnung", en: "New invoice" },
@@ -2941,6 +3553,24 @@ export const D = {
   "agents.legend_failed": { de: "Fehler", en: "Failed" },
   "agents.details": { de: "Details", en: "Details" },
   "agents.select_job": { de: "Wähle einen Job aus der Liste", en: "Select a job from the list" },
+  "agents.seed_title": { de: "Erste Schritte mit Agents", en: "Getting started with Agents" },
+  "agents.seed_desc": {
+    de: "Agents sind autonome KI-Assistenten, die komplexe juristische Aufgaben in Schritten ausführen. Wähle eine Vorlage links oder beschreibe deine eigene Aufgabe.",
+    en: "Agents are autonomous AI assistants that execute complex legal tasks step by step. Pick a template on the left or describe your own task.",
+  },
+  "agents.seed_step_1": {
+    de: "Vorlage wählen oder Aufgabe beschreiben",
+    en: "Pick a template or describe your task",
+  },
+  "agents.seed_step_2": {
+    de: "Agent plant und führt Schritte autonom aus",
+    en: "Agent plans and executes steps autonomously",
+  },
+  "agents.seed_step_3": { de: "Ergebnisse prüfen und freigeben", en: "Review and approve results" },
+  "agents.seed_empty_dag": {
+    de: "Sobald du einen Agenten startest, erscheint hier der Workflow-Graph",
+    en: "Once you start an agent, the workflow graph appears here",
+  },
   "agents.supervisor": { de: "Supervisor", en: "Supervisor" },
   "agents.subagent": { de: "subagent", en: "subagent" },
 
@@ -3730,10 +4360,10 @@ export const D = {
   "sources.status_unknown": { de: "Unbekannt", en: "Unknown" },
   "bea.breadcrumb": { de: "beA", en: "beA" },
   "bea.compose": { de: "Entwurf erstellen", en: "Create draft" },
-  "bea.no_send_title": { de: "Kein Versand über Subsumio", en: "No sending via Subsumio" },
+  "bea.no_send_title": { de: "beA-Versand via Middleware", en: "beA sending via middleware" },
   "bea.no_send_desc": {
-    de: "Der beA-Versand erfordert eine zertifizierte beA-Software mit Anwalts-Signaturkarte. Subsumio versendet keine Nachrichten — es importiert beA-Nachrichten via XML-Export (Konnektor bea-import) und speichert Entwürfe im Brain, die du in deiner beA-Software (z. B. beA-Webclient, RA-MICRO) versendest.",
-    en: "Sending via beA requires certified beA software with a lawyer signature card. Subsumio does not send messages — it imports beA messages via XML export (connector bea-import) and stores drafts in the brain that you send in your beA software (e.g. beA web client, RA-MICRO).",
+    de: "Der beA-Versand erfolgt über einen zertifizierten Middleware-Anbieter, der das beA-Protokoll, die Signatur und den VPN-Tunnel kapselt. Bei nicht konfigurierter Middleware wird ein XJustiz-XML zum manuellen Upload im beA-Portal generiert. Empfangene beA-Nachrichten werden via XML-Import (Konnektor bea-import) automatisch importiert.",
+    en: "beA sending is handled via a certified middleware provider that encapsulates the beA protocol, signature and VPN tunnel. When no middleware is configured, an XJustiz XML is generated for manual upload in the beA portal. Incoming beA messages are automatically imported via XML import (connector bea-import).",
   },
   "bea.error_load": {
     de: "beA-Daten konnten nicht geladen werden.",
@@ -3775,9 +4405,12 @@ export const D = {
   "bea.approve": { de: "Freigeben", en: "Approve" },
   "bea.discard": { de: "Verwerfen", en: "Discard" },
   "bea.approved_send_hint": {
-    de: "Freigegeben — Versand erfolgt in deiner beA-Software.",
-    en: "Approved — sending is done in your beA software.",
+    de: "Freigegeben — jetzt versendebereit.",
+    en: "Approved — ready to send.",
   },
+  "bea.send_via_middleware": { de: "Versenden", en: "Send" },
+  "bea.retry_send": { de: "Erneut versenden", en: "Retry send" },
+  "bea.confirm_receipt": { de: "Empfangsbestätigung", en: "Confirm receipt" },
   "bea.create_filing": { de: "Filing-Paket anlegen", en: "Create filing package" },
   "bea.filing_created": {
     de: "Filing-Paket angelegt (Status: Entwurf).",
@@ -3981,6 +4614,14 @@ export const D = {
   "vault.status_processing": { de: "In Verarbeitung", en: "Processing" },
   "vault.status_failed": { de: "Fehlgeschlagen", en: "Failed" },
   "vault.status_ocr_needed": { de: "OCR nötig", en: "OCR needed" },
+  "ocr.error_title": { de: "Text-Extraktion fehlgeschlagen", en: "Text extraction failed" },
+  "ocr.warning_title": {
+    de: "Dokument nur teilweise extrahiert",
+    en: "Document only partially extracted",
+  },
+  "ocr.retry": { de: "Erneut versuchen", en: "Retry" },
+  "ocr.retry_success": { de: "OCR neu gestartet", en: "OCR restarted" },
+  "ocr.retry_error": { de: "OCR-Neustart fehlgeschlagen", en: "OCR retry failed" },
   "vault.parts": { de: "Teile", en: "parts" },
   "vault.split_parent": { de: "Gesplittet", en: "Split parent" },
   "vault.part_of": { de: "Teil von", en: "Part of" },
@@ -4041,6 +4682,16 @@ export const D = {
   "whatsapp.kind_intake": { de: "Mandatsanfrage", en: "Intake" },
   "whatsapp.kind_docs": { de: "Dokumente", en: "Documents" },
   "whatsapp.no_entries": { de: "Noch keine Einträge.", en: "No entries yet." },
+  "whatsapp.inbox_tab": { de: "Posteingang", en: "Inbox" },
+  "whatsapp.inbox_empty": {
+    de: "Noch keine WhatsApp-Nachrichten empfangen.",
+    en: "No WhatsApp messages received yet.",
+  },
+  "whatsapp.reply_placeholder": { de: "Antwort schreiben…", en: "Type a reply…" },
+  "whatsapp.search_conversations": {
+    de: "Konversationen durchsuchen…",
+    en: "Search conversations…",
+  },
   "whatsapp.status_open": { de: "offen", en: "open" },
   "whatsapp.secretary_title": { de: "Sekretariats-Funktionen", en: "Secretary functions" },
   "whatsapp.secretary_desc": {
@@ -4117,6 +4768,9 @@ export const D = {
     de: "Offene Freigaben zuerst prüfen, dann Überarbeitungen bündeln. Zugewiesene Vorgänge wechseln automatisch in Prüfung.",
     en: "Approve open documents first, then batch revision requests. Assigned matters automatically move into review.",
   },
+  "review_queue.toast_status_updated": { de: "Status aktualisiert", en: "Status updated" },
+  "review_queue.toast_assigned": { de: "Zuweisung aktualisiert", en: "Assignment updated" },
+  "review_queue.toast_pipeline_resumed": { de: "Pipeline fortgesetzt", en: "Pipeline resumed" },
 
   // ── Workflows page ──
   "workflows.title": { de: "Abläufe", en: "Workflows" },
@@ -4129,6 +4783,11 @@ export const D = {
   "workflows.note": {
     de: "Abläufe verketten wiederkehrende Kanzlei-Schritte wie Dokumentanalyse, Fristnotierung, Versand oder Abrechnung. Risikoreiche Aktionen laufen über Freigaben.",
     en: "Workflows chain recurring firm steps such as document analysis, deadline creation, sending or billing. Risky actions go through approvals.",
+  },
+  "workflows.seed_welcome": { de: "Willkommen bei den Workflows", en: "Welcome to Workflows" },
+  "workflows.seed_welcome_desc": {
+    de: "Starte mit einer Vorlage unten. Jeder Workflow führt mehrere Schritte automatisch aus — von der Recherche bis zum Versand. Du kannst jeden Schritt nachverfolgen und Freigaben erteilen.",
+    en: "Start with a template below. Each workflow executes multiple steps automatically — from research to dispatch. You can track every step and grant approvals.",
   },
   "workflows.filter_all": { de: "Alle", en: "All" },
   "workflows.filter_completed": { de: "Abgeschlossen", en: "Completed" },
@@ -4396,6 +5055,9 @@ export const D = {
   },
   "playbooks.confirm_delete_label": { de: "Löschen", en: "Delete" },
   "playbooks.err_delete_failed": { de: "Löschen fehlgeschlagen.", en: "Delete failed." },
+  "playbooks.success_created": { de: "Playbook erstellt", en: "Playbook created" },
+  "playbooks.success_updated": { de: "Playbook aktualisiert", en: "Playbook updated" },
+  "playbooks.success_deleted": { de: "Playbook gelöscht", en: "Playbook deleted" },
   "playbooks.title": { de: "Contract Playbooks", en: "Contract Playbooks" },
   "playbooks.description": {
     de: "Rule-Based Contract Review — definiere Klausel-Standards und flagge Deviationen beim Redlining",
@@ -4591,7 +5253,7 @@ export const D = {
   "copilot.ctx.anonymize": { de: "Anonymisierung", en: "Anonymization" },
   "copilot.ctx.case_scanner": { de: "Akten-Scanner", en: "Case Scanner" },
   "copilot.ctx.process_strategy": { de: "Prozessstrategie", en: "Litigation Strategy" },
-  "copilot.ctx.controlling": { de: "Controlling", en: "Controlling" },
+  "copilot.ctx.controlling": { de: "Kanzlei-Kennzahlen", en: "Firm Analytics" },
   "copilot.ctx.workflows": { de: "Workflows", en: "Workflows" },
   "copilot.ctx.monitoring": { de: "Monitoring", en: "Monitoring" },
   "copilot.ctx.calendar": { de: "Kalender", en: "Calendar" },
@@ -4943,6 +5605,7 @@ export const D = {
   "intake.search_placeholder": { de: "Mandatsanfrage suchen…", en: "Search intake…" },
   "intake.source_all": { de: "Alle Quellen", en: "All sources" },
   "intake.source_manual": { de: "Manuell", en: "Manual" },
+  "intake.source_scan": { de: "Scan", en: "Scan" },
   "intake.opens_page": { de: "öffnet eigene Seite", en: "opens dedicated page" },
   "intake.loading": { de: "Lade Mandatsanfragen…", en: "Loading intake…" },
   "intake.empty_title": { de: "Keine Mandatsanfragen", en: "No intakes" },
@@ -5461,6 +6124,7 @@ export const D = {
 
   // ── Connectors page ──
   "connectors.title": { de: "Konnektoren", en: "Connectors" },
+  "connectors.empty": { de: "Keine Konnektoren konfiguriert", en: "No connectors configured" },
   "connectors.description": {
     de: "Externe Datenquellen mit dem Brain verbinden",
     en: "Connect external data sources to the brain",
@@ -5594,6 +6258,28 @@ export const D = {
     de: "Hinweis: Die angezeigten Fristen dienen als Orientierung. Die tatsächliche Aufbewahrungsfrist hängt von der Rechtsmaterie ab: Handakten (§ 147 AO): 6 Jahre, Kanzleiakten (§ 50 BRAO): 10 Jahre. Persönliche Daten müssen nach Zweckwegfall gelöscht werden (Art. 5 DSGVO). Vor Löschung stets eine Datenträgerkopie anfertigen.",
     en: "Note: The displayed periods serve as guidance. The actual retention period depends on the legal matter: case files (§ 147 AO): 6 years, firm files (§ 50 BRAO): 10 years. Personal data must be deleted after purpose fulfillment (Art. 5 GDPR). Always create a backup copy before deletion.",
   },
+
+  // ── Global Search ──
+  "search.title": { de: "Globale Suche", en: "Global Search" },
+  "search.description": {
+    de: "Volltextsuche über alle Akten, Dokumente, Fristen und Notizen",
+    en: "Full-text search across all cases, documents, deadlines and notes",
+  },
+  "search.placeholder": { de: "Suchbegriff eingeben…", en: "Enter search term…" },
+  "search.hint": {
+    de: "Suchen Sie nach Akten, Dokumenten, Fristen, Rechnungen und mehr.",
+    en: "Search across cases, documents, deadlines, invoices and more.",
+  },
+  "search.no_results": { de: "Keine Treffer.", en: "No results found." },
+  "search.results_count": { de: "Treffer", en: "results" },
+  "search.scope_all": { de: "Alle", en: "All" },
+  "search.scope_cases": { de: "Akten", en: "Cases" },
+  "search.scope_documents": { de: "Dokumente", en: "Documents" },
+  "search.scope_deadlines": { de: "Fristen", en: "Deadlines" },
+  "search.scope_notes": { de: "Notizen", en: "Notes" },
+  "search.scope_invoices": { de: "Rechnungen", en: "Invoices" },
+  "search.scope_chats": { de: "Chats", en: "Chats" },
+  "search.scope_contacts": { de: "Kontakte", en: "Contacts" },
 
   // ── Settings Kanzlei page ──
   "settings.kanzlei.title": { de: "Kanzlei-Einstellungen", en: "Firm settings" },
@@ -6320,6 +7006,132 @@ export const D = {
 
   // ── Trust Accounting ─────────────────────────────────────────────────
   "nav.trust_accounting": { de: "Treuhandkonto", en: "Trust Accounting" },
+  "nav.fibu": { de: "FiBu", en: "Accounting" },
+  "nav.kanzlei_tools": { de: "Kanzlei-Werkzeuge", en: "Firm tools" },
+  "nav.outbound_register": { de: "Postausgangsbuch", en: "Outbound Register" },
+  "nav.power_of_attorney": { de: "Vollmachten", en: "Powers of Attorney" },
+  "nav.fao_tracking": { de: "FAO-Tracking", en: "FAO Tracking" },
+  "nav.dictation": { de: "Diktat", en: "Dictation" },
+  "nav.kyc": { de: "GwG / KYC", en: "KYC" },
+  "nav.absences": { de: "Urlaubsvertretung", en: "Vacation Delegation" },
+  "nav.ethical_wall": { de: "Ethical Wall", en: "Ethical Wall" },
+  "nav.webhooks": { de: "Webhooks", en: "Webhooks" },
+  "nav.time_suggestions": { de: "Zeit-Vorschläge", en: "Time Suggestions" },
+  "nav.autonomous": { de: "Autopilot", en: "Autopilot" },
+  "nav.red_team": { de: "Red-Team", en: "Red Team" },
+  "nav.document_interviews": { de: "Interviews", en: "Interviews" },
+  "nav.court_analytics": { de: "Entscheider-Analytics", en: "Court Analytics" },
+  "nav.online_booking": { de: "Online-Termine", en: "Online Booking" },
+  "nav.bulk_cases": { de: "Massenakten", en: "Bulk Cases" },
+  "nav.datev_direct": { de: "DATEV Direct", en: "DATEV Direct" },
+  "nav.legal_insurance": { de: "Rechtsschutz", en: "Legal insurance" },
+  "nav.peer_benchmark": { de: "Peer-Benchmark", en: "Peer benchmark" },
+  "nav.white_label": { de: "White-Label PWA", en: "White-label PWA" },
+  "workspace.rsv.title": { de: "Rechtsschutzversicherung", en: "Legal expenses insurance" },
+  "workspace.rsv.description": {
+    de: "Deckungsanfragen für drebis oder strukturierten E-Mail-Versand vorbereiten",
+    en: "Prepare coverage requests for drebis or structured email delivery",
+  },
+  "workspace.rsv.new": { de: "Neue Deckungsanfrage", en: "New coverage request" },
+  "workspace.rsv.case": { de: "Akten-Slug", en: "Case slug" },
+  "workspace.rsv.client": { de: "Mandant", en: "Client" },
+  "workspace.rsv.insurer": { de: "Versicherer", en: "Insurer" },
+  "workspace.rsv.number": { de: "Versicherungsnummer", en: "Policy number" },
+  "workspace.rsv.area": { de: "Rechtsgebiet", en: "Practice area" },
+  "workspace.rsv.value": { de: "Streitwert", en: "Dispute value" },
+  "workspace.rsv.matter": { de: "Gegenstand", en: "Matter" },
+  "workspace.rsv.create": { de: "Anfrage erzeugen", en: "Create request" },
+  "workspace.rsv.ready": { de: "Versandfertige Anfrage", en: "Ready-to-send request" },
+  "workspace.rsv.status": { de: "Deckungsstatus", en: "Coverage status" },
+  "workspace.rsv.empty": { de: "Noch keine Anfragen.", en: "No requests yet." },
+  "workspace.benchmark.title": { de: "Peer-Benchmark", en: "Peer benchmark" },
+  "workspace.benchmark.description": {
+    de: "Anonymisierter Kanzleivergleich mit k-Anonymität",
+    en: "Anonymous firm comparison with k-anonymity",
+  },
+  "workspace.benchmark.contribute": { de: "Anonymisiert beitragen", en: "Contribute anonymously" },
+  "workspace.benchmark.firm": { de: "Interne Kanzlei-ID", en: "Internal firm ID" },
+  "workspace.benchmark.area": { de: "Rechtsgebiet", en: "Practice area" },
+  "workspace.benchmark.total": { de: "Fälle gesamt", en: "Total cases" },
+  "workspace.benchmark.won": { de: "Gewonnene Fälle", en: "Cases won" },
+  "workspace.benchmark.durations": {
+    de: "Dauern in Tagen, kommasepariert",
+    en: "Durations in days, comma-separated",
+  },
+  "workspace.benchmark.from": { de: "Zeitraum von", en: "Period from" },
+  "workspace.benchmark.to": { de: "Zeitraum bis", en: "Period to" },
+  "workspace.benchmark.submit": { de: "Anonymisiert übermitteln", en: "Submit anonymously" },
+  "workspace.benchmark.groups": { de: "Vergleichsgruppen", en: "Comparison groups" },
+  "workspace.benchmark.empty": {
+    de: "Noch keine Gruppe erfüllt die k-Anonymität.",
+    en: "No group meets the k-anonymity threshold yet.",
+  },
+  "workspace.datev.title": { de: "DATEV Direct", en: "DATEV Direct" },
+  "workspace.datev.description": {
+    de: "Rechnungs- und Buchungsdaten direkt an DATEV übertragen",
+    en: "Transfer invoice and accounting data directly to DATEV",
+  },
+  "workspace.datev.configured": {
+    de: "DATEV-Zugang konfiguriert — Exporte werden direkt gesendet.",
+    en: "DATEV access configured — exports are sent directly.",
+  },
+  "workspace.datev.missing": {
+    de: "DATEV-Zugang fehlt — Exporte werden als ausstehend gespeichert.",
+    en: "DATEV access is missing — exports are stored as pending.",
+  },
+  "workspace.datev.start": { de: "Export starten", en: "Start export" },
+  "workspace.datev.create": { de: "Export erzeugen", en: "Create export" },
+  "workspace.datev.history": { de: "Übertragungen", en: "Transfers" },
+  "workspace.datev.type": { de: "Typ", en: "Type" },
+  "workspace.datev.invoices": { de: "Rechnungen", en: "Invoices" },
+  "workspace.datev.bookings": { de: "Buchungen", en: "Bookings" },
+  "workspace.datev.master": { de: "Stammdaten", en: "Master data" },
+  "workspace.datev.from": { de: "Von", en: "From" },
+  "workspace.datev.to": { de: "Bis", en: "To" },
+  "workspace.datev.number": { de: "Rechnungsnummer", en: "Invoice number" },
+  "workspace.datev.date": { de: "Rechnungsdatum", en: "Invoice date" },
+  "workspace.datev.client": { de: "Mandant", en: "Client" },
+  "workspace.datev.net": { de: "Netto", en: "Net" },
+  "workspace.datev.tax": { de: "USt. %", en: "VAT %" },
+  "workspace.datev.records": { de: "Datensätze", en: "records" },
+  "workspace.benchmark.success": { de: "Erfolg", en: "success" },
+  "workspace.benchmark.days": { de: "Tage Median", en: "median days" },
+  "workspace.benchmark.firms": { de: "Kanzleien", en: "firms" },
+  "workspace.white.title": { de: "White-Label PWA", en: "White-label PWA" },
+  "workspace.white.description": {
+    de: "Mandantenportal mit Kanzleinamen, Logo und Farben ausliefern",
+    en: "Deliver the client portal with your firm name, logo and colors",
+  },
+  "workspace.white.firm": { de: "Kanzleiname", en: "Firm name" },
+  "workspace.white.short": { de: "Kurzname", en: "Short name" },
+  "workspace.white.description_label": { de: "Beschreibung", en: "Description" },
+  "workspace.white.logo": { de: "Logo-URL", en: "Logo URL" },
+  "workspace.white.start": { de: "Start-URL", en: "Start URL" },
+  "workspace.white.accent": { de: "Akzentfarbe", en: "Accent color" },
+  "workspace.white.background": { de: "Hintergrund", en: "Background" },
+  "workspace.white.save": { de: "Branding speichern", en: "Save branding" },
+  "workspace.white.open": { de: "Mandantenportal öffnen", en: "Open client portal" },
+  "workspace.white.logo_alt": { de: "Kanzleilogo", en: "Firm logo" },
+  "workspace.white.fallback": { de: "Ihre Kanzlei", en: "Your firm" },
+  "workspace.bulk.title": { de: "Massenakten", en: "Bulk cases" },
+  "workspace.bulk.description": {
+    de: "CSV prüfen, als Portfolio gruppieren und kontrolliert importieren",
+    en: "Validate CSV data, group it as a portfolio and import it safely",
+  },
+  "workspace.bulk.import": { de: "CSV-Import", en: "CSV import" },
+  "workspace.bulk.valid": { de: "gültige Zeilen", en: "valid rows" },
+  "workspace.bulk.preview": { de: "Vorschau", en: "Preview" },
+  "workspace.bulk.case": { de: "Az.", en: "Case no." },
+  "workspace.bulk.client": { de: "Mandant", en: "Client" },
+  "workspace.bulk.matter": { de: "Gegenstand", en: "Matter" },
+  "workspace.bulk.portfolio": { de: "Portfolio", en: "Portfolio" },
+  "workspace.bulk.submit_prefix": { de: "Diese", en: "Import these" },
+  "workspace.bulk.submit_suffix": { de: "Akten importieren", en: "cases" },
+  "workspace.bulk.created": { de: "Akten erstellt", en: "cases created" },
+  "workspace.bulk.errors": { de: "Fehler", en: "errors" },
+  "workspace.bulk.csv_label": { de: "CSV-Daten", en: "CSV data" },
+  "nav.fee_agreements": { de: "Honorar", en: "Fee Agreements" },
+  "nav.claim_account": { de: "Mahnwesen & ZV", en: "Claims & Enforcement" },
   "trust.title": { de: "Treuhandkonten", en: "Trust Accounts" },
   "trust.description": {
     de: "Verwaltung von Mandantengeldern auf Anderkonto (§ 43a BRAO, § 16 RAO)",
@@ -7119,6 +7931,10 @@ export const D = {
     en: "Only the team owner can do that.",
   },
   "team.loading": { de: "Lade Team…", en: "Loading team…" },
+  "team.empty": {
+    de: "Noch keine Mitglieder — lade Kollegen ein.",
+    en: "No members yet — invite colleagues.",
+  },
   "team.create_title": { de: "Team erstellen", en: "Create team" },
   "team.create_notice": {
     de: "Team erstellt — lade jetzt Mitglieder ein.",
@@ -7356,6 +8172,29 @@ export const D = {
   "billingtab.time": { de: "Zeit", en: "time" },
   "billingtab.expenses": { de: "Auslagen", en: "expenses" },
   "billingtab.create_invoice": { de: "Rechnung erstellen", en: "Create Invoice" },
+  "billingtab.invoice_link": { de: "Rechnung", en: "Invoice" },
+  "billingtab.unbill": { de: "Abrechnung zurücknehmen", en: "Unbill" },
+  "billingtab.unbill_confirm": {
+    de: "Abrechnung wirklich zurücknehmen? Der Zeiteintrag wird wieder als nicht abgerechnet markiert.",
+    en: "Really unbill this entry? It will be marked as unbilled again.",
+  },
+  "billingtab.unbilled_ok": { de: "Abrechnung zurückgenommen", en: "Entry unbilled" },
+  "billingtab.unbill_failed": {
+    de: "Zurücknehmen fehlgeschlagen",
+    en: "Unbill failed",
+  },
+  "billingtab.linked_time_entries": {
+    de: "Enthaltene Zeiteinträge",
+    en: "Included Time Entries",
+  },
+  "billingtab.linked_expenses": {
+    de: "Enthaltene Auslagen",
+    en: "Included Expenses",
+  },
+  "billingtab.no_linked_entries": {
+    de: "Keine verknüpften Einträge",
+    en: "No linked entries",
+  },
   "strategytab.semantic_contradictions": {
     de: "Semantische Widersprüche",
     en: "Semantic Contradictions",
@@ -7529,6 +8368,7 @@ export const D = {
   "email.to": { de: "An", en: "To" },
   "email.subject": { de: "Betreff", en: "Subject" },
   "email.body": { de: "Nachricht", en: "Message" },
+  "email.body_placeholder": { de: "Sehr geehrte/r…", en: "Dear Sir/Madam…" },
   "email.send": { de: "Senden", en: "Send" },
   "email.sent_ok": { de: "E-Mail gesendet", en: "Email sent" },
   "email.sent_error": { de: "Senden fehlgeschlagen", en: "Send failed" },
@@ -7548,6 +8388,411 @@ export const D = {
   "docusign.send": { de: "Senden", en: "Send" },
   "docusign.sent_ok": { de: "DocuSign-Umschlag gesendet", en: "DocuSign envelope sent" },
   "docusign.sent_error": { de: "DocuSign-Versand fehlgeschlagen", en: "DocuSign send failed" },
+
+  // ── Mandantenportal i18n (P0-TODO 3) ──
+  "portal.loading": { de: "Portal wird geladen…", en: "Loading portal…" },
+  "portal.access_denied": { de: "Zugriff nicht möglich", en: "Access Denied" },
+  "portal.contact_firm": {
+    de: "Bei Fragen wenden Sie sich bitte an Ihre Kanzlei.",
+    en: "Please contact your law firm if you have questions.",
+  },
+  "portal.link_expired": {
+    de: "Dieser Link ist abgelaufen oder ungültig. Bitte kontaktieren Sie Ihren Anwalt.",
+    en: "This link has expired or is invalid. Please contact your lawyer.",
+  },
+  "portal.access_forbidden": { de: "Zugriff verweigert.", en: "Access denied." },
+  "portal.connection_error": {
+    de: "Verbindungsfehler. Bitte versuchen Sie es später erneut.",
+    en: "Connection error. Please try again later.",
+  },
+  "portal.link_renewal_required": {
+    de: "Dieser Portal-Link muss erneuert werden. Bitte kontaktieren Sie Ihre Kanzlei.",
+    en: "This portal link needs to be renewed. Please contact your law firm.",
+  },
+  "portal.case_load_failed": {
+    de: "Akte konnte nicht geladen werden.",
+    en: "Case could not be loaded.",
+  },
+  "portal.case_not_enabled": {
+    de: "Diese Akte ist derzeit nicht für das Mandantenportal freigegeben.",
+    en: "This case is not currently enabled for the client portal.",
+  },
+  "portal.header_title": { de: "Mandanten-Portal", en: "Client Portal" },
+  "portal.header_subtitle": {
+    de: "Übersicht über Ihre Akte",
+    en: "Overview of your case",
+  },
+  "portal.status.open": { de: "Offen", en: "Open" },
+  "portal.status.pending": { de: "Anhängig", en: "Pending" },
+  "portal.status.settled": { de: "Erledigt", en: "Settled" },
+  "portal.status.won": { de: "Gewonnen", en: "Won" },
+  "portal.status.lost": { de: "Verloren", en: "Lost" },
+  "portal.status.appealed": { de: "Berufung", en: "Appealed" },
+  "portal.status.dormant": { de: "Ruhend", en: "Dormant" },
+  "portal.client_label": { de: "Mandant:", en: "Client:" },
+  "portal.opponent_label": { de: "Gegner:", en: "Opponent:" },
+  "portal.court_label": { de: "Gericht:", en: "Court:" },
+  "portal.facts_title": { de: "Sachverhalt", en: "Facts" },
+  "portal.claims_title": { de: "Ansprüche", en: "Claims" },
+  "portal.deadlines_title": { de: "Fristen", en: "Deadlines" },
+  "portal.deadline_default": { de: "Frist", en: "Deadline" },
+  "portal.doc_requests_title": {
+    de: "Angeforderte Unterlagen",
+    en: "Requested Documents",
+  },
+  "portal.doc_request.submitted": { de: "Eingereicht", en: "Submitted" },
+  "portal.doc_request.required": { de: "Erforderlich", en: "Required" },
+  "portal.doc_request.optional": { de: "Optional", en: "Optional" },
+  "portal.upload": { de: "Hochladen", en: "Upload" },
+  "portal.uploading": { de: "Lädt…", en: "Uploading…" },
+  "portal.documents_title": { de: "Dokumente", en: "Documents" },
+  "portal.document_default": { de: "Dokument", en: "Document" },
+  "portal.download": { de: "Herunterladen →", en: "Download →" },
+  "portal.doc_password_label": {
+    de: "Dokumentkennwort (nur falls geschützt)",
+    en: "Document password (only if protected)",
+  },
+  "portal.doc_password_placeholder": {
+    de: "Wird nicht gespeichert",
+    en: "Will not be stored",
+  },
+  "portal.no_documents": {
+    de: "Noch keine Dokumente hinterlegt.",
+    en: "No documents uploaded yet.",
+  },
+  "portal.upload_failed": {
+    de: "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    en: "Upload failed. Please try again.",
+  },
+  "portal.upload_success_fulfilled": {
+    de: "Dokument hochgeladen. Die Dokumentenanfrage ist vollständig erfüllt.",
+    en: "Document uploaded. The document request is fully fulfilled.",
+  },
+  "portal.upload_success": {
+    de: "Dokument hochgeladen und an die Akte übermittelt.",
+    en: "Document uploaded and submitted to the case.",
+  },
+  "portal.messages_title": {
+    de: "Nachrichten an Ihre Kanzlei",
+    en: "Messages to your law firm",
+  },
+  "portal.no_messages": {
+    de: "Noch keine Nachrichten. Schreiben Sie Ihrer Kanzlei unten.",
+    en: "No messages yet. Write to your law firm below.",
+  },
+  "portal.message_placeholder": {
+    de: "Nachricht an Ihre Kanzlei…",
+    en: "Message to your law firm…",
+  },
+  "portal.send": { de: "Senden", en: "Send" },
+  "portal.tab_info": { de: "Akte", en: "Case" },
+  "portal.tab_chat": { de: "Chat", en: "Chat" },
+  "portal.chat_disclaimer": {
+    de: "Der Chatbot beantwortet Fragen ausschließlich zu Ihrer Akte. Fragen zu anderen Akten oder internen Notizen werden nicht beantwortet.",
+    en: "The chatbot answers questions about your case only. Questions about other cases or internal notes will not be answered.",
+  },
+  "portal.chat_empty": {
+    de: "Stellen Sie eine Frage zu Ihrer Akte…",
+    en: "Ask a question about your case…",
+  },
+  "portal.chat_placeholder": {
+    de: "Frage eingeben…",
+    en: "Type your question…",
+  },
+  "portal.chat_escalate": {
+    de: "An Anwalt weiterleiten",
+    en: "Escalate to lawyer",
+  },
+  "portal.footer": {
+    de: "Diese Ansicht ist nur für Sie bestimmt. Bitte teilen Sie den Link nicht.",
+    en: "This view is for you only. Please do not share the link.",
+  },
+  "portal.lang_toggle": { de: "EN", en: "DE" },
+
+  // ── i18n for pages previously without useLang ──
+  "claim.title": { de: "Mahnverfahren & Zwangsvollstreckung", en: "Claims & Enforcement" },
+  "claim.description": {
+    de: "Forderungskonten, § 367 BGB Verrechnung, Mahnbescheid und ZV-Verwaltung",
+    en: "Claim accounts, § 367 BGB allocation, dunning and enforcement",
+  },
+  "claim.new": { de: "Neue Forderung", en: "New Claim" },
+  "claim.open_claims": { de: "Offene Forderungen", en: "Open Claims" },
+  "claim.active_cases": { de: "Aktive Fälle", en: "Active Cases" },
+  "claim.paid": { de: "Bezahlt", en: "Paid" },
+  "claim.create_title": { de: "Neue Forderung anlegen", en: "Create New Claim" },
+  "claim.case_slug": { de: "Akten-Slug", en: "Case Slug" },
+  "claim.claim_number": { de: "Forderungsnummer", en: "Claim Number" },
+  "claim.claimant": { de: "Gläubiger", en: "Claimant" },
+  "claim.debtor": { de: "Schuldner", en: "Debtor" },
+  "claim.debtor_address": { de: "Schuldner-Adresse", en: "Debtor Address" },
+  "claim.principal": { de: "Hauptforderung (€)", en: "Principal (€)" },
+  "claim.interest": { de: "Zinsen (€)", en: "Interest (€)" },
+  "claim.costs": { de: "Kosten (€)", en: "Costs (€)" },
+  "claim.interest_from": { de: "Zinslauf ab", en: "Interest From" },
+  "claim.due_date": { de: "Fälligkeit", en: "Due Date" },
+  "claim.court": { de: "Gericht", en: "Court" },
+  "claim.create_btn": { de: "Anlegen", en: "Create" },
+  "claim.cancel": { de: "Abbrechen", en: "Cancel" },
+  "claim.payment_title": { de: "Zahlung verbuchen", en: "Record Payment" },
+  "claim.payment_hint": {
+    de: "Verrechnung nach § 367 BGB (Kosten → Zinsen → Hauptforderung)",
+    en: "Allocation per § 367 BGB (costs → interest → principal)",
+  },
+  "claim.payment_amount": { de: "Zahlungsbetrag (€)", en: "Payment Amount (€)" },
+  "claim.record_btn": { de: "Verbuchen", en: "Record" },
+  "claim.empty": { de: "Noch keine Forderungen erfasst.", en: "No claims recorded yet." },
+  "claim.total_claim": { de: "von", en: "of" },
+  "claim.principal_label": { de: "Haupt", en: "Principal" },
+  "claim.interest_label": { de: "Zinsen", en: "Interest" },
+  "claim.costs_label": { de: "Kosten", en: "Costs" },
+  "claim.paid_label": { de: "Bezahlt", en: "Paid" },
+  "claim.record_payment": { de: "Zahlung verbuchen", en: "Record Payment" },
+  "claim.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+  "claim.err_create": { de: "Erstellung fehlgeschlagen", en: "Creation failed" },
+  "claim.err_payment": { de: "Zahlung fehlgeschlagen", en: "Payment failed" },
+  "claim.ok_create": { de: "Forderung erstellt", en: "Claim created" },
+  "claim.ok_payment": { de: "Zahlung verbucht (§ 367 BGB)", en: "Payment recorded (§ 367 BGB)" },
+  "claim.err_required": { de: "Pflichtfelder fehlen", en: "Required fields missing" },
+
+  "fee.title": { de: "Vergütungsvereinbarungen", en: "Fee Agreements" },
+  "fee.description": {
+    de: "Honorarmodelle und Budget-Überwachung pro Akte — Warnung ab 80% Budget-Auslastung",
+    en: "Fee models and budget monitoring per case — warning at 80% budget utilization",
+  },
+  "fee.new": { de: "Neue Vereinbarung", en: "New Agreement" },
+  "fee.create_title": { de: "Neue Honorarvereinbarung", en: "New Fee Agreement" },
+  "fee.model": { de: "Modell", en: "Model" },
+  "fee.hourly_rate": { de: "Stundensatz (€)", en: "Hourly Rate (€)" },
+  "fee.flat_amount": { de: "Pauschale (€)", en: "Flat Fee (€)" },
+  "fee.budget_cap": { de: "Budget-Deckel (€)", en: "Budget Cap (€)" },
+  "fee.rvg_area": { de: "RVG-Gebiet", en: "RVG Area" },
+  "fee.notes": { de: "Notizen", en: "Notes" },
+  "fee.save": { de: "Speichern", en: "Save" },
+  "fee.cancel": { de: "Abbrechen", en: "Cancel" },
+  "fee.empty": { de: "Noch keine Honorarvereinbarungen vorhanden.", en: "No fee agreements yet." },
+  "fee.utilization": { de: "Budget-Auslastung", en: "Budget Utilization" },
+  "fee.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+  "fee.err_create": { de: "Erstellung fehlgeschlagen", en: "Creation failed" },
+  "fee.ok_create": { de: "Vereinbarung erstellt", en: "Agreement created" },
+  "fee.err_slug": { de: "Akten-Slug erforderlich", en: "Case slug required" },
+
+  "redteam.title": { de: "Red-Team Agent", en: "Red-Team Agent" },
+  "redteam.description": {
+    de: "Adversariale Prüfung von Schriftsätzen — findet Schwächen bevor der Gegner sie findet",
+    en: "Adversarial review of legal drafts — finds weaknesses before the opposition does",
+  },
+  "redteam.new": { de: "Neue Analyse", en: "New Analysis" },
+  "redteam.case_slug": { de: "Akten-Slug", en: "Case Slug" },
+  "redteam.legal_area": { de: "Rechtsgebiet", en: "Practice Area" },
+  "redteam.context": { de: "Fallkontext", en: "Case Context" },
+  "redteam.draft": { de: "Entwurf-Text", en: "Draft Text" },
+  "redteam.submit": { de: "Analyse starten", en: "Start Analysis" },
+  "redteam.analyzing": { de: "Analysiere...", en: "Analyzing..." },
+  "redteam.empty": {
+    de: "Noch keine Red-Team-Analysen vorhanden.",
+    en: "No red-team analyses yet.",
+  },
+  "redteam.risk": { de: "Risiko", en: "Risk" },
+  "redteam.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+  "redteam.err_required": {
+    de: "Bitte alle Pflichtfelder ausfüllen",
+    en: "Please fill all required fields",
+  },
+  "redteam.err_analyze": { de: "Analyse fehlgeschlagen", en: "Analysis failed" },
+  "redteam.ok_analyze": { de: "Red-Team-Analyse erstellt", en: "Red-team analysis created" },
+
+  "court_an.title": { de: "Entscheider-Analytics", en: "Court Analytics" },
+  "court_an.description": {
+    de: "Gerichtsentscheidungen aggregiert — Verfahrensdauer, Erfolgsquoten, Zitierhäufigkeit",
+    en: "Court decisions aggregated — duration, success rates, citation frequency",
+  },
+  "court_an.empty": {
+    de: "Keine Analytics-Daten verfügbar. Urteile-Sync zuerst ausführen.",
+    en: "No analytics data available. Run judgements sync first.",
+  },
+  "court_an.decisions": { de: "Entscheidungen", en: "Decisions" },
+  "court_an.duration": { de: "Ø Verfahrensdauer", en: "Avg Duration" },
+  "court_an.plaintiff_wins": { de: "Klägererfolge", en: "Plaintiff Wins" },
+  "court_an.defendant_wins": { de: "Beklagtenerfolge", en: "Defendant Wins" },
+  "court_an.citations": { de: "Zitierhäufigkeit", en: "Citation Frequency" },
+  "court_an.top_areas": { de: "Top Rechtsgebiete", en: "Top Practice Areas" },
+  "court_an.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "interview.title": { de: "Dokumenten-Interviews", en: "Document Interviews" },
+  "interview.description": {
+    de: "Geführte Mandantenfragebögen für automatisches Document Assembly",
+    en: "Guided client questionnaires for automated document assembly",
+  },
+  "interview.new": { de: "Neues Interview", en: "New Interview" },
+  "interview.create_title": { de: "Neues Interview erstellen", en: "Create New Interview" },
+  "interview.title_label": { de: "Titel", en: "Title" },
+  "interview.template_slug": { de: "Template-Slug", en: "Template Slug" },
+  "interview.description_label": { de: "Beschreibung", en: "Description" },
+  "interview.output_format": { de: "Ausgabeformat", en: "Output Format" },
+  "interview.save": { de: "Speichern", en: "Save" },
+  "interview.cancel": { de: "Abbrechen", en: "Cancel" },
+  "interview.empty": { de: "Noch keine Interviews definiert.", en: "No interviews defined yet." },
+  "interview.questions": { de: "Fragen", en: "Questions" },
+  "interview.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+  "interview.err_required": {
+    de: "Titel und Template-Slug erforderlich",
+    en: "Title and template slug required",
+  },
+  "interview.err_create": { de: "Erstellung fehlgeschlagen", en: "Creation failed" },
+  "interview.ok_create": { de: "Interview erstellt", en: "Interview created" },
+
+  "booking.title": { de: "Online-Terminbuchung", en: "Online Booking" },
+  "booking.description": {
+    de: "Verfügbare Beratungsslots verwalten — Mandanten buchen selbstständig",
+    en: "Manage available consultation slots — clients book independently",
+  },
+  "booking.config": { de: "Slot-Konfiguration", en: "Slot Configuration" },
+  "booking.date": { de: "Datum", en: "Date" },
+  "booking.from": { de: "Von", en: "From" },
+  "booking.to": { de: "Bis", en: "To" },
+  "booking.duration": { de: "Slot-Dauer (Min)", en: "Slot Duration (min)" },
+  "booking.empty": { de: "Keine Slots verfügbar.", en: "No slots available." },
+  "booking.booked": { de: "Belegt", en: "Booked" },
+  "booking.free": { de: "Frei", en: "Free" },
+  "booking.slots": { de: "Slots", en: "Slots" },
+  "booking.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "dictation.title": { de: "Diktat-Loop", en: "Dictation Loop" },
+  "dictation.description": {
+    de: "Diktate aufnehmen, transkribieren, korrigieren und ablegen",
+    en: "Record, transcribe, correct and file dictations",
+  },
+  "dictation.new": { de: "Diktat", en: "Dictation" },
+  "dictation.create_title": { de: "Neues Diktat", en: "New Dictation" },
+  "dictation.lawyer": { de: "Anwalt", en: "Lawyer" },
+  "dictation.email": { de: "E-Mail", en: "Email" },
+  "dictation.case": { de: "Akte", en: "Case" },
+  "dictation.duration_sec": { de: "Dauer (Sekunden)", en: "Duration (seconds)" },
+  "dictation.save": { de: "Speichern", en: "Save" },
+  "dictation.empty": { de: "Keine Diktate", en: "No dictations" },
+  "dictation.empty_hint": {
+    de: "Erfassen Sie Diktate für Transkription und Ablage.",
+    en: "Record dictations for transcription and filing.",
+  },
+  "dictation.pending": {
+    de: "Diktat(e) warten auf Korrektur.",
+    en: "dictation(s) awaiting correction.",
+  },
+  "dictation.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+  "dictation.err_required": { de: "Pflichtfelder fehlen", en: "Required fields missing" },
+  "dictation.ok_create": { de: "Diktat erstellt", en: "Dictation created" },
+  "dictation.err_create": { de: "Fehler", en: "Error" },
+
+  "kyc.title": { de: "GwG / KYC", en: "AML / KYC" },
+  "kyc.description": {
+    de: "Identitäts- und Risikoprüfung bei Mandatsaufnahme",
+    en: "Identity and risk check at client intake",
+  },
+  "kyc.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "fao.title": { de: "FAO-Tracking", en: "FAO Tracking" },
+  "fao.description": {
+    de: "Fortbildungsstunden und Nachweise pro Fachanwaltstitel",
+    en: "Continuing education hours and evidence per specialist title",
+  },
+  "fao.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "poa.title": { de: "Vollmachten", en: "Powers of Attorney" },
+  "poa.description": {
+    de: "Geltung und Ablauf von Vollmachten verwalten",
+    en: "Manage validity and expiry of powers of attorney",
+  },
+  "poa.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "outbound.title": { de: "Postausgangsbuch", en: "Outbound Register" },
+  "outbound.description": {
+    de: "Versand und Zustellung nachhalten — GoBD-konform",
+    en: "Track dispatch and delivery — GoBD-compliant",
+  },
+  "outbound.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "time_sugg.title": { de: "Zeit-Vorschläge", en: "Time Suggestions" },
+  "time_sugg.description": {
+    de: "KI-generierte Zeiterfassungsvorschläge aus Aktenaktivität",
+    en: "AI-generated time entries from case activity",
+  },
+  "time_sugg.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "comments.title": { de: "Kommentierungen", en: "Commentaries" },
+  "comments.description": {
+    de: "Anmerkungen und Erläuterungen zu Normen und Urteilen",
+    en: "Annotations and commentary on statutes and case law",
+  },
+  "comments.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "judgements_db.title": { de: "Urteils-Datenbank", en: "Judgements Database" },
+  "judgements_db.description": {
+    de: "Volltext-Suche und Filterung in der Judikatur-Datenbank",
+    en: "Full-text search and filtering in the case law database",
+  },
+  "judgements_db.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "shared.title": { de: "Geteilte Bereiche", en: "Shared Spaces" },
+  "shared.description": {
+    de: "Gemeinsame Arbeitsbereiche für Teams und Mandanten",
+    en: "Shared workspaces for teams and clients",
+  },
+  "shared.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "deep_analysis.title": { de: "Tiefenanalyse", en: "Deep Analysis" },
+  "deep_analysis.description": {
+    de: "Detaillierte KI-Analyse von Dokumenten und Sachverhalten",
+    en: "Detailed AI analysis of documents and facts",
+  },
+  "deep_analysis.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "autonomous.title": { de: "Autopilot", en: "Autopilot" },
+  "autonomous.description": {
+    de: "Autonome KI-Aufgaben mit Budget-Cap und Approval-Gating",
+    en: "Autonomous AI tasks with budget cap and approval gating",
+  },
+  "autonomous.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "chat_page.title": { de: "KI-Copilot", en: "AI Copilot" },
+  "chat_page.description": {
+    de: "Rechtlicher KI-Assistent mit Zitierungssicherheit",
+    en: "Legal AI assistant with citation grounding",
+  },
+  "chat_page.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "chat_compare.title": { de: "Modellvergleich", en: "Model Comparison" },
+  "chat_compare.description": {
+    de: "Vergleiche KI-Antworten verschiedener Modelle",
+    en: "Compare AI responses across models",
+  },
+  "chat_compare.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "monitoring_engine.title": { de: "Engine-Monitoring", en: "Engine Monitoring" },
+  "monitoring_engine.description": {
+    de: "Systemstatus und Performance-Metriken",
+    en: "System status and performance metrics",
+  },
+  "monitoring_engine.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "rs_analytics.title": { de: "Rechtsprechungs-Analytics", en: "Case Law Analytics" },
+  "rs_analytics.description": {
+    de: "Statistische Analyse der Rechtsprechung",
+    en: "Statistical analysis of case law",
+  },
+  "rs_analytics.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "altlasten.title": { de: "Bestandsakten", en: "Legacy Cases" },
+  "altlasten.description": {
+    de: "Migration und Bereinigung alter Aktenbestände",
+    en: "Migration and cleanup of legacy case inventories",
+  },
+  "altlasten.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+
+  "kanzlei_tools.title": { de: "Kanzlei-Werkzeuge", en: "Firm Tools" },
+  "kanzlei_tools.description": {
+    de: "Fachrechner, Register, Integrationen und Compliance an einem Ort",
+    en: "Calculators, registers, integrations and compliance in one place",
+  },
 } satisfies Record<string, BiString>;
 
 export type DashboardKey = keyof typeof D;

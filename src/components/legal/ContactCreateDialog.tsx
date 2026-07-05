@@ -32,6 +32,7 @@ export interface ContactCreateResult {
   email?: string;
   phone?: string;
   address?: string;
+  leitwegId?: string;
   notes?: string;
 }
 
@@ -72,6 +73,7 @@ export function ContactCreateDialog({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [leitwegId, setLeitwegId] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +87,7 @@ export function ContactCreateDialog({
       setEmail("");
       setPhone("");
       setAddress("");
+      setLeitwegId("");
       setNotes("");
       setError(null);
       setConflict(null);
@@ -128,6 +131,7 @@ export function ContactCreateDialog({
       email: email.trim() || undefined,
       phone: phone.trim() || undefined,
       address: address.trim() || undefined,
+      leitwegId: leitwegId.trim() || undefined,
       notes: notes.trim() || undefined,
     });
     if (!result.success) {
@@ -151,6 +155,7 @@ export function ContactCreateDialog({
           email: result.data.email,
           phone: result.data.phone,
           address: result.data.address,
+          leitwegId: result.data.leitwegId,
           notes: result.data.notes,
         },
       };
@@ -167,6 +172,7 @@ export function ContactCreateDialog({
         email: result.data.email,
         phone: result.data.phone,
         address: result.data.address,
+        leitwegId: result.data.leitwegId,
         notes: result.data.notes,
       });
       onOpenChange(false);
@@ -328,6 +334,21 @@ export function ContactCreateDialog({
               placeholder="Straße, PLZ Ort"
               className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
             />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+              Leitweg-ID
+            </label>
+            <Input
+              value={leitwegId}
+              onChange={(e) => setLeitwegId(e.target.value)}
+              placeholder="Leitweg-ID für XRechnung (öffentlich-rechtlich)"
+              className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+            />
+            <p className="mt-1 text-[10px] text-[color:var(--ds-text-muted)]">
+              Erforderlich für Rechnungen an öffentliche Auftraggeber (XRechnung)
+            </p>
           </div>
         </div>
 

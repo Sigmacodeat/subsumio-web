@@ -132,7 +132,9 @@ export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset";
         </Link>
 
         <div className="glass rounded-2xl p-8 shadow-2xl shadow-black/50">
-          <h1 className="mb-1 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)]">{m.title}</h1>
+          <h1 className="mb-1 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)]">
+            {m.title}
+          </h1>
           <p className="mb-7 text-sm text-pretty [color:var(--mk-text-muted)]">{m.sub}</p>
 
           {done ? (

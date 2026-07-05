@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect, forwardRef, type CSSProperties } from "react";
+import { useState, useMemo, useEffect, useCallback, forwardRef, type CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Brain,
   BookOpen,
+  BookMarked,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -20,25 +21,22 @@ import {
   Briefcase,
   CalendarClock,
   Clock,
+  Timer,
   Landmark,
+  Banknote,
   Plug,
   PenTool,
   UserCircle,
   ShieldCheck,
   FileSpreadsheet,
   ScrollText,
-  FileText,
   FileSignature,
-  FileCog,
   FileSliders,
-  FileJson,
   EyeOff,
   Gavel,
   CloudOff,
-  BarChart3,
   FolderOpen,
   MessageSquareText,
-  Globe,
   Search,
   ClipboardList,
   FileSearch,
@@ -49,11 +47,9 @@ import {
   Receipt,
   FileUp,
   UserCog,
-  Mail,
   Scale,
   FileCheck,
   Library,
-  ClipboardCheck,
   MessageCircle,
   Network,
   Calculator,
@@ -62,24 +58,19 @@ import {
   Share2,
   TrendingUp,
   Send,
-  Archive,
   FileQuestion,
-  Shield,
   ShieldX,
   Hammer,
   FileCode,
   Gauge,
-  Activity,
   FileLock,
   FolderSearch,
   ScanSearch,
-  ScanLine,
-  Scale as ScaleIcon,
   MailOpen,
-  History,
   FileArchive,
   ListChecks,
   CheckSquare,
+  ListTodo,
   FileCheck2,
   Download,
   FileBarChart,
@@ -88,15 +79,26 @@ import {
   RefreshCw,
   GraduationCap,
   Grid3x3,
-  Table2,
   ChartNoAxesColumn,
   SearchCheck,
   Cpu,
   Smartphone,
   ServerCog,
   MessagesSquare,
+  Mailbox,
   CalendarSync,
   ShieldAlert,
+  Layers,
+  LayoutGrid,
+  Languages,
+  Mic,
+  CalendarOff,
+  Fingerprint,
+  Lightbulb,
+  Wallet,
+  Calendar,
+  Palette,
+  Flag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -108,14 +110,33 @@ import { useIsDesktop } from "@/lib/use-media-query";
 import type { DashboardKey } from "@/content/dashboard";
 import { MatterSidebarSection } from "@/components/dashboard/matter-sidebar-section";
 
+export type NavTier = "free" | "pro" | "enterprise" | "admin";
+export type AudienceTier = "quick-start" | "erweitert" | "dach-integration" | "system";
+
+const PLAN_RANK: Record<NavTier, number> = { free: 0, pro: 1, enterprise: 2, admin: 3 };
+
+const CORE_SECTION_KEYS: DashboardKey[] = [
+  "nav.section.clients_comm",
+  "nav.section.schedule",
+  "nav.section.docs_drafting",
+];
+
 type NavItem = {
   href: string;
   icon: typeof LayoutDashboard;
   labelKey: DashboardKey;
   comingSoon?: boolean;
   keywords?: string;
+  tier?: NavTier;
+  audienceTier?: AudienceTier;
+  tooltipKey?: DashboardKey;
 };
-type NavSection = { titleKey: DashboardKey; items: NavItem[]; colorVar?: string };
+type NavSection = {
+  titleKey: DashboardKey;
+  descKey?: DashboardKey;
+  items: NavItem[];
+  colorVar?: string;
+};
 
 // Workflow-ordered sidebar with all items grouped into collapsible sections.
 // Primary items (overview, cases, deadlines, intake, chat) are always visible.
@@ -123,19 +144,30 @@ type NavSection = { titleKey: DashboardKey; items: NavItem[]; colorVar?: string 
 export const NAV_SECTIONS: NavSection[] = [
   {
     titleKey: "nav.section.clients_comm",
+    descKey: "nav.section.desc.clients_comm",
     colorVar: "--nav-cat-cases",
     items: [
+      {
+        href: "/dashboard/search",
+        icon: Search,
+        labelKey: "nav.search",
+        keywords: "suche search fulltext volltext filter scope",
+        tooltipKey: "nav.tooltip.search",
+      },
       {
         href: "/dashboard/contacts",
         icon: Users,
         labelKey: "nav.contacts",
         keywords: "mandanten klienten parteien clients",
+        tooltipKey: "nav.tooltip.contacts",
       },
       {
         href: "/dashboard/opponents",
         icon: Scale,
         labelKey: "nav.opponents",
         keywords: "gegner processgegner opposite party",
+        audienceTier: "dach-integration",
+        tooltipKey: "nav.tooltip.opponents",
       },
       {
         href: "/dashboard/kollisionspruefung",
@@ -148,6 +180,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: UserCircle,
         labelKey: "nav.client_portal",
         keywords: "mandantenportal portal client access",
+        audienceTier: "erweitert",
       },
       {
         href: "/dashboard/document-requests",
@@ -155,10 +188,26 @@ export const NAV_SECTIONS: NavSection[] = [
         labelKey: "nav.document_requests",
         keywords: "dokumentenanforderung unterlagen documents request",
       },
+      {
+        href: "/dashboard/bea",
+        icon: Send,
+        labelKey: "nav.bea",
+        keywords: "bea elektronischer anwaltlicher austausch e-filing court",
+        tooltipKey: "nav.tooltip.bea",
+        audienceTier: "dach-integration",
+      },
+      {
+        href: "/dashboard/communications",
+        icon: Mailbox,
+        labelKey: "nav.communications",
+        keywords: "kommunikation inbox messages unified bea whatsapp email portal",
+        tooltipKey: "nav.tooltip.communications",
+      },
     ],
   },
   {
     titleKey: "nav.section.schedule",
+    descKey: "nav.section.desc.schedule",
     colorVar: "--nav-cat-cases",
     items: [
       {
@@ -166,6 +215,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: CalendarClock,
         labelKey: "nav.calendar",
         keywords: "kalender calendar fristen termine deadlines",
+        tooltipKey: "nav.tooltip.calendar",
       },
       {
         href: "/dashboard/deadlines",
@@ -174,15 +224,30 @@ export const NAV_SECTIONS: NavSection[] = [
         keywords: "fristen termine deadlines",
       },
       {
+        href: "/dashboard/fristenbuch",
+        icon: BookOpen,
+        labelKey: "nav.fristenbuch",
+        keywords: "fristenbuch deadline register fristen chronologisch",
+      },
+      {
         href: "/dashboard/tasks",
         icon: CheckSquare,
         labelKey: "nav.tasks",
         keywords: "aufgaben tasks todos",
+        tooltipKey: "nav.tooltip.tasks",
+      },
+      {
+        href: "/dashboard/time-suggestions",
+        icon: Lightbulb,
+        labelKey: "nav.time_suggestions",
+        keywords: "zeit vorschläge passive zeiterfassung time suggestions tracking",
+        audienceTier: "erweitert",
       },
     ],
   },
   {
     titleKey: "nav.section.docs_drafting",
+    descKey: "nav.section.desc.docs_drafting",
     colorVar: "--nav-cat-docs",
     items: [
       {
@@ -190,6 +255,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: FolderOpen,
         labelKey: "nav.vault",
         keywords: "dokumente vault archiv dms",
+        audienceTier: "erweitert",
       },
       {
         href: "/dashboard/upload",
@@ -202,6 +268,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: PenTool,
         labelKey: "nav.drafting",
         keywords: "entwurf drafting schreiben write",
+        tooltipKey: "nav.tooltip.drafting",
       },
       {
         href: "/dashboard/templates",
@@ -210,27 +277,31 @@ export const NAV_SECTIONS: NavSection[] = [
         keywords: "vorlagen templates muster",
       },
       {
-        href: "/dashboard/version-history",
-        icon: History,
-        labelKey: "nav.version_history",
-        keywords: "versionen historie changes anderungen",
-      },
-      {
-        href: "/dashboard/word-addin",
-        icon: FileCog,
-        labelKey: "nav.word_addin",
-        keywords: "word plugin addin office",
-      },
-      {
         href: "/dashboard/review-sets",
         icon: FolderSearch,
         labelKey: "nav.review_sets",
         keywords: "review sets review-sets e-discovery privilege",
+        tooltipKey: "nav.tooltip.review_sets",
+      },
+      {
+        href: "/dashboard/dictation",
+        icon: Mic,
+        labelKey: "nav.dictation",
+        keywords: "diktat dictation voice transcription aufnahme",
+        audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/document-interviews",
+        icon: FileQuestion,
+        labelKey: "nav.document_interviews",
+        keywords: "interview fragebogen document assembly geführt mandant",
+        audienceTier: "erweitert",
       },
     ],
   },
   {
     titleKey: "nav.section.contracts",
+    descKey: "nav.section.desc.contracts",
     colorVar: "--nav-cat-docs",
     items: [
       {
@@ -250,6 +321,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: FileSignature,
         labelKey: "nav.signature",
         keywords: "unterschrift sign docusign signatur",
+        audienceTier: "erweitert",
       },
       {
         href: "/dashboard/obligation-tracking",
@@ -259,7 +331,7 @@ export const NAV_SECTIONS: NavSection[] = [
       },
       {
         href: "/dashboard/playbooks",
-        icon: BookOpen,
+        icon: BookMarked,
         labelKey: "nav.playbooks",
         keywords: "playbooks handbucher manuals vorlagen",
       },
@@ -267,6 +339,7 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     titleKey: "nav.section.knowledge",
+    descKey: "nav.section.desc.knowledge",
     colorVar: "--nav-cat-research",
     items: [
       {
@@ -274,23 +347,27 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Brain,
         labelKey: "nav.brain",
         keywords: "wissen knowledge base explorer seiten",
+        tooltipKey: "nav.tooltip.brain",
       },
       {
         href: "/dashboard/graph",
         icon: Network,
         labelKey: "nav.graph",
         keywords: "graph netzwerk entitaten beziehungen entities",
+        tooltipKey: "nav.tooltip.graph",
       },
       {
         href: "/dashboard/sources",
         icon: Database,
         labelKey: "nav.sources",
         keywords: "quellen datenquellen connectors sources",
+        tooltipKey: "nav.tooltip.sources",
       },
     ],
   },
   {
     titleKey: "nav.section.litigation",
+    descKey: "nav.section.desc.litigation",
     colorVar: "--nav-cat-cases",
     items: [
       {
@@ -298,41 +375,40 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Hammer,
         labelKey: "nav.litigation",
         keywords: "prozess gericht klage litigation court",
+        tooltipKey: "nav.tooltip.litigation",
       },
       {
         href: "/dashboard/process-strategy",
         icon: Gavel,
         labelKey: "nav.process_strategy",
         keywords: "strategie prozess strategy litigation",
+        audienceTier: "erweitert",
       },
       {
-        href: "/dashboard/litigation-analytics",
+        href: "/dashboard/analytics",
         icon: TrendingUp,
-        labelKey: "nav.litigation_analytics",
-        keywords: "analytics statistik gericht urteile outcomes",
+        labelKey: "nav.analytics_hub",
+        keywords: "analytics berichte insights statistik gericht portfolio reports",
       },
       {
-        href: "/dashboard/portfolio-insights",
-        icon: BarChart3,
-        labelKey: "nav.portfolio_insights",
-        keywords: "portfolio insights analytics kennzahlen",
+        href: "/dashboard/court-analytics",
+        icon: Scale,
+        labelKey: "nav.court_analytics",
+        keywords: "entscheider analytics gericht dauer erfolg quote",
+        audienceTier: "erweitert",
       },
       {
-        href: "/dashboard/case-scanner",
-        icon: ScanLine,
-        labelKey: "nav.case_scanner",
-        keywords: "scanner akten scan case",
-      },
-      {
-        href: "/dashboard/tabular-review",
-        icon: Table2,
-        labelKey: "nav.tabular_review",
-        keywords: "tabellarisch review tabelle table",
+        href: "/dashboard/red-team",
+        icon: ShieldAlert,
+        labelKey: "nav.red_team",
+        keywords: "red team adversarial prüfung schwächen gegenargument",
+        audienceTier: "erweitert",
       },
     ],
   },
   {
     titleKey: "nav.section.billing",
+    descKey: "nav.section.desc.billing",
     colorVar: "--nav-cat-billing",
     items: [
       {
@@ -340,61 +416,111 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Receipt,
         labelKey: "nav.invoicing",
         keywords: "rechnung invoice rvg gebühren",
+        tooltipKey: "nav.tooltip.invoicing",
       },
       {
         href: "/dashboard/time-tracking",
-        icon: Clock,
+        icon: Timer,
         labelKey: "nav.time_tracking",
         keywords: "zeit time tracking stunden zeiterfassung",
+      },
+      {
+        href: "/dashboard/time",
+        icon: Clock,
+        labelKey: "nav.time",
+        keywords: "zeiterfassung time entries leistungen timer",
+      },
+      {
+        href: "/dashboard/notifications",
+        icon: Bell,
+        labelKey: "nav.notifications",
+        keywords: "benachrichtigung notifications alerts erwähnung frist",
       },
       {
         href: "/dashboard/cost-calculator",
         icon: Calculator,
         labelKey: "nav.cost_calculator",
         keywords: "kostenrechner rvg calculator streitwert",
+        audienceTier: "erweitert",
       },
       {
         href: "/dashboard/datev-export",
         icon: FileSpreadsheet,
         labelKey: "nav.datev_export",
         keywords: "datev export buhaltung steuer",
+        audienceTier: "dach-integration",
+        tooltipKey: "nav.tooltip.datev_export",
+      },
+      {
+        href: "/dashboard/datev-direct",
+        icon: FileSpreadsheet,
+        labelKey: "nav.datev_direct",
+        keywords: "datev direct api rechnungsdaten buchungsdaten",
+        audienceTier: "dach-integration",
       },
       {
         href: "/dashboard/trust-accounting",
         icon: Landmark,
         labelKey: "nav.trust_accounting",
         keywords: "treuhand trust klientengelder fiduciary",
+        tooltipKey: "nav.tooltip.trust_accounting",
+      },
+      {
+        href: "/dashboard/fibu",
+        icon: Banknote,
+        labelKey: "nav.fibu",
+        keywords: "fibu finanzbuchhaltung bank opos mahnung zahlung payment",
+        tooltipKey: "nav.tooltip.fibu",
+      },
+      {
+        href: "/dashboard/kanzlei-tools",
+        icon: Calculator,
+        labelKey: "nav.kanzlei_tools",
+        keywords: "fachrechner gericht pkh rsv fax kyc vollmacht fao rubrum tools",
+        audienceTier: "erweitert",
       },
       {
         href: "/dashboard/controlling",
         icon: Gauge,
         labelKey: "nav.controlling",
-        keywords: "controlling kpi kennzahlen steuerung",
+        keywords: "controlling kpi kennzahlen kanzlei steuerung analytics",
+        tooltipKey: "nav.tooltip.controlling",
+      },
+      {
+        href: "/dashboard/fee-agreements",
+        icon: Wallet,
+        labelKey: "nav.fee_agreements",
+        keywords: "honorar vereinbarung budget fee agreement deckelung",
+        audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/claim-account",
+        icon: Gavel,
+        labelKey: "nav.claim_account",
+        keywords: "mahnung zwangsvollstreckung forderung claim mahnbescheid zv",
+        audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/legal-insurance",
+        icon: ShieldCheck,
+        labelKey: "nav.legal_insurance",
+        keywords: "rechtsschutz rsv drebis deckungsanfrage versicherung",
+        audienceTier: "dach-integration",
+      },
+      {
+        href: "/dashboard/peer-benchmark",
+        icon: TrendingUp,
+        labelKey: "nav.peer_benchmark",
+        keywords: "benchmark vergleich kanzlei erfolgsquote durchlaufzeit",
+        audienceTier: "erweitert",
       },
     ],
   },
   {
     titleKey: "nav.section.firm_ops",
+    descKey: "nav.section.desc.firm_ops",
     colorVar: "--nav-cat-billing",
     items: [
-      {
-        href: "/dashboard/reports",
-        icon: FileBarChart,
-        labelKey: "nav.reports",
-        keywords: "berichte reports reporte statistik",
-      },
-      {
-        href: "/dashboard/analytics",
-        icon: ChartNoAxesColumn,
-        labelKey: "nav.analytics",
-        keywords: "analytics statistik kpi dashboards",
-      },
-      {
-        href: "/dashboard/adoption-analytics",
-        icon: Activity,
-        labelKey: "nav.adoption_analytics",
-        keywords: "adoption nutzung analytics verwendung",
-      },
       {
         href: "/dashboard/workflows",
         icon: ClipboardList,
@@ -412,17 +538,41 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Share2,
         labelKey: "nav.shared_spaces",
         keywords: "shared spaces kollaboration teams",
+        audienceTier: "erweitert",
       },
       {
-        href: "/dashboard/monitoring",
-        icon: Bell,
-        labelKey: "nav.monitoring",
-        keywords: "monitoring uberwachung alerts health",
+        href: "/dashboard/absences",
+        icon: CalendarOff,
+        labelKey: "nav.absences",
+        keywords: "urlaub vertretung absences vacation delegation abwesenheit",
+        audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/online-booking",
+        icon: Calendar,
+        labelKey: "nav.online_booking",
+        keywords: "online booking termine slots mandanten buchung",
+        audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/bulk-cases",
+        icon: Layers,
+        labelKey: "nav.bulk_cases",
+        keywords: "massenakten bulk import csv portfolien migration",
+        audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/white-label",
+        icon: Palette,
+        labelKey: "nav.white_label",
+        keywords: "white label branding pwa portal logo farben",
+        audienceTier: "erweitert",
       },
     ],
   },
   {
     titleKey: "nav.section.compliance",
+    descKey: "nav.section.desc.compliance",
     colorVar: "--nav-cat-billing",
     items: [
       {
@@ -430,36 +580,66 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: ShieldCheck,
         labelKey: "nav.compliance",
         keywords: "compliance dsgvo gdpr brao compliance",
+        tooltipKey: "nav.tooltip.compliance",
+        audienceTier: "dach-integration",
       },
       {
         href: "/dashboard/compliance/retention",
         icon: FileArchive,
         labelKey: "nav.retention",
         keywords: "aufbewahrung retention fristen archivierung",
-      },
-      {
-        href: "/dashboard/anonymize",
-        icon: EyeOff,
-        labelKey: "nav.anonymize",
-        keywords: "anonymisierung datenschutz privacy redact",
+        audienceTier: "dach-integration",
+        tooltipKey: "nav.tooltip.retention",
       },
       {
         href: "/dashboard/verfahrensdoku",
         icon: FileCheck2,
         labelKey: "nav.verfahrensdoku",
         keywords: "verfahrensdokumentation gobd protokoll",
+        audienceTier: "dach-integration",
+        tooltipKey: "nav.tooltip.verfahrensdoku",
+      },
+      {
+        href: "/dashboard/outbound-register",
+        icon: Send,
+        labelKey: "nav.outbound_register",
+        keywords: "postausgangsbuch versand zustellung outbound register",
+        audienceTier: "dach-integration",
+      },
+      {
+        href: "/dashboard/power-of-attorney",
+        icon: FileSignature,
+        labelKey: "nav.power_of_attorney",
+        keywords: "vollmacht power of attorney mandatsvollmacht",
+        audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/fao-tracking",
+        icon: GraduationCap,
+        labelKey: "nav.fao_tracking",
+        keywords: "fao fortbildung nachweise fachanwalt",
+        audienceTier: "erweitert",
       },
       {
         href: "/dashboard/data-export",
         icon: Download,
         labelKey: "nav.data_export",
         keywords: "export daten download csv",
+        audienceTier: "dach-integration",
+        tooltipKey: "nav.tooltip.data_export",
       },
       {
         href: "/dashboard/review-queue",
-        icon: CheckSquare,
+        icon: ListTodo,
         labelKey: "nav.review_queue",
         keywords: "review queue warteschlange freigabe",
+      },
+      {
+        href: "/dashboard/kyc",
+        icon: Fingerprint,
+        labelKey: "nav.kyc",
+        keywords: "kyc gwg geldwäsche identitätsprüfung risk assessment",
+        audienceTier: "dach-integration",
       },
     ],
   },
@@ -471,24 +651,32 @@ export const BOTTOM_ITEMS: NavItem[] = [
     icon: Settings,
     labelKey: "nav.settings",
     keywords: "einstellungen settings konfiguration preferences",
+    tooltipKey: "nav.tooltip.settings",
+    tier: "free",
   },
   {
     href: "/dashboard/team",
     icon: UserCog,
     labelKey: "nav.admin",
     keywords: "team verwaltung admin benutzer users mitarbeiter",
+    tier: "admin",
   },
   {
     href: "/dashboard/audit",
     icon: ScrollText,
     labelKey: "nav.audit_log",
     keywords: "audit log protokoll nachverfolgung trail",
+    tier: "admin",
+    audienceTier: "system",
+    tooltipKey: "nav.tooltip.audit_log",
   },
   {
     href: "/dashboard/directory",
     icon: Grid3x3,
     labelKey: "nav.directory",
     keywords: "alle funktionen verzeichnis directory ubersicht features",
+    tier: "free",
+    audienceTier: "quick-start",
   },
 ];
 
@@ -503,25 +691,29 @@ const PRIMARY_ITEMS: NavItem[] = [
     href: "/dashboard/cases",
     icon: Briefcase,
     labelKey: "nav.cases",
-    keywords: "akten mandante falle cases matters altlasten",
+    keywords: "akten mandante falle cases matters bestandsakten",
+    tooltipKey: "nav.tooltip.cases",
   },
   {
     href: "/dashboard/deadlines",
     icon: CalendarClock,
     labelKey: "nav.deadlines",
     keywords: "fristen termine deadlines calendar kalender",
+    tooltipKey: "nav.tooltip.deadlines",
   },
   {
     href: "/dashboard/intake",
     icon: Inbox,
     labelKey: "nav.intake",
     keywords: "mandantsaufnahme intake eingang neue posteingang bea whatsapp email",
+    tooltipKey: "nav.tooltip.intake",
   },
   {
     href: "/dashboard/research",
     icon: SearchCheck,
     labelKey: "nav.legal_research",
     keywords: "recherche rechtsprechung gesetze urteile research hub",
+    tooltipKey: "nav.tooltip.research",
   },
 ];
 
@@ -535,6 +727,7 @@ const PRIMARY_COLOR_VARS: string[] = [
 
 const ADMIN_SECTION: NavSection = {
   titleKey: "nav.section.admin",
+  descKey: "nav.section.desc.admin",
   colorVar: "--nav-cat-admin",
   items: [
     ...BOTTOM_ITEMS,
@@ -543,114 +736,209 @@ const ADMIN_SECTION: NavSection = {
       icon: CreditCard,
       labelKey: "nav.billing",
       keywords: "billing abo plan subscription zahlung",
+      tier: "free",
+      audienceTier: "quick-start",
     },
     {
       href: "/dashboard/agents",
       icon: Bot,
       labelKey: "nav.agents",
       keywords: "agenten bots automation ki agents",
+      tier: "pro",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/connectors",
       icon: Plug,
       labelKey: "nav.connectors",
       keywords: "connectors integrationen schnittstellen apis",
+      tier: "pro",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/api-keys",
       icon: FileLock,
       labelKey: "nav.api_keys",
       keywords: "api keys schlussel tokens zugang",
+      tier: "admin",
+      audienceTier: "quick-start",
     },
     {
       href: "/dashboard/settings/kanzlei",
       icon: ServerCog,
       labelKey: "nav.kanzlei",
       keywords: "kanzlei firma einstellungen orga",
+      tier: "admin",
+      audienceTier: "dach-integration",
+      tooltipKey: "nav.tooltip.kanzlei_settings",
     },
     {
       href: "/dashboard/settings/security",
       icon: ShieldAlert,
       labelKey: "nav.security",
       keywords: "sicherheit security 2fa passwort schutz",
+      tier: "free",
+      audienceTier: "quick-start",
     },
     {
       href: "/dashboard/settings/scim",
       icon: Network,
       labelKey: "nav.scim",
       keywords: "scim provisioning sso saml benutzer",
+      tier: "enterprise",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/settings/ai-model",
       icon: Cpu,
       labelKey: "nav.ai_model",
       keywords: "ki modell ai model llm konfiguration",
+      tier: "admin",
+      audienceTier: "system",
+      tooltipKey: "nav.tooltip.ai_model",
     },
     {
       href: "/dashboard/import-kanzlei",
       icon: FileSliders,
       labelKey: "nav.import_kanzlei",
       keywords: "import kanzlei migration daten",
+      tier: "admin",
+      audienceTier: "dach-integration",
+      tooltipKey: "nav.tooltip.import_kanzlei",
+    },
+    {
+      href: "/dashboard/admin/backup",
+      icon: Database,
+      labelKey: "nav.backup_restore",
+      keywords: "backup restore sicherung daten export import",
+      tier: "admin",
+      audienceTier: "system",
+    },
+    {
+      href: "/dashboard/admin/feature-flags",
+      icon: Flag,
+      labelKey: "nav.feature_flags",
+      keywords: "feature flags feature toggle rollout freigaben",
+      tier: "admin",
+      audienceTier: "system",
     },
     {
       href: "/dashboard/mobile",
       icon: Smartphone,
       labelKey: "nav.mobile",
       keywords: "mobile app handy smartphone install",
+      tier: "free",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/onboarding",
       icon: Award,
       labelKey: "nav.onboarding",
       keywords: "onboarding einfuhrung setup start",
+      tier: "free",
+      audienceTier: "quick-start",
     },
     {
       href: "/dashboard/experience",
       icon: GraduationCap,
       labelKey: "nav.experience",
       keywords: "erfahrung profil lebenslauf attorney",
+      tier: "free",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/rag-eval",
       icon: FlaskConical,
       labelKey: "nav.rag_eval",
       keywords: "rag eval evaluation qualitat test",
+      tier: "admin",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/chat/analytics",
       icon: ChartNoAxesColumn,
       labelKey: "nav.chat_analytics",
       keywords: "chat analytics statistik nutzung",
+      tier: "pro",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/chat/compare",
       icon: GitCompare,
       labelKey: "nav.chat_compare",
       keywords: "modell vergleich compare benchmark",
+      tier: "pro",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/whatsapp/templates",
       icon: MessagesSquare,
       labelKey: "nav.whatsapp_templates",
       keywords: "whatsapp vorlagen templates",
+      tier: "pro",
+      audienceTier: "dach-integration",
+      tooltipKey: "nav.tooltip.whatsapp_templates",
     },
     {
       href: "/dashboard/calendar-export",
       icon: CalendarSync,
       labelKey: "nav.calendar_export",
       keywords: "kalender export ics sync outlook",
+      tier: "free",
+      audienceTier: "dach-integration",
+      tooltipKey: "nav.tooltip.calendar_export",
     },
     {
       href: "/dashboard/judgements-sync",
       icon: RefreshCw,
       labelKey: "nav.judgements_sync",
       keywords: "urteile sync rechtsprechung update",
+      tier: "admin",
+      audienceTier: "dach-integration",
+      tooltipKey: "nav.tooltip.judgements_sync",
     },
     {
-      href: "/dashboard/judgements-db",
-      icon: FileJson,
-      labelKey: "nav.judgements_db",
-      keywords: "urteile datenbank rechtsprechung gerichte",
+      href: "/dashboard/monitoring",
+      icon: Bell,
+      labelKey: "nav.monitoring",
+      keywords: "monitoring uberwachung alerts health",
+      tier: "admin",
+      audienceTier: "erweitert",
+    },
+    {
+      href: "/dashboard/deep-analysis",
+      icon: ScanSearch,
+      labelKey: "nav.deep_analysis",
+      keywords: "tiefenanalyse cross-document deep analysis zusammenhange",
+      tier: "admin",
+      audienceTier: "erweitert",
+      tooltipKey: "nav.tooltip.deep_analysis",
+    },
+    {
+      href: "/dashboard/translate",
+      icon: Languages,
+      labelKey: "nav.translate",
+      keywords: "ubersetzung translate juristische fachsprache",
+      tier: "admin",
+      audienceTier: "erweitert",
+      tooltipKey: "nav.tooltip.translate",
+    },
+    {
+      href: "/dashboard/anonymize",
+      icon: EyeOff,
+      labelKey: "nav.anonymize",
+      keywords: "anonymisierung datenschutz privacy redact",
+      tier: "admin",
+      audienceTier: "dach-integration",
+      tooltipKey: "nav.tooltip.anonymize",
+    },
+    {
+      href: "/dashboard/autonomous",
+      icon: Zap,
+      labelKey: "nav.autonomous",
+      keywords: "autopilot autonomous overnight nacht jobs approval queue",
+      tier: "admin",
+      audienceTier: "erweitert",
     },
   ],
 };
@@ -751,6 +1039,7 @@ const TAX_PRIMARY_COLOR_VARS: string[] = [
 const TAX_NAV_SECTIONS: NavSection[] = [
   {
     titleKey: "nav.section.clients",
+    descKey: "nav.section.desc.clients_comm",
     colorVar: "--nav-cat-cases",
     items: [
       {
@@ -764,6 +1053,7 @@ const TAX_NAV_SECTIONS: NavSection[] = [
         icon: UserCircle,
         labelKey: "nav.client_portal",
         keywords: "mandantenportal portal client access",
+        audienceTier: "erweitert",
       },
       {
         href: "/dashboard/document-requests",
@@ -775,6 +1065,7 @@ const TAX_NAV_SECTIONS: NavSection[] = [
   },
   {
     titleKey: "nav.section.tax_returns",
+    descKey: "nav.section.desc.tax_returns",
     colorVar: "--nav-cat-ops",
     items: [
       {
@@ -817,6 +1108,7 @@ const TAX_NAV_SECTIONS: NavSection[] = [
   },
   {
     titleKey: "nav.section.documents",
+    descKey: "nav.section.desc.docs_drafting",
     colorVar: "--nav-cat-docs",
     items: [
       {
@@ -830,6 +1122,7 @@ const TAX_NAV_SECTIONS: NavSection[] = [
         icon: FolderOpen,
         labelKey: "nav.vault",
         keywords: "dokumente vault archiv dms",
+        audienceTier: "erweitert",
       },
       {
         href: "/dashboard/templates",
@@ -848,11 +1141,13 @@ const TAX_NAV_SECTIONS: NavSection[] = [
         icon: FileSignature,
         labelKey: "nav.signature",
         keywords: "unterschrift sign docusign signatur",
+        audienceTier: "erweitert",
       },
     ],
   },
   {
     titleKey: "nav.section.billing_compliance",
+    descKey: "nav.section.desc.billing",
     colorVar: "--nav-cat-billing",
     items: [
       {
@@ -866,6 +1161,8 @@ const TAX_NAV_SECTIONS: NavSection[] = [
         icon: FileSpreadsheet,
         labelKey: "nav.datev_export",
         keywords: "datev export buhaltung steuer",
+        audienceTier: "dach-integration",
+        tooltipKey: "nav.tooltip.datev_export",
       },
       {
         href: "/dashboard/cost-calculator",
@@ -884,11 +1181,14 @@ const TAX_NAV_SECTIONS: NavSection[] = [
         icon: FileCheck2,
         labelKey: "nav.verfahrensdoku",
         keywords: "verfahrensdokumentation gobd protokoll",
+        audienceTier: "dach-integration",
+        tooltipKey: "nav.tooltip.verfahrensdoku",
       },
     ],
   },
   {
     titleKey: "nav.section.communication",
+    descKey: "nav.section.desc.clients_comm",
     colorVar: "--nav-cat-comm",
     items: [
       {
@@ -907,6 +1207,7 @@ const TAX_NAV_SECTIONS: NavSection[] = [
   },
   {
     titleKey: "nav.section.research_knowledge",
+    descKey: "nav.section.desc.knowledge",
     colorVar: "--nav-cat-research",
     items: [
       {
@@ -931,11 +1232,12 @@ const TAX_NAV_SECTIONS: NavSection[] = [
   },
   {
     titleKey: "nav.section.operations",
+    descKey: "nav.section.desc.firm_ops",
     colorVar: "--nav-cat-ops",
     items: [
       {
         href: "/dashboard/review-queue",
-        icon: CheckSquare,
+        icon: ListTodo,
         labelKey: "nav.review_queue",
         keywords: "review queue warteschlange freigabe",
       },
@@ -956,24 +1258,14 @@ const TAX_NAV_SECTIONS: NavSection[] = [
         icon: FileBarChart,
         labelKey: "nav.reports",
         keywords: "berichte reports reporte statistik",
-      },
-      {
-        href: "/dashboard/analytics",
-        icon: TrendingUp,
-        labelKey: "nav.analytics",
-        keywords: "analytics statistik kpi dashboards",
+        audienceTier: "erweitert",
       },
       {
         href: "/dashboard/shared-spaces",
         icon: Share2,
         labelKey: "nav.shared_spaces",
         keywords: "shared spaces kollaboration teams",
-      },
-      {
-        href: "/dashboard/monitoring",
-        icon: Bell,
-        labelKey: "nav.monitoring",
-        keywords: "monitoring uberwachung alerts health",
+        audienceTier: "erweitert",
       },
     ],
   },
@@ -981,6 +1273,7 @@ const TAX_NAV_SECTIONS: NavSection[] = [
 
 const TAX_ADMIN_SECTION: NavSection = {
   titleKey: "nav.section.admin",
+  descKey: "nav.section.desc.admin",
   colorVar: "--nav-cat-admin",
   items: [
     ...BOTTOM_ITEMS,
@@ -989,102 +1282,165 @@ const TAX_ADMIN_SECTION: NavSection = {
       icon: CreditCard,
       labelKey: "nav.billing",
       keywords: "billing abo plan subscription zahlung",
+      tier: "free",
+      audienceTier: "quick-start",
     },
     {
       href: "/dashboard/agents",
       icon: Bot,
       labelKey: "nav.agents",
       keywords: "agenten bots automation ki agents",
+      tier: "pro",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/connectors",
       icon: Plug,
       labelKey: "nav.connectors",
       keywords: "connectors integrationen schnittstellen apis",
+      tier: "pro",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/api-keys",
       icon: FileLock,
       labelKey: "nav.api_keys",
       keywords: "api keys schlussel tokens zugang",
+      tier: "admin",
+      audienceTier: "quick-start",
     },
     {
       href: "/dashboard/settings/kanzlei",
       icon: ServerCog,
       labelKey: "nav.kanzlei",
       keywords: "kanzlei firma einstellungen orga",
+      tier: "admin",
+      audienceTier: "dach-integration",
+      tooltipKey: "nav.tooltip.kanzlei_settings",
     },
     {
       href: "/dashboard/settings/security",
       icon: ShieldAlert,
       labelKey: "nav.security",
       keywords: "sicherheit security 2fa passwort schutz",
+      tier: "free",
+      audienceTier: "quick-start",
     },
     {
       href: "/dashboard/settings/scim",
       icon: Network,
       labelKey: "nav.scim",
       keywords: "scim provisioning sso saml benutzer",
+      tier: "enterprise",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/settings/ai-model",
       icon: Cpu,
       labelKey: "nav.ai_model",
       keywords: "ki modell ai model llm konfiguration",
+      tier: "admin",
+      audienceTier: "system",
+      tooltipKey: "nav.tooltip.ai_model",
     },
     {
       href: "/dashboard/import-kanzlei",
       icon: FileSliders,
       labelKey: "nav.import_kanzlei",
       keywords: "import kanzlei migration daten",
+      tier: "admin",
+      audienceTier: "dach-integration",
+      tooltipKey: "nav.tooltip.import_kanzlei",
+    },
+    {
+      href: "/dashboard/admin/backup",
+      icon: Database,
+      labelKey: "nav.backup_restore",
+      keywords: "backup restore sicherung daten export import",
+      tier: "admin",
+      audienceTier: "system",
+    },
+    {
+      href: "/dashboard/admin/feature-flags",
+      icon: Flag,
+      labelKey: "nav.feature_flags",
+      keywords: "feature flags feature toggle rollout freigaben",
+      tier: "admin",
+      audienceTier: "system",
     },
     {
       href: "/dashboard/mobile",
       icon: Smartphone,
       labelKey: "nav.mobile",
       keywords: "mobile app handy smartphone install",
+      tier: "free",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/onboarding",
       icon: Award,
       labelKey: "nav.onboarding",
       keywords: "onboarding einfuhrung setup start",
+      tier: "free",
+      audienceTier: "quick-start",
     },
     {
       href: "/dashboard/experience",
       icon: GraduationCap,
       labelKey: "nav.experience",
       keywords: "erfahrung profil lebenslauf attorney",
+      tier: "free",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/rag-eval",
       icon: FlaskConical,
       labelKey: "nav.rag_eval",
       keywords: "rag eval evaluation qualitat test",
+      tier: "admin",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/chat/analytics",
       icon: ChartNoAxesColumn,
       labelKey: "nav.chat_analytics",
       keywords: "chat analytics statistik nutzung",
+      tier: "pro",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/chat/compare",
       icon: GitCompare,
       labelKey: "nav.chat_compare",
       keywords: "modell vergleich compare benchmark",
+      tier: "pro",
+      audienceTier: "erweitert",
     },
     {
       href: "/dashboard/whatsapp/templates",
       icon: MessagesSquare,
       labelKey: "nav.whatsapp_templates",
       keywords: "whatsapp vorlagen templates",
+      tier: "pro",
+      audienceTier: "dach-integration",
+      tooltipKey: "nav.tooltip.whatsapp_templates",
     },
     {
       href: "/dashboard/calendar-export",
       icon: CalendarSync,
       labelKey: "nav.calendar_export",
       keywords: "kalender export ics sync outlook",
+      tier: "free",
+      audienceTier: "dach-integration",
+      tooltipKey: "nav.tooltip.calendar_export",
+    },
+    {
+      href: "/dashboard/monitoring",
+      icon: Bell,
+      labelKey: "nav.monitoring",
+      keywords: "monitoring uberwachung alerts health",
+      tier: "admin",
+      audienceTier: "erweitert",
     },
   ],
 };
@@ -1215,6 +1571,8 @@ interface SidebarProps {
   industry?: string | null;
   /** User role — non-admins see a trimmed admin section. */
   role?: string | null;
+  /** User plan — drives tier-based visibility (free, pro, team, enterprise). */
+  plan?: string | null;
 }
 
 export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
@@ -1231,6 +1589,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     brainReachable,
     industry,
     role,
+    plan,
   },
   ref
 ) {
@@ -1238,6 +1597,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   const [searchQuery, setSearchQuery] = useState("");
   const [openSections, setOpenSections] = useState<DashboardKey[]>([]);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [coreMode, setCoreMode] = useState(true);
   const isDesktopMQ = useIsDesktop();
   const { t, lang } = useLang();
   const { panelTransition: sidebarPanelTransition } = useDashboardMotion();
@@ -1257,29 +1617,37 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   } = navConfig;
 
   const isAdmin = role === "admin";
+  const userPlan = (plan ?? "free") as NavTier;
+  const userPlanRank = PLAN_RANK[userPlan] ?? 0;
+  const itemTierRank = useCallback((tier?: NavTier) => (tier ? (PLAN_RANK[tier] ?? 0) : 0), []);
+  const isTierVisible = useCallback(
+    (item: NavItem) => !item.tier || itemTierRank(item.tier) <= userPlanRank || isAdmin,
+    [userPlanRank, isAdmin, itemTierRank]
+  );
   const adminSection = useMemo(
     () =>
       isAdmin
         ? fullAdminSection
         : {
             ...fullAdminSection,
-            items: fullAdminSection.items.filter((item) =>
-              bottomItems.some((b) => b.href === item.href)
+            items: fullAdminSection.items.filter(
+              (item) => bottomItems.some((b) => b.href === item.href) && isTierVisible(item)
             ),
           },
-    [isAdmin, fullAdminSection, bottomItems]
+    [isAdmin, fullAdminSection, bottomItems, isTierVisible]
   );
   const allNavItems = useMemo(
     () =>
       isAdmin
-        ? fullAllNavItems
+        ? fullAllNavItems.filter(isTierVisible)
         : fullAllNavItems.filter(
             (item) =>
-              adminSection.items.some((a) => a.href === item.href) ||
-              navSections.some((s) => s.items.some((sItem) => sItem.href === item.href)) ||
-              primaryItems.some((p) => p.href === item.href)
+              isTierVisible(item) &&
+              (adminSection.items.some((a) => a.href === item.href) ||
+                navSections.some((s) => s.items.some((sItem) => sItem.href === item.href)) ||
+                primaryItems.some((p) => p.href === item.href))
           ),
-    [isAdmin, fullAllNavItems, adminSection, navSections, primaryItems]
+    [isAdmin, fullAllNavItems, adminSection, navSections, primaryItems, isTierVisible]
   );
   const preferredSectionByHref = useMemo(
     () =>
@@ -1300,7 +1668,13 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
 
   const filteredSections = useMemo(() => {
     if (!searchQuery.trim()) {
-      return navSections.filter((section) => section.items.some((item) => !item.comingSoon));
+      const base = navSections
+        .map((section) => ({
+          ...section,
+          items: section.items.filter((item) => !item.comingSoon && isTierVisible(item)),
+        }))
+        .filter((section) => section.items.length > 0);
+      return coreMode ? base.filter((s) => CORE_SECTION_KEYS.includes(s.titleKey)) : base;
     }
     const q = searchQuery.toLowerCase().trim();
     const sections = [...navSections, adminSection];
@@ -1313,6 +1687,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           return (
             sectionKey === section.titleKey &&
             !item.comingSoon &&
+            isTierVisible(item) &&
             !primaryItems.some((primary) => primary.href === item.href) &&
             (t(item.labelKey).toLowerCase().includes(q) ||
               (item.keywords ?? "").toLowerCase().includes(q))
@@ -1328,12 +1703,14 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     allNavItems,
     preferredSectionByHref,
     primaryItems,
+    isTierVisible,
+    coreMode,
   ]);
 
   const filteredBottomItems = useMemo(() => {
-    if (!searchQuery.trim()) return bottomItems;
+    if (!searchQuery.trim()) return bottomItems.filter(isTierVisible);
     return [];
-  }, [searchQuery, bottomItems]);
+  }, [searchQuery, bottomItems, isTierVisible]);
 
   const hasResults = filteredSections.length > 0 || filteredBottomItems.length > 0;
   const accordionSections = useMemo<NavSection[]>(() => {
@@ -1356,6 +1733,23 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   useEffect(() => {
     setIsDesktop(isDesktopMQ);
   }, [isDesktopMQ]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("sidebar-core-mode");
+      if (stored !== null) setCoreMode(stored === "false" ? false : true);
+    } catch {}
+  }, []);
+
+  const toggleCoreMode = useCallback(() => {
+    setCoreMode((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("sidebar-core-mode", String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (searchQuery.trim()) return;
@@ -1560,6 +1954,32 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             </div>
           </div>
 
+          {/* Core / Extended toggle */}
+          {!collapsed && !searchQuery.trim() && (
+            <div className="px-3 pt-2">
+              <button
+                onClick={toggleCoreMode}
+                className="flex w-full items-center justify-between rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                aria-pressed={!coreMode}
+                title={
+                  coreMode ? t("sidebar.show_all_functions") : t("sidebar.show_core_functions")
+                }
+              >
+                <span className="flex items-center gap-1.5">
+                  {coreMode ? <Layers size={13} /> : <LayoutGrid size={13} />}
+                  {coreMode ? t("sidebar.core_mode") : t("sidebar.extended_mode")}
+                </span>
+                <ChevronRight
+                  size={12}
+                  className={cn(
+                    "text-[color:var(--ds-text-subtle)] transition-transform duration-200",
+                    !coreMode && "rotate-180"
+                  )}
+                />
+              </button>
+            </div>
+          )}
+
           {/* Nav */}
           <nav
             className={cn("py-4", collapsed ? "px-2" : "px-3")}
@@ -1573,10 +1993,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               </div>
             )}
             <div className={cn("space-y-0.5", collapsed && "hidden md:block")}>
-              {primaryItems.map((item, index) => {
+              {primaryItems.filter(isTierVisible).map((item, index) => {
                 const Icon = item.icon;
                 const active = isActiveHref(pathname, item.href);
                 const colorVar = primaryColorVars[index] ?? "--nav-cat-cases";
+                const tooltip = item.tooltipKey ? t(item.tooltipKey) : undefined;
                 return (
                   <Link
                     key={`primary-${item.href}`}
@@ -1584,7 +2005,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     aria-current={active ? "page" : undefined}
                     aria-label={collapsed ? t(item.labelKey) : undefined}
                     onClick={() => setMobileOpen(false)}
-                    title={collapsed ? t(item.labelKey) : undefined}
+                    title={collapsed ? (tooltip ?? t(item.labelKey)) : tooltip}
                     className={cn(
                       "group relative flex items-center gap-3 rounded-lg text-[13px] font-semibold transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                       collapsed ? "h-9 justify-center px-0" : "h-9 px-3",
@@ -1657,7 +2078,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                             aria-current={active ? "page" : undefined}
                             aria-label={t(item.labelKey)}
                             onClick={() => setMobileOpen(false)}
-                            title={t(item.labelKey)}
+                            title={item.tooltipKey ? t(item.tooltipKey) : t(item.labelKey)}
                             className={cn(
                               "group relative flex h-8 items-center justify-center rounded-lg text-[13px] transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                               active
@@ -1758,6 +2179,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                           )}
                         />
                       </button>
+                      {isOpen && section.descKey && (
+                        <p className="px-3 pb-1 text-[11px] leading-tight text-[color:var(--ds-text-subtle)]">
+                          {t(section.descKey)}
+                        </p>
+                      )}
                       <motion.div
                         id={panelId}
                         initial={false}
@@ -1810,7 +2236,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                   href={item.href}
                                   aria-current={active ? "page" : undefined}
                                   onClick={() => setMobileOpen(false)}
-                                  title={t(item.labelKey)}
+                                  title={item.tooltipKey ? t(item.tooltipKey) : undefined}
                                   style={{ "--sidebar-item-index": index } as CSSProperties}
                                   className={cn(
                                     "sidebar-item-in relative flex h-8 items-center gap-3 rounded-md px-3 text-[13px] font-medium transition-[background-color,color,transform] duration-[120ms] ease-[var(--ds-ease-panel)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.99]",

@@ -51,6 +51,7 @@ interface ExtractJobData {
   upload_frontmatter?: Record<string, unknown>;
   matter_scope?: string[] | "all";
   acl_groups?: string[] | "all";
+  auto_trigger_legal_pipeline?: boolean;
 }
 
 export function makeExtractDocumentHandler({ engine }: { engine: BrainEngine }) {
@@ -87,6 +88,7 @@ export function makeExtractDocumentHandler({ engine }: { engine: BrainEngine }) 
         password: d.password,
         matterScope: d.matter_scope,
         aclGroups: d.acl_groups,
+        autoTriggerLegalPipeline: d.auto_trigger_legal_pipeline ?? true,
       });
 
       // Guarantee a terminal status. The import normally overwrites the stub's

@@ -1,4 +1,4 @@
-import type { GroundingMetadata } from "@/lib/citation-gate";
+import type { GroundingMetadata } from "@/lib/citation-gate-client";
 
 export interface BrainPage {
   slug: string;

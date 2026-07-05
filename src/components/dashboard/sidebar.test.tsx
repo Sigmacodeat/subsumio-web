@@ -160,6 +160,8 @@ describe("Sidebar restructured nav", () => {
   beforeEach(() => {
     pathname = "/dashboard";
     localStorage.clear();
+    // Enable extended mode so all nav sections are visible (not just core)
+    localStorage.setItem("sidebar-core-mode", "false");
   });
 
   test("primary items: 5 items with Recherche replacing Chat", async () => {

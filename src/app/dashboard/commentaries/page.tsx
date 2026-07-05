@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { useToast } from "@/components/ui/toast";
 import {
   Search,
   BookOpen,
@@ -23,6 +22,8 @@ import {
   ExternalLink,
   Gavel,
 } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
+import { useLang } from "@/lib/use-lang";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { api } from "@/lib/api";
@@ -76,6 +77,7 @@ const COMMENTARY_TYPES = [
 export default function CommentariesPage() {
   const confirm = useConfirm();
   const { addToast } = useToast();
+  const { t } = useLang();
   const [commentaries, setCommentaries] = useState<Commentary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -185,9 +187,9 @@ export default function CommentariesPage() {
     <div className="min-h-screen bg-[color:var(--ds-bg)]">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <PageHeader
-          title="Kommentierungen"
-          description="Synthetische und Open-Access-Kommentierungen pro Paragraph"
-          breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Kommentierungen" }]}
+          title={t("comments.title")}
+          description={t("comments.description")}
+          breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("comments.title") }]}
           actions={
             <button
               onClick={() => setShowSynthForm(!showSynthForm)}

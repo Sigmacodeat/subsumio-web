@@ -25,6 +25,7 @@ import {
   Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLang } from "@/lib/use-lang";
 
 interface SearchResult {
   id: string;
@@ -160,6 +161,7 @@ const TREATMENT_LABELS: Record<string, { de: string; en: string }> = {
 };
 
 export default function JudgementsDbPage() {
+  const { t } = useLang();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [total, setTotal] = useState(0);
@@ -389,7 +391,9 @@ export default function JudgementsDbPage() {
       <div className="mb-6 flex items-center gap-3">
         <Database className="h-6 w-6 text-[color:var(--brand-primary)]" />
         <div>
-          <h1 className="text-xl font-semibold text-[color:var(--ds-text)]">Urteils-Datenbank</h1>
+          <h1 className="text-xl font-semibold text-[color:var(--ds-text)]">
+            {t("judgements_db.title")}
+          </h1>
           <p className="text-sm text-[color:var(--ds-text-muted)]">
             Semantische Suche · Citation Graph · Treatment Validation
           </p>

@@ -43,7 +43,7 @@ export function SignatureQuickCreateDialog({
   onCreated,
   presetCaseSlug,
 }: SignatureQuickCreateDialogProps) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { addToast } = useToast();
   const [saving, setSaving] = useState(false);
 

@@ -6,11 +6,13 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  // Allows CI/verification jobs to build concurrently without corrupting .next.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   eslint: {
     ignoreDuringBuilds: true,
   },
   images: {
-    remotePatterns: [{ protocol: "https", hostname: "**" }],
+    remotePatterns: [],
     formats: ["image/avif", "image/webp"],
   },
   async redirects() {
@@ -31,6 +33,32 @@ const nextConfig: NextConfig = {
       // Removed dashboard routes (IA consolidation) — keep old bookmarks alive
       { source: "/dashboard/assistant", destination: "/dashboard/chat", permanent: true },
       { source: "/dashboard/query", destination: "/dashboard/brain", permanent: true },
+      // TODO 11: Recherche-Hub — old routes redirect to unified hub with tab facet
+      {
+        source: "/dashboard/rechtsprechung",
+        destination: "/dashboard/research?tab=rechtsprechung",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/norms",
+        destination: "/dashboard/research?tab=normen",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/judgements-db",
+        destination: "/dashboard/research?tab=judgements-db",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/precedent-search",
+        destination: "/dashboard/research?tab=precedent-search",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/commentaries",
+        destination: "/dashboard/research?tab=commentaries",
+        permanent: true,
+      },
     ];
   },
   async headers() {
@@ -49,6 +77,8 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(self), microphone=(), geolocation=(), interest-cohort=()",
           },
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+          { key: "Cross-Origin-Embedder-Policy", value: "credentialless" },
           // CSP is set per-request in middleware with a cryptographic nonce
           // to eliminate 'unsafe-inline' from script-src.
         ],
@@ -57,6 +87,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     reactCompiler: false,
+    optimizePackageImports: ["lucide-react", "framer-motion", "date-fns", "radash"],
     // In Next 15.5 these options both live under `experimental`. The web upload
     // route is matched by middleware, while Server Actions use their own limit.
     serverActions: {

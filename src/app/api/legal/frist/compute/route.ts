@@ -1,7 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import { ENGINE_URL, engineContext } from "@/lib/engine";
+import { NextResponse } from "next/server";
+import { ENGINE_URL } from "@/lib/engine";
+import { createHandler } from "@/lib/api-handler";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
+
+const computeSchema = z
+  .object({
+    start_date: z.string().max(20).optional(),
+    frist_type: z.string().max(100).optional(),
+    days: z.number().int().min(-365).max(365).optional(),
+    law: z.string().max(50).optional(),
+    case_slug: z.string().max(500).optional(),
+  })
+  .passthrough();
 
 /**
  * POST /api/legal/frist/compute — Proxies the Engine's AT frist-engine
@@ -14,32 +26,33 @@ export const dynamic = "force-dynamic";
  *   - AVG-specific rules (§ 33 Abs 2)
  *   - Vorfrist computation
  */
-export async function POST(req: NextRequest) {
-  const ctx = await engineContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-
-  try {
-    const body = await req.json();
-    const res = await fetch(`${ENGINE_URL}/api/legal/frist/compute`, {
-      method: "POST",
-      headers: {
-        ...ctx.headers,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(15_000),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      return NextResponse.json(data, { status: res.status });
+export const POST = createHandler(
+  {
+    action: "brain.read",
+    rateTier: "standard",
+    body: computeSchema,
+  },
+  async (ctx, body) => {
+    try {
+      const res = await fetch(`${ENGINE_URL}/api/legal/frist/compute`, {
+        method: "POST",
+        headers: {
+          ...ctx.headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(15_000),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return NextResponse.json(data, { status: res.status });
+      }
+      return NextResponse.json(data);
+    } catch {
+      return NextResponse.json(
+        { error: "frist_compute_unavailable", message: "Engine not reachable" },
+        { status: 502 }
+      );
     }
-    return NextResponse.json(data);
-  } catch {
-    return NextResponse.json(
-      { error: "frist_compute_unavailable", message: "Engine not reachable" },
-      { status: 502 }
-    );
   }
-}
+);

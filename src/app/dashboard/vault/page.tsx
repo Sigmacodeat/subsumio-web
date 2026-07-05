@@ -47,6 +47,7 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { usePaginatedList } from "@/lib/hooks/use-pagination";
 import { Pagination } from "@/components/ui/pagination";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { OcrErrorBanner } from "@/components/documents/ocr-error-banner";
 import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import type { DashboardKey } from "@/content/dashboard";
@@ -1144,6 +1145,16 @@ export default function VaultPage() {
                   {doc.content ? doc.content.slice(0, 120) : ""}
                   {doc.content && doc.content.length > 120 ? "…" : ""}
                 </div>
+                {(doc.extractionStatus === "failed" ||
+                  doc.extractionStatus === "error" ||
+                  doc.extractionStatus === "ocr_failed" ||
+                  doc.extractionStatus === "partial") && (
+                  <OcrErrorBanner
+                    slug={doc.slug}
+                    extractionStatus={doc.extractionStatus}
+                    className="mt-2"
+                  />
+                )}
                 {doc.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {doc.tags.map((tag) => (

@@ -13,6 +13,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Zap, Database, Search, RefreshCw, Clock, TrendingUp, ArrowLeft } from "lucide-react";
@@ -205,6 +206,7 @@ function StatusDot({ status }: { status: "healthy" | "degraded" | "down" | "load
 // ── Main ──────────────────────────────────────────────────────────────
 
 export default function EngineAPMPage() {
+  const { t } = useLang();
   const [searchStats, setSearchStats] = useState<SearchStats | null>(null);
   const [health, setHealth] = useState<BrainHealth | null>(null);
   const [quota, setQuota] = useState<QuotaUsage | null>(null);
@@ -340,8 +342,8 @@ export default function EngineAPMPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a18", color: "#e8e8f0", paddingBottom: 40 }}>
       <PageHeader
-        title="Engine Performance"
-        description="Subsumio Engine — Latenz, Qualität, Quota"
+        title={t("monitoring_engine.title")}
+        description={t("monitoring_engine.description")}
       />
 
       <div style={{ padding: "0 24px" }}>

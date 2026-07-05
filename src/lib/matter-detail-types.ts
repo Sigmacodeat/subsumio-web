@@ -11,6 +11,7 @@ import type {
   AdditionalOpponent,
 } from "@/lib/legal-types";
 import type { BrainPage } from "@/lib/types";
+import type { DeadlineStatus } from "@/lib/legal-deadlines";
 
 export interface SuggestedDeadline {
   title: string;
@@ -195,7 +196,7 @@ export function parseCaseDetail(page: BrainPage): CaseDetail {
 }
 
 function normalizeDeadlineKey(deadline: DeadlineEntry) {
-  return [deadline.id, deadline.title?.trim().toLowerCase(), deadline.due_date || deadline.date]
+  return [deadline.id, deadline.title?.trim().toLowerCase(), deadline.due_date]
     .filter(Boolean)
     .join(":");
 }
@@ -217,13 +218,13 @@ function standaloneDeadlineForCase(page: BrainPage, detail: CaseDetail): Deadlin
       : typeof fm.date === "string"
         ? fm.date
         : undefined;
+  if (!dueDate) return null;
   return {
     id: `page:${page.slug}`,
     title: typeof fm.title === "string" ? fm.title : page.title,
     description: typeof fm.description === "string" ? fm.description : undefined,
-    date: dueDate,
     due_date: dueDate,
-    status: typeof fm.status === "string" ? fm.status : undefined,
+    status: typeof fm.status === "string" ? (fm.status as DeadlineStatus) : undefined,
     type: typeof fm.deadline_type === "string" ? fm.deadline_type : (fm.type as string | undefined),
     source: typeof fm.source === "string" ? fm.source : "Fristenmodul",
     law: typeof fm.law === "string" ? fm.law : undefined,

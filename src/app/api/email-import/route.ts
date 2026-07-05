@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { resolveEmailImport, type EmailHeaders } from "@/lib/email-threading";
 
 export const maxDuration = 60;
 
@@ -10,6 +11,10 @@ const emailImportSchema = z.object({
   from: z.string().min(1, "from_required"),
   body: z.string().min(1, "body_required"),
   date: z.string().optional(),
+  message_id: z.string().optional(),
+  in_reply_to: z.string().optional(),
+  references: z.string().optional(),
+  force_case_slug: z.string().optional(),
 });
 
 export const POST = createHandler(
@@ -24,92 +29,118 @@ export const POST = createHandler(
       const pages = await brain.listPages({ type: "legal_case", limit: 500 });
       const cases = pages.map((p) => ({ slug: p.slug, title: p.title, ...caseFrontmatter(p) }));
 
-      let matchedCase = cases.find((c) => {
-        const caseNum = c.case_number;
-        return caseNum && body.subject.toLowerCase().includes(caseNum.toLowerCase());
-      });
-
-      if (!matchedCase) {
-        matchedCase = cases.find((c) => {
-          const clientEmail = c.client_slug ? String(c.client_slug) : "";
-          const clientName = c.client_name || "";
-          const fromLower = body.from.toLowerCase();
-          return (
-            (clientEmail && fromLower.includes(clientEmail.toLowerCase())) ||
-            (clientName && fromLower.includes(clientName.toLowerCase()))
-          );
-        });
+      // If user explicitly selected a case (disambiguation), use it directly
+      if (body.force_case_slug) {
+        const forcedCase = cases.find((c) => c.slug === body.force_case_slug);
+        if (forcedCase) {
+          return await importEmailIntoCase(brain, forcedCase, body);
+        }
       }
 
-      if (!matchedCase) {
-        matchedCase = cases.find((c) => {
-          const oppName = c.opponent_name || "";
-          return oppName && body.from.toLowerCase().includes(oppName.toLowerCase());
-        });
-      }
+      const headers: EmailHeaders = {
+        subject: body.subject,
+        from: body.from,
+        body: body.body,
+        date: body.date,
+        messageId: body.message_id,
+        inReplyTo: body.in_reply_to,
+        references: body.references,
+      };
 
-      if (!matchedCase) {
+      const result = resolveEmailImport(headers, cases);
+
+      if (result.status === "no_match") {
         return Response.json({
           success: false,
           error: "no_case_match",
-          message:
-            "Keine passende Akte gefunden. Pr\u00fcfen Sie Betreff (Aktenzeichen) oder Absender.",
+          threadId: result.threadId,
+          message: result.message,
           suggestions: cases
             .slice(0, 5)
             .map((c) => ({ slug: c.slug, caseNumber: c.case_number, title: c.title })),
         });
       }
 
-      const existingDocs = (matchedCase.documents || []) as Array<{
-        id?: string;
-        name?: string;
-        notes?: string;
-      }>;
-      const isDuplicate = existingDocs.some((doc) => {
-        const docNotes = doc.notes || "";
-        return docNotes.includes(`Von: ${body.from}`) && doc.name === `E-Mail: ${body.subject}`;
-      });
-      if (isDuplicate) {
+      if (result.status === "ambiguous") {
         return Response.json({
-          success: true,
-          duplicate: true,
-          matchedCase: {
-            slug: matchedCase.slug,
-            caseNumber: matchedCase.case_number,
-            title: matchedCase.title,
-          },
-          message: "E-Mail wurde bereits in diese Akte importiert.",
+          success: false,
+          error: "ambiguous_match",
+          threadId: result.threadId,
+          message: result.message,
+          candidates: result.candidates,
         });
       }
 
-      const documentEntry = {
-        id: `doc-${Date.now()}`,
-        name: `E-Mail: ${body.subject}`,
-        type: "email",
-        url: "#email",
-        uploadedAt: body.date || new Date().toISOString(),
-        notes: `Von: ${body.from}\n\n${body.body.substring(0, 2000)}`,
-      };
+      const matchedCase = cases.find((c) => c.slug === result.matchedCaseSlug);
+      if (!matchedCase) {
+        return apiError("case_not_found", "Zugeordnete Akte nicht gefunden", 404);
+      }
 
-      await brain.updatePage({
-        slug: matchedCase.slug,
-        frontmatter: {
-          documents: [...existingDocs, documentEntry],
-        },
-      });
-
-      return Response.json({
-        success: true,
-        matchedCase: {
-          slug: matchedCase.slug,
-          caseNumber: matchedCase.case_number,
-          title: matchedCase.title,
-        },
-        document: documentEntry,
-      });
+      return await importEmailIntoCase(brain, matchedCase, body, result.threadId);
     } catch (err) {
       console.error("[email-import] failed:", err instanceof Error ? err.message : String(err));
       return apiError("import_failed", "E-Mail-Import fehlgeschlagen", 500);
     }
   }
 );
+
+async function importEmailIntoCase(
+  brain: ReturnType<typeof createServerBrainClient>,
+  matchedCase: { slug: string; title: string; case_number?: string; documents?: unknown[] },
+  body: z.infer<typeof emailImportSchema>,
+  threadId?: string
+) {
+  const existingDocs = (matchedCase.documents || []) as Array<{
+    id?: string;
+    name?: string;
+    notes?: string;
+    thread_id?: string;
+  }>;
+
+  const isDuplicate = existingDocs.some((doc) => {
+    const docNotes = doc.notes || "";
+    return docNotes.includes(`Von: ${body.from}`) && doc.name === `E-Mail: ${body.subject}`;
+  });
+
+  if (isDuplicate) {
+    return Response.json({
+      success: true,
+      duplicate: true,
+      threadId,
+      matchedCase: {
+        slug: matchedCase.slug,
+        caseNumber: matchedCase.case_number,
+        title: matchedCase.title,
+      },
+      message: "E-Mail wurde bereits in diese Akte importiert.",
+    });
+  }
+
+  const documentEntry = {
+    id: `doc-${Date.now()}`,
+    name: `E-Mail: ${body.subject}`,
+    type: "email",
+    url: "#email",
+    uploadedAt: body.date || new Date().toISOString(),
+    notes: `Von: ${body.from}\n\n${body.body.substring(0, 2000)}`,
+    thread_id: threadId,
+  };
+
+  await brain.updatePage({
+    slug: matchedCase.slug,
+    frontmatter: {
+      documents: [...existingDocs, documentEntry],
+    },
+  });
+
+  return Response.json({
+    success: true,
+    threadId,
+    matchedCase: {
+      slug: matchedCase.slug,
+      caseNumber: matchedCase.case_number,
+      title: matchedCase.title,
+    },
+    document: documentEntry,
+  });
+}

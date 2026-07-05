@@ -4,10 +4,23 @@ import { useMemo, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Briefcase, Upload, Search, ArrowRight, FileText } from "lucide-react";
+import {
+  Briefcase,
+  Upload,
+  Search,
+  ArrowRight,
+  FileText,
+  AlertTriangle,
+  Clock,
+  Mail,
+  FileCheck,
+  PenSquare,
+  Zap,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/dashboard/skeleton";
 import { useBrainStats, useRecentQueries } from "@/lib/queries/brain";
+import { useKanzleiCockpitData } from "@/components/dashboard/widget-dashboard";
 import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
@@ -134,6 +147,121 @@ function CalmGreeting({
   );
 }
 
+function ProactiveActionBanner() {
+  const { t, lang } = useLang();
+  const cockpit = useKanzleiCockpitData();
+
+  const actions = useMemo(() => {
+    const items: Array<{
+      href: string;
+      icon: typeof AlertTriangle;
+      label: string;
+      count: number;
+      variant: "danger" | "warning" | "info";
+    }> = [];
+
+    const criticalCount = cockpit.criticalDeadlines.length;
+    if (criticalCount > 0) {
+      items.push({
+        href: "/dashboard/deadlines",
+        icon: Clock,
+        label: t("cockpit.stat_deadlines"),
+        count: criticalCount,
+        variant: "danger",
+      });
+    }
+
+    const inboxCount = cockpit.inboxItems.length;
+    if (inboxCount > 0) {
+      items.push({
+        href: "/dashboard/intake",
+        icon: Mail,
+        label: t("cockpit.stat_inbox"),
+        count: inboxCount,
+        variant: "info",
+      });
+    }
+
+    const reviewCount = cockpit.pendingReviews.length;
+    if (reviewCount > 0) {
+      items.push({
+        href: "/dashboard/review-queue",
+        icon: FileCheck,
+        label: t("cockpit.stat_reviews"),
+        count: reviewCount,
+        variant: "warning",
+      });
+    }
+
+    const sigCount = cockpit.pendingSignatures.length;
+    if (sigCount > 0) {
+      items.push({
+        href: "/dashboard/docusign",
+        icon: PenSquare,
+        label: lang === "en" ? "Signatures" : "Signaturen",
+        count: sigCount,
+        variant: "warning",
+      });
+    }
+
+    const gapsCount = cockpit.unassignedDocs.length + cockpit.reviewGaps.length;
+    if (gapsCount > 0) {
+      items.push({
+        href: "/dashboard/vault",
+        icon: AlertTriangle,
+        label: t("cockpit.gaps_title"),
+        count: gapsCount,
+        variant: "danger",
+      });
+    }
+
+    return items;
+  }, [cockpit, t, lang]);
+
+  if (actions.length === 0) return null;
+
+  const variantClasses = {
+    danger:
+      "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+    warning:
+      "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+    info: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+  };
+
+  return (
+    <StaggerContainer>
+      <StaggerItem>
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 md:p-4">
+          <div className="mb-2.5 flex items-center gap-2">
+            <Zap size={14} className="text-[color:var(--brand-primary)]" />
+            <span className="text-xs font-semibold text-[color:var(--ds-text)]">
+              {lang === "en" ? "Action needed" : "Handlungsbedarf"}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {actions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-opacity hover:opacity-80 ${variantClasses[action.variant]}`}
+                >
+                  <Icon size={13} />
+                  <span>{action.label}</span>
+                  <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-xs font-bold">
+                    {action.count}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </StaggerItem>
+    </StaggerContainer>
+  );
+}
+
 export default function DashboardPage() {
   const statsQuery = useBrainStats();
   const recentQuery = useRecentQueries(5);
@@ -166,6 +294,8 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
+      {!isFirstTime && <ProactiveActionBanner />}
+
       {isFirstTime && (
         <StaggerContainer>
           <StaggerItem>

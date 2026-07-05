@@ -34,6 +34,7 @@ import type { ChatContextType } from "@/components/chat/chat-types";
 import { api } from "@/lib/api";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { useRealtime } from "@/lib/realtime";
+import { caseSlugFromDashboardPath } from "@/lib/matter-route-path";
 
 interface CopilotSidebarProps {
   open: boolean;
@@ -77,7 +78,7 @@ const ROUTE_PATTERNS: Array<{
       const isEn = lang === "en";
       return {
         type: m[1] ? "case" : "global",
-        caseSlug: m[1] ? `cases/${m[1]}` : undefined,
+        caseSlug: m[1] ? decodeURIComponent(m[1]) : undefined,
         label: m[1] ? `${t("copilot.ctx.case_prefix")} ${m[1]}` : t("copilot.ctx.cases"),
         quickActions: m[1]
           ? [
@@ -1108,7 +1109,7 @@ function MatterContextCard({ info, lang }: { info: MatterContextInfo; lang: Lang
           <div className="truncate text-[13px] leading-tight font-medium text-[color:var(--ds-text)]">
             {info.title}
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-[color:var(--ds-text-subtle)]">
+          <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-subtle)]">
             <span className="font-mono">{info.caseNumber}</span>
             <span className="h-3 w-px bg-[color:var(--ds-border)]" />
             <span className="tabular-nums">
@@ -1120,7 +1121,7 @@ function MatterContextCard({ info, lang }: { info: MatterContextInfo; lang: Lang
           </div>
         </div>
         {info.nextDeadlineDate && (
-          <div className="shrink-0 rounded-md bg-[color:var(--ds-warning-bg)] px-2 py-1 text-[11px] font-medium text-[color:var(--ds-warning-text)]">
+          <div className="shrink-0 rounded-md bg-[color:var(--ds-warning-bg)] px-2 py-1 text-xs font-medium text-[color:var(--ds-warning-text)]">
             {new Date(info.nextDeadlineDate).toLocaleDateString(isEn ? "en-GB" : "de-DE", {
               day: "2-digit",
               month: "short",
@@ -1214,7 +1215,7 @@ function QuickActionsChips({
             <button
               key={action.label}
               onClick={() => onAction(action)}
-              className="group/action inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-left text-[11px] text-[color:var(--ds-text-subtle)] transition-[border-color,background-color,color] duration-200 ease-[var(--ds-ease-smooth)] hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+              className="group/action inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-left text-xs text-[color:var(--ds-text-subtle)] transition-[border-color,background-color,color] duration-200 ease-[var(--ds-ease-smooth)] hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
             >
               <Icon
                 size={11}
@@ -1227,7 +1228,7 @@ function QuickActionsChips({
         {actions.length > 4 && (
           <button
             onClick={onToggleExpanded}
-            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] text-[color:var(--ds-text-subtle)] transition-[color,background-color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-[color,background-color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             aria-expanded={expanded}
             aria-label={expanded ? t("copilot.show_less_aria") : t("copilot.show_more_aria")}
           >
@@ -1286,7 +1287,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       setMatterContextInfo(null);
       return;
     }
-    const slug = pathname.replace("/dashboard/cases/", "").split("/")[0];
+    const slug = caseSlugFromDashboardPath(pathname);
     if (!slug) {
       setMatterContextInfo(null);
       return;
@@ -1300,12 +1301,10 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         const deadlines = fm.deadlines || [];
         const tasks = fm.tasks || [];
         const documents = fm.documents || [];
-        const openDeadlines = deadlines.filter(
-          (d) => d.status !== "done" && d.status !== "completed"
-        );
+        const openDeadlines = deadlines.filter((d) => d.status !== "done");
         const openTasks = tasks.filter((t) => !t.done);
         const nextDeadline = openDeadlines
-          .map((d) => d.due_date || d.date || "")
+          .map((d) => d.due_date || "")
           .filter(Boolean)
           .sort()[0];
         setMatterContextInfo({

@@ -307,6 +307,15 @@ export default function NewCasePage() {
             });
             return;
           }
+          if (err instanceof ApiRequestError && err.code === "conflict_waiver_unauthorized") {
+            addToast({
+              type: "error",
+              title: "Konflikt-Waiver abgelehnt",
+              description:
+                "Nur Partner (admin/lawyer) können Konflikte freigeben. Bitte einen Partner hinzuziehen.",
+            });
+            return;
+          }
           throw err;
         }
       } else {
@@ -553,6 +562,9 @@ export default function NewCasePage() {
               {t("casesnew.waiver_label")}
             </Label>
             <p className="text-xs opacity-80">{t("casesnew.waiver_desc")}</p>
+            <p className="text-xs font-medium opacity-90">
+              ⚖️ Freigabe erfordert Partner-Rolle (admin/lawyer).
+            </p>
             <Input
               id="waiver-reason"
               value={waiverReason}

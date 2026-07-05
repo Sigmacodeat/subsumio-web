@@ -4,6 +4,8 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
   createDeadlineNotification,
+  deleteNotification,
+  deleteAllReadNotifications,
 } from "@/lib/comments";
 import { z } from "zod";
 
@@ -109,5 +111,32 @@ export const PATCH = createHandler(
   async (ctx, body, _query, _req) => {
     await markNotificationRead(body.id, { userId: ctx.user.id, brainId: ctx.brainId });
     return Response.json({ ok: true });
+  }
+);
+
+const deleteSchema = z.object({
+  id: z.string().min(1, "id_required").optional(),
+  deleteAllRead: z.boolean().optional(),
+});
+
+export const DELETE = createHandler(
+  {
+    action: "settings.write",
+    rateTier: "standard",
+    body: deleteSchema.optional(),
+  },
+  async (ctx, body, _query, _req) => {
+    if (body?.deleteAllRead) {
+      const deleted = await deleteAllReadNotifications({
+        userId: ctx.user.id,
+        brainId: ctx.brainId,
+      });
+      return Response.json({ ok: true, deleted });
+    }
+    if (body?.id) {
+      await deleteNotification(body.id, { userId: ctx.user.id, brainId: ctx.brainId });
+      return Response.json({ ok: true });
+    }
+    return Response.json({ error: "id_or_deleteAllRead_required" }, { status: 400 });
   }
 );

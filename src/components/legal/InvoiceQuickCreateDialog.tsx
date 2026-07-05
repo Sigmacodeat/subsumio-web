@@ -140,6 +140,8 @@ export function InvoiceQuickCreateDialog({
   const [showRvg, setShowRvg] = useState(false);
   const [streitwert, setStreitwert] = useState("");
   const [rvgResult, setRvgResult] = useState<RvgResult | null>(null);
+  const [leitwegId, setLeitwegId] = useState("");
+  const [eInvoiceFormat, setEInvoiceFormat] = useState<"none" | "xrechnung" | "zugferd">("none");
 
   const resetForm = useCallback(() => {
     setSelectedCaseSlug(presetCaseSlug ?? "");
@@ -148,6 +150,8 @@ export function InvoiceQuickCreateDialog({
     setShowRvg(false);
     setStreitwert("");
     setRvgResult(null);
+    setLeitwegId("");
+    setEInvoiceFormat("none");
   }, [presetCaseSlug]);
 
   useEffect(() => {
@@ -274,25 +278,53 @@ export function InvoiceQuickCreateDialog({
         return;
       }
 
-      const items: InvoiceItem[] = billableTime.map((entry) => {
-        const hours = entry.minutes / 60;
-        const rate = entry.rate || defaultRate;
-        return {
+      const billableTimeIds = billableTime.map((e) => e.id);
+      const billableExpenseIds = billableExpenses.map((e) => e.id);
+
+      let items: InvoiceItem[];
+      let expenses: InvoiceExpenseEntry[];
+      let subtotal: number;
+      let expTotal: number;
+
+      if (showRvg && rvgResult) {
+        // RVG mode: use calculated RVG fees as the invoice total
+        items = [
+          {
+            description: `RVG-Gebühren (Streitwert ${rvgResult.streitwert.toLocaleString("de-DE")} €)`,
+            date: new Date().toISOString().split("T")[0],
+            hours: 0,
+            rate: 0,
+            amount: rvgResult.summeNetto,
+          },
+        ];
+        expenses = billableExpenses.map((entry) => ({
           description: entry.description,
           date: entry.date.split("T")[0],
-          hours: Math.round(hours * 100) / 100,
-          rate,
-          amount: Math.round(hours * rate * 100) / 100,
-        };
-      });
-      const expenses: InvoiceExpenseEntry[] = billableExpenses.map((entry) => ({
-        description: entry.description,
-        date: entry.date.split("T")[0],
-        amount: entry.amount,
-      }));
-
-      const subtotal = items.reduce((s, i) => s + i.amount, 0);
-      const expTotal = expenses.reduce((s, i) => s + i.amount, 0);
+          amount: entry.amount,
+        }));
+        subtotal = rvgResult.summeNetto;
+        expTotal = expenses.reduce((s, i) => s + i.amount, 0);
+      } else {
+        // Hourly rate mode
+        items = billableTime.map((entry) => {
+          const hours = entry.minutes / 60;
+          const rate = entry.rate || defaultRate;
+          return {
+            description: entry.description,
+            date: entry.date.split("T")[0],
+            hours: Math.round(hours * 100) / 100,
+            rate,
+            amount: Math.round(hours * rate * 100) / 100,
+          };
+        });
+        expenses = billableExpenses.map((entry) => ({
+          description: entry.description,
+          date: entry.date.split("T")[0],
+          amount: entry.amount,
+        }));
+        subtotal = items.reduce((s, i) => s + i.amount, 0);
+        expTotal = expenses.reduce((s, i) => s + i.amount, 0);
+      }
       const parsedAdvance = Math.max(0, parseFloat(advancePayment) || 0);
       const vatRate = settings?.tarifModell === "ratg" ? 0.2 : 0.19;
       const taxableBase = subtotal + expTotal;
@@ -339,10 +371,13 @@ export function InvoiceQuickCreateDialog({
           client_slug: invoice.clientSlug,
           client_address: invoice.clientAddress,
           case_number: invoice.caseNumber,
+          case_slugs: [c.slug],
           date: invoice.date,
           due_date: invoice.dueDate,
           items: invoice.items,
           expenses: invoice.expenses,
+          time_entry_ids: billableTime.map((e) => e.id),
+          expense_entry_ids: billableExpenses.map((e) => e.id),
           status: invoice.status,
           subtotal: invoice.subtotal,
           expense_total: invoice.expenseTotal,
@@ -354,6 +389,7 @@ export function InvoiceQuickCreateDialog({
           bank: invoice.bank,
           notes: invoice.notes,
           invoice_type: invoiceType,
+          leitweg_id: leitwegId.trim() || undefined,
           ...gobdFrontmatter(hash, issuedAt),
         },
       };
@@ -363,8 +399,21 @@ export function InvoiceQuickCreateDialog({
         await enqueueMutation({ type: "createPage", payload: invoicePayload });
       }
 
-      const billedTimeIds = new Set(billableTime.map((entry) => entry.id));
-      const billedExpenseIds = new Set(billableExpenses.map((entry) => entry.id));
+      // Mark time entries as billed via dedicated API endpoint (SSE + audit trail)
+      if (isOnline() && billableTimeIds.length > 0) {
+        try {
+          await api.time.markBilled({
+            entry_ids: billableTimeIds,
+            invoice_number: invoice.number,
+            case_slug: c.slug,
+          });
+        } catch {
+          // non-fatal — frontmatter update below is the fallback
+        }
+      }
+
+      const billedTimeIds = new Set(billableTimeIds);
+      const billedExpenseIds = new Set(billableExpenseIds);
       const updatedTimeEntries = (c.timeEntries ?? []).map((entry) =>
         billedTimeIds.has(entry.id)
           ? { ...entry, billed: true, invoice_number: invoice.number }
@@ -399,6 +448,71 @@ export function InvoiceQuickCreateDialog({
       });
 
       addToast({ type: "success", title: t("inv.quick_created" as DashboardKey) });
+
+      // Auto-generate e-invoice if format selected
+      if (eInvoiceFormat !== "none") {
+        try {
+          const { csrfFetch } = await import("@/lib/csrf");
+          const res = await csrfFetch("/api/e-invoice/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              format: eInvoiceFormat,
+              invoice: {
+                invoice_number: invoice.number,
+                client: invoice.client,
+                client_address: invoice.clientAddress,
+                case_number: invoice.caseNumber,
+                date: invoice.date,
+                due_date: invoice.dueDate,
+                items: invoice.items,
+                expenses: invoice.expenses,
+                subtotal: invoice.subtotal,
+                expense_total: invoice.expenseTotal,
+                advance_payment: invoice.advancePayment,
+                vat_rate: invoice.vatRate,
+                tax: invoice.tax,
+                total: invoice.total,
+                payment_terms: invoice.paymentTerms,
+                bank: invoice.bank,
+                notes: invoice.notes,
+                invoice_type: invoice.invoiceType,
+                leitweg_id: leitwegId.trim() || undefined,
+              },
+              settings,
+              options: {
+                leitwegId: leitwegId.trim() || undefined,
+              },
+            }),
+          });
+          if (res.ok) {
+            if (eInvoiceFormat === "xrechnung") {
+              const data = await res.json();
+              if (data.ok && data.xml) {
+                const blob = new Blob([data.xml], { type: "application/xml" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = data.filename || `xrechnung_${invoice.number}.xml`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }
+            } else {
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `zugferd_${invoice.number}.pdf`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }
+            addToast({ type: "info", title: t("inv.e_invoice_auto_generated" as DashboardKey) });
+          }
+        } catch {
+          addToast({ type: "error", title: t("inv.e_invoice_auto_failed" as DashboardKey) });
+        }
+      }
+
       onOpenChange(false);
       if (onCreated) onCreated();
     } catch (err) {
@@ -524,6 +638,39 @@ export function InvoiceQuickCreateDialog({
                   onChange={(e) => setAdvancePayment(e.target.value)}
                   placeholder="0,00"
                 />
+              </div>
+            </div>
+
+            {/* E-Invoice options */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="quick-leitweg" className="text-xs">
+                  {t("inv.leitweg_id" as DashboardKey)}
+                </Label>
+                <Input
+                  id="quick-leitweg"
+                  value={leitwegId}
+                  onChange={(e) => setLeitwegId(e.target.value)}
+                  placeholder="991-51097-29"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="quick-einvoice-format" className="text-xs">
+                  {t("inv.e_invoice_format" as DashboardKey)}
+                </Label>
+                <Select
+                  value={eInvoiceFormat}
+                  onValueChange={(v) => setEInvoiceFormat(v as typeof eInvoiceFormat)}
+                >
+                  <SelectTrigger id="quick-einvoice-format">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t("inv.e_invoice_none" as DashboardKey)}</SelectItem>
+                    <SelectItem value="xrechnung">XRechnung XML</SelectItem>
+                    <SelectItem value="zugferd">ZUGFeRD PDF</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

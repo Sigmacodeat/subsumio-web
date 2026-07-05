@@ -27,7 +27,8 @@ import { useBrainStats, useCockpitData } from "@/lib/queries/brain";
 import { useRecentMatters } from "@/lib/use-recent-matters";
 import { useLang } from "@/lib/use-lang";
 import { useRealtime, ensureRealtime } from "@/lib/realtime";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import type { Lang } from "@/content/site";
 import type { BrainPage, BrainStats, RecentQuery } from "@/lib/types";
 import { StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
@@ -136,6 +137,34 @@ export function useKanzleiCockpitData() {
   const signatures = (pages.signature_request ?? []) as DashboardPageLike[];
   const reviews = (pages.review_item ?? []) as DashboardPageLike[];
   const agentActions = (pages.agent_action ?? []) as DashboardPageLike[];
+
+  // Trust accounts — fetch separately for overdue reconciliation compliance
+  const trustQuery = useQuery({
+    queryKey: ["brain", "trust-accounts"],
+    queryFn: () => api.legal.trustAccounts.list({ limit: 100 }),
+    staleTime: 60_000,
+  });
+  const trustAccounts = (trustQuery.data ?? []) as Array<{
+    slug: string;
+    frontmatter?: Record<string, unknown>;
+  }>;
+  const overdueReconciliations = trustAccounts.filter((acc) => {
+    const fm = acc.frontmatter ?? {};
+    const recs = (fm.reconciliations as Array<{ date: string }> | undefined) ?? [];
+    const now = new Date();
+    const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
+    const currentYear = now.getFullYear();
+    const hasCurrentQuarter = recs.some((r) => {
+      const rDate = new Date(r.date);
+      return (
+        Math.floor(rDate.getMonth() / 3) + 1 === currentQuarter &&
+        rDate.getFullYear() === currentYear
+      );
+    });
+    const quarterStartMonth = (currentQuarter - 1) * 3;
+    const isPastGracePeriod = now.getMonth() > quarterStartMonth;
+    return isPastGracePeriod && !hasCurrentQuarter;
+  });
   const docs = [
     ...((pages.document ?? []) as DashboardPageLike[]),
     ...((pages.legal_document ?? []) as DashboardPageLike[]),
@@ -212,6 +241,7 @@ export function useKanzleiCockpitData() {
     pendingReviews,
     openDocumentRequests,
     pendingSignatures,
+    overdueReconciliations,
     loading,
     degraded,
   };
@@ -607,6 +637,7 @@ export function HeutePanel({
   documentRequestCount,
   signatureCount,
   gapsCount: _gapsCount,
+  overdueReconciliations,
 }: {
   loading: boolean;
   criticalDeadlines: DeadlineItem[];
@@ -616,6 +647,7 @@ export function HeutePanel({
   documentRequestCount: number;
   signatureCount: number;
   gapsCount: number;
+  overdueReconciliations: Array<{ slug: string; frontmatter?: Record<string, unknown> }>;
 }) {
   const { t, lang } = useLang();
   const hasCritical = criticalDeadlines.length > 0;
@@ -658,6 +690,12 @@ export function HeutePanel({
       count: signatureCount,
       href: "/dashboard/signature",
       urgent: signatureCount > 0,
+    },
+    {
+      label: "Anderkonto-Abstimmung überfällig",
+      count: overdueReconciliations.length,
+      href: "/dashboard/trust-accounting",
+      urgent: overdueReconciliations.length > 0,
     },
   ].filter((a) => a.count > 0);
 
@@ -901,7 +939,7 @@ export function ActivityFeedWidget({ data }: { data: CockpitData }) {
     }
 
     return items.sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 12);
-  }, [data, t, lang]);
+  }, [data, t]);
 
   if (entries.length === 0) {
     return (
@@ -1062,6 +1100,7 @@ export function WidgetDashboard() {
             documentRequestCount={documentRequestCount}
             signatureCount={signatureCount}
             gapsCount={gapsCount}
+            overdueReconciliations={data.overdueReconciliations}
           />
         </StaggerItem>
 

@@ -59,6 +59,14 @@ export type DeepPartial<T> = T extends object ? { [K in keyof T]?: DeepPartial<T
 
 export function deepMerge<T>(base: T, overrides: DeepPartial<T> | undefined): T {
   if (!overrides) return base;
+  if (Array.isArray(base) && Array.isArray(overrides)) {
+    if (base.length === overrides.length) {
+      return base.map((item, i) =>
+        deepMerge(item, (overrides as readonly unknown[])[i] as DeepPartial<typeof item>)
+      ) as T;
+    }
+    return overrides as T;
+  }
   if (typeof base !== "object" || base === null || Array.isArray(base)) {
     return (overrides as T) ?? base;
   }
@@ -67,14 +75,7 @@ export function deepMerge<T>(base: T, overrides: DeepPartial<T> | undefined): T 
     const ov = (overrides as Record<string, unknown>)[key];
     if (ov === undefined) continue;
     const bv = (result as Record<string, unknown>)[key];
-    if (
-      typeof bv === "object" &&
-      bv !== null &&
-      !Array.isArray(bv) &&
-      typeof ov === "object" &&
-      ov !== null &&
-      !Array.isArray(ov)
-    ) {
+    if (typeof bv === "object" && bv !== null && typeof ov === "object" && ov !== null) {
       result[key] = deepMerge(bv, ov as Partial<typeof bv>);
     } else {
       result[key] = ov;
@@ -1859,7 +1860,7 @@ const _landingDe = {
   h1b: "Subsumio nicht.",
   heroTagline: "Jede Akte, eine belegte Antwort.",
   h1Keyword: "KI-Kanzleisoftware & Anwaltssoftware mit belegten Antworten",
-  sub: "KI-Kanzleiosoftware mit belegten Antworten — Fundstellen, nicht Halluzinationen. Für Rechtsanwälte in AT · DE · CH.",
+  sub: "KI-Kanzleisoftware mit belegten Antworten — Fundstellen, nicht Halluzinationen. Für Rechtsanwälte in AT · DE · CH.",
   heroTrustItems: [
     { icon: "CreditCard", label: "Keine Kreditkarte" },
     { icon: "Scale", label: "§ 203 StGB" },
@@ -1868,7 +1869,7 @@ const _landingDe = {
   heroQACard: {
     question: "Wo widersprechen sich die Schriftsätze der Gegenseite?",
     answer:
-      "Akte Bauer ./. Hofer: Plädandum der Gegenseite S. 3 claims „keine Kenntnis“ vom Vertrag — S. 7 zitiert denselben Vertrag als Beleg. Widerspruch erkannt.",
+      "Akte Bauer ./. Hofer: Plädoyer der Gegenseite S. 3 claims „keine Kenntnis“ vom Vertrag — S. 7 zitiert denselben Vertrag als Beleg. Widerspruch erkannt.",
     sources: [
       { label: "akte/bauer-hofer", href: "/superbrain" },
       { label: "schriftsatz/gegenseite", href: "/superbrain" },
@@ -1928,7 +1929,7 @@ const _landingDe = {
       {
         question: "Wo widersprechen sich die Schriftsätze der Gegenseite?",
         answer:
-          'Plädandum S. 3: „keine Kenntnis" vom Vertrag. S. 7: zitiert denselben Vertrag als Beleg. Widerspruch erkannt — Beweiswert geschwächt.',
+          'Plädoyer S. 3: „keine Kenntnis" vom Vertrag. S. 7: zitiert denselben Vertrag als Beleg. Widerspruch erkannt — Beweiswert geschwächt.',
         sources: ["schriftsatz/gegenseite", "akten/bauer-hofer"],
       },
       {
@@ -2470,6 +2471,7 @@ export const LANDING = {
 const _uiStringsDe: Record<string, string> = {
   // Landing — trust signals
   noCreditCard: "Keine Kreditkarte",
+  trialDaysFree: "14 Tage gratis · Keine Kreditkarte",
   threeMinAnswer: "3 Min. zur ersten belegten Antwort",
   euHosted: "EU-gehostet oder On-Premise",
   liveDemoAria: "Live-Demo",
@@ -2487,6 +2489,16 @@ const _uiStringsDe: Record<string, string> = {
   stillQuestions: "Noch Fragen?",
   writeUs: "Schreib uns — wir antworten persönlich.",
   startFree: "Kostenlos starten",
+  seePlans: "Pläne ansehen",
+  watchDemo: "Demo ansehen",
+  trySubsumio: "Subsumio testen",
+  ariaFeatures: "Features",
+  ariaPricing: "Preise",
+  ariaKeyMetrics: "Kennzahlen",
+  ariaFaq: "FAQ",
+  ariaCta: "Handlungsaufforderung",
+  ariaComparison: "Vergleich",
+  ariaRealWorkflows: "Praxis-Workflows",
   // Solution page
   seePlatform: "Plattform ansehen",
   questionsAnswered: "Fragen, beantwortet",
@@ -2511,6 +2523,13 @@ const _uiStringsDe: Record<string, string> = {
     "Die Docs sind nicht als rohe API-Liste gedacht. Sie erklären, welche Funktion im Dashboard sichtbar ist, welchen Kanzlei-Prozess sie verbessert und welche Sicherheitsannahme dahintersteht.",
   // Back to top
   backToTopAria: "Zurück nach oben",
+  // Docs page extras
+  docsSearchPlaceholder: "Features suchen…",
+  docsNoResults: "Keine Features gefunden für",
+  docsFeatureCount: "Features",
+  docsCategoryCount: "Kategorien",
+  docsStatsBadge: "Komplett dokumentiert",
+  docsClearSearch: "Suche zurücksetzen",
   // Product workflow showcase
   followContext: "Kontext folgen",
   // Chrome / nav
@@ -2522,6 +2541,9 @@ const _uiStringsDe: Record<string, string> = {
   // Branch pricing
   pricingBadge: "Preise",
   mostPopular: "Beliebteste Wahl",
+  billingAnnual: "Jährlich",
+  billingMonthly: "Monatlich",
+  toggleBilling: "Abrechnung umschalten",
   fullPricingFaq: "Alle Preise & FAQ",
   // Dashboard reel
   openMatter: "Akte öffnen",
@@ -2568,6 +2590,7 @@ const _uiStringsDe: Record<string, string> = {
 const _uiStringsEn: Record<string, string> = {
   // Landing — trust signals
   noCreditCard: "No credit card",
+  trialDaysFree: "14 days free · No credit card",
   threeMinAnswer: "3 min to first cited answer",
   euHosted: "EU-hosted or self-hosted",
   liveDemoAria: "Live demo",
@@ -2585,6 +2608,16 @@ const _uiStringsEn: Record<string, string> = {
   stillQuestions: "Still have questions?",
   writeUs: "Write to us — we reply personally.",
   startFree: "Start free",
+  seePlans: "See plans",
+  watchDemo: "Watch demo",
+  trySubsumio: "Try Subsumio",
+  ariaFeatures: "Features",
+  ariaPricing: "Pricing",
+  ariaKeyMetrics: "Key metrics",
+  ariaFaq: "FAQ",
+  ariaCta: "Call to action",
+  ariaComparison: "Comparison",
+  ariaRealWorkflows: "Real workflows",
   // Solution page
   seePlatform: "See the platform",
   questionsAnswered: "Questions, answered",
@@ -2609,6 +2642,13 @@ const _uiStringsEn: Record<string, string> = {
     "The docs are not a raw API inventory. They show which dashboard surface exists, which legal workflow it improves and which security assumption sits underneath it.",
   // Back to top
   backToTopAria: "Back to top",
+  // Docs page extras
+  docsSearchPlaceholder: "Search features…",
+  docsNoResults: "No features found for",
+  docsFeatureCount: "features",
+  docsCategoryCount: "categories",
+  docsStatsBadge: "Fully documented",
+  docsClearSearch: "Clear search",
   // Product workflow showcase
   followContext: "Follow context",
   // Chrome / nav
@@ -2620,6 +2660,9 @@ const _uiStringsEn: Record<string, string> = {
   // Branch pricing
   pricingBadge: "Pricing",
   mostPopular: "Most popular",
+  billingAnnual: "Annual",
+  billingMonthly: "Monthly",
+  toggleBilling: "Toggle billing",
   fullPricingFaq: "Full pricing & FAQ",
   // Dashboard reel
   openMatter: "Open matter",
@@ -2685,7 +2728,16 @@ export const UI_STRINGS: Record<Lang, Record<string, string>> = {
       "Back to overview": "Torna alla panoramica",
       Pricing: "Prezzi",
       "Most popular": "Più popolare",
+      Annual: "Annuale",
+      Monthly: "Mensile",
+      "Toggle billing": "Cambia fatturazione",
       "Search…": "Cerca…",
+      "Search features…": "Cerca funzioni…",
+      "No features found for": "Nessuna funzione trovata per",
+      features: "funzioni",
+      categories: "categorie",
+      "Fully documented": "Completamente documentato",
+      "Clear search": "Cancella ricerca",
     }
   ),
   es: applyReplacements(
@@ -2705,7 +2757,16 @@ export const UI_STRINGS: Record<Lang, Record<string, string>> = {
       "Back to overview": "Volver al resumen",
       Pricing: "Precios",
       "Most popular": "Más popular",
+      Annual: "Anual",
+      Monthly: "Mensual",
+      "Toggle billing": "Cambiar facturación",
       "Search…": "Buscar…",
+      "Search features…": "Buscar funciones…",
+      "No features found for": "No se encontraron funciones para",
+      features: "funciones",
+      categories: "categorías",
+      "Fully documented": "Completamente documentado",
+      "Clear search": "Borrar búsqueda",
     }
   ),
   pl: applyReplacements(
@@ -2725,7 +2786,16 @@ export const UI_STRINGS: Record<Lang, Record<string, string>> = {
       "Back to overview": "Powrót do przeglądu",
       Pricing: "Cennik",
       "Most popular": "Najpopularniejszy",
+      Annual: "Rocznie",
+      Monthly: "Miesięcznie",
+      "Toggle billing": "Przełącz rozliczenie",
       "Search…": "Szukaj…",
+      "Search features…": "Szukaj funkcji…",
+      "No features found for": "Nie znaleziono funkcji dla",
+      features: "funkcji",
+      categories: "kategorii",
+      "Fully documented": "W pełni udokumentowane",
+      "Clear search": "Wyczyść wyszukiwanie",
     }
   ),
   fr: applyReplacements(
@@ -2745,7 +2815,16 @@ export const UI_STRINGS: Record<Lang, Record<string, string>> = {
       "Back to overview": "Retour à l'aperçu",
       Pricing: "Tarifs",
       "Most popular": "Le plus populaire",
+      Annual: "Annuel",
+      Monthly: "Mensuel",
+      "Toggle billing": "Changer la facturation",
       "Search…": "Rechercher…",
+      "Search features…": "Rechercher des fonctionnalités…",
+      "No features found for": "Aucune fonctionnalité trouvée pour",
+      features: "fonctionnalités",
+      categories: "catégories",
+      "Fully documented": "Entièrement documenté",
+      "Clear search": "Effacer la recherche",
     }
   ),
   nl: applyReplacements(
@@ -2765,7 +2844,16 @@ export const UI_STRINGS: Record<Lang, Record<string, string>> = {
       "Back to overview": "Terug naar overzicht",
       Pricing: "Prijzen",
       "Most popular": "Meest gekozen",
+      Annual: "Jaarlijks",
+      Monthly: "Maandelijks",
+      "Toggle billing": "Facturering wisselen",
       "Search…": "Zoeken…",
+      "Search features…": "Functies zoeken…",
+      "No features found for": "Geen functies gevonden voor",
+      features: "functies",
+      categories: "categoriën",
+      "Fully documented": "Volledig gedocumenteerd",
+      "Clear search": "Zoekopdracht wissen",
     }
   ),
 };

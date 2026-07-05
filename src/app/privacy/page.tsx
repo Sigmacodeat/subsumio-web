@@ -6,7 +6,15 @@ export const metadata: Metadata = {
   title: "Datenschutz",
   description:
     "Wie Subsumio mit Daten umgeht: DSGVO-Konformität, Verschlüsselung, EU-Datenhoheit und eure Rechte.",
-  alternates: { canonical: "/privacy", languages: { de: "/privacy", en: "/en/privacy" } },
+  alternates: {
+    canonical: "/privacy",
+    languages: {
+      "de-DE": "/privacy",
+      "de-AT": "/at/privacy",
+      "de-CH": "/ch/privacy",
+      en: "/en/privacy",
+    },
+  },
   openGraph: {
     title: "Datenschutz — Subsumio",
     description:

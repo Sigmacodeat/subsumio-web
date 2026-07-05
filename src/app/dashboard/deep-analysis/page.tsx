@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLang } from "@/lib/use-lang";
 import {
   FileSearch,
   Loader2,
@@ -59,6 +60,7 @@ const riskBorder: Record<string, string> = {
 };
 
 export default function DeepAnalysisPage() {
+  const { t } = useLang();
   const [report, setReport] = useState<DeepAnalysisReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,9 +112,12 @@ export default function DeepAnalysisPage() {
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Vault Deep Analysis"
-        description="Bulk-Analyse mehrerer Dokumente mit übergreifenden Erkenntnissen, Themen und Risiken — jede Aussage mit wörtlichen Zitaten belegt."
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Deep Analysis" }]}
+        title={t("deep_analysis.title")}
+        description={t("deep_analysis.description")}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: t("deep_analysis.title") },
+        ]}
       />
 
       {/* Input Form */}

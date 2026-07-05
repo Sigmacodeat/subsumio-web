@@ -13,11 +13,12 @@
  * that need to react without using the hook directly.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useMobileKeyboard() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const isKeyboardOpenRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -31,6 +32,7 @@ export function useMobileKeyboard() {
       const keyboardOpen = heightDiff > 50; // threshold to avoid false positives
       setKeyboardHeight(keyboardOpen ? heightDiff : 0);
       setIsKeyboardOpen(keyboardOpen);
+      isKeyboardOpenRef.current = keyboardOpen;
 
       // Dispatch custom event for non-hook consumers
       window.dispatchEvent(
@@ -42,7 +44,7 @@ export function useMobileKeyboard() {
 
     const onResize = () => {
       // Reset baseline when viewport changes (rotation, etc.)
-      if (!isKeyboardOpen) {
+      if (!isKeyboardOpenRef.current) {
         baselineHeight = vv.height;
       }
       update();

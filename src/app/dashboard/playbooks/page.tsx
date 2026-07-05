@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/components/ui/toast";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import type {
@@ -114,6 +115,7 @@ function emptyRule(): PlaybookRule {
 export default function PlaybooksPage() {
   const { t } = useLang();
   const confirm = useConfirm();
+  const { addToast } = useToast();
 
   const _jurisdictionLabel = (j: string): string =>
     t(`playbooks.jurisdiction_${j}` as DashboardKey);
@@ -257,6 +259,7 @@ export default function PlaybooksPage() {
         };
         setPlaybooks((p) => [newItem, ...p]);
       }
+      addToast({ type: "success", title: t("playbooks.success_created" as DashboardKey) });
       cancelForm();
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : t("playbooks.err_save_failed"));
@@ -276,6 +279,7 @@ export default function PlaybooksPage() {
     try {
       await api.legal.playbooks.delete(slug);
       setPlaybooks((p) => p.filter((pb) => pb.slug !== slug));
+      addToast({ type: "success", title: t("playbooks.success_deleted" as DashboardKey) });
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : t("playbooks.err_delete_failed"));
     }

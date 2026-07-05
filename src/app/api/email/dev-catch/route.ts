@@ -4,6 +4,9 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { env } from "@/lib/env";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
+
+const log = logger("dev-catch");
 
 const DATA_DIR = path.join(process.cwd(), ".data");
 const MAILBOX_FILE = path.join(DATA_DIR, "mailbox.json");
@@ -85,9 +88,7 @@ export const POST = createPublicHandler(
     };
 
     await persist(email);
-    if (process.env.NODE_ENV !== "production") {
-      console.debug(`[dev-catch] email received: ${email.id}`);
-    }
+    log.debug("email received", { id: email.id });
 
     return Response.json({ ok: true, id: email.id });
   }

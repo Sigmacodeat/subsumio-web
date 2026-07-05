@@ -7,8 +7,19 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { Play, Pause, Square, Save, Loader2, CheckCircle2, FolderOpen } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Square,
+  Save,
+  Loader2,
+  CheckCircle2,
+  FolderOpen,
+  AlertCircle,
+  RefreshCw,
+} from "lucide-react";
 import { api } from "@/lib/api";
+import { isOnline, enqueueMutation } from "@/lib/offline-store";
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -29,6 +40,8 @@ export default function MobileTimePage() {
   const [mode, setMode] = useState<"timer" | "manual">("timer");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [pendingSync, setPendingSync] = useState(false);
   const [todayEntries, setTodayEntries] = useState<
     { duration: number; description: string; matter?: string }[]
   >([]);
@@ -69,10 +82,10 @@ export default function MobileTimePage() {
 
     if (durationSecs === 0) return;
     setSaving(true);
+    setSaveError(null);
+    const durationHours = durationSecs / 3600;
+    const now = new Date();
     try {
-      const durationHours = durationSecs / 3600;
-      const now = new Date();
-
       // Try dedicated timetracking API first
       const ttRes = await fetch("/api/timetracking", {
         method: "POST",
@@ -119,9 +132,37 @@ export default function MobileTimePage() {
       setDescription("");
       setManualHours("");
       setManualMinutes("");
+      setSaveError(null);
+      setPendingSync(false);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
-      console.error("[time] save error:", e);
+      const msg = e instanceof Error ? e.message : "Speichern fehlgeschlagen";
+      setSaveError(msg);
+      // Store offline for later sync
+      if (!isOnline()) {
+        try {
+          await enqueueMutation({
+            type: "createPage",
+            payload: {
+              slug: `time-${Date.now()}`,
+              title: `Zeit ${now.toLocaleDateString("de-AT")} — ${description || "Zeiteintrag"}`,
+              content: `## Zeiteintrag\n\n**Dauer:** ${formatDuration(durationSecs)}\n**Beschreibung:** ${description || "—"}\n**Akte:** ${matter || "—"}\n**Datum:** ${now.toLocaleDateString("de-AT")}`,
+              type: "time_entry",
+              frontmatter: {
+                type: "time_entry",
+                date: now.toISOString().split("T")[0],
+                matter: matter || undefined,
+                description: description || "Zeiteintrag",
+                duration_hours: durationHours,
+                started_at: startTime?.toISOString(),
+              },
+            },
+          });
+          setPendingSync(true);
+        } catch {
+          // offline store also failed — nothing more we can do
+        }
+      }
     } finally {
       setSaving(false);
     }
@@ -368,6 +409,60 @@ export default function MobileTimePage() {
         {/* Description + matter */}
         {(elapsed > 0 || mode === "manual") && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+            {saveError && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "10px 12px",
+                  background: "#ef444420",
+                  border: "1px solid #ef444430",
+                  borderRadius: 10,
+                  fontSize: 13,
+                  color: "#ef4444",
+                }}
+              >
+                <AlertCircle size={15} />
+                <span style={{ flex: 1 }}>{saveError}</span>
+                <button
+                  onClick={save}
+                  disabled={saving || currentSecs === 0}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#ef4444",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    fontSize: 12,
+                    fontWeight: 600,
+                  }}
+                >
+                  <RefreshCw size={13} />
+                  Retry
+                </button>
+              </div>
+            )}
+            {pendingSync && !saveError && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "10px 12px",
+                  background: "#f59e0b20",
+                  border: "1px solid #f59e0b30",
+                  borderRadius: 10,
+                  fontSize: 12,
+                  color: "#f59e0b",
+                }}
+              >
+                <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} />
+                Offline gespeichert — wird synchronisiert wenn online
+              </div>
+            )}
             <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}

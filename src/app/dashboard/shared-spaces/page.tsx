@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useToast } from "@/components/ui/toast";
+import { useLang } from "@/lib/use-lang";
 import {
   Share2,
   Plus,
@@ -47,6 +48,7 @@ const resourceIcon: Record<string, typeof FileText> = {
 
 export default function SharedSpacesPage() {
   const { addToast } = useToast();
+  const { t } = useLang();
   const [spaces, setSpaces] = useState<SharedSpace[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +117,7 @@ export default function SharedSpacesPage() {
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
         <AlertCircle className="h-12 w-12 text-red-600" />
         <p className="text-[color:var(--ds-text-muted)]">
-          Fehler beim Laden der Shared Spaces: {error}
+          {t("shared.err_load")}: {error}
         </p>
         <Button onClick={load} variant="outline">
           Erneut versuchen
@@ -127,9 +129,9 @@ export default function SharedSpacesPage() {
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Shared Spaces"
-        description="Cross-Organisation-Kollaboration: Teile Dokumente, Akten und Playbooks mit anderen Kanzleien und Unternehmen."
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Shared Spaces" }]}
+        title={t("shared.title")}
+        description={t("shared.description")}
+        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("shared.title") }]}
         actions={
           <Button onClick={() => setShowCreate(true)} size="sm">
             <Plus className="mr-1.5 h-4 w-4" />

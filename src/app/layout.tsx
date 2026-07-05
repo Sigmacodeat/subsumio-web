@@ -1,21 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { headers } from "next/headers";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import ServiceWorkerRegister from "@/components/pwa/sw-register";
 import AppUpdateBanner from "@/components/pwa/app-update-banner";
-import RefConsentBanner from "@/components/marketing/ref-consent";
-import AnalyticsConsentBanner from "@/components/marketing/analytics-consent";
 import { MonitoringProvider } from "@/components/providers/monitoring-provider";
 import SubsumioTheme from "@/components/brand/subsumio-theme";
 import LangSetter from "@/components/brand/lang-setter";
 import { ToastProvider } from "@/components/ui/toast";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { QueryProvider } from "@/components/providers/query-provider";
-import MarketingShell from "@/components/marketing/marketing-shell";
-import type { Lang } from "@/content/site";
+import LayoutShell from "@/components/marketing/layout-shell";
 import "./globals.css";
-
-export const dynamic = "force-dynamic";
 
 // next/font self-hosts at build time — zero runtime requests to Google
 // (GDPR: no visitor IP ever reaches fonts.googleapis.com) and no
@@ -139,49 +133,14 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const headersList = await headers();
-  const pathname = headersList.get("x-pathname") || "/";
-  const lang: Lang = pathname.startsWith("/en")
-    ? "en"
-    : pathname.startsWith("/at")
-      ? "at"
-      : pathname.startsWith("/ch")
-        ? "ch"
-        : "de";
-  // Dashboard and portal render their own <main> landmark; wrap other routes here.
-  const hasOwnMain = pathname.startsWith("/dashboard") || pathname.startsWith("/portal");
-
-  // Marketing pages get the shared shell (nav, background, footer) so the
-  // header persists across client-side navigations instead of remounting.
-  const isMarketingPage =
-    !hasOwnMain &&
-    !pathname.startsWith("/admin") &&
-    !pathname.startsWith("/login") &&
-    !pathname.startsWith("/signup") &&
-    !pathname.startsWith("/reset") &&
-    !pathname.startsWith("/forgot") &&
-    !pathname.startsWith("/en/login") &&
-    !pathname.startsWith("/en/signup") &&
-    !pathname.startsWith("/en/reset") &&
-    !pathname.startsWith("/en/forgot") &&
-    !pathname.startsWith("/api");
-
-  const pageContent = hasOwnMain ? (
-    children
-  ) : (
-    <main id="main-content" role="main">
-      {children}
-    </main>
-  );
-
   return (
     <html
-      lang={lang}
+      lang="de"
       className={`h-full ${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
       style={{ colorScheme: "light dark" }}
       suppressHydrationWarning
@@ -205,26 +164,11 @@ export default async function RootLayout({
           <MonitoringProvider>
             <ToastProvider>
               <ConfirmProvider>
-                {isMarketingPage ? (
-                  <>
-                    {/* Skip-to-content link for keyboard users */}
-                    <a
-                      href="#main-content"
-                      className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:rounded-lg focus:bg-[color:var(--brand-primary)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg"
-                    >
-                      {lang === "en" ? "Skip to content" : "Zum Inhalt springen"}
-                    </a>
-                    <MarketingShell lang={lang}>{pageContent}</MarketingShell>
-                  </>
-                ) : (
-                  pageContent
-                )}
+                <LayoutShell>{children}</LayoutShell>
               </ConfirmProvider>
             </ToastProvider>
           </MonitoringProvider>
         </QueryProvider>
-        {isMarketingPage && <RefConsentBanner />}
-        {isMarketingPage && <AnalyticsConsentBanner />}
         <ServiceWorkerRegister />
         <AppUpdateBanner />
         <noscript>
@@ -242,9 +186,9 @@ export default async function RootLayout({
               zIndex: 9999,
             }}
           >
-            {lang === "en"
-              ? "JavaScript is disabled — some features may be unavailable. Content is still readable."
-              : "JavaScript ist deaktiviert — einige Funktionen sind möglicherweise nicht verfügbar. Der Inhalt ist weiterhin lesbar."}
+            {
+              "JavaScript ist deaktiviert — einige Funktionen sind möglicherweise nicht verfügbar. Der Inhalt ist weiterhin lesbar."
+            }
           </div>
         </noscript>
       </body>

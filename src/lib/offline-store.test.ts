@@ -55,10 +55,10 @@ describe("OFFLINE_KEYS", () => {
     expect(OFFLINE_KEYS.chatHistory).toBe("dashboard:chat-history");
   });
 
-  test("all values are strings starting with dashboard:", () => {
+  test("all values are strings with valid prefix", () => {
     for (const key of Object.values(OFFLINE_KEYS)) {
       expect(typeof key).toBe("string");
-      expect(key.startsWith("dashboard:")).toBe(true);
+      expect(key.startsWith("dashboard:") || key.startsWith("mobile:")).toBe(true);
     }
   });
 });

@@ -1,4 +1,5 @@
 import type { QueryMode } from "@/lib/matter-context-types";
+import type { GroundingMetadata } from "@/lib/citation-gate-client";
 
 export type ChatRole = "user" | "assistant";
 
@@ -32,6 +33,7 @@ export interface ChatMessage {
   error?: string;
   replyTo?: { id: string; role: ChatRole; preview: string };
   toolCalls?: ToolCall[];
+  grounding?: GroundingMetadata | null;
 }
 
 export type ToolType =

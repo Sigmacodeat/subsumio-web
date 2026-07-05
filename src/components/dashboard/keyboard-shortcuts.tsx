@@ -69,7 +69,7 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
     },
   ];
 
-  const singleKeyEnabled =
+  const _singleKeyEnabled =
     typeof window === "undefined" || localStorage.getItem("single-key-shortcuts") !== "false";
 
   return (

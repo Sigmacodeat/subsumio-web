@@ -190,7 +190,7 @@ export default function WorkflowsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8" data-tour="workflows-page">
       <PageHeader
         title={t("workflows.title")}
         description={t("workflows.desc")}
@@ -210,6 +210,7 @@ export default function WorkflowsPage() {
       <div
         className="brand-border brand-soft/5 flex items-start gap-3 rounded-xl border px-4 py-3"
         role="note"
+        data-tour="workflows-intro"
       >
         <Info size={16} className="brand-text mt-0.5 shrink-0" aria-hidden="true" />
         <p className="brand-text/90 text-xs leading-relaxed">{t("workflows.note")}</p>
@@ -235,7 +236,24 @@ export default function WorkflowsPage() {
 
       {/* Template Gallery (shown when no instances or when explicitly starting) */}
       {(instances.length === 0 || selectedTemplate !== null) && (
-        <section className="space-y-3">
+        <section className="space-y-3" data-tour="workflows-templates">
+          {instances.length === 0 && !selectedTemplate && (
+            <div className="brand-border brand-soft/5 rounded-xl border p-5">
+              <div className="flex items-start gap-3">
+                <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border">
+                  <Zap size={18} className="brand-text" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    {t("workflows.seed_welcome")}
+                  </h2>
+                  <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                    {t("workflows.seed_welcome_desc")}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <Zap size={14} className="brand-text" aria-hidden="true" />
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -376,7 +394,7 @@ export default function WorkflowsPage() {
 
       {/* Workflow List */}
       {instances.length > 0 && (
-        <section className="space-y-3">
+        <section className="space-y-3" data-tour="workflows-list">
           {/* Filter bar */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-1.5">

@@ -45,6 +45,7 @@ import { useRealtime } from "@/lib/realtime";
 import { csrfFetch } from "@/lib/csrf";
 import { cn } from "@/lib/utils";
 import { MatterSwitcher } from "@/components/dashboard/matter-switcher";
+import { tracking } from "@/lib/tracking";
 
 export type Theme = "light" | "dark";
 
@@ -451,7 +452,10 @@ export function Topbar({
       {/* Notification bell — visible on all screen sizes */}
       <div className="relative shrink-0" ref={notifRef}>
         <button
-          onClick={() => setNotifOpen(!notifOpen)}
+          onClick={() => {
+            if (!notifOpen) tracking.notifications.bellClicked();
+            setNotifOpen(!notifOpen);
+          }}
           aria-label={
             unreadCount > 0
               ? `${t("topbar.notifications")} — ${unreadCount} ${t("topbar.unread_count")}`
@@ -586,6 +590,18 @@ export function Topbar({
                     );
                   })
                 )}
+              </div>
+              <div className="border-t border-[color:var(--ds-border)] p-2">
+                <button
+                  onClick={() => {
+                    router.push("/dashboard/notifications");
+                    setNotifOpen(false);
+                  }}
+                  className="brand-text flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition-opacity hover:opacity-80"
+                >
+                  <Bell size={12} />
+                  Alle Benachrichtigungen
+                </button>
               </div>
             </motion.div>
           )}

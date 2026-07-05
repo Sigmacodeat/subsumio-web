@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Briefcase,
   CalendarClock,
-  MessageSquareText,
   Brain,
   PanelRightOpen,
   Inbox,
@@ -31,8 +30,6 @@ import {
   FileSignature,
   Gavel,
   Globe,
-  Landmark,
-  BookOpen,
   Network,
   Database,
   ClipboardList,
@@ -386,12 +383,6 @@ export function MobileTabBar({
                 icon={Globe}
                 label={t("nav.legal_research")}
               />
-              <MoreSheetLink
-                href="/dashboard/rechtsprechung"
-                icon={Landmark}
-                label={t("nav.rechtsprechung")}
-              />
-              <MoreSheetLink href="/dashboard/norms" icon={BookOpen} label={t("nav.norms")} />
             </MoreSheetSection>
 
             {/* Prozess & Gericht */}
@@ -452,11 +443,6 @@ export function MobileTabBar({
                 label={t("nav.workflows")}
               />
               <MoreSheetLink href="/dashboard/reports" icon={FileText} label={t("nav.reports")} />
-              <MoreSheetLink
-                href="/dashboard/analytics"
-                icon={TrendingUp}
-                label={t("nav.analytics")}
-              />
               <MoreSheetLink
                 href="/dashboard/shared-spaces"
                 icon={Share2}

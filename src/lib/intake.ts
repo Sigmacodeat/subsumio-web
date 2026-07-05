@@ -14,7 +14,7 @@ export type ConflictCheckStatus = "pending" | "clear" | "conflict" | "needs_revi
 
 export interface IntakeRequestFrontmatter {
   type: "intake_request";
-  source: "whatsapp" | "portal" | "web" | "email" | "manual";
+  source: "whatsapp" | "portal" | "web" | "email" | "bea" | "scan" | "manual";
   status: IntakeStatus;
   client_name?: string;
   phone_hash?: string;

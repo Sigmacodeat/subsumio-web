@@ -91,6 +91,14 @@ Per-file detail is in `docs/architecture/KEY_FILES.md`.
   (fail-closed vs warn-only vs null), not its own numbers. Pinned by `test/model-pricing.test.ts`
   (drift guard asserts each view equals canonical). Embeddings price separately in
   `embedding-pricing.ts` (different unit).
+- **Every AI output surface MUST use `useGroundedAnswer` + `CitationPanel`.** No screen that
+  renders AI-generated legal text may show it without grounding verification and the standard
+  citation/trust panel. `useGroundedAnswer` (in `src/lib/use-grounded-answer.ts`) calls
+  `api.legal.ground()` non-blockingly after the answer text is visible; `CitationPanel` renders
+  the result with verified/unverified counts and the "anwaltlich zu prüfen" badge. This is the
+  same pattern as JSONB/Source-Isolation — a cross-cutting invariant, not per-screen discretion.
+  Pinned by `src/components/chat/chat-grounding.test.tsx` and
+  `src/lib/use-grounded-answer.test.ts`.
 
 ## Reference map (load on demand)
 

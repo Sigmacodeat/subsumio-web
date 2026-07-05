@@ -77,6 +77,7 @@ interface ContactItem {
   email?: string;
   phone?: string;
   address?: string;
+  leitwegId?: string;
   notes?: string;
 }
 
@@ -114,6 +115,7 @@ function parseContact(page: BrainPage): ContactItem {
     email: fm.email,
     phone: fm.phone,
     address: fm.address,
+    leitwegId: fm.leitwegId,
     notes: fm.notes || page.content || "",
   };
 }
@@ -210,6 +212,7 @@ export default function ContactsPage() {
       email: "",
       phone: "",
       address: "",
+      leitwegId: "",
       notes: "",
     },
     onSubmit: async (data) => {
@@ -222,6 +225,7 @@ export default function ContactsPage() {
         email: data.email?.trim() || undefined,
         phone: data.phone?.trim() || undefined,
         address: data.address?.trim() || undefined,
+        leitwegId: data.leitwegId?.trim() || undefined,
         notes: data.notes?.trim() || undefined,
       };
       const pagePayload = {
@@ -237,6 +241,7 @@ export default function ContactsPage() {
           email: contact.email,
           phone: contact.phone,
           address: contact.address,
+          leitwegId: contact.leitwegId,
           notes: contact.notes,
         },
       };
@@ -262,6 +267,7 @@ export default function ContactsPage() {
       email: "",
       phone: "",
       address: "",
+      leitwegId: "",
       notes: "",
     },
     onSubmit: async (data) => {
@@ -278,6 +284,7 @@ export default function ContactsPage() {
           email: data.email?.trim() || undefined,
           phone: data.phone?.trim() || undefined,
           address: data.address?.trim() || undefined,
+          leitwegId: data.leitwegId?.trim() || undefined,
           notes: data.notes?.trim() || undefined,
         },
       };
@@ -297,6 +304,7 @@ export default function ContactsPage() {
               email: data.email?.trim() || undefined,
               phone: data.phone?.trim() || undefined,
               address: data.address?.trim() || undefined,
+              leitwegId: data.leitwegId?.trim() || undefined,
               notes: data.notes?.trim() || undefined,
             }
           : c
@@ -396,6 +404,7 @@ export default function ContactsPage() {
       email: contact.email ?? "",
       phone: contact.phone ?? "",
       address: contact.address ?? "",
+      leitwegId: contact.leitwegId ?? "",
       notes: contact.notes ?? "",
     });
     setEditOpen(true);
@@ -1065,6 +1074,20 @@ function ContactFormFields({
           placeholder={t("contacts.placeholder_address")}
           className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+          Leitweg-ID
+        </label>
+        <Input
+          {...form.register("leitwegId")}
+          placeholder="Leitweg-ID für XRechnung (öffentlich-rechtlich)"
+          className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+        />
+        <p className="mt-1 text-[10px] text-[color:var(--ds-text-muted)]">
+          Erforderlich für Rechnungen an öffentliche Auftraggeber (XRechnung)
+        </p>
       </div>
 
       <div>

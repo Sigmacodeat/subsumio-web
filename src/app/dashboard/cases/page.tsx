@@ -41,6 +41,7 @@ import { useLang } from "@/lib/use-lang";
 import { useMe } from "@/lib/queries/auth";
 import type { DashboardKey } from "@/content/dashboard";
 import { CaseQuickCreateDialog } from "@/components/legal/CaseQuickCreateDialog";
+import { CaseCloseChecklistDialog } from "@/components/legal/case-close-checklist-dialog";
 
 interface LegalCaseItem {
   slug: string;
@@ -98,7 +99,7 @@ function parseCase(page: BrainPage): LegalCaseItem {
   const deadlines = fm.deadlines ?? [];
   const openDeadlines = deadlines.filter((d) => String(d.status ?? "pending") !== "done");
   const criticalDeadlines = openDeadlines.filter((d) => {
-    const date = d.due_date || d.date;
+    const date = d.due_date;
     if (!date) return false;
     return daysUntil(date) <= 3;
   });
@@ -143,6 +144,9 @@ export default function CasesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [closeChecklistOpen, setCloseChecklistOpen] = useState(false);
+  const [closeChecklistSlug, setCloseChecklistSlug] = useState("");
+  const [closeChecklistTitle, setCloseChecklistTitle] = useState("");
 
   const loadCases = useCallback(async () => {
     setLoading(true);
@@ -192,14 +196,13 @@ export default function CasesPage() {
 
   async function deleteCase(slug: string) {
     const caseItem = cases.find((c) => c.slug === slug);
-    const confirmed = await confirm({
-      title: t("cases.confirm_archive_title"),
-      message: t("cases.confirm_archive_msg").replace("{{name}}", caseItem?.title ?? slug),
-      confirmLabel: t("cases.btn_archive"),
-      cancelLabel: t("cases.btn_cancel"),
-      variant: "danger",
-    });
-    if (!confirmed) return;
+    setCloseChecklistSlug(slug);
+    setCloseChecklistTitle(caseItem?.title ?? slug);
+    setCloseChecklistOpen(true);
+  }
+
+  async function confirmDeleteCase(slug: string) {
+    const caseItem = cases.find((c) => c.slug === slug);
 
     const next = cases.filter((c) => c.slug !== slug);
     setCases(next);
@@ -771,6 +774,14 @@ export default function CasesPage() {
           void loadCases();
           setQuickCreateOpen(false);
         }}
+      />
+
+      <CaseCloseChecklistDialog
+        open={closeChecklistOpen}
+        onOpenChange={setCloseChecklistOpen}
+        caseSlug={closeChecklistSlug}
+        caseTitle={closeChecklistTitle}
+        onConfirmArchive={() => void confirmDeleteCase(closeChecklistSlug)}
       />
     </div>
   );

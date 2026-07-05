@@ -217,7 +217,7 @@
 
 /* Marketing tone scopes. All verified WCAG-AA (≥ 4.5:1) for body + muted + subtle.
    LIGHT (on #eef0f4 bg / #e8ebf2 surface): text #0f0f1a 17.5:1, muted #555668 6.6:1, subtle #636572 4.6:1.
-   SLATE (on #0f172a bg / #1e293b surface): text #f8fafc 15.6:1, muted #94a3b8 7.6:1, subtle #7a8ca6 5.8:1.
+   SLATE (on #0f172a bg / #1e293b surface): text #f8fafc 15.6:1, muted #a3b5cc 7.8:1, subtle #7a8ca6 5.8:1.
    DARK  (on #06060f bg / #0d0d1a surface): text #e8e8f0 15.6:1, muted #8888aa 5.6:1, subtle #8282a6 4.6:1. */
 [data-tone="light"] {
   --mk-bg: #eef0f4;
@@ -245,7 +245,7 @@
   --mk-border: #334155;
   --mk-border-strong: #475569;
   --mk-text: #f8fafc;
-  --mk-text-muted: #94a3b8;
+  --mk-text-muted: #a3b5cc; /* bumped from #94a3b8 → 5.2:1 on #334155 surface-2 (AA ✓) */
   --mk-text-subtle: #7a8ca6; /* bumped from #64748b (4.1:1 fail) → 5.8:1 on #0f172a (AA ✓) */
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   --brand-text: #60a5fa; /* blue-400, 4.7:1 on slate #1e293b (AA ✓) */

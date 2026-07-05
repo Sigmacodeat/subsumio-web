@@ -62,12 +62,17 @@ export type RouteAction =
   | "settings.write" // POST /api/settings/*
   | "invoice.read"
   | "invoice.write"
+  | "invoice.e_invoice"
   | "legal.conflict"
   | "legal.anonymize"
   | "legal.judgements"
   | "legal.tabular"
   | "legal.contract_draft"
   | "legal.document_review"
+  | "workflow.approve" // POST /api/workflows/approve
+  | "workflow.start" // POST /api/workflows
+  | "workflow.update" // PATCH /api/workflows/[slug]
+  | "workflow.delete" // DELETE /api/workflows/[slug]
   | "legal.deep_analysis"
   | "legal.portfolio_insights"
   | "legal.due_diligence"
@@ -136,12 +141,17 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "settings.write": ["admin"],
   "invoice.read": ["admin", "lawyer", "assistant"],
   "invoice.write": ["admin", "lawyer", "assistant"],
+  "invoice.e_invoice": ["admin", "lawyer", "assistant"],
   "legal.conflict": ["admin", "lawyer", "assistant"],
   "legal.anonymize": ["admin", "lawyer", "assistant"],
   "legal.judgements": ["admin", "lawyer", "assistant"],
   "legal.tabular": ["admin", "lawyer", "assistant"],
   "legal.contract_draft": ["admin", "lawyer"],
   "legal.document_review": ["admin", "lawyer", "assistant"],
+  "workflow.approve": ["admin", "lawyer"],
+  "workflow.start": ["admin", "lawyer", "assistant"],
+  "workflow.update": ["admin", "lawyer", "assistant"],
+  "workflow.delete": ["admin", "lawyer"],
   "legal.deep_analysis": ["admin", "lawyer", "assistant"],
   "legal.portfolio_insights": ["admin", "lawyer", "assistant"],
   "legal.due_diligence": ["admin", "lawyer"],
@@ -231,12 +241,17 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "settings.write": "settings.update",
     "invoice.read": "invoice.create",
     "invoice.write": "invoice.create",
+    "invoice.e_invoice": "invoice.e_invoice_generate",
     "legal.conflict": "conflict.check",
     "legal.anonymize": "legal.anonymize",
     "legal.judgements": "judgements.search",
     "legal.tabular": "query.submit",
     "legal.contract_draft": "legal.contract_draft",
     "legal.document_review": "legal.document_review",
+    "workflow.approve": "workflow.approve",
+    "workflow.start": "workflow.start",
+    "workflow.update": "workflow.update",
+    "workflow.delete": "workflow.delete",
     "legal.deep_analysis": "legal.deep_analysis",
     "legal.portfolio_insights": "legal.portfolio_insights",
     "legal.due_diligence": "legal.due_diligence",

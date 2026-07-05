@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Clock,
   Plus,
@@ -18,7 +19,6 @@ import { Label } from "@/components/ui/label";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
-import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 import {
@@ -39,6 +39,7 @@ import {
 const ACTIVITIES = ["research", "drafting", "court", "meeting", "other"] as const;
 
 export default function TimeTrackingPage() {
+  const router = useRouter();
   const t = useLang().t;
   const { addToast } = useToast();
   const queryClient = useQueryClient();
@@ -104,10 +105,16 @@ export default function TimeTrackingPage() {
         title={t("time_tracking.title")}
         description={t("time_tracking.description")}
         actions={
-          <Button onClick={() => setOpen(true)}>
-            <Plus size={16} className="mr-1.5" />
-            {t("time_tracking.add")}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => router.push("/dashboard/time")}>
+              <Clock size={16} className="mr-1.5" />
+              Alle Einträge
+            </Button>
+            <Button onClick={() => setOpen(true)}>
+              <Plus size={16} className="mr-1.5" />
+              {t("time_tracking.add")}
+            </Button>
+          </div>
         }
       />
 

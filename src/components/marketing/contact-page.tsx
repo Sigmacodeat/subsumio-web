@@ -146,12 +146,29 @@ export default function ContactPage({ lang }: { lang: Lang }) {
             transition={{ duration: 0.5, ease: EASE.out }}
             onSubmit={(e) => {
               e.preventDefault();
-              window.location.href = "mailto:hello@subsum.eu";
+              const form = e.currentTarget;
+              const data = new FormData(form);
+              const name = String(data.get("name") ?? "");
+              const email = String(data.get("email") ?? "");
+              const firm = String(data.get("firm") ?? "");
+              const message = String(data.get("message") ?? "");
+              const subject = `Subsumio contact — ${name}${firm ? ` (${firm})` : ""}`;
+              const body = [
+                `Name: ${name}`,
+                `E-Mail: ${email}`,
+                firm && `Kanzlei: ${firm}`,
+                "",
+                message,
+              ]
+                .filter(Boolean)
+                .join("\n");
+              window.location.href = `mailto:hello@subsum.eu?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             }}
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <input
                 type="text"
+                name="name"
                 placeholder={c.formName}
                 aria-label={c.formName}
                 autoComplete="name"
@@ -160,6 +177,7 @@ export default function ContactPage({ lang }: { lang: Lang }) {
               />
               <input
                 type="email"
+                name="email"
                 placeholder={c.formEmail}
                 aria-label={c.formEmail}
                 autoComplete="email"
@@ -169,12 +187,14 @@ export default function ContactPage({ lang }: { lang: Lang }) {
             </div>
             <input
               type="text"
+              name="firm"
               placeholder={c.formFirm}
               aria-label={c.formFirm}
               autoComplete="organization"
               className="w-full rounded-xl border [border-color:var(--mk-border)] px-4 py-3 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
             />
             <textarea
+              name="message"
               placeholder={c.formMessage}
               aria-label={c.formMessage}
               required

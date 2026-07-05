@@ -8,6 +8,8 @@ import {
   createDailyDedup,
 } from "@/lib/cron-utils";
 import { env } from "@/lib/env";
+import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import { createRetentionNotification } from "@/lib/comments";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -71,6 +73,8 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     const items: RetentionItem[] = [];
     for (const page of closedCases) {
       const fm = page.frontmatter ?? {};
+      // Legal Hold: skip cases under legal hold from retention/deletion
+      if (fm.legal_hold === true) continue;
       const closedAt = String(fm.closed_at ?? "");
       if (!closedAt) continue;
       const action = classifyRetention(closedAt);
@@ -91,6 +95,52 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
     if (items.length === 0) continue;
     itemsFound += items.length;
+
+    // In-app notifications + frontmatter marking (merged from retention-check)
+    const headers = engineHeadersForBrain(brainId);
+    for (const item of items) {
+      try {
+        const fm = closedCases.find((p) => p.slug === item.slug)?.frontmatter ?? {};
+        const lastNotified = fm.retention_notified_at
+          ? new Date(String(fm.retention_notified_at))
+          : null;
+        const daysSinceNotification = lastNotified
+          ? Math.floor((Date.now() - lastNotified.getTime()) / (1000 * 60 * 60 * 24))
+          : Infinity;
+        if (daysSinceNotification < 30) continue;
+
+        for (const user of recipients) {
+          try {
+            await createRetentionNotification({
+              userId: user.id,
+              brainId,
+              caseSlug: item.slug,
+              caseTitle: item.title,
+              caseNumber: item.caseNumber,
+              action: item.action,
+              yearsSinceClosure: item.yearsSinceClosure,
+            });
+          } catch {
+            // non-fatal — email is still sent below
+          }
+        }
+
+        await enginePatchPage(
+          headers,
+          {
+            slug: item.slug,
+            frontmatter: {
+              retention_notified_at: new Date().toISOString(),
+              retention_action: item.action,
+              retention_years: item.yearsSinceClosure,
+            },
+          },
+          { timeoutMs: 10_000 }
+        );
+      } catch {
+        // non-fatal — email is still sent below
+      }
+    }
 
     if (await alreadyNotifiedToday(brainId)) continue;
 

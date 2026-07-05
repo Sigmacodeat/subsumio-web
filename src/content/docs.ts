@@ -14,6 +14,7 @@ export interface DocCategory {
 export interface DocsContent {
   hero: { badge: string; title: string; claim: string; sub: string };
   intro: string;
+  quickstart: { title: string; sub: string; steps: { num: string; title: string; desc: string }[] };
   categories: DocCategory[];
   arch: { title: string; sub: string; items: DocFeature[] };
   cta: { title: string; sub: string; button: string };
@@ -28,6 +29,37 @@ const DE: DocsContent = {
   },
   intro:
     "Subsumio ist eine vollständige Kanzlei-Software mit einem KI-Brain im Kern. Hier findest du jede Funktion, jeden Endpunkt und jeden Workflow — auf einen Blick.",
+  quickstart: {
+    title: "In 5 Schritten starten",
+    sub: "Vom Login bis zur ersten Akte — so schnell geht Subsumio live.",
+    steps: [
+      {
+        num: "01",
+        title: "Brain einrichten",
+        desc: "Onboarding-Wizard starten, Datenquellen verbinden, Brain indexieren.",
+      },
+      {
+        num: "02",
+        title: "Erste Akte anlegen",
+        desc: "Mandant erfassen, Akte erstellen, Dokumente per Drag-and-drop hochladen.",
+      },
+      {
+        num: "03",
+        title: "Fristen konfigurieren",
+        desc: "AI scannt automatisch alle Dokumente nach Fristen — Kalender-Export aktivieren.",
+      },
+      {
+        num: "04",
+        title: "Copilot nutzen",
+        desc: "Fragen an das Brain stellen, Antworten mit Fundstellen, Zeit buchen per Chat.",
+      },
+      {
+        num: "05",
+        title: "Team einladen",
+        desc: "Mitglieder hinzufügen, Rollen vergeben, gemeinsam am Brain arbeiten.",
+      },
+    ],
+  },
   categories: [
     {
       id: "brain",
@@ -37,22 +69,22 @@ const DE: DocsContent = {
         {
           icon: "Brain",
           title: "Semantic Brain",
-          desc: "Vector-basierte Wissensdatenbank (PGLite oder Postgres + pgvector). Jede Entität und jedes Dokument embeddings-durchsuchbar.",
+          desc: "Fragen in normaler Sprache stellen — Antworten aus der gesamten Wissensbasis. Jedes Dokument, jede Email, jede Notiz ist sofort durchsuchbar.",
         },
         {
           icon: "Search",
           title: "KI-Chat mit Fundstellen",
-          desc: "Jede Antwort zitiert die exakte Seite. Halluzinierte Zitate werden verworfen — RAG mit Groundedness-Check.",
+          desc: "Jede Antwort verweist auf die exakte Quelle. Keine Halluzinationen — wenn das Brain es nicht findet, sagt es das auch.",
         },
         {
           icon: "Zap",
           title: "Think / Reasoning",
-          desc: "Deep-reasoning für komplexe Rechtsfragen. Trajectory-Tracking für zeitliche Entwicklungen und Metriken.",
+          desc: "Komplexe Rechtsfragen bekommen Schritt-für-Schritt-Argumentationen. Das Brain zeigt seinen Gedankengang — jede Schlussfolgerung nachprüfbar.",
         },
         {
           icon: "Network",
           title: "Agenten-System",
-          desc: "Eigene Agenten erstellen und über API steuern. Skill-basiert, evaluierbar, federated über Multiple Brains.",
+          desc: "Spezialisierte KI-Agenten für wiederkehrende Aufgaben einsetzen — Recherche, Entwurf, Review. Jeder Agent hat eigene Skills und ist evaluierbar.",
         },
         {
           icon: "GitBranch",
@@ -62,12 +94,47 @@ const DE: DocsContent = {
         {
           icon: "ScanSearch",
           title: "RAG Evaluation",
-          desc: "Eingebautes Benchmark-System für Retrieval-Qualität. Replay gegen erfasste Queries, LongMemEval-Support.",
+          desc: "Eingebautes Qualitäts-Dashboard für KI-Antworten. Teste die Trefferqualität gegen echte Anfragen — weißt genau, wie zuverlässig das Brain ist.",
         },
         {
           icon: "Zap",
           title: "KI-Assistent",
           desc: "Integrierter KI-Assistent im Dashboard. Kontextbewusste Hilfe für alle Workflow-Schritte — von der Aktenanlage bis zur Rechnung.",
+        },
+        {
+          icon: "Layers",
+          title: "Cross-Dokument-Analyse",
+          desc: "KI liest mehrere Dokumente gleichzeitig — erkennt Themen, Risiken und Muster, die in Einzeldokumenten unsichtbar bleiben.",
+        },
+        {
+          icon: "BarChart3",
+          title: "Portfolio Insights",
+          desc: "Kanzlei-Portfolio-Analyse: Akten-Mix, Erfolgsraten, Risikocluster und Trends — auf Basis aller Brain-Daten.",
+        },
+        {
+          icon: "BarChart3",
+          title: "Adoption Analytics",
+          desc: "Sieh, wer welche Funktionen wie oft nutzt. Trainingslücken erkennen, Adoption steuern, ROI messen.",
+        },
+        {
+          icon: "Users",
+          title: "Geteilte Räume",
+          desc: "Shared Spaces für Teams: gemeinsame Wissensbereiche, geteilte Aktenzüge und kollaborative Notizen — mit granularer Zugriffskontrolle.",
+        },
+        {
+          icon: "Database",
+          title: "Datenquellen-Verwaltung",
+          desc: "Alle Datenquellen in einem Dashboard: Sync-Status, Frequenz, Fehlerprotokolle. Probleme erkennen, bevor sie welche werden.",
+        },
+        {
+          icon: "BarChart3",
+          title: "Chat-Analytics",
+          desc: "Copilot-Nutzung tracken: Sessions, Nachrichten, Token-Kosten, gepinnte Antworten — pro Nutzer, pro Tag.",
+        },
+        {
+          icon: "GitCompare",
+          title: "Modell-Vergleich",
+          desc: "Side-by-Side-Vergleich verschiedener KI-Modelle: dieselbe Frage an mehrere Modelle gleichzeitig, Antworten nebeneinander bewerten.",
         },
       ],
     },
@@ -94,7 +161,7 @@ const DE: DocsContent = {
         {
           icon: "Layers",
           title: "OCR & Dokumentenverarbeitung",
-          desc: "Texterkennung, Klassifizierung, Named-Entity-Recognition. PDFs, Scans und Bilder werden durchsuchbar.",
+          desc: "Scans, Fotos oder PDFs hochladen — Text wird automatisch extrahiert. Jedes Dokument wird durchsuchbar und klassifiziert.",
         },
         {
           icon: "Mail",
@@ -120,6 +187,31 @@ const DE: DocsContent = {
           icon: "Users",
           title: "Gegenstellen-Verwaltung",
           desc: "Erfassung aller Gegenanwälte, Versicherungen und Gegenstellen. Interessenkonflikt-Prüfung integriert.",
+        },
+        {
+          icon: "FileClock",
+          title: "Dokumentenanfragen",
+          desc: "Strukturierte Anforderung von Unterlagen an Mandanten. Status-Tracking, automatische Erinnerungen nach 7 Tagen, Eskalation nach 3 Remindern — per WhatsApp und In-App-Benachrichtigung.",
+        },
+        {
+          icon: "GitBranch",
+          title: "Versionshistorie",
+          desc: "Vollständige Versionierung jedes Dokuments. Änderungen vergleichen, frühere Versionen wiederherstellen, Audit-Trail pro Version.",
+        },
+        {
+          icon: "Layers",
+          title: "Review-Sets & eDiscovery",
+          desc: "Defensible Review-Sets mit Privilege Log und Redactions. Deduplication, Bulk-Tagging, Export gerichtsfertig.",
+        },
+        {
+          icon: "CheckSquare",
+          title: "Review-Queue",
+          desc: "Strukturierte Durchsicht von Dokumenten: Taggen, Kommentieren, Priorisieren. Batch-Weise mit Filtern und Saved Views.",
+        },
+        {
+          icon: "AlertTriangle",
+          title: "Altlasten-Management",
+          desc: "Risikobehaftete und veraltete Akten identifizieren, klassifizieren und überwachen. Pipeline-Status, Eskalationsstufen, Fristen-Warnung — nichts fällt durchs Raster.",
         },
       ],
     },
@@ -147,6 +239,21 @@ const DE: DocsContent = {
           icon: "Calculator",
           title: "Zeiterfassung & Auslagen",
           desc: "Per Chat, WhatsApp oder manuell — Zeiten und Auslagen der richtigen Akte zugeordnet, bestätigungspflichtig.",
+        },
+        {
+          icon: "BookOpen",
+          title: "Fristenbuch",
+          desc: "Chronologisches Fristenregister — alle Fristen einer Akte in einer Übersicht. Sortierbar nach Datum, Art, Status. Revisionssicher dokumentiert.",
+        },
+        {
+          icon: "CheckSquare",
+          title: "Aufgabenverwaltung",
+          desc: "Aufgaben und To-Dos pro Akte oder global. Fälligkeitsdaten, Prioritäten, Zuweisung an Teammitglieder, Status-Tracking.",
+        },
+        {
+          icon: "CalendarClock",
+          title: "Kalender mit Inline-Bearbeitung",
+          desc: "Monatskalender mit Klick-zu-Erstellen, Drag-Bearbeitung, Termin-Typen (Termin, Verhandlung, Beratung). Aktenverknüpfung, Erinnerungen.",
         },
       ],
     },
@@ -185,6 +292,16 @@ const DE: DocsContent = {
           title: "Controlling & Kennzahlen",
           desc: "Kanzlei-Controlling: Umsatz, Deckungsbeitrag, Auslastung pro Anwalt, Mandantenprofitabilität. Export für Steuerberater.",
         },
+        {
+          icon: "Shield",
+          title: "Treuhandkonten",
+          desc: "Verwaltung von Klientengeldern auf Anderkonten. Ein- und Auszahlungen, Salden, Buchungsnachweise — revisionssicher.",
+        },
+        {
+          icon: "FileText",
+          title: "Berichte & Reports",
+          desc: "Strukturierte Berichte: Aktenauswertungen, Umsatzstatistiken, Fristen-Reports, Produktivitätsanalysen. Export als PDF oder CSV.",
+        },
       ],
     },
     {
@@ -195,7 +312,7 @@ const DE: DocsContent = {
         {
           icon: "Shield",
           title: "DSGVO / GDPR",
-          desc: "AVV-Vorlage Art. 28, EU-Standardvertragsklauseln, Recht auf Datenübertragbarkeit, Löschung und Auskunft.",
+          desc: "DSGVO eingebaut ins Platform: AVV-Vorlagen, Datenportabilität, Löschrecht — alles out-of-the-box ready.",
         },
         {
           icon: "FileText",
@@ -225,7 +342,7 @@ const DE: DocsContent = {
         {
           icon: "Network",
           title: "Mandanten-Isolation",
-          desc: "Strikte Zugriffstrennung pro Akte und Nutzer. Jeder Lesepfad auf Leaks zwischen Mandaten geprüft.",
+          desc: "Jede Akte ist strikt getrennt. Ein Nutzer auf Akte A kann Akte B nicht sehen — per Design garantiert, fuzz-getestet auf zero leaks.",
         },
         {
           icon: "ShieldAlert",
@@ -236,6 +353,16 @@ const DE: DocsContent = {
           icon: "Database",
           title: "Daten-Export",
           desc: "Vollständiger Daten-Export für Backup, Migration oder Portabilitätsanfragen. JSON, CSV, PDF — DSGVO-konform.",
+        },
+        {
+          icon: "Gauge",
+          title: "Engine-Monitoring (APM)",
+          desc: "Echtzeit-Performance-Dashboard: Antwortzeiten, Brain-Qualität, Queue-Tiefe und Fehlerraten — alles auf einen Blick.",
+        },
+        {
+          icon: "FileArchive",
+          title: "Aufbewahrungsrichtlinien",
+          desc: "Automatisierte Retention-Rules nach DSGVO und BRAO: Aufbewahrungsfristen pro Dokumententyp, automatische Löschung nach Ablauf, Audit-Trail.",
         },
       ],
     },
@@ -274,6 +401,21 @@ const DE: DocsContent = {
           title: "Team & Organisation",
           desc: "Team-Workspace-Verwaltung: Organisation erstellen, Mitglieder einladen, Rollen und Zugriffsrechte verteilen. Ein Brain für das ganze Team.",
         },
+        {
+          icon: "Inbox",
+          title: "Eingangspost (Intake)",
+          desc: "Neue Mandanten und Eingänge strukturiert erfassen. Schnellerfassung mit automatischer Aktenanlage, Kontaktanreicherung und Fristenerkennung.",
+        },
+        {
+          icon: "BookOpen",
+          title: "Verzeichnis (Gerichte & Behörden)",
+          desc: "Zentrales Verzeichnis aller Gerichte, Behörden und Institutionen. Adressen, Zuständigkeiten, Aktenzeichen-Formate — direkt verknüpfbar mit Akten.",
+        },
+        {
+          icon: "MessageSquare",
+          title: "WhatsApp-Vorlagen",
+          desc: "Vorlagenbibliothek für WhatsApp-Nachrichten: Standard-Antworten, Mandanten-Anschreiben, Erinnerungs-Templates. Mit Variablen und Freigabe-Workflow.",
+        },
       ],
     },
     {
@@ -289,7 +431,7 @@ const DE: DocsContent = {
         {
           icon: "Network",
           title: "Connectors",
-          desc: "Offene API für Drittsysteme. Webhook-basierte Echtzeit-Synchronisation mit beliebigen Tools.",
+          desc: "Jede Drittanbieter-Software per offener API anbinden. Echtzeit-Webhooks halten alles synchron — keine manuellen Exporte.",
         },
         {
           icon: "Database",
@@ -321,6 +463,31 @@ const DE: DocsContent = {
           title: "Plugin-System",
           desc: "Erweiterbarkeit durch eigene Plugins und Skills. subsumio.plugin.json Format, Subagenten, Skillpacks — die Plattform wächst mit deinen Workflows.",
         },
+        {
+          icon: "Languages",
+          title: "Juristische Übersetzung",
+          desc: "KI-gestützte Übersetzung juristischer Texte mit fachsprachlicher Genauigkeit. Erkennt Vertragsklauseln, Rechtsbegriffe und Behördentermini.",
+        },
+        {
+          icon: "Zap",
+          title: "Onboarding-Wizard",
+          desc: "Geführtes Onboarding für neue Nutzer: Brain einrichten, erste Akte anlegen, Kontakte importieren, Fristen konfigurieren — Schritt für Schritt.",
+        },
+        {
+          icon: "Cpu",
+          title: "KI-Modell-Konfiguration",
+          desc: "Modell-Auswahl im Dashboard: Provider, Geschwindigkeit, Kosten, Kontextfenster. Pro Organisation konfigurierbar — von Budget-Modell bis Premium-Reasoning.",
+        },
+        {
+          icon: "Network",
+          title: "SCIM-Provisioning",
+          desc: "Automatisierte Benutzer-Verwaltung via SCIM 2.0: User anlegen, aktualisieren, deaktivieren — direkt aus Identity-Provider (Okta, Azure AD, Google).",
+        },
+        {
+          icon: "CreditCard",
+          title: "Abrechnung & Abo-Verwaltung",
+          desc: "Plan-Verwaltung, Upgrade/Downgrade, Zahlungsmethoden, Rechnungshistorie. Stripe-Integration mit Self-Service-Portal für Mandanten.",
+        },
       ],
     },
     {
@@ -346,7 +513,32 @@ const DE: DocsContent = {
         {
           icon: "Brain",
           title: "Agenten-Automatisierung",
-          desc: "Selbstkonfigurierbare Agents für wiederkehrende Aufgaben. Skill-basiert, evaluierbar, federated.",
+          desc: "Agenten für wiederkehrende Aufgaben einrichten — sie laufen nach Zeitplan, melden Ergebnisse und lernen aus Feedback.",
+        },
+        {
+          icon: "Zap",
+          title: "Workflow-Automatisierung",
+          desc: "Wiederkehrende Workflows automatisieren: Dokumentenfreigaben, Fristen-Eskalationen, Akten-Status-Übergänge. Trigger-basiert, mit Bedingungen und Aktionen.",
+        },
+        {
+          icon: "CheckSquare",
+          title: "Freigaben & Approvals",
+          desc: "Strukturierte Freigabeprozesse für Dokumente, Rechnungen und Schriftsätze. Mehrstufige Approval-Ketten, Delegation, Audit-Trail pro Freigabe.",
+        },
+        {
+          icon: "Shield",
+          title: "Obliegenheits-Tracking",
+          desc: "Verfolgung aller Obliegenheiten pro Akte: Fristen, Formvorschriften, Darlegungspflichten. Automatische Warnung bei drohender Verletzung.",
+        },
+        {
+          icon: "RefreshCw",
+          title: "Urteils-Synchronisation",
+          desc: "Automatischer Abruf neuer Gerichtsentscheidungen aus externen Quellen. Täglicher Sync, Delta-Erkennung, automatische Indexierung ins Brain.",
+        },
+        {
+          icon: "Workflow",
+          title: "Workflow-Builder",
+          desc: "Visueller Drag-and-Drop-Editor für Automatisierungen: Trigger, Bedingungen, Aktionen. Kein Code nötig — Workflows grafisch erstellen und testen.",
         },
       ],
     },
@@ -405,6 +597,36 @@ const DE: DocsContent = {
           title: "Compliance & GRC",
           desc: "Compliance- und Governance-Modul für DSGVO, GwG, EU AI Act. Pflichten, Kontrollen und der Nachweis — alles dokumentiert.",
         },
+        {
+          icon: "BookOpen",
+          title: "Playbooks",
+          desc: "Wiederverwendbare Prozessvorlagen für wiederkehrende Falltypen. Schritt-folgen, Checklisten, Fristen-Muster — pro Rechtsgebiet.",
+        },
+        {
+          icon: "FileText",
+          title: "Vorlagenverwaltung",
+          desc: "Zentrale Bibliothek für Dokumentvorlagen. Schriftsätze, Verträge, Anschreiben — mit Variablen und Brain-Anbindung für Auto-Fill.",
+        },
+        {
+          icon: "Layers",
+          title: "Klauselbibliothek",
+          desc: "Strukturierte Sammlung wiederverwendbarer Klauseln. Kategorisiert nach Vertragstyp, Rechtsgebiet und Risiko. Mit KI-Vorschlägen bei der Drafting.",
+        },
+        {
+          icon: "MessageSquare",
+          title: "Juristische Kommentierungen",
+          desc: "Annotationen und Kommentare zu Normen, Urteilen und Vertragsklauseln. Team-weit geteilt, mit Diskussionsverlauf.",
+        },
+        {
+          icon: "Brain",
+          title: "Wissensmanagement (Experience)",
+          desc: "Strukturierte Erfassung von Kanzlei-Wissen: Fallstricke, Best Practices, Lessons Learned. Durchsuchbar, verknüpfbar mit Akten.",
+        },
+        {
+          icon: "Database",
+          title: "Urteilsdatenbank",
+          desc: "Volltext-Suche in tausenden Gerichtsentscheidungen. Filter nach Gericht, Datum, Aktenzeichen, Rechtsgebiet — mit KI-Zusammenfassung pro Urteil.",
+        },
       ],
     },
     {
@@ -426,6 +648,16 @@ const DE: DocsContent = {
           icon: "MessageSquare",
           title: "Mobile Brücke",
           desc: "Nahtloser Handover Desktop ↔ Mobile. Auf dem Handy begonnen, im Browser fortgesetzt.",
+        },
+        {
+          icon: "Search",
+          title: "Globale Volltextsuche",
+          desc: "Suche über alle Akten, Dokumente, Notizen, Rechnungen und Chats — mit Scope-Filter pro Typ. Hybrid-Suche: Vektor + BM25 + Graph.",
+        },
+        {
+          icon: "Zap",
+          title: "Mobile Pipeline-Status",
+          desc: "Pipeline-Runs mobil überwachen: Status (running, completed, failed, awaiting_review), Layer-Details tap-to-expand, Output-Viewer mit Markdown-Rendering.",
         },
       ],
     },
@@ -459,6 +691,90 @@ const DE: DocsContent = {
           title: "Schriftsatz-Entwürfe",
           desc: "KI-gestützte Entwürfe für Klageschriften, Verteidigungsschriften, Bescheidsprüfungen und Rechtsmittel. Mit Fundstellen und Zitaten.",
         },
+        {
+          icon: "PenTool",
+          title: "Drafting-Editor",
+          desc: "Vollständiger Drafting-Editor mit Brain-Anbindung: KI-Vorschläge inline, Fundstellen-Einfügung, Klauselbibliothek-Integration, Versionsvergleich.",
+        },
+        {
+          icon: "FileSearch",
+          title: "Standalone-Dokumentenanalyse",
+          desc: "Dokumente analysieren ohne Aktenkontext: Upload, KI-Analyse, Risiko-Highlighting, Zusammenfassung — ideal für Ersteinschätzungen und Due Diligence.",
+        },
+      ],
+    },
+    {
+      id: "litigation",
+      title: "Prozessführung & eDiscovery",
+      sub: "Phasen, Analytics, Review-Sets, Präzedenzsuche.",
+      features: [
+        {
+          icon: "Gavel",
+          title: "Prozessführung (Litigation)",
+          desc: "Strukturierte Prozessverwaltung mit Phasen und Schritten. Status pro Phase, zugewiesene Teammitglieder, Fristen und Dokumente pro Schritt.",
+        },
+        {
+          icon: "BarChart3",
+          title: "Prozess-Analytics",
+          desc: "Erfolgsraten, Verfahrensdauer, Gerichtsstatistiken. Trends pro Gericht, pro Verfahrensart, pro Gegner — auf Basis historischer Daten.",
+        },
+        {
+          icon: "Search",
+          title: "Präzedenzfall-Suche",
+          desc: "KI-gestützte Suche nach ähnlichen Fällen im Brain und in externen Rechtsprechungsdatenbanken. Automatische Relevanz-Sortierung.",
+        },
+        {
+          icon: "Zap",
+          title: "Prozessstrategie",
+          desc: "Strukturierte Strategie-Erfassung pro Akte: Argumentationslinien, Beweisführung, Gegenargumente. Mit KI-Vorschlägen und Erfolgsprognose.",
+        },
+        {
+          icon: "BarChart3",
+          title: "Rechtsprechungs-Analytics",
+          desc: "Statistische Analyse der Rechtsprechung: Erfolgsquoten pro Gericht, Trend-Kurven, Verfahrensarten-Verteilung — auf Basis tausender Entscheidungen.",
+        },
+      ],
+    },
+    {
+      id: "tax",
+      title: "Steuer & Buchhaltung",
+      sub: "Steuererklärungen, ELSTER, StBVV, Betriebsprüfung.",
+      features: [
+        {
+          icon: "FileText",
+          title: "Steuererklärungen",
+          desc: "Erstellung und Verwaltung von Steuererklärungen (ESt, USt, GewSt, KSt). Strukturierte Erfassung, Validierung, Status-Tracking.",
+        },
+        {
+          icon: "FileText",
+          title: "Steuerbescheide",
+          desc: "Erfassung und Analyse von Steuerbescheiden. Abgleich mit Erklärung, Abweichungsanalyse, Einspruch-Fristen-Tracking.",
+        },
+        {
+          icon: "Shield",
+          title: "Betriebsprüfung",
+          desc: "Vorbereitung und Begleitung von Betriebsprüfungen. Prüffeld-Management, Dokumentbereitstellung, Protokollführung.",
+        },
+        {
+          icon: "CalendarClock",
+          title: "Steuerfristen",
+          desc: "Alle steuerlichen Fristen (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) mit automatischer Wochenend- und Feiertagsverschiebung.",
+        },
+        {
+          icon: "Calculator",
+          title: "StBVV-Gebührenrechner",
+          desc: "Steuerberatervergütungsverordnung: 10 Aktivitäten, VV-Nummern, Faktor-Berechnung, Mehrwertsteuer. Interaktiv und exportierbar.",
+        },
+        {
+          icon: "Users",
+          title: "Steuermandanten",
+          desc: "Separate Mandantenverwaltung für Steuerberater: Stammdaten, Steuernummer, Finanzamt, Zuordnung zu Erklärungen und Bescheiden.",
+        },
+        {
+          icon: "Landmark",
+          title: "ELSTER-Integration",
+          desc: "Elektronische Steuererklärungen via ELSTER. XML-Generierung, Form-Typen, Submission-Wizard — direkt aus dem Dashboard.",
+        },
       ],
     },
   ],
@@ -468,13 +784,13 @@ const DE: DocsContent = {
     items: [
       {
         icon: "Database",
-        title: "72 API Endpunkte",
+        title: "90+ API Endpunkte",
         desc: "Vollständige REST-API mit Auth, Rate-Limiting, Audit-Logging und TypeScript-Typen.",
       },
       {
         icon: "FolderOpen",
-        title: "57 Dashboard-Seiten",
-        desc: "Jede Funktion hat eine eigene, responsive Seite — von der Akte bis zum Kostenrechner.",
+        title: "97+ Dashboard-Seiten",
+        desc: "Jede Funktion hat eine eigene, responsive Seite — von der Akte bis zum ELSTER-Wizard.",
       },
       {
         icon: "Shield",
@@ -514,6 +830,37 @@ const EN: DocsContent = {
   },
   intro:
     "Subsumio is a complete law practice platform with an AI brain at its core. Here you'll find every feature, every endpoint, and every workflow — at a glance.",
+  quickstart: {
+    title: "Get started in 5 steps",
+    sub: "From login to first case — how fast Subsumio goes live.",
+    steps: [
+      {
+        num: "01",
+        title: "Set up Brain",
+        desc: "Run the onboarding wizard, connect data sources, index your brain.",
+      },
+      {
+        num: "02",
+        title: "Create first case",
+        desc: "Add client, create case, upload documents via drag-and-drop.",
+      },
+      {
+        num: "03",
+        title: "Configure deadlines",
+        desc: "AI automatically scans all documents for deadlines — enable calendar export.",
+      },
+      {
+        num: "04",
+        title: "Use Copilot",
+        desc: "Ask the brain questions, get cited answers, book time via chat.",
+      },
+      {
+        num: "05",
+        title: "Invite team",
+        desc: "Add members, assign roles, collaborate on the brain together.",
+      },
+    ],
+  },
   categories: [
     {
       id: "brain",
@@ -523,22 +870,22 @@ const EN: DocsContent = {
         {
           icon: "Brain",
           title: "Semantic Brain",
-          desc: "Vector-based knowledge base (PGLite or Postgres + pgvector). Every entity and document becomes embedding-searchable.",
+          desc: "Ask questions in plain language — get answers from your entire knowledge base. Every document, email and note is instantly searchable.",
         },
         {
           icon: "Search",
           title: "AI Chat with Citations",
-          desc: "Every answer cites the exact page. Hallucinated citations are dropped — RAG with groundedness check.",
+          desc: "Every answer links back to the exact source passage. No hallucinations — if the brain can't find it, it says so.",
         },
         {
           icon: "Zap",
           title: "Think / Reasoning",
-          desc: "Deep-reasoning for complex legal questions. Trajectory tracking for temporal developments.",
+          desc: "Complex legal questions get step-by-step reasoning. The brain shows its work — so you can verify every conclusion.",
         },
         {
           icon: "Network",
           title: "Agent System",
-          desc: "Create and control custom agents via API. Skill-based, evaluable, federated across multiple brains.",
+          desc: "Deploy specialized AI agents for recurring tasks — research, drafting, review. Each agent has its own skills and can be evaluated.",
         },
         {
           icon: "GitBranch",
@@ -548,12 +895,47 @@ const EN: DocsContent = {
         {
           icon: "ScanSearch",
           title: "RAG Evaluation",
-          desc: "Built-in benchmark system for retrieval quality. Replay against captured queries, LongMemEval support.",
+          desc: "Built-in quality dashboard for AI answers. Test retrieval quality against real queries — know exactly how reliable the brain is.",
         },
         {
           icon: "Zap",
           title: "AI Assistant",
           desc: "Integrated AI assistant in the dashboard. Context-aware help for every workflow step — from case creation to invoicing.",
+        },
+        {
+          icon: "Layers",
+          title: "Cross-Document Analysis",
+          desc: "AI reads across multiple documents at once — finds themes, risks and patterns you'd miss document-by-document.",
+        },
+        {
+          icon: "BarChart3",
+          title: "Portfolio Insights",
+          desc: "Firm portfolio analysis: case mix, success rates, risk clusters and trends — based on all brain data.",
+        },
+        {
+          icon: "BarChart3",
+          title: "Adoption Analytics",
+          desc: "See who uses which features and how often. Spot training gaps, drive adoption, measure ROI.",
+        },
+        {
+          icon: "Users",
+          title: "Shared Spaces",
+          desc: "Shared Spaces for teams: collaborative knowledge areas, shared case streams and notes — with granular access control.",
+        },
+        {
+          icon: "Database",
+          title: "Sources Management",
+          desc: "All data sources in one dashboard: sync status, frequency, error logs. Spot issues before they become problems.",
+        },
+        {
+          icon: "BarChart3",
+          title: "Chat Analytics",
+          desc: "Track copilot usage: sessions, messages, token costs, pinned answers — per user, per day.",
+        },
+        {
+          icon: "GitCompare",
+          title: "Model Comparison",
+          desc: "Side-by-side comparison of different AI models: same question to multiple models at once, evaluate answers next to each other.",
         },
       ],
     },
@@ -580,7 +962,7 @@ const EN: DocsContent = {
         {
           icon: "Layers",
           title: "OCR & Document Processing",
-          desc: "Text recognition, classification, NER. PDFs, scans and images become searchable.",
+          desc: "Upload scans, photos or PDFs — text is extracted automatically. Every document becomes searchable and classified.",
         },
         {
           icon: "Mail",
@@ -606,6 +988,31 @@ const EN: DocsContent = {
           icon: "Users",
           title: "Opponent Management",
           desc: "Capture all opposing counsel, insurers and opponents. Integrated conflict-of-interest check.",
+        },
+        {
+          icon: "FileClock",
+          title: "Document Requests",
+          desc: "Structured requests for documents from clients. Status tracking, automatic reminders after 7 days, escalation after 3 reminders — via WhatsApp and in-app notification.",
+        },
+        {
+          icon: "GitBranch",
+          title: "Version History",
+          desc: "Full versioning of every document. Compare changes, restore previous versions, audit trail per version.",
+        },
+        {
+          icon: "Layers",
+          title: "Review Sets & eDiscovery",
+          desc: "Defensible review sets with privilege log and redactions. Deduplication, bulk tagging, export ready for court.",
+        },
+        {
+          icon: "CheckSquare",
+          title: "Review Queue",
+          desc: "Structured document review: tagging, commenting, prioritizing. Batch-based with filters and saved views.",
+        },
+        {
+          icon: "AlertTriangle",
+          title: "Legacy Cases",
+          desc: "Identify, classify and monitor risky and outdated cases. Pipeline status, escalation levels, deadline warnings — nothing falls through the cracks.",
         },
       ],
     },
@@ -633,6 +1040,21 @@ const EN: DocsContent = {
           icon: "Calculator",
           title: "Time Tracking & Expenses",
           desc: "Via chat, WhatsApp or manual — times and expenses assigned to the correct case, confirmation-gated.",
+        },
+        {
+          icon: "BookOpen",
+          title: "Deadline Register",
+          desc: "Chronological deadline register — all deadlines of a case in one view. Sortable by date, type, status. Audit-proof documented.",
+        },
+        {
+          icon: "CheckSquare",
+          title: "Task Management",
+          desc: "Tasks and to-dos per case or global. Due dates, priorities, assignment to team members, status tracking.",
+        },
+        {
+          icon: "CalendarClock",
+          title: "Calendar with Inline Editing",
+          desc: "Month calendar with click-to-create, drag editing, appointment types (hearing, consultation, meeting). Case linking, reminders.",
         },
       ],
     },
@@ -671,6 +1093,16 @@ const EN: DocsContent = {
           title: "Controlling & KPIs",
           desc: "Firm controlling: revenue, contribution margin, per-lawyer utilization, client profitability. Export for tax advisors.",
         },
+        {
+          icon: "Shield",
+          title: "Trust Accounting",
+          desc: "Management of client funds on escrow accounts. Deposits and withdrawals, balances, transaction records — audit-proof.",
+        },
+        {
+          icon: "FileText",
+          title: "Reports",
+          desc: "Structured reports: case evaluations, revenue statistics, deadline reports, productivity analyses. Export as PDF or CSV.",
+        },
       ],
     },
     {
@@ -681,7 +1113,7 @@ const EN: DocsContent = {
         {
           icon: "Shield",
           title: "GDPR / DSGVO",
-          desc: "DPA template Art. 28, EU standard contractual clauses, right to data portability, erasure and access.",
+          desc: "GDPR built into the platform: DPA templates, data portability, right to erasure — all ready out of the box.",
         },
         {
           icon: "FileText",
@@ -711,7 +1143,7 @@ const EN: DocsContent = {
         {
           icon: "Network",
           title: "Client Isolation",
-          desc: "Strict access separation per case and user. Every read path checked for leaks between mandates.",
+          desc: "Every case is walled off from others. A user on case A cannot see case B — guaranteed by design, fuzz-tested for zero leaks.",
         },
         {
           icon: "ShieldAlert",
@@ -722,6 +1154,16 @@ const EN: DocsContent = {
           icon: "Database",
           title: "Data Export",
           desc: "Complete data export for backup, migration or portability requests. JSON, CSV, PDF — GDPR-compliant.",
+        },
+        {
+          icon: "Gauge",
+          title: "Engine Monitoring (APM)",
+          desc: "Real-time performance dashboard: response times, brain quality, queue depth and error rates — all at a glance.",
+        },
+        {
+          icon: "FileArchive",
+          title: "Retention Policies",
+          desc: "Automated retention rules per GDPR and BRAO: retention periods per document type, automatic deletion after expiry, audit trail.",
         },
       ],
     },
@@ -760,6 +1202,21 @@ const EN: DocsContent = {
           title: "Team & Organization",
           desc: "Team workspace management: create organization, invite members, assign roles and access rights. One brain for the whole team.",
         },
+        {
+          icon: "Inbox",
+          title: "Intake",
+          desc: "Structured intake of new clients and incoming items. Quick capture with automatic case creation, contact enrichment and deadline detection.",
+        },
+        {
+          icon: "BookOpen",
+          title: "Directory (Courts & Authorities)",
+          desc: "Central directory of all courts, authorities and institutions. Addresses, jurisdictions, file number formats — directly linkable to cases.",
+        },
+        {
+          icon: "MessageSquare",
+          title: "WhatsApp Templates",
+          desc: "Template library for WhatsApp messages: standard replies, client letters, reminder templates. With variables and approval workflow.",
+        },
       ],
     },
     {
@@ -775,7 +1232,7 @@ const EN: DocsContent = {
         {
           icon: "Network",
           title: "Connectors",
-          desc: "Open API for third-party systems. Webhook-based real-time sync with any tool.",
+          desc: "Connect any third-party tool via open API. Real-time webhooks keep everything in sync — no manual exports.",
         },
         {
           icon: "Database",
@@ -807,6 +1264,31 @@ const EN: DocsContent = {
           title: "Plugin System",
           desc: "Extensibility through custom plugins and skills. subsumio.plugin.json format, subagents, skillpacks — the platform grows with your workflows.",
         },
+        {
+          icon: "Languages",
+          title: "Legal Translation",
+          desc: "AI-powered translation of legal texts with specialized terminology accuracy. Detects contract clauses, legal terms and authority jargon.",
+        },
+        {
+          icon: "Zap",
+          title: "Onboarding Wizard",
+          desc: "Guided onboarding for new users: set up brain, create first case, import contacts, configure deadlines — step by step.",
+        },
+        {
+          icon: "Cpu",
+          title: "AI Model Configuration",
+          desc: "Model selection in the dashboard: provider, speed, cost, context window. Configurable per organization — from budget model to premium reasoning.",
+        },
+        {
+          icon: "Network",
+          title: "SCIM Provisioning",
+          desc: "Automated user management via SCIM 2.0: create, update, deactivate users — directly from identity providers (Okta, Azure AD, Google).",
+        },
+        {
+          icon: "CreditCard",
+          title: "Billing & Subscription",
+          desc: "Plan management, upgrade/downgrade, payment methods, invoice history. Stripe integration with self-service portal for clients.",
+        },
       ],
     },
     {
@@ -832,7 +1314,32 @@ const EN: DocsContent = {
         {
           icon: "Brain",
           title: "Agent Automation",
-          desc: "Self-configurable agents for recurring tasks. Skill-based, evaluable, federated.",
+          desc: "Set up agents for recurring tasks — they run on schedule, report results and learn from feedback.",
+        },
+        {
+          icon: "Zap",
+          title: "Workflow Automation",
+          desc: "Automate recurring workflows: document approvals, deadline escalations, case status transitions. Trigger-based, with conditions and actions.",
+        },
+        {
+          icon: "CheckSquare",
+          title: "Approvals",
+          desc: "Structured approval processes for documents, invoices and pleadings. Multi-stage approval chains, delegation, audit trail per approval.",
+        },
+        {
+          icon: "Shield",
+          title: "Obligation Tracking",
+          desc: "Tracking of all obligations per case: deadlines, form requirements, disclosure duties. Automatic warning when violation is imminent.",
+        },
+        {
+          icon: "RefreshCw",
+          title: "Judgement Sync",
+          desc: "Automatic retrieval of new court decisions from external sources. Daily sync, delta detection, automatic indexing into the brain.",
+        },
+        {
+          icon: "Workflow",
+          title: "Workflow Builder",
+          desc: "Visual drag-and-drop editor for automations: triggers, conditions, actions. No code needed — build and test workflows visually.",
         },
       ],
     },
@@ -891,6 +1398,36 @@ const EN: DocsContent = {
           title: "Compliance & GRC",
           desc: "Compliance and governance module for GDPR, AML, EU AI Act. Obligations, controls and evidence — all documented.",
         },
+        {
+          icon: "BookOpen",
+          title: "Playbooks",
+          desc: "Reusable process templates for recurring case types. Step sequences, checklists, deadline patterns — per practice area.",
+        },
+        {
+          icon: "FileText",
+          title: "Template Management",
+          desc: "Central library for document templates. Pleadings, contracts, cover letters — with variables and brain connection for auto-fill.",
+        },
+        {
+          icon: "Layers",
+          title: "Clause Library",
+          desc: "Structured collection of reusable clauses. Categorized by contract type, practice area and risk. With AI suggestions during drafting.",
+        },
+        {
+          icon: "MessageSquare",
+          title: "Legal Commentaries",
+          desc: "Annotations and comments on norms, judgments and contract clauses. Shared across the team, with discussion history.",
+        },
+        {
+          icon: "Brain",
+          title: "Knowledge Management (Experience)",
+          desc: "Structured capture of firm knowledge: pitfalls, best practices, lessons learned. Searchable, linkable to cases.",
+        },
+        {
+          icon: "Database",
+          title: "Judgement Database",
+          desc: "Full-text search across thousands of court decisions. Filter by court, date, file number, practice area — with AI summary per judgement.",
+        },
       ],
     },
     {
@@ -912,6 +1449,16 @@ const EN: DocsContent = {
           icon: "MessageSquare",
           title: "Mobile Bridge",
           desc: "Seamless handover desktop ↔ mobile. Started on phone, continued in browser.",
+        },
+        {
+          icon: "Search",
+          title: "Global Full-Text Search",
+          desc: "Search across all cases, documents, notes, invoices and chats — with scope filters per type. Hybrid search: vector + BM25 + graph.",
+        },
+        {
+          icon: "Zap",
+          title: "Mobile Pipeline Status",
+          desc: "Monitor pipeline runs on mobile: status (running, completed, failed, awaiting_review), layer details tap-to-expand, output viewer with Markdown rendering.",
         },
       ],
     },
@@ -945,6 +1492,90 @@ const EN: DocsContent = {
           title: "Pleadings Drafts",
           desc: "AI-assisted drafts for complaints, defense briefs, review petitions and legal remedies. With sources and citations.",
         },
+        {
+          icon: "PenTool",
+          title: "Drafting Editor",
+          desc: "Full drafting editor with brain connection: inline AI suggestions, source insertion, clause library integration, version comparison.",
+        },
+        {
+          icon: "FileSearch",
+          title: "Standalone Document Analysis",
+          desc: "Analyze documents without case context: upload, AI analysis, risk highlighting, summary — ideal for initial assessments and due diligence.",
+        },
+      ],
+    },
+    {
+      id: "litigation",
+      title: "Litigation & eDiscovery",
+      sub: "Phases, analytics, review sets, precedent search.",
+      features: [
+        {
+          icon: "Gavel",
+          title: "Litigation Management",
+          desc: "Structured litigation management with phases and steps. Status per phase, assigned team members, deadlines and documents per step.",
+        },
+        {
+          icon: "BarChart3",
+          title: "Litigation Analytics",
+          desc: "Success rates, case duration, court statistics. Trends per court, per case type, per opponent — based on historical data.",
+        },
+        {
+          icon: "Search",
+          title: "Precedent Search",
+          desc: "AI-powered search for similar cases in the brain and external case law databases. Automatic relevance ranking.",
+        },
+        {
+          icon: "Zap",
+          title: "Process Strategy",
+          desc: "Structured strategy capture per case: argument lines, evidence, counter-arguments. With AI suggestions and success prognosis.",
+        },
+        {
+          icon: "BarChart3",
+          title: "Case Law Analytics",
+          desc: "Statistical analysis of case law: success rates per court, trend curves, case type distribution — based on thousands of decisions.",
+        },
+      ],
+    },
+    {
+      id: "tax",
+      title: "Tax & Accounting",
+      sub: "Tax returns, ELSTER, StBVV, tax audits.",
+      features: [
+        {
+          icon: "FileText",
+          title: "Tax Returns",
+          desc: "Preparation and management of tax returns (income, VAT, trade, corporate). Structured entry, validation, status tracking.",
+        },
+        {
+          icon: "FileText",
+          title: "Tax Assessments",
+          desc: "Capture and analysis of tax assessments. Comparison with return, deviation analysis, objection deadline tracking.",
+        },
+        {
+          icon: "Shield",
+          title: "Tax Audit",
+          desc: "Preparation and support of tax audits. Audit field management, document provision, protocol management.",
+        },
+        {
+          icon: "CalendarClock",
+          title: "Tax Deadlines",
+          desc: "All tax deadlines (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) with automatic weekend and holiday shifting.",
+        },
+        {
+          icon: "Calculator",
+          title: "StBVV Fee Calculator",
+          desc: "Tax adviser remuneration ordinance: 10 activities, VV numbers, factor calculation, VAT. Interactive and exportable.",
+        },
+        {
+          icon: "Users",
+          title: "Tax Clients",
+          desc: "Separate client management for tax advisers: master data, tax number, tax office, assignment to returns and assessments.",
+        },
+        {
+          icon: "Landmark",
+          title: "ELSTER Integration",
+          desc: "Electronic tax returns via ELSTER. XML generation, form types, submission wizard — directly from the dashboard.",
+        },
       ],
     },
   ],
@@ -954,13 +1585,13 @@ const EN: DocsContent = {
     items: [
       {
         icon: "Database",
-        title: "72 API Endpoints",
+        title: "90+ API Endpoints",
         desc: "Complete REST API with auth, rate limiting, audit logging and TypeScript types.",
       },
       {
         icon: "FolderOpen",
-        title: "57 Dashboard Pages",
-        desc: "Every function has its own responsive page — from the case file to the cost calculator.",
+        title: "97+ Dashboard Pages",
+        desc: "Every function has its own responsive page — from the case file to the ELSTER wizard.",
       },
       {
         icon: "Shield",
@@ -1169,11 +1800,11 @@ const IT_DOCS_REPLACEMENTS: Record<string, string> = {
     "Bozze assistite AI per querelle, memorie di difesa, ricorsi e rimedi legali. Con fonti e citazioni.",
   "Technical Architecture": "Architettura Tecnica",
   "Straight from the backend — no speculation.": "Direttamente dal backend — nessuna speculazione.",
-  "72 API Endpoints": "72 Endpoint API",
+  "90+ API Endpoints": "90+ Endpoint API",
   "Complete REST API with auth, rate limiting, audit logging and TypeScript types.":
     "API REST completa con auth, rate limiting, audit logging e tipi TypeScript.",
-  "57 Dashboard Pages": "57 Pagine Dashboard",
-  "Every function has its own responsive page — from the case file to the cost calculator.":
+  "97+ Dashboard Pages": "97+ Pagine Dashboard",
+  "Every function has its own responsive page — from the case file to the ELSTER wizard.":
     "Ogni funzione ha la sua pagina responsive — dal fascicolo al calcolatore costi.",
   "Self-Hosted or EU Cloud": "Self-Hosted o EU Cloud",
   "Local Docker installation or hosted in the EU with DPA. Data never leaves your control.":
@@ -1200,6 +1831,225 @@ const IT_DOCS_REPLACEMENTS: Record<string, string> = {
   "Team & Organization": "Team & Organizzazione",
   "Team workspace management: create organization, invite members, assign roles and access rights. One brain for the whole team.":
     "Gestione workspace team: crea organizzazione, invita membri, assegna ruoli e diritti di accesso. Un brain per tutto il team.",
+  // ── New features ──
+  "Cross-Document Analysis": "Analisi Cross-Documento",
+  "AI-powered analysis across multiple documents: detect themes, risks and patterns invisible in individual documents.":
+    "Analisi AI su più documenti: rileva temi, rischi e pattern invisibili nei singoli documenti.",
+  "Portfolio Insights": "Insights Portfolio",
+  "Firm portfolio analysis: case mix, success rates, risk clusters and trends — based on all brain data.":
+    "Analisi portfolio studio: mix casi, tassi di successo, cluster di rischio e trend — basati su tutti i dati del brain.",
+  "Adoption Analytics": "Analytics di Adozione",
+  "Usage and adoption tracking: who uses which features how often? Basis for training decisions and rollout steering.":
+    "Tracciamento di utilizzo e adozione: chi usa quali funzioni e quanto spesso? Base per decisioni di formazione e rollout.",
+  "Shared Spaces": "Spazi Condivisi",
+  "Shared Spaces for teams: collaborative knowledge areas, shared case streams and notes — with granular access control.":
+    "Spazi Condivisi per team: aree di conoscenza collaborative, flussi di casi condivisi e note — con controllo accessi granulare.",
+  "Sources Management": "Gestione Fonti",
+  "Central management of all data sources and connectors. Status, sync frequency, error logs — all in one place.":
+    "Gestione centrale di tutte le fonti dati e connector. Stato, frequenza di sync, log errori — tutto in un posto.",
+  "Document Requests": "Richieste Documenti",
+  "Structured requests for documents from clients. Status tracking, automatic reminders after 7 days, escalation after 3 reminders — via WhatsApp and in-app notification.":
+    "Richieste strutturate di documenti ai clienti. Tracciamento stato, promemoria automatici dopo 7 giorni, escalation dopo 3 promemoria — via WhatsApp e notifica in-app.",
+  "Version History": "Cronologia Versioni",
+  "Full versioning of every document. Compare changes, restore previous versions, audit trail per version.":
+    "Versioning completo di ogni documento. Confronta modifiche, ripristina versioni precedenti, audit trail per versione.",
+  "Review Sets & eDiscovery": "Review Set & eDiscovery",
+  "Defensible review sets with privilege log and redactions. Deduplication, bulk tagging, export for court.":
+    "Review set difendibili con privilege log e redazioni. Deduplicazione, tagging massivo, export per tribunale.",
+  "Review Queue": "Coda di Review",
+  "Structured document review: tagging, commenting, prioritizing. Batch-based with filters and saved views.":
+    "Review strutturata dei documenti: tagging, commenti, priorità. Per batch con filtri e viste salvate.",
+  "Deadline Register": "Registro Scadenze",
+  "Chronological deadline register — all deadlines of a case in one view. Sortable by date, type, status. Audit-proof documented.":
+    "Registro scadenze cronologico — tutte le scadenze di un caso in una vista. Ordinabile per data, tipo, stato. Documentato audit-proof.",
+  "Task Management": "Gestione Task",
+  "Tasks and to-dos per case or global. Due dates, priorities, assignment to team members, status tracking.":
+    "Task e to-do per caso o globali. Date di scadenza, priorità, assegnazione a membri del team, tracciamento stato.",
+  "Calendar with Inline Editing": "Calendario con Modifica Inline",
+  "Month calendar with click-to-create, drag editing, appointment types (hearing, consultation, meeting). Case linking, reminders.":
+    "Calendario mensile con click-per-creare, modifica drag, tipi appuntamento (udienza, consulenza, riunione). Collegamento casi, promemoria.",
+  "Trust Accounting": "Conti Fiduciari",
+  "Management of client funds on escrow accounts. Deposits and withdrawals, balances, transaction records — audit-proof.":
+    "Gestione fondi cliente su conti fiduciari. Depositi e prelievi, saldi, registrazioni transazioni — audit-proof.",
+  Reports: "Report",
+  "Structured reports: case evaluations, revenue statistics, deadline reports, productivity analyses. Export as PDF or CSV.":
+    "Report strutturati: valutazioni casi, statistiche ricavi, report scadenze, analisi produttività. Export PDF o CSV.",
+  Intake: "Intake",
+  "Structured intake of new clients and incoming items. Quick capture with automatic case creation, contact enrichment and deadline detection.":
+    "Intake strutturato di nuovi clienti e arrivi. Acquisizione rapida con creazione automatica caso, arricchimento contatti e rilevamento scadenze.",
+  "Directory (Courts & Authorities)": "Elenco (Tribunali & Autorità)",
+  "Central directory of all courts, authorities and institutions. Addresses, jurisdictions, file number formats — directly linkable to cases.":
+    "Elenco centrale di tutti i tribunali, autorità e istituzioni. Indirizzi, giurisdizioni, formati numeri di pratica — collegabili direttamente ai casi.",
+  "Legal Translation": "Traduzione Legale",
+  "AI-powered translation of legal texts with specialized terminology accuracy. Detects contract clauses, legal terms and authority jargon.":
+    "Traduzione AI di testi legali con accuratezza terminologica specializzata. Rileva clausole contrattuali, termini legali e gergo burocratico.",
+  "Onboarding Wizard": "Wizard Onboarding",
+  "Guided onboarding for new users: set up brain, create first case, import contacts, configure deadlines — step by step.":
+    "Onboarding guidato per nuovi utenti: configura brain, crea primo caso, importa contatti, configura scadenze — passo per passo.",
+  "Workflow Automation": "Automazione Workflow",
+  "Automate recurring workflows: document approvals, deadline escalations, case status transitions. Trigger-based, with conditions and actions.":
+    "Automatizza workflow ricorrenti: approvazioni documenti, escalation scadenze, transizioni stato casi. Basato su trigger, con condizioni e azioni.",
+  Approvals: "Approvazioni",
+  "Structured approval processes for documents, invoices and pleadings. Multi-stage approval chains, delegation, audit trail per approval.":
+    "Processi di approvazione strutturati per documenti, fatture e atti. Catene di approvazione multi-livello, delega, audit trail per approvazione.",
+  "Obligation Tracking": "Tracciamento Obblighi",
+  "Tracking of all obligations per case: deadlines, form requirements, disclosure duties. Automatic warning when violation is imminent.":
+    "Tracciamento di tutti gli obblighi per caso: scadenze, requisiti formali, obblighi di disclosure. Avviso automatico quando la violazione è imminente.",
+  Playbooks: "Playbook",
+  "Reusable process templates for recurring case types. Step sequences, checklists, deadline patterns — per practice area.":
+    "Template di processo riutilizzabili per tipi di caso ricorrenti. Sequenze di passi, checklist, pattern di scadenze — per area di pratica.",
+  "Template Management": "Gestione Template",
+  "Central library for document templates. Pleadings, contracts, cover letters — with variables and brain connection for auto-fill.":
+    "Libreria centrale per template documentali. Atti, contratti, lettere — con variabili e connessione brain per auto-fill.",
+  "Clause Library": "Libreria Clausole",
+  "Structured collection of reusable clauses. Categorized by contract type, practice area and risk. With AI suggestions during drafting.":
+    "Raccolta strutturata di clausole riutilizzabili. Categorizzate per tipo contratto, area di pratica e rischio. Con suggerimenti AI durante la redazione.",
+  "Legal Commentaries": "Commentari Legali",
+  "Annotations and comments on norms, judgments and contract clauses. Shared across the team, with discussion history.":
+    "Annotazioni e commenti su norme, sentenze e clausole contrattuali. Condivisi nel team, con cronologia discussioni.",
+  "Knowledge Management (Experience)": "Gestione Conoscenza (Experience)",
+  "Structured capture of firm knowledge: pitfalls, best practices, lessons learned. Searchable, linkable to cases.":
+    "Acquisizione strutturata della conoscenza dello studio: insidie, best practice, lezioni apprese. Ricercabile, collegabile ai casi.",
+  "Global Full-Text Search": "Ricerca Full-Text Globale",
+  "Search across all cases, documents, notes, invoices and chats — with scope filters per type. Hybrid search: vector + BM25 + graph.":
+    "Ricerca su tutti i casi, documenti, note, fatture e chat — con filtri scope per tipo. Ricerca ibrida: vettoriale + BM25 + grafo.",
+  "Drafting Editor": "Editor di Redazione",
+  "Full drafting editor with brain connection: inline AI suggestions, source insertion, clause library integration, version comparison.":
+    "Editor di redazione completo con connessione brain: suggerimenti AI inline, inserimento fonti, integrazione libreria clausole, confronto versioni.",
+  "Litigation & eDiscovery": "Litigazione & eDiscovery",
+  "Phases, analytics, review sets, precedent search.":
+    "Fasi, analytics, review set, ricerca precedenti.",
+  "Litigation Management": "Gestione Litigazione",
+  "Structured litigation management with phases and steps. Status per phase, assigned team members, deadlines and documents per step.":
+    "Gestione strutturata della litigazione con fasi e passi. Stato per fase, membri del team assegnati, scadenze e documenti per passo.",
+  "Litigation Analytics": "Analytics Litigazione",
+  "Success rates, case duration, court statistics. Trends per court, per case type, per opponent — based on historical data.":
+    "Tassi di successo, durata casi, statistiche tribunali. Trend per tribunale, per tipo di caso, per controparte — basati su dati storici.",
+  "Precedent Search": "Ricerca Precedenti",
+  "AI-powered search for similar cases in the brain and external case law databases. Automatic relevance ranking.":
+    "Ricerca AI di casi simili nel brain e database di giurisprudenza esterni. Ranking di rilevanza automatico.",
+  "Process Strategy": "Strategia di Processo",
+  "Structured strategy capture per case: argument lines, evidence, counter-arguments. With AI suggestions and success prognosis.":
+    "Acquisizione strutturata della strategia per caso: linee argomentative, prove, contro-argomenti. Con suggerimenti AI e prognosi di successo.",
+  "Tax & Accounting": "Fiscali & Contabilità",
+  "Tax returns, ELSTER, StBVV, tax audits.": "Dichiarazioni fiscali, ELSTER, StBVV, audit fiscali.",
+  "Tax Returns": "Dichiarazioni Fiscali",
+  "Preparation and management of tax returns (income, VAT, trade, corporate). Structured entry, validation, status tracking.":
+    "Preparazione e gestione di dichiarazioni fiscali (reddito, IVA, commercio, società). Inserimento strutturato, validazione, tracciamento stato.",
+  "Tax Assessments": "Valutazioni Fiscali",
+  "Capture and analysis of tax assessments. Comparison with return, deviation analysis, objection deadline tracking.":
+    "Acquisizione e analisi di valutazioni fiscali. Confronto con dichiarazione, analisi deviazioni, tracciamento scadenze ricorso.",
+  "Tax Audit": "Audit Fiscale",
+  "Preparation and support of tax audits. Audit field management, document provision, protocol management.":
+    "Preparazione e supporto di audit fiscali. Gestione campi di audit, fornitura documenti, gestione protocolli.",
+  "Tax Deadlines": "Scadenze Fiscali",
+  "All tax deadlines (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) with automatic weekend and holiday shifting.":
+    "Tutte le scadenze fiscali (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) con spostamento automatico weekend e festività.",
+  "StBVV Fee Calculator": "Calcolatore StBVV",
+  "Tax adviser remuneration ordinance: 10 activities, VV numbers, factor calculation, VAT. Interactive and exportable.":
+    "Ordinamento remunerazione consulenti fiscali: 10 attività, numeri VV, calcolo fattore, IVA. Interattivo ed esportabile.",
+  "Tax Clients": "Clienti Fiscali",
+  "Separate client management for tax advisers: master data, tax number, tax office, assignment to returns and assessments.":
+    "Gestione clienti separata per consulenti fiscali: dati anagrafici, numero fiscale, ufficio fiscale, assegnazione a dichiarazioni e valutazioni.",
+  "ELSTER Integration": "Integrazione ELSTER",
+  "Electronic tax returns via ELSTER. XML generation, form types, submission wizard — directly from the dashboard.":
+    "Dichiarazioni fiscali elettroniche via ELSTER. Generazione XML, tipi modulo, wizard di invio — direttamente dalla dashboard.",
+  "Chat Analytics": "Analytics Chat",
+  "Usage statistics for the AI copilot: sessions, messages, token consumption, pinned answers — per day and per user.":
+    "Statistiche di utilizzo per il copilota AI: sessioni, messaggi, consumo token, risposte fissate — per giorno e per utente.",
+  "Model Comparison": "Confronto Modelli",
+  "Side-by-side comparison of different AI models: same question to multiple models at once, evaluate answers next to each other.":
+    "Confronto affiancato di diversi modelli AI: stessa domanda a più modelli contemporaneamente, valutazione delle risposte lado a lado.",
+  "Legacy Cases": "Pratiche Stagnanti",
+  "Identify, classify and monitor risky and outdated cases. Pipeline status, escalation levels, deadline warnings — nothing falls through the cracks.":
+    "Identificare, classificare e monitorare pratiche rischiose e obsolete. Stato pipeline, livelli di escalation, avvisi scadenze — nulla sfugge.",
+  "Engine Monitoring (APM)": "Monitoraggio Engine (APM)",
+  "Performance dashboard: P50/P95/P99 latency, brain quality, embedding queue, quota usage and error events in real time.":
+    "Dashboard prestazioni: latenza P50/P95/P99, qualità brain, coda embedding, utilizzo quota ed eventi errore in tempo reale.",
+  "Retention Policies": "Politiche di Conservazione",
+  "Automated retention rules per GDPR and BRAO: retention periods per document type, automatic deletion after expiry, audit trail.":
+    "Regole di conservazione automatiche GDPR e BRAO: periodi di conservazione per tipo documento, cancellazione automatica post-scadenza, audit trail.",
+  "WhatsApp Templates": "Modelli WhatsApp",
+  "Template library for WhatsApp messages: standard replies, client letters, reminder templates. With variables and approval workflow.":
+    "Libreria modelli per messaggi WhatsApp: risposte standard, lettere clienti, modelli promemoria. Con variabili e workflow di approvazione.",
+  "AI Model Configuration": "Configurazione Modello AI",
+  "Model selection in the dashboard: provider, speed, cost, context window. Configurable per organization — from budget model to premium reasoning.":
+    "Selezione modello nella dashboard: provider, velocità, costo, finestra contesto. Configurabile per organizzazione — da modello economico a reasoning premium.",
+  "SCIM Provisioning": "Provisioning SCIM",
+  "Automated user management via SCIM 2.0: create, update, deactivate users — directly from identity providers (Okta, Azure AD, Google).":
+    "Gestione utenti automatizzata via SCIM 2.0: creare, aggiornare, disattivare utenti — direttamente da identity provider (Okta, Azure AD, Google).",
+  "Billing & Subscription": "Fatturazione & Abbonamento",
+  "Plan management, upgrade/downgrade, payment methods, invoice history. Stripe integration with self-service portal for clients.":
+    "Gestione piano, upgrade/downgrade, metodi pagamento, storico fatture. Integrazione Stripe con portale self-service per clienti.",
+  "Judgement Sync": "Sincronizzazione Sentenze",
+  "Automatic retrieval of new court decisions from external sources. Daily sync, delta detection, automatic indexing into the brain.":
+    "Recupero automatico di nuove sentenze da fonti esterne. Sync giornaliero, rilevamento delta, indicizzazione automatica nel brain.",
+  "Workflow Builder": "Costruttore Workflow",
+  "Visual drag-and-drop editor for automations: triggers, conditions, actions. No code needed — build and test workflows visually.":
+    "Editor visuale drag-and-drop per automazioni: trigger, condizioni, azioni. Senza codice — crea e testa workflow visivamente.",
+  "Judgement Database": "Database Sentenze",
+  "Full-text search across thousands of court decisions. Filter by court, date, file number, practice area — with AI summary per judgement.":
+    "Ricerca full-text in migliaia di sentenze. Filtra per tribunale, data, numero ruolo, area pratica — con riassunto AI per sentenza.",
+  "Mobile Pipeline Status": "Stato Pipeline Mobile",
+  "Monitor pipeline runs on mobile: status (running, completed, failed, awaiting_review), layer details tap-to-expand, output viewer with Markdown rendering.":
+    "Monitora esecuzioni pipeline su mobile: stato (running, completed, failed, awaiting_review), dettagli layer tap-to-expand, visualizzatore output con rendering Markdown.",
+  "Standalone Document Analysis": "Analisi Documenti Standalone",
+  "Analyze documents without case context: upload, AI analysis, risk highlighting, summary — ideal for initial assessments and due diligence.":
+    "Analizza documenti senza contesto pratica: upload, analisi AI, evidenziazione rischi, riepilogo — ideale per valutazioni iniziali e due diligence.",
+  "Case Law Analytics": "Analytics Giurisprudenza",
+  "Statistical analysis of case law: success rates per court, trend curves, case type distribution — based on thousands of decisions.":
+    "Analisi statistica giurisprudenza: tassi successo per tribunale, curve trend, distribuzione tipi causa — su migliaia di sentenze.",
+  "Get started in 5 steps": "Inizia in 5 passi",
+  "From login to first case — how fast Subsumio goes live.":
+    "Dal login alla prima pratica — quanto velocemente Subsumio va live.",
+  "Set up Brain": "Configura Brain",
+  "Run the onboarding wizard, connect data sources, index your brain.":
+    "Avvia il wizard onboarding, collega fonti dati, indicizza il brain.",
+  "Create first case": "Crea prima pratica",
+  "Add client, create case, upload documents via drag-and-drop.":
+    "Aggiungi cliente, crea pratica, carica documenti via drag-and-drop.",
+  "Configure deadlines": "Configura scadenze",
+  "AI automatically scans all documents for deadlines — enable calendar export.":
+    "AI scansiona automaticamente tutti i documenti per scadenze — attiva export calendario.",
+  "Use Copilot": "Usa Copilot",
+  "Ask the brain questions, get cited answers, book time via chat.":
+    "Fai domande al brain, ottieni risposte con citazioni, registra tempo via chat.",
+  "Invite team": "Invita team",
+  "Add members, assign roles, collaborate on the brain together.":
+    "Aggiungi membri, assegna ruoli, collabora sul brain insieme.",
+  // ── User-centric description rewrites ──
+  "Ask questions in plain language — get answers from your entire knowledge base. Every document, email and note is instantly searchable.":
+    "Fai domande in linguaggio semplice — ottieni risposte da tutta la base di conoscenza. Ogni documento, email e nota è ricercabile istantaneamente.",
+  "Every answer links back to the exact source passage. No hallucinations — if the brain can't find it, it says so.":
+    "Ogni risposta rimanda al passaggio esatto della fonte. Nessuna allucinazione — se il brain non lo trova, lo dice.",
+  "Complex legal questions get step-by-step reasoning. The brain shows its work — so you can verify every conclusion.":
+    "Questioni legali complesse con ragionamento passo-passo. Il brain mostra il suo lavoro — ogni conclusione verificabile.",
+  "Deploy specialized AI agents for recurring tasks — research, drafting, review. Each agent has its own skills and can be evaluated.":
+    "Distribuisci agenti AI specializzati per task ricorrenti — ricerca, drafting, review. Ogni agente ha le proprie skill ed è valutabile.",
+  "Built-in quality dashboard for AI answers. Test retrieval quality against real queries — know exactly how reliable the brain is.":
+    "Dashboard qualità integrata per le risposte AI. Testa la qualità del retrieval su query reali — sai esattamente quanto è affidabile il brain.",
+  "AI reads across multiple documents at once — finds themes, risks and patterns you'd miss document-by-document.":
+    "L'AI legge più documenti contemporaneamente — trova temi, rischi e pattern che perderesti documento per documento.",
+  "See who uses which features and how often. Spot training gaps, drive adoption, measure ROI.":
+    "Vedi chi usa quali funzioni e quanto spesso. Identifica gap di formazione, guida l'adozione, misura il ROI.",
+  "All data sources in one dashboard: sync status, frequency, error logs. Spot issues before they become problems.":
+    "Tutte le fonti dati in un dashboard: stato sync, frequenza, log errori. Individua problemi prima che lo diventino.",
+  "Track copilot usage: sessions, messages, token costs, pinned answers — per user, per day.":
+    "Traccia l'uso del copilota: sessioni, messaggi, costi token, risposte fissate — per utente, per giorno.",
+  "Upload scans, photos or PDFs — text is extracted automatically. Every document becomes searchable and classified.":
+    "Carica scansioni, foto o PDF — il testo viene estratto automaticamente. Ogni documento diventa ricercabile e classificato.",
+  "Defensible review sets with privilege log and redactions. Deduplication, bulk tagging, export ready for court.":
+    "Review set difendibili con privilege log e redazioni. Deduplicazione, tagging massivo, export pronto per il tribunale.",
+  "Every case is walled off from others. A user on case A cannot see case B — guaranteed by design, fuzz-tested for zero leaks.":
+    "Ogni caso è isolato dagli altri. Un utente sul caso A non può vedere il caso B — garantito per design, fuzz-testato per zero leak.",
+  "Real-time performance dashboard: response times, brain quality, queue depth and error rates — all at a glance.":
+    "Dashboard prestazioni in tempo reale: tempi di risposta, qualità brain, profondità coda e tassi di errore — tutto a colpo d'occhio.",
+  "GDPR built into the platform: DPA templates, data portability, right to erasure — all ready out of the box.":
+    "GDPR integrato nella piattaforma: template DPA, portabilità dati, diritto alla cancellazione — tutto pronto out-of-the-box.",
+  "Connect any third-party tool via open API. Real-time webhooks keep everything in sync — no manual exports.":
+    "Collega qualsiasi strumento di terze parti via API aperta. Webhook real-time tengono tutto sincronizzato — nessun export manuale.",
+  "Set up agents for recurring tasks — they run on schedule, report results and learn from feedback.":
+    "Configura agenti per task ricorrenti — girano su pianificazione, riferiscono risultati e imparano dai feedback.",
 };
 
 const ES_DOCS_REPLACEMENTS: Record<string, string> = {
@@ -1380,11 +2230,11 @@ const ES_DOCS_REPLACEMENTS: Record<string, string> = {
     "Borradores asistidos por AI para demandas, escritos de defensa, recursos y remedios legales. Con fuentes y citas.",
   "Technical Architecture": "Arquitectura Técnica",
   "Straight from the backend — no speculation.": "Directo del backend — sin especulación.",
-  "72 API Endpoints": "72 Endpoint API",
+  "90+ API Endpoints": "90+ Endpoint API",
   "Complete REST API with auth, rate limiting, audit logging and TypeScript types.":
     "API REST completa con auth, rate limiting, audit logging y tipos TypeScript.",
-  "57 Dashboard Pages": "57 Páginas Dashboard",
-  "Every function has its own responsive page — from the case file to the cost calculator.":
+  "97+ Dashboard Pages": "97+ Páginas Dashboard",
+  "Every function has its own responsive page — from the case file to the ELSTER wizard.":
     "Cada función tiene su propia página responsive — desde el expediente hasta la calculadora de costos.",
   "Self-Hosted or EU Cloud": "Self-Hosted o EU Cloud",
   "Local Docker installation or hosted in the EU with DPA. Data never leaves your control.":
@@ -1411,6 +2261,226 @@ const ES_DOCS_REPLACEMENTS: Record<string, string> = {
   "Team & Organization": "Equipo & Organización",
   "Team workspace management: create organization, invite members, assign roles and access rights. One brain for the whole team.":
     "Gestión de workspace del equipo: crea organización, invita miembros, asigna roles y derechos de acceso. Un brain para todo el equipo.",
+  // ── New features ──
+  "Cross-Document Analysis": "Análisis Cross-Documento",
+  "AI-powered analysis across multiple documents: detect themes, risks and patterns invisible in individual documents.":
+    "Análisis AI en múltiples documentos: detecta temas, riesgos y patrones invisibles en documentos individuales.",
+  "Portfolio Insights": "Insights de Portafolio",
+  "Firm portfolio analysis: case mix, success rates, risk clusters and trends — based on all brain data.":
+    "Análisis de portafolio del bufete: mix de casos, tasas de éxito, clusters de riesgo y tendencias — basado en todos los datos del brain.",
+  "Adoption Analytics": "Analytics de Adopción",
+  "Usage and adoption tracking: who uses which features how often? Basis for training decisions and rollout steering.":
+    "Seguimiento de uso y adopción: ¿quién usa qué funciones y con qué frecuencia? Base para decisiones de formación y rollout.",
+  "Shared Spaces": "Espacios Compartidos",
+  "Shared Spaces for teams: collaborative knowledge areas, shared case streams and notes — with granular access control.":
+    "Espacios Compartidos para equipos: áreas de conocimiento colaborativas, flujos de casos compartidos y notas — con control de acceso granular.",
+  "Sources Management": "Gestión de Fuentes",
+  "Central management of all data sources and connectors. Status, sync frequency, error logs — all in one place.":
+    "Gestión central de todas las fuentes de datos y conectores. Estado, frecuencia de sync, logs de errores — todo en un lugar.",
+  "Document Requests": "Solicitudes de Documentos",
+  "Structured requests for documents from clients. Status tracking, automatic reminders after 7 days, escalation after 3 reminders — via WhatsApp and in-app notification.":
+    "Solicitudes estructuradas de documentos a clientes. Seguimiento de estado, recordatorios automáticos tras 7 días, escalación tras 3 recordatorios — vía WhatsApp y notificación in-app.",
+  "Version History": "Historial de Versiones",
+  "Full versioning of every document. Compare changes, restore previous versions, audit trail per version.":
+    "Versionado completo de cada documento. Compara cambios, restaura versiones anteriores, audit trail por versión.",
+  "Review Sets & eDiscovery": "Review Sets & eDiscovery",
+  "Defensible review sets with privilege log and redactions. Deduplication, bulk tagging, export for court.":
+    "Review sets defendibles con privilege log y redacciones. Deduplicación, tagging masivo, exportación para tribunal.",
+  "Review Queue": "Cola de Review",
+  "Structured document review: tagging, commenting, prioritizing. Batch-based with filters and saved views.":
+    "Review estructurado de documentos: tagging, comentarios, priorización. Por lotes con filtros y vistas guardadas.",
+  "Deadline Register": "Registro de Plazos",
+  "Chronological deadline register — all deadlines of a case in one view. Sortable by date, type, status. Audit-proof documented.":
+    "Registro cronológico de plazos — todos los plazos de un caso en una vista. Ordenable por fecha, tipo, estado. Documentado audit-proof.",
+  "Task Management": "Gestión de Tareas",
+  "Tasks and to-dos per case or global. Due dates, priorities, assignment to team members, status tracking.":
+    "Tareas y to-dos por caso o globales. Fechas límite, prioridades, asignación a miembros del equipo, seguimiento de estado.",
+  "Calendar with Inline Editing": "Calendario con Edición Inline",
+  "Month calendar with click-to-create, drag editing, appointment types (hearing, consultation, meeting). Case linking, reminders.":
+    "Calendario mensual con clic-para-crear, edición drag, tipos de cita (audiencia, consulta, reunión). Vinculación de casos, recordatorios.",
+  "Trust Accounting": "Contabilidad Fiduciaria",
+  "Management of client funds on escrow accounts. Deposits and withdrawals, balances, transaction records — audit-proof.":
+    "Gestión de fondos de clientes en cuentas fiduciarias. Depósitos y retiros, saldos, registros de transacciones — audit-proof.",
+  Reports: "Informes",
+  "Structured reports: case evaluations, revenue statistics, deadline reports, productivity analyses. Export as PDF or CSV.":
+    "Informes estructurados: evaluaciones de casos, estadísticas de ingresos, informes de plazos, análisis de productividad. Exportación PDF o CSV.",
+  Intake: "Recepción",
+  "Structured intake of new clients and incoming items. Quick capture with automatic case creation, contact enrichment and deadline detection.":
+    "Recepción estructurada de nuevos clientes y entradas. Captura rápida con creación automática de caso, enriquecimiento de contactos y detección de plazos.",
+  "Directory (Courts & Authorities)": "Directorio (Tribunales & Autoridades)",
+  "Central directory of all courts, authorities and institutions. Addresses, jurisdictions, file number formats — directly linkable to cases.":
+    "Directorio central de todos los tribunales, autoridades e instituciones. Direcciones, jurisdicciones, formatos de número de expediente — vinculables directamente a casos.",
+  "Legal Translation": "Traducción Legal",
+  "AI-powered translation of legal texts with specialized terminology accuracy. Detects contract clauses, legal terms and authority jargon.":
+    "Traducción AI de textos legales con precisión terminológica especializada. Detecta cláusulas contractuales, términos legales y jerga de autoridades.",
+  "Onboarding Wizard": "Asistente de Onboarding",
+  "Guided onboarding for new users: set up brain, create first case, import contacts, configure deadlines — step by step.":
+    "Onboarding guiado para nuevos usuarios: configurar brain, crear primer caso, importar contactos, configurar plazos — paso a paso.",
+  "Workflow Automation": "Automatización de Workflows",
+  "Automate recurring workflows: document approvals, deadline escalations, case status transitions. Trigger-based, with conditions and actions.":
+    "Automatiza workflows recurrentes: aprobaciones de documentos, escalaciones de plazos, transiciones de estado de casos. Basado en triggers, con condiciones y acciones.",
+  Approvals: "Aprobaciones",
+  "Structured approval processes for documents, invoices and pleadings. Multi-stage approval chains, delegation, audit trail per approval.":
+    "Procesos de aprobación estructurados para documentos, facturas y escritos. Cadenas de aprobación multi-nivel, delegación, audit trail por aprobación.",
+  "Obligation Tracking": "Seguimiento de Obligaciones",
+  "Tracking of all obligations per case: deadlines, form requirements, disclosure duties. Automatic warning when violation is imminent.":
+    "Seguimiento de todas las obligaciones por caso: plazos, requisitos formales, deberes de divulgación. Advertencia automática cuando la violación es inminente.",
+  Playbooks: "Playbooks",
+  "Reusable process templates for recurring case types. Step sequences, checklists, deadline patterns — per practice area.":
+    "Plantillas de proceso reutilizables para tipos de caso recurrentes. Secuencias de pasos, checklists, patrones de plazos — por área de práctica.",
+  "Template Management": "Gestión de Plantillas",
+  "Central library for document templates. Pleadings, contracts, cover letters — with variables and brain connection for auto-fill.":
+    "Biblioteca central de plantillas de documentos. Escritos, contratos, cartas de presentación — con variables y conexión brain para auto-fill.",
+  "Clause Library": "Biblioteca de Cláusulas",
+  "Structured collection of reusable clauses. Categorized by contract type, practice area and risk. With AI suggestions during drafting.":
+    "Colección estructurada de cláusulas reutilizables. Categorizadas por tipo de contrato, área de práctica y riesgo. Con sugerencias AI durante la redacción.",
+  "Legal Commentaries": "Comentarios Legales",
+  "Annotations and comments on norms, judgments and contract clauses. Shared across the team, with discussion history.":
+    "Anotaciones y comentarios sobre normas, sentencias y cláusulas contractuales. Compartidos en el equipo, con historial de discusión.",
+  "Knowledge Management (Experience)": "Gestión de Conocimiento (Experience)",
+  "Structured capture of firm knowledge: pitfalls, best practices, lessons learned. Searchable, linkable to cases.":
+    "Captura estructurada del conocimiento del bufete: trampas, mejores prácticas, lecciones aprendidas. Buscable, vinculable a casos.",
+  "Global Full-Text Search": "Búsqueda Full-Text Global",
+  "Search across all cases, documents, notes, invoices and chats — with scope filters per type. Hybrid search: vector + BM25 + graph.":
+    "Búsqueda en todos los casos, documentos, notas, facturas y chats — con filtros de scope por tipo. Búsqueda híbrida: vectorial + BM25 + grafo.",
+  "Drafting Editor": "Editor de Redacción",
+  "Full drafting editor with brain connection: inline AI suggestions, source insertion, clause library integration, version comparison.":
+    "Editor de redacción completo con conexión brain: sugerencias AI inline, inserción de fuentes, integración de biblioteca de cláusulas, comparación de versiones.",
+  "Litigation & eDiscovery": "Litigación & eDiscovery",
+  "Phases, analytics, review sets, precedent search.":
+    "Fases, analytics, review sets, búsqueda de precedentes.",
+  "Litigation Management": "Gestión de Litigación",
+  "Structured litigation management with phases and steps. Status per phase, assigned team members, deadlines and documents per step.":
+    "Gestión estructurada de litigación con fases y pasos. Estado por fase, miembros del equipo asignados, plazos y documentos por paso.",
+  "Litigation Analytics": "Analytics de Litigación",
+  "Success rates, case duration, court statistics. Trends per court, per case type, per opponent — based on historical data.":
+    "Tasas de éxito, duración de casos, estadísticas de tribunales. Tendencias por tribunal, por tipo de caso, por contraparte — basadas en datos históricos.",
+  "Precedent Search": "Búsqueda de Precedentes",
+  "AI-powered search for similar cases in the brain and external case law databases. Automatic relevance ranking.":
+    "Búsqueda AI de casos similares en el brain y bases de datos de jurisprudencia externas. Ranking de relevancia automático.",
+  "Process Strategy": "Estrategia de Proceso",
+  "Structured strategy capture per case: argument lines, evidence, counter-arguments. With AI suggestions and success prognosis.":
+    "Captura estructurada de estrategia por caso: líneas argumentativas, evidencia, contraargumentos. Con sugerencias AI y pronóstico de éxito.",
+  "Tax & Accounting": "Fiscal & Contabilidad",
+  "Tax returns, ELSTER, StBVV, tax audits.":
+    "Declaraciones fiscales, ELSTER, StBVV, auditorías fiscales.",
+  "Tax Returns": "Declaraciones Fiscales",
+  "Preparation and management of tax returns (income, VAT, trade, corporate). Structured entry, validation, status tracking.":
+    "Preparación y gestión de declaraciones fiscales (renta, IVA, comercio, sociedades). Entrada estructurada, validación, seguimiento de estado.",
+  "Tax Assessments": "Liquidaciones Fiscales",
+  "Capture and analysis of tax assessments. Comparison with return, deviation analysis, objection deadline tracking.":
+    "Captura y análisis de liquidaciones fiscales. Comparación con declaración, análisis de desviaciones, seguimiento de plazos de recurso.",
+  "Tax Audit": "Auditoría Fiscal",
+  "Preparation and support of tax audits. Audit field management, document provision, protocol management.":
+    "Preparación y soporte de auditorías fiscales. Gestión de campos de auditoría, provisión de documentos, gestión de protocolos.",
+  "Tax Deadlines": "Plazos Fiscales",
+  "All tax deadlines (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) with automatic weekend and holiday shifting.":
+    "Todos los plazos fiscales (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) con desplazamiento automático de fines de semana y festivos.",
+  "StBVV Fee Calculator": "Calculadora StBVV",
+  "Tax adviser remuneration ordinance: 10 activities, VV numbers, factor calculation, VAT. Interactive and exportable.":
+    "Ordenanza de remuneración de asesores fiscales: 10 actividades, números VV, cálculo de factor, IVA. Interactiva y exportable.",
+  "Tax Clients": "Clientes Fiscales",
+  "Separate client management for tax advisers: master data, tax number, tax office, assignment to returns and assessments.":
+    "Gestión de clientes separada para asesores fiscales: datos maestros, número fiscal, oficina fiscal, asignación a declaraciones y liquidaciones.",
+  "ELSTER Integration": "Integración ELSTER",
+  "Electronic tax returns via ELSTER. XML generation, form types, submission wizard — directly from the dashboard.":
+    "Declaraciones fiscales electrónicas vía ELSTER. Generación XML, tipos de formulario, asistente de envío — directamente desde el dashboard.",
+  "Chat Analytics": "Analytics Chat",
+  "Usage statistics for the AI copilot: sessions, messages, token consumption, pinned answers — per day and per user.":
+    "Estadísticas de uso del copiloto AI: sesiones, mensajes, consumo de tokens, respuestas fijadas — por día y por usuario.",
+  "Model Comparison": "Comparación de Modelos",
+  "Side-by-side comparison of different AI models: same question to multiple models at once, evaluate answers next to each other.":
+    "Comparación lado a lado de diferentes modelos AI: misma pregunta a múltiples modelos a la vez, evaluar respuestas una al lado de otra.",
+  "Legacy Cases": "Casos Obsoletos",
+  "Identify, classify and monitor risky and outdated cases. Pipeline status, escalation levels, deadline warnings — nothing falls through the cracks.":
+    "Identificar, clasificar y monitorizar casos riesgosos y obsoletos. Estado pipeline, niveles escalación, avisos plazos — nada se escapa.",
+  "Engine Monitoring (APM)": "Monitorización Engine (APM)",
+  "Performance dashboard: P50/P95/P99 latency, brain quality, embedding queue, quota usage and error events in real time.":
+    "Dashboard rendimiento: latencia P50/P95/P99, calidad brain, cola embedding, uso quota y eventos error en tiempo real.",
+  "Retention Policies": "Políticas de Conservación",
+  "Automated retention rules per GDPR and BRAO: retention periods per document type, automatic deletion after expiry, audit trail.":
+    "Reglas de conservación automáticas GDPR y BRAO: periodos por tipo documento, borrado automático tras vencimiento, audit trail.",
+  "WhatsApp Templates": "Plantillas WhatsApp",
+  "Template library for WhatsApp messages: standard replies, client letters, reminder templates. With variables and approval workflow.":
+    "Biblioteca de plantillas para mensajes WhatsApp: respuestas estándar, cartas clientes, plantillas recordatorias. Con variables y workflow aprobación.",
+  "AI Model Configuration": "Configuración Modelo AI",
+  "Model selection in the dashboard: provider, speed, cost, context window. Configurable per organization — from budget model to premium reasoning.":
+    "Selección modelo en dashboard: provider, velocidad, coste, ventana contexto. Configurable por organización — de modelo económico a reasoning premium.",
+  "SCIM Provisioning": "Provisioning SCIM",
+  "Automated user management via SCIM 2.0: create, update, deactivate users — directly from identity providers (Okta, Azure AD, Google).":
+    "Gestión usuarios automatizada vía SCIM 2.0: crear, actualizar, desactivar usuarios — directamente desde identity providers (Okta, Azure AD, Google).",
+  "Billing & Subscription": "Facturación & Suscripción",
+  "Plan management, upgrade/downgrade, payment methods, invoice history. Stripe integration with self-service portal for clients.":
+    "Gestión plan, upgrade/downgrade, métodos pago, historial facturas. Integración Stripe con portal self-service para clientes.",
+  "Judgement Sync": "Sincronización Sentencias",
+  "Automatic retrieval of new court decisions from external sources. Daily sync, delta detection, automatic indexing into the brain.":
+    "Recuperación automática de nuevas sentencias de fuentes externas. Sync diario, detección delta, indexación automática en brain.",
+  "Workflow Builder": "Constructor Workflow",
+  "Visual drag-and-drop editor for automations: triggers, conditions, actions. No code needed — build and test workflows visually.":
+    "Editor visual drag-and-drop para automatizaciones: triggers, condiciones, acciones. Sin código — crea y testa workflows visualmente.",
+  "Judgement Database": "Base de Datos Sentencias",
+  "Full-text search across thousands of court decisions. Filter by court, date, file number, practice area — with AI summary per judgement.":
+    "Búsqueda full-text en miles de sentencias. Filtrar por tribunal, fecha, número expediente, área práctica — con resumen AI por sentencia.",
+  "Mobile Pipeline Status": "Estado Pipeline Móvil",
+  "Monitor pipeline runs on mobile: status (running, completed, failed, awaiting_review), layer details tap-to-expand, output viewer with Markdown rendering.":
+    "Monitorizar ejecuciones pipeline en móvil: estado (running, completed, failed, awaiting_review), detalles layer tap-to-expand, visor output con rendering Markdown.",
+  "Standalone Document Analysis": "Análisis Documentos Standalone",
+  "Analyze documents without case context: upload, AI analysis, risk highlighting, summary — ideal for initial assessments and due diligence.":
+    "Analizar documentos sin contexto caso: upload, análisis AI, resaltado riesgos, resumen — ideal para evaluaciones iniciales y due diligence.",
+  "Case Law Analytics": "Analytics Jurisprudencia",
+  "Statistical analysis of case law: success rates per court, trend curves, case type distribution — based on thousands of decisions.":
+    "Análisis estadístico jurisprudencia: tasas éxito por tribunal, curvas trend, distribución tipos caso — sobre miles de sentencias.",
+  "Get started in 5 steps": "Empieza en 5 pasos",
+  "From login to first case — how fast Subsumio goes live.":
+    "Del login al primer caso — lo rápido que Subsumio va live.",
+  "Set up Brain": "Configurar Brain",
+  "Run the onboarding wizard, connect data sources, index your brain.":
+    "Ejecuta el wizard onboarding, conecta fuentes datos, indexa tu brain.",
+  "Create first case": "Crear primer caso",
+  "Add client, create case, upload documents via drag-and-drop.":
+    "Añade cliente, crea caso, sube documentos via drag-and-drop.",
+  "Configure deadlines": "Configurar plazos",
+  "AI automatically scans all documents for deadlines — enable calendar export.":
+    "AI escanea automáticamente todos los documentos por plazos — activa export calendario.",
+  "Use Copilot": "Usar Copilot",
+  "Ask the brain questions, get cited answers, book time via chat.":
+    "Haz preguntas al brain, obtén respuestas con citas, registra tiempo via chat.",
+  "Invite team": "Invitar equipo",
+  "Add members, assign roles, collaborate on the brain together.":
+    "Añade miembros, asigna roles, colabora en el brain juntos.",
+  // ── User-centric description rewrites ──
+  "Ask questions in plain language — get answers from your entire knowledge base. Every document, email and note is instantly searchable.":
+    "Haz preguntas en lenguaje normal — obtén respuestas de toda tu base de conocimiento. Cada documento, email y nota es buscable al instante.",
+  "Every answer links back to the exact source passage. No hallucinations — if the brain can't find it, it says so.":
+    "Cada respuesta remite al pasaje exacto de la fuente. Sin alucinaciones — si el brain no lo encuentra, lo dice.",
+  "Complex legal questions get step-by-step reasoning. The brain shows its work — so you can verify every conclusion.":
+    "Cuestiones legales complejas con razonamiento paso a paso. El brain muestra su trabajo — cada conclusión verificable.",
+  "Deploy specialized AI agents for recurring tasks — research, drafting, review. Each agent has its own skills and can be evaluated.":
+    "Despliega agentes AI especializados para tareas recurrentes — investigación, drafting, review. Cada agente tiene sus propias skills y es evaluable.",
+  "Built-in quality dashboard for AI answers. Test retrieval quality against real queries — know exactly how reliable the brain is.":
+    "Dashboard de calidad integrado para respuestas AI. Prueba la calidad de retrieval contra consultas reales — sabes exactamente cuán fiable es el brain.",
+  "AI reads across multiple documents at once — finds themes, risks and patterns you'd miss document-by-document.":
+    "La AI lee múltiples documentos a la vez — encuentra temas, riesgos y patrones que perderías documento por documento.",
+  "See who uses which features and how often. Spot training gaps, drive adoption, measure ROI.":
+    "Ve quién usa qué funciones y con qué frecuencia. Identifica brechas de formación, impulsa la adopción, mide el ROI.",
+  "All data sources in one dashboard: sync status, frequency, error logs. Spot issues before they become problems.":
+    "Todas las fuentes de datos en un dashboard: estado sync, frecuencia, logs de errores. Detecta problemas antes de que lo sean.",
+  "Track copilot usage: sessions, messages, token costs, pinned answers — per user, per day.":
+    "Rastrea el uso del copiloto: sesiones, mensajes, costes de token, respuestas fijadas — por usuario, por día.",
+  "Upload scans, photos or PDFs — text is extracted automatically. Every document becomes searchable and classified.":
+    "Sube escaneos, fotos o PDFs — el texto se extrae automáticamente. Cada documento se vuelve buscable y clasificado.",
+  "Defensible review sets with privilege log and redactions. Deduplication, bulk tagging, export ready for court.":
+    "Review sets defendibles con privilege log y redactions. Deduplicación, bulk tagging, export listo para tribunal.",
+  "Every case is walled off from others. A user on case A cannot see case B — guaranteed by design, fuzz-tested for zero leaks.":
+    "Cada caso está aislado de los demás. Un usuario en el caso A no puede ver el caso B — garantizado por diseño, fuzz-testeado para cero leaks.",
+  "Real-time performance dashboard: response times, brain quality, queue depth and error rates — all at a glance.":
+    "Dashboard de rendimiento en tiempo real: tiempos de respuesta, calidad del brain, profundidad de cola y tasas de error — todo a primera vista.",
+  "GDPR built into the platform: DPA templates, data portability, right to erasure — all ready out of the box.":
+    "GDPR integrado en la plataforma: plantillas DPA, portabilidad de datos, derecho de supresión — todo listo out-of-the-box.",
+  "Connect any third-party tool via open API. Real-time webhooks keep everything in sync — no manual exports.":
+    "Conecta cualquier herramienta de terceros via API abierta. Webhooks en tiempo real mantienen todo sincronizado — sin exports manuales.",
+  "Set up agents for recurring tasks — they run on schedule, report results and learn from feedback.":
+    "Configura agentes para tareas recurrentes — se ejecutan según planificación, reportan resultados y aprenden del feedback.",
 };
 
 const PL_DOCS_REPLACEMENTS: Record<string, string> = {
@@ -1590,11 +2660,11 @@ const PL_DOCS_REPLACEMENTS: Record<string, string> = {
     "Projekty asystowane AI dla pozwów, pism obronnych, skarg i środków prawnych. Ze źródłami i cytatami.",
   "Technical Architecture": "Architektura Techniczna",
   "Straight from the backend — no speculation.": "Prosto z backendu — bez spekulacji.",
-  "72 API Endpoints": "72 Endpoint API",
+  "90+ API Endpoints": "90+ Endpoint API",
   "Complete REST API with auth, rate limiting, audit logging and TypeScript types.":
     "Kompletne REST API z auth, rate limiting, audit logging i typami TypeScript.",
-  "57 Dashboard Pages": "57 Stron Dashboard",
-  "Every function has its own responsive page — from the case file to the cost calculator.":
+  "97+ Dashboard Pages": "97+ Stron Dashboard",
+  "Every function has its own responsive page — from the case file to the ELSTER wizard.":
     "Każda funkcja ma własną stronę responsive — od akt sprawy po kalkulator kosztów.",
   "Self-Hosted or EU Cloud": "Self-Hosted lub EU Cloud",
   "Local Docker installation or hosted in the EU with DPA. Data never leaves your control.":
@@ -1621,6 +2691,225 @@ const PL_DOCS_REPLACEMENTS: Record<string, string> = {
   "Team & Organization": "Zespół & Organizacja",
   "Team workspace management: create organization, invite members, assign roles and access rights. One brain for the whole team.":
     "Zarządzanie workspace zespołu: twórz organizację, zapraszaj członków, przypisuj role i prawa dostępu. Jeden brain dla całego zespołu.",
+  // ── New features ──
+  "Cross-Document Analysis": "Analiza Cross-Dokumentowa",
+  "AI-powered analysis across multiple documents: detect themes, risks and patterns invisible in individual documents.":
+    "Analiza AI na wielu dokumentach: wykrywa motywy, ryzyka i wzorce niewidoczne w pojedynczych dokumentach.",
+  "Portfolio Insights": "Insights Portfela",
+  "Firm portfolio analysis: case mix, success rates, risk clusters and trends — based on all brain data.":
+    "Analiza portfela kancelarii: mix spraw, wskaźniki sukcesu, klastry ryzyka i trendy — na podstawie wszystkich danych brain.",
+  "Adoption Analytics": "Analytics Adopcji",
+  "Usage and adoption tracking: who uses which features how often? Basis for training decisions and rollout steering.":
+    "Śledzenie użycia i adopcji: kto używa których funkcji i jak często? Podstawa dla decyzji szkoleniowych i sterowania rollout.",
+  "Shared Spaces": "Wspólne Przestrzenie",
+  "Shared Spaces for teams: collaborative knowledge areas, shared case streams and notes — with granular access control.":
+    "Wspólne Przestrzenie dla zespołów: współdzielone obszary wiedzy, strumienie spraw i notatki — z granularną kontrolą dostępu.",
+  "Sources Management": "Zarządzanie Źródłami",
+  "Central management of all data sources and connectors. Status, sync frequency, error logs — all in one place.":
+    "Centralne zarządzanie wszystkimi źródłami danych i connectorami. Status, częstotliwość sync, logi błędów — wszystko w jednym miejscu.",
+  "Document Requests": "Wnioski o Dokumenty",
+  "Structured requests for documents from clients. Status tracking, automatic reminders after 7 days, escalation after 3 reminders — via WhatsApp and in-app notification.":
+    "Ustrukturyzowane wnioski o dokumenty od klientów. Śledzenie statusu, automatyczne przypomnienia po 7 dniach, eskalacja po 3 przypomnieniach — przez WhatsApp i powiadomienia in-app.",
+  "Version History": "Historia Wersji",
+  "Full versioning of every document. Compare changes, restore previous versions, audit trail per version.":
+    "Pełne wersjonowanie każdego dokumentu. Porównuj zmiany, przywracaj poprzednie wersje, audit trail na wersję.",
+  "Review Sets & eDiscovery": "Review Set & eDiscovery",
+  "Defensible review sets with privilege log and redactions. Deduplication, bulk tagging, export for court.":
+    "Defensible review set z privilege log i redactions. Deduplikacja, bulk tagging, eksport dla sądu.",
+  "Review Queue": "Kolejka Review",
+  "Structured document review: tagging, commenting, prioritizing. Batch-based with filters and saved views.":
+    "Ustrukturyzowany review dokumentów: tagowanie, komentarze, priorytetyzacja. Wsadowo z filtrami i zapisanymi widokami.",
+  "Deadline Register": "Rejestr Terminów",
+  "Chronological deadline register — all deadlines of a case in one view. Sortable by date, type, status. Audit-proof documented.":
+    "Chronologiczny rejestr terminów — wszystkie terminy sprawy w jednym widoku. Sortowalne po dacie, typie, statusie. Udokumentowane audit-proof.",
+  "Task Management": "Zarządzanie Zadaniami",
+  "Tasks and to-dos per case or global. Due dates, priorities, assignment to team members, status tracking.":
+    "Zadania i to-do per sprawa lub globalne. Terminy, priorytety, przypisanie do członków zespołu, śledzenie statusu.",
+  "Calendar with Inline Editing": "Kalendarz z Edycją Inline",
+  "Month calendar with click-to-create, drag editing, appointment types (hearing, consultation, meeting). Case linking, reminders.":
+    "Kalendarz miesięczny z kliknij-aby-utworzyć, edycją drag, typami spotkań (rozprawa, konsultacja, spotkanie). Powiązanie spraw, przypomnienia.",
+  "Trust Accounting": "Konta Powiernicze",
+  "Management of client funds on escrow accounts. Deposits and withdrawals, balances, transaction records — audit-proof.":
+    "Zarządzanie funduszami klientów na kontach powierniczych. Wpłaty i wypłaty, salda, zapisy transakcji — audit-proof.",
+  Reports: "Raporty",
+  "Structured reports: case evaluations, revenue statistics, deadline reports, productivity analyses. Export as PDF or CSV.":
+    "Ustrukturyzowane raporty: ewaluacje spraw, statystyki przychodów, raporty terminów, analizy produktywności. Eksport PDF lub CSV.",
+  Intake: "Przyjęcie",
+  "Structured intake of new clients and incoming items. Quick capture with automatic case creation, contact enrichment and deadline detection.":
+    "Ustrukturyzowane przyjęcie nowych klientów i przesyłek. Szybkie przechwytywanie z automatycznym tworzeniem spraw, wzbogacaniem kontaktów i wykrywaniem terminów.",
+  "Directory (Courts & Authorities)": "Katalog (Sądy & Urzędy)",
+  "Central directory of all courts, authorities and institutions. Addresses, jurisdictions, file number formats — directly linkable to cases.":
+    "Centralny katalog wszystkich sądów, urzędów i instytucji. Adresy, jurysdykcje, formaty numerów akt — bezpośrednio linkowalne do spraw.",
+  "Legal Translation": "Tłumaczenie Prawnicze",
+  "AI-powered translation of legal texts with specialized terminology accuracy. Detects contract clauses, legal terms and authority jargon.":
+    "Tłumaczenie AI tekstów prawnych z precyzją terminologii specjalistycznej. Wykrywa klauzule umów, terminy prawne i żargon urzędowy.",
+  "Onboarding Wizard": "Kreator Onboardingu",
+  "Guided onboarding for new users: set up brain, create first case, import contacts, configure deadlines — step by step.":
+    "Guidowany onboarding dla nowych użytkowników: skonfiguruj brain, utwórz pierwszą sprawę, importuj kontakty, skonfiguruj terminy — krok po kroku.",
+  "Workflow Automation": "Automatyzacja Workflow",
+  "Automate recurring workflows: document approvals, deadline escalations, case status transitions. Trigger-based, with conditions and actions.":
+    "Automatyzuj powtarzalne workflow: aprobacje dokumentów, eskalacje terminów, przejścia statusu spraw. Oparte na triggerach, z warunkami i akcjami.",
+  Approvals: "Aprobacje",
+  "Structured approval processes for documents, invoices and pleadings. Multi-stage approval chains, delegation, audit trail per approval.":
+    "Ustrukturyzowane procesy aprobacji dla dokumentów, faktur i pism. Wieloetapowe łańcuchy aprobacji, delegacja, audit trail na aprobację.",
+  "Obligation Tracking": "Śledzenie Obowiązków",
+  "Tracking of all obligations per case: deadlines, form requirements, disclosure duties. Automatic warning when violation is imminent.":
+    "Śledzenie wszystkich obowiązków per sprawa: terminy, wymogi formalne, obowiązki ujawnienia. Automatyczne ostrzeżenie gdy naruszenie jest nieuchronne.",
+  Playbooks: "Playbooki",
+  "Reusable process templates for recurring case types. Step sequences, checklists, deadline patterns — per practice area.":
+    "Wielokrotnie używane szablony procesów dla powtarzalnych typów spraw. Sekwencje kroków, checklisty, wzorce terminów — per obszar praktyki.",
+  "Template Management": "Zarządzanie Szablonami",
+  "Central library for document templates. Pleadings, contracts, cover letters — with variables and brain connection for auto-fill.":
+    "Centralna biblioteka szablonów dokumentów. Pisma, umowy, listy przewodnie — ze zmiennymi i połączeniem brain dla auto-fill.",
+  "Clause Library": "Biblioteka Klauzul",
+  "Structured collection of reusable clauses. Categorized by contract type, practice area and risk. With AI suggestions during drafting.":
+    "Ustrukturyzowana kolekcja klauzul wielokrotnego użytku. Kategoryzowane po typie umowy, obszarze praktyki i ryzyku. Z sugestiami AI podczas redagowania.",
+  "Legal Commentaries": "Komentarze Prawnicze",
+  "Annotations and comments on norms, judgments and contract clauses. Shared across the team, with discussion history.":
+    "Adnotacje i komentarze do norm, orzeczeń i klauzul umów. Współdzielone w zespole, z historią dyskusji.",
+  "Knowledge Management (Experience)": "Zarządzanie Wiedzą (Experience)",
+  "Structured capture of firm knowledge: pitfalls, best practices, lessons learned. Searchable, linkable to cases.":
+    "Ustrukturyzowane przechwytywanie wiedzy kancelarii: pułapki, best practices, lessons learned. Przeszukiwalne, linkowalne do spraw.",
+  "Global Full-Text Search": "Globalne Wyszukiwanie Full-Text",
+  "Search across all cases, documents, notes, invoices and chats — with scope filters per type. Hybrid search: vector + BM25 + graph.":
+    "Wyszukiwanie we wszystkich sprawach, dokumentach, notatkach, fakturach i chat — z filtrami scope per typ. Wyszukiwanie hybrydowe: wektorowe + BM25 + graf.",
+  "Drafting Editor": "Editor Redagowania",
+  "Full drafting editor with brain connection: inline AI suggestions, source insertion, clause library integration, version comparison.":
+    "Pełny editor redagowania z połączeniem brain: sugestie AI inline, wstawianie źródeł, integracja biblioteki klauzul, porównanie wersji.",
+  "Litigation & eDiscovery": "Postępowanie & eDiscovery",
+  "Phases, analytics, review sets, precedent search.":
+    "Fazy, analytics, review set, wyszukiwanie precedensów.",
+  "Litigation Management": "Zarządzanie Postępowaniem",
+  "Structured litigation management with phases and steps. Status per phase, assigned team members, deadlines and documents per step.":
+    "Ustrukturyzowane zarządzanie postępowaniem z fazami i krokami. Status per faza, przypisani członkowie zespołu, terminy i dokumenty per krok.",
+  "Litigation Analytics": "Analytics Postępowania",
+  "Success rates, case duration, court statistics. Trends per court, per case type, per opponent — based on historical data.":
+    "Wskaźniki sukcesu, czas trwania spraw, statystyki sądów. Trendy per sąd, per typ sprawy, per przeciwnik — na podstawie danych historycznych.",
+  "Precedent Search": "Wyszukiwanie Precedensów",
+  "AI-powered search for similar cases in the brain and external case law databases. Automatic relevance ranking.":
+    "Wyszukiwanie AI podobnych spraw w brain i zewnętrznych bazach orzecznictwa. Automatyczny ranking istotności.",
+  "Process Strategy": "Strategia Procesu",
+  "Structured strategy capture per case: argument lines, evidence, counter-arguments. With AI suggestions and success prognosis.":
+    "Ustrukturyzowane przechwytywanie strategii per sprawa: linie argumentacyjne, dowody, kontrargumenty. Z sugestiami AI i prognozą sukcesu.",
+  "Tax & Accounting": "Podatki & Księgowość",
+  "Tax returns, ELSTER, StBVV, tax audits.": "Zeznania podatkowe, ELSTER, StBVV, audyty podatkowe.",
+  "Tax Returns": "Zeznania Podatkowe",
+  "Preparation and management of tax returns (income, VAT, trade, corporate). Structured entry, validation, status tracking.":
+    "Przygotowanie i zarządzanie zeznaniami podatkowymi (dochodowe, VAT, handlowe, spółkowe). Ustrukturyzowany wpis, walidacja, śledzenie statusu.",
+  "Tax Assessments": "Decyzje Podatkowe",
+  "Capture and analysis of tax assessments. Comparison with return, deviation analysis, objection deadline tracking.":
+    "Przechwytywanie i analiza decyzji podatkowych. Porównanie z zeznaniem, analiza odchyleń, śledzenie terminów odwołań.",
+  "Tax Audit": "Audyt Podatkowy",
+  "Preparation and support of tax audits. Audit field management, document provision, protocol management.":
+    "Przygotowanie i wsparcie audytów podatkowych. Zarządzanie obszarami audytu, dostarczanie dokumentów, zarządzanie protokołami.",
+  "Tax Deadlines": "Terminy Podatkowe",
+  "All tax deadlines (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) with automatic weekend and holiday shifting.":
+    "Wszystkie terminy podatkowe (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) z automatycznym przesunięciem weekendów i świąt.",
+  "StBVV Fee Calculator": "Kalkulator StBVV",
+  "Tax adviser remuneration ordinance: 10 activities, VV numbers, factor calculation, VAT. Interactive and exportable.":
+    "Rozporządzenie o wynagrodzeniu doradców podatkowych: 10 działalności, numery VV, obliczanie czynnika, VAT. Interaktywny i eksportowalny.",
+  "Tax Clients": "Klienci Podatkowi",
+  "Separate client management for tax advisers: master data, tax number, tax office, assignment to returns and assessments.":
+    "Oddzielne zarządzanie klientami dla doradców podatkowych: dane master, NIP, urząd skarbowy, przypisanie do zeznań i decyzji.",
+  "ELSTER Integration": "Integracja ELSTER",
+  "Electronic tax returns via ELSTER. XML generation, form types, submission wizard — directly from the dashboard.":
+    "Elektroniczne zeznania podatkowe przez ELSTER. Generacja XML, typy formularzy, kreator wysyłki — bezpośrednio z dashboard.",
+  "Chat Analytics": "Analytics Czatu",
+  "Usage statistics for the AI copilot: sessions, messages, token consumption, pinned answers — per day and per user.":
+    "Statystyki użycia kopilota AI: sesje, wiadomości, zużycie tokenów, przypięte odpowiedzi — per dzień i per użytkownik.",
+  "Model Comparison": "Porównanie Modeli",
+  "Side-by-side comparison of different AI models: same question to multiple models at once, evaluate answers next to each other.":
+    "Porównanie obok siebie różnych modeli AI: to samo pytanie do wielu modeli naraz, ocena odpowiedzi obok siebie.",
+  "Legacy Cases": "Stare Sprawy",
+  "Identify, classify and monitor risky and outdated cases. Pipeline status, escalation levels, deadline warnings — nothing falls through the cracks.":
+    "Identyfikuj, klasyfikuj i monitoruj ryzykowne i nieaktualne sprawy. Status pipeline, poziomy eskalacji, ostrzeżenia terminów — nic nie umknie.",
+  "Engine Monitoring (APM)": "Monitorowanie Engine (APM)",
+  "Performance dashboard: P50/P95/P99 latency, brain quality, embedding queue, quota usage and error events in real time.":
+    "Dashboard wydajności: latencja P50/P95/P99, jakość brain, kolejka embedding, użycie quota i zdarzenia błędów w czasie rzeczywistym.",
+  "Retention Policies": "Polityki Retencji",
+  "Automated retention rules per GDPR and BRAO: retention periods per document type, automatic deletion after expiry, audit trail.":
+    "Automatyczne reguły retencji GDPR i BRAO: okresy retencji per typ dokumentu, automatyczne usuwanie po wygaśnięciu, audit trail.",
+  "WhatsApp Templates": "Szablony WhatsApp",
+  "Template library for WhatsApp messages: standard replies, client letters, reminder templates. With variables and approval workflow.":
+    "Biblioteka szablonów wiadomości WhatsApp: standardowe odpowiedzi, listy klientów, szablony przypomnień. Ze zmiennymi i workflow zatwierdzania.",
+  "AI Model Configuration": "Konfiguracja Modelu AI",
+  "Model selection in the dashboard: provider, speed, cost, context window. Configurable per organization — from budget model to premium reasoning.":
+    "Wybór modelu w dashboard: provider, prędkość, koszt, okno kontekstu. Konfigurowalne per organizacja — od modelu budżetowego do premium reasoning.",
+  "SCIM Provisioning": "Provisioning SCIM",
+  "Automated user management via SCIM 2.0: create, update, deactivate users — directly from identity providers (Okta, Azure AD, Google).":
+    "Automatyczne zarządzanie użytkownikami via SCIM 2.0: tworzenie, aktualizacja, dezaktywacja — bezpośrednio z identity providers (Okta, Azure AD, Google).",
+  "Billing & Subscription": "Fakturacja & Subskrypcja",
+  "Plan management, upgrade/downgrade, payment methods, invoice history. Stripe integration with self-service portal for clients.":
+    "Zarządzanie planem, upgrade/downgrade, metody płatności, historia faktur. Integracja Stripe z portalem self-service dla klientów.",
+  "Judgement Sync": "Sync Orzeczeń",
+  "Automatic retrieval of new court decisions from external sources. Daily sync, delta detection, automatic indexing into the brain.":
+    "Automatyczne pobieranie nowych orzeczeń ze źródeł zewnętrznych. Codzienny sync, detekcja delta, automatyczna indeksacja w brain.",
+  "Workflow Builder": "Kreator Workflow",
+  "Visual drag-and-drop editor for automations: triggers, conditions, actions. No code needed — build and test workflows visually.":
+    "Wizualny editor drag-and-drop dla automatyzacji: triggery, warunki, akcje. Bez kodu — twórz i testuj workflow wizualnie.",
+  "Judgement Database": "Baza Orzeczeń",
+  "Full-text search across thousands of court decisions. Filter by court, date, file number, practice area — with AI summary per judgement.":
+    "Wyszukiwanie full-text w tysiącach orzeczeń. Filtruj po sądzie, dacie, numerze sprawy, obszarze praktyki — z podsumowaniem AI per orzeczenie.",
+  "Mobile Pipeline Status": "Status Pipeline Mobile",
+  "Monitor pipeline runs on mobile: status (running, completed, failed, awaiting_review), layer details tap-to-expand, output viewer with Markdown rendering.":
+    "Monitoruj uruchomienia pipeline na mobile: status (running, completed, failed, awaiting_review), szczegóły layer tap-to-expand, przeglądarka output z rendering Markdown.",
+  "Standalone Document Analysis": "Analiza Dokumentów Standalone",
+  "Analyze documents without case context: upload, AI analysis, risk highlighting, summary — ideal for initial assessments and due diligence.":
+    "Analizuj dokumenty bez kontekstu sprawy: upload, analiza AI, podświetlanie ryzyk, podsumowanie — idealne dla wstępnych ocen i due diligence.",
+  "Case Law Analytics": "Analytics Orzecznictwa",
+  "Statistical analysis of case law: success rates per court, trend curves, case type distribution — based on thousands of decisions.":
+    "Analiza statystyczna orzecznictwa: wskaźniki sukcesu per sąd, krzywe trendów, dystrybucja typów spraw — na podstawie tysięcy orzeczeń.",
+  "Get started in 5 steps": "Zacznij w 5 krokach",
+  "From login to first case — how fast Subsumio goes live.":
+    "Od logowania do pierwszej sprawy — jak szybko Subsumio startuje.",
+  "Set up Brain": "Skonfiguruj Brain",
+  "Run the onboarding wizard, connect data sources, index your brain.":
+    "Uruchom wizard onboarding, podłącz źródła danych, zindeksuj brain.",
+  "Create first case": "Utwórz pierwszą sprawę",
+  "Add client, create case, upload documents via drag-and-drop.":
+    "Dodaj klienta, utwórz sprawę, wgraj dokumenty via drag-and-drop.",
+  "Configure deadlines": "Skonfiguruj terminy",
+  "AI automatically scans all documents for deadlines — enable calendar export.":
+    "AI automatycznie skanuje wszystkie dokumenty pod kątem terminów — włącz eksport kalendarza.",
+  "Use Copilot": "Użyj Copilota",
+  "Ask the brain questions, get cited answers, book time via chat.":
+    "Zadawaj pytania brain, otrzymuj odpowiedzi z cytatami, rejestruj czas via chat.",
+  "Invite team": "Zaproś zespół",
+  "Add members, assign roles, collaborate on the brain together.":
+    "Dodaj członków, przypisz role, współpracuj nad brain razem.",
+  // ── User-centric description rewrites ──
+  "Ask questions in plain language — get answers from your entire knowledge base. Every document, email and note is instantly searchable.":
+    "Zadawaj pytania w zwykłym języku — otrzymuj odpowiedzi z całej bazy wiedzy. Każdy dokument, email i notatka jest natychmiast przeszukiwalna.",
+  "Every answer links back to the exact source passage. No hallucinations — if the brain can't find it, it says so.":
+    "Każda odpowiedź odsyła do dokładnego fragmentu źródła. Bez halucynacji — jeśli brain tego nie znajdzie, tak mówi.",
+  "Complex legal questions get step-by-step reasoning. The brain shows its work — so you can verify every conclusion.":
+    "Złożone pytania prawne otrzymują rozumowanie krok po kroku. Brain pokazuje swoją pracę — każdy wniosek do weryfikacji.",
+  "Deploy specialized AI agents for recurring tasks — research, drafting, review. Each agent has its own skills and can be evaluated.":
+    "Wdrażaj wyspecjalizowanych agentów AI do powtarzających się zadań — research, drafting, review. Każdy agent ma własne skille i jest evaluable.",
+  "Built-in quality dashboard for AI answers. Test retrieval quality against real queries — know exactly how reliable the brain is.":
+    "Wbudowany dashboard jakości dla odpowiedzi AI. Testuj jakość retrievalu na realnych zapytaniach — wiesz dokładnie, jak niezawodny jest brain.",
+  "AI reads across multiple documents at once — finds themes, risks and patterns you'd miss document-by-document.":
+    "AI czyta wiele dokumentów naraz — znajduje motywy, ryzyka i wzorce, które umkną dokument po dokumencie.",
+  "See who uses which features and how often. Spot training gaps, drive adoption, measure ROI.":
+    "Widzisz, kto używa których funkcji i jak często. Wykrywaj luki szkoleniowe, napędzaj adopcję, mierz ROI.",
+  "All data sources in one dashboard: sync status, frequency, error logs. Spot issues before they become problems.":
+    "Wszystkie źródła danych w jednym dashboardzie: status sync, częstotliwość, logi błędów. Wykrywaj problemy zanim staną się problemami.",
+  "Track copilot usage: sessions, messages, token costs, pinned answers — per user, per day.":
+    "Śledź użycie copilota: sesje, wiadomości, koszty tokenów, przypięte odpowiedzi — per użytkownik, per dzień.",
+  "Upload scans, photos or PDFs — text is extracted automatically. Every document becomes searchable and classified.":
+    "Wgraj skany, zdjęcia lub PDFy — tekst jest automatycznie ekstrahowany. Każdy dokument staje się przeszukiwalny i sklasyfikowany.",
+  "Defensible review sets with privilege log and redactions. Deduplication, bulk tagging, export ready for court.":
+    "Defensible review sets z privilege log i redactions. Deduplikacja, bulk tagging, export gotowy dla sądu.",
+  "Every case is walled off from others. A user on case A cannot see case B — guaranteed by design, fuzz-tested for zero leaks.":
+    "Każda sprawa jest odizolowana od innych. Użytkownik na sprawie A nie może zobaczyć sprawy B — gwarantowane przez design, fuzz-testowane na zero leaków.",
+  "Real-time performance dashboard: response times, brain quality, queue depth and error rates — all at a glance.":
+    "Dashboard wydajności w czasie rzeczywistym: czasy odpowiedzi, jakość brain, głębokość kolejki i wskaźniki błędów — wszystko na pierwszy rzut oka.",
+  "GDPR built into the platform: DPA templates, data portability, right to erasure — all ready out of the box.":
+    "RODO wbudowane w platformę: szablony DPA, przenośność danych, prawo do usunięcia — wszystko gotowe out-of-the-box.",
+  "Connect any third-party tool via open API. Real-time webhooks keep everything in sync — no manual exports.":
+    "Podłącz dowolne narzędzie zewnętrzne przez otwartą API. Webhooki real-time trzymają wszystko w sync — bez manualnych exportów.",
+  "Set up agents for recurring tasks — they run on schedule, report results and learn from feedback.":
+    "Ustaw agentów dla powtarzających się zadań — działają wg harmonogramu, zgłaszają wyniki i uczą się z feedbacku.",
 };
 
 const FR_DOCS_REPLACEMENTS: Record<string, string> = {
@@ -1800,11 +3089,11 @@ const FR_DOCS_REPLACEMENTS: Record<string, string> = {
     "Projets assistés par AI pour plaintes, mémoires de défense, recours et remèdes juridiques. Avec sources et citations.",
   "Technical Architecture": "Architecture Technique",
   "Straight from the backend — no speculation.": "Directement du backend — sans spéculation.",
-  "72 API Endpoints": "72 Endpoints API",
+  "90+ API Endpoints": "90+ Endpoints API",
   "Complete REST API with auth, rate limiting, audit logging and TypeScript types.":
     "API REST complète avec auth, rate limiting, audit logging et types TypeScript.",
-  "57 Dashboard Pages": "57 Pages Dashboard",
-  "Every function has its own responsive page — from the case file to the cost calculator.":
+  "97+ Dashboard Pages": "97+ Pages Dashboard",
+  "Every function has its own responsive page — from the case file to the ELSTER wizard.":
     "Chaque fonction a sa propre page responsive — du dossier au calculateur de coûts.",
   "Self-Hosted or EU Cloud": "Self-Hosted ou EU Cloud",
   "Local Docker installation or hosted in the EU with DPA. Data never leaves your control.":
@@ -1831,6 +3120,226 @@ const FR_DOCS_REPLACEMENTS: Record<string, string> = {
   "Team & Organization": "Équipe & Organisation",
   "Team workspace management: create organization, invite members, assign roles and access rights. One brain for the whole team.":
     "Gestion du workspace d'équipe: créez l'organisation, invitez des membres, assignez rôles et droits d'accès. Un brain pour toute l'équipe.",
+  // ── New features ──
+  "Cross-Document Analysis": "Analyse Cross-Document",
+  "AI-powered analysis across multiple documents: detect themes, risks and patterns invisible in individual documents.":
+    "Analyse AI sur plusieurs documents: détecte thèmes, risques et patterns invisibles dans les documents individuels.",
+  "Portfolio Insights": "Insights Portfolio",
+  "Firm portfolio analysis: case mix, success rates, risk clusters and trends — based on all brain data.":
+    "Analyse du portfolio du cabinet: mix de dossiers, taux de succès, clusters de risque et tendances — basés sur toutes les données du brain.",
+  "Adoption Analytics": "Analytics d'Adoption",
+  "Usage and adoption tracking: who uses which features how often? Basis for training decisions and rollout steering.":
+    "Suivi d'utilisation et d'adoption: qui utilise quelles fonctions et combien souvent? Base pour décisions de formation et pilotage du rollout.",
+  "Shared Spaces": "Espaces Partagés",
+  "Shared Spaces for teams: collaborative knowledge areas, shared case streams and notes — with granular access control.":
+    "Espaces Partagés pour équipes: zones de connaissance collaboratives, flux de dossiers partagés et notes — avec contrôle d'accès granulaire.",
+  "Sources Management": "Gestion des Sources",
+  "Central management of all data sources and connectors. Status, sync frequency, error logs — all in one place.":
+    "Gestion centrale de toutes les sources de données et connecteurs. Statut, fréquence de sync, logs d'erreurs — tout au même endroit.",
+  "Document Requests": "Demandes de Documents",
+  "Structured requests for documents from clients. Status tracking, automatic reminders after 7 days, escalation after 3 reminders — via WhatsApp and in-app notification.":
+    "Demandes structurées de documents aux clients. Suivi de statut, rappels automatiques après 7 jours, escalade après 3 rappels — via WhatsApp et notification in-app.",
+  "Version History": "Historique des Versions",
+  "Full versioning of every document. Compare changes, restore previous versions, audit trail per version.":
+    "Versioning complet de chaque document. Comparez les changements, restaurez les versions précédentes, audit trail par version.",
+  "Review Sets & eDiscovery": "Review Sets & eDiscovery",
+  "Defensible review sets with privilege log and redactions. Deduplication, bulk tagging, export for court.":
+    "Review sets défensibles avec privilege log et redactions. Déduplication, tagging en masse, export pour tribunal.",
+  "Review Queue": "File de Review",
+  "Structured document review: tagging, commenting, prioritizing. Batch-based with filters and saved views.":
+    "Review structurée de documents: tagging, commentaires, priorisation. Par lots avec filtres et vues sauvegardées.",
+  "Deadline Register": "Registre des Délais",
+  "Chronological deadline register — all deadlines of a case in one view. Sortable by date, type, status. Audit-proof documented.":
+    "Registre chronologique des délais — tous les délais d'un dossier en une vue. Triable par date, type, statut. Documenté audit-proof.",
+  "Task Management": "Gestion des Tâches",
+  "Tasks and to-dos per case or global. Due dates, priorities, assignment to team members, status tracking.":
+    "Tâches et to-dos par dossier ou globales. Échéances, priorités, assignation aux membres de l'équipe, suivi de statut.",
+  "Calendar with Inline Editing": "Calendrier avec Édition Inline",
+  "Month calendar with click-to-create, drag editing, appointment types (hearing, consultation, meeting). Case linking, reminders.":
+    "Calendrier mensuel avec clic-pour-créer, édition drag, types de rendez-vous (audience, consultation, réunion). Liaison de dossiers, rappels.",
+  "Trust Accounting": "Comptabilité Fiduciaire",
+  "Management of client funds on escrow accounts. Deposits and withdrawals, balances, transaction records — audit-proof.":
+    "Gestion des fonds clients sur comptes fiduciaires. Dépôts et retraits, soldes, enregistrements de transactions — audit-proof.",
+  Reports: "Rapports",
+  "Structured reports: case evaluations, revenue statistics, deadline reports, productivity analyses. Export as PDF or CSV.":
+    "Rapports structurés: évaluations de dossiers, statistiques de revenus, rapports de délais, analyses de productivité. Export PDF ou CSV.",
+  Intake: "Réception",
+  "Structured intake of new clients and incoming items. Quick capture with automatic case creation, contact enrichment and deadline detection.":
+    "Réception structurée de nouveaux clients et entrées. Capture rapide avec création automatique de dossier, enrichissement de contacts et détection de délais.",
+  "Directory (Courts & Authorities)": "Annuaire (Tribunaux & Autorités)",
+  "Central directory of all courts, authorities and institutions. Addresses, jurisdictions, file number formats — directly linkable to cases.":
+    "Annuaire central de tous les tribunaux, autorités et institutions. Adresses, juridictions, formats de numéros de dossier — directement liables aux dossiers.",
+  "Legal Translation": "Traduction Juridique",
+  "AI-powered translation of legal texts with specialized terminology accuracy. Detects contract clauses, legal terms and authority jargon.":
+    "Traduction AI de textes juridiques avec précision terminologique spécialisée. Détecte les clauses contractuelles, termes juridiques et jargon administratif.",
+  "Onboarding Wizard": "Assistant d'Onboarding",
+  "Guided onboarding for new users: set up brain, create first case, import contacts, configure deadlines — step by step.":
+    "Onboarding guidé pour nouveaux utilisateurs: configurer brain, créer premier dossier, importer contacts, configurer délais — étape par étape.",
+  "Workflow Automation": "Automatisation de Workflows",
+  "Automate recurring workflows: document approvals, deadline escalations, case status transitions. Trigger-based, with conditions and actions.":
+    "Automatisez les workflows récurrents: approbations de documents, escalades de délais, transitions de statut de dossiers. Basé sur triggers, avec conditions et actions.",
+  Approvals: "Approbations",
+  "Structured approval processes for documents, invoices and pleadings. Multi-stage approval chains, delegation, audit trail per approval.":
+    "Processus d'approbation structurés pour documents, factures et conclusions. Chaînes d'approbation multi-niveaux, délégation, audit trail par approbation.",
+  "Obligation Tracking": "Suivi des Obligations",
+  "Tracking of all obligations per case: deadlines, form requirements, disclosure duties. Automatic warning when violation is imminent.":
+    "Suivi de toutes les obligations par dossier: délais, exigences formelles, devoirs de divulgation. Avertissement automatique quand la violation est imminente.",
+  Playbooks: "Playbooks",
+  "Reusable process templates for recurring case types. Step sequences, checklists, deadline patterns — per practice area.":
+    "Modèles de processus réutilisables pour types de dossiers récurrents. Séquences d'étapes, checklists, patterns de délais — par domaine de pratique.",
+  "Template Management": "Gestion des Modèles",
+  "Central library for document templates. Pleadings, contracts, cover letters — with variables and brain connection for auto-fill.":
+    "Bibliothèque centrale de modèles de documents. Conclusions, contrats, lettres d'accompagnement — avec variables et connexion brain pour auto-fill.",
+  "Clause Library": "Bibliothèque de Clauses",
+  "Structured collection of reusable clauses. Categorized by contract type, practice area and risk. With AI suggestions during drafting.":
+    "Collection structurée de clauses réutilisables. Catégorisées par type de contrat, domaine de pratique et risque. Avec suggestions AI lors de la rédaction.",
+  "Legal Commentaries": "Commentaires Juridiques",
+  "Annotations and comments on norms, judgments and contract clauses. Shared across the team, with discussion history.":
+    "Annotations et commentaires sur normes, jugements et clauses contractuelles. Partagés dans l'équipe, avec historique de discussion.",
+  "Knowledge Management (Experience)": "Gestion des Connaissances (Experience)",
+  "Structured capture of firm knowledge: pitfalls, best practices, lessons learned. Searchable, linkable to cases.":
+    "Capture structurée des connaissances du cabinet: pièges, best practices, leçons apprises. Consultable, liable aux dossiers.",
+  "Global Full-Text Search": "Recherche Full-Text Globale",
+  "Search across all cases, documents, notes, invoices and chats — with scope filters per type. Hybrid search: vector + BM25 + graph.":
+    "Recherche dans tous les dossiers, documents, notes, factures et chats — avec filtres de scope par type. Recherche hybride: vectorielle + BM25 + graphe.",
+  "Drafting Editor": "Éditeur de Rédaction",
+  "Full drafting editor with brain connection: inline AI suggestions, source insertion, clause library integration, version comparison.":
+    "Éditeur de rédaction complet avec connexion brain: suggestions AI inline, insertion de sources, intégration de bibliothèque de clauses, comparaison de versions.",
+  "Litigation & eDiscovery": "Contentieux & eDiscovery",
+  "Phases, analytics, review sets, precedent search.":
+    "Phases, analytics, review sets, recherche de précédents.",
+  "Litigation Management": "Gestion du Contentieux",
+  "Structured litigation management with phases and steps. Status per phase, assigned team members, deadlines and documents per step.":
+    "Gestion structurée du contentieux avec phases et étapes. Statut par phase, membres de l'équipe assignés, délais et documents par étape.",
+  "Litigation Analytics": "Analytics du Contentieux",
+  "Success rates, case duration, court statistics. Trends per court, per case type, per opponent — based on historical data.":
+    "Taux de succès, durée des dossiers, statistiques des tribunaux. Tendances par tribunal, par type de dossier, par adversaire — basées sur données historiques.",
+  "Precedent Search": "Recherche de Précédents",
+  "AI-powered search for similar cases in the brain and external case law databases. Automatic relevance ranking.":
+    "Recherche AI de dossiers similaires dans le brain et bases de jurisprudence externes. Classement de pertinence automatique.",
+  "Process Strategy": "Stratégie de Procédure",
+  "Structured strategy capture per case: argument lines, evidence, counter-arguments. With AI suggestions and success prognosis.":
+    "Capture structurée de stratégie par dossier: lignes argumentaires, preuves, contre-arguments. Avec suggestions AI et pronostic de succès.",
+  "Tax & Accounting": "Fiscalité & Comptabilité",
+  "Tax returns, ELSTER, StBVV, tax audits.":
+    "Déclarations fiscales, ELSTER, StBVV, audits fiscaux.",
+  "Tax Returns": "Déclarations Fiscales",
+  "Preparation and management of tax returns (income, VAT, trade, corporate). Structured entry, validation, status tracking.":
+    "Préparation et gestion des déclarations fiscales (impôt, TVA, commerce, société). Saisie structurée, validation, suivi de statut.",
+  "Tax Assessments": "Avis d'Imposition",
+  "Capture and analysis of tax assessments. Comparison with return, deviation analysis, objection deadline tracking.":
+    "Capture et analyse des avis d'imposition. Comparaison avec déclaration, analyse des écarts, suivi des délais de recours.",
+  "Tax Audit": "Audit Fiscal",
+  "Preparation and support of tax audits. Audit field management, document provision, protocol management.":
+    "Préparation et support des audits fiscaux. Gestion des domaines d'audit, provision de documents, gestion des protocoles.",
+  "Tax Deadlines": "Délais Fiscaux",
+  "All tax deadlines (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) with automatic weekend and holiday shifting.":
+    "Tous les délais fiscaux (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) avec décalage automatique des week-ends et jours fériés.",
+  "StBVV Fee Calculator": "Calculateur StBVV",
+  "Tax adviser remuneration ordinance: 10 activities, VV numbers, factor calculation, VAT. Interactive and exportable.":
+    "Ordonnance de rémunération des conseillers fiscaux: 10 activités, numéros VV, calcul de facteur, TVA. Interactif et exportable.",
+  "Tax Clients": "Clients Fiscaux",
+  "Separate client management for tax advisers: master data, tax number, tax office, assignment to returns and assessments.":
+    "Gestion séparée des clients pour conseillers fiscaux: données maîtresses, numéro fiscal, bureau des impôts, assignation aux déclarations et avis.",
+  "ELSTER Integration": "Intégration ELSTER",
+  "Electronic tax returns via ELSTER. XML generation, form types, submission wizard — directly from the dashboard.":
+    "Déclarations fiscales électroniques via ELSTER. Génération XML, types de formulaires, assistant de soumission — directement depuis le dashboard.",
+  "Chat Analytics": "Analytics Chat",
+  "Usage statistics for the AI copilot: sessions, messages, token consumption, pinned answers — per day and per user.":
+    "Statistiques d'utilisation du copilote AI: sessions, messages, consommation tokens, réponses épinglées — par jour et par utilisateur.",
+  "Model Comparison": "Comparaison de Modèles",
+  "Side-by-side comparison of different AI models: same question to multiple models at once, evaluate answers next to each other.":
+    "Comparaison côte à côte de différents modèles AI: même question à plusieurs modèles simultanément, évaluer les réponses côte à côte.",
+  "Legacy Cases": "Affaires Anciennes",
+  "Identify, classify and monitor risky and outdated cases. Pipeline status, escalation levels, deadline warnings — nothing falls through the cracks.":
+    "Identifier, classer et surveiller les affaires risquées et obsolètes. Statut pipeline, niveaux d'escalade, alertes échéances — rien n'échappe.",
+  "Engine Monitoring (APM)": "Surveillance Engine (APM)",
+  "Performance dashboard: P50/P95/P99 latency, brain quality, embedding queue, quota usage and error events in real time.":
+    "Tableau de bord performance: latence P50/P95/P99, qualité brain, file embedding, utilisation quota et événements d'erreur en temps réel.",
+  "Retention Policies": "Politiques de Conservation",
+  "Automated retention rules per GDPR and BRAO: retention periods per document type, automatic deletion after expiry, audit trail.":
+    "Règles de conservation automatiques GDPR et BRAO: durées par type de document, suppression automatique après expiration, audit trail.",
+  "WhatsApp Templates": "Modèles WhatsApp",
+  "Template library for WhatsApp messages: standard replies, client letters, reminder templates. With variables and approval workflow.":
+    "Bibliothèque de modèles pour messages WhatsApp: réponses standard, courriers clients, modèles de rappels. Avec variables et workflow d'approbation.",
+  "AI Model Configuration": "Configuration Modèle AI",
+  "Model selection in the dashboard: provider, speed, cost, context window. Configurable per organization — from budget model to premium reasoning.":
+    "Sélection modèle dans dashboard: provider, vitesse, coût, fenêtre contexte. Configurable par organisation — du modèle économique au reasoning premium.",
+  "SCIM Provisioning": "Provisioning SCIM",
+  "Automated user management via SCIM 2.0: create, update, deactivate users — directly from identity providers (Okta, Azure AD, Google).":
+    "Gestion utilisateurs automatisée via SCIM 2.0: créer, mettre à jour, désactiver utilisateurs — directement depuis identity providers (Okta, Azure AD, Google).",
+  "Billing & Subscription": "Facturation & Abonnement",
+  "Plan management, upgrade/downgrade, payment methods, invoice history. Stripe integration with self-service portal for clients.":
+    "Gestion plan, upgrade/downgrade, méthodes paiement, historique factures. Intégration Stripe avec portail self-service pour clients.",
+  "Judgement Sync": "Sync Jurisprudence",
+  "Automatic retrieval of new court decisions from external sources. Daily sync, delta detection, automatic indexing into the brain.":
+    "Récupération automatique des nouvelles décisions de sources externes. Sync quotidien, détection delta, indexation automatique dans brain.",
+  "Workflow Builder": "Constructeur Workflow",
+  "Visual drag-and-drop editor for automations: triggers, conditions, actions. No code needed — build and test workflows visually.":
+    "Éditeur visuel drag-and-drop pour automatisations: triggers, conditions, actions. Sans code — créez et testez workflows visuellement.",
+  "Judgement Database": "Base Jurisprudence",
+  "Full-text search across thousands of court decisions. Filter by court, date, file number, practice area — with AI summary per judgement.":
+    "Recherche full-text dans des milliers de décisions. Filtrer par tribunal, date, numéro dossier, domaine pratique — avec résumé AI par décision.",
+  "Mobile Pipeline Status": "Statut Pipeline Mobile",
+  "Monitor pipeline runs on mobile: status (running, completed, failed, awaiting_review), layer details tap-to-expand, output viewer with Markdown rendering.":
+    "Surveiller exécutions pipeline sur mobile: statut (running, completed, failed, awaiting_review), détails layer tap-to-expand, visionneuse output avec rendering Markdown.",
+  "Standalone Document Analysis": "Analyse Documents Standalone",
+  "Analyze documents without case context: upload, AI analysis, risk highlighting, summary — ideal for initial assessments and due diligence.":
+    "Analyser documents sans contexte affaire: upload, analyse AI, surlignage risques, résumé — idéal pour évaluations initiales et due diligence.",
+  "Case Law Analytics": "Analytics Jurisprudence",
+  "Statistical analysis of case law: success rates per court, trend curves, case type distribution — based on thousands of decisions.":
+    "Analyse statistique jurisprudence: taux succès par tribunal, courbes tendance, distribution types affaires — sur des milliers de décisions.",
+  "Get started in 5 steps": "Démarrez en 5 étapes",
+  "From login to first case — how fast Subsumio goes live.":
+    "Du login à la première affaire — la vitesse à laquelle Subsumio devient opérationnel.",
+  "Set up Brain": "Configurer Brain",
+  "Run the onboarding wizard, connect data sources, index your brain.":
+    "Lancez l'assistant onboarding, connectez les sources de données, indexez votre brain.",
+  "Create first case": "Créer première affaire",
+  "Add client, create case, upload documents via drag-and-drop.":
+    "Ajoutez client, créez affaire, uploadez documents via drag-and-drop.",
+  "Configure deadlines": "Configurer échéances",
+  "AI automatically scans all documents for deadlines — enable calendar export.":
+    "AI scanne automatiquement tous les documents pour échéances — activez export calendrier.",
+  "Use Copilot": "Utiliser Copilot",
+  "Ask the brain questions, get cited answers, book time via chat.":
+    "Posez questions au brain, obtenez réponses avec citations, enregistrez temps via chat.",
+  "Invite team": "Inviter équipe",
+  "Add members, assign roles, collaborate on the brain together.":
+    "Ajoutez membres, assignez rôles, collaborez sur le brain ensemble.",
+  // ── User-centric description rewrites ──
+  "Ask questions in plain language — get answers from your entire knowledge base. Every document, email and note is instantly searchable.":
+    "Posez des questions en langage courant — obtenez des réponses de toute votre base de connaissances. Chaque document, email et note est instantanément recherchable.",
+  "Every answer links back to the exact source passage. No hallucinations — if the brain can't find it, it says so.":
+    "Chaque réponse renvoie au passage exact de la source. Pas d'hallucinations — si le brain ne trouve pas, il le dit.",
+  "Complex legal questions get step-by-step reasoning. The brain shows its work — so you can verify every conclusion.":
+    "Les questions juridiques complexes reçoivent un raisonnement étape par étape. Le brain montre son travail — chaque conclusion vérifiable.",
+  "Deploy specialized AI agents for recurring tasks — research, drafting, review. Each agent has its own skills and can be evaluated.":
+    "Déployez des agents AI spécialisés pour les tâches récurrentes — recherche, drafting, review. Chaque agent a ses propres skills et est évaluable.",
+  "Built-in quality dashboard for AI answers. Test retrieval quality against real queries — know exactly how reliable the brain is.":
+    "Tableau de bord qualité intégré pour les réponses AI. Testez la qualité de retrieval sur des requêtes réelles — savez exactement combien fiable est le brain.",
+  "AI reads across multiple documents at once — finds themes, risks and patterns you'd miss document-by-document.":
+    "L'AI lit plusieurs documents à la fois — trouve des thèmes, risques et motifs que vous manqueriez document par document.",
+  "See who uses which features and how often. Spot training gaps, drive adoption, measure ROI.":
+    "Voyez qui utilise quelles fonctionnalités et à quelle fréquence. Détectez les lacunes de formation, pilotez l'adoption, mesurez le ROI.",
+  "All data sources in one dashboard: sync status, frequency, error logs. Spot issues before they become problems.":
+    "Toutes les sources de données en un tableau de bord: statut sync, fréquence, logs d'erreurs. Détectez les problèmes avant qu'ils n'en soient.",
+  "Track copilot usage: sessions, messages, token costs, pinned answers — per user, per day.":
+    "Suivez l'usage du copilote: sessions, messages, coûts de tokens, réponses épinglées — par utilisateur, par jour.",
+  "Upload scans, photos or PDFs — text is extracted automatically. Every document becomes searchable and classified.":
+    "Téléchargez scans, photos ou PDFs — le texte est extrait automatiquement. Chaque document devient recherchable et classifié.",
+  "Defensible review sets with privilege log and redactions. Deduplication, bulk tagging, export ready for court.":
+    "Review sets défendables avec privilege log et redactions. Déduplication, bulk tagging, export prêt pour le tribunal.",
+  "Every case is walled off from others. A user on case A cannot see case B — guaranteed by design, fuzz-tested for zero leaks.":
+    "Chaque dossier est isolé des autres. Un utilisateur sur le dossier A ne peut pas voir le dossier B — garanti par design, fuzz-testé pour zéro fuite.",
+  "Real-time performance dashboard: response times, brain quality, queue depth and error rates — all at a glance.":
+    "Tableau de bord performance en temps réel: temps de réponse, qualité du brain, profondeur de file et taux d'erreur — tout d'un coup d'œil.",
+  "GDPR built into the platform: DPA templates, data portability, right to erasure — all ready out of the box.":
+    "RGPD intégré dans la plateforme: modèles DPA, portabilité des données, droit à l'effacement — tout prêt out-of-the-box.",
+  "Connect any third-party tool via open API. Real-time webhooks keep everything in sync — no manual exports.":
+    "Connectez tout outil tiers via API ouverte. Les webhooks en temps réel gardent tout synchronisé — sans exports manuels.",
+  "Set up agents for recurring tasks — they run on schedule, report results and learn from feedback.":
+    "Configurez des agents pour les tâches récurrentes — ils s'exécutent selon planning, rapportent les résultats et apprennent des retours.",
 };
 
 const NL_DOCS_REPLACEMENTS: Record<string, string> = {
@@ -2012,11 +3521,11 @@ const NL_DOCS_REPLACEMENTS: Record<string, string> = {
   "Technical Architecture": "Technische Architectuur",
   "Straight from the backend — no speculation.":
     "Rechtstreeks vanuit de backend — geen speculatie.",
-  "72 API Endpoints": "72 API-Endpoints",
+  "90+ API Endpoints": "90+ API-Endpoints",
   "Complete REST API with auth, rate limiting, audit logging and TypeScript types.":
     "Compleet REST API met auth, rate limiting, audit logging en TypeScript-types.",
-  "57 Dashboard Pages": "57 Dashboard-Pagina's",
-  "Every function has its own responsive page — from the case file to the cost calculator.":
+  "97+ Dashboard Pages": "97+ Dashboard-Pagina's",
+  "Every function has its own responsive page — from the case file to the ELSTER wizard.":
     "Elke functie heeft zijn eigen responsive pagina — van het dossier tot de kosten-calculator.",
   "Self-Hosted or EU Cloud": "Self-Hosted of EU Cloud",
   "Local Docker installation or hosted in the EU with DPA. Data never leaves your control.":
@@ -2043,6 +3552,225 @@ const NL_DOCS_REPLACEMENTS: Record<string, string> = {
   "Team & Organization": "Team & Organisatie",
   "Team workspace management: create organization, invite members, assign roles and access rights. One brain for the whole team.":
     "Team-workspacebeheer: maak organisatie, nodig leden uit, wijs rollen en toegangsrechten toe. Eén brain voor het hele team.",
+  // ── New features ──
+  "Cross-Document Analysis": "Cross-Document Analyse",
+  "AI-powered analysis across multiple documents: detect themes, risks and patterns invisible in individual documents.":
+    "AI-analyse over meerdere documenten: detecteer thema's, risico's en patronen onzichtbaar in individuele documenten.",
+  "Portfolio Insights": "Portfolio Insights",
+  "Firm portfolio analysis: case mix, success rates, risk clusters and trends — based on all brain data.":
+    "Kantoor-portfolioanalyse: zaak-mix, succespercentages, risicoclusters en trends — gebaseerd op alle brain-data.",
+  "Adoption Analytics": "Adoption Analytics",
+  "Usage and adoption tracking: who uses which features how often? Basis for training decisions and rollout steering.":
+    "Gebruiks- en adoption-tracking: wie gebruikt welke functies hoe vaak? Basis voor trainingsbeslissingen en rollout-sturing.",
+  "Shared Spaces": "Gedeelde Ruimtes",
+  "Shared Spaces for teams: collaborative knowledge areas, shared case streams and notes — with granular access control.":
+    "Gedeelde Ruimtes voor teams: collaboratieve kennisgebieden, gedeelde zaak-streams en notities — met granulaire toegangscontrole.",
+  "Sources Management": "Bronbeheer",
+  "Central management of all data sources and connectors. Status, sync frequency, error logs — all in one place.":
+    "Centraal beheer van alle databronnen en connectors. Status, sync-frequentie, fout-logs — alles op één plek.",
+  "Document Requests": "Documentverzoeken",
+  "Structured requests for documents from clients. Status tracking, automatic reminders after 7 days, escalation after 3 reminders — via WhatsApp and in-app notification.":
+    "Gestructureerde documentverzoeken aan cliënten. Status-tracking, automatische herinneringen na 7 dagen, escalatie na 3 herinneringen — via WhatsApp en in-app notificatie.",
+  "Version History": "Versiegeschiedenis",
+  "Full versioning of every document. Compare changes, restore previous versions, audit trail per version.":
+    "Volledige versiebeheer van elk document. Vergelijk wijzigingen, herstel eerdere versies, audit trail per versie.",
+  "Review Sets & eDiscovery": "Review Sets & eDiscovery",
+  "Defensible review sets with privilege log and redactions. Deduplication, bulk tagging, export for court.":
+    "Verdedigbare review sets met privilege log en redactions. Deduplicatie, bulk tagging, export voor rechtbank.",
+  "Review Queue": "Review-Wachtrij",
+  "Structured document review: tagging, commenting, prioritizing. Batch-based with filters and saved views.":
+    "Gestructureerde document-review: tagging, commentaar, prioritering. Per batch met filters en opgeslagen weergaven.",
+  "Deadline Register": "Termijnregister",
+  "Chronological deadline register — all deadlines of a case in one view. Sortable by date, type, status. Audit-proof documented.":
+    "Chronologisch termijnregister — alle termijnen van een zaak in één weergave. Sorteerbaar op datum, type, status. Audit-proof gedocumenteerd.",
+  "Task Management": "Taakbeheer",
+  "Tasks and to-dos per case or global. Due dates, priorities, assignment to team members, status tracking.":
+    "Taken en to-do's per zaak of globaal. Deadlines, prioriteiten, toewijzing aan teamleden, status-tracking.",
+  "Calendar with Inline Editing": "Kalender met Inline Bewerking",
+  "Month calendar with click-to-create, drag editing, appointment types (hearing, consultation, meeting). Case linking, reminders.":
+    "Maandkalender met klik-om-te-maken, drag-bewerking, afspraak-types (zitting, consultatie, vergadering). Zaak-koppeling, herinneringen.",
+  "Trust Accounting": "Derdengelden",
+  "Management of client funds on escrow accounts. Deposits and withdrawals, balances, transaction records — audit-proof.":
+    "Beheer van cliëntfondsen op derdenrekeningen. Stortingen en opnames, saldi, transactieregistraties — audit-proof.",
+  Reports: "Rapporten",
+  "Structured reports: case evaluations, revenue statistics, deadline reports, productivity analyses. Export as PDF or CSV.":
+    "Gestructureerde rapporten: zaak-evaluaties, omzetstatistieken, termijnrapporten, productiviteitsanalyses. Export als PDF of CSV.",
+  Intake: "Intake",
+  "Structured intake of new clients and incoming items. Quick capture with automatic case creation, contact enrichment and deadline detection.":
+    "Gestructureerde intake van nieuwe cliënten en inkomende items. Snelle capture met automatische zaak-aanmaak, contactverrijking en termijndetectie.",
+  "Directory (Courts & Authorities)": "Register (Rechtbanken & Autoriteiten)",
+  "Central directory of all courts, authorities and institutions. Addresses, jurisdictions, file number formats — directly linkable to cases.":
+    "Centraal register van alle rechtbanken, autoriteiten en instellingen. Adressen, jurisdicties, dossiernummer-formaten — direct koppelbaar aan zaken.",
+  "Legal Translation": "Juridische Vertaling",
+  "AI-powered translation of legal texts with specialized terminology accuracy. Detects contract clauses, legal terms and authority jargon.":
+    "AI-vertaling van juridische teksten met gespecialiseerde terminologische nauwkeurigheid. Detecteert contractclausules, juridische termen en ambtelijk jargon.",
+  "Onboarding Wizard": "Onboarding-Wizard",
+  "Guided onboarding for new users: set up brain, create first case, import contacts, configure deadlines — step by step.":
+    "Begeleide onboarding voor nieuwe gebruikers: brain instellen, eerste zaak aanmaken, contacten importeren, termijnen configureren — stap voor stap.",
+  "Workflow Automation": "Workflow-Automatisering",
+  "Automate recurring workflows: document approvals, deadline escalations, case status transitions. Trigger-based, with conditions and actions.":
+    "Automatiseer terugkerende workflows: documentgoedkeuringen, termijn-escalaties, zaak-status-overgangen. Trigger-gebaseerd, met voorwaarden en acties.",
+  Approvals: "Goedkeuringen",
+  "Structured approval processes for documents, invoices and pleadings. Multi-stage approval chains, delegation, audit trail per approval.":
+    "Gestructureerde goedkeuringsprocessen voor documenten, facturen en pleidooien. Meestaps goedkeuringsketens, delegatie, audit trail per goedkeuring.",
+  "Obligation Tracking": "Verplichtingen-Tracking",
+  "Tracking of all obligations per case: deadlines, form requirements, disclosure duties. Automatic warning when violation is imminent.":
+    "Tracking van alle verplichtingen per zaak: termijnen, vormvereisten, openbaarheidsplichten. Automatische waarschuwing bij dreigende schending.",
+  Playbooks: "Playbooks",
+  "Reusable process templates for recurring case types. Step sequences, checklists, deadline patterns — per practice area.":
+    "Hergebruikbare processjablonen voor terugkerende zaak-types. Stapsequenties, checklists, termijn-patronen — per praktijkgebied.",
+  "Template Management": "Sjabloonbeheer",
+  "Central library for document templates. Pleadings, contracts, cover letters — with variables and brain connection for auto-fill.":
+    "Centrale bibliotheek voor documentsjablonen. Pleidooien, contracten, begeleidende brieven — met variabelen en brain-verbinding voor auto-fill.",
+  "Clause Library": "Clausulebibliotheek",
+  "Structured collection of reusable clauses. Categorized by contract type, practice area and risk. With AI suggestions during drafting.":
+    "Gestructureerde collectie van herbruikbare clausules. Gecategoriseerd per contracttype, praktijkgebied en risico. Met AI-suggesties tijdens het opstellen.",
+  "Legal Commentaries": "Juridische Commentaren",
+  "Annotations and comments on norms, judgments and contract clauses. Shared across the team, with discussion history.":
+    "Annotaties en commentaren op normen, uitspraken en contractclausules. Gedeeld in het team, met discussiegeschiedenis.",
+  "Knowledge Management (Experience)": "Kennisbeheer (Experience)",
+  "Structured capture of firm knowledge: pitfalls, best practices, lessons learned. Searchable, linkable to cases.":
+    "Gestructureerde vastlegging van kantorkennis: valkuilen, best practices, lessons learned. Doorzoekbaar, koppelbaar aan zaken.",
+  "Global Full-Text Search": "Globale Full-Text Zoekfunctie",
+  "Search across all cases, documents, notes, invoices and chats — with scope filters per type. Hybrid search: vector + BM25 + graph.":
+    "Zoeken in alle zaken, documenten, notities, facturen en chats — met scope-filters per type. Hybride zoekfunctie: vector + BM25 + grafiek.",
+  "Drafting Editor": "Opstel-Editor",
+  "Full drafting editor with brain connection: inline AI suggestions, source insertion, clause library integration, version comparison.":
+    "Volledige opstel-editor met brain-verbinding: inline AI-suggesties, bron-invoeging, clausulebibliotheek-integratie, versievergelijking.",
+  "Litigation & eDiscovery": "Litigatie & eDiscovery",
+  "Phases, analytics, review sets, precedent search.":
+    "Fases, analytics, review sets, precedentenzoekfunctie.",
+  "Litigation Management": "Litigatiebeheer",
+  "Structured litigation management with phases and steps. Status per phase, assigned team members, deadlines and documents per step.":
+    "Gestructureerd litigatiebeheer met fases en stappen. Status per fase, toegewezen teamleden, termijnen en documenten per stap.",
+  "Litigation Analytics": "Litigatie-Analytics",
+  "Success rates, case duration, court statistics. Trends per court, per case type, per opponent — based on historical data.":
+    "Succespercentages, zaakduur, rechtbankstatistieken. Trends per rechtbank, per zaaktype, per tegenpartij — gebaseerd op historische data.",
+  "Precedent Search": "Precedentenzoekfunctie",
+  "AI-powered search for similar cases in the brain and external case law databases. Automatic relevance ranking.":
+    "AI-zoekfunctie voor vergelijkbare zaken in de brain en externe jurisprudentiedatabases. Automatische relevantie-ranking.",
+  "Process Strategy": "Processtrategie",
+  "Structured strategy capture per case: argument lines, evidence, counter-arguments. With AI suggestions and success prognosis.":
+    "Gestructureerde strategie-vastlegging per zaak: argumentatielijnen, bewijs, tegenargumenten. Met AI-suggesties en succesprognose.",
+  "Tax & Accounting": "Fiscaliteit & Boekhouding",
+  "Tax returns, ELSTER, StBVV, tax audits.": "Belastingaangiften, ELSTER, StBVV, belastingaudits.",
+  "Tax Returns": "Belastingaangiften",
+  "Preparation and management of tax returns (income, VAT, trade, corporate). Structured entry, validation, status tracking.":
+    "Voorbereiding en beheer van belastingaangiften (inkomsten, btw, handel, vennootschap). Gestructureerde invoer, validatie, status-tracking.",
+  "Tax Assessments": "Belastingaanslagen",
+  "Capture and analysis of tax assessments. Comparison with return, deviation analysis, objection deadline tracking.":
+    "Vastlegging en analyse van belastingaanslagen. Vergelijking met aangifte, afwijkingsanalyse, bezwaartermijn-tracking.",
+  "Tax Audit": "Belastingaudit",
+  "Preparation and support of tax audits. Audit field management, document provision, protocol management.":
+    "Voorbereiding en ondersteuning van belastingaudits. Audit-veldbeheer, documentvoorziening, protocolbeheer.",
+  "Tax Deadlines": "Belastingtermijnen",
+  "All tax deadlines (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) with automatic weekend and holiday shifting.":
+    "Alle belastingtermijnen (§ 109, § 153, § 168, § 226, § 355, § 367, § 477 AO) met automatische weekend- en feestdagaverschuiving.",
+  "StBVV Fee Calculator": "StBVV-Calculator",
+  "Tax adviser remuneration ordinance: 10 activities, VV numbers, factor calculation, VAT. Interactive and exportable.":
+    "Belastingadviseurs-vergoedingsverordening: 10 activiteiten, VV-nummers, factorberekening, btw. Interactief en exporteerbaar.",
+  "Tax Clients": "Belastingcliënten",
+  "Separate client management for tax advisers: master data, tax number, tax office, assignment to returns and assessments.":
+    "Separate cliëntbeheer voor belastingadviseurs: masterdata, belastingnummer, belastingkantoor, toewijzing aan aangiften en aanslagen.",
+  "ELSTER Integration": "ELSTER-Integratie",
+  "Electronic tax returns via ELSTER. XML generation, form types, submission wizard — directly from the dashboard.":
+    "Elektronische belastingaangiften via ELSTER. XML-generatie, formuliertypes, indieningswizard — direct vanuit het dashboard.",
+  "Chat Analytics": "Chat Analytics",
+  "Usage statistics for the AI copilot: sessions, messages, token consumption, pinned answers — per day and per user.":
+    "Gebruiksstatistieken voor de AI-copiloot: sessies, berichten, token-verbruik, vastgemaakte antwoorden — per dag en per gebruiker.",
+  "Model Comparison": "Modelvergelijking",
+  "Side-by-side comparison of different AI models: same question to multiple models at once, evaluate answers next to each other.":
+    "Zij-aan-zij vergelijking van verschillende AI-modellen: dezelfde vraag aan meerdere modellen tegelijk, antwoorden naast elkaar evalueren.",
+  "Legacy Cases": "Verouderde Dossiers",
+  "Identify, classify and monitor risky and outdated cases. Pipeline status, escalation levels, deadline warnings — nothing falls through the cracks.":
+    "Identificeer, classificeer en monitor risicovolle en verouderde dossiers. Pipeline-status, escalatieniveaus, deadline-waarschuwingen — niets ontglipt.",
+  "Engine Monitoring (APM)": "Engine-Monitoring (APM)",
+  "Performance dashboard: P50/P95/P99 latency, brain quality, embedding queue, quota usage and error events in real time.":
+    "Prestatie-dashboard: P50/P95/P99-latentie, brain-kwaliteit, embedding-wachtrij, quota-gebruik en foutgebeurtenissen in real-time.",
+  "Retention Policies": "Bewaarbeleid",
+  "Automated retention rules per GDPR and BRAO: retention periods per document type, automatic deletion after expiry, audit trail.":
+    "Geautomatiseerde bewaarregels GDPR en BRAO: bewaartermijnen per documenttype, automatische verwijdering na verloop, audit trail.",
+  "WhatsApp Templates": "WhatsApp-Sjablonen",
+  "Template library for WhatsApp messages: standard replies, client letters, reminder templates. With variables and approval workflow.":
+    "Sjabloonbibliotheek voor WhatsApp-berichten: standaardantwoorden, cliëntbrieven, herinneringssjablonen. Met variabelen en goedkeuringsworkflow.",
+  "AI Model Configuration": "AI-Model Configuratie",
+  "Model selection in the dashboard: provider, speed, cost, context window. Configurable per organization — from budget model to premium reasoning.":
+    "Modelselectie in dashboard: provider, snelheid, kosten, contextvenster. Configureerbaar per organisatie — van budgetmodel tot premium reasoning.",
+  "SCIM Provisioning": "SCIM-Provisioning",
+  "Automated user management via SCIM 2.0: create, update, deactivate users — directly from identity providers (Okta, Azure AD, Google).":
+    "Geautomatiseerd gebruikersbeheer via SCIM 2.0: aanmaken, bijwerken, deactiveren gebruikers — direct vanuit identity providers (Okta, Azure AD, Google).",
+  "Billing & Subscription": "Facturering & Abonnement",
+  "Plan management, upgrade/downgrade, payment methods, invoice history. Stripe integration with self-service portal for clients.":
+    "Planbeheer, upgrade/downgrade, betaalmethoden, factuurgeschiedenis. Stripe-integratie met self-service portal voor cliënten.",
+  "Judgement Sync": "Uitspraak-Sync",
+  "Automatic retrieval of new court decisions from external sources. Daily sync, delta detection, automatic indexing into the brain.":
+    "Automatische ophaling van nieuwe uitspraken uit externe bronnen. Dagelijkse sync, delta-detectie, automatische indexering in brain.",
+  "Workflow Builder": "Workflow-Builder",
+  "Visual drag-and-drop editor for automations: triggers, conditions, actions. No code needed — build and test workflows visually.":
+    "Visuele drag-and-drop editor voor automatiseringen: triggers, voorwaarden, acties. Geen code nodig — maak en test workflows visueel.",
+  "Judgement Database": "Uitsprakenendatabase",
+  "Full-text search across thousands of court decisions. Filter by court, date, file number, practice area — with AI summary per judgement.":
+    "Full-text zoekfunctie in duizenden uitspraken. Filteren op rechtbank, datum, dossiernummer, praktijkgebied — met AI-samenvatting per uitspraak.",
+  "Mobile Pipeline Status": "Mobiele Pipeline-Status",
+  "Monitor pipeline runs on mobile: status (running, completed, failed, awaiting_review), layer details tap-to-expand, output viewer with Markdown rendering.":
+    "Monitor pipeline-runs op mobiel: status (running, completed, failed, awaiting_review), layer-details tap-to-expand, output-viewer met Markdown-rendering.",
+  "Standalone Document Analysis": "Standalone Documentanalyse",
+  "Analyze documents without case context: upload, AI analysis, risk highlighting, summary — ideal for initial assessments and due diligence.":
+    "Analyseer documenten zonder dossiercontext: upload, AI-analyse, risico-markering, samenvatting — ideaal voor eerste beoordelingen en due diligence.",
+  "Case Law Analytics": "Jurisprudentie-Analytics",
+  "Statistical analysis of case law: success rates per court, trend curves, case type distribution — based on thousands of decisions.":
+    "Statistische analyse van jurisprudentie: succespercentages per rechtbank, trendcurves, distributie zaakstypen — op basis van duizenden uitspraken.",
+  "Get started in 5 steps": "Start in 5 stappen",
+  "From login to first case — how fast Subsumio goes live.":
+    "Van login tot eerste dossier — hoe snel Subsumio live gaat.",
+  "Set up Brain": "Brain instellen",
+  "Run the onboarding wizard, connect data sources, index your brain.":
+    "Start de onboarding-wizard, verbind gegevensbronnen, indexeer je brain.",
+  "Create first case": "Eerste dossier aanmaken",
+  "Add client, create case, upload documents via drag-and-drop.":
+    "Voeg cliënt toe, maak dossier aan, upload documenten via drag-and-drop.",
+  "Configure deadlines": "Termijnen configureren",
+  "AI automatically scans all documents for deadlines — enable calendar export.":
+    "AI scant automatisch alle documenten op termijnen — activeer kalender-export.",
+  "Use Copilot": "Copilot gebruiken",
+  "Ask the brain questions, get cited answers, book time via chat.":
+    "Stel vragen aan het brain, krijg antwoorden met bronvermeldingen, registreer tijd via chat.",
+  "Invite team": "Team uitnodigen",
+  "Add members, assign roles, collaborate on the brain together.":
+    "Voeg leden toe, wijs rollen toe, werk samen aan het brain.",
+  // ── User-centric description rewrites ──
+  "Ask questions in plain language — get answers from your entire knowledge base. Every document, email and note is instantly searchable.":
+    "Stel vragen in gewone taal — krijg antwoorden uit je hele kennisbank. Elk document, email en notitie is direct doorzoekbaar.",
+  "Every answer links back to the exact source passage. No hallucinations — if the brain can't find it, it says so.":
+    "Elk antwoord verwijst naar de exacte bronpassage. Geen hallucinaties — als de brain het niet vindt, zegt hij dat.",
+  "Complex legal questions get step-by-step reasoning. The brain shows its work — so you can verify every conclusion.":
+    "Complexe juridische vragen krijgen stap-voor-stap redenering. De brain toont zijn werk — elke conclusie verifieerbaar.",
+  "Deploy specialized AI agents for recurring tasks — research, drafting, review. Each agent has its own skills and can be evaluated.":
+    "Implementeer gespecialiseerde AI-agents voor terugkerende taken — research, drafting, review. Elke agent heeft eigen skills en is evalueerbaar.",
+  "Built-in quality dashboard for AI answers. Test retrieval quality against real queries — know exactly how reliable the brain is.":
+    "Ingebouwd kwaliteitsdashboard voor AI-antwoorden. Test retrieval-kwaliteit tegen echte queries — weet precies hoe betrouwbaar de brain is.",
+  "AI reads across multiple documents at once — finds themes, risks and patterns you'd miss document-by-document.":
+    "AI leest meerdere documenten tegelijk — vindt thema's, risico's en patronen die je document-per-document mist.",
+  "See who uses which features and how often. Spot training gaps, drive adoption, measure ROI.":
+    "Zie wie welke functies hoe vaak gebruikt. Spot trainingsgaten, stuur adoptie, meet ROI.",
+  "All data sources in one dashboard: sync status, frequency, error logs. Spot issues before they become problems.":
+    "Alle databronnen in één dashboard: sync-status, frequentie, foutlogs. Spot problemen voordat ze problemen worden.",
+  "Track copilot usage: sessions, messages, token costs, pinned answers — per user, per day.":
+    "Volg copilot-gebruik: sessies, berichten, token-kosten, gepinde antwoorden — per gebruiker, per dag.",
+  "Upload scans, photos or PDFs — text is extracted automatically. Every document becomes searchable and classified.":
+    "Upload scans, foto's of PDF's — tekst wordt automatisch geëxtraheerd. Elk document wordt doorzoekbaar en geclassificeerd.",
+  "Defensible review sets with privilege log and redactions. Deduplication, bulk tagging, export ready for court.":
+    "Verdedigbare review sets met privilege log en redactions. Deduplicatie, bulk tagging, export klaar voor rechtbank.",
+  "Every case is walled off from others. A user on case A cannot see case B — guaranteed by design, fuzz-tested for zero leaks.":
+    "Elke zaak is afgeschermd van andere. Een gebruiker op zaak A kan zaak B niet zien — gegarandeerd door design, fuzz-getest op zero leaks.",
+  "Real-time performance dashboard: response times, brain quality, queue depth and error rates — all at a glance.":
+    "Real-time prestatiedashboard: responstijden, brain-kwaliteit, queue-diepte en foutpercentages — alles in één oogopslag.",
+  "GDPR built into the platform: DPA templates, data portability, right to erasure — all ready out of the box.":
+    "AVG ingebouwd in het platform: DPA-sjablonen, dataportabiliteit, recht op wissen — alles ready out-of-the-box.",
+  "Connect any third-party tool via open API. Real-time webhooks keep everything in sync — no manual exports.":
+    "Verbind elke tool van derden via open API. Real-time webhooks houden alles in sync — geen handmatige exports.",
+  "Set up agents for recurring tasks — they run on schedule, report results and learn from feedback.":
+    "Stel agents in voor terugkerende taken — ze draaien op schema, rapporteren resultaten en leren van feedback.",
 };
 
 export function getDocs(lang: Lang): DocsContent {

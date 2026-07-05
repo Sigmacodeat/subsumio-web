@@ -193,7 +193,16 @@ export interface Notification {
   id: string;
   userId: string;
   brainId: string;
-  type: "mention" | "reply" | "deadline" | "system";
+  type:
+    | "mention"
+    | "reply"
+    | "deadline"
+    | "system"
+    | "notification_failure"
+    | "document_request"
+    | "retention"
+    | "autonomous_task"
+    | "inbox_triage";
   data: Record<string, unknown>;
   readAt: string | null;
   createdAt: string;
@@ -482,6 +491,70 @@ export async function createDeadlineNotification(opts: {
   await persistNotificationUpsert(notif);
 }
 
+export async function createDocumentRequestNotification(opts: {
+  userId: string;
+  brainId: string;
+  caseSlug?: string;
+  caseTitle: string;
+  requestSlug: string;
+  itemCount: number;
+  isReminder: boolean;
+  daysSinceSent?: number;
+}): Promise<void> {
+  const slugPart = opts.caseSlug ?? opts.caseTitle.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+  const reqPart = opts.requestSlug.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+  const suffix = opts.isReminder ? `_rem_${opts.daysSinceSent ?? 0}` : "";
+  const notifId = `notif_dr_${slugPart}_${reqPart}${suffix}`;
+
+  const notif: Notification = {
+    id: notifId,
+    userId: opts.userId,
+    brainId: opts.brainId,
+    type: "document_request",
+    data: {
+      title: opts.caseTitle,
+      caseSlug: opts.caseSlug,
+      requestSlug: opts.requestSlug,
+      itemCount: opts.itemCount,
+      isReminder: opts.isReminder,
+      daysSinceSent: opts.daysSinceSent,
+    },
+    readAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  await persistNotificationUpsert(notif);
+}
+
+export async function createRetentionNotification(opts: {
+  userId: string;
+  brainId: string;
+  caseSlug: string;
+  caseTitle: string;
+  caseNumber: string;
+  action: "review" | "delete";
+  yearsSinceClosure: number;
+}): Promise<void> {
+  const slugPart = opts.caseSlug.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+  const notifId = `notif_retention_${slugPart}_${opts.action}`;
+
+  const notif: Notification = {
+    id: notifId,
+    userId: opts.userId,
+    brainId: opts.brainId,
+    type: "retention",
+    data: {
+      title: opts.caseTitle,
+      caseSlug: opts.caseSlug,
+      caseNumber: opts.caseNumber,
+      action: opts.action,
+      yearsSinceClosure: opts.yearsSinceClosure,
+    },
+    readAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  await persistNotificationUpsert(notif);
+}
+
 export async function markAllNotificationsRead(opts: {
   userId: string;
   brainId: string;
@@ -502,7 +575,6 @@ export async function markAllNotificationsRead(opts: {
       const raw = await fs.readFile(NOTIF_FILE, "utf-8");
       const all = JSON.parse(raw) as Notification[];
       for (const n of all) {
-        // Security: only mark notifications owned by this user+brain
         if (n.userId === opts.userId && n.brainId === opts.brainId && !n.readAt) {
           n.readAt = new Date().toISOString();
         }
@@ -512,4 +584,159 @@ export async function markAllNotificationsRead(opts: {
       await fs.rename(tmp, NOTIF_FILE);
     } catch {}
   });
+}
+
+export async function deleteNotification(
+  id: string,
+  owner: { userId: string; brainId: string }
+): Promise<void> {
+  const pool = getSharedPgPool();
+  if (pool) {
+    try {
+      await ensureNotifSchema();
+      await pool.query(
+        "DELETE FROM subsumio_notifications WHERE id = $1 AND user_id = $2 AND brain_id = $3",
+        [id, owner.userId, owner.brainId]
+      );
+    } catch {}
+    return;
+  }
+  await fileWriteQueue.run(async () => {
+    try {
+      const raw = await fs.readFile(NOTIF_FILE, "utf-8");
+      const all = JSON.parse(raw) as Notification[];
+      const filtered = all.filter(
+        (n) => !(n.id === id && n.userId === owner.userId && n.brainId === owner.brainId)
+      );
+      const tmp = `${NOTIF_FILE}.tmp`;
+      await fs.writeFile(tmp, JSON.stringify(filtered, null, 2));
+      await fs.rename(tmp, NOTIF_FILE);
+    } catch {}
+  });
+}
+
+export async function deleteAllReadNotifications(opts: {
+  userId: string;
+  brainId: string;
+}): Promise<number> {
+  const pool = getSharedPgPool();
+  if (pool) {
+    try {
+      await ensureNotifSchema();
+      const result = await pool.query(
+        "DELETE FROM subsumio_notifications WHERE user_id = $1 AND brain_id = $2 AND read_at IS NOT NULL",
+        [opts.userId, opts.brainId]
+      );
+      return result.rowCount ?? 0;
+    } catch {}
+    return 0;
+  }
+  let deleted = 0;
+  await fileWriteQueue.run(async () => {
+    try {
+      const raw = await fs.readFile(NOTIF_FILE, "utf-8");
+      const all = JSON.parse(raw) as Notification[];
+      const filtered = all.filter((n) => {
+        if (n.userId === opts.userId && n.brainId === opts.brainId && n.readAt) {
+          deleted++;
+          return false;
+        }
+        return true;
+      });
+      const tmp = `${NOTIF_FILE}.tmp`;
+      await fs.writeFile(tmp, JSON.stringify(filtered, null, 2));
+      await fs.rename(tmp, NOTIF_FILE);
+    } catch {}
+  });
+  return deleted;
+}
+
+export async function createNotificationFailureNotification(opts: {
+  userId: string;
+  brainId: string;
+  caseSlug?: string;
+  caseTitle: string;
+  deadlineTitle: string;
+  deadlineDate: string;
+  channels: string[];
+  reason: string;
+}): Promise<void> {
+  const slugPart = opts.caseSlug ?? opts.caseTitle.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+  const datePart = String(opts.deadlineDate)
+    .replace(/[^a-zA-Z0-9]/g, "_")
+    .slice(0, 20);
+  const reasonPart = opts.reason.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
+  const notifId = `notif_fail_${slugPart}_${datePart}_${reasonPart}`;
+
+  const notif: Notification = {
+    id: notifId,
+    userId: opts.userId,
+    brainId: opts.brainId,
+    type: "notification_failure",
+    data: {
+      title: opts.caseTitle,
+      caseSlug: opts.caseSlug,
+      deadlineTitle: opts.deadlineTitle,
+      deadlineDate: opts.deadlineDate,
+      channels: opts.channels,
+      reason: opts.reason,
+    },
+    readAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  await persistNotificationUpsert(notif);
+}
+
+export async function createAutonomousTaskNotification(opts: {
+  userId: string;
+  brainId: string;
+  taskId: string;
+  taskType: string;
+  status: "completed" | "failed" | "requires_approval";
+  caseSlug?: string;
+  result?: Record<string, unknown>;
+}): Promise<void> {
+  const notifId = `notif_auto_${opts.taskId}`;
+  const notif: Notification = {
+    id: notifId,
+    userId: opts.userId,
+    brainId: opts.brainId,
+    type: "autonomous_task",
+    data: {
+      taskId: opts.taskId,
+      taskType: opts.taskType,
+      status: opts.status,
+      caseSlug: opts.caseSlug,
+      result: opts.result,
+    },
+    readAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  await persistNotificationUpsert(notif);
+}
+
+export async function createInboxTriageNotification(opts: {
+  userId: string;
+  brainId: string;
+  messageId: string;
+  subject: string;
+  urgency: "urgent" | "normal" | "low";
+  suggestedAction: string;
+}): Promise<void> {
+  const notifId = `notif_triage_${opts.messageId}`;
+  const notif: Notification = {
+    id: notifId,
+    userId: opts.userId,
+    brainId: opts.brainId,
+    type: "inbox_triage",
+    data: {
+      messageId: opts.messageId,
+      subject: opts.subject,
+      urgency: opts.urgency,
+      suggestedAction: opts.suggestedAction,
+    },
+    readAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  await persistNotificationUpsert(notif);
 }

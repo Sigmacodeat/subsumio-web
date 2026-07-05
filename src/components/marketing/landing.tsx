@@ -204,7 +204,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 </MagneticButton>
                 <Link href="#pricing" className="inline-flex">
                   <Button size="lg" variant="ghost">
-                    {lang !== "en" ? "Pläne ansehen" : "See plans"} <ArrowRight size={16} />
+                    {ui.seePlans} <ArrowRight size={16} />
                   </Button>
                 </Link>
               </motion.div>
@@ -223,7 +223,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   className="inline-flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-muted)] transition-colors hover:text-[var(--brand-text)]"
                 >
                   <Play size={14} />
-                  {lang !== "en" ? "Demo ansehen" : "Watch demo"}
+                  {ui.watchDemo}
                 </a>
               </motion.div>
 
@@ -380,7 +380,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         )}
 
         {/* Stats — proof band. Answers the agitation above with hard metrics. */}
-        <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8" aria-label="Key metrics">
+        <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8" aria-label={ui.ariaKeyMetrics}>
           <motion.div {...reveal} className="mx-auto max-w-4xl">
             <StaggerContainer
               className="mb-6 grid grid-cols-2 gap-8 text-center md:grid-cols-4"
@@ -421,7 +421,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           tone="light"
           id="features"
           className="scroll-mt-24 px-4 py-24 sm:px-6 lg:px-8"
-          aria-label="Features"
+          aria-label={ui.ariaFeatures}
         >
           <div className="mx-auto max-w-7xl">
             <motion.div {...reveal}>
@@ -487,7 +487,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <Section
           tone="light"
           className="px-4 py-24 sm:px-6 lg:px-8"
-          aria-label={lang === "en" ? "Real workflows" : "Praxis-Workflows"}
+          aria-label={ui.ariaRealWorkflows}
         >
           <div className="mx-auto max-w-7xl">
             <motion.div {...reveal}>
@@ -528,11 +528,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             breaks the long light run and frames the differentiation moment; the
             dark scope carries AA-bright signal accents (green/rose/blue), unlike
             slate — so the ✓/✗ cells stay legible. */}
-        <Section
-          tone="dark"
-          className="px-4 py-24 sm:px-6 lg:px-8"
-          aria-label={lang === "en" ? "Comparison" : "Vergleich"}
-        >
+        <Section tone="dark" className="px-4 py-24 sm:px-6 lg:px-8" aria-label={ui.ariaComparison}>
           <motion.div {...reveal} className="mx-auto max-w-5xl">
             <SectionHeading title={t.comparisonTitle} sub={t.comparisonSub} />
             <div className="overflow-x-auto">
@@ -603,7 +599,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           tone="light"
           id="pricing"
           className="scroll-mt-24 px-4 py-24 sm:px-6 lg:px-8"
-          aria-label="Pricing"
+          aria-label={ui.ariaPricing}
         >
           <motion.div {...reveal} className="mx-auto max-w-6xl">
             <SectionHeading badge="Pricing" title={pricing.title} sub={pricing.sub} />
@@ -619,7 +615,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         </Section>
 
         {/* FAQ — light band, clean flow into the dark CTA close */}
-        <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="FAQ">
+        <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8" aria-label={ui.ariaFaq}>
           <motion.div {...reveal} className="mx-auto max-w-5xl">
             <SectionHeading title={t.faqTitle} />
             <AnimatedFaqList items={t.faq} tone="light" />
@@ -630,7 +626,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <Section
           tone="dark"
           className="relative overflow-hidden px-4 py-24 text-center sm:px-6 lg:px-8"
-          aria-label="Call to action"
+          aria-label={ui.ariaCta}
         >
           <GradientMesh className="z-0" />
           <motion.div {...reveal} className="relative z-10 mx-auto max-w-3xl text-center">
@@ -692,13 +688,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
             <div className="flex items-center gap-3">
               <SubsumioMark size={24} />
-              <span className="text-sm font-semibold [color:var(--mk-text)]">
-                {lang !== "en" ? "Subsumio testen" : "Try Subsumio"}
-              </span>
+              <span className="text-sm font-semibold [color:var(--mk-text)]">{ui.trySubsumio}</span>
               <span className="hidden text-xs [color:var(--mk-text-subtle)] sm:inline">
-                {lang !== "en"
-                  ? "14 Tage gratis · Keine Kreditkarte"
-                  : "14 days free · No credit card"}
+                {ui.trialDaysFree}
               </span>
             </div>
             <Link href={p(lang, "/signup")}>

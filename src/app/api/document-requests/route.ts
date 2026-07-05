@@ -8,6 +8,7 @@ import {
   type DocumentRequestFrontmatter,
 } from "@/lib/document-requests";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
+import { createDocumentRequestNotification } from "@/lib/comments";
 import type { BrainPage } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -211,6 +212,28 @@ export const PATCH = createHandler(
       slug: body.slug,
       by: ctx.user.email,
     });
+
+    // Create in-app notification when request is sent
+    if (body.status === "sent") {
+      try {
+        const items = Array.isArray(patch.items) ? patch.items : [];
+        await createDocumentRequestNotification({
+          userId: ctx.user.id,
+          brainId: ctx.brainId,
+          caseSlug: body.slug.split("/").pop(),
+          caseTitle: body.slug,
+          requestSlug: body.slug,
+          itemCount: items.length,
+          isReminder: false,
+        });
+      } catch (err) {
+        console.error(
+          "[doc-request] notification creation failed:",
+          err instanceof Error ? err.message : String(err)
+        );
+      }
+    }
+
     return Response.json({ ok: true, slug: body.slug, patch });
   }
 );

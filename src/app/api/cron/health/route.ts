@@ -12,7 +12,9 @@ export const dynamic = "force-dynamic";
  *   - Last execution time (from the dedup tables)
  *   - Whether the cron secret is configured
  *   - Database connectivity
- *   - Pipeline-sync status
+ *   - Deadline digest dedup table (last notification per brain)
+ *   - Pipeline-sync status (deadline_calendar pages exist)
+ *   - Engine reachability
  *
  * This endpoint should be polled by external monitoring
  * (e.g. Hetzner Uptime Kuma, Better Stack) to detect silent cron failures.
@@ -82,6 +84,49 @@ export async function GET(req: NextRequest) {
       ok: false,
       detail: err instanceof Error ? err.message : "unreachable",
     };
+  }
+
+  // 5. Pipeline-sync: check if deadline_calendar pages exist (pipeline is feeding deadlines)
+  if (pool) {
+    try {
+      const result = await pool.query(
+        `SELECT COUNT(*) as cnt FROM pages
+         WHERE type = 'deadline_calendar' AND deleted_at IS NULL`
+      );
+      const count = Number((result.rows[0] as { cnt?: string }).cnt ?? 0);
+      checks.pipeline_sync = {
+        ok: true,
+        detail:
+          count > 0
+            ? `${count} deadline_calendar page(s) — pipeline feeding`
+            : "no deadline_calendar pages yet (pipeline may not have run)",
+      };
+    } catch {
+      checks.pipeline_sync = { ok: true, detail: "table check skipped" };
+    }
+  } else {
+    checks.pipeline_sync = { ok: false, detail: "no db — cannot verify" };
+  }
+
+  // 6. Notification channels configured (SMTP, WhatsApp, Push)
+  try {
+    const { loadKanzleiSettings } = await import("@/lib/kanzlei-settings");
+    const smtpSettings = await loadKanzleiSettings();
+    const smtpOn = !!(smtpSettings.smtpHost && smtpSettings.smtpUser && smtpSettings.smtpPassword);
+    const waOn = !!(process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN);
+    const pushOn = !!(process.env.APNS_TEAM_ID || process.env.FCM_SERVER_KEY);
+    const channels: string[] = [];
+    if (!smtpOn) channels.push("email");
+    if (!waOn) channels.push("whatsapp");
+    if (!pushOn) channels.push("push");
+    checks.notifications = {
+      ok: smtpOn,
+      detail: smtpOn
+        ? `email✓ ${waOn ? "whatsapp✓" : "whatsapp✗"} ${pushOn ? "push✓" : "push✗"}`
+        : `missing: ${channels.join(", ")} — deadline reminders degraded to in-app only`,
+    };
+  } catch {
+    checks.notifications = { ok: false, detail: "cannot load kanzlei settings" };
   }
 
   const allOk = Object.values(checks).every((c) => c.ok);

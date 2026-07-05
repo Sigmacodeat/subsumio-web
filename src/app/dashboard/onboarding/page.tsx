@@ -34,6 +34,8 @@ import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { normalizeKanzleiSettings, saveKanzleiSettings } from "@/lib/kanzlei-settings";
 import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
 type Step =
   | "welcome"
@@ -86,6 +88,11 @@ export default function OnboardingPage() {
   const [queryText, setQueryText] = useState("");
   const [querying, setQuerying] = useState(false);
   const [queryAnswer, setQueryAnswer] = useState<string | null>(null);
+  const {
+    grounding: queryGrounding,
+    groundAnswer: groundQuery,
+    reset: resetQueryGrounding,
+  } = useGroundedAnswer();
   const [error, setError] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -149,6 +156,7 @@ export default function OnboardingPage() {
     setQuerying(true);
     setError(null);
     setQueryAnswer(null);
+    resetQueryGrounding();
     try {
       const result = await api.query.think(queryText.trim(), {
         mode: "balanced",
@@ -160,11 +168,13 @@ export default function OnboardingPage() {
       if (!result.answer && !queryAnswer) {
         setQueryAnswer(result.answer || "—");
       }
+      const finalText = result.answer || queryAnswer || "";
+      if (finalText) groundQuery(finalText).catch(() => {});
     } catch {
       setError(t("onboarding.error_query"));
     }
     setQuerying(false);
-  }, [queryText, t, queryAnswer]);
+  }, [queryText, t, queryAnswer, groundQuery, resetQueryGrounding]);
 
   const saveProfile = useCallback(async () => {
     const contactName = profile.anwaltName.trim() || userName.trim();
@@ -857,6 +867,17 @@ export default function OnboardingPage() {
                     <p className="text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
                       {queryAnswer}
                     </p>
+                    {queryGrounding !== undefined && (
+                      <CitationPanel
+                        data={
+                          {
+                            grounding: queryGrounding ?? null,
+                            isStreaming: querying,
+                          } satisfies CitationPanelData
+                        }
+                        compact
+                      />
+                    )}
                   </div>
                 )}
 

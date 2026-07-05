@@ -6,6 +6,7 @@ import {
   CalendarClock,
   Clock,
   Inbox,
+  Lightbulb,
   MessageSquare,
   PenTool,
   Scale,
@@ -26,7 +27,8 @@ export type WidgetId =
   | "kanzlei-insights"
   | "recent-queries"
   | "rundown"
-  | "activity-feed";
+  | "activity-feed"
+  | "insights";
 
 export interface WidgetPref {
   id: WidgetId;
@@ -177,6 +179,16 @@ export const WIDGET_REGISTRY: WidgetMeta[] = [
     descKey: "widget.activity_feed_desc",
     defaultVisible: true,
     defaultOrder: 12,
+    fullWidth: true,
+  },
+  {
+    id: "insights",
+    type: "insights",
+    icon: Lightbulb,
+    labelKey: "widget.insights",
+    descKey: "widget.insights_desc",
+    defaultVisible: true,
+    defaultOrder: 13,
     fullWidth: true,
   },
 ];

@@ -4,8 +4,11 @@ import {
   isWebhookProcessed,
   markWebhookProcessed,
   verifyDocusignConnectSignature,
+  downloadEnvelopeDocuments,
 } from "@/lib/docusign";
 import { createWebhookHandler } from "@/lib/api-handler";
+import { createNotificationFailureNotification } from "@/lib/comments";
+import { getRecipientsByBrain } from "@/lib/cron-utils";
 
 export const maxDuration = 30;
 
@@ -18,8 +21,8 @@ export const dynamic = "force-dynamic";
  * Dedup: gleiche Event-IDs werden idempotent behandelt.
  *
  * Events:
- *   - envelope-completed → Update Brain-Page (signature_request) zu "signed"
- *   - envelope-declined → Update zu "declined"
+ *   - envelope-completed → Update Brain-Page (signature_request) zu "signed" + signed PDF download & upload to case
+ *   - envelope-declined → Update zu "declined" + visible notification to all recipients
  *   - envelope-voided   → Update zu "expired"
  */
 /**
@@ -152,12 +155,16 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
   }
 
   let updated = false;
+  let documentUploaded = false;
+  let declined = false;
   try {
     const headers = engineHeadersForBrain(brainId);
     const searchRes = await fetch(
       `${ENGINE_URL}/api/search?q=${encodeURIComponent(`docusign_envelope_id:${envelopeId}`)}`,
       { headers, signal: AbortSignal.timeout(15_000) }
     );
+    let pageSlug: string | undefined;
+    let pageFrontmatter: Record<string, unknown> = {};
     if (searchRes.ok) {
       const raw = await searchRes.json();
       const results = Array.isArray(raw)
@@ -165,8 +172,12 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
         : Array.isArray((raw as Record<string, unknown>)?.pages)
           ? (raw as Record<string, unknown[]>).pages
           : [];
-      const page = results[0] as { slug: string } | undefined;
+      const page = results[0] as
+        | { slug: string; frontmatter?: Record<string, unknown> }
+        | undefined;
       if (page) {
+        pageSlug = page.slug;
+        pageFrontmatter = page.frontmatter ?? {};
         const patchRes = await enginePatchPage(
           headers,
           {
@@ -182,6 +193,85 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
         updated = patchRes.ok;
       }
     }
+
+    // On completed: download the signed PDF and upload it to the case as a document page
+    if (status === "completed" && pageSlug) {
+      try {
+        const pdfBuffer = await downloadEnvelopeDocuments(envelopeId);
+        const caseSlug = String(pageFrontmatter.case_slug ?? "");
+        const docSlug = `legal/documents/signed_${envelopeId.slice(0, 12)}_${Date.now()}`;
+        const docTitle = `Signiertes Dokument — ${String(pageFrontmatter.case_title ?? pageFrontmatter.title ?? envelopeId)}`;
+
+        const createDocRes = await fetch(`${ENGINE_URL}/api/pages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...headers },
+          body: JSON.stringify({
+            slug: docSlug,
+            title: docTitle,
+            type: "document",
+            frontmatter: {
+              document_type: "signed_contract",
+              source: "docusign",
+              docusign_envelope_id: envelopeId,
+              case_slug: caseSlug || undefined,
+              signed_at: new Date().toISOString(),
+              content_base64: pdfBuffer.toString("base64"),
+              mime_type: "application/pdf",
+            },
+          }),
+          signal: AbortSignal.timeout(30_000),
+        });
+        documentUploaded = createDocRes.ok;
+
+        // Also update the signature_request page to reference the uploaded document
+        if (documentUploaded) {
+          await enginePatchPage(
+            headers,
+            {
+              slug: pageSlug,
+              frontmatter: {
+                signed_document_slug: docSlug,
+              },
+            },
+            { timeoutMs: 15_000 }
+          );
+        }
+      } catch (docErr) {
+        console.error(
+          "[docusign-webhook] Document download/upload failed:",
+          docErr instanceof Error ? docErr.message : String(docErr)
+        );
+      }
+    }
+
+    // On declined: create visible notification to all recipients of this brain
+    if (status === "declined") {
+      declined = true;
+      try {
+        const recipientsByBrain = await getRecipientsByBrain();
+        const recipients = recipientsByBrain.get(brainId) ?? [];
+        const caseTitle = String(
+          pageFrontmatter.case_title ?? pageFrontmatter.title ?? "Unbekannte Akte"
+        );
+        for (const recipient of recipients) {
+          await createNotificationFailureNotification({
+            userId: recipient.id,
+            brainId,
+            caseSlug: pageSlug,
+            caseTitle,
+            deadlineTitle: "DocuSign-Signatur",
+            deadlineDate: new Date().toISOString(),
+            channels: ["docusign"],
+            reason: "envelope_declined",
+          });
+        }
+      } catch (notifErr) {
+        console.error(
+          "[docusign-webhook] Declined notification failed:",
+          notifErr instanceof Error ? notifErr.message : String(notifErr)
+        );
+      }
+    }
   } catch (err) {
     console.error(
       "[docusign webhook] brain update failed:",
@@ -191,5 +281,5 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
 
   if (eventId) await markWebhookProcessed(eventId, envelopeId, body.event);
 
-  return Response.json({ ok: true, envelopeId, mapped, updated });
+  return Response.json({ ok: true, envelopeId, mapped, updated, documentUploaded, declined });
 });

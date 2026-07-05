@@ -228,6 +228,327 @@ const AT_LAWS: AtLaw[] = [
     abbr: "BRagG",
     title: "Bundesrätegesetz (Österreich)",
   },
+  {
+    searchTitle: "Sicherheitspolizeigesetz",
+    matchTitle: "Sicherheitspolizeigesetz",
+    abbr: "SPG",
+    title: "Sicherheitspolizeigesetz (Österreich)",
+  },
+  {
+    searchTitle: "Beamten-Dienstrechtsgesetz 1979",
+    matchTitle: "Beamten-Dienstrechtsgesetz 1979",
+    abbr: "BDG",
+    title: "Beamten-Dienstrechtsgesetz 1979 (Österreich)",
+  },
+  // ── Verfassungsrecht ──
+  {
+    searchTitle: "Bundes-Verfassungsgesetz",
+    matchTitle: "Bundes-Verfassungsgesetz",
+    abbr: "B-VG",
+    title: "Bundes-Verfassungsgesetz (Österreich)",
+  },
+  // ── Ausländer- & Asylrecht ──
+  {
+    searchTitle: "Aufenthaltsgesetz",
+    matchTitle: "Niederlassungs- und Aufenthaltsgesetz",
+    abbr: "AufenthG",
+    title: "Niederlassungs- und Aufenthaltsgesetz (Österreich)",
+  },
+  {
+    searchTitle: "Fremdenpolizeigesetz 2005",
+    matchTitle: "Fremdenpolizeigesetz 2005",
+    abbr: "FPG",
+    title: "Fremdenpolizeigesetz 2005 (Österreich)",
+  },
+  {
+    searchTitle: "Asylgesetz 2005",
+    matchTitle: "Asylgesetz 2005",
+    abbr: "AsylG",
+    title: "Asylgesetz 2005 (Österreich)",
+  },
+  {
+    searchTitle: "Staatsbürgerschaftsgesetz 1985",
+    matchTitle: "Staatsbürgerschaftsgesetz 1985",
+    abbr: "StbG",
+    title: "Staatsbürgerschaftsgesetz 1985 (Österreich)",
+  },
+  {
+    searchTitle: "Ausländerbeschäftigungsgesetz",
+    matchTitle: "Ausländerbeschäftigungsgesetz",
+    abbr: "AuslBG",
+    title: "Ausländerbeschäftigungsgesetz (Österreich)",
+  },
+  // ── Strafrecht ergänzend ──
+  {
+    searchTitle: "Suchtmittelgesetz",
+    matchTitle: "Suchtmittelgesetz",
+    abbr: "SMG",
+    title: "Suchtmittelgesetz (Österreich)",
+  },
+  {
+    searchTitle: "Waffengesetz",
+    matchTitle: "Waffengesetz 1996",
+    abbr: "WaffG",
+    title: "Waffengesetz 1996 (Österreich)",
+  },
+  // ── Verwaltungsrecht ──
+  {
+    searchTitle: "Verwaltungsstrafgesetz 1991",
+    matchTitle: "Verwaltungsstrafgesetz 1991",
+    abbr: "VStG",
+    title: "Verwaltungsstrafgesetz 1991 (Österreich)",
+  },
+  {
+    searchTitle: "Verwaltungsvollstreckungsgesetz 1991",
+    matchTitle: "Verwaltungsvollstreckungsgesetz 1991",
+    abbr: "VVG",
+    title: "Verwaltungsvollstreckungsgesetz 1991 (Österreich)",
+  },
+  {
+    searchTitle: "Zustellgesetz",
+    matchTitle: "Zustellgesetz",
+    abbr: "ZustG",
+    title: "Zustellgesetz (Österreich)",
+  },
+  // ── Familienrecht ──
+  {
+    searchTitle: "Ehegesetz",
+    matchTitle: "Ehegesetz",
+    abbr: "EheG",
+    title: "Ehegesetz (Österreich)",
+  },
+  // ── Gewaltschutz ──
+  // Hinweis: Das "Gewaltschutzgesetz 2019" ist kein eigenständiges Gesetz,
+  // sondern ein Änderungsbündel (SPG § 38a, StGB, EO etc.). Der Gewaltschutz
+  // ist im SPG (§ 38a Betretungs- und Annäherungsverbot) geregelt, das wir
+  // bereits im Korpus haben.
+  // ── Gleichbehandlung ──
+  {
+    searchTitle: "Gleichbehandlungsgesetz",
+    matchTitle: "Gleichbehandlungsgesetz",
+    abbr: "GlbG",
+    title: "Gleichbehandlungsgesetz (Österreich)",
+  },
+  // ── Medienrecht ──
+  {
+    searchTitle: "Mediengesetz",
+    matchTitle: "Mediengesetz",
+    abbr: "MedienG",
+    title: "Mediengesetz (Österreich)",
+  },
+  // ── Vergaberecht ──
+  {
+    searchTitle: "Bundesvergabegesetz 2018",
+    matchTitle: "Bundesvergabegesetz 2018",
+    abbr: "BVergG",
+    title: "Bundesvergabegesetz 2018 (Österreich)",
+  },
+  // ── Wasserrecht ──
+  {
+    searchTitle: "Wasserrechtsgesetz 1959",
+    matchTitle: "Wasserrechtsgesetz 1959",
+    abbr: "WRG",
+    title: "Wasserrechtsgesetz 1959 (Österreich)",
+  },
+  // ── Patentrecht ──
+  {
+    searchTitle: "Patentgesetz 1970",
+    matchTitle: "Patentgesetz 1970",
+    abbr: "PatG",
+    title: "Patentgesetz 1970 (Österreich)",
+  },
+  // ── Arbeitslosenversicherung ──
+  {
+    searchTitle: "Arbeitslosenversicherungsgesetz 1977",
+    matchTitle: "Arbeitslosenversicherungsgesetz 1977",
+    abbr: "AlVG",
+    title: "Arbeitslosenversicherungsgesetz 1977 (Österreich)",
+  },
+  // ── Bauarbeiterurlaub ──
+  {
+    searchTitle: "Bauarbeiter-Urlaubs- und Abfertigungsgesetz",
+    matchTitle: "Bauarbeiter-Urlaubs- und Abfertigungsgesetz",
+    abbr: "BUAG",
+    title: "Bauarbeiter-Urlaubs- und Abfertigungsgesetz (Österreich)",
+  },
+  // ── E-Government ──
+  {
+    searchTitle: "E-Government-Gesetz",
+    matchTitle: "E-Government-Gesetz",
+    abbr: "E-GovG",
+    title: "E-Government-Gesetz (Österreich)",
+  },
+  // ── Krankenanstalten ──
+  {
+    searchTitle: "Krankenanstaltengesetz",
+    matchTitle: "Krankenanstalten- und Kuranstaltengesetz",
+    abbr: "KAG",
+    title: "Krankenanstaltengesetz (Österreich)",
+  },
+  // ── Arztgesetz ──
+  {
+    searchTitle: "Ärztegesetz 1998",
+    matchTitle: "Ärztegesetz 1998",
+    abbr: "ÄrzteG",
+    title: "Ärztegesetz 1998 (Österreich)",
+  },
+  // ── Behindertengesetz ──
+  {
+    searchTitle: "Bundesbehindertengesetz",
+    matchTitle: "Bundesbehindertengesetz",
+    abbr: "BBG",
+    title: "Bundesbehindertengesetz (Österreich)",
+  },
+  // ── Forstrecht ──
+  {
+    searchTitle: "Forstgesetz 1975",
+    matchTitle: "Forstgesetz 1975",
+    abbr: "ForstG",
+    title: "Forstgesetz 1975 (Österreich)",
+  },
+  // ── Gesundheitsrecht ergänzend ──
+  {
+    searchTitle: "Epidemiegesetz 1950",
+    matchTitle: "Epidemiegesetz 1950",
+    abbr: "EpiG",
+    title: "Epidemiegesetz 1950 (Österreich)",
+  },
+  {
+    searchTitle: "Arzneimittelgesetz",
+    matchTitle: "Arzneimittelgesetz",
+    abbr: "AMG",
+    title: "Arzneimittelgesetz (Österreich)",
+  },
+  {
+    searchTitle: "Gesundheits- und Krankenpflegegesetz",
+    matchTitle: "Gesundheits- und Krankenpflegegesetz",
+    abbr: "GuKG",
+    title: "Gesundheits- und Krankenpflegegesetz (Österreich)",
+  },
+  // ── Steuerrecht ergänzend ──
+  {
+    searchTitle: "Bewertungsgesetz 1955",
+    matchTitle: "Bewertungsgesetz 1955",
+    abbr: "BewG",
+    title: "Bewertungsgesetz 1955 (Österreich)",
+  },
+  {
+    searchTitle: "Grundsteuergesetz 1955",
+    matchTitle: "Grundsteuergesetz 1955",
+    abbr: "GrStG",
+    title: "Grundsteuergesetz 1955 (Österreich)",
+  },
+  // Hinweis: Vermögensteuergesetz wurde 2005 abgeschafft, Erbschaftsteuergesetz 2008.
+  // Gebührentarif ist Teil des Gebührengesetzes 1957 (GebG), das wir bereits haben.
+  // Außerstreitgesetz haben wir bereits als au-strg.md.
+  {
+    searchTitle: "Verbandsverantwortlichkeitsgesetz",
+    matchTitle: "Verbandsverantwortlichkeitsgesetz",
+    abbr: "VbVG",
+    title: "Verbandsverantwortlichkeitsgesetz (Österreich)",
+  },
+  {
+    searchTitle: "Tilgungsgesetz 1972",
+    matchTitle: "Tilgungsgesetz 1972",
+    abbr: "TilgG",
+    title: "Tilgungsgesetz 1972 (Österreich)",
+  },
+  {
+    searchTitle: "Strafregistergesetz 1968",
+    matchTitle: "Strafregistergesetz 1968",
+    abbr: "StRegG",
+    title: "Strafregistergesetz 1968 (Österreich)",
+  },
+  // ── Jugendrecht ──
+  {
+    searchTitle: "Jugendgerichtsgesetz 1988",
+    matchTitle: "Jugendgerichtsgesetz 1988",
+    abbr: "JGG-AT",
+    title: "Jugendgerichtsgesetz 1988 (Österreich)",
+  },
+  // ── Arbeitsrecht ergänzend ──
+  {
+    searchTitle: "Arbeitszeitgesetz",
+    matchTitle: "Arbeitszeitgesetz",
+    abbr: "AZG",
+    title: "Arbeitszeitgesetz (Österreich)",
+  },
+  {
+    searchTitle: "Mutterschutzgesetz 1979",
+    matchTitle: "Mutterschutzgesetz 1979",
+    abbr: "MSchG-AT",
+    title: "Mutterschutzgesetz 1979 (Österreich)",
+  },
+  {
+    searchTitle: "Väter-Karenzgesetz",
+    matchTitle: "Väter-Karenzgesetz",
+    abbr: "VKgG",
+    title: "Väter-Karenzgesetz (Österreich)",
+  },
+  {
+    searchTitle: "Arbeitsruhegesetz",
+    matchTitle: "Arbeitsruhegesetz",
+    abbr: "ARG",
+    title: "Arbeitsruhegesetz (Österreich)",
+  },
+  {
+    searchTitle: "Arbeitsvertragsrechts-Anpassungsgesetz",
+    matchTitle: "Arbeitsvertragsrechts-Anpassungsgesetz",
+    abbr: "AVRAG",
+    title: "Arbeitsvertragsrechts-Anpassungsgesetz (Österreich)",
+  },
+  // Hinweis: Betriebsrätegesetz wurde ins Arbeitsverfassungsgesetz (ArbVG) integriert.
+  // ── Personenstandsrecht ──
+  {
+    searchTitle: "Personenstandsgesetz 2013",
+    matchTitle: "Personenstandsgesetz 2013",
+    abbr: "PStG",
+    title: "Personenstandsgesetz 2013 (Österreich)",
+  },
+  // ── Namensrecht ──
+  {
+    searchTitle: "Namensänderungsgesetz",
+    matchTitle: "Namensänderungsgesetz",
+    abbr: "NÄG",
+    title: "Namensänderungsgesetz (Österreich)",
+  },
+  // ── Tierschutz ──
+  {
+    searchTitle: "Tierschutzgesetz",
+    matchTitle: "Tierschutzgesetz",
+    abbr: "TSchG",
+    title: "Tierschutzgesetz (Österreich)",
+  },
+  // ── Abfallrecht ──
+  {
+    searchTitle: "Abfallwirtschaftsgesetz 2002",
+    matchTitle: "Abfallwirtschaftsgesetz 2002",
+    abbr: "AWG",
+    title: "Abfallwirtschaftsgesetz 2002 (Österreich)",
+  },
+  // ── Chemikalienrecht ──
+  {
+    searchTitle: "Chemikaliengesetz",
+    matchTitle: "Chemikaliengesetz",
+    abbr: "ChemG",
+    title: "Chemikaliengesetz (Österreich)",
+  },
+  // Hinweis: Luftreinhaltegesetz existiert nicht als eigenständiges Bundesgesetz.
+  // ── Energie ──
+  {
+    searchTitle: "Elektrizitätswirtschafts- und -organisationsgesetz 2010",
+    matchTitle: "Elektrizitätswirtschafts- und -organisationsgesetz 2010",
+    abbr: "EiWOG",
+    title: "Elektrizitätswirtschafts- und -organisationsgesetz 2010 (Österreich)",
+  },
+  {
+    searchTitle: "Gaswirtschaftsgesetz 2011",
+    matchTitle: "Gaswirtschaftsgesetz 2011",
+    abbr: "GWG",
+    title: "Gaswirtschaftsgesetz 2011 (Österreich)",
+  },
+  // Hinweis: Baurecht ist in Österreich Landessache. Todeserklärung (§§ 25-28 ABGB)
+  // und Erbrecht (§§ 531-817 ABGB) sind im ABGB geregelt, das wir bereits haben.
 ];
 
 // ── Switzerland (3 core codes via Fedlex) ─────────────────────────────
@@ -395,7 +716,18 @@ async function resolveGesetzesnummer(law: AtLaw): Promise<string | null> {
           | Record<string, unknown>
           | undefined;
         const bund = meta?.Bundesrecht as Record<string, unknown> | undefined;
-        if (bund?.Kurztitel !== (law.matchTitle ?? law.searchTitle)) continue;
+        // RIS API returns non-breaking spaces (U+00A0) in Kurztitel instead of
+        // regular spaces (U+0020). Normalize before comparing.
+        const normalize = (s: unknown) => (typeof s === "string" ? s.replace(/\u00A0/g, " ") : s);
+        const expected = normalize(law.matchTitle ?? law.searchTitle);
+        if (normalize(bund?.Kurztitel) !== expected) continue;
+        // Gesetzesnummer is directly in the API JSON — prefer this.
+        const brKons = bund?.BrKons as Record<string, unknown> | undefined;
+        const gnr = (brKons?.Gesetzesnummer ?? bund?.Gesetzesnummer) as string | undefined;
+        if (typeof gnr === "string" && /^\d+$/.test(gnr)) {
+          return gnr;
+        }
+        // Fallback: scrape from document page HTML.
         const docUrl = (meta?.Allgemein as Record<string, unknown> | undefined)?.DokumentUrl as
           | string
           | undefined;

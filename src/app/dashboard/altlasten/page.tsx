@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useToast } from "@/components/ui/toast";
+import { useLang } from "@/lib/use-lang";
 
 interface CaseRow {
   slug: string;
@@ -40,6 +41,7 @@ type SortKey = "verjaehrung" | "score" | "updated" | "status";
 export default function AltlastenPage() {
   const router = useRouter();
   const { addToast } = useToast();
+  const { t } = useLang();
 
   const [cases, setCases] = useState<CaseRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,14 +118,14 @@ export default function AltlastenPage() {
     } catch (err) {
       addToast({
         type: "error",
-        title: "Fehler beim Laden",
+        title: t("altlasten.err_load"),
         description: err instanceof Error ? err.message : "Unbekannter Fehler",
         duration: 5000,
       });
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, [addToast, t]);
 
   useEffect(() => {
     fetchCases();
@@ -346,8 +348,8 @@ export default function AltlastenPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Altlasten-Bearbeitung"
-        description="Massenbearbeitung alter Akten — priorisiert nach Verjährungsrisiko"
+        title={t("altlasten.title")}
+        description={t("altlasten.description")}
         actions={
           <div className="flex gap-2">
             <Button
@@ -591,7 +593,7 @@ export default function AltlastenPage() {
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <FileText className="mb-4 h-12 w-12 text-[color:var(--ds-text-muted)]" />
           <p className="text-[color:var(--ds-text-muted)]">
-            Keine Akten gefunden. Laden Sie Akten hoch, um die Altlasten-Bearbeitung zu starten.
+            Keine Akten gefunden. Laden Sie Akten hoch, um die Bestandsakten-Bearbeitung zu starten.
           </p>
         </div>
       )}

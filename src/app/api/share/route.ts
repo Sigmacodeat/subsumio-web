@@ -1,5 +1,8 @@
 import { createHandler } from "@/lib/api-handler";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
+
+const log = logger("share");
 
 const shareSchema = z
   .object({
@@ -28,23 +31,11 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    const { text, url, title, caseSlug } = body;
+    const { caseSlug } = body;
 
     const shareId = `shr_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 
-    const payload = {
-      id: shareId,
-      userId: ctx.user.id,
-      text: text ?? null,
-      url: url ?? null,
-      title: title ?? null,
-      caseSlug: caseSlug ?? null,
-      receivedAt: new Date().toISOString(),
-    };
-
-    if (process.env.NODE_ENV !== "production") {
-      console.debug(`[share-receive] user=${ctx.user.id} shareId=${shareId}`);
-    }
+    log.debug("share received", { userId: ctx.user.id, shareId });
 
     return Response.json({
       ok: true,

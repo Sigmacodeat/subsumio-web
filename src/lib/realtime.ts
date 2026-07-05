@@ -125,6 +125,7 @@ class RealtimeClient {
         "case.deleted",
         "case.restored",
         "deadline.changed",
+        "deadline.alert",
         "note.added",
         "invoice.created",
         "comment.added",
@@ -136,6 +137,20 @@ class RealtimeClient {
         "presence.joined",
         "presence.left",
         "presence.heartbeat",
+        "inbox.triage",
+        "document.uploaded",
+        "autonomous.task_queued",
+        "autonomous.task_completed",
+        "user.activity.document",
+        "user.activity.query",
+        "user.activity.case",
+        "user.activity.email",
+        "user.activity.other",
+        "time.entry.created",
+        "time.entry.updated",
+        "time.entry.deleted",
+        "time.activity.started",
+        "time.activity.stopped",
       ];
       for (const evt of knownEvents) {
         this.es.addEventListener(evt, (ev: MessageEvent) => {

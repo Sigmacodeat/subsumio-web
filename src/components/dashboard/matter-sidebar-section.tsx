@@ -17,9 +17,7 @@ import {
   Lightbulb,
   Activity,
   Receipt,
-  Mail,
   Users,
-  Brain,
   ShieldAlert,
   ChevronRight,
 } from "lucide-react";
@@ -47,9 +45,7 @@ const MATTER_NAV_ITEMS: MatterNavItem[] = [
   { tab: "evidence", icon: ShieldAlert, labelDe: "Beweise", labelEn: "Evidence" },
   { tab: "activity", icon: Activity, labelDe: "Aktivität", labelEn: "Activity" },
   { tab: "billing", icon: Receipt, labelDe: "Kosten", labelEn: "Billing" },
-  { tab: "communications", icon: Mail, labelDe: "Kommunikation", labelEn: "Communications" },
   { tab: "contacts", icon: Users, labelDe: "Beteiligte", labelEn: "Contacts" },
-  { tab: "ai", icon: Brain, labelDe: "KI-Analyse", labelEn: "AI Analysis" },
 ];
 
 interface MatterSidebarSectionProps {

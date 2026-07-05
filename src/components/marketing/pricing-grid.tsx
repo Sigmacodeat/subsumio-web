@@ -7,15 +7,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PRICING, p, type Lang } from "@/content/site";
+import { PRICING, UI_STRINGS, p, type Lang } from "@/content/site";
 import { StaggerContainer, StaggerItem } from "./motion-system";
 
 type Billing = "annual" | "monthly";
 
 export function PricingGrid({ lang }: { lang: Lang }) {
   const pricing = PRICING[lang];
+  const ui = UI_STRINGS[lang];
   const [billing, setBilling] = useState<Billing>("annual");
-  const isDE = lang !== "en";
 
   return (
     <>
@@ -26,7 +26,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
           className={`text-sm font-medium transition-colors ${billing === "annual" ? "brand-text" : "[color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"}`}
           aria-pressed={billing === "annual"}
         >
-          {isDE ? "Jährlich" : "Annual"}
+          {ui.billingAnnual}
           <span className="brand-text brand-soft ml-1.5 rounded-full px-1.5 py-0.5 text-xs">
             −20%
           </span>
@@ -36,7 +36,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
             onClick={() => setBilling(billing === "annual" ? "monthly" : "annual")}
             role="switch"
             aria-checked={billing === "monthly"}
-            aria-label={isDE ? "Abrechnung umschalten" : "Toggle billing"}
+            aria-label={ui.toggleBilling}
             className={`brand-bg absolute top-0.5 h-5 w-5 rounded-full shadow-sm transition-transform ${billing === "monthly" ? "translate-x-6" : "translate-x-0.5"}`}
           />
         </div>
@@ -45,7 +45,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
           className={`text-sm font-medium transition-colors ${billing === "monthly" ? "brand-text" : "[color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"}`}
           aria-pressed={billing === "monthly"}
         >
-          {isDE ? "Monatlich" : "Monthly"}
+          {ui.billingMonthly}
         </button>
       </div>
 
@@ -86,7 +86,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
                 {tier.highlight && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="brand-bg rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white">
-                      {isDE ? "Beliebteste Wahl" : "Most popular"}
+                      {ui.mostPopular}
                     </span>
                   </div>
                 )}

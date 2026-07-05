@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { renderMarkdown } from "@/lib/markdown";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import type { BrainPage, TabularReviewResponse } from "@/lib/types";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -131,6 +132,10 @@ export default function ContractsPage() {
 
   const [analyzingSlug, setAnalyzingSlug] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  const [analysisCitations, setAnalysisCitations] = useState<
+    Array<{ slug: string; title: string }>
+  >([]);
+  const [analysisGaps, setAnalysisGaps] = useState<string[]>([]);
   const [_analysisLoading, setAnalysisLoading] = useState(false);
 
   const [showReview, setShowReview] = useState(false);
@@ -207,6 +212,8 @@ export default function ContractsPage() {
         queryMode: "deep_matter",
       });
       setAnalysisResult(result.answer);
+      setAnalysisCitations(result.citations ?? []);
+      setAnalysisGaps(result.gaps ?? []);
       const riskMatch = result.answer.match(/🟢|🟡|🔴|🚨/);
       const riskLevel: ContractItem["riskLevel"] = riskMatch
         ? riskMatch[0] === "🚨"
@@ -816,6 +823,15 @@ export default function ContractsPage() {
                     <div
                       className="prose prose-invert prose-sm max-h-[400px] max-w-none overflow-auto text-[color:var(--ds-text-muted)]"
                       dangerouslySetInnerHTML={{ __html: renderMarkdown(analysisResult) }}
+                    />
+                    <CitationPanel
+                      data={
+                        {
+                          citations: analysisCitations,
+                          gaps: analysisGaps,
+                        } satisfies CitationPanelData
+                      }
+                      compact
                     />
                   </div>
                 )}

@@ -173,7 +173,9 @@ export default function LogoMarquee({ lang }: { lang: Lang }) {
           <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--brand-text)" }} />
           {eyebrow}
         </span>
-        <h3 className="text-lg font-semibold [color:var(--mk-text-muted)]">{heading}</h3>
+        <p className="text-lg font-semibold [color:var(--mk-text-muted)]" role="presentation">
+          {heading}
+        </p>
       </div>
 
       {/* Row 1 — scrolls right to left */}

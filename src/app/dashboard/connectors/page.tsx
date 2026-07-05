@@ -67,6 +67,8 @@ export default function ConnectorsPage() {
   const [showCoverage, setShowCoverage] = useState(false);
   const [advokatPath, setAdvokatPath] = useState("/imports/advokat");
   const [configuringAdvokat, setConfiguringAdvokat] = useState(false);
+  const [beaPath, setBeaPath] = useState("~/Downloads/bea");
+  const [configuringBea, setConfiguringBea] = useState(false);
 
   async function loadConnectors() {
     setLoading(true);
@@ -151,6 +153,24 @@ export default function ConnectorsPage() {
     }
   }
 
+  async function configureBea() {
+    setConfiguringBea(true);
+    setMessage(null);
+    setError(null);
+    try {
+      await api.connectors.configureFolder("bea-import", {
+        watch_dir: beaPath,
+        poll_interval_ms: 60_000,
+      });
+      setMessage("beA-Import eingerichtet — Posteingang wird überwacht.");
+      await loadConnectors();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "beA-Import konnte nicht eingerichtet werden.");
+    } finally {
+      setConfiguringBea(false);
+    }
+  }
+
   function lastSyncLabel(value: number | null) {
     if (!value) return t("connectors.never_synced" as DashboardKey);
     return `${t("connectors.last_sync" as DashboardKey)}: ${new Date(value).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}`;
@@ -201,6 +221,13 @@ export default function ConnectorsPage() {
           aria-label={t("aria.loading")}
         >
           <Loader2 size={24} className="brand-text animate-spin" />
+        </div>
+      ) : connectors.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-[color:var(--ds-border)] p-12 text-center">
+          <Plug className="mx-auto mb-3 h-12 w-12 opacity-40" />
+          <p className="text-[color:var(--ds-text-muted)]">
+            {t("connectors.empty" as DashboardKey)}
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -342,6 +369,28 @@ export default function ConnectorsPage() {
         </div>
       </div>
 
+      <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+        <div>
+          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">beA Import</h2>
+          <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+            beA-Posteingangsordner überwachen — neue Nachrichten werden automatisch als
+            Akten-Ereignis importiert.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            value={beaPath}
+            onChange={(event) => setBeaPath(event.target.value)}
+            placeholder="~/Downloads/bea"
+            aria-label="beA Importordner"
+          />
+          <Button type="button" onClick={configureBea} disabled={!beaPath.trim() || configuringBea}>
+            {configuringBea ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Verbinden
+          </Button>
+        </div>
+      </div>
+
       {/* CLI reference */}
       <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">CLI-Kommandos</h2>
@@ -400,7 +449,7 @@ export default function ConnectorsPage() {
 }
 
 function CoverageMatrix() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const matrix = getCoverageMatrix();
 
   const statusColors: Record<string, string> = {

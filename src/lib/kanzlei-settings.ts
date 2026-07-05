@@ -41,6 +41,10 @@ export interface KanzleiSettings {
   // C1: Rechtsraum — jurisdiction for holiday-aware deadline calculation
   rechtsraumCountry?: "DE" | "AT" | "CH";
   rechtsraumState?: string;
+  // E-Invoice: Kleinunternehmer (§19 UStG) — no VAT on invoices
+  kleinunternehmer?: boolean;
+  // E-Invoice: default profile for ZUGFeRD generation
+  eInvoiceProfile?: "BASIC" | "COMFORT" | "EXTENDED";
 }
 
 export const KANZLEI_SETTINGS_SLUG = "legal/settings/kanzlei";

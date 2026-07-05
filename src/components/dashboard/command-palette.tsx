@@ -36,6 +36,7 @@ import { useLang } from "@/lib/use-lang";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import type { DashboardKey } from "@/content/dashboard";
 import { navForIndustry } from "@/components/dashboard/sidebar";
+import { tracking } from "@/lib/tracking";
 
 interface CommandItem {
   id: string;
@@ -64,10 +65,8 @@ const CMD_LABEL_KEYS: Record<string, DashboardKey> = {
   // Recherche
   research: "nav.legal_research",
   analyze: "nav.analyze",
-  "precedent-search": "nav.precedent_search",
+  "deep-analysis": "nav.deep_analysis",
   translate: "nav.translate",
-  rechtsprechung: "nav.rechtsprechung",
-  norms: "nav.norms",
   "judgements-sync": "nav.judgements_sync",
   kollisionspruefung: "nav.kollisionspruefung",
   "tabular-review": "nav.tabular_review",
@@ -111,9 +110,27 @@ const CMD_LABEL_KEYS: Record<string, DashboardKey> = {
   "settings-security": "nav.security",
   "settings-ai-model": "nav.ai_model",
   "portfolio-insights": "nav.portfolio_insights",
-  "adoption-analytics": "nav.adoption_analytics",
-  analytics: "nav.analytics",
   "shared-spaces": "nav.shared_spaces",
+  "outbound-register": "nav.outbound_register",
+  "power-of-attorney": "nav.power_of_attorney",
+  "fao-tracking": "nav.fao_tracking",
+  dictation: "nav.dictation",
+  kyc: "nav.kyc",
+  absences: "nav.absences",
+  "kanzlei-tools": "nav.kanzlei_tools",
+  "ethical-wall": "nav.ethical_wall",
+  webhooks: "nav.webhooks",
+  "time-suggestions": "nav.time_suggestions",
+  commentaries: "nav.commentaries",
+  autonomous: "nav.autonomous",
+  "red-team": "nav.red_team",
+  "document-interviews": "nav.document_interviews",
+  "court-analytics": "nav.court_analytics",
+  "online-booking": "nav.online_booking",
+  "bulk-cases": "nav.bulk_cases",
+  "fee-agreements": "nav.fee_agreements",
+  "claim-account": "nav.claim_account",
+  time: "nav.time",
 };
 
 const CMD_SECTION_KEYS: Record<string, DashboardKey> = {
@@ -228,7 +245,7 @@ export function CommandPalette({
         href: "/dashboard/altlasten",
         section: "nav.section.clients_comm",
         sectionKey: "nav.section.clients_comm",
-        keywords: "altlasten backlog alte akten bestandsakten archiv",
+        keywords: "bestandsakten altlasten backlog alte akten archiv legacy",
       });
     }
     return commands;
@@ -433,6 +450,7 @@ export function CommandPalette({
 
   useEffect(() => {
     if (open) {
+      tracking.features.commandPaletteOpened();
       setQuery("");
       setActiveIndex(0);
       setSearchResults([]);
@@ -577,8 +595,21 @@ export function CommandPalette({
       arr.push(cmd);
       map.set(cmd.section, arr);
     }
+    // "Ask Copilot" fallback — always last when there's a non-trivial query
+    if (query.trim().length >= 2) {
+      map.set(t("cmd.ask_copilot") || "Copilot fragen", [
+        {
+          id: "ask-copilot-fallback",
+          label: `${t("cmd.ask_copilot") || "Copilot fragen"}: „${query.trim()}“`,
+          icon: MessageSquareText,
+          href: `/dashboard/chat?q=${encodeURIComponent(query.trim())}`,
+          section: t("cmd.ask_copilot") || "Copilot fragen",
+          keywords: query.trim(),
+        },
+      ]);
+    }
     return Array.from(map.entries());
-  }, [filtered, searchCommands, fedCommands, t]);
+  }, [filtered, searchCommands, fedCommands, t, query]);
 
   const flatList = useMemo(
     () => [...recentItems, ...grouped.flatMap(([, items]) => items)],

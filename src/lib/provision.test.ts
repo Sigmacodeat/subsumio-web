@@ -26,14 +26,18 @@ describe("provisionBrain", () => {
   });
 
   test("returns ok:true on successful stats call", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 200 })); // stats
+    fetchSpy.mockResolvedValue(new Response("{}", { status: 200 })); // seed workflows
     const result = await provisionBrain("brain-1");
     expect(result.ok).toBe(true);
     expect(result.brainId).toBe("brain-1");
   });
 
   test("returns ok:true on 404 (source not yet created)", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("not found", { status: 404 }));
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    fetchSpy.mockResolvedValueOnce(new Response("not found", { status: 404 })); // stats
+    fetchSpy.mockResolvedValue(new Response("{}", { status: 200 })); // seed workflows
     const result = await provisionBrain("brain-1");
     expect(result.ok).toBe(true);
   });
@@ -42,25 +46,33 @@ describe("provisionBrain", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 200 })); // stats
     fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 200 })); // skillpack
+    // seedWorkflows: 3 workflow pages for legal
+    fetchSpy.mockResolvedValue(new Response("{}", { status: 200 }));
     const result = await provisionBrain("brain-1", { industry: "legal" });
     expect(result.ok).toBe(true);
-    expect(fetchSpy).toHaveBeenCalledTimes(2);
     const skillpackCall = fetchSpy.mock.calls[1];
     expect(skillpackCall[0]).toContain("/api/skillpack/apply");
+    // Verify seed workflow calls were made (calls after skillpack)
+    const seedCalls = fetchSpy.mock.calls.filter((c) => String(c[0]).includes("/api/pages"));
+    expect(seedCalls.length).toBe(3);
   });
 
   test("does not mount skill pack for unknown industry", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
-    fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 200 })); // stats only
+    fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 200 })); // stats
+    // seedWorkflows still runs for unknown industry (defaults to legal templates)
+    fetchSpy.mockResolvedValue(new Response("{}", { status: 200 }));
     const result = await provisionBrain("brain-1", { industry: "nonexistent" });
     expect(result.ok).toBe(true);
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    // stats + 3 seed workflow calls = 4 total (no skillpack)
+    expect(fetchSpy).toHaveBeenCalledTimes(4);
   });
 
   test("succeeds even if skill pack mounting fails", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 200 })); // stats
     fetchSpy.mockRejectedValueOnce(new Error("skillpack fail")); // skillpack error
+    fetchSpy.mockResolvedValue(new Response("{}", { status: 200 })); // seed workflow calls
     const result = await provisionBrain("brain-1", { industry: "legal" });
     expect(result.ok).toBe(true);
   });

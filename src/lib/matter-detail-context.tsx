@@ -299,16 +299,13 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   const { activeTab: contextTab, caseSlug: contextCaseSlug } = useMatterData();
   const { pendingCount: offlinePendingCount, syncing: offlineSyncing } = useMutationQueue();
 
-  const activeTab: string = contextTab === "deadlines" ? "deadlines_tasks" : contextTab;
+  const activeTab: string = contextTab;
 
   const navigateToTab = useCallback(
     (tab: string) => {
-      const mapped = tab === "deadlines_tasks" ? "deadlines" : tab;
       const encoded = contextCaseSlug.split("/").map(encodeURIComponent).join("/");
       const url =
-        mapped === "overview"
-          ? `/dashboard/cases/${encoded}`
-          : `/dashboard/cases/${encoded}/${mapped}`;
+        tab === "overview" ? `/dashboard/cases/${encoded}` : `/dashboard/cases/${encoded}/${tab}`;
       router.push(url);
     },
     [contextCaseSlug, router]
@@ -451,7 +448,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
       if (detail?.caseSlug && detail.caseSlug !== contextCaseSlug) return;
       const eventType = e.type;
       if (eventType === "subsumio:create-deadline" || eventType === "subsumio:create-task") {
-        navigateToTab("deadlines_tasks");
+        navigateToTab("deadlines");
       } else if (eventType === "subsumio:upload-document") {
         navigateToTab("documents");
       } else if (eventType === "subsumio:log-time") {
@@ -459,7 +456,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
       } else if (eventType === "subsumio:create-contact") {
         navigateToTab("contacts");
       } else if (eventType === "subsumio:create-communication") {
-        navigateToTab("communications");
+        navigateToTab("activity");
       }
     };
     const events = [
@@ -1290,7 +1287,6 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
         ),
         id: data.id || `dl-${Date.now()}`,
         due_date: date,
-        date,
         status: computeDeadlineStatus(date, effectiveStatus, data.vorfrist_date),
         review_status: data.review_status ?? "unreviewed",
         vorfrist_date: data.vorfrist_date,
@@ -1470,7 +1466,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   todayStart.setHours(0, 0, 0, 0);
   const activeDeadlines = deadlinesList.filter((dl) => dl.status !== "done");
   const criticalDeadlineCount = activeDeadlines.filter((dl) => {
-    const due = new Date(dl.due_date || dl.date || "");
+    const due = new Date(dl.due_date || "");
     if (Number.isNaN(due.getTime())) return false;
     const days = Math.ceil((due.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24));
     return days <= 3;

@@ -20,6 +20,28 @@ vi.mock("@/components/legal/CitationLink", () => ({
 }));
 
 vi.mock("@/components/legal/CitationPanel", () => ({
+  CitationPanel: ({
+    data,
+  }: {
+    data: {
+      citations?: Array<{ slug: string; title: string }>;
+      gaps?: string[];
+      grounding?: unknown;
+    };
+  }) => (
+    <div data-testid="citation-panel">
+      {data.citations?.map((c) => (
+        <span key={c.slug} data-testid={`citation-${c.slug}`}>
+          {c.title}
+        </span>
+      ))}
+      {data.gaps?.map((g, i) => (
+        <span key={i} data-testid={`gap-${i}`}>
+          {g}
+        </span>
+      ))}
+    </div>
+  ),
   CitationBadgesInline: () => <span data-testid="citation-badges-inline">Citations</span>,
 }));
 
@@ -101,7 +123,7 @@ describe("ChatMessageBubble", () => {
       gaps: ["Fehlende Beweiskette"],
     };
     renderMessage(message);
-    expect(screen.getByTestId("citation-badges-inline")).toBeInTheDocument();
+    expect(screen.getByTestId("citation-panel")).toBeInTheDocument();
     expect(screen.getByText("Zitat 1")).toBeInTheDocument();
     expect(screen.getByText(/Fehlende Beweiskette/i)).toBeInTheDocument();
   });

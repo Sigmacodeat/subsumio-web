@@ -31,6 +31,8 @@ export interface DocumentRequestFrontmatter {
   created_at: string;
   sent_at?: string;
   updated_at: string;
+  reminder_sent_at?: string;
+  reminder_count?: number;
 }
 
 export interface DocumentRequestInput {

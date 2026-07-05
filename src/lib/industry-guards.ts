@@ -19,9 +19,6 @@ export const LEGAL_ONLY_PAGES: readonly string[] = [
   "/dashboard/tabular-review",
   "/dashboard/obligation-tracking",
   "/dashboard/research",
-  "/dashboard/rechtsprechung",
-  "/dashboard/norms",
-  "/dashboard/precedent-search",
   "/dashboard/judgements-sync",
   "/dashboard/bea",
 ];

@@ -53,7 +53,7 @@ const ROUTE_HELP: Array<{
     desc: "Pflege Kanzlei- und Bankdaten, prüfe offene Leistungen und erstelle Rechnungen aus Akten.",
     links: [
       { href: "/dashboard/settings/kanzlei", label: "Kanzlei-Daten" },
-      { href: "/dashboard/controlling", label: "Controlling" },
+      { href: "/dashboard/controlling", label: "Kanzlei-Kennzahlen" },
     ],
   },
 ];

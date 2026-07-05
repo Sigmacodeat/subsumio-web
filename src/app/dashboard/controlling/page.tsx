@@ -94,12 +94,9 @@ export default function ControllingPage() {
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Leistungscontrolling"
+        title="Leistungskennzahlen"
         description="Übersicht über Anwälte, Stunden und Umsatz"
-        breadcrumbs={[
-          { label: "Übersicht", href: "/dashboard" },
-          { label: "Leistungscontrolling" },
-        ]}
+        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Leistungskennzahlen" }]}
         actions={
           <div className="flex gap-2">
             {(["month", "quarter", "year"] as const).map((p) => (

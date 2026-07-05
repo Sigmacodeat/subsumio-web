@@ -15,7 +15,6 @@
 import { describe, test, expect } from "vitest";
 import {
   createTimeEntry,
-  computeSummary,
   computeBillingSummary,
   markEntriesBilled,
   filterEntries,

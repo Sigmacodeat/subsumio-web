@@ -5,6 +5,9 @@ import { createPublicHandler } from "@/lib/api-handler";
 import { timingSafeEqual } from "node:crypto";
 import { env } from "@/lib/env";
 import { createIdempotencyStore } from "@/lib/idempotency";
+import { logger } from "@/lib/logger";
+
+const log = logger("webhook-incoming");
 
 // Idempotency: Postgres-backed (durable across instances/restarts) with an
 // in-memory fallback for dev. Prevents duplicate processing on provider retries.
@@ -66,9 +69,7 @@ export const POST = createPublicHandler(
     }
 
     // Log and return success (processing is async)
-    if (process.env.NODE_ENV !== "production") {
-      console.debug(`[webhook] received ${event}`);
-    }
+    log.debug("webhook received", { event });
     if (eventId) await idempotency.markProcessed(eventId, event);
     return NextResponse.json({
       success: true,

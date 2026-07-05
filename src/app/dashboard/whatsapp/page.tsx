@@ -35,6 +35,7 @@ import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { WhatsAppInbox } from "@/components/whatsapp/whatsapp-inbox";
 
 interface WhatsAppStatus {
   configured: boolean;
@@ -450,6 +451,13 @@ export default function WhatsAppDashboardPage() {
             }
             onAssign={(doc) => assignDocumentToCase(doc, caseSelections[doc.slug] || "")}
           />
+
+          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+            <h2 className="mb-4 text-sm font-semibold text-[color:var(--ds-text)]">
+              {t("whatsapp.inbox_tab")}
+            </h2>
+            <WhatsAppInbox />
+          </div>
 
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
             <div className="mb-4 flex items-start justify-between gap-3">
