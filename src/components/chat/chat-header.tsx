@@ -129,118 +129,49 @@ export function ChatHeader(props: ChatHeaderProps) {
 
   return (
     <div className="border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
-      {/* Top row: title + actions */}
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
-            <MessageSquareText size={16} className="text-[color:var(--ds-text-muted)]" />
+      {/* Single row: title + status + controls + actions — no wrapping */}
+      <div className="flex items-center gap-2 px-3 py-2">
+        {/* Title + status badge */}
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
+            <MessageSquareText size={14} className="text-[color:var(--ds-text-muted)]" />
           </div>
-          <div className="min-w-0">
-            <h2 className="truncate text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
-              {t("chat.title")}
-            </h2>
-            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-[color:var(--ds-text-subtle)]">
-              {props.features.brainStatus && !compact && (
-                <span
-                  className="inline-flex items-center gap-1.5 font-medium"
-                  title={
-                    brainDegraded
-                      ? t("chat.brain_degraded")
-                      : brainOnline
-                        ? t("chat.brain_online")
-                        : t("chat.brain_offline")
-                  }
-                >
-                  <span
-                    className={cn(
-                      "h-1.5 w-1.5 rounded-full",
-                      brainDegraded ? "bg-amber-500" : brainOnline ? "bg-emerald-500" : "bg-red-500"
-                    )}
-                  />
-                  {props.messageCount > 0 && (
-                    <span>
-                      {props.messageCount} {t("chat.session_count")}
-                    </span>
-                  )}
-                </span>
-              )}
-              {props.messageCount > 0 && !props.features.brainStatus && (
+          <h2 className="truncate text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
+            {t("chat.title")}
+          </h2>
+          {props.features.brainStatus && !compact && (
+            <span
+              className="inline-flex shrink-0 items-center gap-1 text-xs text-[color:var(--ds-text-subtle)]"
+              title={
+                brainDegraded
+                  ? t("chat.brain_degraded")
+                  : brainOnline
+                    ? t("chat.brain_online")
+                    : t("chat.brain_offline")
+              }
+            >
+              <span
+                className={cn(
+                  "h-1.5 w-1.5 rounded-full",
+                  brainDegraded ? "bg-amber-500" : brainOnline ? "bg-emerald-500" : "bg-red-500"
+                )}
+              />
+              {props.messageCount > 0 && (
                 <span>
                   {props.messageCount} {t("chat.session_count")}
                 </span>
               )}
-            </div>
-          </div>
-        </div>
-
-        <div className="relative flex shrink-0 items-center gap-0.5" ref={actionsRef}>
-          {props.messageCount > 0 && (
-            <>
-              <button
-                onClick={() => setShowActions((v) => !v)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
-                aria-label={t("copilot.more_actions")}
-                title={t("copilot.more_actions")}
-                aria-haspopup="true"
-                aria-expanded={showActions}
-              >
-                <MoreVertical size={14} />
-              </button>
-              <AnimatePresence initial={false}>
-                {showActions && (
-                  <motion.div
-                    className="absolute top-full right-0 z-50 mt-1 w-48 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1 shadow-lg"
-                    initial={popoverInitial}
-                    animate={popoverAnimate}
-                    exit={popoverExit}
-                    transition={popoverTransition}
-                  >
-                    {props.onShare && (
-                      <button
-                        onClick={() => {
-                          props.onShare?.();
-                          setShowActions(false);
-                        }}
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[color:var(--ds-text)] transition-colors hover:bg-[color:var(--ds-hover)]"
-                      >
-                        <Share2 size={13} />
-                        {t("chat.share")}
-                      </button>
-                    )}
-                    {props.features.exportChat && (
-                      <button
-                        onClick={() => {
-                          props.onExport();
-                          setShowActions(false);
-                        }}
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[color:var(--ds-text)] transition-colors hover:bg-[color:var(--ds-hover)]"
-                      >
-                        <Download size={13} />
-                        {t("chat.export")}
-                      </button>
-                    )}
-                    <div className="my-1 h-px bg-[color:var(--ds-border)]" />
-                    <button
-                      onClick={() => {
-                        props.onClear();
-                        setShowActions(false);
-                      }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-red-600 transition-colors hover:bg-red-500/10 dark:text-red-400"
-                    >
-                      <Trash2 size={13} />
-                      {t("chat.clear")}
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </>
+            </span>
+          )}
+          {props.messageCount > 0 && !props.features.brainStatus && (
+            <span className="shrink-0 text-xs text-[color:var(--ds-text-subtle)]">
+              {props.messageCount} {t("chat.session_count")}
+            </span>
           )}
         </div>
-      </div>
 
-      {/* Controls row — unified toolbar track */}
-      <div className="px-3 pb-2.5">
-        <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-[color:var(--ds-surface-2)] p-1.5 max-md:gap-1">
+        {/* Controls toolbar — single line, no wrap */}
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto rounded-xl bg-[color:var(--ds-surface-2)] p-1">
           {/* ── Combined Sessions + Case dropdown ── */}
           {props.sessions && props.onSelectSession ? (
             <div ref={sessionsRef} className="relative">
@@ -600,6 +531,71 @@ export function ChatHeader(props: ChatHeaderProps) {
             !compact && (
               <ModelSelector selectedModelId={props.modelOverride} onSelect={props.onModelChange} />
             )}
+        </div>
+
+        {/* Actions — more menu */}
+        <div className="relative flex shrink-0 items-center" ref={actionsRef}>
+          {props.messageCount > 0 && (
+            <>
+              <button
+                onClick={() => setShowActions((v) => !v)}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+                aria-label={t("copilot.more_actions")}
+                title={t("copilot.more_actions")}
+                aria-haspopup="true"
+                aria-expanded={showActions}
+              >
+                <MoreVertical size={14} />
+              </button>
+              <AnimatePresence initial={false}>
+                {showActions && (
+                  <motion.div
+                    className="absolute top-full right-0 z-50 mt-1 w-48 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1 shadow-lg"
+                    initial={popoverInitial}
+                    animate={popoverAnimate}
+                    exit={popoverExit}
+                    transition={popoverTransition}
+                  >
+                    {props.onShare && (
+                      <button
+                        onClick={() => {
+                          props.onShare?.();
+                          setShowActions(false);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[color:var(--ds-text)] transition-colors hover:bg-[color:var(--ds-hover)]"
+                      >
+                        <Share2 size={13} />
+                        {t("chat.share")}
+                      </button>
+                    )}
+                    {props.features.exportChat && (
+                      <button
+                        onClick={() => {
+                          props.onExport();
+                          setShowActions(false);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[color:var(--ds-text)] transition-colors hover:bg-[color:var(--ds-hover)]"
+                      >
+                        <Download size={13} />
+                        {t("chat.export")}
+                      </button>
+                    )}
+                    <div className="my-1 h-px bg-[color:var(--ds-border)]" />
+                    <button
+                      onClick={() => {
+                        props.onClear();
+                        setShowActions(false);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-red-600 transition-colors hover:bg-red-500/10 dark:text-red-400"
+                    >
+                      <Trash2 size={13} />
+                      {t("chat.clear")}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          )}
         </div>
       </div>
     </div>

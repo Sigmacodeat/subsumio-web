@@ -1979,25 +1979,20 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             ) : (
               <div className="flex min-h-0 min-w-0 flex-1 flex-col">
                 {!isMobile && (
-                  <>
-                    <div className="shrink-0 border-b border-[color:var(--ds-border)] px-3 py-1.5 text-[11px] text-[color:var(--ds-text-subtle)]">
-                      {t("copilot.planning_hint")}
-                    </div>
-                    <ChatPanel
-                      ref={chatRef}
-                      context={{
-                        type: routeContext.type,
-                        caseSlug: routeContext.caseSlug,
-                        pageSlug: routeContext.pageSlug,
-                      }}
-                      className="h-full rounded-none border-0"
-                      placeholder={
-                        routeContext.caseSlug
-                          ? t("chat.placeholder_case")
-                          : t("chat.placeholder_global")
-                      }
-                    />
-                  </>
+                  <ChatPanel
+                    ref={chatRef}
+                    context={{
+                      type: routeContext.type,
+                      caseSlug: routeContext.caseSlug,
+                      pageSlug: routeContext.pageSlug,
+                    }}
+                    className="h-full rounded-none border-0"
+                    placeholder={
+                      routeContext.caseSlug
+                        ? t("chat.placeholder_case")
+                        : t("chat.placeholder_global")
+                    }
+                  />
                 )}
               </div>
             )}
