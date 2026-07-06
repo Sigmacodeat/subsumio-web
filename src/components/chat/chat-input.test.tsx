@@ -54,6 +54,7 @@ vi.mock("@/lib/api", () => ({
   api: {
     upload: {
       file: vi.fn(),
+      waitUntilQueryable: vi.fn().mockResolvedValue(undefined),
     },
   },
 }));

@@ -15,6 +15,7 @@ import {
   Reply,
   Lightbulb,
 } from "lucide-react";
+import { CopilotExplanationPanel } from "@/components/copilot/copilot-explanation-panel";
 import { cn } from "@/lib/utils";
 import { renderMarkdown } from "@/lib/markdown";
 import { useLang } from "@/lib/use-lang";
@@ -53,6 +54,7 @@ function ChatMessageBubbleInner({
   onFollowUp,
 }: ChatMessageBubbleProps) {
   const [copied, setCopied] = useState(false);
+  const [showExplain, setShowExplain] = useState(false);
   const { t, lang } = useLang();
   const isUser = message.role === "user";
   const hasCitations = (message.citations?.length ?? 0) > 0;
@@ -246,6 +248,20 @@ function ChatMessageBubbleInner({
                 <RefreshCw size={12} />
               </button>
             )}
+            {!isUser && (
+              <button
+                onClick={() => setShowExplain((v) => !v)}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                aria-label={lang === "en" ? "Explain" : "Erklären"}
+                title={
+                  lang === "en"
+                    ? "Why this answer? Show reasoning and sources"
+                    : "Warum diese Antwort? Zeige Begründung und Quellen"
+                }
+              >
+                <Lightbulb size={12} />
+              </button>
+            )}
             {isUser && onEdit && (
               <button
                 onClick={() => onEdit(message.id)}
@@ -277,6 +293,15 @@ function ChatMessageBubbleInner({
           </div>
         )}
       </div>
+      {showExplain && !isUser && (
+        <div className="mt-2">
+          <CopilotExplanationPanel
+            query={message.content.slice(0, 500)}
+            answer={message.content}
+            onClose={() => setShowExplain(false)}
+          />
+        </div>
+      )}
     </div>
   );
 }

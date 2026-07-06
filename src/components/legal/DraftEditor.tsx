@@ -12,6 +12,7 @@ import {
   FileText,
   Mail,
   AlertTriangle,
+  FileSearch,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ import { csrfFetch } from "@/lib/csrf";
 import { generateDraftPdf } from "@/lib/legal-draft-pdf";
 import { CertificationStamp } from "@/components/legal/certification-stamp";
 import { createCertification, type AICertification } from "@/lib/ai-certification";
+import { DraftReviewPanel } from "@/components/copilot/draft-review-panel";
 
 export interface DraftInfo {
   slug: string;
@@ -64,6 +66,7 @@ export function DraftEditor({
   const [emailSubject, setEmailSubject] = useState(draft.title);
   const [emailBody, setEmailBody] = useState("");
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [showReview, setShowReview] = useState(false);
 
   useEffect(() => {
     setContent(draft.content);
@@ -293,11 +296,31 @@ export function DraftEditor({
             <Send size={12} />
             Per E-Mail
           </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="gap-1.5 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)]"
+            onClick={() => setShowReview((v) => !v)}
+          >
+            <FileSearch size={12} />
+            {showReview ? "Review schließen" : "KI-Review"}
+          </Button>
         </div>
       </div>
 
       {/* AI Certification Stamp */}
       <CertificationStamp cert={certification} compact={false} expandable={true} />
+
+      {/* Draft Review Panel */}
+      {showReview && (
+        <DraftReviewPanel
+          content={mode === "edit" ? content : draft.content}
+          title={draft.title}
+          type={draft.draftType}
+          draftSlug={draft.slug}
+          onClose={() => setShowReview(false)}
+        />
+      )}
 
       {/* Content / Editor */}
       {mode === "view" ? (

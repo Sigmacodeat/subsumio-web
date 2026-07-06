@@ -62,6 +62,14 @@ vi.mock("@/lib/use-offline-sync", () => ({
   useNetworkStatus: () => true,
 }));
 
+vi.mock("@/lib/queries/sidebar-badges", () => ({
+  useSidebarBadges: () => ({
+    data: { pages: 0, cases: 0, deadlines: 0, messages: 0, tasks: 0 },
+    isLoading: false,
+    error: null,
+  }),
+}));
+
 function renderSidebar(props: Partial<ComponentProps<typeof Sidebar>> = {}) {
   return render(
     <Sidebar

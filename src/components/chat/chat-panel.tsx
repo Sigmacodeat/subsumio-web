@@ -16,6 +16,7 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useLang } from "@/lib/use-lang";
 import { useMe } from "@/lib/queries/auth";
 import { buildSafePrompt } from "@/lib/prompt-sanitizer";
+import { csrfFetch } from "@/lib/csrf";
 import {
   buildPromptContext,
   processStreamingChunk,
@@ -844,6 +845,15 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       setMessages((m) => [...m, userMsg, assistantMsg]);
       setIsStreaming(true);
       setError(null);
+
+      // Non-blocking: infer memories from user message
+      if (text.length > 10) {
+        csrfFetch("/api/copilot/memory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "infer", message: text, caseSlug: context.caseSlug }),
+        }).catch(() => {});
+      }
 
       if (persistHistory && activeSessionId) {
         await saveMessage(activeSessionId, userMsg);
