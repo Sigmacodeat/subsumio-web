@@ -1863,10 +1863,10 @@ const _landingDe = {
     "EU-Cloud oder On-Premise",
   ],
   h1a: "Deine Kanzlei vergisst.",
-  h1b: "Subsumio nicht — KI-Anwaltssoftware, die jede Antwort belegt.",
-  heroTagline: "Jede Akte, eine belegte Antwort — mit Fundstellen, nicht Halluzinationen.",
+  h1b: "Subsumio nicht.",
+  heroTagline: "Das Kanzlei-Gedächtnis, das jede Frage mit Fundstellen beantwortet.",
   h1Keyword: "KI-Kanzleisoftware & Anwaltssoftware mit belegten Antworten",
-  sub: "KI-Kanzleisoftware mit belegten Antworten für Rechtsanwälte in AT · DE · CH. Fristenmanagement nach ZPO/BGB/ABGB, DATEV-Export, Kollisionsprüfung — § 203 StGB-konform, On-Premise oder EU-Cloud mit AVV.",
+  sub: "Fristen, Akten, Schriftsätze — alles an einem Ort. Du fragst in normaler Sprache, Subsumio antwortet mit Quellenangaben. Für Anwälte in AT, DE und CH.",
   heroTrustItems: [
     { icon: "CreditCard", label: "Keine Kreditkarte" },
     { icon: "Scale", label: "§ 203 StGB" },
@@ -1889,22 +1889,25 @@ const _landingDe = {
     { icon: "Globe", label: "EU-Cloud" },
     { icon: "Server", label: "On-Premise" },
   ],
-  painTitle: "Was kostet dich deine Kanzleisoftware heute?",
+  painTitle: "Was kostet es, wenn niemand mitdenkt?",
   painSub:
-    "Was Kanzleien ohne KI-Anwaltssoftware täglich verlieren — Branchenschätzungen, keine Laborwerte. Abrechenbarer Umsatz, den du nie siehst. Haftungsrisiko durch Fristversäumnis, das du nicht brauchst.",
+    "Jede Kanzlei verliert Zeit und Geld an Dinge, die eine Maschine besser macht — wenn sie für Anwälte gebaut ist.",
   pains: [
     {
-      value: "bis zu 40 %",
-      label: "der abrechenbaren Zeit gehen für Aktenrecherche und Wiederauffinden verloren",
+      value: "40 %",
+      label: "abrechenbare Zeit geht für Recherche und Wiederauffinden verloren",
     },
     {
-      value: "Notfrist",
-      label: "Eine einzige menschlich übersehene Notfrist genügt für einen Haftpflichtfall",
+      value: "1 Notfrist",
+      label: "genügt für einen Haftpflichtfall — menschlich übersehen, maschinell vermeidbar",
     },
-    { value: "3+ Std.", label: "pro Schriftsatz für manuelle Zitatprüfung und Quellenrecherche" },
+    {
+      value: "3 Std.",
+      label: "pro Schriftsatz für manuelle Quellenprüfung — Subsumio braucht Sekunden",
+    },
     {
       value: "Wochen",
-      label: "Einarbeitung neuer Mitarbeiter — bis sie das Kanzleiwissen selbständig finden",
+      label: "Einarbeitung neuer Mitarbeiter, bis sie das Kanzleiwissen selbständig finden",
     },
   ],
   ctaPrimary: "14 Tage kostenlos testen",
@@ -1947,52 +1950,51 @@ const _landingDe = {
     ],
   },
   stats: [
-    { value: "97,9 %", label: "Recall@5 — Retrieval-Benchmark" },
-    { value: "3", label: "Jurisdiktionen — AT · DE · CH" },
-    { value: "Zero", label: "bekannte Mandantendaten-Lecks — by design" },
-    { value: "14", label: "Tage volle Testversion — keine Kreditkarte" },
+    { value: "97,9 %", label: "Retrieval-Trefferquote (Recall@5)" },
+    { value: "3", label: "Jurisdiktionen: AT, DE, CH" },
+    { value: "0", label: "Mandantendaten-Lecks — by design" },
+    { value: "14", label: "Tage gratis testen" },
   ],
   statsNote:
-    "Engine-Klasse Retrieval — jede KI-Antwort nennt die exakte Fundstelle. Kein Chat-Wrapper, keine Halluzination. Kanzleisoftware, die Anwälten Beweise liefert, nicht Behauptungen.",
-  featuresTitle: "KI-Kanzleisoftware, die für Anwälte gebaut ist — nicht nachträglich angepasst",
-  featuresSub:
-    "Von Fristenmanagement nach ZPO/BGB/ABGB bis Widerspruchserkennung in Schriftsätzen — jede Antwort mit Fundstellen, jede Frist überwacht, keine Halluzination. Legal-Tech-Software für Kanzleimanagement, die Berufsgeheimnisträgern gerecht wird.",
+    "Engine-Klasse Retrieval, kein Chat-Wrapper. Jede Antwort nennt die Quelle — oder sagt ehrlich, wenn die Akte nichts hergibt.",
+  featuresTitle: "Sechs Dinge, die deine Kanzlei ab heute nicht mehr manuell macht",
+  featuresSub: "Jedes Feature für Anwälte gebaut — nicht nachträglich angepasst.",
   features: [
     {
       icon: "Brain",
       color: "violet",
       title: "Antworten mit Fundstellen",
-      desc: "Jede KI-Antwort zitiert die exakten Fundstellen aus deinen Akten — ein Klick zur Verifikation, bevor etwas in den Schriftsatz geht. Du prüfst in Sekunden, was früher Minuten kostete. Keine halluzinierten Quellen, keine Blackbox, kein Bauchgefühl.",
+      desc: "Jede Antwort zitiert die exakte Stelle in deinen Akten. Ein Klick zur Verifikation — keine halluzinierten Quellen, keine Blackbox.",
     },
     {
       icon: "CalendarClock",
       color: "amber",
       title: "Fristen automatisch berechnet",
-      desc: "Notfristen und Berufungsfristen nach ZPO, BGB und ABGB — mit korrekter Monatsarithmetik, Wochenend- und Feiertagsverschiebung. Der tägliche E-Mail-Digest markiert kritische Fristen vor Fristablauf. Du schläfst ruhig, weil nichts mehr durchs Raster fällt.",
+      desc: "Not- und Berufungsfristen nach ZPO, BGB und ABGB — mit Feiertagsverschiebung. Der tägliche Digest markiert, was kritisch wird.",
     },
     {
       icon: "MessageSquare",
       color: "emerald",
-      title: "WhatsApp-Copilot für die Kanzlei",
-      desc: "Zeiten buchen, Dokumente ablegen, Sprachnotizen vom Handy. Alles landet in der richtigen Akte — bestätigungspflichtig, nichts erreicht die Akte ungesehen. GoBD-konform dokumentiert.",
+      title: "WhatsApp-Copilot",
+      desc: "Zeiten buchen, Dokumente ablegen, Sprachnotizen vom Handy. Alles landet in der richtigen Akte — GoBD-konform.",
     },
     {
       icon: "ShieldAlert",
       color: "rose",
-      title: "Kollisionsprüfung nach § 43a BRAO, § 10 RAO, BGFA",
-      desc: "Jeder neue Mandant oder Gegner wird serverseitig gegen den gesamten Aktenbestand geprüft — Konflikte werden gemeldet, bevor das Mandat angenommen wird. Deckt § 43a BRAO (DE), § 10 RAO (AT) und BGFA (CH) ab.",
+      title: "Kollisionsprüfung",
+      desc: "Jeder neue Mandant wird gegen den gesamten Aktenbestand geprüft — § 43a BRAO, § 10 RAO, BGFA. Konflikte vor Mandatsannahme.",
     },
     {
       icon: "Calculator",
       color: "blue",
-      title: "Zeiten, Auslagen, Rechnungen und DATEV",
-      desc: "Minuten nach Anwalt und Tätigkeit buchen, abrechenbare Auslagen erfassen, Rechnungen aus offener Arbeit erstellen. DATEV-Export (DE) und ADATEV (AT) in einem Klick. Keine abrechenbare Minute verloren — jeder Anruf, jede E-Mail erfasst.",
+      title: "Zeiten, Rechnungen, DATEV",
+      desc: "Minuten buchen, Auslagen erfassen, Rechnungen erstellen. DATEV-Export (DE) und ADATEV (AT) in einem Klick.",
     },
     {
       icon: "Shield",
       color: "violet",
-      title: "On-Premise oder EU-Cloud mit AVV",
-      desc: "Die vollständige Engine auf eigener Kanzlei-Infrastruktur mit eigenen Schlüsseln — oder verwaltete EU-Cloud mit AVV. Mandantendaten verlassen niemals deine Kontrolle.",
+      title: "Self-Hosting oder EU-Cloud",
+      desc: "Die Engine auf deiner Hardware mit deinen Schlüsseln — oder verwaltete EU-Cloud mit AVV. Deine Daten, deine Kontrolle.",
     },
   ],
   howTitle: "So funktioniert KI-Kanzleisoftware: vom Dokument zur belegten Antwort",
@@ -2022,8 +2024,8 @@ const _landingDe = {
       desc: "Eine synthetisierte Antwort mit seitengenauen Zitaten — plus ehrlicher Hinweis, was in der Akte noch fehlt. Die Gap-Analyse zeigt offene Risiken, bevor sie zu Problemen werden.",
     },
   ],
-  scenariosTitle: "Kanzlei-Workflows aus der Praxis — mit KI-Anwaltssoftware automatisiert",
-  scenariosSub: "Drei Abläufe aus dem Produkt, die jeder Anwalt sofort erkennt.",
+  scenariosTitle: "Drei Workflows, die jeder Anwalt sofort erkennt",
+  scenariosSub: "Aus dem Produkt, nicht aus einem Mockup.",
   scenarios: [
     {
       role: "Eingangspost",
@@ -2038,10 +2040,8 @@ const _landingDe = {
       text: "Fünf Jahre Akten und Schriftsätze indexieren. Der neue Mitarbeiter fragt: „Haben wir schon mal so etwas argumentiert?“ — und findet den Schriftsatz von 2023 in Sekunden, mit seitengenauen Zitaten. Einarbeitungszeit von Wochen auf Tage.",
     },
   ],
-  comparisonTitle:
-    "Kanzleisoftware Vergleich: Subsumio vs. andere KI-Tools — der Unterschied, der Anwälten wichtig ist",
-  comparisonSub:
-    "Allgemeine KI-Tools und Legal-Tech-Plattformen sind nicht für Anwälte gebaut. Subsumio ist es.",
+  comparisonTitle: "Warum nicht einfach ChatGPT, Notion AI oder eine Vektor-Datenbank?",
+  comparisonSub: "Allgemeine KI-Tools sind nicht für Anwälte gebaut. Subsumio ist es.",
   comparison: [
     {
       feature: "Fundstellen pro Antwort",
@@ -2079,69 +2079,44 @@ const _landingDe = {
       others: "Oft ja, oder unklar",
     },
   ],
-  faqTitle: "Häufige Fragen zur KI-Kanzleisoftware — klar beantwortet",
+  faqTitle: "Häufige Fragen",
   faq: [
     {
-      q: "Was unterscheidet Subsumio von Notion AI, Glean oder einer Vektor-Datenbank?",
-      a: `Notion AI, Glean und Vektor-Datenbanken liefern Dokumente oder Textabschnitte. Subsumio liefert eine synthetisierte Antwort mit seitengenauen Zitaten, nutzt für Beziehungsfragen einen typisierten Wissensgraphen und gibt eine Gap-Analyse — es zeigt explizit, was in der Akte fehlt. Das ist der Unterschied zwischen \u201Eirgendwo steht etwas\u201C und \u201Ehier steht die Antwort, und hier fehlt noch etwas\u201C.`,
+      q: "Was unterscheidet Subsumio von ChatGPT, Notion AI oder einer Vektor-Datenbank?",
+      a: `Jene liefern Dokumente oder Textabschnitte. Subsumio liefert eine synthetisierte Antwort mit seitengenauen Zitaten, nutzt einen typisierten Wissensgraphen für Beziehungsfragen und zeigt explizit, was in der Akte noch fehlt (Gap-Analyse). Der Unterschied zwischen „irgendwo steht etwas" und „hier steht die Antwort, und hier fehlt noch etwas".`,
     },
     {
-      q: "Wo liegen meine Kanzleidaten?",
-      a: "Du hast die Wahl: Self-Hosting der Engine auf eigener Hardware mit eigenen Schlüsseln oder unsere verwaltete EU-Cloud mit AVV. Enterprise-Pläne unterstützen On-Premise-Deployment und einen unterzeichneten AVV. Mandantendaten verlassen in keinem Fall die EU.",
+      q: "Wo liegen meine Daten — und ist das § 203 StGB-konform?",
+      a: "Du wählst: Self-Hosting auf eigener Hardware mit eigenen Schlüsseln, oder verwaltete EU-Cloud mit AVV. Mandantendaten verlassen nie die EU. Kein Dritter verarbeitet sie ohne ausdrückliche Freigabe. Die Architektur ist für Berufsgeheimnisträger gebaut — § 203 StGB, § 9 RAO, BGFA.",
     },
     {
-      q: "Brauche ich API-Keys oder eigene Server-Infrastruktur?",
-      a: "Nein. Bei gehosteten Plänen ist Subsumio vollständig verwaltet — keine API-Keys, keine eigene Infrastruktur, keine IT-Ressourcen nötig. Enterprise-On-Premise läuft auf eigener Hardware mit eigenen Schlüsseln.",
+      q: "Brauche ich IT-Kenntnisse oder eigene Server?",
+      a: "Nein. Bei gehosteten Plänen ist alles verwaltet — keine API-Keys, keine Infrastruktur. Du lädst Dokumente hoch, stellst Fragen, bekommst Antworten. Wenn du E-Mails schreiben kannst, kannst du Subsumio bedienen. Enterprise-On-Premise läuft auf deiner Hardware mit deinen Schlüsseln.",
     },
     {
-      q: "Was passiert, wenn ich an Plan-Limits stoße?",
-      a: "Der Verbrauch ist live im Dashboard sichtbar. Wir fragen, bevor sich etwas ändert — keine Überraschungsrechnungen, kein stilles Drosseln. Mehrverbrauch wird zu transparenten Einheitspreisen abgerechnet.",
+      q: "Trainiert Subsumio auf meinen Daten?",
+      a: "Niemals. Dein Kanzleiwissen gehört dir. On-Premise bleibt alles auf deiner Infrastruktur. In der EU-Cloud wird es verschlüsselt und mandantensepariert verarbeitet — keine andere Kanzlei hat Zugriff.",
     },
     {
-      q: "Trainiert Subsumio auf meinen Kanzleidaten?",
-      a: "Niemals. Dein Kanzleiwissen gehört allein dir und wird nicht zum Training geteilter Modelle genutzt. On-Premise bleibt alles auf deiner Infrastruktur. In der EU-Cloud wird es verschlüsselt und mandantensepariert verarbeitet — keine andere Kanzlei hat Zugriff.",
+      q: "Funktioniert das mit unserer bestehenden Software?",
+      a: "Ja. Subsumio importiert aus DATEV, RA-Micro, anwalt.de und jedem System, das Dokumente exportieren kann. E-Mails über IMAP, WhatsApp über Meta Business API. Subsumio ersetzt nichts — es ergänzt deine Software um ein Kanzlei-Brain.",
     },
     {
-      q: "Ist Subsumio mit § 203 StGB und Berufsgeheimnis-Pflichten vereinbar?",
-      a: "Ja. Die Architektur ist für Berufsgeheimnisträger konzipiert: Kein Dritter verarbeitet Mandantendaten ohne ausdrückliche Freigabe. On-Premise bleibt die Datenverarbeitung vollständig innerhalb der Kanzlei. In der EU-Cloud erfolgt die Verarbeitung verschlüsselt und mandantensepariert.",
+      q: "Was passiert, wenn eine Antwort falsch ist?",
+      a: "Jede Antwort nennt die Quelle — du prüfst in einem Klick. Wenn die Akte keine Antwort enthält, sagt Subsumio das explizit statt zu halluzinieren. Du behältst immer die letzte Entscheidung.",
     },
     {
-      q: "Ist das nicht zu kompliziert für unsere Kanzlei?",
-      a: "Nein. Subsumio ist für Anwälte gebaut, nicht für IT-Abteilungen. Keine API-Keys, keine Server-Infrastruktur, keine Schulung nötig. Du lädst Dokumente hoch, stellst Fragen — und bekommst Antworten mit Fundstellen. Die Einrichtung dauert Minuten, nicht Wochen. Wenn du E-Mails schreiben kannst, kannst du Subsumio bedienen.",
+      q: "Wie werden Fristen berechnet?",
+      a: "Not- und Berufungsfristen nach ZPO, BGB und ABGB — mit korrekter Monatsarithmetik und Feiertagsverschiebung. Eingehende Dokumente werden auf fristauslösende Ereignisse analysiert. Der tägliche Digest markiert kritische Fristen vor Ablauf.",
     },
     {
-      q: "Funktioniert das mit unserer bestehenden Anwaltssoftware?",
-      a: "Ja. Subsumio importiert aus DATEV, RA-Micro, anwalt.de und jedem System, das Dokumente exportieren kann. E-Mails werden über die standardmäßige IMAP-Schnittstelle indexiert. Die WhatsApp-Anbindung läuft über die Meta Business API. Subsumio ersetzt keine Anwaltssoftware — es ergänzt sie um ein Kanzlei-Brain, das alle Akten kennt.",
-    },
-    {
-      q: "Was passiert, wenn Subsumio eine Antwort falsch hat?",
-      a: "Jede Antwort nennt die exakten Fundstellen — du prüfst in einem Klick, ob das Zitat stimmt. Wenn die Akte keine Antwort enthält, sagt Subsumio das explizit (Gap-Analyse) statt zu halluzinieren. Du behältst immer die letzte Entscheidung, bevor etwas in einen Schriftsatz geht.",
-    },
-    {
-      q: "Welche Kanzleisoftware ist die beste für Solo-Anwälte und Kleinkanzleien?",
-      a: "Für Solo-Anwälte und Kleinkanzleien ist eine KI-native Allrounder-Software wie Subsumio ideal: Aktenverwaltung, Fristenmanagement nach ZPO/BGB/ABGB, belegte KI-Antworten und DATEV-Export in einer Plattform. Der Community-Plan ist kostenlos, der Pro-Plan ab 890 €/Nutzer/Mon. — ohne Lock-in, mit 14-Tage-Reverse-Trial.",
-    },
-    {
-      q: "Ist KI-Anwaltssoftware DSGVO-konform und mit § 203 StGB vereinbar?",
-      a: "Ja — wenn die Architektur dafür gebaut ist. Subsumio verarbeitet Mandantendaten ausschließlich in der EU-Cloud oder On-Premise auf eigener Hardware. Ein AVV ist Standard, die Verarbeitung ist mandantensepariert und Ende-zu-Ende verschlüsselt. Kein Dritter sieht Mandantendaten ohne ausdrückliche Freigabe. On-Premise bleibt die Datenverarbeitung vollständig innerhalb der Kanzlei — ideal für § 203 StGB und § 9 RAO.",
-    },
-    {
-      q: "Kann ich Kanzleisoftware selbst hosten — auf eigener Hardware?",
-      a: "Ja. Subsumio ist die einzige KI-Kanzleisoftware mit vollem On-Premise-Support: Die komplette Engine läuft auf deiner Hardware mit deinen Schlüsseln. Keine API-Abhängigkeit von US-Cloud-Anbietern, keine Daten verlassen die Kanzlei. Enterprise-Pläne unterstützen S3-kompatiblen Objektspeicher, SSO/SAML und individuelle Aufbewahrungsrichtlinien.",
-    },
-    {
-      q: "Wie berechnet die Software Fristen nach ZPO, BGB und ABGB?",
-      a: "Subsumio berechnet Notfristen, Berufungsfristen und alle gesetzlichen Fristen automatisch nach ZPO, BGB und ABGB — mit korrekter Monatsarithmetik, Wochenend- und Feiertagsverschiebung. Eingehende Dokumente werden auf fristauslösende Ereignisse analysiert, Fristen werden im Kalender eingetragen und mit der Akte verknüpft. Ein täglicher E-Mail-Digest markiert kritische Fristen vor Fristablauf.",
-    },
-    {
-      q: "Was kostet KI-Kanzleisoftware und gibt es versteckte Gebühren?",
-      a: "Subsumio ist transparent: Community kostenlos, Pro ab 890 €/Nutzer/Mon., Team ab 1.290 €, Enterprise ab 1.890 €. Jahreszahlung spart 20 %. Mehrverbrauch wird zu transparenten Einheitspreisen abgerechnet — sichtbar im Dashboard, keine Überraschungsrechnungen, kein stilles Drosseln. 14-Tage-Reverse-Trial mit Geld-zurück-Garantie, keine Kreditkarte nötig.",
+      q: "Was kostet Subsumio — und gibt es versteckte Gebühren?",
+      a: "Community kostenlos, Pro ab 890 €/Nutzer/Mon., Team ab 1.290 €, Enterprise ab 1.890 €. Jahreszahlung spart 20 %. Mehrverbrauch zu transparenten Einheitspreisen — sichtbar im Dashboard. 14 Tage gratis, keine Kreditkarte.",
     },
   ],
-  ctaTitle:
-    "Hör auf zu suchen. Fang an zu fragen — mit KI-Kanzleisoftware, die jede Antwort belegt.",
+  ctaTitle: "Hör auf zu suchen. Fang an zu fragen.",
   ctaSub:
-    "14 Tage volle Testversion der Kanzleisoftware. Keine Kreditkarte. Kein IT-Aufwand. Dein Brain baut sich ab der ersten Akte auf.",
+    "14 Tage volle Testversion. Keine Kreditkarte, kein IT-Aufwand. Dein Kanzlei-Gedächtnis baut sich ab der ersten Akte auf.",
   ctaButton: "14 Tage kostenlos testen",
   relatedLinks: [
     { label: "Preise & Pläne", href: "/pricing" },
@@ -2160,10 +2135,10 @@ const _landingEn = {
     "EU-Cloud or On-Premise",
   ],
   h1a: "Your firm forgets.",
-  h1b: "Subsumio doesn't — AI legal software that cites every answer.",
-  heroTagline: "Every matter, one cited answer — page-level sources, not hallucinations.",
+  h1b: "Subsumio doesn't.",
+  heroTagline: "The firm memory that answers every question with citations.",
   h1Keyword: "AI legal software with cited answers for law firms",
-  sub: "AI legal software with cited answers for law firms in AT · DE · CH. Deadline management per ZPO/BGB/ABGB, DATEV export, conflict checking — § 203 StGB compliant, on-premise or EU cloud with DPA.",
+  sub: "Deadlines, matters, briefs — all in one place. Ask in plain language, get answers with sources. For lawyers in AT, DE and CH.",
   heroTrustItems: [
     { icon: "CreditCard", label: "No credit card" },
     { icon: "Scale", label: "§ 203 StGB" },
@@ -2186,22 +2161,22 @@ const _landingEn = {
     { icon: "Globe", label: "EU-Cloud" },
     { icon: "Server", label: "On-Premise" },
   ],
-  painTitle: "What is your law firm software costing you today?",
+  painTitle: "What does it cost when nobody's paying attention?",
   painSub:
-    "What firms without AI legal software lose every day — industry estimates, not lab numbers. Billable revenue you never see. Malpractice risk from missed deadlines you don't need.",
+    "Every firm loses time and money to things a machine does better — when it's built for lawyers.",
   pains: [
     {
-      value: "up to 40%",
-      label: "of billable time lost to matter research and re-finding documents",
+      value: "40%",
+      label: "of billable time lost to research and re-finding documents",
     },
     {
-      value: "One deadline",
-      label: "a single manually missed statutory deadline is enough for a malpractice claim",
+      value: "1 deadline",
+      label: "a single missed statutory deadline is enough for a malpractice claim",
     },
-    { value: "3+ hrs", label: "per brief for manual citation checking and source research" },
+    { value: "3 hrs", label: "per brief for manual citation checking — Subsumio takes seconds" },
     {
       value: "Weeks",
-      label: "onboarding new associates — until they can navigate firm knowledge alone",
+      label: "onboarding new associates, until they can navigate firm knowledge alone",
     },
   ],
   ctaPrimary: "Start free trial",
@@ -2244,52 +2219,51 @@ const _landingEn = {
     ],
   },
   stats: [
-    { value: "97.9%", label: "Recall@5 — retrieval benchmark" },
-    { value: "3", label: "jurisdictions — AT · DE · CH" },
-    { value: "Zero", label: "client-data leaks, by design" },
-    { value: "14", label: "days full trial — no credit card" },
+    { value: "97.9%", label: "Retrieval accuracy (Recall@5)" },
+    { value: "3", label: "Jurisdictions: AT, DE, CH" },
+    { value: "0", label: "Client-data leaks — by design" },
+    { value: "14", label: "Days free trial" },
   ],
   statsNote:
-    "Engine-class retrieval — every AI answer cites its exact source. Not a chat wrapper, no hallucination. Legal software that gives lawyers evidence, not assertions.",
-  featuresTitle: "AI legal software built for law firms — not adapted for them",
-  featuresSub:
-    "From deadline management per ZPO/BGB/ABGB to contradiction detection in pleadings — every answer cited, every deadline tracked, no hallucinations. Legal-tech software for law firm management, built for professional secrecy holders.",
+    "Engine-class retrieval, not a chat wrapper. Every answer cites its source — or honestly says the file doesn't contain one.",
+  featuresTitle: "Six things your firm stops doing manually from today",
+  featuresSub: "Every feature built for lawyers — not adapted for them.",
   features: [
     {
       icon: "Brain",
       color: "violet",
       title: "Answers with citations",
-      desc: "Every AI answer cites the exact pages it comes from — verify in one click before anything goes into a brief. You check in seconds what used to take minutes. No hallucinated references, no black box, no gut feeling.",
+      desc: "Every answer cites the exact page in your files. One click to verify — no hallucinated sources, no black box.",
     },
     {
       icon: "CalendarClock",
       color: "amber",
       title: "Deadlines, automatically",
-      desc: "Statutory and appeal deadlines computed per ZPO/BGB/ABGB with correct month arithmetic and weekend roll-forward. A daily email digest flags what's critical before the deadline expires. You sleep through the night before a hearing, because nothing slips through.",
+      desc: "Statutory and appeal deadlines per ZPO/BGB/ABGB — with holiday roll-forward. The daily digest flags what's critical.",
     },
     {
       icon: "MessageSquare",
       color: "emerald",
       title: "WhatsApp copilot",
-      desc: "Book time, file documents, send voice notes from your phone. Everything lands in the right matter — confirmation-gated, nothing reaches the file unseen. GoBD-compliant.",
+      desc: "Book time, file documents, send voice notes from your phone. Everything lands in the right matter — GoBD-compliant.",
     },
     {
       icon: "ShieldAlert",
       color: "rose",
-      title: "Conflict check (§ 43a BRAO / § 10 RAO / BGFA)",
-      desc: "Every new client or opponent is checked server-side against your entire matter database — conflicts flagged before the mandate is accepted. Covers § 43a BRAO (DE), § 10 RAO (AT) and BGFA (CH).",
+      title: "Conflict checking",
+      desc: "Every new client checked against your entire matter database — § 43a BRAO, § 10 RAO, BGFA. Conflicts before mandate acceptance.",
     },
     {
       icon: "Calculator",
       color: "blue",
-      title: "Time, expenses, invoices & DATEV",
-      desc: "Book minutes by lawyer and activity, track billable expenses, generate invoices from open work, export DATEV-ready (DE) or ADATEV (AT). No billable minute lost — every call, every email captured.",
+      title: "Time, invoices, DATEV",
+      desc: "Book minutes, track expenses, generate invoices. DATEV export (DE) and ADATEV (AT) in one click.",
     },
     {
       icon: "Shield",
       color: "violet",
       title: "Self-hosted or EU cloud",
-      desc: "The full engine on your hardware with your keys — or managed EU cloud with DPA. Client data never leaves your control.",
+      desc: "The engine on your hardware with your keys — or managed EU cloud with DPA. Your data, your control.",
     },
   ],
   howTitle: "How AI legal software works: from document to cited answer",
@@ -2319,8 +2293,8 @@ const _landingEn = {
       desc: "A synthesized answer with page-level citations — plus an honest note on what the file is still missing. The gap analysis surfaces open risks before they become problems.",
     },
   ],
-  scenariosTitle: "Real law firm workflows — automated with AI legal software",
-  scenariosSub: "From the engine, not a mockup — three workflows your team will recognize.",
+  scenariosTitle: "Three workflows every lawyer recognizes instantly",
+  scenariosSub: "From the product, not a mockup.",
   scenarios: [
     {
       role: "Incoming post",
@@ -2335,10 +2309,8 @@ const _landingEn = {
       text: "Index five years of matters and pleadings. The new associate asks: 'Have we argued something like this before?' — and finds the 2023 brief in seconds, with page-level citations. Onboarding from weeks to days.",
     },
   ],
-  comparisonTitle:
-    "Law firm software comparison: Subsumio vs. other AI tools — the difference that matters to lawyers",
-  comparisonSub:
-    "General AI tools and legal-tech platforms are not built for lawyers. Subsumio is.",
+  comparisonTitle: "Why not just ChatGPT, Notion AI or a vector database?",
+  comparisonSub: "General AI tools aren't built for lawyers. Subsumio is.",
   comparison: [
     {
       feature: "Citations per answer",
@@ -2376,68 +2348,44 @@ const _landingEn = {
       others: "Often yes, or unclear",
     },
   ],
-  faqTitle: "AI legal software questions, answered",
+  faqTitle: "Common questions",
   faq: [
     {
-      q: "How is this different from Notion AI, Glean or a vector database?",
-      a: 'Those return documents or chunks. Subsumio returns a synthesized answer with page-level citations, walks a typed knowledge graph for relationship questions ("who invested in X?"), and tells you what it doesn\'t know — the gap analysis is the part that changes how you work.',
+      q: "How is this different from ChatGPT, Notion AI or a vector database?",
+      a: `Those return documents or chunks. Subsumio returns a synthesized answer with page-level citations, uses a typed knowledge graph for relationship questions, and tells you what it doesn't know — the gap analysis. The difference between "something somewhere says X" and "here's the answer, and here's what's still missing".`,
     },
     {
-      q: "Where does my data live?",
-      a: "Your choice. Self-host the engine on your own hardware, or use our managed EU cloud. Enterprise plans support on-prem and a signed DPA. Client data never leaves the EU.",
+      q: "Where does my data live — and is it § 203 StGB compliant?",
+      a: "Your choice: self-host on your own hardware with your own keys, or managed EU cloud with DPA. Client data never leaves the EU. No third party processes it without explicit release. The architecture is built for confidentiality holders — § 203 StGB, § 9 RAO, BGFA.",
     },
     {
-      q: "Do I need API keys or a server?",
-      a: "No. Sign up and your brain runs — fully managed, no keys, no infrastructure. Enterprise self-hosting runs on your own hardware with your own keys.",
-    },
-    {
-      q: "What happens when I hit my plan limits?",
-      a: "You see usage live in the dashboard and we ask before anything changes. No surprise bills, no silent throttling. Overages billed at transparent per-unit rates.",
+      q: "Do I need IT skills or my own servers?",
+      a: "No. Hosted plans are fully managed — no API keys, no infrastructure. Upload documents, ask questions, get answers. If you can write an email, you can use Subsumio. Enterprise on-premise runs on your hardware with your keys.",
     },
     {
       q: "Do you train on our data?",
-      a: "Never. Your knowledge is yours alone — never used to train shared models. Self-hosted, nothing leaves your building; on our EU cloud it stays encrypted and isolated per customer.",
+      a: "Never. Your knowledge is yours. On-premise stays on your infrastructure. In the EU cloud it's encrypted and isolated per customer — no other firm has access.",
     },
     {
-      q: "Is Subsumio compatible with § 203 StGB and professional secrecy obligations?",
-      a: "Yes. The architecture is designed for confidentiality holders: no third party processes client data without explicit release. On-premise keeps data processing entirely within your firm. In the EU cloud, processing is encrypted and isolated per customer.",
+      q: "Does it work with our existing software?",
+      a: "Yes. Subsumio imports from DATEV, RA-Micro, anwalt.de and any system that exports documents. Emails via IMAP, WhatsApp via Meta Business API. Subsumio doesn't replace anything — it adds a firm brain to your existing stack.",
     },
     {
-      q: "Isn't this too complicated for our firm?",
-      a: "No. Subsumio is built for lawyers, not IT departments. No API keys, no server infrastructure, no training required. You upload documents, ask questions — and get answers with citations. Setup takes minutes, not weeks. If you can write an email, you can use Subsumio.",
+      q: "What happens if an answer is wrong?",
+      a: "Every answer cites its source — you verify in one click. If the file doesn't contain an answer, Subsumio says so explicitly instead of hallucinating. You always keep the final decision.",
     },
     {
-      q: "Does it work with our existing practice software?",
-      a: "Yes. Subsumio imports from DATEV, RA-Micro, anwalt.de and any system that can export documents. Emails are indexed via standard IMAP. WhatsApp runs through the Meta Business API. Subsumio doesn't replace your practice software — it adds a firm brain that knows every matter.",
+      q: "How are deadlines calculated?",
+      a: "Statutory and appeal deadlines per ZPO, BGB and ABGB — with correct month arithmetic and holiday roll-forward. Incoming documents are analyzed for deadline-triggering events. The daily digest flags critical deadlines before they expire.",
     },
     {
-      q: "What happens if Subsumio gives a wrong answer?",
-      a: "Every answer cites the exact source — you verify in one click whether the citation is accurate. If the file doesn't contain an answer, Subsumio says so explicitly (gap analysis) instead of hallucinating. You always keep the final decision before anything goes into a brief.",
-    },
-    {
-      q: "Which law firm software is best for solo lawyers and small firms?",
-      a: "For solo lawyers and small firms, an AI-native all-in-one platform like Subsumio is ideal: matter management, deadline tracking per ZPO/BGB/ABGB, cited AI answers and DATEV export in one platform. The Community plan is free, Pro starts at €890/user/mo. — no lock-in, with a 14-day reverse trial.",
-    },
-    {
-      q: "Is AI legal software GDPR-compliant and compatible with § 203 StGB?",
-      a: "Yes — when the architecture is built for it. Subsumio processes client data exclusively in the EU cloud or on-premise on your own hardware. A DPA is standard, processing is customer-isolated and end-to-end encrypted. No third party sees client data without explicit release. On-premise keeps data processing entirely within your firm — ideal for § 203 StGB and § 9 RAO.",
-    },
-    {
-      q: "Can I self-host law firm software — on my own hardware?",
-      a: "Yes. Subsumio is the only AI legal software with full on-premise support: the entire engine runs on your hardware with your keys. No API dependency on US cloud providers, no data leaves your firm. Enterprise plans support S3-compatible object storage, SSO/SAML and custom retention policies.",
-    },
-    {
-      q: "How does the software calculate deadlines per ZPO, BGB and ABGB?",
-      a: "Subsumio automatically calculates statutory deadlines, appeal deadlines and all legal time limits per ZPO, BGB and ABGB — with correct month arithmetic, weekend and holiday roll-forward. Incoming documents are analyzed for deadline-triggering events, deadlines are calendared and linked to the matter. A daily email digest flags critical deadlines before they expire.",
-    },
-    {
-      q: "What does AI legal software cost and are there hidden fees?",
-      a: "Subsumio is transparent: Community free, Pro from €890/user/mo., Team from €1,290, Enterprise from €1,890. Annual billing saves 20%. Overages billed at transparent per-unit rates — visible in the dashboard, no surprise bills, no silent throttling. 14-day reverse trial with money-back guarantee, no credit card required.",
+      q: "What does Subsumio cost — and are there hidden fees?",
+      a: "Community free, Pro from €890/user/mo., Team from €1,290, Enterprise from €1,890. Annual billing saves 20%. Overages at transparent per-unit rates — visible in the dashboard. 14 days free, no credit card.",
     },
   ],
-  ctaTitle: "Stop searching. Start asking — with AI legal software that cites every answer.",
+  ctaTitle: "Stop searching. Start asking.",
   ctaSub:
-    "14 days full trial of the legal software. No credit card. No IT setup. Your brain builds from the first matter.",
+    "14 days full trial. No credit card, no IT setup. Your firm memory builds from the first matter.",
   ctaButton: "Start free trial",
   relatedLinks: [
     { label: "Pricing & plans", href: "/en/pricing" },
