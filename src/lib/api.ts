@@ -221,6 +221,10 @@ export const api = {
     return request(`/api/search?${params.toString()}`);
   },
 
+  get<T>(path: string): Promise<T> {
+    return request<T>(path);
+  },
+
   brain: {
     stats(): Promise<BrainStats> {
       return request("/api/stats");

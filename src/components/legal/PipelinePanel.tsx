@@ -9,7 +9,6 @@ import {
   Clock,
   FileText,
   Table,
-  ShieldCheck,
   PenTool,
   Gavel,
   ChevronDown,
@@ -209,6 +208,7 @@ export function PipelinePanel({
   const [showDamageOverlaps, setShowDamageOverlaps] = useState(false);
   const [showOnGraph, setShowOnGraph] = useState(false);
   const [showCoherence, setShowCoherence] = useState(false);
+  const [showLimitationScan, setShowLimitationScan] = useState(false);
 
   const fetchPipelineData = useCallback(async () => {
     setLoading(true);
@@ -441,6 +441,29 @@ export function PipelinePanel({
   const hasPipeline = pipelineState !== null;
   const pipelineStatus = pipelineState?.status ?? "not_started";
   const _isRunning = pipelineStatus === "running";
+
+  // Limitation Scanner (Layer 5l, Verjährung) result — surfaced as its own alert
+  // instead of being buried, unlabeled, inside the generic "bucket 5" output list.
+  // A missed limitation period is one of the highest-stakes findings the pipeline
+  // can produce, so it gets the same prominence as the deadline/damage-overlap panels.
+  const limitationScanPage = Object.values(outputPages).find(
+    (p) =>
+      (p.frontmatter as Record<string, unknown> | undefined)?.type === "limitation_scan_analysis"
+  );
+  const limitationFm = (limitationScanPage?.frontmatter ?? {}) as Record<string, unknown>;
+  const limitationUrgentCount = Number(limitationFm.urgent_count ?? 0);
+  const limitationExpiredCount = Number(limitationFm.verjaehrte_count ?? 0);
+  const limitationRiskScore =
+    typeof limitationFm.verjaehrung_risiko_score === "number"
+      ? limitationFm.verjaehrung_risiko_score
+      : undefined;
+  const limitationUrgentClaims = Array.isArray(limitationFm.urgent_ansprueche)
+    ? (limitationFm.urgent_ansprueche as Array<Record<string, unknown>>)
+    : [];
+  const limitationExpiredClaims = Array.isArray(limitationFm.verjaehrte_ansprueche)
+    ? (limitationFm.verjaehrte_ansprueche as Array<Record<string, unknown>>)
+    : [];
+  const hasLimitationAlert = limitationUrgentCount > 0 || limitationExpiredCount > 0;
 
   return (
     <div className="space-y-4">
@@ -881,6 +904,110 @@ export function PipelinePanel({
             )}
           </div>
         )}
+
+      {/* Verjährungs-Scan Alert Panel (Layer 5l Limitation Scanner) */}
+      {hasLimitationAlert && (
+        <div
+          className={cn(
+            "rounded-xl border p-4",
+            limitationExpiredCount > 0
+              ? "border-red-500/30 bg-red-500/5"
+              : "border-amber-500/30 bg-amber-500/5"
+          )}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <AlertTriangle
+                size={18}
+                className={limitationExpiredCount > 0 ? "text-red-600" : "text-amber-600"}
+              />
+              <div>
+                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  Verjährungs-Scan
+                </h3>
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  {limitationExpiredCount > 0 &&
+                    `${limitationExpiredCount} verjährte(r) Anspruch/Ansprüche · `}
+                  {limitationUrgentCount > 0 &&
+                    `${limitationUrgentCount} dringende(r) Anspruch/Ansprüche vor Verjährung`}
+                  {limitationRiskScore !== undefined &&
+                    ` · Risiko-Score: ${limitationRiskScore}/100`}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {limitationExpiredCount > 0 && (
+                <Badge
+                  variant="default"
+                  className="border border-red-500/30 bg-red-500/10 text-xs text-red-600"
+                >
+                  ⛔ {limitationExpiredCount} verjährt
+                </Badge>
+              )}
+              {limitationUrgentCount > 0 && (
+                <Badge
+                  variant="default"
+                  className="border border-amber-500/30 bg-amber-500/10 text-xs text-amber-600"
+                >
+                  🚨 {limitationUrgentCount} dringend
+                </Badge>
+              )}
+              <Button
+                variant="secondary"
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={() => setShowLimitationScan(!showLimitationScan)}
+              >
+                {showLimitationScan ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                {showLimitationScan ? "Ausblenden" : "Details"}
+              </Button>
+            </div>
+          </div>
+
+          {showLimitationScan && (
+            <div className="mt-3 space-y-2">
+              {limitationExpiredClaims.map((claim, i) => (
+                <div
+                  key={`expired-${i}`}
+                  className="rounded-lg border border-red-500/30 bg-red-500/5 p-3"
+                >
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle size={14} className="mt-0.5 shrink-0 text-red-600" />
+                    <div className="text-xs leading-relaxed text-[color:var(--ds-text)]">
+                      <span className="font-semibold">{String(claim.anspruch ?? "Anspruch")}</span>
+                      {claim.gegner ? ` gegen ${String(claim.gegner)}` : ""} — bereits verjährt
+                      {claim.paragraph ? ` (${String(claim.paragraph)})` : ""}
+                      {claim.grund ? `: ${String(claim.grund)}` : ""}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {limitationUrgentClaims.map((claim, i) => (
+                <div
+                  key={`urgent-${i}`}
+                  className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3"
+                >
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle size={14} className="mt-0.5 shrink-0 text-amber-600" />
+                    <div className="text-xs leading-relaxed text-[color:var(--ds-text)]">
+                      <span className="font-semibold">{String(claim.anspruch ?? "Anspruch")}</span>
+                      {claim.gegner ? ` gegen ${String(claim.gegner)}` : ""} — noch{" "}
+                      {String(claim.restzeit_tage ?? "?")} Tage
+                      {claim.paragraph ? ` (${String(claim.paragraph)})` : ""}
+                      {claim.handlungsbedarf ? `: ${String(claim.handlungsbedarf)}` : ""}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {limitationExpiredClaims.length === 0 && limitationUrgentClaims.length === 0 && (
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  Details nicht verfügbar — vollständigen Verjährungs-Scan im Layer-5-Output öffnen.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ON-Querverweis-Graph Panel */}
       {pipelineState?.layers?.[1]?.output_slugs &&

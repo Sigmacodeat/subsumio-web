@@ -58,6 +58,9 @@ import {
 import dynamic from "next/dynamic";
 import { RundownWidget } from "./rundown-widget";
 import { InsightsWidget } from "./insights-widget";
+import { CrossCaseTimeline } from "./cross-case-timeline";
+import { ConfidenceScoreWidget } from "./confidence-score-widget";
+import { SilentFailureWidget } from "./silent-failure-widget";
 
 const KanzleiInsights = dynamic(() => import("./kanzlei-insights").then((m) => m.KanzleiInsights), {
   loading: () => (
@@ -403,6 +406,12 @@ export function WidgetBoard() {
         return <RecentQueriesPanel data={data} />;
       case "activity-feed":
         return <ActivityFeedWidget data={data} />;
+      case "cross-timeline":
+        return <CrossCaseTimeline data={data} />;
+      case "confidence-score":
+        return <ConfidenceScoreWidget />;
+      case "silent-failures":
+        return <SilentFailureWidget />;
       case "insights":
         return <InsightsWidget />;
       default:

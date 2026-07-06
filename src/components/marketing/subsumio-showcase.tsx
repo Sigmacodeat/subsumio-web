@@ -12,6 +12,7 @@ import {
   Paperclip,
   Mic,
   Clock,
+  CalendarClock,
   Check,
   CheckCheck,
   FileText,
@@ -29,10 +30,10 @@ import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { UI_STRINGS, type Lang } from "@/content/site";
 
 const _deShowcase = {
-  waEyebrow: "Komfort-Kanal für unterwegs",
-  waTitle: "Subsumio-Copilot — direkt in WhatsApp",
+  waEyebrow: "Unterwegs und immer im Bild",
+  waTitle: "Immer erreichbar — nie eine Frist verpassen",
   waSub:
-    "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Copilot versteht die Akte und legt alles bestätigungspflichtig ins Brain.",
+    "Subsumio ist deine Sekretärin für unterwegs: Zeiten buchen, Belege ablegen, Fristen im Blick — alles über WhatsApp, ohne App-Wechsel.",
   waPoints: [
     {
       icon: Clock,
@@ -51,6 +52,12 @@ const _deShowcase = {
       color: "violet",
       t: "Sprachnotiz unterwegs",
       d: "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor du im Büro bist.",
+    },
+    {
+      icon: CalendarClock,
+      color: "rose",
+      t: "Fristen, die dich nicht vergessen",
+      d: "Täglicher Digest, Feiertagsverschiebung, Notfristen automatisch berechnet. Du schläfst ruhig — Subsumio wacht.",
     },
   ],
   phoneHeader: "Subsumio-Copilot",
@@ -71,6 +78,11 @@ const _deShowcase = {
       from: "bot",
       text: "3 Widersprüche gefunden — mit Fundstellen (S. 14, B7, Protokoll K.). Antwort in der Akte abgelegt.",
     },
+    { from: "user", text: "Welche Fristen laufen diese Woche ab?" },
+    {
+      from: "bot",
+      text: "3 Fristen: ⚠️ Replik Bauer heute 24:00 (Notfrist), Klageerwiderung Müller Do 16:00, Berufung Schmidt Fr 12:00. Alle verlinkt mit Akte.",
+    },
   ],
   bentoEyebrow: "Alle Funktionen",
   bentoTitle: "Alles, was die Kanzlei braucht — in einem Gehirn",
@@ -83,10 +95,10 @@ const COPY = {
   at: _deShowcase,
   ch: _deShowcase,
   en: {
-    waEyebrow: "Convenience on the go",
-    waTitle: "Subsumio Copilot — right inside WhatsApp",
+    waEyebrow: "On the go and in the loop",
+    waTitle: "Always reachable — never miss a deadline",
     waSub:
-      "Book time, file documents, query matters — from your phone, no app switch, no training. The copilot understands the matter and files everything for confirmation in the brain.",
+      "Subsumio is your secretary on the go: book time, file receipts, track deadlines — all via WhatsApp, no app switch.",
     waPoints: [
       {
         icon: Clock,
@@ -106,6 +118,12 @@ const COPY = {
         t: "Voice note on the go",
         d: "Dictate after the hearing — transcribed and attached to the matter before you're back at the office.",
       },
+      {
+        icon: CalendarClock,
+        color: "rose",
+        t: "Deadlines that don't forget you",
+        d: "Daily digest, holiday roll-forward, statutory deadlines calculated automatically. You sleep — Subsumio watches.",
+      },
     ],
     phoneHeader: "Subsumio Copilot",
     phoneStatus: "online",
@@ -124,6 +142,11 @@ const COPY = {
       {
         from: "bot",
         text: "3 contradictions found — with sources (p. 14, B7, protocol K.). Answer filed in the matter.",
+      },
+      { from: "user", text: "Which deadlines expire this week?" },
+      {
+        from: "bot",
+        text: "3 deadlines: ⚠️ Reply Bauer today 24:00 (statutory), Answer Müller Thu 16:00, Appeal Schmidt Fri 12:00. All linked to matter.",
       },
     ],
     bentoEyebrow: "All capabilities",
@@ -181,8 +204,8 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
     inputField: "#2a3b45",
   } as const;
 
-  const chat = useMemo(() => c.chat.slice(0, 4), [c]);
-  const times = ["14:02", "14:02", "14:03", "14:04"] as const;
+  const chat = useMemo(() => c.chat.slice(0, 6), [c]);
+  const times = ["14:02", "14:02", "14:03", "14:04", "14:05", "14:06"] as const;
 
   const [visibleCount, setVisibleCount] = useState(reduce ? chat.length : 0);
   const [isTyping, setIsTyping] = useState(false);

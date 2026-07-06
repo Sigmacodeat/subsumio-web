@@ -1864,9 +1864,9 @@ const _landingDe = {
   ],
   h1a: "Deine Kanzlei vergisst.",
   h1b: "Subsumio nicht.",
-  heroTagline: "Das Kanzlei-Gedächtnis, das jede Frage mit Fundstellen beantwortet.",
+  heroTagline: "Das Kanzlei-Gedächtnis, das vorausdenkt — und jede Antwort belegt.",
   h1Keyword: "KI-Kanzleisoftware & Anwaltssoftware mit belegten Antworten",
-  sub: "Fristen, Akten, Schriftsätze — alles an einem Ort. Du fragst in normaler Sprache, Subsumio antwortet mit Quellenangaben. Für Anwälte in AT, DE und CH.",
+  sub: "Nie wieder eine Frist übersehen. Nie wieder einen Widerspruch verpassen. Du fragst in normaler Sprache — Subsumio antwortet mit Fundstellen. Für Anwälte in AT, DE und CH.",
   heroTrustItems: [
     { icon: "CreditCard", label: "Keine Kreditkarte" },
     { icon: "Scale", label: "§ 203 StGB" },
@@ -1889,9 +1889,9 @@ const _landingDe = {
     { icon: "Globe", label: "EU-Cloud" },
     { icon: "Server", label: "On-Premise" },
   ],
-  painTitle: "Was kostet es, wenn niemand mitdenkt?",
+  painTitle: "Was kostet dich Suchen — jeden Tag?",
   painSub:
-    "Jede Kanzlei verliert Zeit und Geld an Dinge, die eine Maschine besser macht — wenn sie für Anwälte gebaut ist.",
+    "Jede Kanzlei verliert abrechenbare Zeit an Dinge, die eine Maschine besser macht — wenn sie für Anwälte gebaut ist.",
   pains: [
     {
       value: "40 %",
@@ -1957,8 +1957,8 @@ const _landingDe = {
   ],
   statsNote:
     "Engine-Klasse Retrieval, kein Chat-Wrapper. Jede Antwort nennt die Quelle — oder sagt ehrlich, wenn die Akte nichts hergibt.",
-  featuresTitle: "Sechs Dinge, die deine Kanzlei ab heute nicht mehr manuell macht",
-  featuresSub: "Jedes Feature für Anwälte gebaut — nicht nachträglich angepasst.",
+  featuresTitle: "Was deine Kanzlei ab heute kann",
+  featuresSub: "Sechs Fähigkeiten, gebaut für Anwälte — nicht nachträglich angepasst.",
   features: [
     {
       icon: "Brain",
@@ -2024,20 +2024,21 @@ const _landingDe = {
       desc: "Eine synthetisierte Antwort mit seitengenauen Zitaten — plus ehrlicher Hinweis, was in der Akte noch fehlt. Die Gap-Analyse zeigt offene Risiken, bevor sie zu Problemen werden.",
     },
   ],
-  scenariosTitle: "Drei Workflows, die jeder Anwalt sofort erkennt",
-  scenariosSub: "Aus dem Produkt, nicht aus einem Mockup.",
+  scenariosTitle: "Ein Tag mit Subsumio",
+  scenariosSub:
+    "Drei Momente, die zeigen, was sich ändert — nicht in der Theorie, sondern im Alltag.",
   scenarios: [
     {
-      role: "Eingangspost",
-      text: "Tagespost und einen gescannten Vertrag hochladen, dann fragen: „Welche Fristen löst das aus?“ — jedes gesetzliche Datum wird nach ZPO/BGB/ABGB berechnet, im Kalender eingetragen und mit der Akte verknüpft. Manual Fristenbuch entfällt.",
+      role: "Morgen · 07:30",
+      text: "Du trinkst Kaffee. Subsumio hat schon alle Fristen für heute geprüft — eine Notfrist läuft um Mitternacht, markiert und mit der Akte verlinkt. Der tägliche Digest liegt im Posteingang. Du weißt, was heute wichtig ist, bevor du den ersten Schriftsatz öffnest.",
     },
     {
-      role: "Verhandlungsvorbereitung",
-      text: "Sprachnotiz und PDF per WhatsApp mit Aktenzeichen schicken, 20 Minuten buchen, dann fragen: „Wo widersprechen sich die Schriftsätze der Gegenseite?“ — Subsumio findet Widersprüche über Schriftsätze, Anlagen und Protokolle hinweg in Sekunden.",
+      role: "Mittag · 12:15",
+      text: "Sprachnotiz vom Gericht: „Zeit 0,5h Akte Müller, Widerspruch S.3 vs S.7 prüfen.“ Subsumio bucht die Zeit, findet den Widerspruch in den Schriftsätzen, legt alles in der Akte ab — während du noch auf dem Rückweg bist.",
     },
     {
-      role: "Mitarbeiter-Onboarding",
-      text: "Fünf Jahre Akten und Schriftsätze indexieren. Der neue Mitarbeiter fragt: „Haben wir schon mal so etwas argumentiert?“ — und findet den Schriftsatz von 2023 in Sekunden, mit seitengenauen Zitaten. Einarbeitungszeit von Wochen auf Tage.",
+      role: "Abend · 18:45",
+      text: "„Entwirf die Replik dafür.“ Subsumio zieht die Argumente aus den Akten, zitiert S.3 und S.7, schlägt den Antrag vor. Du prüfst die Fundstellen in einem Klick, bestätigst, fertig. Der Schriftsatz geht raus — mit Quellen, nicht mit Bauchgefühl.",
     },
   ],
   comparisonTitle: "Warum nicht einfach ChatGPT, Notion AI oder eine Vektor-Datenbank?",
@@ -2106,7 +2107,7 @@ const _landingDe = {
   ],
   ctaTitle: "Hör auf zu suchen. Fang an zu fragen.",
   ctaSub:
-    "14 Tage volle Testversion. Keine Kreditkarte, kein IT-Aufwand. Dein Kanzlei-Gedächtnis baut sich ab der ersten Akte auf.",
+    "14 Tage volle Testversion. Keine Kreditkarte, kein IT-Aufwand. Deine Sekretärin wartet schon.",
   ctaButton: "14 Tage kostenlos testen",
   relatedLinks: [
     { label: "Preise & Pläne", href: "/pricing" },
@@ -2126,9 +2127,9 @@ const _landingEn = {
   ],
   h1a: "Your firm forgets.",
   h1b: "Subsumio doesn't.",
-  heroTagline: "The firm memory that answers every question with citations.",
+  heroTagline: "The firm memory that thinks ahead — and cites every answer.",
   h1Keyword: "AI legal software with cited answers for law firms",
-  sub: "Deadlines, matters, briefs — all in one place. Ask in plain language, get answers with sources. For lawyers in AT, DE and CH.",
+  sub: "Never miss a deadline. Never miss a contradiction. Ask in plain language — Subsumio answers with citations. For lawyers in AT, DE and CH.",
   heroTrustItems: [
     { icon: "CreditCard", label: "No credit card" },
     { icon: "Scale", label: "§ 203 StGB" },
@@ -2151,9 +2152,9 @@ const _landingEn = {
     { icon: "Globe", label: "EU-Cloud" },
     { icon: "Server", label: "On-Premise" },
   ],
-  painTitle: "What does it cost when nobody's paying attention?",
+  painTitle: "What does searching cost you — every day?",
   painSub:
-    "Every firm loses time and money to things a machine does better — when it's built for lawyers.",
+    "Every firm loses billable time to things a machine does better — when it's built for lawyers.",
   pains: [
     {
       value: "40%",
@@ -2216,8 +2217,8 @@ const _landingEn = {
   ],
   statsNote:
     "Engine-class retrieval, not a chat wrapper. Every answer cites its source — or honestly says the file doesn't contain one.",
-  featuresTitle: "Six things your firm stops doing manually from today",
-  featuresSub: "Every feature built for lawyers — not adapted for them.",
+  featuresTitle: "What your firm can do from today",
+  featuresSub: "Six capabilities, built for lawyers — not adapted for them.",
   features: [
     {
       icon: "Brain",
@@ -2283,20 +2284,20 @@ const _landingEn = {
       desc: "A synthesized answer with page-level citations — plus an honest note on what the file is still missing. The gap analysis surfaces open risks before they become problems.",
     },
   ],
-  scenariosTitle: "Three workflows every lawyer recognizes instantly",
-  scenariosSub: "From the product, not a mockup.",
+  scenariosTitle: "A day with Subsumio",
+  scenariosSub: "Three moments that show what changes — not in theory, but in daily practice.",
   scenarios: [
     {
-      role: "Incoming post",
-      text: "Upload the day's mail and a scanned contract, then ask: 'Which deadlines does this trigger?' — every statutory date is calculated per ZPO/BGB/ABGB, calendared and linked to the matter. Manual deadline book eliminated.",
+      role: "Morning · 07:30",
+      text: "You drink coffee. Subsumio has already checked all deadlines for today — a statutory deadline expires at midnight, flagged and linked to the matter. The daily digest is in your inbox. You know what matters today before you open the first brief.",
     },
     {
-      role: "Trial prep",
-      text: "Send a voice note and a PDF by WhatsApp with a matter reference, book 20 minutes, then ask: 'Where do the opposing party's statements contradict each other?' — Subsumio finds contradictions across filings, exhibits and protocols in seconds.",
+      role: "Noon · 12:15",
+      text: 'Voice note from court: "Book 0.5h matter Müller, check contradiction p.3 vs p.7." Subsumio books the time, finds the contradiction in the filings, files everything in the matter — while you\'re still on your way back.',
     },
     {
-      role: "Onboarding a new associate",
-      text: "Index five years of matters and pleadings. The new associate asks: 'Have we argued something like this before?' — and finds the 2023 brief in seconds, with page-level citations. Onboarding from weeks to days.",
+      role: "Evening · 18:45",
+      text: '"Draft the reply brief for this." Subsumio pulls the arguments from the files, cites p.3 and p.7, proposes the prayer. You verify the citations in one click, confirm, done. The brief goes out — with sources, not gut feeling.',
     },
   ],
   comparisonTitle: "Why not just ChatGPT, Notion AI or a vector database?",
@@ -2364,8 +2365,7 @@ const _landingEn = {
     },
   ],
   ctaTitle: "Stop searching. Start asking.",
-  ctaSub:
-    "14 days full trial. No credit card, no IT setup. Your firm memory builds from the first matter.",
+  ctaSub: "14 days full trial. No credit card, no IT setup. Your secretary is waiting.",
   ctaButton: "Start free trial",
   relatedLinks: [
     { label: "Pricing & plans", href: "/en/pricing" },

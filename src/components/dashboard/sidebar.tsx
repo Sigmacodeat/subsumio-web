@@ -109,6 +109,8 @@ import { useLang } from "@/lib/use-lang";
 import { useIsDesktop } from "@/lib/use-media-query";
 import type { DashboardKey } from "@/content/dashboard";
 import { MatterSidebarSection } from "@/components/dashboard/matter-sidebar-section";
+import { SidebarQuickAccess } from "@/components/dashboard/sidebar-quick-access";
+import { useSidebarBadges, type SidebarBadges } from "@/lib/queries/sidebar-badges";
 
 export type NavTier = "free" | "pro" | "enterprise" | "admin";
 export type AudienceTier = "quick-start" | "erweitert" | "dach-integration" | "system";
@@ -1555,6 +1557,47 @@ export function NetworkStatusBadge() {
   );
 }
 
+const badgeVariantClasses: Record<string, string> = {
+  danger: "bg-[color:var(--ds-danger-text)] text-white",
+  warning: "bg-[color:var(--ds-warning-text)] text-white",
+  info: "bg-[color:var(--ds-info-text)] text-white",
+};
+
+function NavBadge({
+  count,
+  variant,
+  collapsed,
+}: {
+  count: number;
+  variant: "danger" | "warning" | "info";
+  collapsed: boolean;
+}) {
+  if (count <= 0) return null;
+  if (collapsed) {
+    return (
+      <span
+        className={cn(
+          "absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 text-[9px] leading-none font-bold",
+          badgeVariantClasses[variant]
+        )}
+        aria-label={String(count)}
+      >
+        {count > 9 ? "9+" : count}
+      </span>
+    );
+  }
+  return (
+    <span
+      className={cn(
+        "ml-auto flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1.5 text-[10px] leading-none font-bold",
+        badgeVariantClasses[variant]
+      )}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
 interface SidebarProps {
   collapsed: boolean;
   mobileOpen: boolean;
@@ -1603,6 +1646,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   const { panelTransition: sidebarPanelTransition } = useDashboardMotion();
   const sidebarShellTransition = sidebarPanelTransition;
   const sidebarWidth = collapsed && isDesktop ? 64 : 220;
+  const badgesQuery = useSidebarBadges();
+  const badges: SidebarBadges = badgesQuery.data ?? {};
 
   const isTax = industry === "tax";
   const navConfig = navForIndustry(industry);
@@ -2049,6 +2094,20 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     >
                       {highlightMatch(t(item.labelKey), searchQuery)}
                     </span>
+                    {!collapsed && badges[item.href] && (
+                      <NavBadge
+                        count={badges[item.href].count}
+                        variant={badges[item.href].variant}
+                        collapsed={false}
+                      />
+                    )}
+                    {collapsed && badges[item.href] && (
+                      <NavBadge
+                        count={badges[item.href].count}
+                        variant={badges[item.href].variant}
+                        collapsed={true}
+                      />
+                    )}
                   </Link>
                 );
               })}
@@ -2057,6 +2116,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             {/* Matter-scoped navigation — shows when inside a matter page */}
             {!searchQuery.trim() && (
               <MatterSidebarSection collapsed={collapsed} onNavigate={() => setMobileOpen(false)} />
+            )}
+
+            {/* Quick access — pinned & recently visited matters */}
+            {!searchQuery.trim() && (
+              <SidebarQuickAccess collapsed={collapsed} onNavigate={() => setMobileOpen(false)} />
             )}
 
             {/* Collapsed: section-grouped icon list */}
@@ -2111,6 +2175,13 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                   : `color-mix(in srgb, var(${catVar}) 55%, var(--ds-text-muted))`,
                               }}
                             />
+                            {badges[item.href] && (
+                              <NavBadge
+                                count={badges[item.href].count}
+                                variant={badges[item.href].variant}
+                                collapsed={true}
+                              />
+                            )}
                           </Link>
                         );
                       })}
@@ -2265,6 +2336,13 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                   <span className="min-w-0 flex-1 truncate">
                                     {highlightMatch(t(item.labelKey), searchQuery)}
                                   </span>
+                                  {badges[item.href] && (
+                                    <NavBadge
+                                      count={badges[item.href].count}
+                                      variant={badges[item.href].variant}
+                                      collapsed={false}
+                                    />
+                                  )}
                                 </Link>
                               );
                             })}

@@ -33,6 +33,10 @@ const WidgetBoard = dynamic(() =>
 const TaxWidgetBoard = dynamic(() =>
   import("@/components/dashboard/tax-widget-board").then((m) => m.TaxWidgetBoard)
 );
+const MorningBriefing = dynamic(
+  () => import("@/components/dashboard/morning-briefing").then((m) => m.MorningBriefing),
+  { ssr: false }
+);
 
 type Greeting = {
   greeting: string;
@@ -339,6 +343,8 @@ export default function DashboardPage() {
       )}
 
       <CalmGreeting name={userName} engineOnline={engineOnline} degraded={degraded} />
+
+      {!isFirstTime && !isTax && <MorningBriefing />}
 
       {isTax ? <TaxWidgetBoard /> : <WidgetBoard />}
     </div>

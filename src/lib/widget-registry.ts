@@ -1,10 +1,13 @@
 "use client";
 
 import {
+  AlertCircle,
   AlertTriangle,
   Briefcase,
   CalendarClock,
   Clock,
+  Gauge,
+  GitBranch,
   Inbox,
   Lightbulb,
   MessageSquare,
@@ -28,6 +31,9 @@ export type WidgetId =
   | "recent-queries"
   | "rundown"
   | "activity-feed"
+  | "cross-timeline"
+  | "confidence-score"
+  | "silent-failures"
   | "insights";
 
 export interface WidgetPref {
@@ -182,13 +188,43 @@ export const WIDGET_REGISTRY: WidgetMeta[] = [
     fullWidth: true,
   },
   {
+    id: "cross-timeline",
+    type: "timeline",
+    icon: GitBranch,
+    labelKey: "widget.cross_timeline",
+    descKey: "widget.cross_timeline_desc",
+    defaultVisible: true,
+    defaultOrder: 13,
+    fullWidth: true,
+  },
+  {
+    id: "confidence-score",
+    type: "confidence",
+    icon: Gauge,
+    labelKey: "widget.confidence_score",
+    descKey: "widget.confidence_score_desc",
+    defaultVisible: true,
+    defaultOrder: 14,
+    fullWidth: false,
+  },
+  {
+    id: "silent-failures",
+    type: "failures",
+    icon: AlertCircle,
+    labelKey: "widget.silent_failures",
+    descKey: "widget.silent_failures_desc",
+    defaultVisible: true,
+    defaultOrder: 15,
+    fullWidth: false,
+  },
+  {
     id: "insights",
     type: "insights",
     icon: Lightbulb,
     labelKey: "widget.insights",
     descKey: "widget.insights_desc",
-    defaultVisible: true,
-    defaultOrder: 13,
+    defaultVisible: false,
+    defaultOrder: 16,
     fullWidth: true,
   },
 ];
