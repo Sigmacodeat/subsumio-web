@@ -30,6 +30,7 @@ import type { Lang } from "@/content/site";
 import { ChatPanel, type ChatPanelHandle } from "@/components/chat/chat-panel";
 import { CopilotNotifications } from "@/components/copilot/copilot-notifications";
 import { CopilotMemoryPanel } from "@/components/copilot/copilot-memory-panel";
+import { PlanningModePanel } from "@/components/copilot/planning-mode-panel";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useMotionValue, useTransform } from "framer-motion";
 import type { ChatContextType } from "@/components/chat/chat-types";
@@ -1927,6 +1928,9 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                     </div>
                     <div className="border-b border-[color:var(--ds-border)] px-3 py-2">
                       <CopilotMemoryPanel />
+                    </div>
+                    <div className="border-b border-[color:var(--ds-border)] px-3 py-2">
+                      <PlanningModePanel caseSlug={routeContext.caseSlug} />
                     </div>
                     <ChatPanel
                       ref={chatRef}
