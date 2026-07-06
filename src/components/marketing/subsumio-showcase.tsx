@@ -26,7 +26,7 @@ import {
 import { ICONS, Section, accentTile, H2_CTA_CLASS } from "./chrome";
 import { VERTICALS } from "@/content/verticals";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
-import type { Lang } from "@/content/site";
+import { UI_STRINGS, type Lang } from "@/content/site";
 
 const _deShowcase = {
   waEyebrow: "Komfort-Kanal für unterwegs",
@@ -351,7 +351,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
     }
   }, [visibleCount, isTyping]);
 
-  const typingLabel = lang === "en" ? "typing…" : "tippt…";
+  const typingLabel = UI_STRINGS[lang].typingLabel;
 
   return (
     <div className="relative mx-auto w-[290px] sm:w-[330px]" aria-hidden="true">
@@ -417,7 +417,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                         className="rounded-md px-2 py-1 text-[10px] font-medium"
                         style={{ background: "#1e2a31", color: WA.meta }}
                       >
-                        {lang === "en" ? "Today" : "Heute"}
+                        {UI_STRINGS[lang].todayLabel}
                       </span>
                     </div>
                   )}
@@ -510,7 +510,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                                 {isConfirmed && idx === 0 ? (
                                   <span className="flex items-center gap-1">
                                     <Check size={11} strokeWidth={3} />
-                                    {lang === "en" ? "Confirmed" : "Bestätigt"}
+                                    {UI_STRINGS[lang].confirmedLabel}
                                   </span>
                                 ) : (
                                   ch
@@ -606,7 +606,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                 className="min-w-0 flex-1 truncate text-[13px]"
                 style={{ color: isUserTyping && inputText ? WA.text : WA.meta }}
               >
-                {isUserTyping && inputText ? inputText : lang === "en" ? "Message" : "Nachricht"}
+                {isUserTyping && inputText ? inputText : UI_STRINGS[lang].messageLabel}
                 {isUserTyping && inputText && (
                   <motion.span
                     animate={{ opacity: [1, 0, 1] }}

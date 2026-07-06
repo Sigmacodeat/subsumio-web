@@ -39,6 +39,78 @@ export interface StorageBackend {
     path: string,
     opts: { contentType: string; expiresIn?: number }
   ): Promise<PresignedUploadResult | null>;
+
+  /**
+   * Stream a file to storage without buffering the entire body in memory.
+   * Returns when the stream has been fully consumed and persisted.
+   * Implementations that lack native streaming support can fall back to
+   * collecting chunks into a Buffer and calling upload().
+   */
+  uploadStream?(path: string, stream: NodeJS.ReadableStream, mime?: string): Promise<void>;
+
+  /**
+   * Download a file as a stream without buffering the entire body in memory.
+   * Returns a Node.js Readable that can be piped to a file, hash, scanner, etc.
+   * Implementations that lack native streaming support can fall back to
+   * returning a Readable.from(Buffer) from download().
+   */
+  downloadStream?(path: string): Promise<NodeJS.ReadableStream>;
+
+  /**
+   * Initiate a multipart upload. Returns an upload ID + storage path.
+   * The client then presigns each part and uploads them individually.
+   */
+  createMultipartUpload?(
+    path: string,
+    contentType: string
+  ): Promise<{
+    uploadId: string;
+    storagePath: string;
+  }>;
+
+  /**
+   * Generate a presigned URL for uploading a single part.
+   */
+  presignPart?(
+    path: string,
+    uploadId: string,
+    partNumber: number,
+    expiresIn?: number
+  ): Promise<string>;
+
+  /**
+   * Complete a multipart upload by listing all parts with their ETags.
+   */
+  completeMultipartUpload?(
+    path: string,
+    uploadId: string,
+    parts: Array<{ partNumber: number; etag: string }>
+  ): Promise<void>;
+
+  /**
+   * Abort a multipart upload, cleaning up any uploaded parts.
+   */
+  abortMultipartUpload?(path: string, uploadId: string): Promise<void>;
+
+  /**
+   * List all in-progress multipart uploads. Used by the cleanup cron to
+   * find and abort stale uploads that were never completed or aborted.
+   */
+  listMultipartUploads?(): Promise<
+    Array<{
+      uploadId: string;
+      key: string;
+      initiated: Date;
+    }>
+  >;
+
+  /**
+   * Make a stored object immutable (WORM — write-once-read-many).
+   * For local storage: chmod 444 (read-only). For S3: relies on bucket-level
+   * Object Lock (Compliance mode) — this is a no-op if Object Lock isn't enabled.
+   * Used after the scan → clean zone transition for GoBD § 146 AO compliance.
+   */
+  setImmutable?(path: string): Promise<void>;
 }
 
 export interface StorageConfig {

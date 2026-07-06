@@ -6,8 +6,12 @@ import {
   mkdirSync,
   readdirSync,
   realpathSync,
+  createWriteStream,
+  createReadStream,
+  chmodSync,
 } from "fs";
 import { join, dirname, resolve } from "path";
+import { pipeline } from "stream/promises";
 import type { StorageBackend } from "../storage.ts";
 
 /**
@@ -71,5 +75,28 @@ export class LocalStorage implements StorageBackend {
 
   async getUrl(path: string): Promise<string> {
     return `file://${this.contained(path)}`;
+  }
+
+  async uploadStream(path: string, stream: NodeJS.ReadableStream, _mime?: string): Promise<void> {
+    const full = this.contained(path);
+    mkdirSync(dirname(full), { recursive: true });
+    await pipeline(stream, createWriteStream(full));
+  }
+
+  async downloadStream(path: string): Promise<NodeJS.ReadableStream> {
+    const full = this.contained(path);
+    if (!existsSync(full)) throw new Error(`File not found in storage: ${path}`);
+    return createReadStream(full);
+  }
+
+  async setImmutable(path: string): Promise<void> {
+    const full = this.contained(path);
+    if (existsSync(full)) {
+      try {
+        chmodSync(full, 0o444); // r--r--r-- — no write for anyone
+      } catch {
+        // Best-effort — may fail on some filesystems
+      }
+    }
   }
 }

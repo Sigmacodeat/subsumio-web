@@ -151,7 +151,9 @@ export type AuditAction =
   | "triage.action"
   | "bea.send"
   | "bea.retry"
-  | "autopilot.run";
+  | "autopilot.run"
+  | "system.alert"
+  | "system.integrity_check";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -269,6 +271,8 @@ const ACTION_LABELS: Record<string, string> = {
   "triage.action": "Triage-Aktion ausgeführt",
   "bea.send": "beA-Versand gestartet",
   "bea.retry": "beA-Versand Retry",
+  "system.alert": "System-Warnung",
+  "system.integrity_check": "Integritätsprüfung (GoBD)",
 };
 
 export function auditLabel(action: string): string {

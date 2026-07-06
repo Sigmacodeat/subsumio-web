@@ -13,7 +13,7 @@ import {
   Network,
   ShieldCheck,
 } from "lucide-react";
-import { p, type Lang } from "@/content/site";
+import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { Button } from "@/components/ui/button";
 import { H2_CTA_CLASS } from "./chrome";
 
@@ -122,12 +122,12 @@ const orbitNodes = [
 ];
 
 export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
-  const t = copy[lang !== "en" ? "de" : "en"];
+  const t = copy[lang === "en" ? "en" : "de"];
 
   return (
     <section
       data-tone="slate"
-      aria-label={lang !== "en" ? "Die Subsumio-Engine" : "The Subsumio engine"}
+      aria-label={UI_STRINGS[lang].ariaSubsumioEngine}
       className="relative z-10 overflow-hidden px-4 py-24 sm:px-6 lg:px-8"
       style={{ background: "var(--mk-bg)" }}
     >
@@ -201,12 +201,12 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
                 <Brain size={34} className="brand-text mb-3" />
                 <span className="text-sm font-semibold [color:var(--mk-text)]">{t.center}</span>
                 <span className="mt-1 text-xs [color:var(--mk-text-muted)]">
-                  {lang !== "en" ? "abfragbar · belegt · isoliert" : "queryable · cited · scoped"}
+                  {UI_STRINGS[lang].engineTraits}
                 </span>
               </motion.div>
               {orbitNodes.map((node, i) => {
                 const Icon = node.icon;
-                const label = lang !== "en" ? node.labelDe : node.labelEn;
+                const label = lang === "en" ? node.labelEn : node.labelDe;
                 return (
                   <motion.div
                     key={label}

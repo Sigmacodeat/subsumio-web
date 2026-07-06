@@ -4,7 +4,7 @@ import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine
 import { env } from "@/lib/env";
 import type { PostUploadTask } from "@/lib/post-upload-outbox";
 import { MAX_ATTEMPTS } from "@/lib/post-upload-outbox";
-import { getRecipientsByBrain } from "@/lib/cron-utils";
+import { getRecipientsByBrain, mapWithConcurrency } from "@/lib/cron-utils";
 import { reconcileCaseDocuments } from "@/lib/case-documents";
 
 export const maxDuration = 300;
@@ -36,25 +36,25 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   // always carry their source header; an unscoped fetch either fails closed
   // in SaaS mode or only sees the default source.
   const brainIds = [...(await getRecipientsByBrain()).keys()];
-  const allPages: TaskPage[] = [];
-  for (const brainId of brainIds) {
+  // Fetch each brain's outbox in bounded parallel — a sequential loop over many
+  // tenants (each with a 15s timeout) can exceed maxDuration if a few engines
+  // are slow. Failures are isolated per brain (settled, not rejected).
+  const fetched = await mapWithConcurrency(brainIds, async (brainId) => {
     const tasksRes = await fetch(`${ENGINE_URL}/api/pages?type=post_upload_task&limit=200`, {
       headers: engineHeadersForBrain(brainId),
       signal: AbortSignal.timeout(15_000),
     });
-    if (!tasksRes.ok) {
-      console.error(
-        `[post-upload-drain] task fetch failed for ${brainId}: HTTP ${tasksRes.status}`
-      );
-      continue;
-    }
+    if (!tasksRes.ok) throw new Error(`task fetch failed for ${brainId}: HTTP ${tasksRes.status}`);
     const pages = (await tasksRes.json()) as TaskPage[];
-    allPages.push(
-      ...pages.map((page) => ({
-        ...page,
-        frontmatter: { ...page.frontmatter, brain_id: page.frontmatter?.brain_id ?? brainId },
-      }))
-    );
+    return pages.map((page) => ({
+      ...page,
+      frontmatter: { ...page.frontmatter, brain_id: page.frontmatter?.brain_id ?? brainId },
+    }));
+  });
+  const allPages: TaskPage[] = [];
+  for (const result of fetched) {
+    if (result.status === "fulfilled") allPages.push(...result.value);
+    else console.error(`[post-upload-drain] ${String(result.reason)}`);
   }
   const now = new Date();
 

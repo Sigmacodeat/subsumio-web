@@ -56,22 +56,14 @@ export default function LiveDemo({
   const [live, setLive] = useState<DemoResult[] | null>(null);
   const [note, setNote] = useState<string | null>(null);
 
+  const ui = UI_STRINGS[lang];
   const t = {
-    ask: lang === "en" ? "Ask" : "Fragen",
-    placeholder: lang === "en" ? "Ask the demo brain…" : "Frag das Demo-Brain…",
-    scripted:
-      lang === "en"
-        ? "Example answer · live brain after deploy"
-        : "Beispiel-Antwort · Live-Brain nach Deploy",
-    liveLabel: lang === "en" ? "Live from the demo brain:" : "Live aus dem Demo-Brain:",
-    none:
-      lang === "en"
-        ? "No demo matches — here's the example answer."
-        : "Keine Demo-Treffer — hier die Beispiel-Antwort.",
-    rate:
-      lang === "en"
-        ? "Demo limit reached — try again later."
-        : "Demo-Limit erreicht — später erneut.",
+    ask: ui.askLabel,
+    placeholder: ui.placeholderDemo,
+    scripted: ui.scriptedLabel,
+    liveLabel: ui.liveDemoPrefix,
+    none: ui.noDemoMatches,
+    rate: ui.rateLimitLabel,
   };
 
   async function ask() {
@@ -205,9 +197,7 @@ export default function LiveDemo({
           </>
         ) : (
           <span className="text-xs [color:var(--mk-text-subtle)]">
-            {lang === "en"
-              ? "Read-only demo brain · your data stays yours"
-              : "Read-only Demo-Brain · deine Daten bleiben bei dir"}
+            {UI_STRINGS[lang].demoReadOnlyNote}
           </span>
         )}
       </div>

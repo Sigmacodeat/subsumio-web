@@ -26,6 +26,15 @@ import { consumeSSEStream } from "./sse-stream";
 
 // Browser: same-origin Next.js proxy (/api/*). Server: direct engine URL.
 import { env } from "@/lib/env";
+import {
+  getUploadSession,
+  saveUploadSession,
+  updateSessionParts,
+  deleteUploadSession,
+  cleanupExpiredSessions,
+  type UploadSession,
+} from "./upload-session-store";
+import { computeFileSha256 } from "./file-hash";
 
 const BASE_URL =
   typeof window !== "undefined"
@@ -33,7 +42,19 @@ const BASE_URL =
     : env("SUBSUMIO_API_URL") || env("NEXT_PUBLIC_SUBSUMIO_API_URL") || "http://localhost:3001";
 
 type ThinkMode = "conservative" | "balanced" | "tokenmax";
-type UploadProgressPhase = "starting" | "uploading" | "server_processing";
+type UploadProgressPhase =
+  | "starting"
+  | "uploading"
+  | "server_processing"
+  | "downloading"
+  | "verifying"
+  | "scanning"
+  | "extracting";
+
+// Clean up expired upload sessions on module load (browser only)
+if (typeof window !== "undefined") {
+  cleanupExpiredSessions().catch(() => {});
+}
 
 interface ThinkOptions {
   mode?: ThinkMode;
@@ -113,6 +134,84 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const text = await res.text();
   if (!text) return undefined as unknown as T;
   return JSON.parse(text) as T;
+}
+
+/**
+ * Parse SSE stream from /api/upload/confirm. The engine sends:
+ *   event: progress  data: { phase, filename, bytes }
+ *   event: done      data: { slug, title, ... }
+ *   event: error     data: { error, message }
+ *
+ * Resolves on "done", rejects on "error" or stream end without done.
+ */
+async function parseSseConfirm(
+  body: ReadableStream<Uint8Array>,
+  onProgress:
+    | ((
+        progress: number,
+        transfer?: { loaded: number; total: number; phase?: UploadProgressPhase }
+      ) => void)
+    | undefined,
+  fileSize: number
+): Promise<{
+  slug: string;
+  title: string;
+  original_persisted?: boolean;
+  persist_error?: string;
+  extraction_status?: string;
+  extraction_method?: string;
+  extraction_warnings?: string;
+}> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  const progressMap: Record<string, number> = {
+    downloading: 93,
+    verifying: 94,
+    scanning: 95,
+    extracting: 97,
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      throw new Error("Upload-Bestätigung: Stream endete ohne Ergebnis.");
+    }
+    buffer += decoder.decode(value, { stream: true });
+    const events = buffer.split("\n\n");
+    buffer = events.pop() ?? "";
+
+    for (const block of events) {
+      const lines = block.split("\n");
+      let eventType = "";
+      let data = "";
+      for (const line of lines) {
+        if (line.startsWith("event: ")) eventType = line.slice(7);
+        else if (line.startsWith("data: ")) data = line.slice(6);
+      }
+      if (eventType === "progress" && data) {
+        try {
+          const p = JSON.parse(data) as { phase?: string };
+          if (onProgress && p.phase && p.phase in progressMap) {
+            onProgress(progressMap[p.phase], {
+              loaded: fileSize,
+              total: fileSize,
+              phase: p.phase as UploadProgressPhase,
+            });
+          }
+        } catch {
+          /* ignore */
+        }
+      } else if (eventType === "done" && data) {
+        if (onProgress)
+          onProgress(100, { loaded: fileSize, total: fileSize, phase: "server_processing" });
+        return JSON.parse(data);
+      } else if (eventType === "error" && data) {
+        const err = JSON.parse(data) as { message?: string; error?: string };
+        throw new Error(err.message || err.error || "Upload-Bestätigung fehlgeschlagen.");
+      }
+    }
+  }
 }
 
 export const api = {
@@ -2091,24 +2190,13 @@ export const api = {
       extraction_warnings?: string;
       post_upload_queued?: boolean;
     }> {
-      const formData = new FormData();
-      formData.append("file", file);
-      if (options?.title) formData.append("title", options.title);
-      if (options?.source) formData.append("source", options.source);
-      if (options?.tags) formData.append("tags", JSON.stringify(options.tags));
-      if (options?.case_slug) formData.append("case_slug", options.case_slug);
-      if (options?.password) formData.append("password", options.password);
-      if (options?.pause_for_review) formData.append("pause_for_review", "true");
-      if (options?.jurisdiction) formData.append("jurisdiction", options.jurisdiction);
-      if (options?.doc_type) formData.append("doc_type", options.doc_type);
-      if (options?.defer_pipeline) formData.append("defer_pipeline", "true");
+      const MAX_RETRIES = 4;
+      // 429 = server-side upload concurrency guard (busy) — MUST be retried,
+      // honoring Retry-After, so a burst never surfaces a raw error to the user
+      // (Dropbox never shows "too busy"). 502/503/504 = transient gateway/engine.
+      const RETRYABLE_STATUS = new Set([429, 502, 503, 504]);
 
-      const MAX_RETRIES = 2;
-      const RETRYABLE_STATUS = new Set([502, 503, 504]);
-
-      // Always try to get an upload token from the web app. The server returns
-      // the engine URL (from SUBSUMIO_API_URL or NEXT_PUBLIC_ENGINE_URL) so the
-      // browser can upload directly to the engine, bypassing proxy body limits.
+      // ── Stage 1: Get upload token (auth + quota reservation) ──────────
       let uploadToken: string | null = null;
       let engineUrl = "";
       try {
@@ -2148,8 +2236,438 @@ export const api = {
         // Token fetch failed — fall back to same-origin upload
       }
 
-      // If we have a token + engine URL, upload directly to the engine.
-      // Otherwise fall back to same-origin upload.
+      // ── Stage 2: Try presigned URL path (bytes bypass server) ─────────
+      // Harvey-style architecture: browser uploads directly to S3/R2,
+      // server never touches file bytes → zero RAM pressure.
+      if (uploadToken && engineUrl) {
+        try {
+          // End-to-end integrity: hash the file so the engine can verify the
+          // stored bytes match at confirm. For multipart uploads (>100MB) the
+          // hash is computed incrementally during the upload loop (no double-read).
+          // For single PUT (≤100MB) we use SubtleCrypto one-shot before upload.
+          const MULTIPART_THRESHOLD = 100 * 1024 * 1024; // 100MB
+          const PART_SIZE = 8 * 1024 * 1024; // 8MB
+          const willUseMultipart = file.size > MULTIPART_THRESHOLD;
+          let fileSha256: string | null = null;
+
+          if (!willUseMultipart) {
+            // Small file: hash now (SubtleCrypto one-shot, ≤256MB is fine)
+            fileSha256 = await computeFileSha256(file);
+          }
+          // For multipart: hash will be computed during the upload loop below
+          const presignRes = await fetch(`${engineUrl}/api/upload/presign`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-upload-token": uploadToken,
+            },
+            body: JSON.stringify({
+              filename: file.name,
+              size: file.size,
+              content_type: file.type || undefined,
+              source: options?.source ?? "documents",
+              case_slug: options?.case_slug,
+              title: options?.title,
+              tags: options?.tags,
+              password: options?.password,
+              expected_sha256: fileSha256 ?? undefined,
+            }),
+            signal: AbortSignal.timeout(15_000),
+          });
+
+          if (presignRes.ok) {
+            const presign = (await presignRes.json()) as {
+              mode: "presigned" | "streaming";
+              url: string;
+              method: "PUT" | "POST";
+              headers?: Record<string, string>;
+              upload_token: string;
+              expires_at: number;
+            };
+
+            // ── Stage 2b: Connectivity probe ────────────────────────────
+            // Quick HEAD to the presigned URL to verify network reachability.
+            // S3/R2 will return 403/405 for HEAD on a PUT-presigned URL —
+            // that's fine, it proves connectivity. A network error means
+            // CORS/firewall blocks direct-to-storage → fall back immediately.
+            if (presign.mode === "presigned") {
+              try {
+                await fetch(presign.url, {
+                  method: "HEAD",
+                  signal: AbortSignal.timeout(5_000),
+                  mode: "cors",
+                });
+              } catch {
+                // Network/CORS error — storage not reachable from browser
+                console.warn(
+                  "[upload] presigned URL not reachable (CORS/firewall), falling back to direct-upload"
+                );
+                throw new Error("presign_connectivity_failed");
+              }
+            }
+
+            // ── Stage 3: Upload bytes directly to storage ───────────────
+
+            if (presign.mode === "presigned" && file.size > MULTIPART_THRESHOLD) {
+              // ── Multipart upload for large files (resumable) ───────────
+              const partCount = Math.ceil(file.size / PART_SIZE);
+
+              // Check for existing session (resume from tab close/reload)
+              const existingSession = await getUploadSession(
+                file.name,
+                file.size,
+                presign.upload_token
+              );
+              let mpInit: {
+                upload_id: string;
+                storage_path: string;
+                parts: Array<{ part_number: number; url: string }>;
+              };
+              let uploadedParts: Array<{ part_number: number; etag: string }>;
+
+              if (existingSession && existingSession.completedParts.length > 0) {
+                // Resume: reuse existing upload ID, re-presign parts
+                const mpResumeRes = await fetch(`${engineUrl}/api/upload/presign-multipart`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "x-upload-token": presign.upload_token,
+                  },
+                  body: JSON.stringify({ part_count: partCount }),
+                  signal: AbortSignal.timeout(30_000),
+                });
+                if (!mpResumeRes.ok) {
+                  await deleteUploadSession(file.name, file.size, presign.upload_token);
+                  throw new Error(`Multipart resume failed: HTTP ${mpResumeRes.status}`);
+                }
+                const mpResume = (await mpResumeRes.json()) as {
+                  upload_id: string;
+                  storage_path: string;
+                  parts: Array<{ part_number: number; url: string }>;
+                };
+                // Use the existing upload ID (the presign just generates URLs)
+                mpInit = { ...mpResume, upload_id: existingSession.uploadId };
+                uploadedParts = [...existingSession.completedParts];
+                console.info(
+                  `[upload] Resuming multipart upload: ${uploadedParts.length}/${partCount} parts already done`
+                );
+              } else {
+                // Fresh multipart upload
+                const mpInitRes = await fetch(`${engineUrl}/api/upload/presign-multipart`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "x-upload-token": presign.upload_token,
+                  },
+                  body: JSON.stringify({ part_count: partCount }),
+                  signal: AbortSignal.timeout(30_000),
+                });
+
+                if (!mpInitRes.ok) {
+                  throw new Error(`Multipart init failed: HTTP ${mpInitRes.status}`);
+                }
+
+                mpInit = (await mpInitRes.json()) as typeof mpInit;
+                uploadedParts = [];
+              }
+
+              // Save session for potential resume
+              const session: UploadSession = {
+                id: `${presign.upload_token}-${file.name}-${file.size}`,
+                filename: file.name,
+                fileSize: file.size,
+                fileType: file.type,
+                uploadToken: presign.upload_token,
+                uploadId: mpInit.upload_id,
+                storagePath: mpInit.storage_path,
+                partSize: PART_SIZE,
+                partCount,
+                completedParts: uploadedParts,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                options: options
+                  ? {
+                      title: options.title,
+                      source: options.source,
+                      tags: options.tags,
+                      case_slug: options.case_slug,
+                      password: options.password,
+                      pause_for_review: options.pause_for_review,
+                      jurisdiction: options.jurisdiction,
+                      doc_type: options.doc_type,
+                      defer_pipeline: options.defer_pipeline,
+                    }
+                  : undefined,
+              };
+              await saveUploadSession(session);
+
+              // Determine which parts still need uploading
+              const completedPartNumbers = new Set(uploadedParts.map((p) => p.part_number));
+              const MAX_PART_RETRIES = 3;
+
+              // ── Incremental hash-during-upload (Dropbox-style) ──
+              // Instead of pre-hashing the entire file (double-read), we feed
+              // each chunk to the hasher as it's read for upload. On resume,
+              // already-completed parts are read and hashed without uploading.
+              const { createSHA256 } = await import("hash-wasm");
+              const hasher = await createSHA256();
+              hasher.init();
+
+              for (let i = 0; i < mpInit.parts.length; i++) {
+                const partInfo = mpInit.parts[i];
+                const start = i * PART_SIZE;
+                const end = Math.min(start + PART_SIZE, file.size);
+                const chunk = file.slice(start, end);
+                const chunkBuf = new Uint8Array(await chunk.arrayBuffer());
+                hasher.update(chunkBuf);
+
+                if (completedPartNumbers.has(partInfo.part_number)) {
+                  continue; // Already uploaded — chunk was just hashed, skip upload
+                }
+
+                let partUploaded = false;
+                for (let attempt = 0; attempt < MAX_PART_RETRIES; attempt++) {
+                  try {
+                    const partRes = await new Promise<{ etag: string }>((resolve, reject) => {
+                      const xhr = new XMLHttpRequest();
+                      xhr.open("PUT", partInfo.url);
+                      xhr.setRequestHeader("Content-Type", "application/octet-stream");
+                      if (onProgress) {
+                        const baseProgress = (uploadedParts.length / partCount) * 90;
+                        const partProgressRange = 90 / partCount;
+                        xhr.upload.onprogress = (e) => {
+                          if (e.lengthComputable) {
+                            onProgress(baseProgress + (e.loaded / e.total) * partProgressRange, {
+                              loaded: start + e.loaded,
+                              total: file.size,
+                              phase: "uploading",
+                            });
+                          }
+                        };
+                      }
+                      xhr.onload = () => {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                          const etag =
+                            xhr.getResponseHeader("ETag") || xhr.getResponseHeader("etag") || "";
+                          if (!etag) {
+                            reject(new Error(`Part ${partInfo.part_number}: no ETag in response`));
+                          } else {
+                            resolve({ etag: etag.replace(/"/g, "") });
+                          }
+                        } else {
+                          reject(new Error(`Part ${partInfo.part_number}: HTTP ${xhr.status}`));
+                        }
+                      };
+                      xhr.onerror = () =>
+                        reject(new Error(`Part ${partInfo.part_number}: network error`));
+                      xhr.send(new Blob([chunkBuf]));
+                    });
+                    uploadedParts.push({ part_number: partInfo.part_number, etag: partRes.etag });
+                    // Persist progress for resume
+                    await updateSessionParts(session, uploadedParts);
+                    partUploaded = true;
+                    break;
+                  } catch (partErr) {
+                    console.warn(
+                      `[upload] Part ${partInfo.part_number} attempt ${attempt + 1} failed:`,
+                      partErr
+                    );
+                    if (attempt === MAX_PART_RETRIES - 1) throw partErr;
+                  }
+                }
+                if (!partUploaded)
+                  throw new Error(
+                    `Part ${partInfo.part_number} failed after ${MAX_PART_RETRIES} retries`
+                  );
+              }
+
+              // Finalize incremental hash
+              fileSha256 = hasher.digest("hex");
+
+              // Complete multipart upload
+              const completeRes = await fetch(`${engineUrl}/api/upload/complete-multipart`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-upload-token": presign.upload_token,
+                },
+                body: JSON.stringify({
+                  upload_id: mpInit.upload_id,
+                  storage_path: mpInit.storage_path,
+                  parts: uploadedParts,
+                }),
+                signal: AbortSignal.timeout(30_000),
+              });
+
+              if (!completeRes.ok) {
+                // Try to abort the multipart upload to clean up
+                try {
+                  await fetch(`${engineUrl}/api/upload/abort-multipart`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      "x-upload-token": presign.upload_token,
+                    },
+                    body: JSON.stringify({
+                      upload_id: mpInit.upload_id,
+                      storage_path: mpInit.storage_path,
+                    }),
+                  });
+                } catch {}
+                throw new Error(`Multipart complete failed: HTTP ${completeRes.status}`);
+              }
+
+              // Clean up session
+              await deleteUploadSession(file.name, file.size, presign.upload_token);
+            } else if (presign.mode === "presigned") {
+              // ── Single PUT for files ≤ 100MB ─────────────────────────
+              // Direct-to-S3/R2 upload — server never sees file bytes
+              const putRes = await new Promise<Response>((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open(presign.method, presign.url);
+                if (presign.headers) {
+                  for (const [k, v] of Object.entries(presign.headers)) {
+                    xhr.setRequestHeader(k, v);
+                  }
+                }
+                if (onProgress) {
+                  onProgress(0, { loaded: 0, total: file.size, phase: "uploading" });
+                  xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                      onProgress((e.loaded / e.total) * 90, {
+                        loaded: e.loaded,
+                        total: e.total,
+                        phase: "uploading",
+                      });
+                    }
+                  };
+                  xhr.upload.onload = () => {
+                    onProgress(90, {
+                      loaded: file.size,
+                      total: file.size,
+                      phase: "server_processing",
+                    });
+                  };
+                }
+                xhr.onload = () => {
+                  if (xhr.status >= 200 && xhr.status < 300) {
+                    resolve(new Response());
+                  } else {
+                    reject(new Error(`Storage upload failed: HTTP ${xhr.status}`));
+                  }
+                };
+                xhr.onerror = () => reject(new Error("Storage upload network error"));
+                xhr.send(file);
+              });
+              void putRes; // bytes are now in storage
+            } else if (presign.mode === "streaming") {
+              // Local storage fallback: PUT to engine stream endpoint
+              const streamUrl = presign.url.startsWith("http")
+                ? presign.url
+                : `${engineUrl}${presign.url}`;
+              await new Promise<void>((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open("PUT", streamUrl);
+                xhr.setRequestHeader("x-upload-token", presign.upload_token);
+                if (onProgress) {
+                  onProgress(0, { loaded: 0, total: file.size, phase: "uploading" });
+                  xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                      onProgress((e.loaded / e.total) * 90, {
+                        loaded: e.loaded,
+                        total: e.total,
+                        phase: "uploading",
+                      });
+                    }
+                  };
+                  xhr.upload.onload = () => {
+                    onProgress(90, {
+                      loaded: file.size,
+                      total: file.size,
+                      phase: "server_processing",
+                    });
+                  };
+                }
+                xhr.onload = () => {
+                  if (xhr.status >= 200 && xhr.status < 300) resolve();
+                  else reject(new Error(`Stream upload failed: HTTP ${xhr.status}`));
+                };
+                xhr.onerror = () => reject(new Error("Stream upload network error"));
+                xhr.send(file);
+              });
+            }
+
+            // ── Stage 4: Confirm → engine downloads, scans, extracts ────
+            if (onProgress) {
+              onProgress(92, { loaded: file.size, total: file.size, phase: "server_processing" });
+            }
+            const confirmRes = await csrfFetch(`${BASE_URL}/api/upload/confirm`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "text/event-stream",
+              },
+              body: JSON.stringify({
+                upload_token: presign.upload_token,
+                source: options?.source ?? "documents",
+                case_slug: options?.case_slug,
+                expected_sha256: fileSha256 ?? undefined,
+              }),
+              signal: AbortSignal.timeout(540_000),
+            });
+
+            if (confirmRes.ok) {
+              // SSE path: parse events for done/error
+              const contentType = confirmRes.headers.get("content-type") ?? "";
+              if (contentType.includes("text/event-stream") && confirmRes.body) {
+                const result = await parseSseConfirm(confirmRes.body, onProgress, file.size);
+                return result;
+              }
+              // Plain JSON fallback
+              const result = (await confirmRes.json()) as {
+                slug: string;
+                title: string;
+                original_persisted?: boolean;
+                persist_error?: string;
+                extraction_status?: string;
+                extraction_method?: string;
+                extraction_warnings?: string;
+              };
+              if (onProgress)
+                onProgress(100, {
+                  loaded: file.size,
+                  total: file.size,
+                  phase: "server_processing",
+                });
+              return result;
+            }
+            // Confirm failed — fall through to legacy path
+            console.warn("[upload] presigned confirm failed, falling back to direct-upload");
+          }
+        } catch (err) {
+          // Presign path failed (CORS, network, storage down) — fall back
+          console.warn(
+            `[upload] presigned path failed, falling back to direct-upload:`,
+            err instanceof Error ? err.message : String(err)
+          );
+        }
+      }
+
+      // ── Fallback: Legacy direct-upload path ───────────────────────────
+      // Used when: no token, presign disabled, storage unreachable, or
+      // enterprise firewall blocks direct-to-storage uploads.
+      const formData = new FormData();
+      formData.append("file", file);
+      if (options?.title) formData.append("title", options.title);
+      if (options?.source) formData.append("source", options.source);
+      if (options?.tags) formData.append("tags", JSON.stringify(options.tags));
+      if (options?.case_slug) formData.append("case_slug", options.case_slug);
+      if (options?.password) formData.append("password", options.password);
+      if (options?.pause_for_review) formData.append("pause_for_review", "true");
+      if (options?.jurisdiction) formData.append("jurisdiction", options.jurisdiction);
+      if (options?.doc_type) formData.append("doc_type", options.doc_type);
+      if (options?.defer_pipeline) formData.append("defer_pipeline", "true");
+
       const targetUrl =
         uploadToken && engineUrl ? `${engineUrl}/api/direct-upload` : `${BASE_URL}/api/upload`;
 
@@ -2172,7 +2690,6 @@ export const api = {
           if (uploadToken) {
             xhr.setRequestHeader("x-upload-token", uploadToken);
           } else {
-            // Same-origin upload needs CSRF token
             const csrfToken = getCsrfToken();
             if (csrfToken) {
               xhr.setRequestHeader("x-csrf-token", csrfToken);
@@ -2206,17 +2723,25 @@ export const api = {
                 reject(new Error("Invalid JSON response from server"));
               }
             } else {
-              // Retry transient server errors (502/503/504) — engine restart,
-              // Caddy hiccup, etc. Don't retry 4xx (client error) or 500 (bug).
               if (RETRYABLE_STATUS.has(xhr.status) && attempt < MAX_RETRIES) {
-                const delay = Math.pow(2, attempt) * 1000; // 1s, 2s
+                // Honor Retry-After (seconds) when the server sends it (the 429
+                // concurrency guard does), else exponential backoff. Capped at
+                // 30s so the UI never appears wedged.
+                const retryAfterHdr = xhr.getResponseHeader("Retry-After");
+                const retryAfterMs = retryAfterHdr ? parseInt(retryAfterHdr, 10) * 1000 : 0;
+                const delay = Math.min(
+                  retryAfterMs > 0 ? retryAfterMs : Math.pow(2, attempt) * 1000,
+                  30_000
+                );
                 console.warn(
                   `[upload] HTTP ${xhr.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`
                 );
+                if (onProgress) {
+                  onProgress(0, { loaded: 0, total: file.size, phase: "starting" });
+                }
                 setTimeout(() => attemptUpload(attempt + 1).then(resolve, reject), delay);
                 return;
               }
-              // Try to parse a meaningful error message from the JSON response body
               try {
                 const errBody = JSON.parse(xhr.responseText);
                 const message =
@@ -2239,7 +2764,6 @@ export const api = {
           };
 
           xhr.onerror = () => {
-            // Network error — retry if we have attempts left
             if (attempt < MAX_RETRIES) {
               const delay = Math.pow(2, attempt) * 1000;
               console.warn(

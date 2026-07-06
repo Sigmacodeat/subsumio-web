@@ -16,6 +16,8 @@ import { configDir } from "./config.ts";
 import { createStorage, type StorageConfig } from "./storage.ts";
 import { createHash } from "crypto";
 import { join } from "path";
+import { createReadStream, statSync } from "fs";
+import { pipeline } from "stream/promises";
 
 /** Extension → MIME, shared with the `file_upload` operation.
  *
@@ -124,6 +126,14 @@ export async function findStoredUploadByHash(
   sourceId: string
 ): Promise<StoredUploadMatch | null> {
   const hash = createHash("sha256").update(data).digest("hex");
+  return findStoredUploadByHashValue(hash, sourceId);
+}
+
+/** Like findStoredUploadByHash but accepts a pre-computed SHA-256 hex hash. */
+export async function findStoredUploadByHashValue(
+  hash: string,
+  sourceId: string
+): Promise<StoredUploadMatch | null> {
   const sql = db.getConnection();
   const rows = await sql`
     SELECT page_slug, filename, content_hash
@@ -205,10 +215,15 @@ export async function moveFileZone(
   const fromPath = `${fromZone}/${storagePath}`;
   const toPath = `${toZone}/${storagePath}`;
 
-  // Read from source zone
-  const data = await storage.download(fromPath);
-  // Write to destination zone
-  await storage.upload(toPath, data);
+  // Stream from source zone to destination zone — no full buffer
+  if (storage.downloadStream && storage.uploadStream) {
+    const stream = await storage.downloadStream(fromPath);
+    await storage.uploadStream(toPath, stream);
+  } else {
+    // Fallback: buffer-based copy
+    const data = await storage.download(fromPath);
+    await storage.upload(toPath, data);
+  }
   // Delete from source zone
   try {
     await storage.delete(fromPath);
@@ -289,6 +304,94 @@ export async function persistFileBuffer(opts: PersistFileOptions): Promise<Persi
     storage_path: storagePath,
     size_bytes: data.byteLength,
     content_hash: hash,
+  };
+}
+
+/**
+ * Persist a file from a local file path (e.g. a temp download from storage)
+ * without buffering the entire file into RAM. Streams to storage via
+ * uploadStream(), uses pre-computed hash for dedup, and stats the file for size.
+ */
+export async function persistFileFromPath(opts: {
+  filePath: string;
+  filename: string;
+  contentHash: string;
+  pageSlug?: string | null;
+  mimeType?: string | null;
+  sourceId?: string;
+  storageConfig?: unknown;
+  zone?: StorageZone;
+}): Promise<PersistFileResult> {
+  const {
+    filePath,
+    filename,
+    contentHash,
+    pageSlug = null,
+    sourceId = "default",
+    zone = "unscanned",
+  } = opts;
+  const mimeType = mimeForFilename(filename, opts.mimeType);
+  const sizeBytes = statSync(filePath).size;
+
+  const tenantKey = `tenant-${createHash("sha256").update(sourceId).digest("hex").slice(0, 20)}`;
+  const basePath = pageSlug
+    ? `${tenantKey}/${pageSlug}/${filename}`
+    : `${tenantKey}/unsorted/${contentHash.slice(0, 8)}-${filename}`;
+  const storagePath = `${zonePrefix(zone)}/${basePath}`;
+
+  const sql = db.getConnection();
+  const existing =
+    await sql`SELECT id FROM files WHERE source_id = ${sourceId} AND content_hash = ${contentHash} AND storage_path = ${storagePath}`;
+  if (existing.length > 0) {
+    return {
+      status: "already_exists",
+      storage_path: storagePath,
+      size_bytes: sizeBytes,
+      content_hash: contentHash,
+    };
+  }
+
+  const config = resolveStorageConfig(opts.storageConfig);
+  const storage = await createStorage(config);
+  try {
+    if (storage.uploadStream) {
+      await storage.uploadStream(storagePath, createReadStream(filePath), mimeType || undefined);
+    } else {
+      // Fallback: read file into buffer and upload
+      const { readFileSync } = await import("fs");
+      await storage.upload(storagePath, readFileSync(filePath), mimeType || undefined);
+    }
+  } catch (uploadErr) {
+    throw new FileStoreError(
+      `Upload failed: ${uploadErr instanceof Error ? uploadErr.message : String(uploadErr)}`
+    );
+  }
+
+  try {
+    await sql`
+      INSERT INTO files (source_id, page_slug, filename, storage_path, mime_type, size_bytes, content_hash)
+      VALUES (${sourceId}, ${pageSlug}, ${filename}, ${storagePath}, ${mimeType}, ${sizeBytes}, ${contentHash})
+      ON CONFLICT (storage_path) DO UPDATE SET
+        content_hash = EXCLUDED.content_hash,
+        size_bytes = EXCLUDED.size_bytes,
+        mime_type = EXCLUDED.mime_type
+    `;
+  } catch (dbErr) {
+    try {
+      await storage.delete(storagePath);
+    } catch {
+      /* best-effort cleanup */
+    }
+    throw new FileStoreError(
+      `DB write failed: ${dbErr instanceof Error ? dbErr.message : String(dbErr)}`
+    );
+  }
+
+  return {
+    status: "uploaded",
+    storage_path: storagePath,
+    size_bytes: sizeBytes,
+    content_hash: contentHash,
   };
 }
 

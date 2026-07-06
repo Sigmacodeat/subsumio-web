@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { createCronHandler } from "@/lib/api-handler";
-import { getRecipientsByBrain } from "@/lib/cron-utils";
+import { getRecipientsByBrain, mapWithConcurrency } from "@/lib/cron-utils";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 import { isStuck, type DocPage } from "./helpers";
 
@@ -48,22 +48,22 @@ async function listDocuments(brainId: string): Promise<DocPage[]> {
 }
 
 export const GET = createCronHandler(async (_req: NextRequest) => {
-  const recipientsByBrain = await getRecipientsByBrain();
+  const brainIds = [...(await getRecipientsByBrain()).keys()];
 
-  let brainsChecked = 0;
-  let reenqueued = 0;
-  let stampedPending = 0;
-  const errors: string[] = [];
-
-  for (const [brainId] of recipientsByBrain) {
-    brainsChecked++;
+  // Process brains in bounded parallel — each is independent. A sequential loop
+  // over many tenants (each a 30s document listing) risks exceeding maxDuration.
+  const perBrain = await mapWithConcurrency(brainIds, async (brainId) => {
+    const headers = engineHeadersForBrain(brainId);
     const docs = await listDocuments(brainId);
     const stuck = docs.filter(isStuck);
+
+    let reenqueued = 0;
+    let stampedPending = 0;
+    const errors: string[] = [];
 
     for (const doc of stuck) {
       const fm = doc.frontmatter ?? {};
       const caseSlug = typeof fm.case_slug === "string" ? fm.case_slug : undefined;
-      const headers = engineHeadersForBrain(brainId);
 
       // Stamp pending if the status is missing, so the document becomes visible
       // and is picked up by the analysis-retry cron should the drain fail too.
@@ -95,11 +95,25 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         errors.push(`reenqueue ${doc.slug}: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
+    return { reenqueued, stampedPending, errors };
+  });
+
+  let reenqueued = 0;
+  let stampedPending = 0;
+  const errors: string[] = [];
+  for (const result of perBrain) {
+    if (result.status === "fulfilled") {
+      reenqueued += result.value.reenqueued;
+      stampedPending += result.value.stampedPending;
+      errors.push(...result.value.errors);
+    } else {
+      errors.push(String(result.reason));
+    }
   }
 
   return NextResponse.json({
     ok: true,
-    brains_checked: brainsChecked,
+    brains_checked: brainIds.length,
     reenqueued,
     stamped_pending: stampedPending,
     errors: errors.length > 0 ? errors.slice(0, 20) : undefined,

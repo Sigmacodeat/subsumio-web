@@ -40,6 +40,7 @@ import { inferUploadRouting, type KnownCase } from "@/lib/upload-routing";
 import { isOnline, enqueueFileUpload } from "@/lib/offline-store";
 import { sha256HexBytes, gobdFrontmatter } from "@/lib/gobd";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { UploadLifecycle, uploadStageIndex } from "@/components/dashboard/upload-lifecycle";
 import type { BrainPage } from "@/lib/types";
 
 interface FileOverrides {
@@ -73,6 +74,12 @@ interface UploadFile {
   recognizedDocType?: string;
   gzValidated?: boolean;
   gzLeitzahl?: string;
+  /** Server-side sub-phase during processing (downloading/verifying/scanning/extracting) */
+  serverPhase?: "downloading" | "verifying" | "scanning" | "extracting";
+  /** Whether ANY server sub-phase was ever observed (false ⇒ sync-fallback path, no per-stage telemetry). */
+  hadSubPhase?: boolean;
+  /** Whether the "verifying" sub-phase was ever observed for this file. */
+  sawVerifying?: boolean;
 }
 
 const FOLDER_MAX_BYTES = DIRECT_UPLOAD_MAX_SIZE;
@@ -359,6 +366,9 @@ function UploadPageInner() {
                 startedAt: Date.now(),
                 speedBps: undefined,
                 etaSeconds: undefined,
+                serverPhase: undefined,
+                hadSubPhase: undefined,
+                sawVerifying: undefined,
               }
             : f
         )
@@ -406,7 +416,11 @@ function UploadPageInner() {
                       return {
                         ...f,
                         status:
-                          phase === "server_processing"
+                          phase === "server_processing" ||
+                          phase === "downloading" ||
+                          phase === "verifying" ||
+                          phase === "scanning" ||
+                          phase === "extracting"
                             ? "processing"
                             : phase === "uploading"
                               ? "uploading"
@@ -415,6 +429,20 @@ function UploadPageInner() {
                         uploadedBytes: loaded,
                         speedBps,
                         etaSeconds,
+                        serverPhase:
+                          phase === "downloading" ||
+                          phase === "verifying" ||
+                          phase === "scanning" ||
+                          phase === "extracting"
+                            ? phase
+                            : f.serverPhase,
+                        hadSubPhase:
+                          f.hadSubPhase ||
+                          phase === "downloading" ||
+                          phase === "verifying" ||
+                          phase === "scanning" ||
+                          phase === "extracting",
+                        sawVerifying: f.sawVerifying || phase === "verifying",
                       };
                     })()
                   : f
@@ -479,6 +507,7 @@ function UploadPageInner() {
                   slug: result.slug,
                   gobdStamped,
                   persistWarning,
+                  serverPhase: undefined,
                   extractionWarning:
                     [extractionWarning, pipelineWarning].filter(Boolean).join(" ") || undefined,
                   error: extractionStatus === "failed" ? extractionWarning : undefined,
@@ -500,7 +529,12 @@ function UploadPageInner() {
         setFiles((prev) =>
           prev.map((f) =>
             f.id === uploadFile.id
-              ? { ...f, status: isDuplicate ? "skipped" : "error", error: msg }
+              ? {
+                  ...f,
+                  status: isDuplicate ? "skipped" : "error",
+                  error: msg,
+                  serverPhase: undefined,
+                }
               : f
           )
         );
@@ -957,11 +991,30 @@ function UploadPageInner() {
                     f.status === "uploading" ||
                     f.status === "processing") && (
                     <div>
+                      <div className="mb-1.5 overflow-x-auto">
+                        <UploadLifecycle
+                          stage={uploadStageIndex(f)}
+                          verifySkipped={
+                            !f.sawVerifying &&
+                            (f.serverPhase === "scanning" || f.serverPhase === "extracting")
+                          }
+                        />
+                      </div>
                       <div className="mb-1 flex items-center justify-between gap-2 text-xs text-[color:var(--ds-text-muted)]">
                         {f.status === "preparing" ? (
                           <span>Initialisiert · {formatBytes(f.file.size)}</span>
                         ) : f.status === "processing" ? (
-                          <span>Datei übertragen · Server prüft, speichert und indexiert</span>
+                          <span>
+                            {f.serverPhase === "downloading"
+                              ? "Datei wird vom Storage heruntergeladen"
+                              : f.serverPhase === "verifying"
+                                ? "Prüfsumme wird verifiziert"
+                                : f.serverPhase === "scanning"
+                                  ? "Virenscan wird durchgeführt"
+                                  : f.serverPhase === "extracting"
+                                    ? "Inhalt wird extrahiert und indexiert"
+                                    : "Datei übertragen · Server prüft, speichert und indexiert"}
+                          </span>
                         ) : (
                           <span>
                             {formatBytes(f.uploadedBytes ?? 0)} / {formatBytes(f.file.size)}

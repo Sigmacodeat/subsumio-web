@@ -238,10 +238,13 @@ export default function DashboardReel({
     return () => clearInterval(iv);
   }, [view, reduce, v.brain.question]);
 
-  const sidebarLabels =
-    lang !== "en"
-      ? ["Übersicht", "Akten", "Fristen", "Intake", "Chat"]
-      : ["Overview", "Matters", "Deadlines", "Intake", "Chat"];
+  const sidebarLabels = [
+    UI_STRINGS[lang].navOverview,
+    UI_STRINGS[lang].navMatters,
+    UI_STRINGS[lang].navDeadlines,
+    UI_STRINGS[lang].navIntake,
+    UI_STRINGS[lang].navChat,
+  ];
   const cursorTarget =
     view === 0
       ? {
@@ -299,10 +302,10 @@ export default function DashboardReel({
               </div>
               <div className="min-w-0">
                 <p className="truncate text-xs font-semibold [color:var(--mk-text)]">
-                  {lang !== "en" ? "Rechtsanwälte" : "Law Firm"}
+                  {UI_STRINGS[lang].lawFirmLabel}
                 </p>
                 <p className="text-xs [color:var(--mk-text-subtle)]">
-                  {lang !== "en" ? "Kanzlei Müller" : "Müller & Partners"}
+                  {UI_STRINGS[lang].lawFirmName}
                 </p>
               </div>
             </div>
@@ -334,7 +337,7 @@ export default function DashboardReel({
               <div className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full [background:var(--signal-green)]" />
                 <span className="text-xs font-medium [color:var(--mk-text-muted)]">
-                  {lang !== "en" ? "Aktiv" : "Active"}
+                  {UI_STRINGS[lang].activeLabel}
                 </span>
               </div>
             </div>

@@ -124,3 +124,14 @@
 
 # ── Every hour — Time tracking inactivity check ──
 0 * * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/time-tracking/inactivity-check || true
+
+# ── Every hour — Multipart upload cleanup ──
+# Aborts stale S3/R2 multipart uploads older than 24h (tab close, crash, etc.)
+# Prevents storage cost leaks from abandoned uploads.
+15 * * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/upload-multipart-cleanup || true
+
+# ── 03:30 UTC (05:30 CEST) — Daily integrity re-verification (GoBD) ──
+# Re-hashes a batch of stored files and compares against the content_hash
+# anchored in the files table. Detects silent storage corruption/tampering.
+# Rolling: 50 files per run, oldest-first.
+30 3 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/integrity-recheck || true

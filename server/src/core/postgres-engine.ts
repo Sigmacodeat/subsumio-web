@@ -851,6 +851,9 @@ export class PostgresEngine implements BrainEngine {
           NOT NULL DEFAULT 'default' REFERENCES sources(id) ON DELETE CASCADE;
         ALTER TABLE files ADD COLUMN IF NOT EXISTS page_id INTEGER
           REFERENCES pages(id) ON DELETE SET NULL;
+        ALTER TABLE files ADD COLUMN IF NOT EXISTS integrity_status TEXT
+          NOT NULL DEFAULT 'ok';
+        ALTER TABLE files ADD COLUMN IF NOT EXISTS last_integrity_check TIMESTAMPTZ;
       `);
     }
 

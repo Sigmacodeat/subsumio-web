@@ -8,6 +8,36 @@ import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { getStore, getOrgStore, getSharedPgPool, type User } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
 
+/**
+ * Map an async worker over items with a bounded concurrency (default 8), never
+ * rejecting: each result is settled independently. Used by cron routes that fan
+ * out per-brain work — a sequential for-loop over 100 tenants, each with its own
+ * timeout, can blow past the cron's maxDuration if a handful of engines are
+ * slow. Bounded parallelism keeps the wall-clock low without stampeding the
+ * engine. Order is preserved.
+ */
+export async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  worker: (item: T, index: number) => Promise<R>,
+  concurrency = 8
+): Promise<PromiseSettledResult<R>[]> {
+  const results = new Array<PromiseSettledResult<R>>(items.length);
+  let cursor = 0;
+  const limit = Math.max(1, Math.min(concurrency, items.length || 1));
+  async function runner(): Promise<void> {
+    while (cursor < items.length) {
+      const index = cursor++;
+      try {
+        results[index] = { status: "fulfilled", value: await worker(items[index]!, index) };
+      } catch (reason) {
+        results[index] = { status: "rejected", reason };
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: limit }, () => runner()));
+  return results;
+}
+
 export interface EnginePage {
   slug: string;
   title: string;

@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion, useInView } from "framer-motion";
 import { CheckCircle2, FileText, RotateCcw, Send, Loader2, Sparkles } from "lucide-react";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
-import type { Lang } from "@/content/site";
+import { UI_STRINGS, type Lang } from "@/content/site";
 import { EASE } from "./motion-system";
 
 interface Turn {
@@ -336,22 +336,17 @@ export default function ConversationShowreel({
   const [answer, setAnswer] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
 
-  const thinkingLabel = lang === "en" ? "Searching knowledge graph…" : "Durchsuche Wissensgraph…";
-  const verificationLabel = lang === "en" ? "5-layer verified" : "5-Layer verifiziert";
-  const tryYourselfLabel = lang === "en" ? "Try it yourself" : "Jetzt selbst fragen";
-  const replayLabel = lang === "en" ? "Watch again" : "Nochmal ansehen";
-  const scriptedLabel =
-    lang === "en"
-      ? "Example answer · live brain after deploy"
-      : "Beispiel-Antwort · Live-Brain nach Deploy";
-  const rateLabel =
-    lang === "en"
-      ? "Demo limit reached — try again later."
-      : "Demo-Limit erreicht — später erneut.";
-  const askLabel = lang === "en" ? "Ask" : "Fragen";
-  const placeholderLabel = lang === "en" ? "Ask the demo brain…" : "Frag das Demo-Brain…";
-  const liveLabel = lang === "en" ? "live" : "live";
-  const interactiveVerificationLabel = lang === "en" ? "5-layer verified" : "5-Layer verifiziert";
+  const ui = UI_STRINGS[lang];
+  const thinkingLabel = ui.thinkingLabel;
+  const verificationLabel = ui.verificationLabel;
+  const tryYourselfLabel = ui.tryYourselfLabel;
+  const replayLabel = ui.replayLabel;
+  const scriptedLabel = ui.scriptedLabel;
+  const rateLabel = ui.rateLimitLabel;
+  const askLabel = ui.askLabel;
+  const placeholderLabel = ui.placeholderDemo;
+  const liveLabel = ui.liveLabel;
+  const interactiveVerificationLabel = ui.verificationLabel;
 
   // Start showreel when in view
   useEffect(() => {
@@ -445,7 +440,7 @@ export default function ConversationShowreel({
       ref={containerRef}
       className="relative overflow-hidden rounded-2xl text-left shadow-[0_0_0_1px_var(--mk-border),0_24px_64px_-12px_rgba(0,0,0,0.4)] ring-1 ring-white/[0.06] [background:var(--mk-surface)] ring-inset"
       role="region"
-      aria-label={lang === "en" ? "Product demo conversation" : "Produkt-Demo Konversation"}
+      aria-label={UI_STRINGS[lang].ariaProductDemo}
     >
       {/* gradient top accent — brand-tinted hairline */}
       <div

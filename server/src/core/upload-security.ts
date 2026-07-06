@@ -1,5 +1,6 @@
 import { extname } from "node:path";
 import { connect } from "node:net";
+import { open } from "node:fs/promises";
 
 export type UploadSecurityResult = { ok: true } | { ok: false; code: string; message: string };
 
@@ -191,4 +192,107 @@ export async function inspectUploadBytes(
   }
   const clamAv = process.env.CLAMAV_HOST?.trim();
   return clamAv ? scanClamAv(data, clamAv) : { ok: true };
+}
+
+/**
+ * Scan a file by path using clamd SCAN command — no buffer needed.
+ * The file stays on disk, ClamAV reads it directly.
+ */
+async function scanClamAvByPath(filePath: string, target: string): Promise<UploadSecurityResult> {
+  const [hostname, portText] = target.split(":");
+  const port = Number(portText || "3310");
+  return new Promise((resolve) => {
+    const socket = connect(port, hostname);
+    let response = "";
+    let settled = false;
+    const finish = (result: UploadSecurityResult) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      socket.destroy();
+      resolve(result);
+    };
+    const timer = setTimeout(
+      () =>
+        finish({
+          ok: false,
+          code: "scanner_unavailable",
+          message: "Virenscanner nicht erreichbar.",
+        }),
+      60_000
+    );
+    socket.on("connect", () => {
+      socket.write(`SCAN ${filePath}\0`);
+    });
+    socket.on("data", (chunk) => (response += chunk.toString("utf8")));
+    socket.on("end", () => {
+      if (response.includes("FOUND"))
+        finish({
+          ok: false,
+          code: "malware_detected",
+          message: "Schadsoftware erkannt — Upload abgelehnt.",
+        });
+      else if (response.includes("OK")) finish({ ok: true });
+      else
+        finish({
+          ok: false,
+          code: "scanner_unavailable",
+          message: "Virenscanner lieferte keine gültige Antwort.",
+        });
+    });
+    socket.on("error", () =>
+      finish({ ok: false, code: "scanner_unavailable", message: "Virenscanner nicht erreichbar." })
+    );
+  });
+}
+
+/**
+ * Inspect an uploaded file by path — checks magic bytes (reads only first 64 bytes)
+ * and scans with ClamAV by path. Does NOT buffer the entire file into memory.
+ */
+export async function inspectUploadFile(
+  filename: string,
+  filePath: string
+): Promise<UploadSecurityResult> {
+  // Read only the first 64 bytes for magic byte checks
+  const handle = await open(filePath, "r");
+  try {
+    const buf = Buffer.alloc(64);
+    const { bytesRead } = await handle.read(buf, 0, 64, 0);
+    const header = buf.subarray(0, bytesRead);
+
+    if (bytesRead === 0) return { ok: false, code: "empty_file", message: "Die Datei ist leer." };
+
+    for (const signature of EXECUTABLES) {
+      if (startsWith(header, signature.bytes)) {
+        return {
+          ok: false,
+          code: "executable_detected",
+          message: `${signature.label} erkannt — Upload abgelehnt.`,
+        };
+      }
+    }
+    const ext = extname(filename).toLowerCase();
+    const specialMatch = matchesSpecialContainer(ext, header);
+    if (specialMatch === false) {
+      return {
+        ok: false,
+        code: "content_type_mismatch",
+        message: "Dateiendung und tatsächlicher Dateiinhalt stimmen nicht überein.",
+      };
+    }
+    const expected = MAGIC_BY_EXT[ext];
+    if (expected && !expected.some((signature) => startsWith(header, signature))) {
+      return {
+        ok: false,
+        code: "content_type_mismatch",
+        message: "Dateiendung und tatsächlicher Dateiinhalt stimmen nicht überein.",
+      };
+    }
+  } finally {
+    await handle.close();
+  }
+
+  const clamAv = process.env.CLAMAV_HOST?.trim();
+  return clamAv ? scanClamAvByPath(filePath, clamAv) : { ok: true };
 }

@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
+import { logAudit } from "@/lib/audit";
+import type { AuditAction } from "@/lib/audit-labels";
+import { hasValidInternalSecret } from "@/lib/auth/internal";
+import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +17,13 @@ const auditQuerySchema = z.object({
     .string()
     .transform((v) => Math.min(parseInt(v, 10) || 100, 500))
     .default("100"),
+});
+
+const auditPostSchema = z.object({
+  action: z.string(),
+  entity_type: z.string(),
+  entity_id: z.string().optional(),
+  details: z.record(z.unknown()).optional(),
 });
 
 export const GET = createHandler(
@@ -70,3 +81,30 @@ export const GET = createHandler(
     }
   }
 );
+
+/**
+ * POST /api/audit — internal endpoint for the engine to write audit entries.
+ * Authenticated via x-internal-secret header (engine→web internal calls).
+ */
+export async function POST(req: NextRequest) {
+  if (!hasValidInternalSecret(req)) {
+    return Response.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = auditPostSchema.parse(await req.json());
+
+    await logAudit(body.action as AuditAction, body.entity_type, {
+      entityId: body.entity_id,
+      details: body.details,
+    });
+
+    return Response.json({ ok: true });
+  } catch (err) {
+    console.error("[audit POST] failed:", err instanceof Error ? err.message : String(err));
+    return Response.json(
+      { error: "audit_write_failed", message: err instanceof Error ? err.message : "unknown" },
+      { status: 500 }
+    );
+  }
+}

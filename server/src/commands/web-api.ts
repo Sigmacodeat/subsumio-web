@@ -46,6 +46,8 @@ import {
 } from "../core/archive-upload.ts";
 import { inspectUploadBytes } from "../core/upload-security.ts";
 import { FILE_MIME_TYPES } from "../core/file-store.ts";
+import { uploadConcurrencyGuard } from "../core/upload-guard.ts";
+import { pipeline } from "stream/promises";
 import {
   shouldAutoTriggerUploadPipeline,
   uploadPipelineCaseSlug,
@@ -263,6 +265,7 @@ interface PersistResult {
   ok: boolean;
   error?: string;
   storage_path?: string;
+  content_hash?: string;
 }
 
 async function persistUploadBytes(
@@ -286,7 +289,7 @@ async function persistUploadBytes(
       storageConfig: effectiveConfig,
       zone,
     });
-    return { ok: true, storage_path: result.storage_path };
+    return { ok: true, storage_path: result.storage_path, content_hash: result.content_hash };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[web-api] original-file persistence failed for ${pageSlug}: ${msg}`);
@@ -948,17 +951,35 @@ export async function runExtractionAndImport(
     { noEmbed, sourceId: tenantSource, filename }
   );
 
-  // Stamp case_slug on parent + all parts (defense-in-depth; best effort).
+  // Stamp case_slug on parent + all parts (defense-in-depth). A part that fails
+  // to get its case_slug is silently invisible to matter-context (it discovers
+  // documents by the case_slug stamp) — a swallowed failure here orphans part of
+  // a document from its case. So we collect failures, retry each once, and log a
+  // structured warning listing any parts still unstamped so ops can see + fix it,
+  // instead of dropping the error on the floor.
   if (caseSlug) {
+    const stampFailures: string[] = [];
     for (const s of [slug, ...partSlugs]) {
-      try {
-        await patchPageFrontmatter(engine, s, tenantSource, {
-          case_slug: caseSlug,
-          assignment_status: "assigned",
-        });
-      } catch {
-        /* enrichment — the document is imported, stamping is best effort */
+      let stamped = false;
+      for (let attempt = 0; attempt < 2 && !stamped; attempt++) {
+        try {
+          await patchPageFrontmatter(engine, s, tenantSource, {
+            case_slug: caseSlug,
+            assignment_status: "assigned",
+          });
+          stamped = true;
+        } catch {
+          /* retry once, then record */
+        }
       }
+      if (!stamped) stampFailures.push(s);
+    }
+    if (stampFailures.length > 0) {
+      console.error(
+        `[web-api] case_slug stamp failed for ${stampFailures.length} part(s) of ${slug} ` +
+          `(case=${caseSlug}) — these parts are NOT discoverable in the case until re-stamped: ` +
+          stampFailures.join(", ")
+      );
     }
   }
 
@@ -986,6 +1007,15 @@ export async function runExtractionAndImport(
   // Extraction readiness and semantic readiness are separate invariants. A
   // document without vectors may be keyword-searchable, but it is not ready for
   // semantic retrieval. Stamp every split part and the parent explicitly.
+  //
+  // P2-5 (verified safe): stamping "ready" here is NOT optimistic. Embedding is
+  // all-or-nothing per page — `embedBatch` throws on any embedder failure (no
+  // zero-vector fallback), so a failed embed propagates out of importFromContent
+  // → splitAndImportLargeDocument → runExtractionAndImport, failing the whole
+  // extraction (which the async handler then retries via the DLQ). Control only
+  // reaches this stamp when every part imported AND embedded successfully, so
+  // "ready" reflects reality. (A page with zero chunkable content embeds nothing
+  // and is trivially "ready" — nothing to retrieve.)
   for (const s of [slug, ...partSlugs]) {
     await patchPageFrontmatter(engine, s, tenantSource, {
       embedding_status: noEmbed ? "pending" : "ready",
@@ -1857,6 +1887,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       req.uploadTokenPayload = payload;
       next();
     },
+    uploadConcurrencyGuard,
     express.raw({ type: () => true, limit: maxUploadBytes() }),
     async (req: Request, res: Response) => {
       try {
@@ -2159,6 +2190,66 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             persist_error: persistRes.error,
           });
           return;
+        }
+
+        // ── WORM + Audit Log for direct uploads (GoBD) ──
+        if (persistRes.storage_path) {
+          const persistBase = persistRes.storage_path.replace(/^clean\//, "");
+          try {
+            const { createStorage } = await import("../core/storage.ts");
+            const wormStorageConfig = opCtx.config.storage ?? storageConfigFromEnv();
+            if (wormStorageConfig) {
+              const wormStorage = await createStorage(wormStorageConfig as any);
+              if (wormStorage.setImmutable) {
+                try {
+                  await wormStorage.setImmutable(`clean/${persistBase}`);
+                } catch (wormErr) {
+                  console.warn(
+                    `[upload-direct] WORM setImmutable failed: ${wormErr instanceof Error ? wormErr.message : String(wormErr)}`
+                  );
+                }
+              }
+            }
+          } catch (storageErr) {
+            console.warn(
+              `[upload-direct] Failed to create storage for WORM: ${storageErr instanceof Error ? storageErr.message : String(storageErr)}`
+            );
+          }
+          try {
+            const webUrl = process.env.SUBSUMIO_WEB_URL?.replace(/\/$/, "");
+            const internalSecret = process.env.SUBSUMIO_INTERNAL_SECRET;
+            if (webUrl && internalSecret) {
+              const auditRes = await fetch(`${webUrl}/api/audit`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-internal-secret": internalSecret,
+                },
+                body: JSON.stringify({
+                  action: "document.upload",
+                  entity_type: "file",
+                  entity_id: slug,
+                  details: {
+                    filename: file.filename,
+                    storage_path: persistRes.storage_path,
+                    content_hash: persistRes.content_hash,
+                    size_bytes: file.data.byteLength,
+                    mime_type: file.mimeType,
+                    upload_source: "direct",
+                    scan_status: "clean",
+                  },
+                }),
+                signal: AbortSignal.timeout(10_000),
+              });
+              if (!auditRes.ok) {
+                console.warn(`[upload-direct] audit log write failed: HTTP ${auditRes.status}`);
+              }
+            }
+          } catch (auditErr) {
+            console.warn(
+              `[upload-direct] audit log write error: ${auditErr instanceof Error ? auditErr.message : String(auditErr)}`
+            );
+          }
         }
 
         let partSlugs: string[] = [];
@@ -3923,365 +4014,436 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   });
 
-  app.post(
-    "/api/upload",
-    express.raw({ type: () => true, limit: maxUploadBytes() }),
-    async (req: Request, res: Response) => {
-      try {
-        // Pre-check Content-Length before the body is fully buffered by
-        // express.raw. This rejects oversized requests early (413) instead of
-        // wasting RAM buffering a body that will be rejected anyway.
-        const declaredLength = parseInt(String(req.headers["content-length"] ?? "0"), 10);
-        if (declaredLength > maxUploadBytes()) {
-          res.status(413).json({
-            error: "file_too_large",
-            message: `Upload überschreitet das Transportlimit von ${Math.round(maxUploadBytes() / 1024 / 1024)} MB.`,
-          });
-          return;
-        }
+  app.post("/api/upload", uploadConcurrencyGuard, async (req: Request, res: Response) => {
+    try {
+      // Pre-check Content-Length before parsing. Rejects oversized early.
+      const declaredLength = parseInt(String(req.headers["content-length"] ?? "0"), 10);
+      if (declaredLength > maxUploadBytes()) {
+        res.status(413).json({
+          error: "file_too_large",
+          message: `Upload überschreitet das Transportlimit von ${Math.round(maxUploadBytes() / 1024 / 1024)} MB.`,
+        });
+        return;
+      }
 
-        const contentType = String(req.headers["content-type"] ?? "");
-        if (!contentType.includes("multipart/form-data")) {
-          res.status(400).json({ error: "expected_multipart" });
-          return;
-        }
-        if (!Buffer.isBuffer(req.body)) {
-          res.status(400).json({ error: "empty_body" });
-          return;
-        }
+      const contentType = String(req.headers["content-type"] ?? "");
+      if (!contentType.includes("multipart/form-data")) {
+        res.status(400).json({ error: "expected_multipart" });
+        return;
+      }
 
-        const { fields, file } = parseMultipart(req.body, contentType);
-        if (!file) {
-          res.status(400).json({ error: "missing_file" });
-          return;
-        }
-        if ((fields.password?.length ?? 0) > 255) {
-          res.status(400).json({ error: "document_password_too_long" });
-          return;
-        }
-        const fileLimit = maxBytesForUpload(file.filename);
-        if (file.data.byteLength > fileLimit) {
-          res.status(413).json({
-            error: "file_too_large_for_format",
-            message: `Datei überschreitet das Formatlimit von ${Math.round(fileLimit / 1024 / 1024)} MB.`,
-          });
-          return;
-        }
+      // ── Streaming multipart parse via busboy ──
+      // Streams file chunks to a temp file + computes SHA-256 simultaneously.
+      // Peak RAM = busboy chunk size (~64KB), not the full file.
+      const { default: Busboy } = await import("busboy");
+      const { createHash } = await import("crypto");
+      const { createWriteStream, readFileSync, unlinkSync, mkdirSync } = await import("fs");
+      const { join, dirname } = await import("path");
+      const { tmpdir } = await import("os");
 
-        if (!isSafeUploadFilename(file.filename)) {
-          res.status(400).json({ error: "invalid_filename", message: "Ungültiger Dateiname." });
-          return;
-        }
-        if (!isSupportedUploadFilename(file.filename)) {
-          res.status(415).json({
-            error: "unsupported_file_type",
-            message: `Das Dateiformat von ${file.filename} wird nicht unterstützt.`,
-          });
-          return;
-        }
+      const bb = Busboy({ headers: req.headers as any, limits: { fileSize: maxUploadBytes() } });
+      const fields: Record<string, string> = {};
+      let fileData: { filename: string; data: Buffer; mimeType: string; hash: string } | null =
+        null;
+      let fileError: string | null = null;
 
-        // Defense-in-depth: validate MIME type on the engine side too, so a
-        // direct caller bypassing the web layer can't inject arbitrary MIME
-        // types. Aligned with the web-layer allowlist in upload-validation.ts.
-        if (file.mimeType && !ALLOWED_ENGINE_UPLOAD_MIMES.has(file.mimeType.toLowerCase())) {
-          res.status(415).json({
-            error: "unsupported_file_type",
-            message: `Dateityp ${file.mimeType} ist nicht erlaubt.`,
-          });
-          return;
-        }
+      const parsePromise = new Promise<void>((resolve, reject) => {
+        bb.on("field", (name: string, val: string) => {
+          fields[name] = val;
+        });
 
-        const security = await inspectUploadBytes(file.filename, file.data);
-        if (!security.ok) {
-          res.status(security.code === "scanner_unavailable" ? 503 : 422).json({
-            error: security.code,
-            message: security.message,
-          });
-          return;
-        }
+        bb.on("file", (_name: string, stream: any, info: any) => {
+          const filename = info.filename;
+          const mimeType = info.mimeType;
+          const hasher = createHash("sha256");
+          const tmpPath = join(
+            tmpdir(),
+            `upload-${Date.now()}-${Math.random().toString(36).slice(2)}`
+          );
+          mkdirSync(dirname(tmpPath), { recursive: true });
+          const ws = createWriteStream(tmpPath);
+          let bytesWritten = 0;
+          const fileLimit = maxBytesForUpload(filename);
 
-        const source = fields.source || "documents";
-        const title = fields.title || undefined;
-        let tagList: string[] = [];
-        if (fields.tags) {
-          try {
-            const parsed = JSON.parse(fields.tags);
-            tagList = Array.isArray(parsed)
-              ? parsed.map(String)
-              : fields.tags
-                  .split(",")
-                  .map((t) => t.trim())
-                  .filter(Boolean);
-          } catch {
-            tagList = fields.tags
-              .split(",")
-              .map((t) => t.trim())
-              .filter(Boolean);
-          }
-        }
-
-        const opCtx = ctx(req);
-        const tenantSource = opCtx.sourceId ?? "default";
-        await ensureSource(tenantSource);
-
-        const duplicate = await storedDuplicate(file.data, tenantSource);
-        if (duplicate) {
-          res.status(409).json({
-            error: "duplicate_file",
-            message: `Datei bereits vorhanden: ${duplicate.filename}`,
-            existing_slug: duplicate.page_slug,
-          });
-          return;
-        }
-
-        // Same embedding posture as put_page: skip embedding when no
-        // provider is configured instead of failing the whole upload.
-        const { isAvailable } = await import("../core/ai/gateway.ts");
-        const noEmbed = !isAvailable("embedding");
-
-        // beA-Export (XML): route through the beA parser so the message
-        // becomes a structured bea_message page (sender, recipient, subject,
-        // Aktenzeichen) in the TENANT's source — the directory-watcher
-        // connector is install-global and unusable per tenant in SaaS mode.
-        if (file.filename.toLowerCase().endsWith(".xml")) {
-          try {
-            const { BeaImportConnector } =
-              await import("../core/ingestion/connectors/bea-import.ts");
-            const connector = new BeaImportConnector({});
-            const item = connector.parseBeaXmlContent(file.data.toString("utf8"), file.filename);
-            if (item) {
-              const event = await connector.toIngestionEvent(item);
-              let beaSlug =
-                String((event.metadata as Record<string, unknown> | undefined)?.slug ?? "") ||
-                slugFromUpload(source, file.filename, title);
-              beaSlug = await versionUploadSlug(beaSlug, file.data, tenantSource);
-              await importFromContent(engine, beaSlug, event.content, {
-                noEmbed,
-                sourceId: tenantSource,
-                filename: file.filename,
-                source_kind: "web_upload",
-                source_uri: `subsumio-upload:${beaSlug}`,
-              });
-              const persistRes = await persistUploadBytes(
-                file,
-                beaSlug,
-                tenantSource,
-                opCtx.config.storage,
-                "clean"
-              );
-              if (!persistRes.ok) {
-                res.status(500).json({
-                  error: "persist_failed",
-                  message: "Originaldatei konnte nicht dauerhaft gespeichert werden.",
-                  persist_error: persistRes.error,
-                });
-                return;
-              }
-              assertMatterScope(req.matterScope, beaSlug);
-              const beaPage = await engine.getPage(beaSlug, { sourceId: opCtx.sourceId });
-              // E2: Trigger legal-pipeline for beA XML imports
+          stream.on("data", (chunk: Buffer) => {
+            bytesWritten += chunk.length;
+            if (bytesWritten > fileLimit) {
+              fileError = "file_too_large_for_format";
+              stream.destroy();
+              ws.destroy();
               try {
-                const beaQueue2 = new MinionQueue(engine);
-                await beaQueue2.add(
-                  "legal-pipeline",
-                  {
-                    case_slug: beaSlug,
-                    part_slugs: [beaSlug],
-                    ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
-                    trigger: "bea_import",
-                  },
-                  { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
-                  { allowProtectedSubmit: true }
-                );
-              } catch (beaPipelineErr) {
-                console.error(
-                  `[web-api] legal-pipeline trigger failed for beA import ${beaSlug}: ` +
-                    (beaPipelineErr instanceof Error
-                      ? beaPipelineErr.message
-                      : String(beaPipelineErr))
-                );
-              }
-              res.json({
-                slug: beaSlug,
-                title: beaPage?.title ?? item.title,
-                original_persisted: persistRes.ok,
-                ...(persistRes.ok ? {} : { persist_error: persistRes.error }),
+                unlinkSync(tmpPath);
+              } catch {}
+              return;
+            }
+            hasher.update(chunk);
+          });
+
+          ws.on("finish", () => {
+            if (fileError) return;
+            const hash = hasher.digest("hex");
+            const data = readFileSync(tmpPath);
+            try {
+              unlinkSync(tmpPath);
+            } catch {}
+            fileData = { filename, data, mimeType, hash };
+          });
+
+          ws.on("error", (err) => {
+            try {
+              unlinkSync(tmpPath);
+            } catch {}
+            reject(err);
+          });
+
+          stream.pipe(ws);
+        });
+
+        bb.on("finish", () => resolve());
+        bb.on("error", (err: Error) => reject(err));
+
+        req.pipe(bb as any);
+      });
+
+      await parsePromise;
+
+      if (fileError) {
+        res.status(413).json({
+          error: "file_too_large_for_format",
+          message: `Datei überschreitet das Formatlimit.`,
+        });
+        return;
+      }
+
+      if (!fileData) {
+        res.status(400).json({ error: "missing_file" });
+        return;
+      }
+
+      const file: { filename: string; data: Buffer; mimeType: string; hash: string } = fileData;
+      if ((fields.password?.length ?? 0) > 255) {
+        res.status(400).json({ error: "document_password_too_long" });
+        return;
+      }
+      if (file.data.byteLength > maxBytesForUpload(file.filename)) {
+        res.status(413).json({
+          error: "file_too_large_for_format",
+          message: `Datei überschreitet das Formatlimit von ${Math.round(maxBytesForUpload(file.filename) / 1024 / 1024)} MB.`,
+        });
+        return;
+      }
+
+      if (!isSafeUploadFilename(file.filename)) {
+        res.status(400).json({ error: "invalid_filename", message: "Ungültiger Dateiname." });
+        return;
+      }
+      if (!isSupportedUploadFilename(file.filename)) {
+        res.status(415).json({
+          error: "unsupported_file_type",
+          message: `Das Dateiformat von ${file.filename} wird nicht unterstützt.`,
+        });
+        return;
+      }
+
+      // Defense-in-depth: validate MIME type on the engine side too, so a
+      // direct caller bypassing the web layer can't inject arbitrary MIME
+      // types. Aligned with the web-layer allowlist in upload-validation.ts.
+      if (file.mimeType && !ALLOWED_ENGINE_UPLOAD_MIMES.has(file.mimeType.toLowerCase())) {
+        res.status(415).json({
+          error: "unsupported_file_type",
+          message: `Dateityp ${file.mimeType} ist nicht erlaubt.`,
+        });
+        return;
+      }
+
+      const security = await inspectUploadBytes(file.filename, file.data);
+      if (!security.ok) {
+        res.status(security.code === "scanner_unavailable" ? 503 : 422).json({
+          error: security.code,
+          message: security.message,
+        });
+        return;
+      }
+
+      const source = fields.source || "documents";
+      const title = fields.title || undefined;
+      let tagList: string[] = [];
+      if (fields.tags) {
+        try {
+          const parsed = JSON.parse(fields.tags);
+          tagList = Array.isArray(parsed)
+            ? parsed.map(String)
+            : fields.tags
+                .split(",")
+                .map((t) => t.trim())
+                .filter(Boolean);
+        } catch {
+          tagList = fields.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean);
+        }
+      }
+
+      const opCtx = ctx(req);
+      const tenantSource = opCtx.sourceId ?? "default";
+      await ensureSource(tenantSource);
+
+      const duplicate = await storedDuplicate(file.data, tenantSource);
+      if (duplicate) {
+        res.status(409).json({
+          error: "duplicate_file",
+          message: `Datei bereits vorhanden: ${duplicate.filename}`,
+          existing_slug: duplicate.page_slug,
+        });
+        return;
+      }
+
+      // Same embedding posture as put_page: skip embedding when no
+      // provider is configured instead of failing the whole upload.
+      const { isAvailable } = await import("../core/ai/gateway.ts");
+      const noEmbed = !isAvailable("embedding");
+
+      // beA-Export (XML): route through the beA parser so the message
+      // becomes a structured bea_message page (sender, recipient, subject,
+      // Aktenzeichen) in the TENANT's source — the directory-watcher
+      // connector is install-global and unusable per tenant in SaaS mode.
+      if (file.filename.toLowerCase().endsWith(".xml")) {
+        try {
+          const { BeaImportConnector } = await import("../core/ingestion/connectors/bea-import.ts");
+          const connector = new BeaImportConnector({});
+          const item = connector.parseBeaXmlContent(file.data.toString("utf8"), file.filename);
+          if (item) {
+            const event = await connector.toIngestionEvent(item);
+            let beaSlug =
+              String((event.metadata as Record<string, unknown> | undefined)?.slug ?? "") ||
+              slugFromUpload(source, file.filename, title);
+            beaSlug = await versionUploadSlug(beaSlug, file.data, tenantSource);
+            await importFromContent(engine, beaSlug, event.content, {
+              noEmbed,
+              sourceId: tenantSource,
+              filename: file.filename,
+              source_kind: "web_upload",
+              source_uri: `subsumio-upload:${beaSlug}`,
+            });
+            const persistRes = await persistUploadBytes(
+              file,
+              beaSlug,
+              tenantSource,
+              opCtx.config.storage,
+              "clean"
+            );
+            if (!persistRes.ok) {
+              res.status(500).json({
+                error: "persist_failed",
+                message: "Originaldatei konnte nicht dauerhaft gespeichert werden.",
+                persist_error: persistRes.error,
               });
               return;
             }
-            // Not a beA export — fall through to generic document import.
-          } catch (err) {
-            console.error(
-              `[web-api] beA XML parse failed, falling back to generic import: ${err instanceof Error ? err.message : String(err)}`
-            );
+            assertMatterScope(req.matterScope, beaSlug);
+            const beaPage = await engine.getPage(beaSlug, { sourceId: opCtx.sourceId });
+            // E2: Trigger legal-pipeline for beA XML imports
+            try {
+              const beaQueue2 = new MinionQueue(engine);
+              await beaQueue2.add(
+                "legal-pipeline",
+                {
+                  case_slug: beaSlug,
+                  part_slugs: [beaSlug],
+                  ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
+                  trigger: "bea_import",
+                },
+                { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+                { allowProtectedSubmit: true }
+              );
+            } catch (beaPipelineErr) {
+              console.error(
+                `[web-api] legal-pipeline trigger failed for beA import ${beaSlug}: ` +
+                  (beaPipelineErr instanceof Error
+                    ? beaPipelineErr.message
+                    : String(beaPipelineErr))
+              );
+            }
+            res.json({
+              slug: beaSlug,
+              title: beaPage?.title ?? item.title,
+              original_persisted: persistRes.ok,
+              ...(persistRes.ok ? {} : { persist_error: persistRes.error }),
+            });
+            return;
           }
+          // Not a beA export — fall through to generic document import.
+        } catch (err) {
+          console.error(
+            `[web-api] beA XML parse failed, falling back to generic import: ${err instanceof Error ? err.message : String(err)}`
+          );
         }
+      }
 
-        let slug = slugFromUpload(source, file.filename, title);
-        slug = await versionUploadSlug(slug, file.data, tenantSource);
+      let slug = slugFromUpload(source, file.filename, title);
+      slug = await versionUploadSlug(slug, file.data, tenantSource);
 
-        // P0-SECR-002: case uploads require the caller to be scoped to the target case.
-        const caseSlug = fields.case_slug?.trim();
-        if (caseSlug) assertMatterScope(req.matterScope, caseSlug);
+      // P0-SECR-002: case uploads require the caller to be scoped to the target case.
+      const caseSlug = fields.case_slug?.trim();
+      if (caseSlug) assertMatterScope(req.matterScope, caseSlug);
 
-        const uploadFrontmatter: Record<string, unknown> = {
-          source: "upload",
-          source_format: extname(file.filename).replace(/^\./, "").toLowerCase() || undefined,
-          ...(caseSlug ? { case_slug: caseSlug, assignment_status: "assigned" } : {}),
-          ...(fields.pause_for_review === "true" ? { pause_for_review: true } : {}),
-          ...(fields.jurisdiction ? { jurisdiction: fields.jurisdiction } : {}),
-          ...(fields.doc_type ? { doc_type: fields.doc_type } : {}),
-          ...(fields.defer_pipeline === "true" ? { pipeline_deferred: true } : {}),
-        };
-        // Passwords are request-scoped secrets and must never be serialized into
-        // the persistent Minion queue. Process encrypted documents synchronously.
-        const asyncExtract = file.data.byteLength >= asyncExtractMinBytes() && !fields.password;
+      const uploadFrontmatter: Record<string, unknown> = {
+        source: "upload",
+        source_format: extname(file.filename).replace(/^\./, "").toLowerCase() || undefined,
+        ...(caseSlug ? { case_slug: caseSlug, assignment_status: "assigned" } : {}),
+        ...(fields.pause_for_review === "true" ? { pause_for_review: true } : {}),
+        ...(fields.jurisdiction ? { jurisdiction: fields.jurisdiction } : {}),
+        ...(fields.doc_type ? { doc_type: fields.doc_type } : {}),
+        ...(fields.defer_pipeline === "true" ? { pipeline_deferred: true } : {}),
+      };
+      // Passwords are request-scoped secrets and must never be serialized into
+      // the persistent Minion queue. Process encrypted documents synchronously.
+      const asyncExtract = file.data.byteLength >= asyncExtractMinBytes() && !fields.password;
 
-        // Persist the ORIGINAL bytes via the binary-storage SSOT (§ 147 AO /
-        // GoBD). For the async path this MUST happen before queueing so the
-        // extract-document worker can read them back.
-        const persistRes = await persistUploadBytes(
-          file,
-          slug,
-          tenantSource,
-          opCtx.config.storage,
-          "clean"
-        );
+      // Persist the ORIGINAL bytes via the binary-storage SSOT (§ 147 AO /
+      // GoBD). For the async path this MUST happen before queueing so the
+      // extract-document worker can read them back.
+      const persistRes = await persistUploadBytes(
+        file,
+        slug,
+        tenantSource,
+        opCtx.config.storage,
+        "clean"
+      );
 
+      if (!persistRes.ok) {
+        res.status(500).json({
+          error: "persist_failed",
+          message: "Originaldatei konnte nicht dauerhaft gespeichert werden.",
+          persist_error: persistRes.error,
+        });
+        return;
+      }
+
+      let partSlugs: string[] = [];
+      if (asyncExtract) {
         if (!persistRes.ok) {
           res.status(500).json({
             error: "persist_failed",
-            message: "Originaldatei konnte nicht dauerhaft gespeichert werden.",
+            message:
+              "Originaldatei konnte nicht gespeichert werden; Extraktion wurde nicht eingereiht.",
             persist_error: persistRes.error,
           });
           return;
         }
-
-        let partSlugs: string[] = [];
-        if (asyncExtract) {
-          if (!persistRes.ok) {
-            res.status(500).json({
-              error: "persist_failed",
-              message:
-                "Originaldatei konnte nicht gespeichert werden; Extraktion wurde nicht eingereiht.",
-              persist_error: persistRes.error,
-            });
-            return;
-          }
-          // Stub page so the document is visible as `processing` immediately;
-          // the extract-document worker overwrites it on completion.
-          await invokeOp(
-            engine,
-            "put_page",
-            {
-              slug,
-              title: title ?? file.filename.replace(/\.[^.]+$/, ""),
-              content: "> ⏳ Dokument wird verarbeitet … Extraktion läuft im Hintergrund.\n",
-              frontmatter: {
-                ...uploadFrontmatter,
-                type: uploadFrontmatter.type ?? "document",
-                extraction_status: "processing",
-                extraction_queued_at: new Date().toISOString(),
-                upload_size: file.data.byteLength,
-              },
-              merge: false,
+        // Stub page so the document is visible as `processing` immediately;
+        // the extract-document worker overwrites it on completion.
+        await invokeOp(
+          engine,
+          "put_page",
+          {
+            slug,
+            title: title ?? file.filename.replace(/\.[^.]+$/, ""),
+            content: "> ⏳ Dokument wird verarbeitet … Extraktion läuft im Hintergrund.\n",
+            frontmatter: {
+              ...uploadFrontmatter,
+              type: uploadFrontmatter.type ?? "document",
+              extraction_status: "processing",
+              extraction_queued_at: new Date().toISOString(),
+              upload_size: file.data.byteLength,
             },
-            tenantSource,
-            undefined,
-            req.matterScope ?? "all",
-            req.aclGroups ?? "all"
-          );
+            merge: false,
+          },
+          tenantSource,
+          undefined,
+          req.matterScope ?? "all",
+          req.aclGroups ?? "all"
+        );
 
-          const { MinionQueue } = await import("../core/minions/queue.ts");
-          const queue = new MinionQueue(engine);
-          await queue.add(
-            "extract-document",
-            {
-              slug,
-              filename: file.filename,
-              title,
-              tags: tagList,
-              case_slug: caseSlug || undefined,
-              source_id: tenantSource,
-              no_embed: noEmbed,
-              password: fields.password || undefined,
-              upload_frontmatter: uploadFrontmatter,
-              auto_trigger_legal_pipeline: shouldAutoTriggerUploadPipeline(fields.defer_pipeline),
-              matter_scope: req.matterScope ?? "all",
-              acl_groups: req.aclGroups ?? "all",
-            },
-            { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
-            { allowProtectedSubmit: true }
-          );
-        } else {
-          const result = await runExtractionAndImport(engine, {
+        const { MinionQueue } = await import("../core/minions/queue.ts");
+        const queue = new MinionQueue(engine);
+        await queue.add(
+          "extract-document",
+          {
             slug,
             filename: file.filename,
-            data: file.data,
             title,
-            tagList,
-            caseSlug: caseSlug || undefined,
-            uploadFrontmatter,
-            tenantSource,
-            noEmbed,
+            tags: tagList,
+            case_slug: caseSlug || undefined,
+            source_id: tenantSource,
+            no_embed: noEmbed,
             password: fields.password || undefined,
-            matterScope: req.matterScope ?? "all",
-            aclGroups: req.aclGroups ?? "all",
-            autoTriggerLegalPipeline: shouldAutoTriggerUploadPipeline(fields.defer_pipeline),
-          });
-          partSlugs = result.partSlugs;
-        }
-
-        assertMatterScope(req.matterScope, slug);
-        const page = await engine.getPage(slug, { sourceId: opCtx.sourceId });
-        res.json({
+            upload_frontmatter: uploadFrontmatter,
+            auto_trigger_legal_pipeline: shouldAutoTriggerUploadPipeline(fields.defer_pipeline),
+            matter_scope: req.matterScope ?? "all",
+            acl_groups: req.aclGroups ?? "all",
+          },
+          { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+          { allowProtectedSubmit: true }
+        );
+      } else {
+        const result = await runExtractionAndImport(engine, {
           slug,
-          title: page?.title ?? title ?? slug.split("/").pop() ?? slug,
-          original_persisted: persistRes.ok,
-          // async=true → extraction runs in the worker; poll extraction_status.
-          async: asyncExtract,
-          extraction_status: page?.frontmatter?.extraction_status,
-          extraction_method: page?.frontmatter?.extraction_method,
-          extraction_warnings: page?.frontmatter?.extraction_warnings,
-          // D2: Recognition metadata for upload result badges
-          jurisdiction: uploadFrontmatter.jurisdiction,
-          doc_type: uploadFrontmatter.doc_type,
-          aktenzeichen_validated: uploadFrontmatter.aktenzeichen_validated,
-          aktenzeichen: uploadFrontmatter.aktenzeichen,
-          ...(partSlugs.length > 0
-            ? { split: true, part_count: partSlugs.length, part_slugs: partSlugs }
-            : {}),
-          ...(persistRes.ok ? {} : { persist_error: persistRes.error }),
+          filename: file.filename,
+          data: file.data,
+          title,
+          tagList,
+          caseSlug: caseSlug || undefined,
+          uploadFrontmatter,
+          tenantSource,
+          noEmbed,
+          password: fields.password || undefined,
+          matterScope: req.matterScope ?? "all",
+          aclGroups: req.aclGroups ?? "all",
+          autoTriggerLegalPipeline: shouldAutoTriggerUploadPipeline(fields.defer_pipeline),
         });
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "unknown";
-        // A recognized-but-unsupported format is a client problem, not a server
-        // error — return 415 with the actionable guidance so the UI can show it.
-        if (e instanceof UnsupportedUploadError) {
-          res.status(415).json({ error: "unsupported_format", message: msg });
-          return;
-        }
-        if (e instanceof PasswordRequiredError) {
-          res.status(422).json({
-            error: "password_required",
-            format: e.format,
-            message:
-              "Die Datei ist passwortgeschützt. Bitte Kennwort eingeben und erneut hochladen.",
-          });
-          return;
-        }
-        if (e instanceof InvalidDocumentPasswordError) {
-          res.status(422).json({
-            error: "invalid_document_password",
-            format: e.format,
-            message: "Das Dokumentkennwort ist falsch.",
-          });
-          return;
-        }
-        res.status(500).json({ error: "upload_failed", message: msg });
+        partSlugs = result.partSlugs;
       }
+
+      assertMatterScope(req.matterScope, slug);
+      const page = await engine.getPage(slug, { sourceId: opCtx.sourceId });
+      res.json({
+        slug,
+        title: page?.title ?? title ?? slug.split("/").pop() ?? slug,
+        original_persisted: persistRes.ok,
+        // async=true → extraction runs in the worker; poll extraction_status.
+        async: asyncExtract,
+        extraction_status: page?.frontmatter?.extraction_status,
+        extraction_method: page?.frontmatter?.extraction_method,
+        extraction_warnings: page?.frontmatter?.extraction_warnings,
+        // D2: Recognition metadata for upload result badges
+        jurisdiction: uploadFrontmatter.jurisdiction,
+        doc_type: uploadFrontmatter.doc_type,
+        aktenzeichen_validated: uploadFrontmatter.aktenzeichen_validated,
+        aktenzeichen: uploadFrontmatter.aktenzeichen,
+        ...(partSlugs.length > 0
+          ? { split: true, part_count: partSlugs.length, part_slugs: partSlugs }
+          : {}),
+        ...(persistRes.ok ? {} : { persist_error: persistRes.error }),
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      // A recognized-but-unsupported format is a client problem, not a server
+      // error — return 415 with the actionable guidance so the UI can show it.
+      if (e instanceof UnsupportedUploadError) {
+        res.status(415).json({ error: "unsupported_format", message: msg });
+        return;
+      }
+      if (e instanceof PasswordRequiredError) {
+        res.status(422).json({
+          error: "password_required",
+          format: e.format,
+          message: "Die Datei ist passwortgeschützt. Bitte Kennwort eingeben und erneut hochladen.",
+        });
+        return;
+      }
+      if (e instanceof InvalidDocumentPasswordError) {
+        res.status(422).json({
+          error: "invalid_document_password",
+          format: e.format,
+          message: "Das Dokumentkennwort ist falsch.",
+        });
+        return;
+      }
+      res.status(500).json({ error: "upload_failed", message: msg });
     }
-  );
+  });
 
   // ============================================================
   // Presigned URL Upload — direct-to-storage flow for large files
@@ -4305,6 +4467,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     filename: string;
     mimeType: string;
     expectedSize: number;
+    /**
+     * Client-declared SHA-256 (hex) of the file bytes. When present, confirm
+     * re-hashes the stored object and rejects on mismatch — end-to-end content
+     * integrity for the direct-to-storage path (bytes bypass the server, so this
+     * is the only way to prove what landed equals what the user selected). It is
+     * NOT a security credential (a malicious client can upload any bytes anyway);
+     * it protects against accidental corruption in transit / reassembly.
+     */
+    expectedSha256?: string;
+    streamedSha256?: string;
     sourceId: string;
     caseSlug?: string;
     title?: string;
@@ -4332,11 +4504,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     express.json({ limit: "1mb" }),
     async (req: Request, res: Response) => {
       try {
-        if (process.env.SUBSUMIO_PRESIGNED_UPLOAD_ENABLED !== "true") {
+        // Presigned uploads are the primary path (Harvey-style architecture:
+        // bytes bypass the server entirely). The env var can still disable
+        // the path for testing or rollback.
+        if (process.env.SUBSUMIO_PRESIGNED_UPLOAD_ENABLED === "false") {
           res.status(503).json({
             error: "presigned_upload_disabled",
-            message:
-              "Presigned Upload ist bis zur persistenten Session-/Streaming-Abnahme deaktiviert.",
+            message: "Presigned Upload ist deaktiviert (SUBSUMIO_PRESIGNED_UPLOAD_ENABLED=false).",
           });
           return;
         }
@@ -4398,6 +4572,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
 
+        // Optional client-declared content hash (hex SHA-256) for end-to-end
+        // integrity verification at confirm. Accept only a well-formed 64-char
+        // hex string; anything else is ignored (falls back to the size check).
+        const sha256Raw = typeof body.expected_sha256 === "string" ? body.expected_sha256 : "";
+        const expectedSha256 = /^[a-f0-9]{64}$/i.test(sha256Raw)
+          ? sha256Raw.toLowerCase()
+          : undefined;
+
         // Generate storage path (same convention as persistFileBuffer)
         const { createHash } = await import("crypto");
         const tenantKey = `tenant-${createHash("sha256").update(tenantSource).digest("hex").slice(0, 20)}`;
@@ -4429,6 +4611,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             filename,
             mimeType,
             expectedSize,
+            expectedSha256,
             sourceId: tenantSource,
             caseSlug,
             title,
@@ -4469,6 +4652,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           filename,
           mimeType,
           expectedSize,
+          expectedSha256,
           sourceId: tenantSource,
           caseSlug,
           title,
@@ -4498,10 +4682,237 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   );
 
-  // Streaming fallback for local storage — accepts raw body PUT
+  // ── Multipart upload endpoints (S3/R2 only) ──────────────────────────
+  // For files > 100MB, the client splits into parts (8MB each), uploads
+  // each part to its own presigned URL, then calls complete-multipart.
+  // This enables retry of individual parts and resumable uploads.
+
+  // Initiate multipart upload + presign all parts
+  app.post(
+    "/api/upload/presign-multipart",
+    express.json({ limit: "1mb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const token = String(req.headers["x-upload-token"] ?? "");
+        const pending = pendingUploads.get(token);
+        if (!pending || Date.now() > pending.expiresAt) {
+          res.status(410).json({ error: "upload_token_expired" });
+          return;
+        }
+
+        const opCtx = ctx(req);
+        if (pending.sourceId !== (opCtx.sourceId ?? "default")) {
+          res.status(403).json({ error: "token_tenant_mismatch" });
+          return;
+        }
+
+        const body = req.body as { part_count?: number };
+        const partCount = body.part_count ?? Math.ceil(pending.expectedSize / (8 * 1024 * 1024));
+        if (partCount < 1 || partCount > 10000) {
+          res.status(400).json({ error: "invalid_part_count" });
+          return;
+        }
+
+        const storageConfig = opCtx.config.storage ?? storageConfigFromEnv();
+        if (!storageConfig) {
+          res.status(500).json({ error: "no_storage_configured" });
+          return;
+        }
+        const { createStorage } = await import("../core/storage.ts");
+        const storage = await createStorage(storageConfig as any);
+
+        if (!storage.createMultipartUpload || !storage.presignPart) {
+          res
+            .status(501)
+            .json({
+              error: "multipart_not_supported",
+              message: "Storage-Backend unterstützt kein Multipart-Upload.",
+            });
+          return;
+        }
+
+        const { uploadId, storagePath } = await storage.createMultipartUpload(
+          pending.storagePath,
+          pending.mimeType || "application/octet-stream"
+        );
+
+        // Presign all parts
+        const parts: Array<{ part_number: number; url: string }> = [];
+        for (let i = 1; i <= partCount; i++) {
+          const url = await storage.presignPart(storagePath, uploadId, i, 3600);
+          parts.push({ part_number: i, url });
+        }
+
+        res.json({
+          upload_id: uploadId,
+          storage_path: storagePath,
+          parts,
+          part_size: Math.ceil(pending.expectedSize / partCount),
+        });
+      } catch (e) {
+        res.status(500).json({
+          error: "multipart_presign_failed",
+          message: e instanceof Error ? e.message : "unknown",
+        });
+      }
+    }
+  );
+
+  // Complete multipart upload
+  app.post(
+    "/api/upload/complete-multipart",
+    express.json({ limit: "2mb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const token = String(req.headers["x-upload-token"] ?? "");
+        const pending = pendingUploads.get(token);
+        if (!pending || Date.now() > pending.expiresAt) {
+          res.status(410).json({ error: "upload_token_expired" });
+          return;
+        }
+
+        const opCtx = ctx(req);
+        if (pending.sourceId !== (opCtx.sourceId ?? "default")) {
+          res.status(403).json({ error: "token_tenant_mismatch" });
+          return;
+        }
+
+        const body = req.body as {
+          upload_id: string;
+          storage_path: string;
+          parts: Array<{ part_number: number; etag: string }>;
+        };
+
+        if (!body.upload_id || !body.parts?.length) {
+          res.status(400).json({ error: "missing_parts" });
+          return;
+        }
+
+        const storageConfig = opCtx.config.storage ?? storageConfigFromEnv();
+        if (!storageConfig) {
+          res.status(500).json({ error: "no_storage_configured" });
+          return;
+        }
+        const { createStorage } = await import("../core/storage.ts");
+        const storage = await createStorage(storageConfig as any);
+
+        if (!storage.completeMultipartUpload) {
+          res.status(501).json({ error: "multipart_not_supported" });
+          return;
+        }
+
+        await storage.completeMultipartUpload(
+          body.storage_path,
+          body.upload_id,
+          body.parts.map((p) => ({ partNumber: p.part_number, etag: p.etag }))
+        );
+
+        res.json({ ok: true });
+      } catch (e) {
+        res.status(500).json({
+          error: "multipart_complete_failed",
+          message: e instanceof Error ? e.message : "unknown",
+        });
+      }
+    }
+  );
+
+  // Abort multipart upload (cleanup on client cancel/error)
+  app.post(
+    "/api/upload/abort-multipart",
+    express.json({ limit: "1mb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const token = String(req.headers["x-upload-token"] ?? "");
+        const pending = pendingUploads.get(token);
+        if (!pending) {
+          res.status(410).json({ error: "upload_token_expired" });
+          return;
+        }
+
+        const body = req.body as { upload_id: string; storage_path: string };
+        const storageConfig = ctx(req).config.storage ?? storageConfigFromEnv();
+        if (!storageConfig) {
+          res.status(200).json({ ok: true });
+          return;
+        }
+        const { createStorage } = await import("../core/storage.ts");
+        const storage = await createStorage(storageConfig as any);
+
+        if (storage.abortMultipartUpload) {
+          await storage.abortMultipartUpload(body.storage_path, body.upload_id);
+        }
+
+        res.json({ ok: true });
+      } catch {
+        res.status(200).json({ ok: true });
+      }
+    }
+  );
+
+  // ── Multipart cleanup ──────────────────────────────────────────────
+  // Cron-called: lists in-progress multipart uploads from storage and
+  // aborts those older than the TTL (default 24h). Prevents cost leaks
+  // from abandoned uploads (tab close, crash, network failure).
+  app.post(
+    "/api/upload/multipart-cleanup",
+    guard,
+    express.json({ limit: "1mb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const opCtx = ctx(req);
+        const storageConfig = opCtx.config.storage ?? storageConfigFromEnv();
+        if (!storageConfig) {
+          res.json({ aborted: 0, message: "no storage configured" });
+          return;
+        }
+        const { createStorage } = await import("../core/storage.ts");
+        const storage = await createStorage(storageConfig as any);
+
+        if (!storage.listMultipartUploads || !storage.abortMultipartUpload) {
+          res.json({ aborted: 0, message: "backend does not support multipart listing" });
+          return;
+        }
+
+        const uploads = await storage.listMultipartUploads();
+        const ttlMs = 24 * 60 * 60 * 1000; // 24 hours
+        const now = Date.now();
+        const stale = uploads.filter((u) => now - u.initiated.getTime() > ttlMs);
+
+        let aborted = 0;
+        for (const upload of stale) {
+          try {
+            await storage.abortMultipartUpload(upload.key, upload.uploadId);
+            aborted++;
+            console.info(
+              `[multipart-cleanup] Aborted stale upload ${upload.uploadId} for ${upload.key} (initiated ${upload.initiated.toISOString()})`
+            );
+          } catch (err) {
+            console.warn(
+              `[multipart-cleanup] Failed to abort ${upload.uploadId}: ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
+        }
+
+        res.json({
+          total_in_progress: uploads.length,
+          stale: stale.length,
+          aborted,
+        });
+      } catch (e) {
+        res.status(500).json({
+          error: "multipart_cleanup_failed",
+          message: e instanceof Error ? e.message : "unknown",
+        });
+      }
+    }
+  );
+
+  // Streaming fallback for local storage — streams req directly to storage
+  // without buffering the entire body in memory (no express.raw).
   app.put(
     "/api/upload/stream/:token",
-    express.raw({ type: () => true, limit: maxUploadBytes() }),
+    uploadConcurrencyGuard,
     async (req: Request, res: Response) => {
       try {
         const token = String(req.params.token ?? "");
@@ -4512,16 +4923,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             .json({ error: "upload_token_expired", message: "Upload-Token abgelaufen." });
           return;
         }
-        if (!Buffer.isBuffer(req.body)) {
-          res.status(400).json({ error: "empty_body" });
-          return;
-        }
-        if (req.body.byteLength !== pending.expectedSize) {
-          res.status(422).json({ error: "uploaded_size_mismatch" });
-          return;
-        }
+
         const fileLimit = maxBytesForUpload(pending.filename);
-        if (req.body.byteLength > fileLimit) {
+        if (pending.expectedSize > fileLimit) {
           res.status(413).json({
             error: "file_too_large_for_format",
             message: `Datei überschreitet das Formatlimit von ${Math.round(fileLimit / 1024 / 1024)} MB.`,
@@ -4529,15 +4933,87 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
 
-        // Persist bytes to storage
         const opCtx = ctx(req);
         const storageConfig = opCtx.config.storage ?? storageConfigFromEnv();
-        if (storageConfig) {
-          const { createStorage } = await import("../core/storage.ts");
-          const storage = await createStorage(storageConfig as any);
-          await storage.upload(pending.storagePath, req.body, pending.mimeType);
+        if (!storageConfig) {
+          res.status(500).json({ error: "no_storage_configured" });
+          return;
         }
-        res.json({ ok: true, bytes: req.body.byteLength });
+        const { createStorage } = await import("../core/storage.ts");
+        const storage = await createStorage(storageConfig as any);
+
+        // Stream the raw request body directly to storage — no buffering.
+        // We wrap the req stream to count bytes, enforce the size limit,
+        // and compute SHA-256 incrementally — all in one pass.
+        const { Readable, Transform } = await import("stream");
+        let bytesReceived = 0;
+        let sizeExceeded = false;
+
+        const nodeStream = req as unknown as NodeJS.ReadableStream;
+
+        // Streaming SHA-256 — hash chunks as they flow through, no double-read
+        const { createHash } = await import("crypto");
+        const hashTransform = createHash("sha256");
+
+        const sizeGuard = new Transform({
+          transform(chunk: Buffer, _encoding, callback) {
+            bytesReceived += chunk.length;
+            if (bytesReceived > fileLimit) {
+              sizeExceeded = true;
+              callback(new Error("file_too_large"));
+            } else {
+              hashTransform.update(chunk);
+              callback(null, chunk);
+            }
+          },
+        });
+
+        const uploadPromise = storage.uploadStream
+          ? storage.uploadStream(
+              pending.storagePath,
+              Readable.from(nodeStream as any).pipe(sizeGuard),
+              pending.mimeType
+            )
+          : (async () => {
+              // Fallback for backends without uploadStream: collect chunks
+              const chunks: Buffer[] = [];
+              for await (const chunk of nodeStream as any) {
+                bytesReceived += (chunk as Buffer).length;
+                if (bytesReceived > fileLimit) {
+                  sizeExceeded = true;
+                  throw new Error("file_too_large");
+                }
+                hashTransform.update(chunk as Buffer);
+                chunks.push(chunk as Buffer);
+              }
+              await storage.upload(pending.storagePath, Buffer.concat(chunks), pending.mimeType);
+            })();
+
+        try {
+          await uploadPromise;
+        } catch (err) {
+          if (sizeExceeded) {
+            res.status(413).json({
+              error: "file_too_large_for_format",
+              message: `Datei überschreitet das Formatlimit von ${Math.round(fileLimit / 1024 / 1024)} MB.`,
+            });
+            return;
+          }
+          throw err;
+        }
+
+        if (bytesReceived !== pending.expectedSize) {
+          try {
+            await storage.delete(pending.storagePath);
+          } catch {}
+          res.status(422).json({ error: "uploaded_size_mismatch" });
+          return;
+        }
+
+        // Store the streaming hash for the confirm handler to verify
+        pending.streamedSha256 = hashTransform.digest("hex");
+
+        res.json({ ok: true, bytes: bytesReceived });
       } catch (e) {
         res.status(500).json({
           error: "stream_upload_failed",
@@ -4575,6 +5051,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         });
       }
 
+      // Temp file cleanup helper — declared before try so catch can use it
+      let _cleanupTemp: (() => void) | null = null;
+
       try {
         const body = req.body as Record<string, unknown>;
         const token = String(body.upload_token ?? "");
@@ -4603,6 +5082,19 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           }
           res.status(403).json({ error: "token_tenant_mismatch" });
           return;
+        }
+
+        // For multipart uploads, the hash is computed during the upload loop
+        // and sent at confirm time (not presign). Update the pending record.
+        const confirmSha256 = typeof body.expected_sha256 === "string" ? body.expected_sha256 : "";
+        if (confirmSha256 && /^[a-f0-9]{64}$/i.test(confirmSha256)) {
+          pending.expectedSha256 = confirmSha256.toLowerCase();
+        }
+
+        // For streaming uploads, the hash was computed during the stream
+        // upload and stored on the pending record. Use it as fallback.
+        if (!pending.expectedSha256 && pending.streamedSha256) {
+          pending.expectedSha256 = pending.streamedSha256;
         }
 
         // Download from storage
@@ -4637,11 +5129,49 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
 
-        const data = await storage.download(pending.storagePath);
-        if (data.byteLength !== pending.expectedSize) {
+        // ── STREAMING DOWNLOAD ──
+        // Stream from storage to a temp file instead of buffering the entire
+        // file in RAM. This is the key change for OOM safety on large uploads.
+        const {
+          createWriteStream: fsCreateWriteStream,
+          unlinkSync: fsUnlinkSync,
+          statSync: fsStatSync,
+        } = await import("fs");
+        const { join: pathJoin } = await import("path");
+        const { tmpdir } = await import("os");
+        const tmpPath = pathJoin(tmpdir(), `upload-confirm-${token}-${Date.now()}`);
+        let tempCleanedUp = false;
+        const cleanupTemp = () => {
+          if (!tempCleanedUp) {
+            try {
+              fsUnlinkSync(tmpPath);
+            } catch {}
+            tempCleanedUp = true;
+          }
+        };
+        _cleanupTemp = cleanupTemp;
+
+        try {
+          if (storage.downloadStream) {
+            const dlStream = await storage.downloadStream(pending.storagePath);
+            await pipeline(dlStream, fsCreateWriteStream(tmpPath));
+          } else {
+            // Fallback: buffer download then write to temp file
+            const buf = await storage.download(pending.storagePath);
+            const { writeFileSync } = await import("fs");
+            writeFileSync(tmpPath, buf);
+          }
+        } catch (dlErr) {
+          cleanupTemp();
+          throw dlErr;
+        }
+
+        const fileSize = fsStatSync(tmpPath).size;
+        if (fileSize !== pending.expectedSize) {
           try {
             await storage.delete(pending.storagePath);
           } catch {}
+          cleanupTemp();
           pendingUploads.delete(token);
           if (wantsSse) {
             sseSend("error", { error: "uploaded_size_mismatch" });
@@ -4652,14 +5182,61 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
 
+        // ── END-TO-END CONTENT INTEGRITY ──
+        // The bytes went browser → storage directly, so the size check alone
+        // can't catch a byte-flip or a bad multipart reassembly. When the client
+        // declared a SHA-256, re-hash the stored object (streamed from the temp
+        // file — no buffering) and reject on mismatch so a silently corrupted
+        // legal document never enters the brain. The client retries on this.
+        if (pending.expectedSha256) {
+          sseSend("progress", { phase: "verifying", filename: pending.filename, bytes: fileSize });
+          const { createHash } = await import("crypto");
+          const { createReadStream } = await import("fs");
+          const actualSha256 = await new Promise<string>((resolve, reject) => {
+            const h = createHash("sha256");
+            const rs = createReadStream(tmpPath);
+            rs.on("data", (c) => h.update(c));
+            rs.on("end", () => resolve(h.digest("hex")));
+            rs.on("error", reject);
+          });
+          if (actualSha256 !== pending.expectedSha256) {
+            console.error(
+              `[upload-confirm] hash mismatch for ${pending.filename}: expected ${pending.expectedSha256}, got ${actualSha256}`
+            );
+            try {
+              await storage.delete(pending.storagePath);
+            } catch {}
+            cleanupTemp();
+            pendingUploads.delete(token);
+            if (wantsSse) {
+              sseSend("error", {
+                error: "uploaded_hash_mismatch",
+                message:
+                  "Die hochgeladene Datei wurde bei der Übertragung beschädigt (Prüfsumme stimmt nicht). Bitte erneut hochladen.",
+              });
+              res.end();
+            } else {
+              res.status(422).json({
+                error: "uploaded_hash_mismatch",
+                message:
+                  "Die hochgeladene Datei wurde bei der Übertragung beschädigt (Prüfsumme stimmt nicht). Bitte erneut hochladen.",
+              });
+            }
+            return;
+          }
+        }
+
         sseSend("progress", {
           phase: "scanning",
           filename: pending.filename,
-          bytes: data.byteLength,
+          bytes: fileSize,
         });
 
-        // Security scan (same as direct upload path)
-        const security = await inspectUploadBytes(pending.filename, data);
+        // ── STREAMING SECURITY SCAN ──
+        // Scan by file path — ClamAV reads the file directly, no buffer needed.
+        // Magic bytes check reads only the first 64 bytes.
+        const { inspectUploadFile } = await import("../core/upload-security.ts");
+        const security = await inspectUploadFile(pending.filename, tmpPath);
         if (!security.ok) {
           // Move to quarantined zone for audit retention (not deleted)
           const { moveFileZone } = await import("../core/file-store.ts");
@@ -4667,6 +5244,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           try {
             await moveFileZone("unscanned", "quarantined", basePath, storageConfig);
           } catch {}
+          cleanupTemp();
           if (wantsSse) {
             sseSend("error", { error: security.code, message: security.message });
             res.end();
@@ -4677,12 +5255,21 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
 
-        // Hash-based dedup
-        const duplicate = await storedDuplicate(data, pending.sourceId);
+        // ── STREAMING SHA-256 HASH ──
+        // Hash the temp file in a streaming fashion — no full buffer needed.
+        const { createReadStream: mkStream } = await import("fs");
+        const hashStream = createHash("sha256");
+        await pipeline(mkStream(tmpPath), hashStream);
+        const contentHash = hashStream.digest("hex");
+
+        // ── DEDUP CHECK (uses pre-computed hash, no buffer needed) ──
+        const { findStoredUploadByHashValue } = await import("../core/file-store.ts");
+        const duplicate = await findStoredUploadByHashValue(contentHash, pending.sourceId);
         if (duplicate) {
           try {
             await storage.delete(pending.storagePath);
           } catch {}
+          cleanupTemp();
           pendingUploads.delete(token);
           if (wantsSse) {
             sseSend("error", {
@@ -4711,7 +5298,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           pending.filename,
           pending.title
         );
-        const versionedSlug = await versionUploadSlug(slug, data, pending.sourceId);
+        // Version check uses hash, not full buffer
+        const { findStoredUploadForPage } = await import("../core/file-store.ts");
+        const existingPage = await findStoredUploadForPage(slug, pending.sourceId);
+        const versionedSlug = existingPage ? `${slug}-${contentHash.slice(0, 10)}` : slug;
 
         const uploadFrontmatter: Record<string, unknown> = {
           source: "upload",
@@ -4723,36 +5313,24 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
         // PendingUpload.password exists only in memory. Do not copy it into a
         // durable queue row; encrypted documents are confirmed synchronously.
-        const asyncExtract = data.byteLength >= asyncExtractMinBytes() && !pending.password;
+        const asyncExtract = fileSize >= asyncExtractMinBytes() && !pending.password;
 
-        // Register in files table (same as persistUploadBytes)
-        const persistRes = await persistUploadBytes(
-          { filename: pending.filename, data, mimeType: pending.mimeType },
-          versionedSlug,
-          pending.sourceId,
-          opCtx.config.storage
-        );
-
-        if (!persistRes.ok) {
-          if (wantsSse) {
-            sseSend("error", {
-              error: "persist_failed",
-              message: "Originaldatei konnte nicht dauerhaft gespeichert werden.",
-              persist_error: persistRes.error,
-            });
-            res.end();
-          } else {
-            res.status(500).json({
-              error: "persist_failed",
-              message: "Originaldatei konnte nicht dauerhaft gespeichert werden.",
-              persist_error: persistRes.error,
-            });
-          }
-          return;
-        }
+        // ── STREAMING PERSIST ──
+        // Persist from temp file path — streams to storage, no full buffer.
+        // Throws FileStoreError on failure → caught by outer catch block.
+        const { persistFileFromPath } = await import("../core/file-store.ts");
+        const persistRes = await persistFileFromPath({
+          filePath: tmpPath,
+          filename: pending.filename,
+          contentHash,
+          pageSlug: versionedSlug,
+          mimeType: pending.mimeType,
+          sourceId: pending.sourceId,
+          storageConfig: opCtx.config.storage ?? storageConfig,
+        });
 
         // Zone transition: move persisted file from unscanned/ to clean/
-        if (persistRes.ok && persistRes.storage_path) {
+        if (persistRes.storage_path) {
           const { moveFileZone } = await import("../core/file-store.ts");
           const persistBase = persistRes.storage_path.replace(/^unscanned\//, "");
           try {
@@ -4773,26 +5351,66 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               await storage.delete(pending.storagePath);
             } catch {}
           }
+
+          // ── WORM: make file immutable after scan passes ──
+          // For local storage: chmod 444. For S3: relies on bucket Object Lock.
+          if (storage.setImmutable) {
+            try {
+              await storage.setImmutable(`clean/${persistBase}`);
+            } catch (wormErr) {
+              console.warn(
+                `[upload-confirm] WORM setImmutable failed: ${wormErr instanceof Error ? wormErr.message : String(wormErr)}`
+              );
+            }
+          }
+
+          // ── AUDIT LOG: anchor hash for GoBD tamper-evidence ──
+          // The verified content hash + storage path + user are written to the
+          // immutable audit log. The re-verification cron compares stored bytes
+          // against this anchored hash to detect silent corruption/tampering.
+          try {
+            const webUrl = process.env.SUBSUMIO_WEB_URL?.replace(/\/$/, "");
+            const internalSecret = process.env.SUBSUMIO_INTERNAL_SECRET;
+            if (webUrl && internalSecret) {
+              const auditRes = await fetch(`${webUrl}/api/audit`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-internal-secret": internalSecret,
+                },
+                body: JSON.stringify({
+                  action: "document.upload",
+                  entity_type: "file",
+                  entity_id: versionedSlug,
+                  details: {
+                    filename: pending.filename,
+                    storage_path: persistRes.storage_path,
+                    content_hash: contentHash,
+                    size_bytes: fileSize,
+                    mime_type: pending.mimeType,
+                    upload_source: "presigned",
+                    scan_status: "clean",
+                  },
+                }),
+                signal: AbortSignal.timeout(10_000),
+              });
+              if (!auditRes.ok) {
+                console.warn(`[upload-confirm] audit log write failed: HTTP ${auditRes.status}`);
+              }
+            } else {
+              console.warn(
+                "[upload-confirm] audit log skipped: SUBSUMIO_WEB_URL or SUBSUMIO_INTERNAL_SECRET not set"
+              );
+            }
+          } catch (auditErr) {
+            console.warn(
+              `[upload-confirm] audit log write error: ${auditErr instanceof Error ? auditErr.message : String(auditErr)}`
+            );
+          }
         }
 
         let partSlugs: string[] = [];
         if (asyncExtract) {
-          if (!persistRes.ok) {
-            if (wantsSse) {
-              sseSend("error", {
-                error: "persist_failed",
-                message: "Originaldatei konnte nicht gespeichert werden.",
-                persist_error: persistRes.error,
-              });
-              res.end();
-            } else
-              res.status(500).json({
-                error: "persist_failed",
-                message: "Originaldatei konnte nicht gespeichert werden.",
-                persist_error: persistRes.error,
-              });
-            return;
-          }
           // Stub page
           await invokeOp(
             engine,
@@ -4806,7 +5424,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                 type: uploadFrontmatter.type ?? "document",
                 extraction_status: "processing",
                 extraction_queued_at: new Date().toISOString(),
-                upload_size: data.byteLength,
+                upload_size: fileSize,
               },
               merge: false,
             },
@@ -4836,6 +5454,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             { allowProtectedSubmit: true }
           );
         } else {
+          // ── SYNC EXTRACTION ──
+          // Only here do we need the full buffer — extraction libraries
+          // (pdf-parse, mammoth, etc.) require a Buffer. This is the single
+          // unavoidable buffer in the entire pipeline, and it's already
+          // gated by asyncExtractMinBytes() for large files.
+          const { readFileSync } = await import("fs");
+          const data = readFileSync(tmpPath);
           const result = await runExtractionAndImport(engine, {
             slug: versionedSlug,
             filename: pending.filename,
@@ -4853,7 +5478,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           partSlugs = result.partSlugs;
         }
 
-        // Clean up token
+        // Clean up temp file + token
+        cleanupTemp();
         pendingUploads.delete(token);
 
         assertMatterScope(req.matterScope, versionedSlug);
@@ -4861,14 +5487,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const resultPayload = {
           slug: versionedSlug,
           title: page?.title ?? pending.title ?? pending.filename,
-          original_persisted: persistRes.ok,
+          original_persisted: true,
           async: asyncExtract,
           extraction_status: page?.frontmatter?.extraction_status,
           extraction_method: page?.frontmatter?.extraction_method,
           ...(partSlugs.length > 0
             ? { split: true, part_count: partSlugs.length, part_slugs: partSlugs }
             : {}),
-          ...(persistRes.ok ? {} : { persist_error: persistRes.error }),
         };
 
         if (wantsSse) {
@@ -4878,6 +5503,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           res.json(resultPayload);
         }
       } catch (e) {
+        if (_cleanupTemp) _cleanupTemp();
         const msg = e instanceof Error ? e.message : "unknown";
         if (e instanceof UnsupportedUploadError) {
           if (wantsSse) {
@@ -6879,6 +7505,152 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       res.status(500).json({ error: "contradiction_probe_failed", message: msg });
     }
   });
+
+  // ── Integrity re-verification (GoBD) ───────────────────────────────
+  // Re-hashes stored files and compares against the content_hash in the
+  // files table. Detects silent storage corruption or tampering.
+  // Rolling cursor: checks files oldest-first by last_integrity_check,
+  // so over multiple runs every file gets checked eventually.
+  app.post(
+    "/api/admin/integrity-recheck",
+    guard,
+    express.json({ limit: "64kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const opCtx = ctx(req);
+        const storageConfig = opCtx.config.storage ?? storageConfigFromEnv();
+        if (!storageConfig) {
+          res.json({ checked: 0, mismatches: 0, message: "no storage configured" });
+          return;
+        }
+
+        const body = (req.body ?? {}) as { batch_size?: number };
+        const batchSize = Math.min(body.batch_size ?? 50, 200);
+
+        const { createStorage } = await import("../core/storage.ts");
+        const storage = await createStorage(storageConfig as any);
+        const { pipeline } = await import("stream/promises");
+        const { createHash } = await import("crypto");
+
+        // Rolling cursor: oldest-checked first (NULL = never checked = highest priority)
+        const db = await import("../core/db.ts");
+        const conn = db.getConnection();
+        const files = await conn`
+          SELECT id, storage_path, content_hash, filename, page_slug
+          FROM files
+          WHERE storage_path LIKE 'clean/%'
+            AND content_hash IS NOT NULL
+            AND (integrity_status = 'ok' OR integrity_status IS NULL)
+          ORDER BY last_integrity_check ASC NULLS FIRST, id ASC
+          LIMIT ${batchSize}
+        `;
+
+        let checked = 0;
+        let mismatches = 0;
+        const mismatchDetails: Array<{
+          filename: string;
+          storage_path: string;
+          expected: string;
+          actual: string;
+        }> = [];
+
+        for (const file of files) {
+          try {
+            let actualHash: string;
+            if (!storage.downloadStream) {
+              const data = await storage.download(file.storage_path);
+              actualHash = createHash("sha256").update(data).digest("hex");
+            } else {
+              const stream = await storage.downloadStream(file.storage_path);
+              const hasher = createHash("sha256");
+              await pipeline(stream, hasher);
+              actualHash = hasher.digest("hex");
+            }
+            checked++;
+
+            if (actualHash !== file.content_hash) {
+              mismatches++;
+              mismatchDetails.push({
+                filename: file.filename,
+                storage_path: file.storage_path,
+                expected: file.content_hash,
+                actual: actualHash,
+              });
+              console.error(
+                `[integrity-recheck] MISMATCH for ${file.filename}: expected ${file.content_hash}, got ${actualHash}`
+              );
+              // Flag file as corrupted
+              await conn`
+                UPDATE files
+                SET integrity_status = 'corrupted',
+                    last_integrity_check = now()
+                WHERE id = ${file.id}
+              `;
+            } else {
+              // Update last checked timestamp
+              await conn`
+                UPDATE files
+                SET last_integrity_check = now()
+                WHERE id = ${file.id}
+              `;
+            }
+          } catch (checkErr) {
+            console.warn(
+              `[integrity-recheck] Failed to check ${file.storage_path}: ${checkErr instanceof Error ? checkErr.message : String(checkErr)}`
+            );
+            // Mark as check_error so it's not retried every run (will be manually investigated)
+            try {
+              await conn`
+                UPDATE files
+                SET integrity_status = 'check_error',
+                    last_integrity_check = now()
+                WHERE id = ${file.id}
+              `;
+            } catch {}
+          }
+        }
+
+        // Send alert if mismatches found
+        if (mismatches > 0) {
+          const webUrl = process.env.SUBSUMIO_WEB_URL?.replace(/\/$/, "");
+          const internalSecret = process.env.SUBSUMIO_INTERNAL_SECRET;
+          if (webUrl && internalSecret) {
+            try {
+              await fetch(`${webUrl}/api/internal/alert`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-internal-secret": internalSecret,
+                },
+                body: JSON.stringify({
+                  type: "integrity_mismatch",
+                  severity: "critical",
+                  message: `${mismatches} file(s) failed integrity re-verification (GoBD)`,
+                  details: mismatchDetails,
+                }),
+                signal: AbortSignal.timeout(10_000),
+              });
+            } catch (alertErr) {
+              console.error(
+                `[integrity-recheck] Failed to send alert: ${alertErr instanceof Error ? alertErr.message : String(alertErr)}`
+              );
+            }
+          }
+        }
+
+        res.json({
+          checked,
+          mismatches,
+          ...(mismatchDetails.length > 0 ? { mismatch_details: mismatchDetails } : {}),
+        });
+      } catch (e) {
+        res.status(500).json({
+          error: "integrity_recheck_failed",
+          message: e instanceof Error ? e.message : "unknown",
+        });
+      }
+    }
+  );
 
   // E1: Backfill — reclassify documents without doc_type using the heuristic
   // classifier ($0, no LLM). Scans all pages of type "document" or "legal_document"

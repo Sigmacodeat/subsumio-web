@@ -415,15 +415,9 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
           <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
             {UI_STRINGS[lang].inDashboard}
           </p>
-          <h2 className={`${H2_CTA_CLASS} mb-4`}>
-            {lang !== "en"
-              ? "Jede Funktion läuft als Kanzlei-Workflow."
-              : "Features run as a legal workflow."}
-          </h2>
+          <h2 className={`${H2_CTA_CLASS} mb-4`}>{UI_STRINGS[lang].featuresWorkflowTitle}</h2>
           <p className="max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
-            {lang !== "en"
-              ? "Akte, Copilot, Frist, Quelle und Freigabe greifen ineinander. Deshalb beschreibt Subsumio jede Funktion im Kontext der Oberfläche, in der Anwälte sie wirklich benutzen."
-              : "Matter, copilot, deadline, source and approval work together. That is why Subsumio describes every capability in the dashboard context lawyers actually use."}
+            {UI_STRINGS[lang].featuresWorkflowSub}
           </p>
         </motion.div>
 
@@ -524,10 +518,11 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
                     {panels[step].sub}
                   </p>
                   <div className="space-y-2">
-                    {(lang !== "en"
-                      ? ["Quelle geprüft", "Berechtigung aktiv", "Nächster Schritt vorbereitet"]
-                      : ["Source verified", "Permission active", "Next step prepared"]
-                    ).map((line, i) => (
+                    {[
+                      UI_STRINGS[lang].featuresChecklist1,
+                      UI_STRINGS[lang].featuresChecklist2,
+                      UI_STRINGS[lang].featuresChecklist3,
+                    ].map((line, i) => (
                       <motion.div
                         key={line}
                         initial={{ opacity: 0, x: -6 }}
@@ -619,9 +614,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             <div className="glass relative rounded-3xl p-6 shadow-2xl shadow-black/40">
               <GraphHero lang={lang} />
               <p className="mt-2 text-center font-mono text-xs [color:var(--mk-text-subtle)]">
-                {lang === "en"
-                  ? "typed edges, extracted on every write"
-                  : "typisierte Kanten, bei jedem Speichern erkannt"}
+                {UI_STRINGS[lang].featuresGraphCaption}
               </p>
             </div>
           </motion.div>
@@ -782,9 +775,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                 <div className="px-8 text-center">
                   {CatIcon && <CatIcon size={32} className="brand-text mx-auto mb-4" />}
                   <p className="max-w-xs text-sm [color:var(--mk-text-subtle)]">
-                    {lang === "en"
-                      ? "Enforced by tests, not policy docs — deterministic, verifiable behavior."
-                      : "Durch Tests erzwungen, nicht durch Policy-Dokumente — deterministisches, prüfbares Verhalten."}
+                    {UI_STRINGS[lang].featuresEmptyState}
                   </p>
                 </div>
               </div>
@@ -807,15 +798,9 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             <div className="brand-soft brand-border mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border">
               <Shield size={24} className="brand-text" />
             </div>
-            <h2 className={`${H2_CTA_CLASS} mb-3`}>
-              {lang === "en"
-                ? "Built for confidentiality-first work"
-                : "Gebaut für vertrauliche Arbeit"}
-            </h2>
+            <h2 className={`${H2_CTA_CLASS} mb-3`}>{UI_STRINGS[lang].featuresSecurityTitle}</h2>
             <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
-              {lang === "en"
-                ? "Self-hosting, tested isolation, EU AI Act compliance, and an honest roadmap. The full security and data-protection story lives on its own page."
-                : "On-Premise-Betrieb, getestete Isolation, EU-AI-Act-Compliance und eine ehrliche Roadmap. Die vollständige Sicherheits- und Datenschutzdarstellung hat eine eigene Seite."}
+              {UI_STRINGS[lang].featuresSecuritySub}
             </p>
             <Link href={p(lang, "/security")}>
               <Button size="lg" variant="secondary">
@@ -829,9 +814,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
       {/* Everything at a glance */}
       <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
         <h2 className={`${H2_CTA_CLASS} mb-12 text-center`}>
-          {lang === "en"
-            ? "Five capability areas, one engine"
-            : "Fünf Funktionsbereiche, eine Engine"}
+          {UI_STRINGS[lang].featuresGlanceTitle}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {t.categories.map((c, i) => {

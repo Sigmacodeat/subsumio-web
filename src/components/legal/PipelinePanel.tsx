@@ -85,19 +85,62 @@ interface PipelineState {
   total_duration_ms?: number;
 }
 
+// Corrected against the actual backend bucket assignments in
+// server/src/core/minions/handlers/legal-pipeline.ts (state.layers[N].output_slugs
+// writes). The backend groups many specialist sub-analyses into the SAME numeric
+// bucket (e.g. bucket 4 alone holds 7 distinct analyses) — the label here now names
+// the bucket's real scope instead of a single (previously wrong) sub-analysis name,
+// and SUB_TYPE_LABELS below renders each individual page with its own label so nothing
+// hides behind a generic bucket name.
 const LAYER_INFO: Array<{
   num: number;
   name: string;
   icon: typeof FileText;
-  type: string;
 }> = [
-  { num: 1, name: "ON-Scanner", icon: FileText, type: "on_index" },
-  { num: 2, name: "Entity-Extractor", icon: Users, type: "person" },
-  { num: 3, name: "Forensic Analyst", icon: Gavel, type: "forensic_report" },
-  { num: 4, name: "Damage + Deadline", icon: Table, type: "damage_table" },
-  { num: 5, name: "Legal Drafter", icon: PenTool, type: "legal_draft" },
-  { num: 6, name: "Legal Critic", icon: ShieldCheck, type: "quality_audit" },
+  { num: 1, name: "ON-Scanner", icon: FileText },
+  { num: 2, name: "Entity-Extractor", icon: Users },
+  { num: 3, name: "Forensic Analyst", icon: Gavel },
+  { num: 4, name: "Rechtliche Tiefenanalyse", icon: Scale },
+  { num: 5, name: "Schaden, Fristen & Prozessrisiko", icon: Table },
+  { num: 6, name: "Schriftsatz & Gegenargumente", icon: PenTool },
 ];
+
+/** Per-page-type label shown on each output card, so a page is self-explanatory
+ * regardless of which numeric bucket the backend filed it under. */
+const SUB_TYPE_LABELS: Record<string, string> = {
+  on_index: "ON-Index",
+  person: "Entität",
+  forensic_report: "Forensische Analyse",
+  legal_grounding_map: "Rechtsgrundlagen (§-Retrieval)",
+  precedent_match: "Präzedenzfälle (OGH/BGH/BVerfG)",
+  burden_of_proof: "Beweislastverteilung",
+  admissibility_check: "Zulässigkeitsprüfung",
+  fact_gap_analysis: "Sachverhaltslücken",
+  witness_expert_analysis: "Zeugen & Gutachter",
+  evidence_quality_analysis: "Beweiskraft-Bewertung",
+  damage_table: "Schadenstabelle",
+  deadline_calendar: "Fristenkalender",
+  deadline_validation: "Fristenprüfung (§-Cross-Check)",
+  cost_benefit: "Kosten-Nutzen-Analyse",
+  settlement_analysis: "Vergleichsanalyse (BATNA/ZOPA)",
+  enforcement_analysis: "Vollstreckungsanalyse",
+  appeal_risk_analysis: "Berufungsrisiko",
+  procedural_strategy: "Verfahrensstrategie",
+  insurance_coverage: "Versicherungsdeckung",
+  tax_impact_analysis: "Steuerliche Auswirkung",
+  counterclaim_risk_analysis: "Widerklagerisiko",
+  mediation_adr_analysis: "Mediation/Schlichtung",
+  limitation_scan_analysis: "Verjährungs-Scan",
+  cost_award_analysis: "Kostenentscheidung",
+  legal_draft: "Schriftsatz-Entwurf",
+  counter_arguments: "Gegenargumente (Opponent-Simulation)",
+  quality_audit: "Qualitätsprüfung",
+};
+
+function subTypeLabel(type: unknown): string | null {
+  if (typeof type !== "string" || !type) return null;
+  return SUB_TYPE_LABELS[type] ?? null;
+}
 
 function layerStatusColor(status: string): string {
   switch (status) {

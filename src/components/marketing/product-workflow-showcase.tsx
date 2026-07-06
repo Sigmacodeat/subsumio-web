@@ -52,7 +52,7 @@ const copy = {
 } as const;
 
 function locale(lang: Lang) {
-  return lang !== "en" ? "de" : "en";
+  return lang === "en" ? "en" : "de";
 }
 
 export default function ProductWorkflowShowcase({

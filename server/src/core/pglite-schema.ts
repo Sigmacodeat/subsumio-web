@@ -345,6 +345,8 @@ CREATE TABLE IF NOT EXISTS files (
   size_bytes   BIGINT,
   content_hash TEXT   NOT NULL,
   metadata     JSONB  NOT NULL DEFAULT '{}',
+  integrity_status TEXT NOT NULL DEFAULT 'ok',
+  last_integrity_check TIMESTAMPTZ,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(storage_path)
 );
@@ -353,6 +355,7 @@ CREATE INDEX IF NOT EXISTS idx_files_page ON files(page_slug);
 CREATE INDEX IF NOT EXISTS idx_files_page_id ON files(page_id);
 CREATE INDEX IF NOT EXISTS idx_files_source_id ON files(source_id);
 CREATE INDEX IF NOT EXISTS idx_files_hash ON files(content_hash);
+CREATE INDEX IF NOT EXISTS idx_files_integrity ON files(integrity_status) WHERE integrity_status != 'ok';
 
 -- ============================================================
 -- timeline_entries: structured timeline
