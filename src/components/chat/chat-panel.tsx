@@ -1876,14 +1876,6 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         onSessionSearchChange={setSessionSearch}
       />
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-2 text-xs text-[color:var(--ds-text-subtle)]">
-        <span className="inline-flex items-center gap-1.5 font-medium text-[color:var(--ds-text-muted)]">
-          {t("chat.trust_badge")}
-        </span>
-        <span className="hidden h-3 w-px bg-[color:var(--ds-border)] sm:block" aria-hidden />
-        <span>{t("chat.trust_desc")}</span>
-      </div>
-
       {/* Messages area */}
       <div
         ref={scrollContainerRef}

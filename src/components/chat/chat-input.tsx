@@ -176,13 +176,13 @@ export function ChatInput({
   return (
     <div
       className={cn(
-        "border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]",
+        "bg-gradient-to-t from-[color:var(--ds-surface)] via-[color:var(--ds-surface)] to-transparent pt-2",
         className
       )}
     >
       {/* Attachments preview */}
       {attachments.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 px-3 pt-2">
+        <div className="flex flex-wrap gap-1.5 px-4 pt-2">
           {attachments.map((att) => (
             <span
               key={att.slug}
@@ -290,15 +290,15 @@ export function ChatInput({
         </div>
       )}
 
-      <div className="px-4 pt-3 pb-4">
+      <div className="px-4 pb-4">
         <div
           className={cn(
-            "relative flex items-end gap-2 rounded-xl border bg-[color:var(--ds-surface)] px-3 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-[border-color,box-shadow] duration-200 focus-within:shadow-[0_1px_2px_rgba(15,23,42,0.03),0_4px_12px_rgba(15,23,42,0.05)]",
+            "relative flex items-end gap-1.5 rounded-2xl border bg-[color:var(--ds-surface)] px-2.5 py-2 shadow-sm transition-[border-color,box-shadow] duration-200 focus-within:shadow-md",
             overLimit
               ? "border-red-500"
               : nearLimit
                 ? "border-amber-400/60"
-                : "border-[color:var(--ds-border)] focus-within:border-[color:var(--ds-control-border)]"
+                : "border-[color:var(--ds-border)] focus-within:border-[color:var(--brand-primary)]/40"
           )}
         >
           {/* Template picker — compact icon */}
@@ -306,7 +306,7 @@ export function ChatInput({
             <button
               onClick={() => setShowTemplates((v) => !v)}
               disabled={isStreaming || disabled}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
               aria-label={t("chat.input.templates")}
               title={t("chat.input.templates")}
             >
@@ -355,7 +355,7 @@ export function ChatInput({
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isStreaming || uploading || disabled}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
                 aria-label={t("chat.input.upload_file")}
                 title={t("chat.input.upload_file")}
               >
@@ -397,6 +397,12 @@ export function ChatInput({
             className="min-h-[40px] flex-1 resize-none bg-transparent px-1 py-2 text-[14px] leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none disabled:opacity-50"
             aria-label={t("chat.input.enter_message")}
           />
+          {/* Micro hint — Enter to send */}
+          {text.length === 0 && !isStreaming && (
+            <span className="pointer-events-none absolute right-14 bottom-2.5 hidden text-[11px] text-[color:var(--ds-text-subtle)]/50 sm:block">
+              ↵
+            </span>
+          )}
 
           {/* Char counter — visible when approaching limit */}
           {nearLimit && (
@@ -414,24 +420,24 @@ export function ChatInput({
           {isStreaming ? (
             <button
               onClick={() => onStop?.()}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-500 text-white shadow-sm transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-600 hover:shadow-md active:scale-95"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500 transition-[background-color,transform] duration-200 hover:bg-red-500/20 active:scale-95"
               aria-label={t("chat.input.stop_generation")}
               title={t("chat.input.stop_esc")}
             >
-              <Square size={14} className="fill-current" />
+              <Square size={13} className="fill-current" />
             </button>
           ) : (
             <button
               onClick={handleSubmit}
               disabled={!canSend}
               className={cn(
-                "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-white shadow-sm transition-[background-color,transform,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--brand-primary-hover)] hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none",
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-primary)] text-white transition-[background-color,transform,opacity] duration-200 hover:bg-[color:var(--brand-primary-hover)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-30",
                 overLimit && "bg-red-500"
               )}
               aria-label={t("chat.send")}
               title={t("chat.input.send_enter")}
             >
-              <Send size={16} />
+              <Send size={15} />
             </button>
           )}
         </div>

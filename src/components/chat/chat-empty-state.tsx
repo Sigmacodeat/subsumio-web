@@ -29,21 +29,24 @@ export function ChatEmptyState({
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-1 flex-col items-center justify-center px-6 py-8 text-center",
+        "flex min-h-0 flex-1 flex-col items-center justify-center px-6 py-10 text-center",
         className
       )}
     >
-      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] shadow-sm">
-        <MessageSquareText size={22} className="text-[color:var(--ds-text-muted)]" />
+      {/* Claude-style: large icon with brand accent */}
+      <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[color:var(--brand-primary)]/10">
+        <MessageSquareText size={24} className="text-[color:var(--brand-primary)]" />
       </div>
-      <h3 className="font-display text-lg font-semibold tracking-tight text-[color:var(--ds-text)]">
+
+      {/* Large editorial greeting */}
+      <h3 className="font-display text-2xl font-semibold tracking-tight text-[color:var(--ds-text)]">
         {userName
           ? lang === "en"
             ? `Hello, ${userName}`
             : `Guten Tag, ${userName}`
           : t("chat.empty_title")}
       </h3>
-      <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+      <p className="mt-2 max-w-md text-[15px] leading-relaxed text-[color:var(--ds-text-muted)]">
         {userName
           ? lang === "en"
             ? "How can I help you today?"
@@ -57,29 +60,38 @@ export function ChatEmptyState({
         )}
       </p>
 
-      <div className="mt-6 grid w-full max-w-md grid-cols-1 gap-2 sm:grid-cols-2">
+      {/* Pill-shaped suggestion buttons — ChatGPT/Claude style */}
+      <div className="mt-8 flex w-full max-w-lg flex-col items-center gap-2.5">
         {queries.slice(0, 4).map((q, i) => {
           const Icon = icons[i] ?? Search;
           return (
             <button
               key={i}
               onClick={() => onExampleClick(q)}
-              className="group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-left shadow-sm transition-[border-color,background-color,transform,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:shadow-md active:translate-y-0 active:scale-[0.98]"
+              className="group flex w-full max-w-sm items-center gap-3 rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-2.5 text-left transition-[border-color,background-color] duration-200 hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] active:scale-[0.98]"
             >
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-subtle)] transition-colors group-hover:text-[color:var(--ds-text)]">
-                <Icon size={14} />
-              </div>
-              <p className="line-clamp-2 text-[13px] leading-snug text-[color:var(--ds-text-muted)] transition-colors group-hover:text-[color:var(--ds-text)]">
+              <Icon
+                size={15}
+                className="shrink-0 text-[color:var(--ds-text-subtle)] transition-colors group-hover:text-[color:var(--brand-primary)]"
+              />
+              <span className="flex-1 truncate text-[13px] leading-snug text-[color:var(--ds-text-muted)] transition-colors group-hover:text-[color:var(--ds-text)]">
                 {q}
-              </p>
+              </span>
               <ArrowUpRight
-                size={12}
-                className="mt-0.5 shrink-0 text-[color:var(--ds-text-subtle)] opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                size={13}
+                className="shrink-0 text-[color:var(--ds-text-subtle)] opacity-0 transition-opacity duration-200 group-hover:opacity-100"
               />
             </button>
           );
         })}
       </div>
+
+      {/* Subtle micro-text disclaimer — replaces the old banner */}
+      <p className="mt-8 text-[11px] text-[color:var(--ds-text-subtle)]/70">
+        {lang === "en"
+          ? "AI draft — verify sources and deadlines before use."
+          : "KI-Entwurf — Belege und Fristen vor Verwendung anwaltlich prüfen."}
+      </p>
     </div>
   );
 }
