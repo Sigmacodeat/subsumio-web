@@ -396,30 +396,30 @@ export function DraftReviewPanel({
                       <div className="flex items-center gap-1 pt-1">
                         <button
                           onClick={() => updateIssue(issue.id, "accepted")}
-                          className="flex items-center gap-0.5 rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] text-emerald-600 hover:bg-emerald-500/20"
+                          className="flex items-center gap-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[10px] font-medium text-emerald-600 hover:bg-emerald-500/20"
                         >
-                          <Check size={8} />
+                          <Check size={11} />
                           {isEn ? "Accept" : "Akzeptieren"}
                         </button>
                         <button
                           onClick={() => updateIssue(issue.id, "rejected")}
-                          className="flex items-center gap-0.5 rounded border border-red-500/20 bg-red-500/10 px-1.5 py-0.5 text-[9px] text-red-600 hover:bg-red-500/20"
+                          className="flex items-center gap-1 rounded border border-red-500/20 bg-red-500/10 px-2 py-1 text-[10px] font-medium text-red-600 hover:bg-red-500/20"
                         >
-                          <XCircle size={8} />
+                          <XCircle size={11} />
                           {isEn ? "Reject" : "Ablehnen"}
                         </button>
                         <button
                           onClick={() => updateIssue(issue.id, "deferred")}
-                          className="flex items-center gap-0.5 rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-[9px] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                          className="flex items-center gap-1 rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2 py-1 text-[10px] font-medium text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                         >
-                          <Clock size={8} />
+                          <Clock size={11} />
                           {isEn ? "Defer" : "Zurückstellen"}
                         </button>
                       </div>
                     ) : (
                       <button
                         onClick={() => updateIssue(issue.id, "open")}
-                        className="text-[9px] text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
+                        className="text-[10px] text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
                       >
                         {isEn ? "Reopen" : "Wieder öffnen"}
                       </button>

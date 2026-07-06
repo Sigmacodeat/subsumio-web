@@ -5195,6 +5195,13 @@ export const D = {
   "copilot.more_actions": { de: "Mehr Aktionen", en: "More actions" },
   "copilot.tab_activity": { de: "Aktivität", en: "Activity" },
   "copilot.tab_chat": { de: "Chat", en: "Chat" },
+  "copilot.subtab_feed": { de: "Feed", en: "Feed" },
+  "copilot.subtab_notifications": { de: "Alerts", en: "Alerts" },
+  "copilot.subtab_memory": { de: "Gedächtnis", en: "Memory" },
+  "copilot.planning_hint": {
+    de: 'Tipp: Schreibe „Erstelle einen Plan für…" im Chat, um den Planungsmodus zu starten.',
+    en: 'Tip: Type "Create a plan for…" in chat to start planning mode.',
+  },
 
   // ── Copilot: route context labels ──
   "copilot.ctx.cases": { de: "Akten", en: "Cases" },
@@ -5457,6 +5464,9 @@ export const D = {
   "chat.share": { de: "Chat teilen", en: "Share chat" },
   "chat.share_title": { de: "Chat teilen (Link kopieren)", en: "Share chat (copy link)" },
   "chat.session_label": { de: "Session", en: "Session" },
+  "chat.header_session_case": { de: "Konversation & Akte", en: "Session & Case" },
+  "chat.header_mode_model": { de: "Modus & Modell", en: "Mode & Model" },
+  "chat.header_case_section": { de: "Akte", en: "Case" },
   "chat.pin": { de: "Anheften", en: "Pin" },
   "chat.unpin": { de: "Abheften", en: "Unpin" },
   "chat.export_btn": { de: "Exportieren", en: "Export" },

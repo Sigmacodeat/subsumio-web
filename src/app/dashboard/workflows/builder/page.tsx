@@ -65,70 +65,70 @@ const STEP_TYPES: {
     type: "analyze",
     labelKey: "builder.step.analyze",
     icon: <FileText size={14} />,
-    color: "#6366f1",
+    color: "var(--accent-premium)",
     prompt: "Analysiere den folgenden Text aus rechtlicher Sicht:",
   },
   {
     type: "summarize",
     labelKey: "builder.step.summarize",
     icon: <Edit3 size={14} />,
-    color: "#8b5cf6",
+    color: "var(--accent-premium)",
     prompt: "Fasse den folgenden juristischen Text zusammen:",
   },
   {
     type: "draft",
     labelKey: "builder.step.draft",
     icon: <FileText size={14} />,
-    color: "#06b6d4",
+    color: "var(--ds-info-text)",
     prompt: "Erstelle einen Vertragsentwurf basierend auf:",
   },
   {
     type: "risk",
     labelKey: "builder.step.risk",
     icon: <AlertTriangle size={14} />,
-    color: "#f59e0b",
+    color: "var(--ds-warning-text)",
     prompt: "Identifiziere rechtliche Risiken in:",
   },
   {
     type: "translate",
     labelKey: "builder.step.translate",
     icon: <Globe size={14} />,
-    color: "#10b981",
+    color: "var(--ds-success-text)",
     prompt: "Übersetze den folgenden juristischen Text ins Deutsche:",
   },
   {
     type: "review",
     labelKey: "builder.step.review",
     icon: <Eye size={14} />,
-    color: "#ec4899",
+    color: "var(--ds-danger-text)",
     prompt: "Menschliche Überprüfung erforderlich",
   },
   {
     type: "webhook",
     labelKey: "builder.step.webhook",
     icon: <Zap size={14} />,
-    color: "#f97316",
+    color: "var(--ds-warning-text)",
     prompt: "",
   },
   {
     type: "email",
     labelKey: "builder.step.email",
     icon: <Mail size={14} />,
-    color: "#3b82f6",
+    color: "var(--accent-premium)",
     prompt: "",
   },
   {
     type: "obligation",
     labelKey: "builder.step.obligation",
     icon: <CheckCircle size={14} />,
-    color: "#22c55e",
+    color: "var(--ds-success-text)",
     prompt: "Extrahiere alle Pflichten und Fristen aus:",
   },
   {
     type: "redline",
     labelKey: "builder.step.redline",
     icon: <Edit3 size={14} />,
-    color: "#ef4444",
+    color: "var(--ds-danger-text)",
     prompt: "Erstelle einen Redline für den folgenden Vertrag:",
   },
 ];
@@ -249,13 +249,13 @@ export default function WorkflowBuilderPage() {
           <path
             d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
             fill="none"
-            stroke="#6366f1"
+            stroke="var(--accent-premium)"
             strokeWidth="2"
             strokeOpacity="0.6"
           />
           <polygon
             points={`${x2},${y2} ${x2 - 6},${y2 - 6} ${x2 + 6},${y2 - 6}`}
-            fill="#6366f1"
+            fill="var(--accent-premium)"
             fillOpacity="0.6"
           />
         </g>
@@ -305,8 +305,8 @@ export default function WorkflowBuilderPage() {
         display: "flex",
         flexDirection: "column",
         height: "100vh",
-        background: "#0a0a18",
-        color: "#e8e8f0",
+        background: "var(--ds-bg)",
+        color: "var(--ds-text)",
         overflow: "hidden",
       }}
     >
@@ -317,8 +317,8 @@ export default function WorkflowBuilderPage() {
           alignItems: "center",
           gap: 12,
           padding: "10px 16px",
-          borderBottom: "1px solid #1e1e3a",
-          background: "#0d0d1a",
+          borderBottom: "1px solid var(--ds-border)",
+          background: "var(--ds-surface)",
           flexShrink: 0,
         }}
       >
@@ -334,7 +334,7 @@ export default function WorkflowBuilderPage() {
             style={{
               background: "none",
               border: "none",
-              color: "#e8e8f0",
+              color: "var(--ds-text)",
               fontSize: 15,
               fontWeight: 600,
               outline: "none",
@@ -348,7 +348,7 @@ export default function WorkflowBuilderPage() {
             style={{
               background: "none",
               border: "none",
-              color: "#8a8aa8",
+              color: "var(--ds-text-subtle)",
               fontSize: 12,
               outline: "none",
               flex: 1,
@@ -361,7 +361,7 @@ export default function WorkflowBuilderPage() {
             <Save size={14} />
             {saving ? "Speichern…" : saveStatus === "saved" ? "Gespeichert ✓" : "Speichern"}
           </Button>
-          <Button size="sm" style={{ gap: 4, background: "#6366f1" }}>
+          <Button size="sm" style={{ gap: 4, background: "var(--accent-premium)" }}>
             <Play size={14} /> Test
           </Button>
         </div>
@@ -372,8 +372,8 @@ export default function WorkflowBuilderPage() {
         <div
           style={{
             width: 180,
-            borderRight: "1px solid #1e1e3a",
-            background: "#0d0d1a",
+            borderRight: "1px solid var(--ds-border)",
+            background: "var(--ds-surface)",
             padding: "12px 8px",
             overflowY: "auto",
             flexShrink: 0,
@@ -382,7 +382,7 @@ export default function WorkflowBuilderPage() {
           <div
             style={{
               fontSize: 10,
-              color: "#6a6a8a",
+              color: "var(--ds-text-subtle)",
               textTransform: "uppercase",
               letterSpacing: "0.4px",
               marginBottom: 8,
@@ -401,10 +401,10 @@ export default function WorkflowBuilderPage() {
                 alignItems: "center",
                 gap: 8,
                 padding: "8px 8px",
-                border: "1px solid #1e1e3a",
+                border: "1px solid var(--ds-border)",
                 borderRadius: 6,
                 background: "none",
-                color: "#c0c0d8",
+                color: "var(--ds-text)",
                 cursor: "pointer",
                 fontSize: 12,
                 marginBottom: 4,
@@ -412,7 +412,7 @@ export default function WorkflowBuilderPage() {
                 transition: "all 0.1s",
               }}
               onMouseEnter={(e) => (e.currentTarget.style.borderColor = s.color)}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#1e1e3a")}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--ds-border)")}
             >
               <span style={{ color: s.color }}>{s.icon}</span>
               <span>{t(s.labelKey as import("@/content/dashboard").DashboardKey)}</span>
@@ -428,7 +428,8 @@ export default function WorkflowBuilderPage() {
             flex: 1,
             position: "relative",
             overflow: "auto",
-            background: "radial-gradient(circle at 50% 50%, #0f0f20 0%, #0a0a18 100%)",
+            background:
+              "radial-gradient(circle at 50% 50%, var(--ds-surface-2) 0%, var(--ds-bg) 100%)",
             cursor: dragging ? "grabbing" : "default",
           }}
           onClick={(e) => {
@@ -451,7 +452,7 @@ export default function WorkflowBuilderPage() {
                 <path
                   d="M 32 0 L 0 0 0 32"
                   fill="none"
-                  stroke="#1e1e3a"
+                  stroke="var(--ds-border)"
                   strokeWidth="0.5"
                   opacity="0.5"
                 />
@@ -470,7 +471,7 @@ export default function WorkflowBuilderPage() {
                 left: "50%",
                 transform: "translate(-50%,-50%)",
                 textAlign: "center",
-                color: "#6a6a8a",
+                color: "var(--ds-text-subtle)",
               }}
             >
               <Zap size={32} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
@@ -492,8 +493,8 @@ export default function WorkflowBuilderPage() {
                   left: step.x,
                   top: step.y,
                   width: 200,
-                  background: "#0d0d1a",
-                  border: `2px solid ${isSelected ? cfg.color : "#1e1e3a"}`,
+                  background: "var(--ds-surface)",
+                  border: `2px solid ${isSelected ? cfg.color : "var(--ds-border)"}`,
                   borderRadius: 8,
                   cursor: "grab",
                   userSelect: "none",
@@ -510,11 +511,11 @@ export default function WorkflowBuilderPage() {
                     alignItems: "center",
                     gap: 6,
                     padding: "8px 10px",
-                    borderBottom: "1px solid #1e1e3a",
+                    borderBottom: "1px solid var(--ds-border)",
                   }}
                 >
                   <span style={{ color: cfg.color }}>{cfg.icon}</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#e8e8f0", flex: 1 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ds-text)", flex: 1 }}>
                     {step.label}
                   </span>
                   <button
@@ -526,7 +527,7 @@ export default function WorkflowBuilderPage() {
                       background: "none",
                       border: "none",
                       cursor: "pointer",
-                      color: "#ef4444",
+                      color: "var(--ds-danger-text)",
                       padding: 2,
                       display: "flex",
                     }}
@@ -539,7 +540,7 @@ export default function WorkflowBuilderPage() {
                   style={{
                     padding: "6px 10px",
                     fontSize: 11,
-                    color: "#8a8aa8",
+                    color: "var(--ds-text-subtle)",
                     lineHeight: 1.4,
                     maxHeight: 40,
                     overflow: "hidden",
@@ -579,8 +580,8 @@ export default function WorkflowBuilderPage() {
           <div
             style={{
               width: 260,
-              borderLeft: "1px solid #1e1e3a",
-              background: "#0d0d1a",
+              borderLeft: "1px solid var(--ds-border)",
+              background: "var(--ds-surface)",
               padding: 14,
               overflowY: "auto",
               flexShrink: 0,
@@ -600,7 +601,12 @@ export default function WorkflowBuilderPage() {
               </div>
               <button
                 onClick={() => setSelectedStep(null)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#6a6a8a" }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "var(--ds-text-subtle)",
+                }}
               >
                 <X size={14} />
               </button>
@@ -610,7 +616,7 @@ export default function WorkflowBuilderPage() {
               <label
                 style={{
                   fontSize: 10,
-                  color: "#6a6a8a",
+                  color: "var(--ds-text-subtle)",
                   textTransform: "uppercase",
                   letterSpacing: "0.4px",
                   display: "block",
@@ -624,11 +630,11 @@ export default function WorkflowBuilderPage() {
                 onChange={(e) => updateStep(selected.id, { label: e.target.value })}
                 style={{
                   width: "100%",
-                  background: "#0a0a18",
-                  border: "1px solid #1e1e3a",
+                  background: "var(--ds-bg)",
+                  border: "1px solid var(--ds-border)",
                   borderRadius: 5,
                   padding: "6px 8px",
-                  color: "#e8e8f0",
+                  color: "var(--ds-text)",
                   fontSize: 12,
                 }}
               />
@@ -638,7 +644,7 @@ export default function WorkflowBuilderPage() {
               <label
                 style={{
                   fontSize: 10,
-                  color: "#6a6a8a",
+                  color: "var(--ds-text-subtle)",
                   textTransform: "uppercase",
                   letterSpacing: "0.4px",
                   display: "block",
@@ -668,7 +674,7 @@ export default function WorkflowBuilderPage() {
               <label
                 style={{
                   fontSize: 10,
-                  color: "#6a6a8a",
+                  color: "var(--ds-text-subtle)",
                   textTransform: "uppercase",
                   letterSpacing: "0.4px",
                   display: "block",
@@ -684,11 +690,11 @@ export default function WorkflowBuilderPage() {
                 }
                 style={{
                   width: "100%",
-                  background: "#0a0a18",
-                  border: "1px solid #1e1e3a",
+                  background: "var(--ds-bg)",
+                  border: "1px solid var(--ds-border)",
                   borderRadius: 5,
                   padding: "6px 8px",
-                  color: "#e8e8f0",
+                  color: "var(--ds-text)",
                   fontSize: 12,
                 }}
               >
@@ -707,7 +713,7 @@ export default function WorkflowBuilderPage() {
               <label
                 style={{
                   fontSize: 10,
-                  color: "#6a6a8a",
+                  color: "var(--ds-text-subtle)",
                   textTransform: "uppercase",
                   letterSpacing: "0.4px",
                   display: "block",
@@ -721,11 +727,11 @@ export default function WorkflowBuilderPage() {
                 onChange={(e) => updateStep(selected.id, { model: e.target.value || undefined })}
                 style={{
                   width: "100%",
-                  background: "#0a0a18",
-                  border: "1px solid #1e1e3a",
+                  background: "var(--ds-bg)",
+                  border: "1px solid var(--ds-border)",
                   borderRadius: 5,
                   padding: "6px 8px",
-                  color: "#e8e8f0",
+                  color: "var(--ds-text)",
                   fontSize: 12,
                 }}
               >
@@ -741,10 +747,10 @@ export default function WorkflowBuilderPage() {
               style={{
                 width: "100%",
                 padding: "8px",
-                background: "#ef444415",
-                border: "1px solid #ef444430",
+                background: "var(--ds-danger-soft)",
+                border: "1px solid var(--ds-danger-border)",
                 borderRadius: 5,
-                color: "#f87171",
+                color: "var(--ds-danger-text)",
                 fontSize: 12,
                 cursor: "pointer",
                 display: "flex",

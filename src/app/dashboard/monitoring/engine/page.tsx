@@ -112,28 +112,32 @@ function GaugeBar({
           justifyContent: "space-between",
           fontSize: 12,
           marginBottom: 4,
-          color: "#c0c0d8",
+          color: "var(--ds-text)",
         }}
       >
         <span>{label}</span>
-        <span style={{ fontWeight: 600, color: warn ? "#f59e0b" : "#e8e8f0" }}>
+        <span
+          style={{ fontWeight: 600, color: warn ? "var(--ds-warning-text)" : "var(--ds-text)" }}
+        >
           {value.toLocaleString("de-AT")}
           {unit} / {max.toLocaleString("de-AT")}
           {unit}
         </span>
       </div>
-      <div style={{ height: 8, background: "#1e1e3a", borderRadius: 4 }}>
+      <div style={{ height: 8, background: "var(--ds-border)", borderRadius: 4 }}>
         <div
           style={{
             height: "100%",
             width: `${pct}%`,
-            background: warn ? "#f59e0b" : color,
+            background: warn ? "var(--ds-warning-text)" : color,
             borderRadius: 4,
             transition: "width 0.5s",
           }}
         />
       </div>
-      <div style={{ fontSize: 10, color: "#6a6a8a", marginTop: 2 }}>{Math.round(pct)}% genutzt</div>
+      <div style={{ fontSize: 10, color: "var(--ds-text-subtle)", marginTop: 2 }}>
+        {Math.round(pct)}% genutzt
+      </div>
     </div>
   );
 }
@@ -153,23 +157,23 @@ function LatencyPill({
 }) {
   const color =
     ms === 0
-      ? "#6a6a8a"
+      ? "var(--ds-text-subtle)"
       : ms > thresholdCrit
-        ? "#ef4444"
+        ? "var(--ds-danger-text)"
         : ms > thresholdWarn
-          ? "#f59e0b"
-          : "#22c55e";
+          ? "var(--ds-warning-text)"
+          : "var(--ds-success-text)";
   return (
     <div
       style={{
         textAlign: "center",
         padding: "10px 8px",
-        background: "#0a0a18",
+        background: "var(--ds-bg)",
         borderRadius: 8,
         border: `1px solid ${color}30`,
       }}
     >
-      <div style={{ fontSize: 11, color: "#6a6a8a", marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 11, color: "var(--ds-text-subtle)", marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 22, fontWeight: 700, color, lineHeight: 1 }}>
         {ms === 0 ? "—" : ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`}
       </div>
@@ -180,7 +184,12 @@ function LatencyPill({
 // ── Status Dot ───────────────────────────────────────────────────────
 
 function StatusDot({ status }: { status: "healthy" | "degraded" | "down" | "loading" }) {
-  const colors = { healthy: "#22c55e", degraded: "#f59e0b", down: "#ef4444", loading: "#6a6a8a" };
+  const colors = {
+    healthy: "var(--ds-success-text)",
+    degraded: "var(--ds-warning-text)",
+    down: "var(--ds-danger-text)",
+    loading: "var(--ds-text-subtle)",
+  };
   const labels = {
     healthy: "Gesund",
     degraded: "Degradiert",
@@ -340,7 +349,14 @@ export default function EngineAPMPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0a18", color: "#e8e8f0", paddingBottom: 40 }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "var(--ds-bg)",
+        color: "var(--ds-text)",
+        paddingBottom: 40,
+      }}
+    >
       <PageHeader
         title={t("monitoring_engine.title")}
         description={t("monitoring_engine.description")}
@@ -365,7 +381,7 @@ export default function EngineAPMPage() {
             <StatusDot status={engineStatus} />
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 11, color: "#6a6a8a" }}>
+            <span style={{ fontSize: 11, color: "var(--ds-text-subtle)" }}>
               Zuletzt: {lastRefresh.toLocaleTimeString("de-AT")}
             </span>
             <button
@@ -374,9 +390,9 @@ export default function EngineAPMPage() {
                 fontSize: 11,
                 padding: "3px 8px",
                 borderRadius: 4,
-                background: autoRefresh ? "#6366f120" : "#1e1e3a",
-                border: `1px solid ${autoRefresh ? "#6366f140" : "#1e1e3a"}`,
-                color: autoRefresh ? "#6366f1" : "#6a6a8a",
+                background: autoRefresh ? "var(--accent-premium-soft)" : "var(--ds-surface)",
+                border: `1px solid ${autoRefresh ? "var(--accent-premium-border)" : "var(--ds-border)"}`,
+                color: autoRefresh ? "var(--accent-premium)" : "var(--ds-text-subtle)",
                 cursor: "pointer",
               }}
             >
@@ -401,8 +417,8 @@ export default function EngineAPMPage() {
         {/* Latency Section */}
         <div
           style={{
-            background: "#0d0d1a",
-            border: "1px solid #1e1e3a",
+            background: "var(--ds-surface)",
+            border: "1px solid var(--ds-border)",
             borderRadius: 10,
             padding: 16,
             marginBottom: 16,
@@ -412,14 +428,14 @@ export default function EngineAPMPage() {
             style={{
               fontSize: 12,
               fontWeight: 600,
-              color: "#c0c0d8",
+              color: "var(--ds-text)",
               marginBottom: 14,
               display: "flex",
               alignItems: "center",
               gap: 6,
             }}
           >
-            <Clock size={14} style={{ color: "#6366f1" }} /> Antwort-Latenz (Search)
+            <Clock size={14} style={{ color: "var(--accent-premium)" }} /> Antwort-Latenz (Search)
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
             <LatencyPill label="Ø Avg" ms={searchStats?.avgLatencyMs ?? 0} />
@@ -446,8 +462,8 @@ export default function EngineAPMPage() {
           {/* Search Quality */}
           <div
             style={{
-              background: "#0d0d1a",
-              border: "1px solid #1e1e3a",
+              background: "var(--ds-surface)",
+              border: "1px solid var(--ds-border)",
               borderRadius: 10,
               padding: 16,
             }}
@@ -456,14 +472,14 @@ export default function EngineAPMPage() {
               style={{
                 fontSize: 12,
                 fontWeight: 600,
-                color: "#c0c0d8",
+                color: "var(--ds-text)",
                 marginBottom: 14,
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
               }}
             >
-              <Search size={14} style={{ color: "#8b5cf6" }} /> Search-Qualität
+              <Search size={14} style={{ color: "var(--accent-premium)" }} /> Search-Qualität
             </div>
 
             {[
@@ -495,12 +511,17 @@ export default function EngineAPMPage() {
                   justifyContent: "space-between",
                   alignItems: "center",
                   padding: "7px 0",
-                  borderBottom: "1px solid #1a1a30",
+                  borderBottom: "1px solid var(--ds-border)",
                   fontSize: 12,
                 }}
               >
-                <span style={{ color: "#8a8aa8" }}>{row.label}</span>
-                <span style={{ fontWeight: 600, color: row.good ? "#22c55e" : "#f59e0b" }}>
+                <span style={{ color: "var(--ds-text-muted)" }}>{row.label}</span>
+                <span
+                  style={{
+                    fontWeight: 600,
+                    color: row.good ? "var(--ds-success-text)" : "var(--ds-warning-text)",
+                  }}
+                >
                   {row.value}
                 </span>
               </div>
@@ -511,7 +532,7 @@ export default function EngineAPMPage() {
                 <div
                   style={{
                     fontSize: 10,
-                    color: "#6a6a8a",
+                    color: "var(--ds-text-subtle)",
                     textTransform: "uppercase",
                     letterSpacing: "0.4px",
                     marginBottom: 8,
@@ -528,7 +549,7 @@ export default function EngineAPMPage() {
                         display: "flex",
                         justifyContent: "space-between",
                         fontSize: 11,
-                        color: "#8a8aa8",
+                        color: "var(--ds-text-muted)",
                         marginBottom: 3,
                       }}
                     >
@@ -545,8 +566,8 @@ export default function EngineAPMPage() {
           {/* Brain Health */}
           <div
             style={{
-              background: "#0d0d1a",
-              border: "1px solid #1e1e3a",
+              background: "var(--ds-surface)",
+              border: "1px solid var(--ds-border)",
               borderRadius: 10,
               padding: 16,
             }}
@@ -555,14 +576,14 @@ export default function EngineAPMPage() {
               style={{
                 fontSize: 12,
                 fontWeight: 600,
-                color: "#c0c0d8",
+                color: "var(--ds-text)",
                 marginBottom: 14,
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
               }}
             >
-              <Database size={14} style={{ color: "#06b6d4" }} /> Brain-Gesundheit
+              <Database size={14} style={{ color: "var(--ds-info-text)" }} /> Brain-Gesundheit
             </div>
 
             {[
@@ -570,7 +591,7 @@ export default function EngineAPMPage() {
               {
                 label: "Seiten im Brain",
                 value: (
-                  <span style={{ fontWeight: 600, color: "#e8e8f0" }}>
+                  <span style={{ fontWeight: 600, color: "var(--ds-text)" }}>
                     {(health?.pageCount ?? 0).toLocaleString("de-AT")}
                   </span>
                 ),
@@ -581,7 +602,10 @@ export default function EngineAPMPage() {
                   <span
                     style={{
                       fontWeight: 600,
-                      color: (health?.embeddingQueueDepth ?? 0) > 100 ? "#f59e0b" : "#22c55e",
+                      color:
+                        (health?.embeddingQueueDepth ?? 0) > 100
+                          ? "var(--ds-warning-text)"
+                          : "var(--ds-success-text)",
                     }}
                   >
                     {health?.embeddingQueueDepth ?? 0}
@@ -591,17 +615,23 @@ export default function EngineAPMPage() {
               {
                 label: "Vektor-Index",
                 value: (
-                  <span style={{ color: "#8a8aa8" }}>{fmtBytes(health?.vectorIndexSize)}</span>
+                  <span style={{ color: "var(--ds-text-muted)" }}>
+                    {fmtBytes(health?.vectorIndexSize)}
+                  </span>
                 ),
               },
               {
                 label: "DB-Größe",
-                value: <span style={{ color: "#8a8aa8" }}>{fmtBytes(health?.dbSizeBytes)}</span>,
+                value: (
+                  <span style={{ color: "var(--ds-text-muted)" }}>
+                    {fmtBytes(health?.dbSizeBytes)}
+                  </span>
+                ),
               },
               {
                 label: "Letztes Indexing",
                 value: (
-                  <span style={{ color: "#8a8aa8", fontSize: 11 }}>
+                  <span style={{ color: "var(--ds-text-muted)", fontSize: 11 }}>
                     {health?.lastIndexedAt
                       ? new Date(health.lastIndexedAt).toLocaleString("de-AT")
                       : "—"}
@@ -616,11 +646,11 @@ export default function EngineAPMPage() {
                   justifyContent: "space-between",
                   alignItems: "center",
                   padding: "7px 0",
-                  borderBottom: "1px solid #1a1a30",
+                  borderBottom: "1px solid var(--ds-border)",
                   fontSize: 12,
                 }}
               >
-                <span style={{ color: "#8a8aa8" }}>{row.label}</span>
+                <span style={{ color: "var(--ds-text-muted)" }}>{row.label}</span>
                 {row.value}
               </div>
             ))}
@@ -629,8 +659,8 @@ export default function EngineAPMPage() {
           {/* Pipeline / Job-Queue + DLQ */}
           <div
             style={{
-              background: "#0d0d1a",
-              border: "1px solid #1e1e3a",
+              background: "var(--ds-surface)",
+              border: "1px solid var(--ds-border)",
               borderRadius: 10,
               padding: 16,
             }}
@@ -639,14 +669,15 @@ export default function EngineAPMPage() {
               style={{
                 fontSize: 12,
                 fontWeight: 600,
-                color: "#c0c0d8",
+                color: "var(--ds-text)",
                 marginBottom: 14,
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
               }}
             >
-              <Database size={14} style={{ color: "#a855f7" }} /> Pipeline & Dead-Letter
+              <Database size={14} style={{ color: "var(--accent-premium)" }} /> Pipeline &
+              Dead-Letter
             </div>
 
             {[
@@ -656,7 +687,10 @@ export default function EngineAPMPage() {
                   <span
                     style={{
                       fontWeight: 600,
-                      color: (queueHealth?.waiting ?? 0) > 100 ? "#f59e0b" : "#22c55e",
+                      color:
+                        (queueHealth?.waiting ?? 0) > 100
+                          ? "var(--ds-warning-text)"
+                          : "var(--ds-success-text)",
                     }}
                   >
                     {queueHealth?.waiting ?? 0}
@@ -665,7 +699,9 @@ export default function EngineAPMPage() {
               },
               {
                 label: "Aktive Jobs",
-                value: <span style={{ color: "#8a8aa8" }}>{queueHealth?.active ?? 0}</span>,
+                value: (
+                  <span style={{ color: "var(--ds-text-muted)" }}>{queueHealth?.active ?? 0}</span>
+                ),
               },
               {
                 label: "Dead-lettered Jobs",
@@ -673,7 +709,10 @@ export default function EngineAPMPage() {
                   <span
                     style={{
                       fontWeight: 600,
-                      color: (queueHealth?.deadTotal ?? 0) > 0 ? "#ef4444" : "#22c55e",
+                      color:
+                        (queueHealth?.deadTotal ?? 0) > 0
+                          ? "var(--ds-danger-text)"
+                          : "var(--ds-success-text)",
                     }}
                   >
                     {queueHealth?.deadTotal ?? 0}
@@ -686,7 +725,10 @@ export default function EngineAPMPage() {
                   <span
                     style={{
                       fontWeight: 600,
-                      color: (queueHealth?.outboxExhausted ?? 0) > 0 ? "#ef4444" : "#22c55e",
+                      color:
+                        (queueHealth?.outboxExhausted ?? 0) > 0
+                          ? "var(--ds-danger-text)"
+                          : "var(--ds-success-text)",
                     }}
                   >
                     {queueHealth?.outboxExhausted ?? "—"}
@@ -699,7 +741,10 @@ export default function EngineAPMPage() {
                   <span
                     style={{
                       fontWeight: 600,
-                      color: (queueHealth?.docsFailed ?? 0) > 0 ? "#f59e0b" : "#22c55e",
+                      color:
+                        (queueHealth?.docsFailed ?? 0) > 0
+                          ? "var(--ds-warning-text)"
+                          : "var(--ds-success-text)",
                     }}
                   >
                     {queueHealth?.docsFailed ?? "—"}
@@ -711,7 +756,10 @@ export default function EngineAPMPage() {
                 value: (
                   <span
                     style={{
-                      color: (queueHealth?.wedgeMinutes ?? 0) > 30 ? "#f59e0b" : "#8a8aa8",
+                      color:
+                        (queueHealth?.wedgeMinutes ?? 0) > 30
+                          ? "var(--ds-warning-text)"
+                          : "var(--ds-text-muted)",
                     }}
                   >
                     {queueHealth?.wedgeMinutes != null
@@ -792,11 +840,11 @@ export default function EngineAPMPage() {
                   justifyContent: "space-between",
                   alignItems: "center",
                   padding: "7px 0",
-                  borderBottom: "1px solid #1a1a30",
+                  borderBottom: "1px solid var(--ds-border)",
                   fontSize: 12,
                 }}
               >
-                <span style={{ color: "#8a8aa8" }}>{row.label}</span>
+                <span style={{ color: "var(--ds-text-muted)" }}>{row.label}</span>
                 {row.value}
               </div>
             ))}
@@ -807,8 +855,8 @@ export default function EngineAPMPage() {
         {quota && (
           <div
             style={{
-              background: "#0d0d1a",
-              border: "1px solid #1e1e3a",
+              background: "var(--ds-surface)",
+              border: "1px solid var(--ds-border)",
               borderRadius: 10,
               padding: 16,
               marginBottom: 16,
@@ -826,16 +874,16 @@ export default function EngineAPMPage() {
                 style={{
                   fontSize: 12,
                   fontWeight: 600,
-                  color: "#c0c0d8",
+                  color: "var(--ds-text)",
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
                 }}
               >
-                <TrendingUp size={14} style={{ color: "#10b981" }} /> Quota-Nutzung
+                <TrendingUp size={14} style={{ color: "var(--ds-success-text)" }} /> Quota-Nutzung
               </div>
               {quota.resetAt && (
-                <span style={{ fontSize: 11, color: "#6a6a8a" }}>
+                <span style={{ fontSize: 11, color: "var(--ds-text-subtle)" }}>
                   Reset: {new Date(quota.resetAt).toLocaleDateString("de-AT")}
                 </span>
               )}
@@ -844,19 +892,19 @@ export default function EngineAPMPage() {
               label="Queries / Monat"
               value={quota.queriesUsed}
               max={quota.queriesLimit}
-              color="#6366f1"
+              color="var(--accent-premium)"
             />
             <GaugeBar
               label="Seiten im Brain"
               value={quota.pagesUsed}
               max={quota.pagesLimit}
-              color="#8b5cf6"
+              color="var(--accent-premium)"
             />
             <GaugeBar
               label="Embedding-Tokens"
               value={quota.embedTokensUsed}
               max={quota.embedTokensLimit}
-              color="#06b6d4"
+              color="var(--ds-info-text)"
               unit=""
             />
           </div>
@@ -865,8 +913,8 @@ export default function EngineAPMPage() {
         {/* Search Mode Info */}
         <div
           style={{
-            background: "#0d0d1a",
-            border: "1px solid #1e1e3a",
+            background: "var(--ds-surface)",
+            border: "1px solid var(--ds-border)",
             borderRadius: 10,
             padding: 16,
           }}
@@ -875,15 +923,15 @@ export default function EngineAPMPage() {
             style={{
               fontSize: 12,
               fontWeight: 600,
-              color: "#c0c0d8",
+              color: "var(--ds-text)",
               marginBottom: 14,
               display: "flex",
               alignItems: "center",
               gap: 6,
             }}
           >
-            <Zap size={14} style={{ color: "#f59e0b" }} /> Search-Mode Kostenschätzung (10K
-            Queries/Monat)
+            <Zap size={14} style={{ color: "var(--ds-warning-text)" }} /> Search-Mode
+            Kostenschätzung (10K Queries/Monat)
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
             {[
@@ -893,7 +941,7 @@ export default function EngineAPMPage() {
                 haiku: "€37",
                 sonnet: "€111",
                 opus: "€185",
-                color: "#22c55e",
+                color: "var(--ds-success-text)",
               },
               {
                 mode: "balanced",
@@ -901,7 +949,7 @@ export default function EngineAPMPage() {
                 haiku: "€93",
                 sonnet: "€278",
                 opus: "€463",
-                color: "#f59e0b",
+                color: "var(--ds-warning-text)",
               },
               {
                 mode: "tokenmax",
@@ -909,13 +957,13 @@ export default function EngineAPMPage() {
                 haiku: "€185",
                 sonnet: "€556",
                 opus: "€926",
-                color: "#ef4444",
+                color: "var(--ds-danger-text)",
               },
             ].map((m) => (
               <div
                 key={m.mode}
                 style={{
-                  background: "#0a0a18",
+                  background: "var(--ds-bg)",
                   borderRadius: 8,
                   padding: "12px 14px",
                   border: `1px solid ${m.color}20`,
@@ -937,21 +985,21 @@ export default function EngineAPMPage() {
                     {m.desc}
                   </Badge>
                 </div>
-                <div style={{ fontSize: 11, color: "#8a8aa8", lineHeight: 1.8 }}>
+                <div style={{ fontSize: 11, color: "var(--ds-text-muted)", lineHeight: 1.8 }}>
                   <div>
-                    Haiku 4.5: <span style={{ color: "#c0c0d8" }}>{m.haiku}/mo</span>
+                    Haiku 4.5: <span style={{ color: "var(--ds-text)" }}>{m.haiku}/mo</span>
                   </div>
                   <div>
-                    Sonnet 4.6: <span style={{ color: "#c0c0d8" }}>{m.sonnet}/mo</span>
+                    Sonnet 4.6: <span style={{ color: "var(--ds-text)" }}>{m.sonnet}/mo</span>
                   </div>
                   <div>
-                    Opus 4.8: <span style={{ color: "#c0c0d8" }}>{m.opus}/mo</span>
+                    Opus 4.8: <span style={{ color: "var(--ds-text)" }}>{m.opus}/mo</span>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 11, color: "#6a6a8a", marginTop: 10 }}>
+          <div style={{ fontSize: 11, color: "var(--ds-text-subtle)", marginTop: 10 }}>
             * Cache-Hits reduzieren Kosten um ~50%. Preise basierend auf Anthropic API Listenpreis.
           </div>
         </div>

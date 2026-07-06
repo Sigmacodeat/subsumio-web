@@ -97,31 +97,31 @@ function getStatusConfig(t: TFunc) {
   return {
     compliant: {
       icon: CheckCircle,
-      color: "#22c55e",
+      color: "var(--ds-success-text)",
       label: t("aiact.status_compliant"),
-      bg: "#22c55e15",
-      border: "#22c55e30",
+      bg: "var(--ds-success-bg)",
+      border: "var(--ds-success-border)",
     },
     partial: {
       icon: AlertTriangle,
-      color: "#f59e0b",
+      color: "var(--ds-warning-text)",
       label: t("aiact.status_partial"),
-      bg: "#f59e0b15",
-      border: "#f59e0b30",
+      bg: "var(--ds-warning-bg)",
+      border: "var(--ds-warning-border)",
     },
     pending: {
       icon: AlertTriangle,
-      color: "#6366f1",
+      color: "var(--accent-premium)",
       label: t("aiact.status_pending"),
-      bg: "#6366f115",
-      border: "#6366f130",
+      bg: "var(--accent-premium-soft)",
+      border: "var(--accent-premium-border)",
     },
     not_started: {
       icon: XCircle,
-      color: "#ef4444",
+      color: "var(--ds-danger-text)",
       label: t("aiact.status_not_started"),
-      bg: "#ef444415",
-      border: "#ef444430",
+      bg: "var(--ds-danger-bg)",
+      border: "var(--ds-danger-border)",
     },
   } as const;
 }
@@ -152,19 +152,23 @@ export default function AIActConformityPage() {
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <ShieldCheck size={22} style={{ color: "#6366f1" }} />
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: "#e8e8f0" }}>{t("aiact.title")}</h1>
+          <ShieldCheck size={22} style={{ color: "var(--accent-premium)" }} />
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--ds-text)" }}>
+            {t("aiact.title")}
+          </h1>
         </div>
-        <p style={{ fontSize: 13, color: "#8a8aa8", lineHeight: 1.6 }}>{t("aiact.intro")}</p>
+        <p style={{ fontSize: 13, color: "var(--ds-text-muted)", lineHeight: 1.6 }}>
+          {t("aiact.intro")}
+        </p>
         <div
           style={{
             marginTop: 8,
             padding: "8px 12px",
-            background: "#f59e0b15",
-            border: "1px solid #f59e0b30",
+            background: "var(--ds-warning-bg)",
+            border: "1px solid var(--ds-warning-border)",
             borderRadius: 6,
             fontSize: 12,
-            color: "#fbbf24",
+            color: "var(--ds-warning-text)",
           }}
         >
           <strong>{t("aiact.notice")}</strong>
@@ -181,15 +185,37 @@ export default function AIActConformityPage() {
             marginBottom: 16,
           }}
         >
-          <StatCard value={compliantCount} label={t("aiact.stat_compliant")} color="#22c55e" />
-          <StatCard value={partialCount} label={t("aiact.stat_partial")} color="#f59e0b" />
-          <StatCard value={pendingCount} label={t("aiact.stat_pending")} color="#6366f1" />
+          <StatCard
+            value={compliantCount}
+            label={t("aiact.stat_compliant")}
+            color="var(--ds-success-text)"
+            borderColor="var(--ds-success-border)"
+          />
+          <StatCard
+            value={partialCount}
+            label={t("aiact.stat_partial")}
+            color="var(--ds-warning-text)"
+            borderColor="var(--ds-warning-border)"
+          />
+          <StatCard
+            value={pendingCount}
+            label={t("aiact.stat_pending")}
+            color="var(--accent-premium)"
+            borderColor="var(--accent-premium-border)"
+          />
         </div>
-        <div style={{ background: "#0d0d1a", borderRadius: 6, height: 8, overflow: "hidden" }}>
+        <div
+          style={{
+            background: "var(--ds-surface)",
+            borderRadius: 6,
+            height: 8,
+            overflow: "hidden",
+          }}
+        >
           <div
             style={{
               height: "100%",
-              background: `linear-gradient(90deg, #22c55e ${(compliantCount / totalCount) * 100}%, #f59e0b ${(compliantCount / totalCount) * 100}% ${((compliantCount + partialCount) / totalCount) * 100}%, #6366f1 ${((compliantCount + partialCount) / totalCount) * 100}%)`,
+              background: `linear-gradient(90deg, var(--ds-success-text) ${(compliantCount / totalCount) * 100}%, var(--ds-warning-text) ${(compliantCount / totalCount) * 100}% ${((compliantCount + partialCount) / totalCount) * 100}%, var(--accent-premium) ${((compliantCount + partialCount) / totalCount) * 100}%)`,
             }}
           />
         </div>
@@ -197,7 +223,9 @@ export default function AIActConformityPage() {
 
       {/* Classification */}
       <Section title={t("aiact.section_classification")} icon={<FileText size={15} />}>
-        <p style={{ fontSize: 12, color: "#a0a0c0", lineHeight: 1.6, marginBottom: 12 }}>
+        <p
+          style={{ fontSize: 12, color: "var(--ds-text-muted)", lineHeight: 1.6, marginBottom: 12 }}
+        >
           {t("aiact.class_intro")}
         </p>
         <div style={{ display: "grid", gap: 8 }}>
@@ -233,20 +261,23 @@ export default function AIActConformityPage() {
                 gap: 8,
                 alignItems: "flex-start",
                 padding: "6px 0",
-                borderBottom: "1px solid #1e1e3a",
+                borderBottom: "1px solid var(--ds-border)",
               }}
             >
               {item.done ? (
-                <CheckCircle size={14} style={{ color: "#22c55e", flexShrink: 0, marginTop: 1 }} />
+                <CheckCircle
+                  size={14}
+                  style={{ color: "var(--ds-success-text)", flexShrink: 0, marginTop: 1 }}
+                />
               ) : (
                 <AlertTriangle
                   size={14}
-                  style={{ color: "#f59e0b", flexShrink: 0, marginTop: 1 }}
+                  style={{ color: "var(--ds-warning-text)", flexShrink: 0, marginTop: 1 }}
                 />
               )}
               <div>
-                <div style={{ fontSize: 12, color: "#e0e0e8" }}>{item.label}</div>
-                <div style={{ fontSize: 11, color: "#6a6a8a" }}>{item.where}</div>
+                <div style={{ fontSize: 12, color: "var(--ds-text)" }}>{item.label}</div>
+                <div style={{ fontSize: 11, color: "var(--ds-text-subtle)" }}>{item.where}</div>
               </div>
             </div>
           ))}
@@ -255,7 +286,9 @@ export default function AIActConformityPage() {
 
       {/* Human Oversight */}
       <Section title={t("aiact.section_oversight")} icon={<Eye size={15} />}>
-        <p style={{ fontSize: 12, color: "#a0a0c0", lineHeight: 1.6, marginBottom: 12 }}>
+        <p
+          style={{ fontSize: 12, color: "var(--ds-text-muted)", lineHeight: 1.6, marginBottom: 12 }}
+        >
           {t("aiact.oversight_intro")}
         </p>
         <div style={{ display: "grid", gap: 8 }}>
@@ -295,8 +328,8 @@ export default function AIActConformityPage() {
               key={item.title}
               style={{
                 padding: "8px 10px",
-                background: "#0d0d1a",
-                border: "1px solid #1e1e3a",
+                background: "var(--ds-surface)",
+                border: "1px solid var(--ds-border)",
                 borderRadius: 6,
               }}
             >
@@ -307,12 +340,23 @@ export default function AIActConformityPage() {
                   alignItems: "flex-start",
                 }}
               >
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#c0c0d8" }}>{item.title}</div>
-                <span style={{ fontSize: 11, color: "#22c55e", whiteSpace: "nowrap" }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--ds-text)" }}>
+                  {item.title}
+                </div>
+                <span
+                  style={{ fontSize: 11, color: "var(--ds-success-text)", whiteSpace: "nowrap" }}
+                >
                   {item.status}
                 </span>
               </div>
-              <div style={{ fontSize: 11, color: "#6a6a8a", marginTop: 3, lineHeight: 1.5 }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "var(--ds-text-subtle)",
+                  marginTop: 3,
+                  lineHeight: 1.5,
+                }}
+              >
                 {item.desc}
               </div>
             </div>
@@ -322,19 +366,28 @@ export default function AIActConformityPage() {
 
       {/* Transparency */}
       <Section title={t("aiact.section_transparency")} icon={<Users size={15} />}>
-        <p style={{ fontSize: 12, color: "#a0a0c0", lineHeight: 1.6, marginBottom: 12 }}>
+        <p
+          style={{ fontSize: 12, color: "var(--ds-text-muted)", lineHeight: 1.6, marginBottom: 12 }}
+        >
           {t("aiact.transparency_intro")}
         </p>
         <div
           style={{
             padding: "10px 12px",
-            background: "#6366f115",
-            border: "1px solid #6366f130",
+            background: "var(--accent-premium-soft)",
+            border: "1px solid var(--accent-premium-border)",
             borderRadius: 6,
             marginBottom: 12,
           }}
         >
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#a0a0f8", marginBottom: 4 }}>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: "var(--accent-premium)",
+              marginBottom: 4,
+            }}
+          >
             {t("aiact.banner_example")}
           </div>
           <div
@@ -343,17 +396,17 @@ export default function AIActConformityPage() {
               alignItems: "center",
               gap: 6,
               fontSize: 11,
-              color: "#8a8aa8",
+              color: "var(--ds-text-muted)",
               padding: "6px 8px",
-              background: "#1e1e3a",
+              background: "var(--ds-surface-2)",
               borderRadius: 4,
             }}
           >
-            <ShieldCheck size={12} style={{ color: "#6366f1" }} />
+            <ShieldCheck size={12} style={{ color: "var(--accent-premium)" }} />
             {t("aiact.banner_text")}
           </div>
         </div>
-        <div style={{ fontSize: 12, color: "#a0a0c0", lineHeight: 1.6 }}>
+        <div style={{ fontSize: 12, color: "var(--ds-text-muted)", lineHeight: 1.6 }}>
           {t("aiact.transparency_desc")}
         </div>
       </Section>
@@ -385,10 +438,10 @@ export default function AIActConformityPage() {
                 >
                   <Icon size={13} style={{ color: cfg.color, flexShrink: 0 }} />
                   <div style={{ flex: 1, textAlign: "left" }}>
-                    <span style={{ fontSize: 11, color: "#6a6a8a", marginRight: 6 }}>
+                    <span style={{ fontSize: 11, color: "var(--ds-text-subtle)", marginRight: 6 }}>
                       {item.article}
                     </span>
-                    <span style={{ fontSize: 12, color: "#e0e0e8", fontWeight: 500 }}>
+                    <span style={{ fontSize: 12, color: "var(--ds-text)", fontWeight: 500 }}>
                       {t(item.reqKey as DashboardKey)}
                     </span>
                   </div>
@@ -396,16 +449,16 @@ export default function AIActConformityPage() {
                     {cfg.label}
                   </span>
                   {isOpen ? (
-                    <ChevronDown size={12} style={{ color: "#8a8aa8" }} />
+                    <ChevronDown size={12} style={{ color: "var(--ds-text-muted)" }} />
                   ) : (
-                    <ChevronRight size={12} style={{ color: "#8a8aa8" }} />
+                    <ChevronRight size={12} style={{ color: "var(--ds-text-muted)" }} />
                   )}
                 </button>
                 {isOpen && (
                   <div
                     style={{
                       padding: "10px 12px",
-                      background: "#0d0d1a",
+                      background: "var(--ds-surface)",
                       borderTop: `1px solid ${cfg.border}`,
                     }}
                   >
@@ -414,7 +467,7 @@ export default function AIActConformityPage() {
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#6a6a8a",
+                            color: "var(--ds-text-subtle)",
                             textTransform: "uppercase",
                             letterSpacing: "0.4px",
                             marginBottom: 2,
@@ -422,7 +475,7 @@ export default function AIActConformityPage() {
                         >
                           {t("aiact.evidence")}
                         </div>
-                        <div style={{ fontSize: 12, color: "#c0c0d8" }}>{item.evidence}</div>
+                        <div style={{ fontSize: 12, color: "var(--ds-text)" }}>{item.evidence}</div>
                       </div>
                     )}
                     {item.noteKey && (
@@ -430,7 +483,7 @@ export default function AIActConformityPage() {
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#6a6a8a",
+                            color: "var(--ds-text-subtle)",
                             textTransform: "uppercase",
                             letterSpacing: "0.4px",
                             marginBottom: 2,
@@ -438,7 +491,7 @@ export default function AIActConformityPage() {
                         >
                           {t("aiact.note_label")}
                         </div>
-                        <div style={{ fontSize: 12, color: "#a0a0c0" }}>
+                        <div style={{ fontSize: 12, color: "var(--ds-text-muted)" }}>
                           {t(item.noteKey as DashboardKey)}
                         </div>
                       </div>
@@ -453,7 +506,9 @@ export default function AIActConformityPage() {
 
       {/* Certification Roadmap Link */}
       <Section title={t("aiact.section_roadmap")} icon={<ShieldCheck size={15} />}>
-        <p style={{ fontSize: 12, color: "#a0a0c0", lineHeight: 1.6, marginBottom: 12 }}>
+        <p
+          style={{ fontSize: 12, color: "var(--ds-text-muted)", lineHeight: 1.6, marginBottom: 12 }}
+        >
           {t("aiact.roadmap_intro")}
         </p>
         <div style={{ display: "grid", gap: 8 }}>
@@ -462,25 +517,25 @@ export default function AIActConformityPage() {
               cert: "SOC 2 Type II",
               status: t("aiact.cert.soc2.status"),
               eta: "Q2 2027",
-              color: "#6366f1",
+              color: "var(--accent-premium)",
             },
             {
               cert: "ISO 27001:2022",
               status: t("aiact.cert.iso27001.status"),
               eta: "Q3 2027",
-              color: "#6366f1",
+              color: "var(--accent-premium)",
             },
             {
               cert: "ISO 42001:2023 (AI Management)",
               status: t("aiact.cert.iso42001.status"),
               eta: "Q3 2027",
-              color: "#6366f1",
+              color: "var(--accent-premium)",
             },
             {
               cert: "DSGVO-Konformitätserklärung",
               status: t("aiact.cert.gdpr.status"),
               eta: "Q4 2026",
-              color: "#f59e0b",
+              color: "var(--ds-warning-text)",
             },
           ].map((item) => (
             <div
@@ -490,14 +545,16 @@ export default function AIActConformityPage() {
                 justifyContent: "space-between",
                 alignItems: "flex-start",
                 padding: "8px 10px",
-                background: "#0d0d1a",
-                border: "1px solid #1e1e3a",
+                background: "var(--ds-surface)",
+                border: "1px solid var(--ds-border)",
                 borderRadius: 6,
               }}
             >
               <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#c0c0d8" }}>{item.cert}</div>
-                <div style={{ fontSize: 11, color: "#6a6a8a" }}>{item.status}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--ds-text)" }}>
+                  {item.cert}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--ds-text-subtle)" }}>{item.status}</div>
               </div>
               <span
                 style={{ fontSize: 11, color: item.color, whiteSpace: "nowrap", marginLeft: 12 }}
@@ -515,7 +572,7 @@ export default function AIActConformityPage() {
               alignItems: "center",
               gap: 6,
               fontSize: 12,
-              color: "#6366f1",
+              color: "var(--accent-premium)",
               textDecoration: "none",
             }}
           >
@@ -529,15 +586,15 @@ export default function AIActConformityPage() {
         style={{
           marginTop: 24,
           padding: "12px 14px",
-          background: "#0d0d1a",
+          background: "var(--ds-surface)",
           borderRadius: 6,
-          border: "1px solid #1e1e3a",
+          border: "1px solid var(--ds-border)",
           fontSize: 11,
-          color: "#6a6a8a",
+          color: "var(--ds-text-subtle)",
         }}
       >
         {t("aiact.footer")}{" "}
-        <a href="mailto:compliance@subsum.io" style={{ color: "#6366f1" }}>
+        <a href="mailto:compliance@subsum.io" style={{ color: "var(--accent-premium)" }}>
           compliance@subsum.io
         </a>
       </div>
@@ -563,30 +620,40 @@ function Section({
           gap: 8,
           marginBottom: 12,
           paddingBottom: 8,
-          borderBottom: "1px solid #1e1e3a",
+          borderBottom: "1px solid var(--ds-border)",
         }}
       >
-        <div style={{ color: "#6366f1" }}>{icon}</div>
-        <h2 style={{ fontSize: 14, fontWeight: 600, color: "#c0c0d8" }}>{title}</h2>
+        <div style={{ color: "var(--accent-premium)" }}>{icon}</div>
+        <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--ds-text)" }}>{title}</h2>
       </div>
       {children}
     </div>
   );
 }
 
-function StatCard({ value, label, color }: { value: number; label: string; color: string }) {
+function StatCard({
+  value,
+  label,
+  color,
+  borderColor,
+}: {
+  value: number;
+  label: string;
+  color: string;
+  borderColor: string;
+}) {
   return (
     <div
       style={{
         padding: "12px",
-        background: "#0d0d1a",
-        border: `1px solid ${color}30`,
+        background: "var(--ds-surface)",
+        border: `1px solid ${borderColor}`,
         borderRadius: 6,
         textAlign: "center",
       }}
     >
       <div style={{ fontSize: 24, fontWeight: 700, color }}>{value}</div>
-      <div style={{ fontSize: 11, color: "#6a6a8a", marginTop: 2 }}>{label}</div>
+      <div style={{ fontSize: 11, color: "var(--ds-text-subtle)", marginTop: 2 }}>{label}</div>
     </div>
   );
 }
@@ -598,11 +665,11 @@ function ClassificationRow({ label, value }: { label: string; value: string }) {
         display: "flex",
         justifyContent: "space-between",
         padding: "6px 0",
-        borderBottom: "1px solid #1e1e3a",
+        borderBottom: "1px solid var(--ds-border)",
       }}
     >
-      <span style={{ fontSize: 12, color: "#6a6a8a" }}>{label}</span>
-      <span style={{ fontSize: 12, color: "#c0c0d8", textAlign: "right", maxWidth: "55%" }}>
+      <span style={{ fontSize: 12, color: "var(--ds-text-subtle)" }}>{label}</span>
+      <span style={{ fontSize: 12, color: "var(--ds-text)", textAlign: "right", maxWidth: "55%" }}>
         {value}
       </span>
     </div>

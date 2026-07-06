@@ -81,7 +81,7 @@ export default function RvgDialog() {
                 />
                 <Button
                   variant="primary"
-                  className="gap-2 bg-emerald-600 text-sm text-white hover:bg-emerald-500"
+                  className="gap-2 bg-[color:var(--ds-success-solid)] text-sm text-white hover:bg-[color:var(--ds-success-solid-hover)]"
                   onClick={compute}
                 >
                   <Calculator size={14} />

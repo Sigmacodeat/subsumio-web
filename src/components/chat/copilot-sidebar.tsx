@@ -30,7 +30,6 @@ import type { Lang } from "@/content/site";
 import { ChatPanel, type ChatPanelHandle } from "@/components/chat/chat-panel";
 import { CopilotNotifications } from "@/components/copilot/copilot-notifications";
 import { CopilotMemoryPanel } from "@/components/copilot/copilot-memory-panel";
-import { PlanningModePanel } from "@/components/copilot/planning-mode-panel";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useMotionValue, useTransform } from "framer-motion";
 import type { ChatContextType } from "@/components/chat/chat-types";
@@ -46,6 +45,7 @@ interface CopilotSidebarProps {
 }
 
 type PanelMode = "activity" | "chat";
+type ActivitySubTab = "feed" | "notifications" | "memory";
 
 interface RouteContext {
   type: ChatContextType;
@@ -1244,6 +1244,52 @@ function QuickActionsChips({
   );
 }
 
+function ActivityContent({
+  lang,
+  subTab,
+  onSubTabChange,
+  t,
+}: {
+  lang: Lang;
+  subTab: ActivitySubTab;
+  onSubTabChange: (tab: ActivitySubTab) => void;
+  t: TFunc;
+}) {
+  const subTabs: Array<{ key: ActivitySubTab; label: string }> = [
+    { key: "feed", label: t("copilot.subtab_feed") },
+    { key: "notifications", label: t("copilot.subtab_notifications") },
+    { key: "memory", label: t("copilot.subtab_memory") },
+  ];
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Sub-tab bar */}
+      <div className="flex shrink-0 items-center gap-0.5 border-b border-[color:var(--ds-border)] px-2 py-1">
+        {subTabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => onSubTabChange(tab.key)}
+            className={cn(
+              "rounded-md px-2 py-1 text-xs font-medium transition-all",
+              subTab === tab.key
+                ? "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
+                : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+            )}
+            aria-label={tab.label}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      {/* Content */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {subTab === "feed" && <ActivityFeedPanel lang={lang} />}
+        {subTab === "notifications" && <CopilotNotifications />}
+        {subTab === "memory" && <CopilotMemoryPanel />}
+      </div>
+    </div>
+  );
+}
+
 export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -1272,6 +1318,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     }
     return "chat";
   });
+  const [activitySubTab, setActivitySubTab] = useState<ActivitySubTab>("feed");
   const [matterContextInfo, setMatterContextInfo] = useState<MatterContextInfo | null>(null);
 
   // Keep onToggle ref current to avoid stale closure in route-change effect
@@ -1716,9 +1763,14 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             variant="mobile"
           />
 
-          {/* Activity feed or Chat — mobile */}
+          {/* Activity content (with sub-tabs) or Chat — mobile */}
           {panelMode === "activity" ? (
-            <ActivityFeedPanel lang={lang} />
+            <ActivityContent
+              lang={lang}
+              subTab={activitySubTab}
+              onSubTabChange={setActivitySubTab}
+              t={t}
+            />
           ) : (
             isMobile && (
               <ChatPanel
@@ -1916,21 +1968,20 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               variant="desktop"
             />
 
-            {/* Activity feed or Chat panel — desktop */}
+            {/* Activity content (with sub-tabs) or Chat panel — desktop */}
             {panelMode === "activity" ? (
-              <ActivityFeedPanel lang={lang} />
+              <ActivityContent
+                lang={lang}
+                subTab={activitySubTab}
+                onSubTabChange={setActivitySubTab}
+                t={t}
+              />
             ) : (
-              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col">
                 {!isMobile && (
                   <>
-                    <div className="border-b border-[color:var(--ds-border)] px-3 py-2">
-                      <CopilotNotifications />
-                    </div>
-                    <div className="border-b border-[color:var(--ds-border)] px-3 py-2">
-                      <CopilotMemoryPanel />
-                    </div>
-                    <div className="border-b border-[color:var(--ds-border)] px-3 py-2">
-                      <PlanningModePanel caseSlug={routeContext.caseSlug} />
+                    <div className="shrink-0 border-b border-[color:var(--ds-border)] px-3 py-1.5 text-[11px] text-[color:var(--ds-text-subtle)]">
+                      {t("copilot.planning_hint")}
                     </div>
                     <ChatPanel
                       ref={chatRef}

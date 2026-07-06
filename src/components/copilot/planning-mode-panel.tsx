@@ -218,25 +218,25 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
           {activePlan && (
             <button
               onClick={() => setShowRefine((v) => !v)}
-              className="rounded p-0.5 text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              className="rounded p-1 text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
               title={isEn ? "Refine plan" : "Plan anpassen"}
             >
-              <RefreshCw size={11} />
+              <RefreshCw size={13} />
             </button>
           )}
           <button
             onClick={() => setShowCreate((v) => !v)}
-            className="rounded p-0.5 text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            className="rounded p-1 text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             title={isEn ? "New plan" : "Neuer Plan"}
           >
-            <Plus size={12} />
+            <Plus size={14} />
           </button>
           {onClose && (
             <button
               onClick={onClose}
-              className="rounded p-0.5 text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              className="rounded p-1 text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             >
-              <X size={12} />
+              <X size={14} />
             </button>
           )}
         </div>
@@ -256,7 +256,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
               key={p.id}
               onClick={() => setActivePlan(p)}
               className={cn(
-                "rounded border px-1.5 py-0.5 text-[10px] transition-colors",
+                "rounded border px-2 py-1 text-[11px] transition-colors",
                 activePlan?.id === p.id
                   ? "brand-border brand-soft brand-text"
                   : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
@@ -292,9 +292,9 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
             <button
               onClick={handleCreate}
               disabled={creating || !goal.trim()}
-              className="brand-bg flex items-center gap-1 rounded px-2 py-0.5 text-[10px] text-white disabled:opacity-50"
+              className="brand-bg flex items-center gap-1 rounded px-2.5 py-1 text-[11px] text-white disabled:opacity-50"
             >
-              {creating ? <Loader2 size={10} className="animate-spin" /> : <Send size={10} />}
+              {creating ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
               {isEn ? "Create" : "Erstellen"}
             </button>
           </div>
@@ -330,9 +330,9 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
             <button
               onClick={handleRefine}
               disabled={refining || !feedback.trim()}
-              className="brand-bg flex items-center gap-1 rounded px-2 py-0.5 text-[10px] text-white disabled:opacity-50"
+              className="brand-bg flex items-center gap-1 rounded px-2.5 py-1 text-[11px] text-white disabled:opacity-50"
             >
-              {refining ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
+              {refining ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
               {isEn ? "Refine" : "Anpassen"}
             </button>
           </div>
@@ -418,31 +418,31 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
                         <div className="mt-1 flex items-center gap-1">
                           <button
                             onClick={() => handleStepUpdate(step.id, "completed")}
-                            className="flex items-center gap-0.5 rounded border border-emerald-500/20 bg-emerald-500/10 px-1 py-0.5 text-[8px] text-emerald-600 hover:bg-emerald-500/20"
+                            className="flex items-center gap-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-1 text-[10px] font-medium text-emerald-600 hover:bg-emerald-500/20"
                           >
-                            <Check size={7} />
+                            <Check size={11} />
                             {isEn ? "Done" : "Fertig"}
                           </button>
                           {step.status !== "in_progress" && (
                             <button
                               onClick={() => handleStepUpdate(step.id, "in_progress")}
-                              className="rounded border border-blue-500/20 bg-blue-500/10 px-1 py-0.5 text-[8px] text-blue-600 hover:bg-blue-500/20"
+                              className="flex items-center gap-1 rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-1 text-[10px] font-medium text-blue-600 hover:bg-blue-500/20"
                             >
                               {isEn ? "Start" : "Starten"}
                             </button>
                           )}
                           <button
                             onClick={() => handleStepUpdate(step.id, "skipped")}
-                            className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 text-[8px] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                            className="flex items-center gap-1 rounded border border-[color:var(--ds-border)] px-1.5 py-1 text-[10px] font-medium text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                           >
-                            <SkipForward size={7} />
+                            <SkipForward size={11} />
                           </button>
                         </div>
                       )}
                       {step.status === "completed" && (
                         <button
                           onClick={() => handleStepUpdate(step.id, "pending")}
-                          className="mt-0.5 text-[8px] text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
+                          className="mt-1 text-[10px] text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
                         >
                           {isEn ? "Reopen" : "Wieder öffnen"}
                         </button>
@@ -456,7 +456,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
 
           {/* Plan status footer */}
           <div className="flex items-center justify-between border-t border-[color:var(--ds-border)] pt-1.5">
-            <span className="text-[9px] text-[color:var(--ds-text-subtle)]">
+            <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
               {activePlan.status === "completed"
                 ? isEn
                   ? "✓ Plan completed"
@@ -466,7 +466,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
             {activePlan.status !== "completed" && (
               <button
                 onClick={handleAbandon}
-                className="text-[9px] text-[color:var(--ds-text-subtle)] hover:text-red-600"
+                className="text-[10px] text-[color:var(--ds-text-subtle)] hover:text-red-600"
               >
                 {isEn ? "Abandon" : "Verwerfen"}
               </button>

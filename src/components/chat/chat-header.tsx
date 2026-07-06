@@ -17,11 +17,14 @@ import {
   Tag,
   Share2,
   MoreVertical,
+  Cpu,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { ModelSelector } from "@/components/dashboard/model-selector";
 import { useBrainStats } from "@/lib/queries/brain";
+import { useModelPreference } from "@/lib/queries/settings";
 import { useLang } from "@/lib/use-lang";
 import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
 import type { Jurisdiction, ChatSession } from "@/components/chat/chat-types";
@@ -79,6 +82,13 @@ export function ChatHeader(props: ChatHeaderProps) {
   const modeRef = useRef<HTMLDivElement>(null);
   const sessionsRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
+  const [activeCaseSlug, setActiveCaseSlug] = useState(props.selectedCaseSlug);
+  useEffect(() => setActiveCaseSlug(props.selectedCaseSlug), [props.selectedCaseSlug]);
+  const modelPrefQuery = useModelPreference();
+  const modelData = modelPrefQuery.data?.data;
+  const modelList = modelData?.models ?? [];
+  const activeModelId = props.modelOverride ?? modelData?.preferredModelId ?? "auto";
+  const activeModelName = modelList.find((m) => m.id === activeModelId)?.name ?? "Auto";
   const { popoverTransition, popoverInitial, popoverAnimate, popoverExit } = useDashboardMotion();
 
   const stats = statsQuery.data;
@@ -231,15 +241,24 @@ export function ChatHeader(props: ChatHeaderProps) {
       {/* Controls row — unified toolbar track */}
       <div className="px-3 pb-2.5">
         <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-[color:var(--ds-surface-2)] p-1.5 max-md:gap-1">
-          {/* Sessions dropdown */}
-          {props.sessions && props.onSelectSession && (
+          {/* ── Combined Sessions + Case dropdown ── */}
+          {props.sessions && props.onSelectSession ? (
             <div ref={sessionsRef} className="relative">
               <button
                 onClick={() => setShowSessions((v) => !v)}
                 className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)] active:scale-95"
               >
-                <Plus size={12} />
+                <MessageSquareText size={12} />
                 {props.activeSessionId ? t("chat.session_label") : t("chat.new_session")}
+                {props.features.caseSelector && props.selectedCaseSlug && (
+                  <span className="text-[color:var(--ds-text-subtle)]">·</span>
+                )}
+                {props.features.caseSelector && props.selectedCaseSlug && (
+                  <span className="max-w-[80px] truncate text-[color:var(--ds-text-subtle)]">
+                    {props.cases.find((c) => c.slug === props.selectedCaseSlug)?.title ??
+                      t("chat.no_case")}
+                  </span>
+                )}
                 <ChevronDown
                   size={11}
                   className={cn("transition-transform", showSessions && "rotate-180")}
@@ -248,12 +267,13 @@ export function ChatHeader(props: ChatHeaderProps) {
               <AnimatePresence initial={false}>
                 {showSessions && (
                   <motion.div
-                    className="absolute top-full left-0 z-50 mt-1 w-72 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg"
+                    className="absolute top-full left-0 z-50 mt-1 w-80 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg"
                     initial={popoverInitial}
                     animate={popoverAnimate}
                     exit={popoverExit}
                     transition={popoverTransition}
                   >
+                    {/* New session */}
                     <div className="border-b border-[color:var(--ds-border)] p-2">
                       <button
                         onClick={() => {
@@ -266,6 +286,43 @@ export function ChatHeader(props: ChatHeaderProps) {
                         {t("chat.new_session")}
                       </button>
                     </div>
+
+                    {/* Case selector section */}
+                    {props.features.caseSelector && (
+                      <div className="border-b border-[color:var(--ds-border)] p-2">
+                        <p className="mb-1.5 px-1 text-[10px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                          {t("chat.header_case_section")}
+                        </p>
+                        <div className="relative">
+                          <Briefcase
+                            size={11}
+                            className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+                          />
+                          <select
+                            value={activeCaseSlug}
+                            onChange={(e) => {
+                              props.onCaseChange(e.target.value);
+                              setActiveCaseSlug(e.target.value);
+                            }}
+                            className="w-full appearance-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pr-7 pl-8 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                            aria-label={t("chat.case_select")}
+                          >
+                            <option value="">{t("chat.no_case")}</option>
+                            {props.cases.map((c) => (
+                              <option key={c.slug} value={c.slug}>
+                                {c.title}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown
+                            size={11}
+                            className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Session search */}
                     {props.onSessionSearchChange && (
                       <div className="border-b border-[color:var(--ds-border)] p-2">
                         <div className="relative">
@@ -291,7 +348,9 @@ export function ChatHeader(props: ChatHeaderProps) {
                         </div>
                       </div>
                     )}
-                    <div className="max-h-64 overflow-y-auto p-1">
+
+                    {/* Session list */}
+                    <div className="max-h-56 overflow-y-auto p-1">
                       {filteredSessions.length === 0 ? (
                         <p className="px-3 py-4 text-center text-xs text-[color:var(--ds-text-subtle)]">
                           {t("chat.no_sessions")}
@@ -376,10 +435,8 @@ export function ChatHeader(props: ChatHeaderProps) {
                 )}
               </AnimatePresence>
             </div>
-          )}
-
-          {/* Case selector */}
-          {props.features.caseSelector && (
+          ) : props.features.caseSelector ? (
+            /* Case-only fallback when sessions are not available */
             <div className="relative">
               <select
                 value={props.selectedCaseSlug}
@@ -403,12 +460,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                 className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
               />
             </div>
-          )}
-
-          {/* Divider */}
-          {props.features.caseSelector && props.features.jurisdictionSelector && !compact && (
-            <div className="h-4 w-px bg-[color:var(--ds-border)]" aria-hidden />
-          )}
+          ) : null}
 
           {/* Jurisdiction indicator — read-only, derived from case or user profile */}
           {props.features.jurisdictionSelector && !compact && (
@@ -421,15 +473,22 @@ export function ChatHeader(props: ChatHeaderProps) {
             </div>
           )}
 
-          {/* Query mode selector */}
+          {/* ── Combined Mode + Model dropdown ── */}
           {props.features.modeSelector && (
-            <div ref={modeRef} className="relative">
+            <div ref={modeRef} className="relative ml-auto">
               <button
                 onClick={() => setShowModeMenu((v) => !v)}
                 className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)] active:scale-95"
               >
                 <Activity size={11} />
                 {QUERY_MODE_LABELS[props.queryMode].label}
+                {props.features.modelSelector && !compact && (
+                  <>
+                    <span className="text-[color:var(--ds-text-subtle)]">·</span>
+                    <Cpu size={11} className="text-[color:var(--ds-text-subtle)]" />
+                    <span>{activeModelName}</span>
+                  </>
+                )}
                 <ChevronDown
                   size={11}
                   className={cn("transition-transform", showModeMenu && "rotate-180")}
@@ -438,18 +497,21 @@ export function ChatHeader(props: ChatHeaderProps) {
               <AnimatePresence initial={false}>
                 {showModeMenu && (
                   <motion.div
-                    className="absolute top-full left-0 z-50 mt-1 w-64 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5 shadow-lg"
+                    className="absolute top-full right-0 z-50 mt-1 w-72 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5 shadow-lg"
                     initial={popoverInitial}
                     animate={popoverAnimate}
                     exit={popoverExit}
                     transition={popoverTransition}
                   >
+                    {/* Mode section */}
+                    <p className="px-2 py-1 text-[10px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                      {t("chat.mode")}
+                    </p>
                     {(Object.keys(QUERY_MODE_LABELS) as QueryMode[]).map((mode) => (
                       <button
                         key={mode}
                         onClick={() => {
                           props.onQueryModeChange(mode);
-                          setShowModeMenu(false);
                         }}
                         className={cn(
                           "flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[color:var(--ds-hover)]",
@@ -467,21 +529,77 @@ export function ChatHeader(props: ChatHeaderProps) {
                         <span className="text-xs text-[color:var(--ds-text-subtle)]">
                           {QUERY_MODE_LABELS[mode].description}
                         </span>
-                        <span className="text-xs text-[color:var(--ds-text-subtle)] opacity-70">
-                          {QUERY_MODE_LABELS[mode].hint}
-                        </span>
                       </button>
                     ))}
+
+                    {/* Model section */}
+                    {props.features.modelSelector && !compact && (
+                      <>
+                        <div className="my-1 h-px bg-[color:var(--ds-border)]" />
+                        <p className="px-2 py-1 text-[10px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                          {t("chat.model")}
+                        </p>
+                        <div className="max-h-40 overflow-y-auto p-1">
+                          <button
+                            onClick={() => props.onModelChange("auto")}
+                            className={cn(
+                              "flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs transition-colors hover:bg-[color:var(--ds-hover)]",
+                              activeModelId === "auto" && "brand-soft"
+                            )}
+                          >
+                            <Cpu size={11} className="text-[color:var(--ds-text-subtle)]" />
+                            <span
+                              className={cn(
+                                "flex-1",
+                                activeModelId === "auto"
+                                  ? "brand-text font-medium"
+                                  : "text-[color:var(--ds-text)]"
+                              )}
+                            >
+                              Auto
+                            </span>
+                            {activeModelId === "auto" && <Check size={11} className="brand-text" />}
+                          </button>
+                          {modelList.map((model) => (
+                            <button
+                              key={model.id}
+                              onClick={() => props.onModelChange(model.id)}
+                              className={cn(
+                                "flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs transition-colors hover:bg-[color:var(--ds-hover)]",
+                                model.id === activeModelId && "brand-soft"
+                              )}
+                            >
+                              <Cpu size={11} className="text-[color:var(--ds-text-subtle)]" />
+                              <span
+                                className={cn(
+                                  "flex-1 truncate",
+                                  model.id === activeModelId
+                                    ? "brand-text font-medium"
+                                    : "text-[color:var(--ds-text)]"
+                                )}
+                              >
+                                {model.name}
+                              </span>
+                              {model.id === activeModelId && (
+                                <Check size={11} className="brand-text" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           )}
 
-          {/* Model selector — hidden in compact mode */}
-          {props.features.modelSelector && !compact && (
-            <ModelSelector selectedModelId={props.modelOverride} onSelect={props.onModelChange} />
-          )}
+          {/* Model-only fallback when mode selector is disabled but model is enabled */}
+          {(!props.features.modeSelector || compact) &&
+            props.features.modelSelector &&
+            !compact && (
+              <ModelSelector selectedModelId={props.modelOverride} onSelect={props.onModelChange} />
+            )}
         </div>
       </div>
     </div>

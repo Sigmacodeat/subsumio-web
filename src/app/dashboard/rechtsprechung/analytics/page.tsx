@@ -93,7 +93,7 @@ function HBar({
   label,
   value,
   max,
-  color = "#6366f1",
+  color = "var(--accent-premium)",
 }: {
   label: string;
   value: number;
@@ -109,7 +109,7 @@ function HBar({
           justifyContent: "space-between",
           fontSize: 12,
           marginBottom: 3,
-          color: "#c0c0d8",
+          color: "var(--ds-text)",
         }}
       >
         <span
@@ -122,9 +122,9 @@ function HBar({
         >
           {label}
         </span>
-        <span style={{ fontWeight: 600, color: "#e8e8f0" }}>{value}</span>
+        <span style={{ fontWeight: 600, color: "var(--ds-text)" }}>{value}</span>
       </div>
-      <div style={{ height: 6, background: "#1e1e3a", borderRadius: 3 }}>
+      <div style={{ height: 6, background: "var(--ds-border)", borderRadius: 3 }}>
         <div
           style={{
             height: "100%",
@@ -157,18 +157,18 @@ function StatCard({
   return (
     <div
       style={{
-        background: "#0d0d1a",
-        border: "1px solid #1e1e3a",
+        background: "var(--ds-surface)",
+        border: "1px solid var(--ds-border)",
         borderRadius: 10,
         padding: "14px 16px",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <span style={{ color: "#6366f1" }}>{icon}</span>
+        <span style={{ color: "var(--accent-premium)" }}>{icon}</span>
         <span
           style={{
             fontSize: 11,
-            color: "#6a6a8a",
+            color: "var(--ds-text-subtle)",
             textTransform: "uppercase",
             letterSpacing: "0.4px",
           }}
@@ -176,12 +176,19 @@ function StatCard({
           {label}
         </span>
       </div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: "#e8e8f0", lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 26, fontWeight: 700, color: "var(--ds-text)", lineHeight: 1 }}>
+        {value}
+      </div>
       {sub && (
         <div
           style={{
             fontSize: 11,
-            color: trend === "up" ? "#22c55e" : trend === "down" ? "#ef4444" : "#8a8aa8",
+            color:
+              trend === "up"
+                ? "var(--ds-success-text)"
+                : trend === "down"
+                  ? "var(--ds-danger-text)"
+                  : "var(--ds-text-subtle)",
             marginTop: 4,
             display: "flex",
             alignItems: "center",
@@ -278,20 +285,25 @@ export default function LitigationAnalyticsPage() {
     lastYearCount > 0 ? Math.round(((thisYearCount - lastYearCount) / lastYearCount) * 100) : 0;
 
   const areaColors: Record<string, string> = {
-    Arbeitsrecht: "#6366f1",
-    Mietrecht: "#8b5cf6",
-    Vertragsrecht: "#06b6d4",
-    Gesellschaftsrecht: "#10b981",
-    Steuerrecht: "#f59e0b",
-    Familienrecht: "#ec4899",
-    Strafrecht: "#ef4444",
-    Verwaltungsrecht: "#f97316",
-    Allgemein: "#6a6a8a",
+    Arbeitsrecht: "var(--accent-premium)",
+    Mietrecht: "var(--accent-premium)",
+    Vertragsrecht: "var(--ds-info-text)",
+    Gesellschaftsrecht: "var(--ds-success-text)",
+    Steuerrecht: "var(--ds-warning-text)",
+    Familienrecht: "var(--ds-danger-text)",
+    Strafrecht: "var(--ds-danger-text)",
+    Verwaltungsrecht: "var(--ds-warning-text)",
+    Allgemein: "var(--ds-text-subtle)",
   };
 
   return (
     <div
-      style={{ minHeight: "100vh", background: "#0a0a18", color: "#e8e8f0", padding: "0 0 40px" }}
+      style={{
+        minHeight: "100vh",
+        background: "var(--ds-bg)",
+        color: "var(--ds-text)",
+        padding: "0 0 40px",
+      }}
     >
       <PageHeader title={t("rs_analytics.title")} description={t("rs_analytics.description")} />
 
@@ -321,9 +333,9 @@ export default function LitigationAnalyticsPage() {
                 borderRadius: 6,
                 fontSize: 12,
                 cursor: "pointer",
-                background: jurisdiction === j ? "#6366f1" : "#0d0d1a",
-                border: `1px solid ${jurisdiction === j ? "#6366f1" : "#1e1e3a"}`,
-                color: jurisdiction === j ? "#fff" : "#8a8aa8",
+                background: jurisdiction === j ? "var(--accent-premium)" : "var(--ds-surface)",
+                border: `1px solid ${jurisdiction === j ? "var(--accent-premium)" : "var(--ds-border)"}`,
+                color: jurisdiction === j ? "#fff" : "var(--ds-text-subtle)",
               }}
             >
               {j === "all" ? "Alle" : j.toUpperCase()}
@@ -337,9 +349,9 @@ export default function LitigationAnalyticsPage() {
                 borderRadius: 6,
                 fontSize: 12,
                 cursor: "pointer",
-                background: "#1e1e3a",
-                border: "1px solid #2e2e5a",
-                color: "#c0c0d8",
+                background: "var(--ds-border)",
+                border: "1px solid var(--ds-border-strong)",
+                color: "var(--ds-text)",
                 display: "flex",
                 alignItems: "center",
                 gap: 4,
@@ -351,7 +363,7 @@ export default function LitigationAnalyticsPage() {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: "center", padding: 80, color: "#6a6a8a" }}>
+          <div style={{ textAlign: "center", padding: 80, color: "var(--ds-text-subtle)" }}>
             <RefreshCw
               size={24}
               style={{ margin: "0 auto 12px", animation: "spin 1s linear infinite" }}
@@ -404,8 +416,8 @@ export default function LitigationAnalyticsPage() {
               {/* By Court */}
               <div
                 style={{
-                  background: "#0d0d1a",
-                  border: "1px solid #1e1e3a",
+                  background: "var(--ds-surface)",
+                  border: "1px solid var(--ds-border)",
                   borderRadius: 10,
                   padding: 16,
                 }}
@@ -414,20 +426,26 @@ export default function LitigationAnalyticsPage() {
                   style={{
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "#c0c0d8",
+                    color: "var(--ds-text)",
                     marginBottom: 14,
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
                   }}
                 >
-                  <Landmark size={14} style={{ color: "#6366f1" }} /> Top Gerichte
+                  <Landmark size={14} style={{ color: "var(--accent-premium)" }} /> Top Gerichte
                 </div>
                 {topCourts.length === 0 ? (
-                  <div style={{ color: "#6a6a8a", fontSize: 12 }}>Keine Daten</div>
+                  <div style={{ color: "var(--ds-text-subtle)", fontSize: 12 }}>Keine Daten</div>
                 ) : (
                   topCourts.map(([court, count]) => (
-                    <HBar key={court} label={court} value={count} max={maxCourt} color="#6366f1" />
+                    <HBar
+                      key={court}
+                      label={court}
+                      value={count}
+                      max={maxCourt}
+                      color="var(--accent-premium)"
+                    />
                   ))
                 )}
               </div>
@@ -435,8 +453,8 @@ export default function LitigationAnalyticsPage() {
               {/* By Legal Area */}
               <div
                 style={{
-                  background: "#0d0d1a",
-                  border: "1px solid #1e1e3a",
+                  background: "var(--ds-surface)",
+                  border: "1px solid var(--ds-border)",
                   borderRadius: 10,
                   padding: 16,
                 }}
@@ -445,17 +463,17 @@ export default function LitigationAnalyticsPage() {
                   style={{
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "#c0c0d8",
+                    color: "var(--ds-text)",
                     marginBottom: 14,
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
                   }}
                 >
-                  <Scale size={14} style={{ color: "#8b5cf6" }} /> Rechtsgebiete
+                  <Scale size={14} style={{ color: "var(--accent-premium)" }} /> Rechtsgebiete
                 </div>
                 {topAreas.length === 0 ? (
-                  <div style={{ color: "#6a6a8a", fontSize: 12 }}>Keine Daten</div>
+                  <div style={{ color: "var(--ds-text-subtle)", fontSize: 12 }}>Keine Daten</div>
                 ) : (
                   topAreas.map(([area, count]) => (
                     <HBar
@@ -463,7 +481,7 @@ export default function LitigationAnalyticsPage() {
                       label={area}
                       value={count}
                       max={maxArea}
-                      color={areaColors[area] ?? "#6366f1"}
+                      color={areaColors[area] ?? "var(--accent-premium)"}
                     />
                   ))
                 )}
@@ -476,8 +494,8 @@ export default function LitigationAnalyticsPage() {
               {/* Timeline */}
               <div
                 style={{
-                  background: "#0d0d1a",
-                  border: "1px solid #1e1e3a",
+                  background: "var(--ds-surface)",
+                  border: "1px solid var(--ds-border)",
                   borderRadius: 10,
                   padding: 16,
                 }}
@@ -486,17 +504,17 @@ export default function LitigationAnalyticsPage() {
                   style={{
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "#c0c0d8",
+                    color: "var(--ds-text)",
                     marginBottom: 14,
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
                   }}
                 >
-                  <Calendar size={14} style={{ color: "#06b6d4" }} /> Zeitverlauf
+                  <Calendar size={14} style={{ color: "var(--ds-info-text)" }} /> Zeitverlauf
                 </div>
                 {years.length === 0 ? (
-                  <div style={{ color: "#6a6a8a", fontSize: 12 }}>Keine Daten</div>
+                  <div style={{ color: "var(--ds-text-subtle)", fontSize: 12 }}>Keine Daten</div>
                 ) : (
                   years.slice(0, 10).map((year) => (
                     <button
@@ -516,7 +534,9 @@ export default function LitigationAnalyticsPage() {
                         label={String(year)}
                         value={byYear[String(year)] ?? 0}
                         max={Math.max(...years.map((y) => byYear[String(y)] ?? 0))}
-                        color={yearFilter === year ? "#06b6d4" : "#1e4a5a"}
+                        color={
+                          yearFilter === year ? "var(--ds-info-text)" : "var(--ds-border-strong)"
+                        }
                       />
                     </button>
                   ))
@@ -526,8 +546,8 @@ export default function LitigationAnalyticsPage() {
               {/* Jurisdiction Breakdown */}
               <div
                 style={{
-                  background: "#0d0d1a",
-                  border: "1px solid #1e1e3a",
+                  background: "var(--ds-surface)",
+                  border: "1px solid var(--ds-border)",
                   borderRadius: 10,
                   padding: 16,
                 }}
@@ -536,14 +556,14 @@ export default function LitigationAnalyticsPage() {
                   style={{
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "#c0c0d8",
+                    color: "var(--ds-text)",
                     marginBottom: 14,
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
                   }}
                 >
-                  <BarChart3 size={14} style={{ color: "#10b981" }} /> Jurisdiktion
+                  <BarChart3 size={14} style={{ color: "var(--ds-success-text)" }} /> Jurisdiktion
                 </div>
                 {(["at", "de", "ch"] as const).map((j) => {
                   const cnt = byJurisdiction[j] ?? 0;
@@ -559,17 +579,22 @@ export default function LitigationAnalyticsPage() {
                           marginBottom: 4,
                         }}
                       >
-                        <span style={{ color: "#c0c0d8" }}>{j.toUpperCase()}</span>
-                        <span style={{ color: "#8a8aa8" }}>
+                        <span style={{ color: "var(--ds-text)" }}>{j.toUpperCase()}</span>
+                        <span style={{ color: "var(--ds-text-subtle)" }}>
                           {cnt} ({pct}%)
                         </span>
                       </div>
-                      <div style={{ height: 8, background: "#1e1e3a", borderRadius: 4 }}>
+                      <div style={{ height: 8, background: "var(--ds-border)", borderRadius: 4 }}>
                         <div
                           style={{
                             height: "100%",
                             width: `${pct}%`,
-                            background: j === "at" ? "#6366f1" : j === "de" ? "#8b5cf6" : "#06b6d4",
+                            background:
+                              j === "at"
+                                ? "var(--accent-premium)"
+                                : j === "de"
+                                  ? "var(--accent-premium)"
+                                  : "var(--ds-info-text)",
                             borderRadius: 4,
                             transition: "width 0.4s",
                           }}
@@ -579,11 +604,13 @@ export default function LitigationAnalyticsPage() {
                   );
                 })}
 
-                <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #1e1e3a" }}>
+                <div
+                  style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--ds-border)" }}
+                >
                   <div
                     style={{
                       fontSize: 11,
-                      color: "#6a6a8a",
+                      color: "var(--ds-text-subtle)",
                       textTransform: "uppercase",
                       letterSpacing: "0.4px",
                       marginBottom: 10,
@@ -613,7 +640,9 @@ export default function LitigationAnalyticsPage() {
                         </Badge>
                       ))}
                     {filtered.flatMap((d) => d.keywords).length === 0 && (
-                      <span style={{ fontSize: 12, color: "#6a6a8a" }}>Keine Schlagwörter</span>
+                      <span style={{ fontSize: 12, color: "var(--ds-text-subtle)" }}>
+                        Keine Schlagwörter
+                      </span>
                     )}
                   </div>
                 </div>
@@ -623,8 +652,8 @@ export default function LitigationAnalyticsPage() {
             {/* Recent Decisions Table */}
             <div
               style={{
-                background: "#0d0d1a",
-                border: "1px solid #1e1e3a",
+                background: "var(--ds-surface)",
+                border: "1px solid var(--ds-border)",
                 borderRadius: 10,
                 overflow: "hidden",
               }}
@@ -632,7 +661,7 @@ export default function LitigationAnalyticsPage() {
               <div
                 style={{
                   padding: "12px 16px",
-                  borderBottom: "1px solid #1e1e3a",
+                  borderBottom: "1px solid var(--ds-border)",
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
@@ -642,34 +671,41 @@ export default function LitigationAnalyticsPage() {
                   style={{
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "#c0c0d8",
+                    color: "var(--ds-text)",
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
                   }}
                 >
-                  <BookOpen size={14} style={{ color: "#f59e0b" }} /> Letzte Entscheidungen (
-                  {filtered.length})
+                  <BookOpen size={14} style={{ color: "var(--ds-warning-text)" }} /> Letzte
+                  Entscheidungen ({filtered.length})
                 </span>
               </div>
               {filtered.length === 0 ? (
-                <div style={{ padding: 40, textAlign: "center", color: "#6a6a8a", fontSize: 13 }}>
+                <div
+                  style={{
+                    padding: 40,
+                    textAlign: "center",
+                    color: "var(--ds-text-subtle)",
+                    fontSize: 13,
+                  }}
+                >
                   Noch keine Entscheidungen im Brain. Über Rechtsprechung → Judikatur-Sync
                   importieren.
                 </div>
               ) : (
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead>
-                    <tr style={{ background: "#0a0a18" }}>
+                    <tr style={{ background: "var(--ds-bg)" }}>
                       {["Titel", "Gericht", "Datum", "Rechtsgebiet", "Jurisdiktion"].map((h) => (
                         <th
                           key={h}
                           style={{
                             padding: "8px 12px",
                             textAlign: "left",
-                            color: "#6a6a8a",
+                            color: "var(--ds-text-subtle)",
                             fontWeight: 500,
-                            borderBottom: "1px solid #1e1e3a",
+                            borderBottom: "1px solid var(--ds-border)",
                           }}
                         >
                           {h}
@@ -681,8 +717,10 @@ export default function LitigationAnalyticsPage() {
                     {filtered.slice(0, 50).map((d) => (
                       <tr
                         key={d.id}
-                        style={{ borderBottom: "1px solid #1a1a30" }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "#12122a")}
+                        style={{ borderBottom: "1px solid var(--ds-border)" }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = "var(--ds-surface-2)")
+                        }
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
                         <td
@@ -692,13 +730,21 @@ export default function LitigationAnalyticsPage() {
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
-                            color: "#c0c0d8",
+                            color: "var(--ds-text)",
                           }}
                         >
                           {d.title}
                         </td>
-                        <td style={{ padding: "8px 12px", color: "#8a8aa8" }}>{d.court}</td>
-                        <td style={{ padding: "8px 12px", color: "#8a8aa8", whiteSpace: "nowrap" }}>
+                        <td style={{ padding: "8px 12px", color: "var(--ds-text-subtle)" }}>
+                          {d.court}
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 12px",
+                            color: "var(--ds-text-subtle)",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
                           {d.date ? new Date(d.date).toLocaleDateString("de-AT") : "—"}
                         </td>
                         <td style={{ padding: "8px 12px" }}>
@@ -706,8 +752,8 @@ export default function LitigationAnalyticsPage() {
                             variant="default"
                             style={{
                               fontSize: 10,
-                              background: `${areaColors[d.legalArea] ?? "#1e1e3a"}20`,
-                              color: areaColors[d.legalArea] ?? "#8a8aa8",
+                              background: `${areaColors[d.legalArea] ?? "var(--ds-border)"}20`,
+                              color: areaColors[d.legalArea] ?? "var(--ds-text-subtle)",
                               border: "none",
                             }}
                           >
