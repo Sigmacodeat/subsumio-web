@@ -2064,16 +2064,6 @@ const _landingDe = {
       others: "Keine DACH-spezifische Rechtskenntnis",
     },
     {
-      feature: "Fristenmanagement",
-      subsumio: "Automatische Berechnung nach ZPO/BGB/ABGB mit Feiertagen",
-      others: "Keine Fristenberechnung",
-    },
-    {
-      feature: "Integrationen",
-      subsumio: "DATEV, RA-Micro, anwalt.de, IMAP, WhatsApp Meta API",
-      others: "Keine Anwaltssoftware-Integrationen",
-    },
-    {
       feature: "Training auf Mandantendaten",
       subsumio: "Nein — niemals",
       others: "Oft ja, oder unklar",
@@ -2331,16 +2321,6 @@ const _landingEn = {
       feature: "DACH law",
       subsumio: "ABGB, BGB, ZGB, ZPO, EO, HGB — correct deadlines and statutes",
       others: "No DACH-specific legal knowledge",
-    },
-    {
-      feature: "Deadline management",
-      subsumio: "Automatic calculation per ZPO/BGB/ABGB with holidays",
-      others: "No deadline calculation",
-    },
-    {
-      feature: "Integrations",
-      subsumio: "DATEV, RA-Micro, anwalt.de, IMAP, WhatsApp Meta API",
-      others: "No law firm software integrations",
     },
     {
       feature: "Training on client data",

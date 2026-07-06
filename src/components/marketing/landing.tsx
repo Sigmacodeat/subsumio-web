@@ -37,7 +37,6 @@ import LiveDemo from "./live-demo";
 import ConversationShowreel from "./conversation-showreel";
 import ScrollPinnedDashboard from "./scroll-pinned-dashboard";
 import SuperbrainAdvantage from "./superbrain-advantage";
-import TrustBand from "./trust-band";
 import { TestimonialsSection } from "./testimonials";
 import AudienceTabs from "./audience-tabs";
 import { Section, SectionHeading, ICONS, accentTile, H2_CTA_CLASS } from "./chrome";
@@ -339,8 +338,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         {/* Logo Marquee — certifications & integrations sliding from right to left */}
         <LogoMarquee lang={lang} />
 
-        {/* Pain — agitation hook. Comes directly after the hero trust strip so
-            the emotional cost lands BEFORE the proof band (P-A-S-P narrative). */}
+        {/* Pain + Stats — merged: cost of inaction, then proof metrics in one section. */}
         {"pains" in t && t.pains && (
           <Section
             tone="light"
@@ -375,44 +373,39 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   </StaggerItem>
                 ))}
               </StaggerContainer>
+
+              {/* Proof stats — directly below pain, same section */}
+              <StaggerContainer
+                className="mt-12 grid grid-cols-2 gap-8 text-center md:grid-cols-4"
+                stagger={0.09}
+              >
+                {t.stats.map((stat) => {
+                  const num = parseFloat(stat.value.replace(/[^0-9.]/g, ""));
+                  const suffix = stat.value.replace(/[0-9.,]/g, "");
+                  const prefix = stat.value.match(/^[^0-9]*/)?.[0] ?? "";
+                  const isNumeric = !isNaN(num) && num > 0;
+                  return (
+                    <StaggerItem key={stat.label}>
+                      <p className="mb-1 text-4xl font-bold [color:var(--brand-text)] md:text-5xl">
+                        {isNumeric ? (
+                          <AnimatedCounter
+                            to={num}
+                            prefix={prefix}
+                            suffix={suffix}
+                            decimals={stat.value.includes(".") ? 1 : 0}
+                          />
+                        ) : (
+                          stat.value
+                        )}
+                      </p>
+                      <p className="text-sm [color:var(--mk-text-muted)]">{stat.label}</p>
+                    </StaggerItem>
+                  );
+                })}
+              </StaggerContainer>
             </motion.div>
           </Section>
         )}
-
-        {/* Stats — proof band. Answers the agitation above with hard metrics. */}
-        <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8" aria-label={ui.ariaKeyMetrics}>
-          <motion.div {...reveal} className="mx-auto max-w-4xl">
-            <StaggerContainer
-              className="mb-6 grid grid-cols-2 gap-8 text-center md:grid-cols-4"
-              stagger={0.09}
-            >
-              {t.stats.map((stat) => {
-                const num = parseFloat(stat.value.replace(/[^0-9.]/g, ""));
-                const suffix = stat.value.replace(/[0-9.,]/g, "");
-                const prefix = stat.value.match(/^[^0-9]*/)?.[0] ?? "";
-                const isNumeric = !isNaN(num) && num > 0;
-                return (
-                  <StaggerItem key={stat.label}>
-                    <p className="mb-1 text-4xl font-bold [color:var(--brand-text)] md:text-5xl">
-                      {isNumeric ? (
-                        <AnimatedCounter
-                          to={num}
-                          prefix={prefix}
-                          suffix={suffix}
-                          decimals={stat.value.includes(".") ? 1 : 0}
-                        />
-                      ) : (
-                        stat.value
-                      )}
-                    </p>
-                    <p className="text-sm [color:var(--mk-text-muted)]">{stat.label}</p>
-                  </StaggerItem>
-                );
-              })}
-            </StaggerContainer>
-            <p className="text-center text-xs [color:var(--mk-text-subtle)]">{t.statsNote}</p>
-          </motion.div>
-        </Section>
 
         <SuperbrainAdvantage lang={lang} />
 
@@ -517,9 +510,6 @@ export default function LandingPage({ lang }: { lang: Lang }) {
 
         {/* Audience segments — homepage teaser linking to /solutions/* */}
         <AudienceTabs lang={lang} />
-
-        {/* Trust band — light section (primes comparison + pricing) */}
-        <TrustBand lang={lang} />
 
         {/* Testimonials — social proof from real lawyers */}
         <TestimonialsSection lang={lang} />

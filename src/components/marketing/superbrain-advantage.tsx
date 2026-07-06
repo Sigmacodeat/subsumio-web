@@ -20,76 +20,76 @@ import { H2_CTA_CLASS } from "./chrome";
 const copy = {
   en: {
     eyebrow: "The Subsumio engine",
-    title: "Not another chatbot. The firm brain your practice runs on.",
-    sub: "Most assistants answer one prompt and forget. Subsumio builds a durable, permission-aware knowledge base over your own work: files, messages, meetings, entities, deadlines and open risks — then answers with citations.",
+    title: "Not a chatbot. Your firm's memory.",
+    sub: "Subsumio connects matters, deadlines and people into a knowledge graph — and answers with sources, not guesses.",
     center: "Your firm brain",
     proof: [
       {
         icon: Database,
         title: "Own data first",
-        desc: "Answers come from your matters, clients and documents — not generic web guesses.",
+        desc: "Answers from your matters — not generic web guesses.",
       },
       {
         icon: GitBranch,
         title: "Graph memory",
-        desc: "People, companies, files, deadlines and relationships stay connected as reusable context.",
+        desc: "People, companies, deadlines and relationships stay connected.",
       },
       {
         icon: FileSearch,
         title: "Cited answers",
-        desc: "Every synthesis keeps source trails visible, with gaps called out instead of hidden.",
+        desc: "Every synthesis shows sources and calls out gaps.",
       },
       {
         icon: ShieldCheck,
         title: "Deployment choice",
-        desc: "Self-hosted on your keys and hardware, or managed EU cloud when you want speed.",
+        desc: "Self-hosted or managed EU cloud.",
       },
     ],
-    capabilityTitle: "What your knowledge base does",
+    capabilityTitle: "What your brain does",
     capabilities: [
       {
         icon: Brain,
         title: "Compounds",
-        desc: "Every matter, every email, every deadline feeds the knowledge base — it remembers what your firm has ever done.",
+        desc: "Every matter, every email feeds the brain — it remembers everything.",
       },
       {
         icon: FileSearch,
         title: "Retrieves",
-        desc: "Hybrid search across vector, keyword and graph finds the passage that wins the case — with page-level citations.",
+        desc: "Hybrid search finds the passage that wins the case — with citations.",
       },
       {
         icon: ShieldCheck,
         title: "Protects",
-        desc: "Per-matter scoping, fuzz-tested isolation, no training on your data. Confidentiality by architecture, not promise.",
+        desc: "Per-matter scoping, no training on your data.",
       },
     ],
     cta: "Explore features",
   },
   de: {
     eyebrow: "Die Subsumio-Engine",
-    title: "Kein weiterer Chatbot. Das Gedächtnis, auf dem deine Kanzlei läuft.",
-    sub: "Die meisten Assistenten beantworten einen Prompt und vergessen. Subsumio baut eine dauerhafte Wissensbasis über deine eigene Arbeit: Dateien, Nachrichten, Termine, Entitäten, Fristen und offene Risiken — und antwortet mit Fundstellen.",
+    title: "Kein Chatbot. Das Gedächtnis deiner Kanzlei.",
+    sub: "Subsumio verbindet Akten, Fristen und Personen zu einem Wissensgraphen — und antwortet mit Quellen, nicht mit Vermutungen.",
     center: "Deine Kanzlei-Wissensbasis",
     proof: [
       {
         icon: Database,
         title: "Eigene Daten zuerst",
-        desc: "Antworten kommen aus deinen Akten, Mandanten und Dokumenten — nicht aus generischen Web-Vermutungen.",
+        desc: "Antworten aus deinen Akten — nicht aus generischen Web-Vermutungen.",
       },
       {
         icon: GitBranch,
         title: "Graph-Gedächtnis",
-        desc: "Personen, Firmen, Dateien, Fristen und Beziehungen bleiben als wiederverwendbarer Kontext verbunden.",
+        desc: "Personen, Firmen, Fristen und Beziehungen bleiben verbunden.",
       },
       {
         icon: FileSearch,
         title: "Belegte Antworten",
-        desc: "Jede Synthese zeigt Quellen und markiert Lücken, statt sie elegant zu verstecken.",
+        desc: "Jede Synthese zeigt Quellen und markiert Lücken.",
       },
       {
         icon: ShieldCheck,
         title: "Deployment-Wahl",
-        desc: "Self-hosted mit eigenen Keys und Hardware, oder gemanagte EU-Cloud wenn es schnell gehen soll.",
+        desc: "Self-hosted oder gemanagte EU-Cloud.",
       },
     ],
     capabilityTitle: "Was dein Brain kann",
@@ -97,17 +97,17 @@ const copy = {
       {
         icon: Brain,
         title: "Wächst",
-        desc: "Jede Akte, jede E-Mail, jede Frist speist das Brain — es erinnert sich an alles, was deine Kanzlei je getan hat.",
+        desc: "Jede Akte, jede E-Mail speist das Brain — es erinnert sich an alles.",
       },
       {
         icon: FileSearch,
         title: "Findet",
-        desc: "Hybride Suche über Vektor, Keyword und Graph findet die Passage, die den Fall gewinnt — mit seitengenauen Zitaten.",
+        desc: "Hybride Suche findet die Passage, die den Fall gewinnt — mit Zitaten.",
       },
       {
         icon: ShieldCheck,
         title: "Schützt",
-        desc: "Scoping pro Mandat, fuzz-getestete Isolation, kein Training auf deinen Daten. Vertraulichkeit per Architektur, nicht per Versprechen.",
+        desc: "Scoping pro Mandat, kein Training auf deinen Daten.",
       },
     ],
     cta: "Features ansehen",
