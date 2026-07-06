@@ -22,7 +22,9 @@ export interface UserContext {
 const TOOL_INSTRUCTIONS = `Du hast Zugriff auf Kanzlei-Funktionen. Wenn der Nutzer eine Aktion wünscht, kannst du Tool-Marker in deine Antwort einbetten (unsichtbar für den Nutzer, aber vom System erkannt):
 - Navigation: [TOOL:navigate route="/dashboard/cases"]
 - Akten suchen: [TOOL:search_cases query="Muster GmbH"]
-- Fristen prüfen: [TOOL:search_deadlines status="open"] oder [TOOL:search_deadlines case_slug="cases/123" status="overdue"]
+- Fristen prüfen: [TOOL:search_deadlines status="open"] oder [TOOL:search_deadlines case_slug="cases/123" status="critical"]
+- Mandanten-Lookup (Akte + Fristen kombiniert): [TOOL:client_lookup query="Muster GmbH" deadline_status="open"]
+- Frist als erledigt markieren: [TOOL:deadline_mark_done deadline_slug="deadline-123"]
 - Wissen suchen: [TOOL:search_knowledge query="BGB § 280"]
 - Akte erstellen: [TOOL:create_case title="Klage Muster GmbH" client_name="Max Mustermann" opponent_name="Gegner AG"]
 - Aktenzusammenfassung: [TOOL:case_summary case_slug="cases/123"]
@@ -41,16 +43,32 @@ const TOOL_INSTRUCTIONS = `Du hast Zugriff auf Kanzlei-Funktionen. Wenn der Nutz
 - Vertragspflichten extrahieren: [TOOL:obligation_extract document_slug="vertrag-2026" jurisdiction="de"]
 - Massenreview: [TOOL:tabular_review questions="Kündigungsfrist?; Haftungsbegrenzung?" document_slugs="vertrag-a;vertrag-b"]
 
-Verwende Tools nur wenn der Nutzer explizit eine Aktion wünscht. Antworte sonst normal. Wenn eine gewünschte Aktion kein eigenes Tool hat, navigiere zum passenden Dashboard-Modul und erkläre knapp, was dort zu tun ist.
+## PROAKTIVE FRISTEN-WARNUNGEN (Hybrid)
+Wenn du im Kontext einer Akte antwortest und aus den Akten-Vitals oder der Konversation erkennst, dass Fristen kritisch oder überfällig sind (< 7 Tage), erwähne PROAKTIV am Anfang deiner Antwort:
+"⚠️ Wichtige Frist: [Fristname] läuft in X Tagen ab."
+Verwende dazu auch das search_deadlines Tool mit status="critical", um aktuelle Fristen zu zeigen.
+Bei weniger dringenden Fristen (> 7 Tage) erwähne Fristen nur auf ausdrliche Nachfrage.
+
+## SMART FOLLOW-UPS
+Nach jeder Antwort schlage 1-3 kurze Follow-Up-Fragen vor, die für den Nutzer im aktuellen Kontext sinnvoll sind. Format:
+💡 **Follow-Up:** [Vorgeschlagene Frage]
+Beispiele:
+- "Welche Fristen sind in dieser Akte noch offen?"
+- "Soll ich ein Mandanten-Update erstellen?"
+- "Möchten Sie die zugehörigen Dokumente sehen?"
+- "Soll ich eine Frist als erledigt markieren?"
+
+Verwende Tools nur wenn der Nutzer explizit eine Aktion wünscht oder wenn du proaktiv kritische Fristen prüfst. Antworte sonst normal. Wenn eine gewünschte Aktion kein eigenes Tool hat, navigiere zum passenden Dashboard-Modul und erkläre knapp, was dort zu tun ist.
 
 Du kannst MEHRERE Tool-Marker in einer einzigen Antwort verwenden, wenn mehrere Aktionen sinnvoll sind (z.B. zuerst eine Akte suchen, dann eine Frist prüfen). Setze jeden Marker in eine eigene Zeile.
 
-WICHTIG: Tools, die Daten erstellen oder verändern (create_case, intake_create, time_entry, document_request_create), erfordern eine Bestätigung durch den Nutzer. Betten Sie diese Tool-Marker wie gewohnt ein — das System zeigt dem Nutzer einen Bestätigungsdialog an.`;
+WICHTIG: Tools, die Daten erstellen oder verändern (create_case, intake_create, time_entry, document_request_create, deadline_mark_done), erfordern eine Bestätigung durch den Nutzer. Betten Sie diese Tool-Marker wie gewohnt ein — das System zeigt dem Nutzer einen Bestätigungsdialog an.`;
 
 export function buildSystemPrompt(
   jurisdiction: Jurisdiction,
   userContext?: UserContext,
-  conversationHistory?: ChatMessage[]
+  conversationHistory?: ChatMessage[],
+  memoryContext?: string
 ): string {
   const jurisdictionLabel = JURISDICTION_LABELS[jurisdiction];
   const now = new Date();
@@ -132,6 +150,11 @@ Aktuelle Tageszeit: ${timeOfDay} (${hour}:${String(now.getMinutes()).padStart(2,
   personaParts.push(`\n## MANDANTENISOLATION
 Wenn eine konkrete Akte aktiv ist, beantworte Fragen NUR im Kontext dieser Akte. Vermeide mandantenübergreifende Informationen. Wenn ein Nutzer nach anderen Mandanten fragt, weise darauf hin, dass du nur im Kontext der aktuellen Akte antworten kannst.`);
 
+  // ── Copilot Memory ──
+  if (memoryContext) {
+    personaParts.push(`\n${memoryContext}`);
+  }
+
   // ── Conversation History ──
   if (conversationHistory && conversationHistory.length > 0) {
     const historyParts: string[] = ["\n## BISHERIGE KONVERSATION"];
@@ -178,6 +201,7 @@ interface PromptContextParams {
   userContext?: UserContext;
   conversationHistory?: ChatMessage[];
   matterVitals?: MatterVitalsSummary;
+  memoryContext?: string;
 }
 
 export async function buildPromptContext(
@@ -197,6 +221,7 @@ export async function buildPromptContext(
     userContext,
     conversationHistory,
     matterVitals,
+    memoryContext,
   } = params;
 
   const contextParts: string[] = [];
@@ -258,7 +283,12 @@ export async function buildPromptContext(
     );
   }
 
-  const systemPrompt = buildSystemPrompt(jurisdiction, userContext, conversationHistory);
+  const systemPrompt = buildSystemPrompt(
+    jurisdiction,
+    userContext,
+    conversationHistory,
+    memoryContext
+  );
   const userInput = `${contextParts.join("\n")}\nNUTZERFRAGE:\n${userText}`;
 
   return { systemPrompt, userInput };

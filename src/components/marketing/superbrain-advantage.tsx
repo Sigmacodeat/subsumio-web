@@ -10,7 +10,7 @@ import { H2_CTA_CLASS } from "./chrome";
 const copy = {
   en: {
     eyebrow: "Why lawyers trust Subsumio",
-    title: "Three promises — not marketing, architecture.",
+    title: "Three promises — built, not claimed.",
     sub: "Trust isn't a feature. It's the foundation.",
     pillars: [
       {
@@ -21,35 +21,35 @@ const copy = {
       {
         icon: FileSearch,
         title: "Cites what it says",
-        desc: "Every answer with citations from your matters. No hallucinations, no black box — or Subsumio says honestly: 'No answer.'",
+        desc: "Every answer with citations from your matters. No hallucinations, no black box. If the file doesn't contain an answer, Subsumio says so honestly: 'No answer.'",
       },
       {
         icon: ShieldCheck,
         title: "Stays where you want",
-        desc: "On-premise on your hardware or EU cloud with DPA. Your data, your keys, your control.",
+        desc: "On-premise on your hardware or EU cloud with DPA. You decide where the brain lives.",
       },
     ],
     cta: "Explore features",
   },
   de: {
     eyebrow: "Warum Anwälte Subsumio vertrauen",
-    title: "Drei Versprechen — keine Marketingworte, sondern Architektur.",
+    title: "Drei Versprechen — gebaut, nicht behauptet.",
     sub: "Vertrauen ist kein Feature. Es ist die Grundlage.",
     pillars: [
       {
         icon: LockKeyhole,
         title: "Schweigt für sich",
-        desc: "Verschwiegenheit per Architektur, nicht per Versprechen. § 203 StGB, § 9 RAO, BGFA — kein Dritter verarbeitet Mandantendaten.",
+        desc: "Verschwiegenheit durch Architektur, nicht durch Versprechen. § 203 StGB, § 9 RAO, BGFA — kein Dritter verarbeitet Mandantendaten.",
       },
       {
         icon: FileSearch,
         title: "Belegt, was es sagt",
-        desc: "Jede Antwort mit Fundstellen aus deinen Akten. Keine Halluzinationen, keine Blackbox — oder Subsumio sagt ehrlich: ‚Keine Antwort.'",
+        desc: "Jede Antwort mit Fundstellen aus deinen Akten. Keine Halluzinationen, keine Blackbox. Wenn die Akte nichts hergibt, sagt Subsumio ehrlich: ‚Keine Antwort.'",
       },
       {
         icon: ShieldCheck,
         title: "Bleibt, wo du willst",
-        desc: "On-Premise auf deiner Hardware oder EU-Cloud mit AVV. Deine Daten, deine Schlüssel, deine Kontrolle.",
+        desc: "On-Premise auf deiner Hardware oder EU-Cloud mit AVV. Du entscheidest, wo das Gehirn lebt.",
       },
     ],
     cta: "Features ansehen",

@@ -273,6 +273,7 @@ export function PipelinePanel({
                 content: page.content || "",
                 attorneyReviewRequired: fm.attorney_review_required === true,
                 caseRef: String(fm.case_ref ?? caseSlug),
+                frontmatter: fm,
               });
             }
           }

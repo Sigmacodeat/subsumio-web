@@ -32,7 +32,9 @@ export type CopilotToolName =
   | "obligation_extract"
   | "tabular_review"
   | "deep_analysis"
-  | "send_email";
+  | "send_email"
+  | "client_lookup"
+  | "deadline_mark_done";
 
 export interface ToolConditionContext {
   role: string;
@@ -141,6 +143,14 @@ export const TOOL_CONDITIONS: Record<CopilotToolName, ToolCondition> = {
   send_email: {
     roles: ["admin", "lawyer", "assistant"],
     description: "Send an email to one or more recipients",
+  },
+  client_lookup: {
+    roles: ["admin", "lawyer", "assistant"],
+    description: "Look up a client's case and deadlines in one step",
+  },
+  deadline_mark_done: {
+    roles: ["admin", "lawyer", "assistant"],
+    description: "Mark a deadline as done/completed",
   },
 };
 

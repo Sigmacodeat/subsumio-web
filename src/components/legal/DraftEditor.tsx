@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Save,
   Download,
@@ -18,6 +18,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf";
 import { generateDraftPdf } from "@/lib/legal-draft-pdf";
+import { CertificationStamp } from "@/components/legal/certification-stamp";
+import { createCertification, type AICertification } from "@/lib/ai-certification";
 
 export interface DraftInfo {
   slug: string;
@@ -27,6 +29,7 @@ export interface DraftInfo {
   content: string;
   attorneyReviewRequired: boolean;
   caseRef?: string;
+  frontmatter?: Record<string, unknown>;
 }
 
 interface DraftEditorProps {
@@ -190,6 +193,15 @@ export function DraftEditor({
 
   const isDraft = draft.status === "draft";
 
+  const certification: AICertification = useMemo(
+    () =>
+      createCertification(draft.frontmatter ?? {}, {
+        caseSlug: draft.caseRef ?? caseSlug,
+        layerName: draft.draftType,
+      }),
+    [draft.frontmatter, draft.caseRef, draft.draftType, caseSlug]
+  );
+
   return (
     <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
       {/* Header */}
@@ -283,6 +295,9 @@ export function DraftEditor({
           </Button>
         </div>
       </div>
+
+      {/* AI Certification Stamp */}
+      <CertificationStamp cert={certification} compact={false} expandable={true} />
 
       {/* Content / Editor */}
       {mode === "view" ? (

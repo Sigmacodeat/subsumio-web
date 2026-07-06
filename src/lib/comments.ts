@@ -202,7 +202,16 @@ export interface Notification {
     | "document_request"
     | "retention"
     | "autonomous_task"
-    | "inbox_triage";
+    | "inbox_triage"
+    | "copilot_stale_case"
+    | "copilot_missing_time_entries"
+    | "copilot_budget_warning"
+    | "copilot_unread_documents"
+    | "copilot_conflict_pending"
+    | "copilot_missing_parties"
+    | "copilot_legal_hold_active"
+    | "copilot_critical_deadline"
+    | "copilot_no_tasks";
   data: Record<string, unknown>;
   readAt: string | null;
   createdAt: string;
@@ -301,7 +310,7 @@ async function persistNotification(notif: Notification): Promise<void> {
   });
 }
 
-async function persistNotificationUpsert(notif: Notification): Promise<void> {
+export async function persistNotificationUpsert(notif: Notification): Promise<void> {
   const pool = getSharedPgPool();
   if (pool) {
     try {

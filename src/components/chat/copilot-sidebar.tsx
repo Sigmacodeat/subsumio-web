@@ -28,6 +28,8 @@ import { useResizable } from "@/lib/use-resizable";
 import { useLang, type TFunc } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import { ChatPanel, type ChatPanelHandle } from "@/components/chat/chat-panel";
+import { CopilotNotifications } from "@/components/copilot/copilot-notifications";
+import { CopilotMemoryPanel } from "@/components/copilot/copilot-memory-panel";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useMotionValue, useTransform } from "framer-motion";
 import type { ChatContextType } from "@/components/chat/chat-types";
@@ -1917,22 +1919,30 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             {panelMode === "activity" ? (
               <ActivityFeedPanel lang={lang} />
             ) : (
-              <div className="min-h-0 min-w-0 flex-1">
+              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
                 {!isMobile && (
-                  <ChatPanel
-                    ref={chatRef}
-                    context={{
-                      type: routeContext.type,
-                      caseSlug: routeContext.caseSlug,
-                      pageSlug: routeContext.pageSlug,
-                    }}
-                    className="h-full rounded-none border-0"
-                    placeholder={
-                      routeContext.caseSlug
-                        ? t("chat.placeholder_case")
-                        : t("chat.placeholder_global")
-                    }
-                  />
+                  <>
+                    <div className="border-b border-[color:var(--ds-border)] px-3 py-2">
+                      <CopilotNotifications />
+                    </div>
+                    <div className="border-b border-[color:var(--ds-border)] px-3 py-2">
+                      <CopilotMemoryPanel />
+                    </div>
+                    <ChatPanel
+                      ref={chatRef}
+                      context={{
+                        type: routeContext.type,
+                        caseSlug: routeContext.caseSlug,
+                        pageSlug: routeContext.pageSlug,
+                      }}
+                      className="h-full rounded-none border-0"
+                      placeholder={
+                        routeContext.caseSlug
+                          ? t("chat.placeholder_case")
+                          : t("chat.placeholder_global")
+                      }
+                    />
+                  </>
                 )}
               </div>
             )}

@@ -2861,11 +2861,41 @@ export const api = {
       data?: unknown;
       error?: string;
       display: {
-        kind: "navigation" | "list" | "summary" | "confirmation";
+        kind:
+          | "navigation"
+          | "list"
+          | "summary"
+          | "confirmation"
+          | "deadline_cards"
+          | "client_overview";
         title: string;
-        items?: Array<{ label: string; value?: string; href?: string }>;
+        items?: Array<{
+          label: string;
+          value?: string;
+          href?: string;
+          deadlineStatus?: string;
+          daysUntil?: number;
+          dueDate?: string;
+          caseTitle?: string;
+          caseSlug?: string;
+          isNotfrist?: boolean;
+          isVorfrist?: boolean;
+          needsSecondCheck?: boolean;
+          deadlineSlug?: string;
+        }>;
         href?: string;
         message?: string;
+        filterHref?: string;
+        summary?: {
+          caseTitle?: string;
+          caseSlug?: string;
+          caseStatus?: string;
+          openDeadlines?: number;
+          totalDeadlines?: number;
+          nextDeadlineDate?: string;
+          openTasks?: number;
+          documentCount?: number;
+        };
       };
     }> {
       return request("/api/copilot/tools", {

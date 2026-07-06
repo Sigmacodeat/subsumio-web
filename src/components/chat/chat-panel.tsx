@@ -21,6 +21,7 @@ import {
   processStreamingChunk,
   type UserContext,
 } from "@/components/chat/system-prompt";
+import { buildMemoryContext } from "@/lib/copilot-memory";
 import { type QueryMode } from "@/lib/matter-context-types";
 import type { BrainPage } from "@/lib/types";
 import { caseFrontmatter } from "@/lib/legal-types";
@@ -36,6 +37,7 @@ import {
   type ThinkMode,
   type ToolCall,
   type ToolType,
+  type ToolResultDisplay,
   DESTRUCTIVE_TOOLS,
 } from "@/components/chat/chat-types";
 import {
@@ -295,6 +297,21 @@ const TOOL_RULES: ToolDetectionRule[] = [
       case_slug: m[3] || undefined,
     }),
   },
+  {
+    pattern: /\[TOOL:client_lookup\s+query="([^"]+)"(?:\s+deadline_status="([^"]+)")?\]/i,
+    tool: "client_lookup",
+    label: "chat.tool.client_lookup",
+    extractParams: (m) => ({
+      query: m[1],
+      deadline_status: (m[2] as "open" | "critical" | "overdue" | "all") || "open",
+    }),
+  },
+  {
+    pattern: /\[TOOL:deadline_mark_done\s+deadline_slug="([^"]+)"\]/i,
+    tool: "deadline_mark_done",
+    label: "chat.tool.deadline_mark_done",
+    extractParams: (m) => ({ deadline_slug: m[1] }),
+  },
 ];
 
 // Detect all tool markers in AI response — supports multiple tools per response (G16)
@@ -313,6 +330,7 @@ function detectToolCalls(
     "time_entry",
     "case_summary",
     "search_deadlines",
+    "client_lookup",
   ]);
 
   for (const rule of TOOL_RULES) {
@@ -365,7 +383,7 @@ async function executeToolCall(toolCall: ToolCall): Promise<ToolCall> {
         success: result.success,
         data: result.data,
         error: result.error,
-        display: result.display,
+        display: result.display as ToolResultDisplay,
       },
     };
   } catch (err) {
@@ -1732,6 +1750,14 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   const handleEditById = useCallback((messageId: string) => handleEdit(messageId), [handleEdit]);
   const handleReplyById = useCallback((messageId: string) => handleReply(messageId), [handleReply]);
 
+  // Follow-up suggestion click: send as new user message
+  const handleFollowUp = useCallback(
+    (query: string) => {
+      if (query.trim()) handleSend(query.trim());
+    },
+    [handleSend]
+  );
+
   // Example queries
   const exampleQueries = useMemo(() => {
     if (context.type === "case" && selectedCaseSlug) {
@@ -1897,6 +1923,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
                     onToolConfirm={handleToolConfirm}
                     onToolCancel={handleToolCancel}
                     onToolRetry={handleToolRetry}
+                    onFollowUp={handleFollowUp}
                   />
                 </div>
               );

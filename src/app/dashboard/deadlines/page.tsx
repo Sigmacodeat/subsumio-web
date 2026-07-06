@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   CalendarClock,
   AlertTriangle,
@@ -121,6 +121,7 @@ export default function DeadlinesPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
+  const [caseFilter, setCaseFilter] = useState<string | null>(null);
   const [rechtsraum, setRechtsraum] = useState<{ state?: string; country?: string }>({});
   const [secondCheckTarget, setSecondCheckTarget] = useState<DeadlineItem | null>(null);
   const [secondCheckBusy, setSecondCheckBusy] = useState(false);
@@ -326,6 +327,17 @@ export default function DeadlinesPage() {
     };
   }, [loadDeadlines]);
 
+  // Apply URL filter params from deep-link navigation (e.g. ?case=xxx&status=critical)
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const caseParam = searchParams.get("case");
+    const statusParam = searchParams.get("status");
+    if (caseParam) setCaseFilter(caseParam);
+    if (statusParam === "critical") setFilter("critical");
+    else if (statusParam === "overdue") setFilter("overdue");
+    else if (statusParam === "open") setFilter("all");
+  }, [searchParams]);
+
   useEffect(() => {
     const handler = () => setQuickCreateOpen(true);
     window.addEventListener("subsumio:create-deadline", handler);
@@ -368,7 +380,9 @@ export default function DeadlinesPage() {
       (filter === "unreviewed" && d.reviewStatus === "unreviewed") ||
       (filter === "notfrist" && d.isNotfrist) ||
       (filter === "vorfrist" && d.vorfristDate && new Date(d.vorfristDate) <= new Date());
-    return matchesSearch && matchesFilter;
+    const matchesCase =
+      !caseFilter || d.caseSlug === caseFilter || d.caseSlug === `cases/${caseFilter}`;
+    return matchesSearch && matchesFilter && matchesCase;
   });
 
   const counts = deadlines.reduce(
@@ -934,6 +948,13 @@ export default function DeadlinesPage() {
 
       {/* Status filter chips */}
       <div className="flex flex-wrap items-center gap-2">
+        {caseFilter && (
+          <FilterChip
+            label={`${t("deadlines.filter_case" as never)}: ${caseFilter.replace(/^cases\//, "")}`}
+            active
+            onClick={() => setCaseFilter(null)}
+          />
+        )}
         <FilterChip
           label={t("deadlines.all")}
           active={filter === "all"}

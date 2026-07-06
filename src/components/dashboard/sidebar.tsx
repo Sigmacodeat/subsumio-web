@@ -99,6 +99,8 @@ import {
   Calendar,
   Palette,
   Flag,
+  Shield,
+  Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -176,6 +178,13 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: ShieldX,
         labelKey: "nav.kollisionspruefung",
         keywords: "conflict check konflikt conflict search",
+      },
+      {
+        href: "/dashboard/case-search",
+        icon: Filter,
+        labelKey: "nav.case_search",
+        keywords: "case search faceted filter akten suche filter rechtsgebiet status priorität",
+        tooltipKey: "nav.tooltip.case_search",
       },
       {
         href: "/dashboard/client-portal",
@@ -550,6 +559,14 @@ export const NAV_SECTIONS: NavSection[] = [
         audienceTier: "erweitert",
       },
       {
+        href: "/dashboard/case-assignment",
+        icon: Users,
+        labelKey: "nav.case_assignment",
+        keywords: "case assignment team zuweisung aktenverteilung workload",
+        audienceTier: "erweitert",
+        tooltipKey: "nav.tooltip.case_assignment",
+      },
+      {
         href: "/dashboard/online-booking",
         icon: Calendar,
         labelKey: "nav.online_booking",
@@ -600,6 +617,14 @@ export const NAV_SECTIONS: NavSection[] = [
         keywords: "verfahrensdokumentation gobd protokoll",
         audienceTier: "dach-integration",
         tooltipKey: "nav.tooltip.verfahrensdoku",
+      },
+      {
+        href: "/dashboard/legal-hold",
+        icon: Shield,
+        labelKey: "nav.legal_hold",
+        keywords: "legal hold litigation hold beweissicherungsbeschluss erhaltung",
+        audienceTier: "dach-integration",
+        tooltipKey: "nav.tooltip.legal_hold",
       },
       {
         href: "/dashboard/outbound-register",

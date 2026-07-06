@@ -20,11 +20,18 @@ import {
   X,
   Check,
   RotateCw,
+  Briefcase,
+  AlertTriangle,
+  CalendarDays,
+  Bell,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import type { ToolCall, ToolResultDisplay } from "@/components/chat/chat-types";
+import { useState } from "react";
+import type { ToolCall, ToolResultDisplay, DeadlineCardItem } from "@/components/chat/chat-types";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
+import { api } from "@/lib/api";
+import { useToast } from "@/components/ui/toast";
 
 const TOOL_ICONS: Record<string, typeof FileText> = {
   navigate: ArrowRight,
@@ -41,6 +48,8 @@ const TOOL_ICONS: Record<string, typeof FileText> = {
   client_update: Users,
   meeting_tasks: ClipboardList,
   intake_create: UserPlus,
+  client_lookup: Users,
+  deadline_mark_done: CheckCircle2,
 };
 
 const PARAM_LABEL_KEYS: Record<string, string> = {
@@ -228,6 +237,16 @@ function ToolResultCard({
   const { t } = useLang();
   const hasItems = display.items && display.items.length > 0;
 
+  // Rich deadline cards
+  if (display.kind === "deadline_cards") {
+    return <DeadlineCardsDisplay display={display} onNavigate={onNavigate} />;
+  }
+
+  // Client overview (combined case + deadlines + summary)
+  if (display.kind === "client_overview") {
+    return <ClientOverviewDisplay display={display} onNavigate={onNavigate} />;
+  }
+
   return (
     <div className="overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
       {/* Header */}
@@ -291,6 +310,413 @@ function ToolResultCard({
           <ArrowRight size={12} />
         </button>
       )}
+    </div>
+  );
+}
+
+// ── Status Badge Helpers ──────────────────────────────────────────────
+
+const STATUS_STYLES: Record<
+  string,
+  { bg: string; text: string; border: string; icon: typeof Clock }
+> = {
+  pending: {
+    bg: "bg-blue-50 dark:bg-blue-950/30",
+    text: "text-blue-700 dark:text-blue-300",
+    border: "border-blue-200 dark:border-blue-900",
+    icon: Clock,
+  },
+  warning: {
+    bg: "bg-amber-50 dark:bg-amber-950/30",
+    text: "text-amber-700 dark:text-amber-300",
+    border: "border-amber-200 dark:border-amber-900",
+    icon: AlertTriangle,
+  },
+  critical: {
+    bg: "bg-orange-50 dark:bg-orange-950/30",
+    text: "text-orange-700 dark:text-orange-300",
+    border: "border-orange-200 dark:border-orange-900",
+    icon: AlertTriangle,
+  },
+  overdue: {
+    bg: "bg-red-50 dark:bg-red-950/30",
+    text: "text-red-700 dark:text-red-400",
+    border: "border-red-200 dark:border-red-900",
+    icon: AlertCircle,
+  },
+  done: {
+    bg: "bg-emerald-50 dark:bg-emerald-950/30",
+    text: "text-emerald-700 dark:text-emerald-300",
+    border: "border-emerald-200 dark:border-emerald-900",
+    icon: CheckCircle2,
+  },
+  vorfrist: {
+    bg: "bg-purple-50 dark:bg-purple-950/30",
+    text: "text-purple-700 dark:text-purple-300",
+    border: "border-purple-200 dark:border-purple-900",
+    icon: Bell,
+  },
+};
+
+function StatusBadge({
+  status,
+  daysUntil,
+  t,
+}: {
+  status: string;
+  daysUntil?: number;
+  t: (k: never) => string;
+}) {
+  const style = STATUS_STYLES[status] ?? STATUS_STYLES.pending;
+  const Icon = style.icon;
+  const label = t(`chat.deadline.status_${status}` as never);
+  const daysLabel =
+    daysUntil !== undefined
+      ? daysUntil < 0
+        ? t("chat.deadline.days_overdue" as never).replace("{n}", String(Math.abs(daysUntil)))
+        : daysUntil === 0
+          ? t("chat.deadline.today" as never)
+          : t("chat.deadline.days_left" as never).replace("{n}", String(daysUntil))
+      : null;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium",
+        style.bg,
+        style.text,
+        style.border
+      )}
+    >
+      <Icon size={9} />
+      {label}
+      {daysLabel && <span className="opacity-70">· {daysLabel}</span>}
+    </span>
+  );
+}
+
+// ── Rich Deadline Card ─────────────────────────────────────────────────
+
+function DeadlineCard({
+  item,
+  onNavigate,
+  onMarkDone,
+  marking,
+}: {
+  item: DeadlineCardItem;
+  onNavigate: (href?: string) => void;
+  onMarkDone?: (slug: string) => void;
+  marking?: boolean;
+}) {
+  const { t, lang } = useLang();
+  const status = item.deadlineStatus ?? "pending";
+  const style = STATUS_STYLES[status] ?? STATUS_STYLES.pending;
+  const dueDate = item.dueDate ? new Date(item.dueDate) : null;
+  const dateStr = dueDate
+    ? dueDate.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "";
+
+  return (
+    <div
+      className={cn(
+        "border-b border-[color:var(--ds-border)] px-3 py-2.5 last:border-b-0",
+        style.bg
+      )}
+    >
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          {/* Title + Notfrist badge */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => onNavigate(item.href)}
+              disabled={!item.href}
+              className={cn(
+                "min-w-0 flex-1 truncate text-left text-xs font-medium text-[color:var(--ds-text)]",
+                item.href && "hover:text-[color:var(--brand-primary)]"
+              )}
+            >
+              {item.label}
+            </button>
+            {item.isNotfrist && (
+              <span className="shrink-0 rounded bg-red-100 px-1 py-0.5 text-[9px] font-bold text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                {t("chat.deadline.notfrist" as never)}
+              </span>
+            )}
+            {item.isVorfrist && (
+              <span className="shrink-0 rounded bg-purple-100 px-1 py-0.5 text-[9px] font-bold text-purple-700 dark:bg-purple-950/40 dark:text-purple-300">
+                {t("chat.deadline.vorfrist" as never)}
+              </span>
+            )}
+          </div>
+          {/* Case title */}
+          {item.caseTitle && (
+            <div className="mt-0.5 flex items-center gap-1 text-[11px] text-[color:var(--ds-text-subtle)]">
+              <Briefcase size={9} />
+              <span className="truncate">{item.caseTitle}</span>
+            </div>
+          )}
+          {/* Date + Status + Days */}
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 text-[11px] text-[color:var(--ds-text-muted)]">
+              <CalendarDays size={10} />
+              {dateStr}
+            </span>
+            <StatusBadge status={status} daysUntil={item.daysUntil} t={t} />
+            {item.needsSecondCheck && (
+              <span className="inline-flex items-center gap-0.5 rounded bg-amber-100 px-1 py-0.5 text-[9px] font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                <ShieldAlert size={8} />
+                {t("chat.deadline.second_check" as never)}
+              </span>
+            )}
+          </div>
+        </div>
+        {/* Inline actions */}
+        <div className="flex shrink-0 flex-col gap-1">
+          {onMarkDone && item.deadlineSlug && status !== "done" && (
+            <button
+              onClick={() => onMarkDone(item.deadlineSlug!)}
+              disabled={marking}
+              className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[10px] font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
+              title={t("chat.deadline.mark_done" as never)}
+            >
+              {marking ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
+              {t("chat.deadline.mark_done" as never)}
+            </button>
+          )}
+          {item.href && (
+            <button
+              onClick={() => onNavigate(item.href)}
+              className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] transition-colors hover:bg-[color:var(--ds-hover)]"
+            >
+              <ExternalLink size={10} />
+              {t("chat.deadline.open_case" as never)}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Deadline Cards Display ─────────────────────────────────────────────
+
+function DeadlineCardsDisplay({
+  display,
+  onNavigate,
+}: {
+  display: ToolResultDisplay;
+  onNavigate: (href?: string) => void;
+}) {
+  const { t } = useLang();
+  const { addToast } = useToast();
+  const [markingSlug, setMarkingSlug] = useState<string | null>(null);
+  const [doneSlugs, setDoneSlugs] = useState<Set<string>>(new Set());
+  const items = display.items ?? [];
+  const visibleItems = items.filter((i) => !doneSlugs.has(i.deadlineSlug ?? ""));
+
+  const handleMarkDone = async (slug: string) => {
+    setMarkingSlug(slug);
+    try {
+      const result = await api.copilot.executeTool("deadline_mark_done", { deadline_slug: slug });
+      if (result.success) {
+        setDoneSlugs((prev) => new Set(prev).add(slug));
+        addToast({ type: "success", title: t("chat.deadline.mark_done" as never) });
+      } else {
+        addToast({ type: "error", title: result.error ?? "Fehler beim Markieren" });
+      }
+    } catch {
+      addToast({ type: "error", title: t("chat.deadline.mark_done" as never) + " fehlgeschlagen" });
+    } finally {
+      setMarkingSlug(null);
+    }
+  };
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
+      {/* Header */}
+      <div className="flex items-center gap-2 border-b border-[color:var(--ds-border)] px-3 py-2">
+        <CalendarClock size={14} className="text-[color:var(--brand-primary)]" />
+        <span className="flex-1 truncate text-xs font-semibold text-[color:var(--ds-text)]">
+          {display.title}
+        </span>
+        {display.filterHref && (
+          <button
+            onClick={() => onNavigate(display.filterHref)}
+            className="flex items-center gap-1 text-xs font-medium text-[color:var(--brand-primary)] transition-opacity hover:opacity-80"
+          >
+            {t("chat.deadline.all_deadlines" as never)}
+            <ArrowRight size={11} />
+          </button>
+        )}
+      </div>
+      {/* Message */}
+      {display.message && (
+        <p className="px-3 py-2 text-xs text-[color:var(--ds-text-muted)]">{display.message}</p>
+      )}
+      {/* Cards */}
+      {visibleItems.length > 0 ? (
+        <div className="max-h-80 overflow-y-auto">
+          {visibleItems.map((item, idx) => (
+            <DeadlineCard
+              key={item.deadlineSlug ?? `dl-${idx}`}
+              item={item}
+              onNavigate={onNavigate}
+              onMarkDone={handleMarkDone}
+              marking={markingSlug === item.deadlineSlug}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="px-3 py-4 text-center text-xs text-[color:var(--ds-text-muted)]">
+          {t("chat.deadline.none_found" as never)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Client Overview Display ────────────────────────────────────────────
+
+function ClientOverviewDisplay({
+  display,
+  onNavigate,
+}: {
+  display: ToolResultDisplay;
+  onNavigate: (href?: string) => void;
+}) {
+  const { t, lang } = useLang();
+  const { addToast } = useToast();
+  const [markingSlug, setMarkingSlug] = useState<string | null>(null);
+  const [doneSlugs, setDoneSlugs] = useState<Set<string>>(new Set());
+  const s = display.summary;
+  const items = display.items ?? [];
+  const visibleItems = items.filter((i) => !doneSlugs.has(i.deadlineSlug ?? ""));
+
+  const handleMarkDone = async (slug: string) => {
+    setMarkingSlug(slug);
+    try {
+      const result = await api.copilot.executeTool("deadline_mark_done", { deadline_slug: slug });
+      if (result.success) {
+        setDoneSlugs((prev) => new Set(prev).add(slug));
+        addToast({ type: "success", title: t("chat.deadline.mark_done" as never) });
+      } else {
+        addToast({ type: "error", title: result.error ?? "Fehler beim Markieren" });
+      }
+    } catch {
+      addToast({ type: "error", title: t("chat.deadline.mark_done" as never) + " fehlgeschlagen" });
+    } finally {
+      setMarkingSlug(null);
+    }
+  };
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
+      {/* Header */}
+      <div className="flex items-center gap-2 border-b border-[color:var(--ds-border)] px-3 py-2">
+        <Users size={14} className="text-[color:var(--brand-primary)]" />
+        <span className="flex-1 truncate text-xs font-semibold text-[color:var(--ds-text)]">
+          {display.title}
+        </span>
+      </div>
+
+      {/* Case Summary Section */}
+      {s && (
+        <div className="border-b border-[color:var(--ds-border)] px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            <Briefcase size={12} className="text-[color:var(--ds-text-subtle)]" />
+            <span className="flex-1 truncate text-xs font-medium text-[color:var(--ds-text)]">
+              {s.caseTitle ?? "—"}
+            </span>
+            {s.caseStatus && (
+              <span className="rounded bg-[color:var(--ds-surface)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--ds-text-muted)]">
+                {s.caseStatus}
+              </span>
+            )}
+          </div>
+          <div className="mt-1.5 flex flex-wrap gap-3 text-[11px] text-[color:var(--ds-text-subtle)]">
+            {s.openDeadlines !== undefined && (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1",
+                  s.openDeadlines > 0 && "text-orange-600 dark:text-orange-400"
+                )}
+              >
+                <CalendarClock size={10} />
+                {s.openDeadlines}/{s.totalDeadlines ?? 0} {t("chat.deadline.fristen" as never)}
+              </span>
+            )}
+            {s.openTasks !== undefined && (
+              <span className="inline-flex items-center gap-1">
+                <ClipboardList size={10} />
+                {s.openTasks} {t("chat.deadline.tasks" as never)}
+              </span>
+            )}
+            {s.documentCount !== undefined && (
+              <span className="inline-flex items-center gap-1">
+                <FileText size={10} />
+                {s.documentCount} {t("chat.deadline.docs" as never)}
+              </span>
+            )}
+            {s.nextDeadlineDate && (
+              <span className="inline-flex items-center gap-1 font-medium text-orange-600 dark:text-orange-400">
+                <Clock size={10} />
+                {new Date(s.nextDeadlineDate).toLocaleDateString(
+                  lang === "en" ? "en-GB" : "de-DE",
+                  { day: "2-digit", month: "short" }
+                )}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Message */}
+      {display.message && (
+        <p className="px-3 py-2 text-xs text-[color:var(--ds-text-muted)]">{display.message}</p>
+      )}
+
+      {/* Deadline Cards */}
+      {visibleItems.length > 0 && (
+        <div className="max-h-64 overflow-y-auto">
+          {visibleItems.map((item, idx) => (
+            <DeadlineCard
+              key={item.deadlineSlug ?? `dl-${idx}`}
+              item={item}
+              onNavigate={onNavigate}
+              onMarkDone={handleMarkDone}
+              marking={markingSlug === item.deadlineSlug}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Footer: Deep-link buttons */}
+      <div className="flex items-center gap-2 border-t border-[color:var(--ds-border)] px-3 py-2">
+        {s?.caseSlug && (
+          <button
+            onClick={() =>
+              onNavigate(`/dashboard/cases/${(s.caseSlug ?? "").replace(/^cases\//, "")}`)
+            }
+            className="flex items-center gap-1 text-xs font-medium text-[color:var(--brand-primary)] transition-opacity hover:opacity-80"
+          >
+            <Briefcase size={11} />
+            {t("chat.deadline.to_case" as never)}
+            <ArrowRight size={10} />
+          </button>
+        )}
+        {display.filterHref && (
+          <button
+            onClick={() => onNavigate(display.filterHref)}
+            className="ml-auto flex items-center gap-1 text-xs font-medium text-[color:var(--brand-primary)] transition-opacity hover:opacity-80"
+          >
+            {t("chat.deadline.all_deadlines" as never)}
+            <ArrowRight size={11} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

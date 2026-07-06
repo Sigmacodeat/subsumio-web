@@ -175,6 +175,7 @@ export const D = {
   "nav.anonymize": { de: "Anonymisierung", en: "Anonymization" },
   "nav.word_addin": { de: "Word Add-in", en: "Word Add-in" },
   "nav.verfahrensdoku": { de: "Verfahrensdoku", en: "Process Documentation" },
+  "nav.legal_hold": { de: "Legal Hold", en: "Legal Hold" },
   "nav.data_export": { de: "Datenexport", en: "Data Export" },
 
   // ── Sidebar: nav tooltips ──
@@ -301,6 +302,18 @@ export const D = {
   "nav.tooltip.verfahrensdoku": {
     de: "Verfahrensdokumentation nach GoBD führen — nur relevant bei deutscher Buchhaltungspflicht",
     en: "Maintain procedure documentation per GoBD — only relevant for German accounting requirements",
+  },
+  "nav.tooltip.legal_hold": {
+    de: "Legal Hold verwalten — Akten vor Löschung und Änderung schützen",
+    en: "Manage legal holds — protect matters from deletion and modification",
+  },
+  "nav.tooltip.case_assignment": {
+    de: "Akten Teammitgliedern zuweisen und Arbeitslastverteilung anzeigen",
+    en: "Assign cases to team members and view workload distribution",
+  },
+  "nav.tooltip.case_search": {
+    de: "Akten mit mehreren Filtern durchsuchen — Status, Rechtsgebiet, Priorität, Bearbeiter, Gericht, Tags",
+    en: "Search cases with multiple filters — status, legal area, priority, lawyer, court, tags",
   },
   "nav.tooltip.data_export": {
     de: "Vollständiger Datenexport für DSGVO-Auskünfte oder Mandantenübergabe",
@@ -2940,6 +2953,21 @@ export const D = {
     de: "Pipeline-Fehler, Warnungen und steckengebliebene Jobs über alle Akten hinweg",
     en: "Pipeline failures, warnings, and stuck jobs across all cases",
   },
+  "widget.deadline_check": { de: "Fristen-Post-Check", en: "Deadline Post-Check" },
+  "widget.deadline_check_desc": {
+    de: "Deterministische Überprüfung KI-extrahierter Fristen gegen gesetzliche Fristenregeln (§§ ZPO/BGB/ABGB)",
+    en: "Deterministic verification of AI-extracted deadlines against statutory deadline rules (§§ ZPO/BGB/ABGB)",
+  },
+  "widget.matter_budget": { de: "Akten-Budgets", en: "Matter Budgets" },
+  "widget.matter_budget_desc": {
+    de: "Budget-Tracking über alle Akten — Honorarvereinbarungen mit Auslastung und Warnungen",
+    en: "Budget tracking across all matters — fee agreements with utilization and alerts",
+  },
+  "widget.legal_hold": { de: "Legal Hold", en: "Legal Hold" },
+  "widget.legal_hold_desc": {
+    de: "Akten unter Legal Hold — Schutz vor Löschung, Archivierung und Änderung",
+    en: "Matters under legal hold — protected from deletion, archiving, and modification",
+  },
   "widget.activity_deadline": { de: "Frist erfasst", en: "Deadline registered" },
   "widget.activity_intake": { de: "Neuer Eingang", en: "New intake" },
   "widget.activity_review": { de: "KI-Review offen", en: "AI review pending" },
@@ -5391,6 +5419,31 @@ export const D = {
   "chat.tool.translate_text": { de: "Übersetzen", en: "Translate" },
   "chat.tool.obligation_extract": { de: "Pflichten extrahieren", en: "Extract obligations" },
   "chat.tool.tabular_review": { de: "Massenreview", en: "Bulk review" },
+  "chat.tool.client_lookup": { de: "Mandanten-Lookup", en: "Client lookup" },
+  "chat.tool.deadline_mark_done": { de: "Frist erledigen", en: "Mark deadline done" },
+
+  // ── Chat: deadline card labels ──
+  "chat.deadline.status_pending": { de: "Offen", en: "Open" },
+  "chat.deadline.status_warning": { de: "Bald fällig", en: "Due soon" },
+  "chat.deadline.status_critical": { de: "Kritisch", en: "Critical" },
+  "chat.deadline.status_overdue": { de: "Überfällig", en: "Overdue" },
+  "chat.deadline.status_done": { de: "Erledigt", en: "Done" },
+  "chat.deadline.status_vorfrist": { de: "Vorfrist", en: "Pre-deadline" },
+  "chat.deadline.days_left": { de: "noch {n} Tage", en: "{n} days left" },
+  "chat.deadline.days_overdue": { de: "{n} Tage überfällig", en: "{n} days overdue" },
+  "chat.deadline.today": { de: "heute fällig", en: "due today" },
+  "chat.deadline.notfrist": { de: "Notfrist", en: "Notfrist" },
+  "chat.deadline.vorfrist": { de: "Vorfrist", en: "Vorfrist" },
+  "chat.deadline.second_check": { de: "Zweitprüfung", en: "2nd check" },
+  "chat.deadline.mark_done": { de: "Erledigt", en: "Done" },
+  "chat.deadline.open_case": { de: "Akte öffnen", en: "Open case" },
+  "chat.deadline.all_deadlines": { de: "Alle Fristen", en: "All deadlines" },
+  "chat.deadline.none_found": { de: "Keine Fristen gefunden.", en: "No deadlines found." },
+  "chat.deadline.to_case": { de: "Zur Akte", en: "To case" },
+  "chat.deadline.fristen": { de: "Fristen", en: "deadlines" },
+  "chat.deadline.tasks": { de: "Aufgaben", en: "tasks" },
+  "chat.deadline.docs": { de: "Dokumente", en: "documents" },
+  "deadlines.filter_case": { de: "Akte", en: "Case" },
 
   // ── Chat: UI strings ──
   "chat.scroll_bottom": { de: "Nach unten scrollen", en: "Scroll to bottom" },
@@ -7037,6 +7090,8 @@ export const D = {
   "nav.dictation": { de: "Diktat", en: "Dictation" },
   "nav.kyc": { de: "GwG / KYC", en: "KYC" },
   "nav.absences": { de: "Urlaubsvertretung", en: "Vacation Delegation" },
+  "nav.case_assignment": { de: "Akten-Zuweisung", en: "Case Assignment" },
+  "nav.case_search": { de: "Akten-Suche", en: "Case Search" },
   "nav.ethical_wall": { de: "Ethical Wall", en: "Ethical Wall" },
   "nav.webhooks": { de: "Webhooks", en: "Webhooks" },
   "nav.time_suggestions": { de: "Zeit-Vorschläge", en: "Time Suggestions" },

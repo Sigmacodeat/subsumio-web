@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, memo } from "react";
+import { useState, memo, useMemo } from "react";
 import {
   Copy,
   Check,
@@ -13,6 +13,7 @@ import {
   Pencil,
   Download,
   Reply,
+  Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { renderMarkdown } from "@/lib/markdown";
@@ -36,6 +37,7 @@ interface ChatMessageBubbleProps {
   onToolConfirm?: (toolCallId: string) => void;
   onToolCancel?: (toolCallId: string) => void;
   onToolRetry?: (toolCallId: string) => void;
+  onFollowUp?: (query: string) => void;
 }
 
 function ChatMessageBubbleInner({
@@ -48,6 +50,7 @@ function ChatMessageBubbleInner({
   onToolConfirm,
   onToolCancel,
   onToolRetry,
+  onFollowUp,
 }: ChatMessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const { t, lang } = useLang();
@@ -65,8 +68,32 @@ function ChatMessageBubbleInner({
     }
   }
 
-  const rendered =
-    features?.markdownRendering !== false && !isUser ? renderMarkdown(message.content) : null;
+  // Extract follow-up suggestions from AI response (💡 **Follow-Up:** ...)
+  const followUps = useMemo(() => {
+    if (isUser || message.isStreaming || message.error) return [];
+    const lines = message.content.split("\n");
+    const suggestions: string[] = [];
+    for (const line of lines) {
+      const match = line.match(/💡\s*\*\*Follow-Up:?\*\*\s*(.+)/i);
+      if (match && match[1]) {
+        const text = match[1].trim().replace(/^["']+|["']+$/g, "");
+        if (text) suggestions.push(text);
+      }
+    }
+    return suggestions.slice(0, 3);
+  }, [message.content, isUser, message.isStreaming, message.error]);
+
+  // Strip follow-up lines from displayed content
+  const displayContent = useMemo(() => {
+    if (isUser || followUps.length === 0) return message.content;
+    return message.content
+      .split("\n")
+      .filter((line) => !line.match(/💡\s*\*\*Follow-Up:?\*\*\s*.+/i))
+      .join("\n");
+  }, [message.content, isUser, followUps]);
+
+  const displayRendered =
+    features?.markdownRendering !== false && !isUser ? renderMarkdown(displayContent) : null;
 
   return (
     <div
@@ -104,8 +131,8 @@ function ChatMessageBubbleInner({
               <AlertTriangle size={14} className="mt-0.5 shrink-0" />
               <span>{message.error}</span>
             </div>
-          ) : rendered ? (
-            <div className="prose-chat" dangerouslySetInnerHTML={{ __html: rendered }} />
+          ) : displayRendered ? (
+            <div className="prose-chat" dangerouslySetInnerHTML={{ __html: displayRendered }} />
           ) : (
             <p className={cn("whitespace-pre-wrap", isUser && "font-medium")}>
               {message.content}
@@ -149,6 +176,29 @@ function ChatMessageBubbleInner({
             compact
           />
         )}
+
+        {/* Smart Follow-Up suggestions (assistant only) */}
+        {!isUser &&
+          !message.isStreaming &&
+          !message.error &&
+          followUps.length > 0 &&
+          onFollowUp && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-[color:var(--ds-text-subtle)]">
+                <Lightbulb size={10} />
+                {t("chat.follow_ups" as never)}
+              </span>
+              {followUps.map((suggestion, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => onFollowUp(suggestion)}
+                  className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1 text-[11px] text-[color:var(--ds-text-muted)] transition-colors hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--brand-primary)]"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
 
         {/* Metadata row (assistant only) */}
         {!isUser && !message.isStreaming && !message.error && (

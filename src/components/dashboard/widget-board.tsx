@@ -61,6 +61,9 @@ import { InsightsWidget } from "./insights-widget";
 import { CrossCaseTimeline } from "./cross-case-timeline";
 import { ConfidenceScoreWidget } from "./confidence-score-widget";
 import { SilentFailureWidget } from "./silent-failure-widget";
+import { DeadlineCheckWidget } from "./deadline-check-widget";
+import { MatterBudgetWidget } from "./matter-budget-widget";
+import { LegalHoldWidget } from "./legal-hold-widget";
 
 const KanzleiInsights = dynamic(() => import("./kanzlei-insights").then((m) => m.KanzleiInsights), {
   loading: () => (
@@ -412,6 +415,12 @@ export function WidgetBoard() {
         return <ConfidenceScoreWidget />;
       case "silent-failures":
         return <SilentFailureWidget />;
+      case "deadline-check":
+        return <DeadlineCheckWidget />;
+      case "matter-budget":
+        return <MatterBudgetWidget />;
+      case "legal-hold":
+        return <LegalHoldWidget />;
       case "insights":
         return <InsightsWidget />;
       default:

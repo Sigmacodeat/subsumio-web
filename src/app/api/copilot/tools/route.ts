@@ -102,7 +102,7 @@ const searchCasesSchema = z.object({
 
 const searchDeadlinesSchema = z.object({
   case_slug: z.string().optional(),
-  status: z.enum(["open", "overdue", "all"]).default("open"),
+  status: z.enum(["open", "overdue", "critical", "all"]).default("open"),
   limit: z.number().min(1).max(50).default(10),
 });
 
@@ -226,6 +226,16 @@ const sendEmailToolSchema = z.object({
   case_slug: z.string().max(200).optional(),
 });
 
+const clientLookupSchema = z.object({
+  query: z.string().min(1).max(500),
+  include_deadlines: z.boolean().default(true),
+  deadline_status: z.enum(["open", "critical", "overdue", "all"]).default("open"),
+});
+
+const deadlineMarkDoneSchema = z.object({
+  deadline_slug: z.string().min(1).max(300),
+});
+
 const toolSchema = z.object({
   tool: z.enum([
     "navigate",
@@ -250,6 +260,8 @@ const toolSchema = z.object({
     "tabular_review",
     "deep_analysis",
     "send_email",
+    "client_lookup",
+    "deadline_mark_done",
   ]),
   params: z.record(z.unknown()).default({}),
 });
@@ -261,11 +273,35 @@ interface ToolResponse {
   data?: unknown;
   error?: string;
   display: {
-    kind: "navigation" | "list" | "summary" | "confirmation";
+    kind: "navigation" | "list" | "summary" | "confirmation" | "deadline_cards" | "client_overview";
     title: string;
-    items?: Array<{ label: string; value?: string; href?: string }>;
+    items?: Array<{
+      label: string;
+      value?: string;
+      href?: string;
+      deadlineStatus?: string;
+      daysUntil?: number;
+      dueDate?: string;
+      caseTitle?: string;
+      caseSlug?: string;
+      isNotfrist?: boolean;
+      isVorfrist?: boolean;
+      needsSecondCheck?: boolean;
+      deadlineSlug?: string;
+    }>;
     href?: string;
     message?: string;
+    filterHref?: string;
+    summary?: {
+      caseTitle?: string;
+      caseSlug?: string;
+      caseStatus?: string;
+      openDeadlines?: number;
+      totalDeadlines?: number;
+      nextDeadlineDate?: string;
+      openTasks?: number;
+      documentCount?: number;
+    };
   };
 }
 
@@ -354,27 +390,56 @@ async function executeSearchDeadlines(
       frontmatter?: Record<string, unknown>;
     }>;
     const now = new Date();
-    const filtered = pages.filter((p) => {
-      if (params.status === "all") return true;
-      const dueStr = p.frontmatter?.due_date as string | undefined;
-      if (!dueStr) return params.status === "open";
-      const due = new Date(dueStr);
-      if (params.status === "overdue") return due < now;
-      return due >= now;
-    });
+    now.setUTCHours(0, 0, 0, 0);
+
+    // Build rich deadline items using shared helper
+    const items = pages
+      .map((p) => buildDeadlineItem(p, now))
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    // Filter by requested status
+    let filtered = items;
+    if (params.status === "open") {
+      filtered = items.filter((i) => i.deadlineStatus !== "done" && i.deadlineStatus !== "overdue");
+    } else if (params.status === "overdue") {
+      filtered = items.filter((i) => i.deadlineStatus === "overdue");
+    } else if (params.status === "critical") {
+      filtered = items.filter(
+        (i) =>
+          i.deadlineStatus === "critical" ||
+          i.deadlineStatus === "overdue" ||
+          i.deadlineStatus === "vorfrist"
+      );
+    }
+
+    // Sort: most urgent first
+    filtered.sort((a, b) => (a.daysUntil ?? 9999) - (b.daysUntil ?? 9999));
+
+    // Build filter href for deep-link to deadlines page
+    const filterParams = new URLSearchParams();
+    if (params.case_slug) filterParams.set("case", params.case_slug);
+    if (params.status === "critical") filterParams.set("status", "critical");
+    else if (params.status === "overdue") filterParams.set("status", "overdue");
+    const filterHref = `/dashboard/deadlines${filterParams.toString() ? `?${filterParams.toString()}` : ""}`;
+
+    const statusLabel =
+      params.status === "open"
+        ? "offen"
+        : params.status === "overdue"
+          ? "überfällig"
+          : params.status === "critical"
+            ? "kritisch"
+            : "alle";
+
     return {
       success: true,
       data: filtered,
       display: {
-        kind: "list",
-        title: `${filtered.length} Fristen (${params.status === "open" ? "offen" : params.status === "overdue" ? "überfällig" : "alle"})`,
-        items: filtered.map((p) => ({
-          label: p.title,
-          value: (p.frontmatter?.due_date as string) ?? "Kein Datum",
-          href: p.frontmatter?.case_slug
-            ? `/dashboard/cases/${String(p.frontmatter.case_slug).replace(/^cases\//, "")}`
-            : "/dashboard/deadlines",
-        })),
+        kind: "deadline_cards",
+        title: `${filtered.length} Fristen (${statusLabel})`,
+        items: filtered,
+        filterHref,
+        message: filtered.length === 0 ? `Keine ${statusLabel} Fristen gefunden.` : undefined,
       },
     };
   } catch (_err) {
@@ -382,7 +447,7 @@ async function executeSearchDeadlines(
       success: false,
       error: "Search failed",
       display: {
-        kind: "list",
+        kind: "deadline_cards",
         title: "Fristen-Suche fehlgeschlagen",
         message: "Engine nicht erreichbar",
       },
@@ -1383,6 +1448,243 @@ async function executeSendEmail(
   }
 }
 
+// ── Client Lookup: Combined case + deadline search + summary ───────────
+
+async function executeClientLookup(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof clientLookupSchema>
+): Promise<ToolResponse> {
+  try {
+    // 1. Search cases by query
+    const caseParams = new URLSearchParams();
+    caseParams.set("type", "legal_case");
+    caseParams.set("q", params.query);
+    caseParams.set("limit", "5");
+    const caseRes = await fetch(`${ENGINE_URL}/api/pages?${caseParams.toString()}`, {
+      headers: ctx.headers,
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!caseRes.ok) throw new Error(`HTTP ${caseRes.status}`);
+    const cases = (await caseRes.json()) as Array<{
+      slug: string;
+      title: string;
+      frontmatter?: Record<string, unknown>;
+    }>;
+
+    if (cases.length === 0) {
+      return {
+        success: true,
+        data: { cases: [], deadlines: [] },
+        display: {
+          kind: "client_overview",
+          title: `Keine Akten für "${params.query}" gefunden`,
+          message: "Keine passende Akte gefunden. Bitte Namen oder Schlagwort prüfen.",
+        },
+      };
+    }
+
+    // Use first matching case (most relevant)
+    const casePage = cases[0];
+    const caseFm = casePage.frontmatter ?? {};
+    const caseSlug = casePage.slug;
+
+    // 2. Search deadlines for this case
+    let deadlineItems: Array<NonNullable<ReturnType<typeof buildDeadlineItem>>> = [];
+    if (params.include_deadlines) {
+      const dlParams = new URLSearchParams();
+      dlParams.set("type", "deadline");
+      dlParams.set("q", caseSlug);
+      dlParams.set("limit", "20");
+      const dlRes = await fetch(`${ENGINE_URL}/api/pages?${dlParams.toString()}`, {
+        headers: ctx.headers,
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (dlRes.ok) {
+        const dlPages = (await dlRes.json()) as Array<{
+          slug: string;
+          title: string;
+          frontmatter?: Record<string, unknown>;
+        }>;
+        const now = new Date();
+        now.setUTCHours(0, 0, 0, 0);
+        deadlineItems = dlPages
+          .map((p) => buildDeadlineItem(p, now))
+          .filter((item): item is NonNullable<typeof item> => item !== null);
+
+        // Filter by requested deadline_status
+        if (params.deadline_status === "open") {
+          deadlineItems = deadlineItems.filter(
+            (i) => i.deadlineStatus !== "done" && i.deadlineStatus !== "overdue"
+          );
+        } else if (params.deadline_status === "critical") {
+          deadlineItems = deadlineItems.filter(
+            (i) =>
+              i.deadlineStatus === "critical" ||
+              i.deadlineStatus === "overdue" ||
+              i.deadlineStatus === "vorfrist"
+          );
+        } else if (params.deadline_status === "overdue") {
+          deadlineItems = deadlineItems.filter((i) => i.deadlineStatus === "overdue");
+        }
+        deadlineItems.sort((a, b) => (a.daysUntil ?? 9999) - (b.daysUntil ?? 9999));
+      }
+    }
+
+    // 3. Build summary
+    const openDeadlines = deadlineItems.filter((i) => i.deadlineStatus !== "done").length;
+    const nextDeadline = deadlineItems.find(
+      (i) => i.deadlineStatus !== "done" && (i.daysUntil ?? 9999) >= 0
+    );
+
+    // 4. Build filter href
+    const filterParams = new URLSearchParams();
+    filterParams.set("case", caseSlug);
+    if (params.deadline_status === "critical") filterParams.set("status", "critical");
+    else if (params.deadline_status === "overdue") filterParams.set("status", "overdue");
+    const filterHref = `/dashboard/deadlines?${filterParams.toString()}`;
+
+    return {
+      success: true,
+      data: { case: casePage, deadlines: deadlineItems },
+      display: {
+        kind: "client_overview",
+        title: `Mandantenübersicht: ${casePage.title}`,
+        items: deadlineItems,
+        filterHref,
+        summary: {
+          caseTitle: casePage.title,
+          caseSlug,
+          caseStatus: (caseFm.status as string) ?? undefined,
+          openDeadlines,
+          totalDeadlines: deadlineItems.length,
+          nextDeadlineDate: nextDeadline?.dueDate,
+        },
+        message: deadlineItems.length === 0 ? "Keine offenen Fristen für diese Akte." : undefined,
+      },
+    };
+  } catch (_err) {
+    return {
+      success: false,
+      error: "Client lookup failed",
+      display: {
+        kind: "client_overview",
+        title: "Mandantensuche fehlgeschlagen",
+        message: "Engine nicht erreichbar",
+      },
+    };
+  }
+}
+
+// Helper to build a rich deadline item from a page
+function buildDeadlineItem(
+  p: { slug: string; title: string; frontmatter?: Record<string, unknown> },
+  now: Date
+) {
+  const fm = p.frontmatter ?? {};
+  const dueStr = (fm.due_date || fm.date) as string | undefined;
+  if (!dueStr) return null;
+  const due = new Date(dueStr);
+  due.setUTCHours(0, 0, 0, 0);
+  const diff = due.getTime() - now.getTime();
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+  let status: string;
+  if (fm.status === "done") {
+    status = "done";
+  } else if (days < 0) {
+    status = "overdue";
+  } else if (days <= 3) {
+    status = "critical";
+  } else if (days <= 7) {
+    status = "warning";
+  } else if (fm.vorfrist_date) {
+    const vf = new Date(fm.vorfrist_date as string);
+    vf.setUTCHours(0, 0, 0, 0);
+    status = vf.getTime() <= now.getTime() ? "vorfrist" : "pending";
+  } else {
+    status = "pending";
+  }
+
+  const caseSlug = (fm.case_slug as string) ?? undefined;
+  const isNotfrist = Boolean(fm.notfrist || fm.is_notfrist);
+  const isVorfrist = Boolean(fm.vorfrist_date);
+  const needsSecondCheck = Boolean(fm.needs_second_check || (isNotfrist && fm.status !== "done"));
+
+  return {
+    label: p.title,
+    value: dueStr,
+    href: caseSlug
+      ? `/dashboard/cases/${caseSlug.replace(/^cases\//, "")}?tab=deadlines`
+      : "/dashboard/deadlines",
+    deadlineStatus: status,
+    daysUntil: days,
+    dueDate: dueStr,
+    caseTitle: (fm.case_title as string) ?? undefined,
+    caseSlug,
+    isNotfrist,
+    isVorfrist,
+    needsSecondCheck,
+    deadlineSlug: p.slug,
+  };
+}
+
+// ── Deadline Mark Done ─────────────────────────────────────────────────
+
+async function executeDeadlineMarkDone(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof deadlineMarkDoneSchema>
+): Promise<ToolResponse> {
+  try {
+    // Update the deadline page frontmatter via engine
+    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(params.deadline_slug)}`, {
+      method: "PATCH",
+      headers: {
+        ...ctx.headers,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        frontmatter: { status: "done", done_at: new Date().toISOString() },
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    if (!res.ok) {
+      // Fallback: try to at least confirm
+      return {
+        success: false,
+        error: `HTTP ${res.status}`,
+        display: {
+          kind: "confirmation",
+          title: "Frist konnte nicht markiert werden",
+          message:
+            "Engine hat den Status nicht aktualisiert. Bitte auf der Fristenseite manuell erledigen.",
+        },
+      };
+    }
+
+    return {
+      success: true,
+      data: { slug: params.deadline_slug, status: "done" },
+      display: {
+        kind: "confirmation",
+        title: "Frist als erledigt markiert",
+        message: `Frist "${params.deadline_slug}" wurde als erledigt markiert.`,
+        href: "/dashboard/deadlines",
+      },
+    };
+  } catch (_err) {
+    return {
+      success: false,
+      error: "Mark done failed",
+      display: {
+        kind: "confirmation",
+        title: "Aktion fehlgeschlagen",
+        message: "Engine nicht erreichbar. Bitte später erneut versuchen.",
+      },
+    };
+  }
+}
+
 // ── GET: List available tools for current user (Agent Conditionals) ──
 
 export const GET = createHandler(
@@ -1544,6 +1846,16 @@ export const POST = createHandler(
         case "send_email": {
           const params = sendEmailToolSchema.parse(body.params);
           result = await executeSendEmail(ctx, params);
+          break;
+        }
+        case "client_lookup": {
+          const params = clientLookupSchema.parse(body.params);
+          result = await executeClientLookup(ctx, params);
+          break;
+        }
+        case "deadline_mark_done": {
+          const params = deadlineMarkDoneSchema.parse(body.params);
+          result = await executeDeadlineMarkDone(ctx, params);
           break;
         }
         default:

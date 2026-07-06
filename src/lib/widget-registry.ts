@@ -4,6 +4,7 @@ import {
   AlertCircle,
   AlertTriangle,
   Briefcase,
+  CalendarCheck,
   CalendarClock,
   Clock,
   Gauge,
@@ -13,8 +14,10 @@ import {
   MessageSquare,
   PenTool,
   Scale,
+  Shield,
   Sparkles,
   TrendingUp,
+  Wallet,
 } from "lucide-react";
 
 export type WidgetId =
@@ -34,6 +37,9 @@ export type WidgetId =
   | "cross-timeline"
   | "confidence-score"
   | "silent-failures"
+  | "deadline-check"
+  | "matter-budget"
+  | "legal-hold"
   | "insights";
 
 export interface WidgetPref {
@@ -218,13 +224,43 @@ export const WIDGET_REGISTRY: WidgetMeta[] = [
     fullWidth: false,
   },
   {
+    id: "deadline-check",
+    type: "deadline-check",
+    icon: CalendarCheck,
+    labelKey: "widget.deadline_check",
+    descKey: "widget.deadline_check_desc",
+    defaultVisible: true,
+    defaultOrder: 16,
+    fullWidth: false,
+  },
+  {
+    id: "matter-budget",
+    type: "budget",
+    icon: Wallet,
+    labelKey: "widget.matter_budget",
+    descKey: "widget.matter_budget_desc",
+    defaultVisible: true,
+    defaultOrder: 17,
+    fullWidth: false,
+  },
+  {
+    id: "legal-hold",
+    type: "legal-hold",
+    icon: Shield,
+    labelKey: "widget.legal_hold",
+    descKey: "widget.legal_hold_desc",
+    defaultVisible: true,
+    defaultOrder: 18,
+    fullWidth: false,
+  },
+  {
     id: "insights",
     type: "insights",
     icon: Lightbulb,
     labelKey: "widget.insights",
     descKey: "widget.insights_desc",
     defaultVisible: false,
-    defaultOrder: 16,
+    defaultOrder: 19,
     fullWidth: true,
   },
 ];

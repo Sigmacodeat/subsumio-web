@@ -30,8 +30,8 @@ import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { UI_STRINGS, type Lang } from "@/content/site";
 
 const _deShowcase = {
-  waEyebrow: "Unterwegs und immer im Bild",
-  waTitle: "Immer erreichbar — nie eine Frist verpassen",
+  waEyebrow: "Das Büro in der Hosentasche",
+  waTitle: "Immer dabei — nie eine Frist verpassen",
   waSub:
     "Subsumio ist deine Sekretärin für unterwegs: Zeiten buchen, Belege ablegen, Fristen im Blick — alles über WhatsApp, ohne App-Wechsel.",
   waPoints: [
@@ -95,8 +95,8 @@ const COPY = {
   at: _deShowcase,
   ch: _deShowcase,
   en: {
-    waEyebrow: "On the go and in the loop",
-    waTitle: "Always reachable — never miss a deadline",
+    waEyebrow: "The office in your pocket",
+    waTitle: "Always with you — never miss a deadline",
     waSub:
       "Subsumio is your secretary on the go: book time, file receipts, track deadlines — all via WhatsApp, no app switch.",
     waPoints: [

@@ -57,7 +57,9 @@ export type ToolType =
   | "translate_text"
   | "obligation_extract"
   | "tabular_review"
-  | "send_email";
+  | "send_email"
+  | "client_lookup"
+  | "deadline_mark_done";
 
 export const DESTRUCTIVE_TOOLS: ReadonlySet<ToolType> = new Set([
   "create_case",
@@ -65,6 +67,7 @@ export const DESTRUCTIVE_TOOLS: ReadonlySet<ToolType> = new Set([
   "time_entry",
   "document_request_create",
   "send_email",
+  "deadline_mark_done",
 ]);
 
 export interface ToolCall {
@@ -84,12 +87,38 @@ export interface ToolResult {
   display: ToolResultDisplay;
 }
 
+export interface DeadlineCardItem {
+  label: string;
+  value?: string;
+  href?: string;
+  deadlineStatus?: "pending" | "warning" | "critical" | "overdue" | "done" | "vorfrist";
+  daysUntil?: number;
+  dueDate?: string;
+  caseTitle?: string;
+  caseSlug?: string;
+  isNotfrist?: boolean;
+  isVorfrist?: boolean;
+  needsSecondCheck?: boolean;
+  deadlineSlug?: string;
+}
+
 export interface ToolResultDisplay {
-  kind: "navigation" | "list" | "summary" | "confirmation";
+  kind: "navigation" | "list" | "summary" | "confirmation" | "deadline_cards" | "client_overview";
   title: string;
-  items?: Array<{ label: string; value?: string; href?: string }>;
+  items?: Array<DeadlineCardItem>;
   href?: string;
   message?: string;
+  filterHref?: string;
+  summary?: {
+    caseTitle?: string;
+    caseSlug?: string;
+    caseStatus?: string;
+    openDeadlines?: number;
+    totalDeadlines?: number;
+    nextDeadlineDate?: string;
+    openTasks?: number;
+    documentCount?: number;
+  };
 }
 
 export interface ChatSession {

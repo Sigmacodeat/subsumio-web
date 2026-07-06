@@ -2034,7 +2034,7 @@ const _landingDe = {
     },
     {
       role: "Mittag · 12:15",
-      text: "Sprachnotiz vom Gericht: „Zeit 0,5h Akte Müller, Widerspruch S.3 vs S.7 prüfen.“ Subsumio bucht die Zeit, findet den Widerspruch in den Schriftsätzen, legt alles in der Akte ab — während du noch auf dem Rückweg bist.",
+      text: "Auf dem Rückweg vom Gericht: „Zeit 0,5h Akte Müller, Widerspruch S.3 vs S.7 prüfen.“ Subsumio bucht die Zeit, findet den Widerspruch in den Schriftsätzen, legt alles in der Akte ab — während du noch unterwegs bist.",
     },
     {
       role: "Abend · 18:45",
@@ -2293,7 +2293,7 @@ const _landingEn = {
     },
     {
       role: "Noon · 12:15",
-      text: 'Voice note from court: "Book 0.5h matter Müller, check contradiction p.3 vs p.7." Subsumio books the time, finds the contradiction in the filings, files everything in the matter — while you\'re still on your way back.',
+      text: 'On your way back from court: "Book 0.5h matter Müller, check contradiction p.3 vs p.7." Subsumio books the time, finds the contradiction in the filings, files everything in the matter — while you\'re still on your way back.',
     },
     {
       role: "Evening · 18:45",
