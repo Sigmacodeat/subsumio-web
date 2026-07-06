@@ -10,7 +10,12 @@
  * No AI calls — pure rule-based matching for zero-cost, real-time insights.
  */
 
-export type InsightType = "judgement_match" | "playbook_hint" | "contradiction" | "deadline_risk";
+export type InsightType =
+  | "judgement_match"
+  | "playbook_hint"
+  | "contradiction"
+  | "deadline_risk"
+  | "extraction_issue";
 export type InsightSeverity = "info" | "warning" | "critical";
 
 export interface Insight {
@@ -47,6 +52,15 @@ export interface InsightInput {
         title?: string;
         description?: string;
         type?: string;
+      }>;
+      contradictions?: Array<{
+        field?: string;
+        severity?: string;
+        description?: string;
+        value_a?: string;
+        value_b?: string;
+        doc_a_slug?: string;
+        doc_b_slug?: string;
       }>;
     };
   }>;
@@ -217,17 +231,18 @@ function generatePlaybookHints(input: InsightInput): Insight[] {
 }
 
 /**
- * Generate contradiction insights from document analysis status.
+ * Generate extraction-issue insights from document analysis status.
+ * These are NOT inhaltliche Widersprüche — they signal extraction/analysis failures.
  */
-function generateContradictions(input: InsightInput): Insight[] {
+function generateExtractionIssues(input: InsightInput): Insight[] {
   const insights: Insight[] = [];
 
   for (const doc of input.recentDocuments ?? []) {
     const fm = doc.frontmatter ?? {};
     if (fm.analysis_status === "failed" || fm.extraction_unverified === true) {
       insights.push({
-        id: `ins-ctr-${doc.slug}`,
-        type: "contradiction",
+        id: `ins-ext-${doc.slug}`,
+        type: "extraction_issue",
         severity: fm.analysis_status === "failed" ? "critical" : "warning",
         title: fm.analysis_status === "failed" ? "Analyse fehlgeschlagen" : "Extraktion unprüfbar",
         description: `Dokument "${doc.title ?? doc.slug}" ${
@@ -237,6 +252,39 @@ function generateContradictions(input: InsightInput): Insight[] {
         }${fm.case_slug ? ` (Akte: ${fm.case_slug})` : ""}`,
         caseSlug: fm.case_slug,
         href: fm.case_slug ? `/dashboard/cases/${fm.case_slug}?tab=documents` : `/dashboard/vault`,
+        createdAt: new Date().toISOString(),
+      });
+    }
+  }
+
+  return insights;
+}
+
+/**
+ * Generate real contradiction insights from case.frontmatter.contradictions[].
+ * These are inhaltliche Widersprüche between documents — detected by the
+ * nightly contradiction-probe and on-demand cross-check.
+ */
+function generateRealContradictions(input: InsightInput): Insight[] {
+  const insights: Insight[] = [];
+
+  for (const caseItem of input.cases) {
+    if (!isOpenCase(caseItem.frontmatter?.status)) continue;
+    const contradictions = caseItem.frontmatter?.contradictions ?? [];
+    for (const c of contradictions) {
+      const severity =
+        c.severity === "high" ? "critical" : c.severity === "medium" ? "warning" : "info";
+      insights.push({
+        id: `ins-ctr-${caseItem.slug}-${c.field ?? "unknown"}`,
+        type: "contradiction",
+        severity: severity as InsightSeverity,
+        title: `Widerspruch: ${c.field ?? "unbekannt"}`,
+        description:
+          c.description ??
+          `Konflikt zwischen Dokumenten: "${c.value_a ?? "—"}" vs "${c.value_b ?? "—"}"`,
+        caseSlug: caseItem.slug,
+        caseTitle: caseItem.title,
+        href: `/dashboard/cases/${caseItem.slug}?tab=strategy`,
         createdAt: new Date().toISOString(),
       });
     }
@@ -291,7 +339,8 @@ export function generateInsights(input: InsightInput): Insight[] {
   return [
     ...generateJudgementMatches(safeInput),
     ...generatePlaybookHints(safeInput),
-    ...generateContradictions(safeInput),
+    ...generateExtractionIssues(safeInput),
+    ...generateRealContradictions(safeInput),
     ...generateDeadlineRisks(safeInput),
   ].sort((a, b) => {
     // Sort by severity (critical first), then by date (newest first)

@@ -187,7 +187,7 @@ function StatsBand({ t }: { t: SuperbrainCopyDe }) {
             <AnimatedCounter
               to={stat.value}
               suffix={stat.suffix}
-              className="brand-text [font-family:var(--font-display)] text-4xl font-black md:text-5xl"
+              className="brand-text [font-family:var(--font-display)] text-4xl font-bold md:text-5xl"
             />
             <p className="mt-2 text-sm font-semibold [color:var(--mk-text)]">{stat.label}</p>
             <p className="mt-0.5 text-xs [color:var(--mk-text-muted)]">{stat.sub}</p>
@@ -731,7 +731,7 @@ function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
                   <span className="font-mono text-xs tracking-wider [color:var(--mk-text-muted)] uppercase">
                     {point.label}
                   </span>
-                  <span className="brand-text [font-family:var(--font-display)] text-xl font-black">
+                  <span className="brand-text [font-family:var(--font-display)] text-xl font-bold">
                     {point.value}
                   </span>
                 </div>
@@ -884,7 +884,7 @@ function TrustSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
               transition={{ duration: 0.4, delay: i * 0.08 }}
               className="rounded-2xl border [border-color:var(--mk-border)] p-5 text-center [background:var(--mk-surface)]"
             >
-              <div className="brand-text mb-2 [font-family:var(--font-display)] text-lg font-black">
+              <div className="brand-text mb-2 [font-family:var(--font-display)] text-lg font-bold">
                 {badge.label}
               </div>
               <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">{badge.desc}</p>

@@ -76,7 +76,7 @@ export default function BlogPage() {
                       })}{" "}
                       · {post.readMinutes} Min. Lesezeit
                     </time>
-                    <h2 className="mt-2 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] group-hover:text-[color:var(--brand-text)]">
+                    <h2 className="mt-2 text-2xl font-bold tracking-tight text-balance [color:var(--mk-text)] group-hover:text-[color:var(--brand-text)]">
                       {post.title}
                     </h2>
                     <p className="mt-3 text-[color:var(--mk-text-muted)]">{post.description}</p>

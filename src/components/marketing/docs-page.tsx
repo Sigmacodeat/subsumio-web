@@ -76,7 +76,7 @@ function QuickStartSection({ d }: { d: ReturnType<typeof getDocs> }) {
               transition={{ duration: 0.4, delay: i * 0.08 }}
             >
               <div className="relative h-full rounded-2xl border [border-color:var(--mk-border)] p-5 transition-all duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-md">
-                <div className="brand-text mb-3 text-2xl font-black tabular-nums">{step.num}</div>
+                <div className="brand-text mb-3 text-2xl font-bold tabular-nums">{step.num}</div>
                 <h4 className="mb-1.5 text-sm font-semibold [color:var(--mk-text)]">
                   {step.title}
                 </h4>
@@ -356,11 +356,11 @@ export default function DocsPage({ lang }: { lang: Lang }) {
           {/* Stats badges */}
           <div className="flex flex-wrap items-center justify-center gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 text-xs font-medium [color:var(--mk-text)] [background:var(--mk-surface)]">
-              <span className="brand-text font-black">{totalFeatures}</span>
+              <span className="brand-text font-bold">{totalFeatures}</span>
               {t.docsFeatureCount ?? "features"}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 text-xs font-medium [color:var(--mk-text)] [background:var(--mk-surface)]">
-              <span className="brand-text font-black">{d.categories.length}</span>
+              <span className="brand-text font-bold">{d.categories.length}</span>
               {t.docsCategoryCount ?? "categories"}
             </span>
             <span className="brand-soft brand-text inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium">

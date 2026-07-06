@@ -152,6 +152,10 @@ export function ChatInput({
     setUploading(true);
     try {
       const uploaded = await Promise.all(files.map((f) => api.upload.file(f, { source: "chat" })));
+      // A large upload may only have created a processing stub. Never attach
+      // that stub to a prompt: wait until extraction and semantic indexing are
+      // complete. Partial OCR fails closed and asks the user to review it.
+      await Promise.all(uploaded.map((item) => api.upload.waitUntilQueryable(item.slug)));
       setAttachments((prev) => [
         ...prev,
         ...uploaded.map((u) => ({ name: u.title, slug: u.slug })),

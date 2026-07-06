@@ -2785,6 +2785,7 @@ export const api = {
       slug: string;
       title?: string;
       status: "processing" | "ready_to_query" | "failed";
+      readiness: "processing" | "partial" | "indexed" | "copilot_ready" | "failed";
       extraction_status: string;
       extraction_method?: string;
       extraction_warnings?: string;
@@ -2795,6 +2796,55 @@ export const api = {
     }> {
       const path = slug.split("/").map(encodeURIComponent).join("/");
       return request(`/api/upload-status/${path}`);
+    },
+    async waitUntilQueryable(
+      slug: string,
+      options: { timeoutMs?: number; intervalMs?: number; signal?: AbortSignal } = {}
+    ) {
+      const timeoutMs = options.timeoutMs ?? 10 * 60_000;
+      const intervalMs = options.intervalMs ?? 1_500;
+      const deadline = Date.now() + timeoutMs;
+      while (true) {
+        if (options.signal?.aborted) throw new DOMException("Aborted", "AbortError");
+        const current = await api.upload.status(slug);
+        if (current.readiness === "indexed" || current.readiness === "copilot_ready")
+          return current;
+        if (current.readiness === "partial") {
+          throw new ApiRequestError(
+            "Dokument wurde nur teilweise extrahiert und ist noch nicht sicher im Copilot verwendbar.",
+            409,
+            "document_partial",
+            current
+          );
+        }
+        if (current.readiness === "failed") {
+          throw new ApiRequestError(
+            current.extraction_error ?? "Dokumentverarbeitung fehlgeschlagen.",
+            422,
+            current.extraction_error_code ?? "document_processing_failed",
+            current
+          );
+        }
+        if (Date.now() >= deadline) {
+          throw new ApiRequestError(
+            "Dokument wird weiterhin verarbeitet. Bitte später erneut versuchen.",
+            408,
+            "document_processing_timeout",
+            current
+          );
+        }
+        await new Promise<void>((resolve, reject) => {
+          const timer = setTimeout(resolve, intervalMs);
+          options.signal?.addEventListener(
+            "abort",
+            () => {
+              clearTimeout(timer);
+              reject(new DOMException("Aborted", "AbortError"));
+            },
+            { once: true }
+          );
+        });
+      }
     },
   },
 

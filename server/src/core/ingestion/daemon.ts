@@ -36,8 +36,8 @@
  *     running. Bug surfaces in `gbrain doctor ingestion_health`.
  *   - Dispatcher throws → daemon logs but does NOT crash the source. The
  *     queue write failed (DB blip, etc.); subsequent emits will retry.
- *   - Rate-limit exceeded → daemon drops the event silently. Source
- *     enters `warn` health when sustained backpressure exceeds threshold.
+ *   - Rate-limit exceeded → daemon applies backpressure and delays dispatch;
+ *     an accepted event is never silently dropped.
  */
 
 import type {
@@ -410,7 +410,7 @@ export class IngestionDaemon {
    * Process a single emit through the daemon pipeline:
    *   1. Validate event shape — drop on failure.
    *   2. Check dedup window — drop on hit.
-   *   3. Check rate limit — drop on bucket exhausted.
+   *   3. Check rate limit — wait for capacity on bucket exhaustion.
    *   4. Dispatch to Minion queue via opts.dispatch.
    */
   private async handleEmit(state: SourceState, event: IngestionEvent): Promise<void> {
@@ -453,30 +453,45 @@ export class IngestionDaemon {
     // means the source already decided this event should land.
 
     // 3. Rate limit (token-bucket-ish: count events in trailing window).
-    const nowMs = this.now();
-    const windowStart = nowMs - this.rateLimit.windowMs;
-    state.rateLimitTimestamps = state.rateLimitTimestamps.filter((t) => t > windowStart);
-    if (state.rateLimitTimestamps.length >= this.rateLimit.capacity) {
+    // Backpressure instead of dropping: legal/DMS events are durable work and
+    // overload may increase latency, never create a silent corpus gap.
+    while (!this._stopping) {
+      const nowMs = this.now();
+      const windowStart = nowMs - this.rateLimit.windowMs;
+      state.rateLimitTimestamps = state.rateLimitTimestamps.filter((t) => t > windowStart);
+      if (state.rateLimitTimestamps.length < this.rateLimit.capacity) {
+        state.rateLimitTimestamps.push(nowMs);
+        break;
+      }
       state.rateLimitHits++;
       this.opts.logger.warn(
         `[ingestion] source '${sourceId}' rate limit hit ` +
-          `(${this.rateLimit.capacity} events / ${this.rateLimit.windowMs}ms); dropping event`
+          `(${this.rateLimit.capacity} events / ${this.rateLimit.windowMs}ms); applying backpressure`
       );
-      return;
+      const oldest = state.rateLimitTimestamps[0] ?? nowMs;
+      await this.sleep(Math.max(1, oldest + this.rateLimit.windowMs - nowMs));
     }
-    state.rateLimitTimestamps.push(nowMs);
+    if (this._stopping) return;
     state.eventCount++;
 
-    // 4. Dispatch.
-    try {
-      const outcome = await this.opts.dispatch(effectiveEvent);
-      if (outcome.kind === "failed") {
-        this.opts.logger.warn(`[ingestion] source '${sourceId}' dispatch failed: ${outcome.error}`);
+    // 4. Dispatch with bounded exponential delay but unbounded attempts while
+    // the daemon is alive. The Minion queue is the durable acceptance boundary.
+    let attempt = 0;
+    while (!this._stopping) {
+      try {
+        const outcome = await this.opts.dispatch(effectiveEvent);
+        if (outcome.kind === "queued") return;
+        attempt++;
+        this.opts.logger.warn(
+          `[ingestion] source '${sourceId}' dispatch failed (attempt ${attempt}): ${outcome.error}`
+        );
+      } catch (err) {
+        attempt++;
+        this.opts.logger.error(
+          `[ingestion] source '${sourceId}' dispatcher threw (attempt ${attempt}): ${err instanceof Error ? err.message : String(err)}`
+        );
       }
-    } catch (err) {
-      this.opts.logger.error(
-        `[ingestion] source '${sourceId}' dispatcher threw: ${err instanceof Error ? err.message : String(err)}`
-      );
+      await this.sleep(Math.min(30_000, 250 * 2 ** Math.min(attempt - 1, 7)));
     }
   }
 

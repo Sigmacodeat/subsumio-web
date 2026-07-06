@@ -13,7 +13,7 @@ export default function NotFound() {
           <Search size={26} className="text-[var(--brand-primary)]" aria-hidden />
         </div>
         <p className="mb-3 font-mono text-xs text-[var(--brand-primary)]">404</p>
-        <h1 className="mb-3 text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)]">
+        <h1 className="mb-3 text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.12] font-bold tracking-tight text-balance [color:var(--mk-text)]">
           Even the brain doesn&apos;t know this page.
         </h1>
         <p className="mb-3 text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)]">

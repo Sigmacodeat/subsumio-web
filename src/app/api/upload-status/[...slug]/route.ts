@@ -1,5 +1,6 @@
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { isDocumentQueryable, resolveDocumentReadiness } from "@/lib/document-readiness";
 
 export const dynamic = "force-dynamic";
 
@@ -29,16 +30,23 @@ export const GET = createHandler(
     const extraction =
       typeof fm.extraction_status === "string" ? fm.extraction_status : "processing";
     const embedding = typeof fm.embedding_status === "string" ? fm.embedding_status : "unknown";
-    const status = ["failed", "error", "ocr_failed"].includes(extraction)
-      ? "failed"
-      : ["ready", "partial", "text_layer", "ocr_complete"].includes(extraction) &&
-          (embedding === "ready" || embedding === "unknown")
-        ? "ready_to_query"
-        : "processing";
+    const readiness = resolveDocumentReadiness({
+      extraction_status: extraction,
+      embedding_status: embedding,
+      analysis_status: fm.analysis_status,
+      extraction_coverage_percent: fm.extraction_coverage_percent,
+    });
+    const status =
+      readiness === "failed"
+        ? "failed"
+        : isDocumentQueryable(readiness)
+          ? "ready_to_query"
+          : "processing";
     return Response.json({
       slug: page.slug,
       title: page.title,
       status,
+      readiness,
       extraction_status: extraction,
       extraction_method: fm.extraction_method,
       extraction_warnings: fm.extraction_warnings,
@@ -49,6 +57,7 @@ export const GET = createHandler(
       // actionable prompt instead of a generic "failed".
       extraction_error_code: fm.extraction_error_code,
       embedding_status: embedding,
+      extraction_coverage_percent: fm.extraction_coverage_percent,
       analysis_status: fm.analysis_status,
       updated_at: page.updated_at,
     });

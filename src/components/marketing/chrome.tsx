@@ -51,6 +51,7 @@ import {
   Languages,
   Inbox,
   CheckSquare,
+  Check,
   BookOpen,
   AlertTriangle,
   Gauge,
@@ -64,7 +65,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EASE, ClipReveal, Reveal, GlowCard } from "./motion-system";
+import { EASE, ClipReveal, Reveal, GlowCard, AnimatedCounter } from "./motion-system";
 import { SubsumioLogo, SubsumioMark } from "@/components/brand/subsumio-logo";
 import { type SiteBrand } from "@/lib/brand";
 import {
@@ -132,6 +133,7 @@ export const ICONS: Record<string, LucideIcon> = {
   Languages,
   Inbox,
   CheckSquare,
+  Check,
   BookOpen,
   AlertTriangle,
   Gauge,
@@ -1419,7 +1421,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
         </div>
         <div className="flex flex-col items-center justify-between gap-2 border-t [border-color:var(--mk-border)] pt-6 sm:flex-row">
           <p className="text-xs [color:var(--mk-text-subtle)]">
-            © 2026 Subsumio · {UI_STRINGS[lang].footerLegalTagline}
+            © 2025 Subsumio · {UI_STRINGS[lang].footerLegalTagline}
           </p>
           <p className="text-xs [color:var(--mk-text-subtle)]">
             {UI_STRINGS[lang].footerHostingLine}
@@ -1597,11 +1599,11 @@ export function TypewriterText({ text, speed = 12 }: { text: string; speed?: num
 /** Standard H1 class — used by PageHero, but also exported for pages that
  *  compose their own hero layout (vertical.tsx, superbrain-page.tsx). */
 export const H1_CLASS =
-  "text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)]";
+  "text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-bold tracking-tight text-balance [color:var(--mk-text)]";
 
 /** Standard H2 class for CTA closers and inline section headings. */
 export const H2_CTA_CLASS =
-  "text-2xl font-black tracking-tight text-balance [color:var(--mk-text)] md:text-3xl";
+  "text-2xl font-bold tracking-tight text-balance [color:var(--mk-text)] md:text-3xl";
 
 /** Standard badge pill — brand-soft, brand-text, brand-border. */
 export function BadgePill({
@@ -1744,15 +1746,17 @@ export function CTASection({
   href,
   label,
   showLogo = true,
+  tone = "dark",
 }: {
   title: string;
   sub: string;
   href: string;
   label: string;
   showLogo?: boolean;
+  tone?: "dark" | "light" | "slate";
 }) {
   return (
-    <Section tone="dark" className="px-4 py-28 text-center sm:px-6 lg:px-8">
+    <Section tone={tone} className="px-4 py-28 text-center sm:px-6 lg:px-8">
       <Reveal variant="upLg" className="mx-auto max-w-3xl">
         {showLogo && <SubsumioMark size={56} className="mx-auto mb-6" />}
         <h2 className={H2_CTA_CLASS}>{title}</h2>
@@ -1794,4 +1798,386 @@ export function FaqList({ items }: { items: readonly { q: string; a: string }[] 
       ))}
     </div>
   );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// NEW PRIMITIVES — State-of-the-art 2026 SaaS components
+// ════════════════════════════════════════════════════════════════════════
+
+/** SplitHero — two-column hero with text left + visual right (55/45).
+ *  2026 SaaS standard (Linear, Vercel, Datadog). Falls back to stack on mobile. */
+export function SplitHero({
+  badge,
+  h1a,
+  h1b,
+  tagline,
+  sub,
+  h1bClassName = "gradient-text",
+  children,
+  visual,
+  tone = "slate",
+  id,
+}: {
+  badge?: React.ReactNode;
+  h1a: string;
+  h1b?: string;
+  tagline?: string;
+  sub: string;
+  h1bClassName?: string;
+  children?: React.ReactNode;
+  visual: React.ReactNode;
+  tone?: "light" | "slate" | "dark";
+  id?: string;
+}) {
+  return (
+    <Section tone={tone} id={id} className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
+      <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[55%_45%]">
+        <div className="text-center lg:text-left">
+          {badge && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, ease: EASE.out }}
+              className="mb-6 flex justify-center lg:justify-start"
+            >
+              {badge}
+            </motion.div>
+          )}
+          <ClipReveal delay={0.1} duration={0.7} direction="up">
+            <h1 className={`${H1_CLASS} mb-2`}>
+              {h1a}
+              {h1b && (
+                <>
+                  <br />
+                  <span className={h1bClassName}>{h1b}</span>
+                </>
+              )}
+            </h1>
+          </ClipReveal>
+          {tagline && (
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2, ease: EASE.out }}
+              className="mt-3 text-lg font-semibold [color:var(--mk-text)] md:text-xl"
+            >
+              {tagline}
+            </motion.p>
+          )}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.25, ease: EASE.out }}
+          >
+            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg lg:mx-0">
+              {sub}
+            </p>
+          </motion.div>
+          {children && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.35, ease: EASE.out }}
+              className="mt-8 flex flex-col items-center gap-4 sm:flex-row lg:justify-start"
+            >
+              {children}
+            </motion.div>
+          )}
+        </div>
+        <motion.div
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, delay: 0.3, ease: EASE.out }}
+          className="relative order-first lg:order-last"
+        >
+          {visual}
+        </motion.div>
+      </div>
+    </Section>
+  );
+}
+
+/** StatCard — animated counter stat with label and optional context line. */
+export function StatCard({
+  value,
+  label,
+  context,
+  prefix,
+  suffix,
+  decimals,
+}: {
+  value: string;
+  label: string;
+  context?: string;
+  prefix?: string;
+  suffix?: string;
+  decimals?: number;
+}) {
+  const num = parseFloat(value.replace(/[^0-9.]/g, ""));
+  const extractedSuffix = suffix ?? value.replace(/[0-9.,]/g, "");
+  const extractedPrefix = prefix ?? value.match(/^[^0-9]*/)?.[0] ?? "";
+  const isNumeric = !isNaN(num) && num > 0;
+  const dec = decimals ?? (value.includes(".") ? 1 : 0);
+
+  return (
+    <div className="text-center">
+      <p className="mb-1 text-4xl font-bold [color:var(--brand-text)] md:text-5xl">
+        {isNumeric ? (
+          <AnimatedCounter
+            to={num}
+            prefix={extractedPrefix}
+            suffix={extractedSuffix}
+            decimals={dec}
+          />
+        ) : (
+          value
+        )}
+      </p>
+      <p className="text-sm font-semibold [color:var(--mk-text)]">{label}</p>
+      {context && (
+        <p className="mt-0.5 text-xs leading-relaxed [color:var(--mk-text-muted)]">{context}</p>
+      )}
+    </div>
+  );
+}
+
+/** ComparisonTable — responsive comparison matrix (table on desktop, cards on mobile). */
+export function ComparisonTable({
+  columns,
+  rows,
+  highlightCol,
+}: {
+  columns: { label: string; highlight?: boolean }[];
+  rows: { feature: string; values: (string | boolean)[] }[];
+  highlightCol?: number;
+}) {
+  return (
+    <>
+      {/* Desktop: table */}
+      <div className="hidden overflow-hidden rounded-2xl border [border-color:var(--mk-border)] md:block">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="[background:var(--mk-surface)]">
+              <th className="px-5 py-4 text-left font-semibold [color:var(--mk-text)]">{""}</th>
+              {columns.map((col, i) => (
+                <th
+                  key={i}
+                  className={`px-5 py-4 text-center font-semibold [color:var(--mk-text)] ${
+                    col.highlight || highlightCol === i
+                      ? "brand-text [background:var(--mk-surface-2)]"
+                      : ""
+                  }`}
+                >
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, i) => (
+              <tr
+                key={i}
+                className="border-t [border-color:var(--mk-border)] hover:[background:var(--mk-hover)]"
+              >
+                <td className="px-5 py-3.5 text-left text-[color:var(--mk-text-muted)]">
+                  {row.feature}
+                </td>
+                {row.values.map((val, j) => (
+                  <td
+                    key={j}
+                    className={`px-5 py-3.5 text-center ${
+                      columns[j]?.highlight || highlightCol === j
+                        ? "[background:var(--mk-surface-2)]"
+                        : ""
+                    }`}
+                  >
+                    {typeof val === "boolean" ? (
+                      val ? (
+                        <Check size={16} className="mx-auto [color:var(--signal-green)]" />
+                      ) : (
+                        <X size={16} className="mx-auto [color:var(--mk-text-subtle)]" />
+                      )
+                    ) : (
+                      <span className="text-sm [color:var(--mk-text)]">{val}</span>
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile: cards */}
+      <div className="space-y-4 md:hidden">
+        {columns.map((col, colIdx) => (
+          <div
+            key={colIdx}
+            className={`rounded-2xl border [border-color:var(--mk-border)] p-5 [background:var(--mk-surface)] ${
+              col.highlight || highlightCol === colIdx
+                ? "ring-2 ring-[color:var(--brand-text)]"
+                : ""
+            }`}
+          >
+            <h4 className="mb-3 font-semibold [color:var(--mk-text)]">{col.label}</h4>
+            <dl className="space-y-2">
+              {rows.map((row, rowIdx) => (
+                <div key={rowIdx} className="flex items-center justify-between gap-3">
+                  <dt className="text-xs [color:var(--mk-text-muted)]">{row.feature}</dt>
+                  <dd className="text-sm">
+                    {typeof row.values[colIdx] === "boolean" ? (
+                      row.values[colIdx] ? (
+                        <Check size={14} className="[color:var(--signal-green)]" />
+                      ) : (
+                        <X size={14} className="[color:var(--mk-text-subtle)]" />
+                      )
+                    ) : (
+                      <span className="[color:var(--mk-text)]">{row.values[colIdx]}</span>
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/** PricingCard — tier card with highlight, features list, and CTA. */
+export function PricingCard({
+  name,
+  price,
+  period,
+  description,
+  features,
+  ctaLabel,
+  ctaHref,
+  highlighted = false,
+  badge,
+}: {
+  name: string;
+  price: string;
+  period?: string;
+  description: string;
+  features: string[];
+  ctaLabel: string;
+  ctaHref: string;
+  highlighted?: boolean;
+  badge?: string;
+}) {
+  return (
+    <div
+      className={`relative flex h-full flex-col rounded-2xl border p-6 transition-all duration-300 ${
+        highlighted
+          ? "border-[color:var(--brand-text)] shadow-lg [background:var(--mk-surface-2)] lg:scale-105"
+          : "[border-color:var(--mk-border)] [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-md"
+      }`}
+    >
+      {badge && (
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--brand-primary)] px-4 py-1 text-xs font-semibold text-white">
+          {badge}
+        </span>
+      )}
+      <h3 className="mb-1 text-lg font-bold [color:var(--mk-text)]">{name}</h3>
+      <p className="mb-4 text-sm leading-relaxed [color:var(--mk-text-muted)]">{description}</p>
+      <div className="mb-5 flex items-baseline gap-1">
+        <span className="text-3xl font-bold [color:var(--mk-text)]">{price}</span>
+        {period && <span className="text-sm [color:var(--mk-text-muted)]">{period}</span>}
+      </div>
+      <ul className="mb-6 flex-1 space-y-2.5">
+        {features.map((f) => (
+          <li key={f} className="flex items-start gap-2 text-sm [color:var(--mk-text-muted)]">
+            <Check size={15} className="mt-0.5 shrink-0 [color:var(--signal-green)]" />
+            <span>{f}</span>
+          </li>
+        ))}
+      </ul>
+      <Link
+        href={ctaHref}
+        className={`block w-full rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition-colors ${
+          highlighted
+            ? "bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)]"
+            : "border [border-color:var(--mk-border-strong)] [color:var(--mk-text)] hover:[background:var(--mk-hover)]"
+        }`}
+      >
+        {ctaLabel}
+      </Link>
+    </div>
+  );
+}
+
+/** TrustStrip — compact badge strip for compliance/security signals. */
+export function TrustStrip({
+  items,
+  className = "",
+}: {
+  items: { label: string; icon?: LucideIcon }[];
+  className?: string;
+}) {
+  return (
+    <div
+      className={`flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs [color:var(--mk-text-subtle)] ${className}`}
+    >
+      {items.map((item, i) => (
+        <motion.span
+          key={item.label}
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.3, delay: i * 0.06 }}
+          className="inline-flex items-center gap-1.5 font-medium"
+        >
+          {item.icon && <item.icon size={14} className="opacity-70" />}
+          {item.label}
+        </motion.span>
+      ))}
+    </div>
+  );
+}
+
+/** BreadcrumbNav — visible breadcrumbs for sub-pages. */
+export function BreadcrumbNav({
+  items,
+  className = "",
+}: {
+  items: { label: string; href?: string }[];
+  className?: string;
+}) {
+  return (
+    <nav aria-label="Breadcrumb" className={`flex items-center gap-1.5 text-sm ${className}`}>
+      {items.map((item, i) => (
+        <span key={i} className="flex items-center gap-1.5">
+          {i > 0 && <ChevronRight size={14} className="[color:var(--mk-text-subtle)]" />}
+          {item.href ? (
+            <Link
+              href={item.href}
+              className="[color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"
+            >
+              {item.label}
+            </Link>
+          ) : (
+            <span className="font-medium [color:var(--mk-text)]">{item.label}</span>
+          )}
+        </span>
+      ))}
+    </nav>
+  );
+}
+
+/** SectionSpacer — consistent section padding using design tokens. */
+export function SectionSpacer({
+  size = "default",
+  className = "",
+}: {
+  size?: "sm" | "default" | "lg";
+  className?: string;
+}) {
+  const heights = {
+    sm: "h-16",
+    default: "h-24",
+    lg: "h-32",
+  };
+  return <div className={`${heights[size]} ${className}`} aria-hidden />;
 }

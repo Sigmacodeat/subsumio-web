@@ -367,6 +367,23 @@ export function MatterHeader() {
                 {matter.courtName}
               </span>
             )}
+            {matter.jurisdiction && (
+              <span
+                className={cn(
+                  "flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium",
+                  matter.jurisdiction === "de"
+                    ? "bg-blue-500/10 text-blue-700"
+                    : matter.jurisdiction === "at"
+                      ? "bg-red-500/10 text-red-700"
+                      : matter.jurisdiction === "ch"
+                        ? "bg-emerald-500/10 text-emerald-700"
+                        : "bg-purple-500/10 text-purple-700"
+                )}
+              >
+                <Globe size={11} className="shrink-0" />
+                {matter.jurisdiction.toUpperCase()}
+              </span>
+            )}
             {matter.legalArea && (
               <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
                 <FileText size={11} className="shrink-0" />

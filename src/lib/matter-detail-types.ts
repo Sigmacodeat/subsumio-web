@@ -46,6 +46,7 @@ export interface CaseDetail {
   status: string;
   legalArea: string;
   subArea?: string;
+  jurisdiction?: "de" | "at" | "ch" | "eu";
   priority: string;
   opponentId?: string;
   opponentName?: string;
@@ -139,6 +140,7 @@ export function parseCaseDetail(page: BrainPage): CaseDetail {
     status: (fm.status as string) || "open",
     legalArea: (fm.legal_area as string) || "",
     subArea: (fm.sub_area as string) || undefined,
+    jurisdiction: (fm.jurisdiction as "de" | "at" | "ch" | "eu") || undefined,
     priority: (fm.priority as string) || "medium",
     opponentId: (fm.opponent_id as string) || undefined,
     opponentName: (fm.opponent_name as string) || undefined,

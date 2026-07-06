@@ -122,6 +122,32 @@ async function apiGet<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function uploadTextDocument(
+  title: string,
+  content: string,
+  caseSlug?: string
+): Promise<{ slug: string; title: string }> {
+  const safeTitle = (title || "Word-Dokument").replace(/[\\/:*?"<>|]+/g, "-").slice(0, 180);
+  const form = new FormData();
+  form.append("file", new File([content], `${safeTitle}.txt`, { type: "text/plain" }));
+  form.append("title", safeTitle);
+  form.append("source", caseSlug ? "documents" : "kanzleiwissen");
+  if (caseSlug) form.append("case_slug", caseSlug);
+  const res = await fetch(`${API_BASE}/api/upload`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({ error: `HTTP ${res.status}` }))) as Record<
+      string,
+      string
+    >;
+    throw new Error(err.message ?? err.error ?? `HTTP ${res.status}`);
+  }
+  return res.json() as Promise<{ slug: string; title: string }>;
+}
+
 // ── Tab Navigation ────────────────────────────────────────────────────
 
 function switchTab(tab: string) {
@@ -508,13 +534,8 @@ async function saveAsBrainPage() {
       showStatus("Bitte Text markieren der gespeichert werden soll.", false, "exportStatus");
       return;
     }
-    await apiPost("/api/pages", {
-      title: title || "Word-Dokument",
-      content,
-      type: "document",
-      source_slug: caseSlug || undefined,
-    });
-    showStatus("Als Brain-Page gespeichert.", true, "exportStatus");
+    await uploadTextDocument(title || "Word-Dokument", content, caseSlug || undefined);
+    showStatus("Über die Dokument-Pipeline gespeichert.", true, "exportStatus");
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Speichern fehlgeschlagen.", false, "exportStatus");
   } finally {

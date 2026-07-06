@@ -123,7 +123,7 @@ describe("ingest_capture handler — validation + routing", () => {
     await expect(handler(makeJob({ event: ev }))).rejects.toThrow(/invalid event payload/);
   });
 
-  test("rejects binary content_type with helpful message", async () => {
+  test("rejects a missing binary path with a stable message", async () => {
     const handler = makeIngestCaptureHandler(engine);
     const ev = makeEvent({
       content_type: "image/*",
@@ -131,7 +131,7 @@ describe("ingest_capture handler — validation + routing", () => {
       content_hash: computeContentHash("/path/to/screenshot.png"),
     });
     await expect(handler(makeJob({ event: ev }))).rejects.toThrow(
-      /content_type 'image\/\*' requires a content-type processor/
+      /binary content path is unavailable/
     );
   });
 

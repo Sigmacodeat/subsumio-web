@@ -883,7 +883,7 @@ export const NAV: Record<Lang, NavContent> = {
 };
 
 const _footerEn = {
-  tagline: "The firm brain that never forgets.",
+  tagline: "AI legal software that never forgets — the firm brain for lawyers in AT · DE · CH.",
   columns: [
     {
       title: "Platform",
@@ -933,7 +933,7 @@ const _footerEn = {
       ],
     },
   ],
-  note: "Your data, your keys. Self-hosted on your hardware or our EU cloud — GDPR-ready, end-to-end encrypted, zero training on your data.",
+  note: "Your data, your keys. Self-hosted on your hardware or our EU cloud with DPA — GDPR-ready, end-to-end encrypted, zero training on your data.",
 };
 
 export const FOOTER: Record<
@@ -946,7 +946,8 @@ export const FOOTER: Record<
 > = {
   en: _footerEn,
   de: {
-    tagline: "Das Kanzlei-Brain, das nie vergisst.",
+    tagline:
+      "KI-Kanzleisoftware, die nie vergisst — das Kanzlei-Brain für Anwälte in AT · DE · CH.",
     columns: [
       {
         title: "Plattform",
@@ -996,10 +997,10 @@ export const FOOTER: Record<
         ],
       },
     ],
-    note: "Deine Daten. Deine Schlüssel. On-Premise auf eigener Hardware oder EU-Cloud — DSGVO-konform, Ende-zu-Ende verschlüsselt, kein Training auf deinen Daten.",
+    note: "Deine Daten. Deine Schlüssel. On-Premise auf eigener Hardware oder EU-Cloud mit AVV — DSGVO-konform, Ende-zu-Ende verschlüsselt, kein Training auf deinen Daten.",
   },
   at: {
-    tagline: "Das Kanzlei-Brain, das nie vergisst.",
+    tagline: "KI-Kanzleisoftware, die nie vergisst — das Kanzlei-Brain für Anwälte in Österreich.",
     columns: [
       {
         title: "Plattform",
@@ -1049,10 +1050,10 @@ export const FOOTER: Record<
         ],
       },
     ],
-    note: "Deine Daten. Deine Schlüssel. On-Premise auf eigener Hardware oder EU-Cloud — DSGVO-konform, Ende-zu-Ende verschlüsselt, kein Training mit deinen Daten.",
+    note: "Deine Daten. Deine Schlüssel. On-Premise auf eigener Hardware oder EU-Cloud mit AVV — DSGVO-konform, Ende-zu-Ende verschlüsselt, kein Training mit deinen Daten.",
   },
   ch: {
-    tagline: "Das Kanzlei-Brain, das nie vergisst.",
+    tagline: "KI-Kanzleisoftware, die nie vergisst — das Kanzlei-Brain für Anwälte in der Schweiz.",
     columns: [
       {
         title: "Plattform",
@@ -1102,46 +1103,51 @@ export const FOOTER: Record<
         ],
       },
     ],
-    note: "Deine Daten. Deine Schlüssel. On-Premise auf eigener Hardware oder EU-Cloud — DSGVO-konform, Ende-zu-Ende verschlüsselt, kein Training mit deinen Daten.",
+    note: "Deine Daten. Deine Schlüssel. On-Premise auf eigener Hardware oder EU-Cloud mit AVV — DSGVO-konform, Ende-zu-Ende verschlüsselt, kein Training mit deinen Daten.",
   },
   it: applyReplacements(JSON.parse(JSON.stringify(_footerEn)), {
     ...IT_NAV_REPLACEMENTS,
-    "The firm brain that never forgets.": "Il cervello dello studio che non dimentica mai.",
+    "AI legal software that never forgets — the firm brain for lawyers in AT · DE · CH.":
+      "Il cervello dello studio che non dimentica mai.",
     "Terms of service": "Termini di servizio",
     Privacy: "Privacy",
-    "Your data, your keys. Self-hosted on your hardware or our EU cloud — GDPR-ready, end-to-end encrypted, zero training on your data.":
+    "Your data, your keys. Self-hosted on your hardware or our EU cloud with DPA — GDPR-ready, end-to-end encrypted, zero training on your data.":
       "I tuoi dati, le tue chiavi. Self-hosted o EU cloud — conforme GDPR, crittografia end-to-end, nessun training sui tuoi dati.",
   }),
   es: applyReplacements(JSON.parse(JSON.stringify(_footerEn)), {
     ...ES_NAV_REPLACEMENTS,
-    "The firm brain that never forgets.": "El cerebro del despacho que nunca olvida.",
+    "AI legal software that never forgets — the firm brain for lawyers in AT · DE · CH.":
+      "El cerebro del despacho que nunca olvida.",
     "Terms of service": "Términos de servicio",
     Privacy: "Privacidad",
-    "Your data, your keys. Self-hosted on your hardware or our EU cloud — GDPR-ready, end-to-end encrypted, zero training on your data.":
+    "Your data, your keys. Self-hosted on your hardware or our EU cloud with DPA — GDPR-ready, end-to-end encrypted, zero training on your data.":
       "Tus datos, tus claves. Self-hosted o EU cloud — conforme GDPR, cifrado end-to-end, sin entrenamiento con tus datos.",
   }),
   pl: applyReplacements(JSON.parse(JSON.stringify(_footerEn)), {
     ...PL_NAV_REPLACEMENTS,
-    "The firm brain that never forgets.": "Mózg kancelarii, który nigdy nie zapomina.",
+    "AI legal software that never forgets — the firm brain for lawyers in AT · DE · CH.":
+      "Mózg kancelarii, który nigdy nie zapomina.",
     "Terms of service": "Regulamin",
     Privacy: "Prywatność",
-    "Your data, your keys. Self-hosted on your hardware or our EU cloud — GDPR-ready, end-to-end encrypted, zero training on your data.":
+    "Your data, your keys. Self-hosted on your hardware or our EU cloud with DPA — GDPR-ready, end-to-end encrypted, zero training on your data.":
       "Twoje dane, twoje klucze. Self-hosted lub EU cloud — zgodne z GDPR, szyfrowanie end-to-end, brak treningu na twoich danych.",
   }),
   fr: applyReplacements(JSON.parse(JSON.stringify(_footerEn)), {
     ...FR_NAV_REPLACEMENTS,
-    "The firm brain that never forgets.": "Le cerveau du cabinet qui n'oublie jamais.",
+    "AI legal software that never forgets — the firm brain for lawyers in AT · DE · CH.":
+      "Le cerveau du cabinet qui n'oublie jamais.",
     "Terms of service": "Conditions d'utilisation",
     Privacy: "Confidentialité",
-    "Your data, your keys. Self-hosted on your hardware or our EU cloud — GDPR-ready, end-to-end encrypted, zero training on your data.":
+    "Your data, your keys. Self-hosted on your hardware or our EU cloud with DPA — GDPR-ready, end-to-end encrypted, zero training on your data.":
       "Vos données, vos clés. Self-hosted ou EU cloud — conforme GDPR, chiffrement end-to-end, zéro entraînement sur vos données.",
   }),
   nl: applyReplacements(JSON.parse(JSON.stringify(_footerEn)), {
     ...NL_NAV_REPLACEMENTS,
-    "The firm brain that never forgets.": "Het brein van het kantoor dat nooit vergeet.",
+    "AI legal software that never forgets — the firm brain for lawyers in AT · DE · CH.":
+      "Het brein van het kantoor dat nooit vergeet.",
     "Terms of service": "Servicevoorwaarden",
     Privacy: "Privacy",
-    "Your data, your keys. Self-hosted on your hardware or our EU cloud — GDPR-ready, end-to-end encrypted, zero training on your data.":
+    "Your data, your keys. Self-hosted on your hardware or our EU cloud with DPA — GDPR-ready, end-to-end encrypted, zero training on your data.":
       "Jouw gegevens, jouw sleutels. Self-hosted of EU cloud — GDPR-conform, end-to-end versleuteld, geen training op jouw gegevens.",
   }),
 };
@@ -1850,17 +1856,17 @@ const CH_REPLACEMENTS: Record<string, string> = {
 };
 
 const _landingDe = {
-  badge: "KI-Kanzleisoftware für AT · DE · CH",
+  badge: "KI-Kanzleisoftware & Anwaltssoftware für AT · DE · CH",
   heroBadges: [
     "Neu: 5-Layer-Qualitätsarchitektur",
     "§ 203 StGB-konform",
     "EU-Cloud oder On-Premise",
   ],
   h1a: "Deine Kanzlei vergisst.",
-  h1b: "Subsumio nicht.",
-  heroTagline: "Jede Akte, eine belegte Antwort.",
+  h1b: "Subsumio nicht — KI-Anwaltssoftware, die jede Antwort belegt.",
+  heroTagline: "Jede Akte, eine belegte Antwort — mit Fundstellen, nicht Halluzinationen.",
   h1Keyword: "KI-Kanzleisoftware & Anwaltssoftware mit belegten Antworten",
-  sub: "KI-Kanzleisoftware mit belegten Antworten — Fundstellen, nicht Halluzinationen. Für Rechtsanwälte in AT · DE · CH.",
+  sub: "KI-Kanzleisoftware mit belegten Antworten für Rechtsanwälte in AT · DE · CH. Fristenmanagement nach ZPO/BGB/ABGB, DATEV-Export, Kollisionsprüfung — § 203 StGB-konform, On-Premise oder EU-Cloud mit AVV.",
   heroTrustItems: [
     { icon: "CreditCard", label: "Keine Kreditkarte" },
     { icon: "Scale", label: "§ 203 StGB" },
@@ -1883,9 +1889,9 @@ const _landingDe = {
     { icon: "Globe", label: "EU-Cloud" },
     { icon: "Server", label: "On-Premise" },
   ],
-  painTitle: "Was kostet dich das heute?",
+  painTitle: "Was kostet dich deine Kanzleisoftware heute?",
   painSub:
-    "Was Kanzleien ohne KI-Unterstützung täglich verlieren — Branchenschätzungen, keine Laborwerte. Abrechenbarer Umsatz, den du nie siehst. Haftungsrisiko, das du nicht brauchst.",
+    "Was Kanzleien ohne KI-Anwaltssoftware täglich verlieren — Branchenschätzungen, keine Laborwerte. Abrechenbarer Umsatz, den du nie siehst. Haftungsrisiko durch Fristversäumnis, das du nicht brauchst.",
   pains: [
     {
       value: "bis zu 40 %",
@@ -1947,10 +1953,10 @@ const _landingDe = {
     { value: "14", label: "Tage volle Testversion — keine Kreditkarte" },
   ],
   statsNote:
-    "Engine-Klasse Retrieval — jede KI-Antwort nennt die exakte Fundstelle. Kein Chat-Wrapper.",
-  featuresTitle: "Für Kanzleien gebaut — nicht nachträglich angepasst",
+    "Engine-Klasse Retrieval — jede KI-Antwort nennt die exakte Fundstelle. Kein Chat-Wrapper, keine Halluzination. Kanzleisoftware, die Anwälten Beweise liefert, nicht Behauptungen.",
+  featuresTitle: "KI-Kanzleisoftware, die für Anwälte gebaut ist — nicht nachträglich angepasst",
   featuresSub:
-    "Von Fristenmanagement nach ZPO/BGB/ABGB bis Widerspruchserkennung in Schriftsätzen — jede Antwort mit Fundstellen, jede Frist überwacht, keine Halluzination. KI-Software, die Berufsgeheimnisträgern gerecht wird.",
+    "Von Fristenmanagement nach ZPO/BGB/ABGB bis Widerspruchserkennung in Schriftsätzen — jede Antwort mit Fundstellen, jede Frist überwacht, keine Halluzination. Legal-Tech-Software für Kanzleimanagement, die Berufsgeheimnisträgern gerecht wird.",
   features: [
     {
       icon: "Brain",
@@ -2032,8 +2038,10 @@ const _landingDe = {
       text: "Fünf Jahre Akten und Schriftsätze indexieren. Der neue Mitarbeiter fragt: „Haben wir schon mal so etwas argumentiert?“ — und findet den Schriftsatz von 2023 in Sekunden, mit seitengenauen Zitaten. Einarbeitungszeit von Wochen auf Tage.",
     },
   ],
-  comparisonTitle: "Subsumio vs. andere KI-Tools — der Unterschied, der Anwälten wichtig ist",
-  comparisonSub: "Allgemeine KI-Tools sind nicht für Anwälte gebaut. Subsumio ist es.",
+  comparisonTitle:
+    "Kanzleisoftware Vergleich: Subsumio vs. andere KI-Tools — der Unterschied, der Anwälten wichtig ist",
+  comparisonSub:
+    "Allgemeine KI-Tools und Legal-Tech-Plattformen sind nicht für Anwälte gebaut. Subsumio ist es.",
   comparison: [
     {
       feature: "Fundstellen pro Antwort",
@@ -2109,10 +2117,31 @@ const _landingDe = {
       q: "Was passiert, wenn Subsumio eine Antwort falsch hat?",
       a: "Jede Antwort nennt die exakten Fundstellen — du prüfst in einem Klick, ob das Zitat stimmt. Wenn die Akte keine Antwort enthält, sagt Subsumio das explizit (Gap-Analyse) statt zu halluzinieren. Du behältst immer die letzte Entscheidung, bevor etwas in einen Schriftsatz geht.",
     },
+    {
+      q: "Welche Kanzleisoftware ist die beste für Solo-Anwälte und Kleinkanzleien?",
+      a: "Für Solo-Anwälte und Kleinkanzleien ist eine KI-native Allrounder-Software wie Subsumio ideal: Aktenverwaltung, Fristenmanagement nach ZPO/BGB/ABGB, belegte KI-Antworten und DATEV-Export in einer Plattform. Der Community-Plan ist kostenlos, der Pro-Plan ab 890 €/Nutzer/Mon. — ohne Lock-in, mit 14-Tage-Reverse-Trial.",
+    },
+    {
+      q: "Ist KI-Anwaltssoftware DSGVO-konform und mit § 203 StGB vereinbar?",
+      a: "Ja — wenn die Architektur dafür gebaut ist. Subsumio verarbeitet Mandantendaten ausschließlich in der EU-Cloud oder On-Premise auf eigener Hardware. Ein AVV ist Standard, die Verarbeitung ist mandantensepariert und Ende-zu-Ende verschlüsselt. Kein Dritter sieht Mandantendaten ohne ausdrückliche Freigabe. On-Premise bleibt die Datenverarbeitung vollständig innerhalb der Kanzlei — ideal für § 203 StGB und § 9 RAO.",
+    },
+    {
+      q: "Kann ich Kanzleisoftware selbst hosten — auf eigener Hardware?",
+      a: "Ja. Subsumio ist die einzige KI-Kanzleisoftware mit vollem On-Premise-Support: Die komplette Engine läuft auf deiner Hardware mit deinen Schlüsseln. Keine API-Abhängigkeit von US-Cloud-Anbietern, keine Daten verlassen die Kanzlei. Enterprise-Pläne unterstützen S3-kompatiblen Objektspeicher, SSO/SAML und individuelle Aufbewahrungsrichtlinien.",
+    },
+    {
+      q: "Wie berechnet die Software Fristen nach ZPO, BGB und ABGB?",
+      a: "Subsumio berechnet Notfristen, Berufungsfristen und alle gesetzlichen Fristen automatisch nach ZPO, BGB und ABGB — mit korrekter Monatsarithmetik, Wochenend- und Feiertagsverschiebung. Eingehende Dokumente werden auf fristauslösende Ereignisse analysiert, Fristen werden im Kalender eingetragen und mit der Akte verknüpft. Ein täglicher E-Mail-Digest markiert kritische Fristen vor Fristablauf.",
+    },
+    {
+      q: "Was kostet KI-Kanzleisoftware und gibt es versteckte Gebühren?",
+      a: "Subsumio ist transparent: Community kostenlos, Pro ab 890 €/Nutzer/Mon., Team ab 1.290 €, Enterprise ab 1.890 €. Jahreszahlung spart 20 %. Mehrverbrauch wird zu transparenten Einheitspreisen abgerechnet — sichtbar im Dashboard, keine Überraschungsrechnungen, kein stilles Drosseln. 14-Tage-Reverse-Trial mit Geld-zurück-Garantie, keine Kreditkarte nötig.",
+    },
   ],
-  ctaTitle: "Hör auf zu suchen. Fang an zu fragen.",
+  ctaTitle:
+    "Hör auf zu suchen. Fang an zu fragen — mit KI-Kanzleisoftware, die jede Antwort belegt.",
   ctaSub:
-    "14 Tage volle Testversion. Keine Kreditkarte. Kein IT-Aufwand. Dein Brain baut sich ab der ersten Akte auf.",
+    "14 Tage volle Testversion der Kanzleisoftware. Keine Kreditkarte. Kein IT-Aufwand. Dein Brain baut sich ab der ersten Akte auf.",
   ctaButton: "14 Tage kostenlos testen",
   relatedLinks: [
     { label: "Preise & Pläne", href: "/pricing" },
@@ -2124,17 +2153,17 @@ const _landingDe = {
 };
 
 const _landingEn = {
-  badge: "AI legal software for AT · DE · CH",
+  badge: "AI legal software & law firm software for AT · DE · CH",
   heroBadges: [
     "New: 5-layer quality architecture",
     "§ 203 StGB compliant",
     "EU-Cloud or On-Premise",
   ],
   h1a: "Your firm forgets.",
-  h1b: "Subsumio doesn't.",
-  heroTagline: "Every matter, one cited answer.",
+  h1b: "Subsumio doesn't — AI legal software that cites every answer.",
+  heroTagline: "Every matter, one cited answer — page-level sources, not hallucinations.",
   h1Keyword: "AI legal software with cited answers for law firms",
-  sub: "AI legal software with cited answers — page-level sources, not hallucinations. For law firms in AT · DE · CH.",
+  sub: "AI legal software with cited answers for law firms in AT · DE · CH. Deadline management per ZPO/BGB/ABGB, DATEV export, conflict checking — § 203 StGB compliant, on-premise or EU cloud with DPA.",
   heroTrustItems: [
     { icon: "CreditCard", label: "No credit card" },
     { icon: "Scale", label: "§ 203 StGB" },
@@ -2157,9 +2186,9 @@ const _landingEn = {
     { icon: "Globe", label: "EU-Cloud" },
     { icon: "Server", label: "On-Premise" },
   ],
-  painTitle: "What is it costing you today?",
+  painTitle: "What is your law firm software costing you today?",
   painSub:
-    "What firms without AI assistance lose every day — industry estimates, not lab numbers. Billable revenue you never see. Malpractice risk you don't need.",
+    "What firms without AI legal software lose every day — industry estimates, not lab numbers. Billable revenue you never see. Malpractice risk from missed deadlines you don't need.",
   pains: [
     {
       value: "up to 40%",
@@ -2220,10 +2249,11 @@ const _landingEn = {
     { value: "Zero", label: "client-data leaks, by design" },
     { value: "14", label: "days full trial — no credit card" },
   ],
-  statsNote: "Engine-class retrieval — every AI answer cites its exact source. Not a chat wrapper.",
-  featuresTitle: "Built for law firms — not adapted for them",
+  statsNote:
+    "Engine-class retrieval — every AI answer cites its exact source. Not a chat wrapper, no hallucination. Legal software that gives lawyers evidence, not assertions.",
+  featuresTitle: "AI legal software built for law firms — not adapted for them",
   featuresSub:
-    "From deadline management per ZPO/BGB/ABGB to contradiction detection in pleadings — every answer cited, every deadline tracked, no hallucinations. AI software built for professional secrecy holders.",
+    "From deadline management per ZPO/BGB/ABGB to contradiction detection in pleadings — every answer cited, every deadline tracked, no hallucinations. Legal-tech software for law firm management, built for professional secrecy holders.",
   features: [
     {
       icon: "Brain",
@@ -2305,8 +2335,10 @@ const _landingEn = {
       text: "Index five years of matters and pleadings. The new associate asks: 'Have we argued something like this before?' — and finds the 2023 brief in seconds, with page-level citations. Onboarding from weeks to days.",
     },
   ],
-  comparisonTitle: "Subsumio vs. other AI tools — the difference that matters to lawyers",
-  comparisonSub: "General AI tools are not built for lawyers. Subsumio is.",
+  comparisonTitle:
+    "Law firm software comparison: Subsumio vs. other AI tools — the difference that matters to lawyers",
+  comparisonSub:
+    "General AI tools and legal-tech platforms are not built for lawyers. Subsumio is.",
   comparison: [
     {
       feature: "Citations per answer",
@@ -2382,10 +2414,30 @@ const _landingEn = {
       q: "What happens if Subsumio gives a wrong answer?",
       a: "Every answer cites the exact source — you verify in one click whether the citation is accurate. If the file doesn't contain an answer, Subsumio says so explicitly (gap analysis) instead of hallucinating. You always keep the final decision before anything goes into a brief.",
     },
+    {
+      q: "Which law firm software is best for solo lawyers and small firms?",
+      a: "For solo lawyers and small firms, an AI-native all-in-one platform like Subsumio is ideal: matter management, deadline tracking per ZPO/BGB/ABGB, cited AI answers and DATEV export in one platform. The Community plan is free, Pro starts at €890/user/mo. — no lock-in, with a 14-day reverse trial.",
+    },
+    {
+      q: "Is AI legal software GDPR-compliant and compatible with § 203 StGB?",
+      a: "Yes — when the architecture is built for it. Subsumio processes client data exclusively in the EU cloud or on-premise on your own hardware. A DPA is standard, processing is customer-isolated and end-to-end encrypted. No third party sees client data without explicit release. On-premise keeps data processing entirely within your firm — ideal for § 203 StGB and § 9 RAO.",
+    },
+    {
+      q: "Can I self-host law firm software — on my own hardware?",
+      a: "Yes. Subsumio is the only AI legal software with full on-premise support: the entire engine runs on your hardware with your keys. No API dependency on US cloud providers, no data leaves your firm. Enterprise plans support S3-compatible object storage, SSO/SAML and custom retention policies.",
+    },
+    {
+      q: "How does the software calculate deadlines per ZPO, BGB and ABGB?",
+      a: "Subsumio automatically calculates statutory deadlines, appeal deadlines and all legal time limits per ZPO, BGB and ABGB — with correct month arithmetic, weekend and holiday roll-forward. Incoming documents are analyzed for deadline-triggering events, deadlines are calendared and linked to the matter. A daily email digest flags critical deadlines before they expire.",
+    },
+    {
+      q: "What does AI legal software cost and are there hidden fees?",
+      a: "Subsumio is transparent: Community free, Pro from €890/user/mo., Team from €1,290, Enterprise from €1,890. Annual billing saves 20%. Overages billed at transparent per-unit rates — visible in the dashboard, no surprise bills, no silent throttling. 14-day reverse trial with money-back guarantee, no credit card required.",
+    },
   ],
-  ctaTitle: "Stop searching. Start asking.",
+  ctaTitle: "Stop searching. Start asking — with AI legal software that cites every answer.",
   ctaSub:
-    "14 days full trial. No credit card. No IT setup. Your brain builds from the first matter.",
+    "14 days full trial of the legal software. No credit card. No IT setup. Your brain builds from the first matter.",
   ctaButton: "Start free trial",
   relatedLinks: [
     { label: "Pricing & plans", href: "/en/pricing" },
@@ -2402,11 +2454,13 @@ export const LANDING = {
   at: applyReplacements(JSON.parse(JSON.stringify(_landingDe)), AT_REPLACEMENTS),
   ch: applyReplacements(JSON.parse(JSON.stringify(_landingDe)), CH_REPLACEMENTS),
   it: applyReplacements(JSON.parse(JSON.stringify(_landingEn)), {
-    "AI legal software for AT · DE · CH": "Software legale AI per IT · DE · CH",
+    "AI legal software & law firm software for AT · DE · CH": "Software legale AI per IT · DE · CH",
     "Your firm forgets.": "Il tuo studio dimentica.",
-    "Subsumio doesn't.": "Subsumio no.",
-    "Every matter, one cited answer.": "Ogni pratica, una risposta citata.",
-    "Stop searching. Start asking.": "Smetti di cercare. Inizia a chiedere.",
+    "Subsumio doesn't — AI legal software that cites every answer.": "Subsumio no.",
+    "Every matter, one cited answer — page-level sources, not hallucinations.":
+      "Ogni pratica, una risposta citata.",
+    "Stop searching. Start asking — with AI legal software that cites every answer.":
+      "Smetti di cercare. Inizia a chiedere.",
     "Start free trial": "Inizia la prova gratuita",
     "Pricing & plans": "Prezzi e piani",
     "Features overview": "Panoramica funzioni",
@@ -2414,11 +2468,13 @@ export const LANDING = {
     "For law firms": "Per studi legali",
   }),
   es: applyReplacements(JSON.parse(JSON.stringify(_landingEn)), {
-    "AI legal software for AT · DE · CH": "Software legal IA para ES · DE · CH",
+    "AI legal software & law firm software for AT · DE · CH": "Software legal IA para ES · DE · CH",
     "Your firm forgets.": "Tu bufete olvida.",
-    "Subsumio doesn't.": "Subsumio no.",
-    "Every matter, one cited answer.": "Cada asunto, una respuesta citada.",
-    "Stop searching. Start asking.": "Deja de buscar. Empieza a preguntar.",
+    "Subsumio doesn't — AI legal software that cites every answer.": "Subsumio no.",
+    "Every matter, one cited answer — page-level sources, not hallucinations.":
+      "Cada asunto, una respuesta citada.",
+    "Stop searching. Start asking — with AI legal software that cites every answer.":
+      "Deja de buscar. Empieza a preguntar.",
     "Start free trial": "Empezar prueba gratuita",
     "Pricing & plans": "Precios y planes",
     "Features overview": "Resumen de funciones",
@@ -2426,11 +2482,14 @@ export const LANDING = {
     "For law firms": "Para bufetes",
   }),
   pl: applyReplacements(JSON.parse(JSON.stringify(_landingEn)), {
-    "AI legal software for AT · DE · CH": "Oprogramowanie prawne AI dla PL · DE · CH",
+    "AI legal software & law firm software for AT · DE · CH":
+      "Oprogramowanie prawne AI dla PL · DE · CH",
     "Your firm forgets.": "Twoja kancelaria zapomina.",
-    "Subsumio doesn't.": "Subsumio nie.",
-    "Every matter, one cited answer.": "Każda sprawa, jedna cytowana odpowiedź.",
-    "Stop searching. Start asking.": "Przestań szukać. Zacznij pytać.",
+    "Subsumio doesn't — AI legal software that cites every answer.": "Subsumio nie.",
+    "Every matter, one cited answer — page-level sources, not hallucinations.":
+      "Każda sprawa, jedna cytowana odpowiedź.",
+    "Stop searching. Start asking — with AI legal software that cites every answer.":
+      "Przestań szukać. Zacznij pytać.",
     "Start free trial": "Rozpocznij okres próbny",
     "Pricing & plans": "Cennik i plany",
     "Features overview": "Przegląd funkcji",
@@ -2438,11 +2497,14 @@ export const LANDING = {
     "For law firms": "Dla kancelarii",
   }),
   fr: applyReplacements(JSON.parse(JSON.stringify(_landingEn)), {
-    "AI legal software for AT · DE · CH": "Logiciel juridique IA pour FR · DE · CH",
+    "AI legal software & law firm software for AT · DE · CH":
+      "Logiciel juridique IA pour FR · DE · CH",
     "Your firm forgets.": "Votre cabinet oublie.",
-    "Subsumio doesn't.": "Subsumio non.",
-    "Every matter, one cited answer.": "Chaque dossier, une réponse citée.",
-    "Stop searching. Start asking.": "Arrêtez de chercher. Commencez à demander.",
+    "Subsumio doesn't — AI legal software that cites every answer.": "Subsumio non.",
+    "Every matter, one cited answer — page-level sources, not hallucinations.":
+      "Chaque dossier, une réponse citée.",
+    "Stop searching. Start asking — with AI legal software that cites every answer.":
+      "Arrêtez de chercher. Commencez à demander.",
     "Start free trial": "Commencer l'essai gratuit",
     "Pricing & plans": "Tarifs et plans",
     "Features overview": "Aperçu des fonctionnalités",
@@ -2450,11 +2512,14 @@ export const LANDING = {
     "For law firms": "Pour cabinets d'avocats",
   }),
   nl: applyReplacements(JSON.parse(JSON.stringify(_landingEn)), {
-    "AI legal software for AT · DE · CH": "AI juridische software voor NL · DE · CH",
+    "AI legal software & law firm software for AT · DE · CH":
+      "AI juridische software voor NL · DE · CH",
     "Your firm forgets.": "Jouw kantoor vergeet.",
-    "Subsumio doesn't.": "Subsumio niet.",
-    "Every matter, one cited answer.": "Elke zaak, één geciteerd antwoord.",
-    "Stop searching. Start asking.": "Stop met zoeken. Begin met vragen.",
+    "Subsumio doesn't — AI legal software that cites every answer.": "Subsumio niet.",
+    "Every matter, one cited answer — page-level sources, not hallucinations.":
+      "Elke zaak, één geciteerd antwoord.",
+    "Stop searching. Start asking — with AI legal software that cites every answer.":
+      "Stop met zoeken. Begin met vragen.",
     "Start free trial": "Start gratis proefperiode",
     "Pricing & plans": "Prijzen en plannen",
     "Features overview": "Overzicht functies",
@@ -2474,8 +2539,9 @@ const _uiStringsDe: Record<string, string> = {
   ariaMobileNav: "Mobile Navigation",
   ariaCloseMenu: "Menü schließen",
   ariaLanguage: "Sprache",
-  footerLegalTagline: "Legal Intelligence für Kanzleien",
-  footerHostingLine: "EU-gehostet oder self-hosted · DSGVO-konform · vertraulichkeitskritisch",
+  footerLegalTagline: "KI-Kanzleisoftware & Legal Intelligence für Anwälte",
+  footerHostingLine:
+    "EU-Cloud oder On-Premise · DSGVO-konform · AVV inklusive · § 203 StGB-konform",
   // Landing — trust signals
   noCreditCard: "Keine Kreditkarte",
   trialDaysFree: "14 Tage gratis · Keine Kreditkarte",
@@ -2674,8 +2740,8 @@ const _uiStringsEn: Record<string, string> = {
   ariaMobileNav: "Mobile navigation",
   ariaCloseMenu: "Close menu",
   ariaLanguage: "Language",
-  footerLegalTagline: "Legal intelligence for law firms",
-  footerHostingLine: "EU-hosted or self-hosted · GDPR-ready · confidentiality-first",
+  footerLegalTagline: "AI legal software & legal intelligence for law firms",
+  footerHostingLine: "EU cloud or self-hosted · GDPR-ready · AVV included · § 203 StGB compliant",
   // Landing — trust signals
   noCreditCard: "No credit card",
   trialDaysFree: "14 days free · No credit card",

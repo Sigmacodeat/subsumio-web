@@ -633,7 +633,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
               transition={{ duration: 0.4, delay: i * 0.08 }}
               className="rounded-2xl border [border-color:var(--mk-border)] p-5 text-center transition-colors [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
             >
-              <div className="gradient-text mb-1 text-3xl font-black md:text-4xl">
+              <div className="gradient-text mb-1 text-3xl font-bold md:text-4xl">
                 {s.prefix ?? ""}
                 <CountUp to={s.to} decimals={s.dec} />
                 {s.suffix ?? ""}

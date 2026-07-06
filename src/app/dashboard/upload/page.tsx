@@ -496,13 +496,20 @@ function UploadPageInner() {
             ? "Dokument gespeichert, automatische Analyse konnte aber nicht eingeplant werden."
             : undefined;
 
+        const stillProcessing = extractionStatus === "processing";
+
         setFiles((prev) =>
           prev.map((f) =>
             f.id === uploadFile.id
               ? {
                   ...f,
-                  status: extractionStatus === "failed" ? "error" : "done",
-                  progress: 100,
+                  status:
+                    extractionStatus === "failed"
+                      ? "error"
+                      : stillProcessing
+                        ? "processing"
+                        : "done",
+                  progress: stillProcessing ? 97 : 100,
                   uploadedBytes: f.file.size,
                   slug: result.slug,
                   gobdStamped,
@@ -521,6 +528,32 @@ function UploadPageInner() {
               : f
           )
         );
+        if (stillProcessing && result.slug) {
+          void api.upload
+            .waitUntilQueryable(result.slug)
+            .then(() => {
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === uploadFile.id
+                    ? { ...f, status: "done", progress: 100, serverPhase: undefined }
+                    : f
+                )
+              );
+            })
+            .catch((readinessError) => {
+              const message =
+                readinessError instanceof Error
+                  ? readinessError.message
+                  : "Dokumentverarbeitung fehlgeschlagen.";
+              setFiles((prev) =>
+                prev.map((f) =>
+                  f.id === uploadFile.id
+                    ? { ...f, status: "error", error: message, serverPhase: undefined }
+                    : f
+                )
+              );
+            });
+        }
       } catch (e) {
         const msg = e instanceof Error ? e.message : t("upload.err_failed");
         // Duplicate (409) is a benign conflict, not a hard failure — mark the row

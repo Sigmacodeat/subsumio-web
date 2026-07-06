@@ -160,7 +160,7 @@ export default function AboutPage({ lang }: { lang: Lang }) {
                   viewport={{ once: true, amount: 0.15 }}
                   transition={{ duration: 0.45, delay: i * 0.06 }}
                 >
-                  <div className="brand-text text-3xl font-black md:text-4xl">
+                  <div className="brand-text text-3xl font-bold md:text-4xl">
                     {isNumeric ? (
                       <AnimatedCounter
                         to={num}

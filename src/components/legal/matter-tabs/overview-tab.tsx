@@ -21,6 +21,8 @@ import {
   Link2,
   Building2,
   Users,
+  Hourglass,
+  XCircle as XCircleIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -905,6 +907,9 @@ export function OverviewTab() {
         )}
       </div>
 
+      {/* Verjährungs-Scan (Limitation Scanner) — highest liability risk */}
+      <VerjaehrungsScanCard caseSlug={caseData.slug} lang={lang as "de" | "en"} />
+
       {/* Contradictions */}
       {caseData.contradictions && caseData.contradictions.length > 0 && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
@@ -1067,6 +1072,322 @@ export function OverviewTab() {
             })) ?? []
           }
         />
+      )}
+    </div>
+  );
+}
+
+// ── Verjährungs-Scan Card (Layer 5l output) ────────────────────
+
+interface VerjaehrungsAnspruch {
+  anspruch?: string;
+  gegner?: string;
+  restzeit_tage?: number;
+  handlungsbedarf?: string;
+  paragraph?: string;
+  anspruchshoehe?: number;
+  verjaehrungsfrist_jahre?: number;
+  beginn?: string;
+  frist_ende?: string;
+  verjaehrt?: boolean;
+  hemmung?: boolean;
+  hemmung_grund?: string | null;
+  grund?: string;
+}
+
+function VerjaehrungsScanCard({ caseSlug, lang }: { caseSlug: string; lang: "de" | "en" }) {
+  const [data, setData] = useState<{
+    score: number;
+    urgent: VerjaehrungsAnspruch[];
+    verjaehrte: VerjaehrungsAnspruch[];
+    ansprueche: VerjaehrungsAnspruch[];
+    empfehlung: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const page = await api.brain.getPage(`limitation-scan/${caseSlug}`);
+        if (cancelled) return;
+        if (!page) {
+          setData(null);
+          return;
+        }
+        const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+        const score =
+          typeof fm.verjaehrung_risiko_score === "number" ? fm.verjaehrung_risiko_score : 0;
+
+        const parseArr = (raw: unknown): VerjaehrungsAnspruch[] => {
+          if (Array.isArray(raw)) return raw as VerjaehrungsAnspruch[];
+          if (typeof raw === "string") {
+            try {
+              const parsed = JSON.parse(raw);
+              return Array.isArray(parsed) ? (parsed as VerjaehrungsAnspruch[]) : [];
+            } catch {
+              return [];
+            }
+          }
+          return [];
+        };
+
+        const urgent = parseArr(fm.urgent_ansprueche);
+        const verjaehrte = parseArr(fm.verjaehrte_ansprueche);
+
+        // Backend does NOT store ansprueche[] in frontmatter — only in the
+        // markdown table "Alle Ansprüche im Überblick". Parse it from there.
+        const ansprueche: VerjaehrungsAnspruch[] = [];
+        if (page.content) {
+          const tableMatch = page.content.match(
+            /## Alle Ansprüche im Überblick[\s\S]*?\n\| ([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|/
+          );
+          if (tableMatch) {
+            const tableSection = page.content.slice(
+              page.content.indexOf("## Alle Ansprüche im Überblick")
+            );
+            const dataLines = tableSection
+              .split("\n")
+              .filter(
+                (l) =>
+                  l.startsWith("| ") &&
+                  !l.includes("---") &&
+                  !l.includes("Anspruch") &&
+                  !l.includes("|----------")
+              );
+            for (const line of dataLines) {
+              const cells = line
+                .split("|")
+                .map((c) => c.trim())
+                .filter(Boolean);
+              if (cells.length >= 10) {
+                ansprueche.push({
+                  anspruch: cells[0],
+                  gegner: cells[1],
+                  anspruchshoehe: parseFloat(cells[2]?.replace(/[€\s.]/g, "")) || undefined,
+                  verjaehrungsfrist_jahre: parseInt(cells[3]?.replace("J", "")) || undefined,
+                  paragraph: cells[4],
+                  beginn: cells[5],
+                  frist_ende: cells[6],
+                  verjaehrt: cells[7]?.toLowerCase().includes("ja") || false,
+                  restzeit_tage: parseInt(cells[8]?.replace("T", "")) || undefined,
+                  handlungsbedarf: cells[9]?.replace(/[🚨⚠️✅\s]/g, ""),
+                });
+              }
+            }
+          }
+        }
+
+        const empfehlungMatch = page.content?.match(/\*\*Empfehlung:\*\*\s*(.+)/);
+        const empfehlung = empfehlungMatch ? empfehlungMatch[1].trim() : "";
+
+        // Show card if we have any data: score > 0, urgent/verjaehrte arrays,
+        // or parsed ansprueche from the table
+        const hasData =
+          urgent.length > 0 || verjaehrte.length > 0 || ansprueche.length > 0 || score > 0;
+        if (!hasData) {
+          setData(null);
+        } else {
+          setData({ score, urgent, verjaehrte, ansprueche, empfehlung });
+        }
+      } catch {
+        if (!cancelled) setData(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [caseSlug]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm text-[color:var(--ds-text-muted)]">
+        <Loader2 size={14} className="animate-spin" />
+        {lang === "en" ? "Loading limitation scan..." : "Verjährungs-Scan wird geladen..."}
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const hasUrgent = data.urgent.length > 0;
+  const hasVerjaehrt = data.verjaehrte.length > 0;
+  const isCritical = hasUrgent || hasVerjaehrt;
+  const isWarning = !isCritical && data.score >= 40;
+
+  const cardClass = isCritical
+    ? "border-red-500/30 bg-red-500/5"
+    : isWarning
+      ? "border-amber-500/30 bg-amber-500/5"
+      : "border-emerald-500/30 bg-emerald-500/5";
+
+  const iconClass = isCritical ? "text-red-600" : isWarning ? "text-amber-600" : "text-emerald-600";
+
+  const titleText = isCritical
+    ? lang === "en"
+      ? "Limitation Risk — Action Required"
+      : "Verjährungsrisiko — Handlungsbedarf"
+    : isWarning
+      ? lang === "en"
+        ? "Limitation Risk — Warning"
+        : "Verjährungsrisiko — Warnung"
+      : lang === "en"
+        ? "Limitation Scan — OK"
+        : "Verjährungs-Scan — OK";
+
+  return (
+    <div className={cn("rounded-xl border p-4", cardClass)}>
+      <div className="mb-3 flex items-center gap-2">
+        <Hourglass size={16} className={iconClass} />
+        <h3 className={cn("text-sm font-semibold", iconClass)}>{titleText}</h3>
+        <div className="ml-auto flex items-center gap-1.5">
+          {hasVerjaehrt && (
+            <Badge variant="danger" className="text-xs">
+              <XCircleIcon size={10} className="mr-1" />
+              {data.verjaehrte.length} {lang === "en" ? "expired" : "verjährt"}
+            </Badge>
+          )}
+          {hasUrgent && (
+            <Badge variant="danger" className="text-xs">
+              🚨 {data.urgent.length} {lang === "en" ? "urgent" : "dringend"}
+            </Badge>
+          )}
+          {!hasUrgent && !hasVerjaehrt && data.ansprueche.length > 0 && (
+            <Badge variant="success" className="text-xs">
+              ✅ {data.ansprueche.length} OK
+            </Badge>
+          )}
+          <Badge
+            variant="default"
+            className={cn(
+              "border text-xs",
+              data.score >= 75
+                ? "border-red-500/30 bg-red-500/10 text-red-600"
+                : data.score >= 40
+                  ? "border-amber-500/30 bg-amber-500/10 text-amber-600"
+                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+            )}
+          >
+            {lang === "en" ? "Risk" : "Risiko"}: {data.score}/100
+          </Badge>
+        </div>
+      </div>
+
+      {data.empfehlung && (
+        <p className="mb-3 text-xs text-[color:var(--ds-text)]">{data.empfehlung}</p>
+      )}
+
+      {hasVerjaehrt && (
+        <div className="mb-3">
+          <p className="mb-1.5 text-xs font-semibold text-red-600">
+            ⛔{" "}
+            {lang === "en"
+              ? "Expired claims — no longer enforceable"
+              : "Verjährte Ansprüche — nicht mehr durchsetzbar"}
+          </p>
+          <div className="overflow-x-auto rounded-lg border border-red-500/20 bg-[color:var(--ds-surface)]">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]">
+                  <th className="px-2 py-1.5 text-left font-medium">
+                    {lang === "en" ? "Claim" : "Anspruch"}
+                  </th>
+                  <th className="px-2 py-1.5 text-left font-medium">
+                    {lang === "en" ? "Opponent" : "Gegner"}
+                  </th>
+                  <th className="px-2 py-1.5 text-left font-medium">§</th>
+                  <th className="px-2 py-1.5 text-left font-medium">
+                    {lang === "en" ? "Reason" : "Grund"}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.verjaehrte.map((v, i) => (
+                  <tr key={i} className="border-b border-[color:var(--ds-border)] last:border-0">
+                    <td className="px-2 py-1.5 text-[color:var(--ds-text)]">{v.anspruch ?? "—"}</td>
+                    <td className="px-2 py-1.5 text-[color:var(--ds-text-muted)]">
+                      {v.gegner ?? "—"}
+                    </td>
+                    <td className="px-2 py-1.5 font-mono text-[color:var(--ds-text-muted)]">
+                      {v.paragraph ?? "—"}
+                    </td>
+                    <td className="px-2 py-1.5 text-[color:var(--ds-text-muted)]">
+                      {v.grund ?? "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {hasUrgent && (
+        <div className="mb-3">
+          <p className="mb-1.5 text-xs font-semibold text-red-600">
+            🚨{" "}
+            {lang === "en"
+              ? "Urgent — claims expiring soon"
+              : "Dringend — Ansprüche verjähren bald"}
+          </p>
+          <div className="overflow-x-auto rounded-lg border border-red-500/20 bg-[color:var(--ds-surface)]">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]">
+                  <th className="px-2 py-1.5 text-left font-medium">
+                    {lang === "en" ? "Claim" : "Anspruch"}
+                  </th>
+                  <th className="px-2 py-1.5 text-left font-medium">
+                    {lang === "en" ? "Opponent" : "Gegner"}
+                  </th>
+                  <th className="px-2 py-1.5 text-left font-medium">
+                    {lang === "en" ? "Days left" : "Restzeit"}
+                  </th>
+                  <th className="px-2 py-1.5 text-left font-medium">
+                    {lang === "en" ? "Action" : "Handlungsbedarf"}
+                  </th>
+                  <th className="px-2 py-1.5 text-left font-medium">§</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.urgent.map((u, i) => (
+                  <tr key={i} className="border-b border-[color:var(--ds-border)] last:border-0">
+                    <td className="px-2 py-1.5 text-[color:var(--ds-text)]">{u.anspruch ?? "—"}</td>
+                    <td className="px-2 py-1.5 text-[color:var(--ds-text-muted)]">
+                      {u.gegner ?? "—"}
+                    </td>
+                    <td
+                      className={cn(
+                        "px-2 py-1.5 font-mono font-medium",
+                        (u.restzeit_tage ?? 0) <= 30 ? "text-red-600" : "text-amber-600"
+                      )}
+                    >
+                      {u.restzeit_tage ?? "—"} {lang === "en" ? "d" : "T"}
+                    </td>
+                    <td className="px-2 py-1.5 text-[color:var(--ds-text-muted)]">
+                      {u.handlungsbedarf ?? "—"}
+                    </td>
+                    <td className="px-2 py-1.5 font-mono text-[color:var(--ds-text-muted)]">
+                      {u.paragraph ?? "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {!hasUrgent && !hasVerjaehrt && data.ansprueche.length > 0 && (
+        <p className="text-xs text-[color:var(--ds-text-muted)]">
+          ✅{" "}
+          {lang === "en"
+            ? `All ${data.ansprueche.length} claims within limitation period.`
+            : `Alle ${data.ansprueche.length} Ansprüche innerhalb der Verjährungsfrist.`}
+        </p>
       )}
     </div>
   );

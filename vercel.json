@@ -2,6 +2,8 @@
   "crons": [
     { "path": "/api/cron/auto-playbook", "schedule": "0 */6 * * *" },
     { "path": "/api/cron/post-upload-drain", "schedule": "*/2 * * * *" },
+    { "path": "/api/cron/upload-reconcile", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/upload-multipart-cleanup", "schedule": "0 * * * *" },
     { "path": "/api/cron/deadlines", "schedule": "0 6 * * *" },
     { "path": "/api/cron/deadline-reminders", "schedule": "0 7 * * *" },
     { "path": "/api/cron/appointment-reminders", "schedule": "0 8 * * *" },

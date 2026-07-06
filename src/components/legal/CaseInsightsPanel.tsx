@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Sparkles,
   Brain,
+  FileWarning,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ const TYPE_ICONS: Record<InsightType, typeof Lightbulb> = {
   playbook_hint: Lightbulb,
   contradiction: AlertTriangle,
   deadline_risk: CalendarClock,
+  extraction_issue: FileWarning,
 };
 
 const TYPE_LABELS_DE: Record<InsightType, string> = {
@@ -39,6 +41,7 @@ const TYPE_LABELS_DE: Record<InsightType, string> = {
   playbook_hint: "Playbook",
   contradiction: "Widerspruch",
   deadline_risk: "Frist",
+  extraction_issue: "Extraktion",
 };
 
 const TYPE_LABELS_EN: Record<InsightType, string> = {
@@ -46,6 +49,7 @@ const TYPE_LABELS_EN: Record<InsightType, string> = {
   playbook_hint: "Playbook",
   contradiction: "Contradiction",
   deadline_risk: "Deadline",
+  extraction_issue: "Extraction",
 };
 
 interface CaseInsightsPanelProps {

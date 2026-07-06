@@ -5400,6 +5400,83 @@ export const MIGRATIONS: Migration[] = [
         WHERE labile_until IS NOT NULL AND expired_at IS NULL;
     `,
   },
+  {
+    version: 120,
+    name: "canonical_document_ingest_identity",
+    // Separate immutable byte identity from logical document filing. The same
+    // blob may be referenced by multiple matters without storing its bytes or
+    // embeddings twice. Unique keys make concurrent confirm requests atomic.
+    idempotent: true,
+    sql: `
+      CREATE TABLE IF NOT EXISTS content_blobs (
+        id            BIGSERIAL PRIMARY KEY,
+        source_id     TEXT NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+        sha256        TEXT NOT NULL CHECK (length(sha256) = 64),
+        storage_path  TEXT NOT NULL,
+        size_bytes    BIGINT NOT NULL,
+        mime_type     TEXT,
+        scan_status   TEXT NOT NULL DEFAULT 'clean'
+                      CHECK (scan_status IN ('unscanned','clean','quarantined')),
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+        UNIQUE(source_id, sha256)
+      );
+
+      CREATE TABLE IF NOT EXISTS document_refs (
+        id              BIGSERIAL PRIMARY KEY,
+        source_id       TEXT NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+        blob_id         BIGINT NOT NULL REFERENCES content_blobs(id) ON DELETE RESTRICT,
+        page_slug       TEXT NOT NULL,
+        case_slug       TEXT,
+        logical_version INTEGER NOT NULL DEFAULT 1,
+        active          BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS document_refs_active_filing_unique
+        ON document_refs(source_id, COALESCE(case_slug, ''), blob_id)
+        WHERE active;
+      CREATE INDEX IF NOT EXISTS document_refs_page_idx
+        ON document_refs(source_id, page_slug) WHERE active;
+
+      CREATE TABLE IF NOT EXISTS ingest_sessions (
+        id                TEXT PRIMARY KEY,
+        source_id         TEXT NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+        page_slug         TEXT,
+        case_slug         TEXT,
+        blob_id           BIGINT REFERENCES content_blobs(id) ON DELETE SET NULL,
+        pipeline_version  INTEGER NOT NULL DEFAULT 1,
+        state             TEXT NOT NULL DEFAULT 'created',
+        attempt_count     INTEGER NOT NULL DEFAULT 0,
+        error_code        TEXT,
+        error_detail      TEXT,
+        coverage_percent  REAL CHECK (coverage_percent BETWEEN 0 AND 100),
+        created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS ingest_sessions_state_idx
+        ON ingest_sessions(source_id, state, updated_at);
+
+      INSERT INTO content_blobs(source_id, sha256, storage_path, size_bytes, mime_type, scan_status)
+      SELECT DISTINCT ON (source_id, content_hash)
+        source_id, content_hash, storage_path, COALESCE(size_bytes, 0), mime_type,
+        CASE
+          WHEN storage_path LIKE 'quarantined/%' THEN 'quarantined'
+          WHEN storage_path LIKE 'unscanned/%' THEN 'unscanned'
+          ELSE 'clean'
+        END
+      FROM files
+      WHERE content_hash ~ '^[a-fA-F0-9]{64}$'
+      ORDER BY source_id, content_hash, created_at DESC
+      ON CONFLICT (source_id, sha256) DO NOTHING;
+
+      INSERT INTO document_refs(source_id, blob_id, page_slug, case_slug)
+      SELECT f.source_id, b.id, f.page_slug, p.frontmatter->>'case_slug'
+      FROM files f
+      JOIN content_blobs b ON b.source_id = f.source_id AND b.sha256 = f.content_hash
+      LEFT JOIN pages p ON p.source_id = f.source_id AND p.slug = f.page_slug
+      WHERE f.page_slug IS NOT NULL
+      ON CONFLICT DO NOTHING;
+    `,
+  },
 ];
 
 export const LATEST_VERSION =

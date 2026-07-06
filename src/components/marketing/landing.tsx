@@ -364,7 +364,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                       className="h-full rounded-xl border [border-color:var(--mk-border)] p-5 transition-all duration-300 [background:var(--mk-surface-2)] hover:-translate-y-1 hover:shadow-lg"
                     >
                       <div className="flex items-start gap-4">
-                        <p className="w-[88px] shrink-0 text-2xl leading-[1.1] font-black tracking-tight text-balance [color:var(--brand-text)]">
+                        <p className="w-[88px] shrink-0 text-2xl leading-[1.1] font-bold tracking-tight text-balance [color:var(--brand-text)]">
                           {p.value}
                         </p>
                         <p className="text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)]">
@@ -393,7 +393,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 const isNumeric = !isNaN(num) && num > 0;
                 return (
                   <StaggerItem key={stat.label}>
-                    <p className="mb-1 text-4xl font-black [color:var(--brand-text)] md:text-5xl">
+                    <p className="mb-1 text-4xl font-bold [color:var(--brand-text)] md:text-5xl">
                       {isNumeric ? (
                         <AnimatedCounter
                           to={num}

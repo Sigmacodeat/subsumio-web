@@ -872,6 +872,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
           status: updates.status ?? caseData.status,
           legal_area: updates.legalArea ?? caseData.legalArea,
           sub_area: updates.subArea ?? caseData.subArea,
+          jurisdiction: updates.jurisdiction ?? caseData.jurisdiction,
           priority: updates.priority ?? caseData.priority,
           opponent_name: updates.opponentName ?? caseData.opponentName,
           opponent_slugs: updates.opponentSlugs ?? caseData.opponentSlugs,

@@ -49,6 +49,7 @@ import { FILE_MIME_TYPES } from "../core/file-store.ts";
 import { uploadConcurrencyGuard } from "../core/upload-guard.ts";
 import { pipeline } from "stream/promises";
 import {
+  legalPipelineIdempotencyKey,
   shouldAutoTriggerUploadPipeline,
   uploadPipelineCaseSlug,
 } from "../core/upload-pipeline-routing.ts";
@@ -273,7 +274,8 @@ async function persistUploadBytes(
   pageSlug: string,
   sourceId: string,
   storageConfig: unknown,
-  zone?: "unscanned" | "clean" | "quarantined"
+  zone?: "unscanned" | "clean" | "quarantined",
+  caseSlug?: string
 ): Promise<PersistResult> {
   try {
     const { persistFileBuffer } = await import("../core/file-store.ts");
@@ -288,6 +290,7 @@ async function persistUploadBytes(
       sourceId,
       storageConfig: effectiveConfig,
       zone,
+      caseSlug,
     });
     return { ok: true, storage_path: result.storage_path, content_hash: result.content_hash };
   } catch (err) {
@@ -299,10 +302,15 @@ async function persistUploadBytes(
 
 async function storedDuplicate(
   data: Buffer,
-  sourceId: string
+  sourceId: string,
+  caseSlug?: string | null
 ): Promise<{ page_slug: string | null; filename: string } | null> {
-  const { findStoredUploadByHash } = await import("../core/file-store.ts");
-  return findStoredUploadByHash(data, sourceId);
+  const { findStoredDocumentReferenceByHash } = await import("../core/file-store.ts");
+  return findStoredDocumentReferenceByHash(
+    createHash("sha256").update(data).digest("hex"),
+    sourceId,
+    caseSlug
+  );
 }
 
 async function versionUploadSlug(slug: string, data: Buffer, sourceId: string): Promise<string> {
@@ -1081,7 +1089,15 @@ export async function runExtractionAndImport(
           ...(jurisdiction !== "at" ? { jurisdiction } : {}),
           ...(uploadFrontmatter.pause_for_review ? { pause_for_review: true } : {}),
         },
-        { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+        {
+          timeout_ms: 60 * 60 * 1000,
+          max_attempts: 3,
+          idempotency_key: legalPipelineIdempotencyKey(
+            tenantSource,
+            uploadPipelineCaseSlug(slug, caseSlug),
+            pipelineSlugs
+          ),
+        },
         { allowProtectedSubmit: true }
       );
     } catch (pipelineErr) {
@@ -2017,7 +2033,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
         const opCtx = buildOperationContext(engine, {}, { remote: false, sourceId: tenantSource });
 
-        const duplicate = await storedDuplicate(file.data, tenantSource);
+        const duplicate = await storedDuplicate(file.data, tenantSource, payload.case_slug);
         if (duplicate) {
           res.status(409).json({
             error: "duplicate_file",
@@ -2080,40 +2096,6 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                   queueError
                 );
               }
-              const beaWebUrl = process.env.SUBSUMIO_WEB_URL?.replace(/\/$/, "");
-              const beaInternalSecret = process.env.SUBSUMIO_INTERNAL_SECRET;
-              if (beaWebUrl && beaInternalSecret) {
-                setImmediate(() => {
-                  fetch(`${beaWebUrl}/api/internal/post-upload`, {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      "x-internal-secret": beaInternalSecret,
-                    },
-                    body: JSON.stringify({
-                      doc_slug: beaSlug,
-                      case_slug: payload.case_slug?.trim() || undefined,
-                      brain_id: tenantSource,
-                      doc_title: beaPage?.title ?? item.title,
-                      doc_size: file.data.byteLength,
-                      uploaded_at: new Date().toISOString(),
-                    }),
-                    signal: AbortSignal.timeout(60_000),
-                  })
-                    .then(async (callbackRes) => {
-                      if (!callbackRes.ok)
-                        throw new Error(
-                          `HTTP ${callbackRes.status}: ${(await callbackRes.text()).slice(0, 300)}`
-                        );
-                    })
-                    .catch((err) => {
-                      console.error(
-                        "[direct-upload] beA post-upload callback failed (non-fatal):",
-                        err instanceof Error ? err.message : String(err)
-                      );
-                    });
-                });
-              }
               // E2: Trigger legal-pipeline for beA XML imports — same as
               // regular upload path does via runExtractionAndImport.
               try {
@@ -2126,7 +2108,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                     ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
                     trigger: "bea_import",
                   },
-                  { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+                  {
+                    timeout_ms: 60 * 60 * 1000,
+                    max_attempts: 3,
+                    idempotency_key: legalPipelineIdempotencyKey(
+                      tenantSource,
+                      payload.case_slug?.trim() || beaSlug,
+                      [beaSlug]
+                    ),
+                  },
                   { allowProtectedSubmit: true }
                 );
               } catch (beaPipelineErr) {
@@ -2180,7 +2170,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           slug,
           tenantSource,
           opCtx.config.storage,
-          "clean"
+          "clean",
+          caseSlug
         );
 
         if (!persistRes.ok) {
@@ -4189,7 +4180,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const tenantSource = opCtx.sourceId ?? "default";
       await ensureSource(tenantSource);
 
-      const duplicate = await storedDuplicate(file.data, tenantSource);
+      const duplicate = await storedDuplicate(file.data, tenantSource, fields.case_slug);
       if (duplicate) {
         res.status(409).json({
           error: "duplicate_file",
@@ -4254,7 +4245,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                   ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
                   trigger: "bea_import",
                 },
-                { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+                {
+                  timeout_ms: 60 * 60 * 1000,
+                  max_attempts: 3,
+                  idempotency_key: legalPipelineIdempotencyKey(
+                    tenantSource,
+                    fields.case_slug?.trim() || beaSlug,
+                    [beaSlug]
+                  ),
+                },
                 { allowProtectedSubmit: true }
               );
             } catch (beaPipelineErr) {
@@ -4309,7 +4308,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         slug,
         tenantSource,
         opCtx.config.storage,
-        "clean"
+        "clean",
+        caseSlug
       );
 
       if (!persistRes.ok) {
@@ -4722,12 +4722,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const storage = await createStorage(storageConfig as any);
 
         if (!storage.createMultipartUpload || !storage.presignPart) {
-          res
-            .status(501)
-            .json({
-              error: "multipart_not_supported",
-              message: "Storage-Backend unterstützt kein Multipart-Upload.",
-            });
+          res.status(501).json({
+            error: "multipart_not_supported",
+            message: "Storage-Backend unterstützt kein Multipart-Upload.",
+          });
           return;
         }
 
@@ -5263,8 +5261,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const contentHash = hashStream.digest("hex");
 
         // ── DEDUP CHECK (uses pre-computed hash, no buffer needed) ──
-        const { findStoredUploadByHashValue } = await import("../core/file-store.ts");
-        const duplicate = await findStoredUploadByHashValue(contentHash, pending.sourceId);
+        const { findStoredDocumentReferenceByHash } = await import("../core/file-store.ts");
+        const duplicate = await findStoredDocumentReferenceByHash(
+          contentHash,
+          pending.sourceId,
+          pending.caseSlug
+        );
         if (duplicate) {
           try {
             await storage.delete(pending.storagePath);
@@ -5324,6 +5326,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           filename: pending.filename,
           contentHash,
           pageSlug: versionedSlug,
+          caseSlug: pending.caseSlug,
           mimeType: pending.mimeType,
           sourceId: pending.sourceId,
           storageConfig: opCtx.config.storage ?? storageConfig,

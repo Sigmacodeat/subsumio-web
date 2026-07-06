@@ -134,7 +134,7 @@ describe("TODO 8: Insights-Engine", () => {
     expect(notfristInsights[0].severity).toBe("critical");
   });
 
-  it("generates contradiction insight for failed document analysis", () => {
+  it("generates extraction_issue insight for failed document analysis", () => {
     const input: InsightInput = {
       recentDocuments: [
         {
@@ -148,9 +148,9 @@ describe("TODO 8: Insights-Engine", () => {
       ],
     };
     const insights = generateInsights(input);
-    const ctrInsights = insights.filter((i: Insight) => i.type === "contradiction");
-    expect(ctrInsights.length).toBe(1);
-    expect(ctrInsights[0].severity).toBe("critical");
+    const extInsights = insights.filter((i: Insight) => i.type === "extraction_issue");
+    expect(extInsights.length).toBe(1);
+    expect(extInsights[0].severity).toBe("critical");
   });
 
   it("generates deadline_risk insight for overdue deadlines", () => {

@@ -365,7 +365,7 @@ export function PipelinePanel({
       addToast({
         type: "success",
         title: "Pipeline gestartet",
-        description: "Die 6-Layer Legal Agent Pipeline wurde gestartet.",
+        description: "Die Multi-Layer Legal Agent Pipeline wurde gestartet.",
         duration: 4000,
       });
 
@@ -454,7 +454,8 @@ export function PipelinePanel({
                 Legal Agent Pipeline
               </h3>
               <p className="text-xs text-[color:var(--ds-text-muted)]">
-                6-Layer: ON-Scanner → Entity → Forensic → Damage+Deadline → Drafter → Critic
+                Multi-Layer: ON-Scanner → Entity → Forensic → Rechtliche Tiefenanalyse →
+                Schaden/Fristen/Risiko → Schriftsatz → Critic
               </p>
             </div>
           </div>
@@ -583,6 +584,14 @@ export function PipelinePanel({
                               <span className="text-xs font-semibold text-[color:var(--ds-text)]">
                                 {page.title}
                               </span>
+                              {subTypeLabel(fm.type) && (
+                                <Badge
+                                  variant="default"
+                                  className="border border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-glow)] text-xs text-[color:var(--brand-primary)]"
+                                >
+                                  {subTypeLabel(fm.type)}
+                                </Badge>
+                              )}
                               {fm.total_score !== undefined && (
                                 <Badge
                                   variant="default"

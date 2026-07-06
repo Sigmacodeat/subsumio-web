@@ -34,8 +34,14 @@ import type { BrainEngine } from "../../engine.ts";
 import type { IngestionEvent } from "../../ingestion/types.ts";
 import { validateIngestionEvent } from "../../ingestion/types.ts";
 import { importFromContent } from "../../import-file.ts";
+import { persistFileBuffer } from "../../file-store.ts";
+import { inspectUploadFile } from "../../upload-security.ts";
+import { runExtractionAndImport } from "../../../commands/web-api.ts";
+import { legalPipelineIdempotencyKey } from "../../upload-pipeline-routing.ts";
 import { classifyLegalDocument, legalDocTypeLabel } from "../../legal/doc-classifier.ts";
 import { MinionQueue } from "../queue.ts";
+import { basename, extname, isAbsolute } from "node:path";
+import { lstat, readFile, realpath } from "node:fs/promises";
 
 export interface IngestCaptureResult {
   slug: string;
@@ -97,19 +103,6 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
       event.content_type === "application/json" ||
       event.content_type === "unknown";
 
-    if (!isText) {
-      // Binary content without a processor would land as a path-string
-      // page, which isn't useful. Surface as job-level error so the
-      // operator sees the gap in `gbrain doctor` and can decide whether
-      // to install the appropriate skillpack-distributed processor.
-      throw new Error(
-        `ingest_capture: content_type '${event.content_type}' requires a content-type ` +
-          `processor that is not yet installed. Install a processor skillpack ` +
-          `(e.g. gbrain-audio-transcribe, gbrain-image-ocr) or pre-extract the ` +
-          `content to text/markdown before emitting.`
-      );
-    }
-
     const targetSource =
       event.source_kind === "connector:advokat-import" &&
       typeof event.metadata?.target_source_id === "string"
@@ -120,6 +113,85 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
     // Other high-volume capture sources may still explicitly request deferred
     // embeddings with noEmbed=true.
     const noEmbed = (data as { noEmbed?: unknown }).noEmbed === true;
+
+    // Connector/webhook source ids are dynamic tenants in SaaS mode. Provision
+    // the FK row before any page/blob write, idempotently and fail-closed.
+    await engine.executeRaw(
+      `INSERT INTO sources(id, name, config)
+       VALUES ($1, $2, $3::jsonb)
+       ON CONFLICT (id) DO NOTHING`,
+      [targetSource, targetSource, JSON.stringify({ provisioned_by: "ingest_capture" })]
+    );
+
+    if (!isText) {
+      if (untrustedPayload) {
+        throw new Error("ingest_capture: untrusted binary path payload rejected");
+      }
+      if (
+        !isAbsolute(event.content) ||
+        event.content.startsWith("/proc/") ||
+        event.content.startsWith("/dev/")
+      ) {
+        throw new Error("ingest_capture: binary content must be a safe absolute file path");
+      }
+      let resolvedPath: string;
+      try {
+        resolvedPath = await realpath(event.content);
+      } catch {
+        throw new Error("ingest_capture: binary content path is unavailable");
+      }
+      const stat = await lstat(resolvedPath);
+      if (!stat.isFile() || stat.isSymbolicLink()) {
+        throw new Error("ingest_capture: binary content path must resolve to a regular file");
+      }
+      const filename =
+        typeof event.metadata?.filename === "string"
+          ? basename(event.metadata.filename)
+          : basename(resolvedPath);
+      const security = await inspectUploadFile(filename, resolvedPath);
+      if (!security.ok) {
+        throw new Error(`ingest_capture: binary security rejection: ${security.code}`);
+      }
+      const bytes = await readFile(resolvedPath);
+      const caseSlug =
+        typeof event.metadata?.case_slug === "string" ? event.metadata.case_slug : undefined;
+      await persistFileBuffer({
+        data: bytes,
+        filename,
+        pageSlug: slug,
+        caseSlug,
+        sourceId: targetSource,
+        zone: "clean",
+      });
+      const { partSlugs } = await runExtractionAndImport(engine, {
+        slug,
+        filename,
+        data: bytes,
+        title: typeof event.metadata?.title === "string" ? event.metadata.title : undefined,
+        tagList: Array.isArray(event.metadata?.tags) ? event.metadata.tags.map(String) : [],
+        caseSlug,
+        uploadFrontmatter: {
+          source: "connector",
+          source_format: extname(filename).replace(/^\./, "").toLowerCase(),
+          source_kind: event.source_kind,
+          source_uri: event.source_uri,
+          ingested_via: "ingest_capture",
+          ...(caseSlug ? { case_slug: caseSlug, assignment_status: "assigned" } : {}),
+        },
+        tenantSource: targetSource,
+        noEmbed,
+        autoTriggerLegalPipeline: true,
+      });
+      return {
+        slug,
+        status: "imported",
+        chunks: partSlugs.length,
+        untrusted_payload: false,
+        source_kind: event.source_kind,
+        source_uri: event.source_uri,
+        pipeline_queued: true,
+      };
+    }
 
     const result = await importFromContent(engine, slug, event.content, {
       noEmbed,
@@ -168,7 +240,11 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
             ...(targetSource !== "default" ? { source_id: targetSource } : {}),
             trigger: "ingest_capture",
           },
-          { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+          {
+            timeout_ms: 60 * 60 * 1000,
+            max_attempts: 3,
+            idempotency_key: legalPipelineIdempotencyKey(targetSource, slug, [slug]),
+          },
           { allowProtectedSubmit: true }
         );
         pipeline_queued = true;

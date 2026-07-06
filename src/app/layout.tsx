@@ -30,45 +30,52 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Subsumio — KI-Kanzleisoftware für Anwälte | AT · DE · CH",
+    default: "Subsumio — KI-Kanzleisoftware & Anwaltssoftware für Anwälte | AT · DE · CH",
     template: "%s — Subsumio",
   },
   description:
-    "KI-Kanzleisoftware für Anwälte in AT, DE & CH: Aktenverwaltung, Fristen nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export. DSGVO-konform.",
+    "KI-Kanzleisoftware & Anwaltssoftware für Rechtsanwälte in AT, DE & CH: Aktenverwaltung, Fristenmanagement nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. DSGVO-konform, AVV, On-Premise oder EU-Cloud.",
   keywords: [
-    // Cluster A: Kanzleisoftware
+    // Cluster A: Kanzleisoftware (high-volume transactional)
     "Kanzleisoftware",
     "KI Kanzleisoftware",
+    "KI Anwaltssoftware",
+    "Anwaltssoftware",
+    "Anwaltssoftware KI",
     "cloudbasierte Kanzleisoftware",
+    "Kanzleisoftware Vergleich",
     "Kanzleisoftware DSGVO",
     "Kanzleisoftware Österreich",
     "Kanzleisoftware Schweiz",
     "Kanzleisoftware Deutschland",
-    "Anwaltssoftware",
-    "Anwaltssoftware KI",
     "Kanzleisoftware selbst hosten",
-    // Cluster B: Fristen
+    "Software für Rechtsanwälte",
+    "Kanzleimanagement Software",
+    // Cluster B: Fristen (problem keywords)
     "Fristenverwaltung Kanzlei",
     "Fristenmanagement Software",
     "Fristenberechnung ZPO",
     "Fristenberechnung BGB",
     "Fristenberechnung ABGB",
     "Fristenkontrolle Anwalt",
-    // Cluster C: KI Legal
+    // Cluster C: KI Legal (informational + transactional)
     "KI Anwaltskanzlei",
     "KI für Anwälte",
     "Legal AI Software",
+    "Legal Tech",
+    "Kanzlei-Digitalisierung",
     "KI Rechtsrecherche",
     "KI Schriftsatz",
     "KI Aktenverwaltung",
     "KI Dokumentenmanagement Kanzlei",
     "Legal Research AI",
     "AI legal research",
-    // Cluster D: DACH-spezifisch
+    // Cluster D: DACH-spezifisch (compliance + integration)
     "DATEV Kanzlei",
     "ADATEV",
     "beA Anbindung",
     "RVG Abrechnung Software",
+    "Honorarrechnung Software",
     "AVV Kanzleisoftware",
     "On-Premise Kanzleisoftware",
     "Kollisionsprüfung BRAO",
@@ -90,9 +97,9 @@ export const metadata: Metadata = {
     languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en", "x-default": "/" },
   },
   openGraph: {
-    title: "Subsumio — KI-Kanzleisoftware für DACH-Rechtsanwälte",
+    title: "Subsumio — KI-Kanzleisoftware & Anwaltssoftware für DACH-Rechtsanwälte",
     description:
-      "Aktenverwaltung, Fristenkontrolle nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export und Kollisionsprüfung für Kanzleien in AT, DE und CH.",
+      "KI-Kanzleisoftware für Rechtsanwälte in AT, DE & CH: Aktenverwaltung, Fristenmanagement nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. DSGVO-konform, AVV, On-Premise oder EU-Cloud.",
     type: "website",
     siteName: "Subsumio",
     images: [
@@ -106,9 +113,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Subsumio — KI-Kanzleisoftware für DACH-Rechtsanwälte",
+    title: "Subsumio — KI-Kanzleisoftware & Anwaltssoftware für DACH-Rechtsanwälte",
     description:
-      "KI-Kanzleisoftware für Rechtsanwälte in AT, DE und CH: Akten, Fristen, belegte KI-Antworten, DATEV-Export, Kollisionsprüfung.",
+      "KI-Kanzleisoftware & Anwaltssoftware für AT, DE & CH: Akten, Fristen nach ZPO/BGB/ABGB, belegte KI-Antworten, DATEV-Export, Kollisionsprüfung, § 203 StGB-konform.",
     images: ["/og-image.png"],
   },
   icons: {

@@ -100,7 +100,7 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
                   </span>
                 ))}
               </div>
-              <h1 className="mb-4 text-[clamp(1.75rem,4vw,2.5rem)] leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)]">
+              <h1 className="mb-4 text-[clamp(1.75rem,4vw,2.5rem)] leading-[1.12] font-bold tracking-tight text-balance [color:var(--mk-text)]">
                 {post.title}
               </h1>
               <p className="text-lg text-pretty [color:var(--mk-text-muted)]">{post.description}</p>

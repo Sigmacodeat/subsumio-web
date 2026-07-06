@@ -12,6 +12,8 @@ import {
   useMotionValue,
   useSpring,
   useScroll,
+  useTransform,
+  animate,
   Variants,
 } from "framer-motion";
 import {
@@ -910,5 +912,207 @@ export function GradientMesh({
         transition={{ duration, repeat: Infinity, ease: "easeInOut" }}
       />
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TiltCard — 3D hover tilt with glare effect (2026 SaaS standard)
+// ---------------------------------------------------------------------------
+
+interface TiltCardProps {
+  children: ReactNode;
+  className?: string;
+  maxTilt?: number;
+  glareOpacity?: number;
+}
+
+export function TiltCard({
+  children,
+  className = "",
+  maxTilt = 8,
+  glareOpacity = 0.12,
+}: TiltCardProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
+  const rotateX = useSpring(useMotionValue(0), { stiffness: 300, damping: 20 });
+  const rotateY = useSpring(useMotionValue(0), { stiffness: 300, damping: 20 });
+  const glareX = useSpring(useMotionValue(50), { stiffness: 150, damping: 15 });
+  const glareY = useSpring(useMotionValue(50), { stiffness: 150, damping: 15 });
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (reduce || !ref.current) return;
+      const rect = ref.current.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width;
+      const py = (e.clientY - rect.top) / rect.height;
+      rotateY.set((px - 0.5) * maxTilt * 2);
+      rotateX.set(-(py - 0.5) * maxTilt * 2);
+      glareX.set(px * 100);
+      glareY.set(py * 100);
+    },
+    [reduce, maxTilt, rotateX, rotateY, glareX, glareY]
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    rotateX.set(0);
+    rotateY.set(0);
+    glareX.set(50);
+    glareY.set(50);
+  }, [rotateX, rotateY, glareX, glareY]);
+
+  const glareBackground = useTransform([glareX, glareY], (values: number[]) => {
+    const [gx, gy] = values;
+    return `radial-gradient(circle at ${gx}% ${gy}%, rgba(255,255,255,${glareOpacity}), transparent 60%)`;
+  });
+
+  if (reduce) {
+    return (
+      <div className={className} style={{ transformStyle: "preserve-3d" }}>
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        rotateX,
+        rotateY,
+        transformStyle: "preserve-3d",
+        willChange: "transform",
+      }}
+      className={`relative ${className}`}
+    >
+      {children}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[inherit]"
+        style={{
+          background: glareBackground,
+        }}
+      />
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Marquee — infinite scroll animation for logo strips and trust badges
+// ---------------------------------------------------------------------------
+
+interface MarqueeProps {
+  children: ReactNode;
+  className?: string;
+  speed?: number;
+  pauseOnHover?: boolean;
+  reverse?: boolean;
+}
+
+export function Marquee({
+  children,
+  className = "",
+  speed = 30,
+  pauseOnHover: _pauseOnHover = true,
+  reverse = false,
+}: MarqueeProps) {
+  const reduce = useReducedMotion();
+  if (reduce) {
+    return (
+      <div className={`flex flex-wrap items-center justify-center gap-6 ${className}`}>
+        {children}
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`group flex overflow-hidden ${className}`}>
+      <motion.div
+        className="flex shrink-0 items-center gap-6 pr-6 [animation-play-state:running] group-hover:[animation-play-state:paused]"
+        animate={{ x: reverse ? ["-50%", "0%"] : ["0%", "-50%"] }}
+        transition={{ duration: speed, repeat: Infinity, ease: "linear" }}
+      >
+        {children}
+      </motion.div>
+      <motion.div
+        className="flex shrink-0 items-center gap-6 pr-6 [animation-play-state:running] group-hover:[animation-play-state:paused]"
+        aria-hidden
+        animate={{ x: reverse ? ["-50%", "0%"] : ["0%", "-50%"] }}
+        transition={{ duration: speed, repeat: Infinity, ease: "linear" }}
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CountUp — animated number that counts up when scrolled into view
+// ---------------------------------------------------------------------------
+
+interface CountUpProps {
+  to: number;
+  from?: number;
+  duration?: number;
+  decimals?: number;
+  prefix?: string;
+  suffix?: string;
+  className?: string;
+}
+
+export function CountUp({
+  to,
+  from = 0,
+  duration = 1.8,
+  decimals = 0,
+  prefix = "",
+  suffix = "",
+  className = "",
+}: CountUpProps) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const reduce = useReducedMotion();
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const count = useMotionValue(from);
+  const rounded = useTransform(count, (v: number) => {
+    const formatted = decimals > 0 ? v.toFixed(decimals) : Math.round(v).toString();
+    return `${prefix}${formatted}${suffix}`;
+  });
+
+  useEffect(() => {
+    if (reduce || !ref.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !hasAnimated) {
+          setHasAnimated(true);
+          const controls = animate(count, to, {
+            duration,
+            ease: [0.22, 1, 0.36, 1],
+          });
+          return () => controls.stop();
+        }
+      },
+      { threshold: 0.3 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [reduce, to, duration, count, hasAnimated]);
+
+  if (reduce) {
+    const formatted = decimals > 0 ? to.toFixed(decimals) : Math.round(to).toString();
+    return (
+      <span ref={ref} className={className}>
+        {prefix}
+        {formatted}
+        {suffix}
+      </span>
+    );
+  }
+
+  return (
+    <motion.span ref={ref} className={className}>
+      {rounded}
+    </motion.span>
   );
 }

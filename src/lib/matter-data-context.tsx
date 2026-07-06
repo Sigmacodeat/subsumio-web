@@ -68,6 +68,7 @@ export interface MatterData {
   status: string;
   legalArea: string;
   subArea?: string;
+  jurisdiction?: "de" | "at" | "ch" | "eu";
   priority: string;
   opponentName?: string;
   opponentSlugs?: string[];
@@ -199,6 +200,7 @@ function parseMatterData(page: BrainPage): MatterData {
     status: fm.status || "open",
     legalArea: fm.legal_area || "",
     subArea: fm.sub_area || undefined,
+    jurisdiction: fm.jurisdiction as "de" | "at" | "ch" | "eu" | undefined,
     priority: fm.priority || "medium",
     opponentName: fm.opponent_name || undefined,
     opponentSlugs: fm.opponent_slugs || undefined,

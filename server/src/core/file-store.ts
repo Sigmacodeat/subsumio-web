@@ -97,6 +97,8 @@ export interface PersistFileResult {
   storage_path: string;
   size_bytes: number;
   content_hash: string;
+  blob_id?: number;
+  document_ref_id?: number;
 }
 
 export interface PersistFileOptions {
@@ -104,6 +106,8 @@ export interface PersistFileOptions {
   filename: string;
   /** Page the file belongs to. Drives the storage path and DB linkage. */
   pageSlug?: string | null;
+  /** Optional matter filing. Blob identity remains tenant-wide; references are matter-scoped. */
+  caseSlug?: string | null;
   /** Explicit MIME; derived from the filename extension when omitted. */
   mimeType?: string | null;
   /** Tenant source for isolation. Defaults to 'default' (single-tenant CLI). */
@@ -118,6 +122,47 @@ export interface StoredUploadMatch {
   page_slug: string | null;
   filename: string;
   content_hash: string;
+}
+
+async function registerCanonicalDocumentIdentity(input: {
+  sourceId: string;
+  contentHash: string;
+  storagePath: string;
+  sizeBytes: number;
+  mimeType: string | null;
+  pageSlug: string | null;
+  caseSlug?: string | null;
+  scanStatus: StorageZone;
+}): Promise<{ blob_id: number; document_ref_id?: number }> {
+  const sql = db.getConnection();
+  const blobs = await sql`
+    INSERT INTO content_blobs(source_id, sha256, storage_path, size_bytes, mime_type, scan_status)
+    VALUES (${input.sourceId}, ${input.contentHash}, ${input.storagePath}, ${input.sizeBytes}, ${input.mimeType}, ${input.scanStatus})
+    ON CONFLICT (source_id, sha256) DO UPDATE SET
+      size_bytes = EXCLUDED.size_bytes,
+      mime_type = COALESCE(content_blobs.mime_type, EXCLUDED.mime_type)
+    RETURNING id
+  `;
+  const blobId = Number(blobs[0]?.id);
+  if (!Number.isFinite(blobId)) throw new FileStoreError("Canonical blob registration failed");
+  if (!input.pageSlug) return { blob_id: blobId };
+
+  const refs = await sql`
+    INSERT INTO document_refs(source_id, blob_id, page_slug, case_slug)
+    VALUES (${input.sourceId}, ${blobId}, ${input.pageSlug}, ${input.caseSlug ?? null})
+    ON CONFLICT DO NOTHING
+    RETURNING id
+  `;
+  if (refs.length > 0) return { blob_id: blobId, document_ref_id: Number(refs[0]?.id) };
+  const existing = await sql`
+    SELECT id FROM document_refs
+    WHERE source_id = ${input.sourceId}
+      AND blob_id = ${blobId}
+      AND COALESCE(case_slug, '') = COALESCE(${input.caseSlug ?? null}, '')
+      AND active
+    LIMIT 1
+  `;
+  return { blob_id: blobId, document_ref_id: Number(existing[0]?.id) };
 }
 
 /** Tenant-scoped duplicate lookup against the durable original-file index. */
@@ -140,6 +185,31 @@ export async function findStoredUploadByHashValue(
     FROM files
     WHERE source_id = ${sourceId} AND content_hash = ${hash}
     ORDER BY created_at DESC
+    LIMIT 1
+  `;
+  return rows.length > 0 ? (rows[0] as StoredUploadMatch) : null;
+}
+
+/**
+ * Filing-aware duplicate lookup. Byte identity is tenant-wide, but a duplicate
+ * conflict exists only when the same blob is already active in the same matter.
+ * Caseless knowledge uploads intentionally remain tenant-wide.
+ */
+export async function findStoredDocumentReferenceByHash(
+  hash: string,
+  sourceId: string,
+  caseSlug?: string | null
+): Promise<StoredUploadMatch | null> {
+  const sql = db.getConnection();
+  const rows = await sql`
+    SELECT r.page_slug, f.filename, b.sha256 AS content_hash
+    FROM content_blobs b
+    JOIN document_refs r ON r.blob_id = b.id AND r.source_id = b.source_id AND r.active
+    LEFT JOIN files f ON f.source_id = b.source_id AND f.content_hash = b.sha256
+    WHERE b.source_id = ${sourceId}
+      AND b.sha256 = ${hash}
+      AND COALESCE(r.case_slug, '') = COALESCE(${caseSlug ?? null}, '')
+    ORDER BY r.created_at DESC, f.created_at DESC
     LIMIT 1
   `;
   return rows.length > 0 ? (rows[0] as StoredUploadMatch) : null;
@@ -234,6 +304,11 @@ export async function moveFileZone(
   // Update DB row to reflect new path
   const sql = db.getConnection();
   await sql`UPDATE files SET storage_path = ${toPath} WHERE storage_path = ${fromPath}`;
+  await sql`
+    UPDATE content_blobs
+    SET storage_path = ${toPath}, scan_status = ${toZone}
+    WHERE storage_path = ${fromPath}
+  `;
 
   return toPath;
 }
@@ -260,11 +335,22 @@ export async function persistFileBuffer(opts: PersistFileOptions): Promise<Persi
   const existing =
     await sql`SELECT id FROM files WHERE source_id = ${sourceId} AND content_hash = ${hash} AND storage_path = ${storagePath}`;
   if (existing.length > 0) {
+    const identity = await registerCanonicalDocumentIdentity({
+      sourceId,
+      contentHash: hash,
+      storagePath,
+      sizeBytes: data.byteLength,
+      mimeType,
+      pageSlug,
+      caseSlug: opts.caseSlug,
+      scanStatus: zone,
+    });
     return {
       status: "already_exists",
       storage_path: storagePath,
       size_bytes: data.byteLength,
       content_hash: hash,
+      ...identity,
     };
   }
 
@@ -299,11 +385,22 @@ export async function persistFileBuffer(opts: PersistFileOptions): Promise<Persi
     );
   }
 
+  const identity = await registerCanonicalDocumentIdentity({
+    sourceId,
+    contentHash: hash,
+    storagePath,
+    sizeBytes: data.byteLength,
+    mimeType,
+    pageSlug,
+    caseSlug: opts.caseSlug,
+    scanStatus: zone,
+  });
   return {
     status: "uploaded",
     storage_path: storagePath,
     size_bytes: data.byteLength,
     content_hash: hash,
+    ...identity,
   };
 }
 
@@ -317,6 +414,7 @@ export async function persistFileFromPath(opts: {
   filename: string;
   contentHash: string;
   pageSlug?: string | null;
+  caseSlug?: string | null;
   mimeType?: string | null;
   sourceId?: string;
   storageConfig?: unknown;
@@ -343,11 +441,22 @@ export async function persistFileFromPath(opts: {
   const existing =
     await sql`SELECT id FROM files WHERE source_id = ${sourceId} AND content_hash = ${contentHash} AND storage_path = ${storagePath}`;
   if (existing.length > 0) {
+    const identity = await registerCanonicalDocumentIdentity({
+      sourceId,
+      contentHash,
+      storagePath,
+      sizeBytes,
+      mimeType,
+      pageSlug,
+      caseSlug: opts.caseSlug,
+      scanStatus: zone,
+    });
     return {
       status: "already_exists",
       storage_path: storagePath,
       size_bytes: sizeBytes,
       content_hash: contentHash,
+      ...identity,
     };
   }
 
@@ -387,11 +496,22 @@ export async function persistFileFromPath(opts: {
     );
   }
 
+  const identity = await registerCanonicalDocumentIdentity({
+    sourceId,
+    contentHash,
+    storagePath,
+    sizeBytes,
+    mimeType,
+    pageSlug,
+    caseSlug: opts.caseSlug,
+    scanStatus: zone,
+  });
   return {
     status: "uploaded",
     storage_path: storagePath,
     size_bytes: sizeBytes,
     content_hash: contentHash,
+    ...identity,
   };
 }
 

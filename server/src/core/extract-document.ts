@@ -317,6 +317,9 @@ async function extractPdf(buf: Buffer): Promise<ExtractedDocument> {
     const ocr = await tryOcrFallback(buf, totalPages, sparsePages);
     warnings.push(...ocr.warnings);
     if (ocr.pageTexts.size > 0) {
+      const coveredPages = totalPages - sparsePages.length + ocr.pageTexts.size;
+      const coveragePercent =
+        totalPages > 0 ? Math.round((coveredPages / totalPages) * 10000) / 100 : 100;
       const mergedPages = normalizedPages.map((page, index) => {
         const pageNo = index + 1;
         const recognized = ocr.pageTexts.get(pageNo);
@@ -338,6 +341,9 @@ async function extractPdf(buf: Buffer): Promise<ExtractedDocument> {
           pages: totalPages,
           extraction_method: "ocr_vision",
           extraction_unverified: "true",
+          extraction_pages_total: totalPages,
+          extraction_pages_covered: coveredPages,
+          extraction_coverage_percent: coveragePercent,
           annotations_count: annotations.count,
           redline_detected: annotations.redlineCount > 0 ? "true" : "false",
         },
@@ -353,6 +359,12 @@ async function extractPdf(buf: Buffer): Promise<ExtractedDocument> {
       source_format: "pdf",
       pages: totalPages,
       extraction_method: "text_layer",
+      extraction_pages_total: totalPages,
+      extraction_pages_covered: Math.max(0, totalPages - sparsePages.length),
+      extraction_coverage_percent:
+        totalPages > 0
+          ? Math.round(((totalPages - sparsePages.length) / totalPages) * 10000) / 100
+          : 100,
       annotations_count: annotations.count,
       redline_detected: annotations.redlineCount > 0 ? "true" : "false",
     },
