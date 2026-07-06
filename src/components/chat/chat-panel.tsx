@@ -872,6 +872,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         userContext,
         conversationHistory: historyForPrompt,
         matterVitals,
+        memoryContext: await buildMemoryContext({ caseSlug: context.caseSlug }).catch(() => ""),
       });
       const prompt = buildSafePrompt(systemPrompt, userInput);
 
@@ -1437,6 +1438,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           },
           userContext,
           conversationHistory: regenHistory,
+          memoryContext: await buildMemoryContext({ caseSlug: context.caseSlug }).catch(() => ""),
         });
       const prompt = buildSafePrompt(regenSystemPrompt, regenUserInput);
 

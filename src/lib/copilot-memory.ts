@@ -101,7 +101,7 @@ export async function createMemory(opts: {
   const slug = memorySlug(id);
   const now = new Date().toISOString();
 
-  await api.brain.putPage({
+  await api.brain.createPage({
     slug,
     title: `Memory: ${opts.key}`,
     type: "copilot_memory",
@@ -146,7 +146,7 @@ export async function updateMemory(
   const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
   const now = new Date().toISOString();
 
-  await api.brain.putPage({
+  await api.brain.updatePage({
     slug,
     title: existing.title ?? `Memory: ${fm.memory_key ?? id}`,
     type: "copilot_memory",
@@ -175,7 +175,7 @@ export async function incrementReference(id: string): Promise<void> {
   const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
   const count = Number(fm.times_referenced ?? 0) + 1;
 
-  await api.brain.putPage({
+  await api.brain.updatePage({
     slug,
     title: existing.title ?? `Memory: ${fm.memory_key ?? id}`,
     type: "copilot_memory",
