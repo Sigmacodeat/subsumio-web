@@ -618,15 +618,17 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
             </AnimatePresence>
           </div>
 
-          {/* WhatsApp input bar — shows user typing + send/mic toggle */}
-          <div className="relative z-10 flex items-center gap-2 bg-[#1f2c34] px-2 py-2">
+          {/* WhatsApp input bar — shows user typing + send/mic toggle.
+              Real WhatsApp wraps typed text across multiple lines; the bar grows
+              vertically and the send/mic button stays anchored to the bottom. */}
+          <div className="relative z-10 flex items-end gap-2 bg-[#1f2c34] px-2 py-2">
             <div
-              className="flex flex-1 items-center gap-2 rounded-full px-3 py-1.5"
+              className="flex flex-1 items-end gap-2 rounded-full px-3 py-1.5"
               style={{ background: WA.inputField }}
             >
-              <Smile size={20} style={{ color: WA.meta }} className="shrink-0" />
+              <Smile size={20} style={{ color: WA.meta }} className="shrink-0 pb-0.5" />
               <span
-                className="min-w-0 flex-1 truncate text-[13px]"
+                className="min-w-0 flex-1 py-1 text-[13px] leading-snug break-words whitespace-pre-wrap"
                 style={{ color: isUserTyping && inputText ? WA.text : WA.meta }}
               >
                 {isUserTyping && inputText ? inputText : UI_STRINGS[lang].messageLabel}
@@ -641,8 +643,8 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                   </motion.span>
                 )}
               </span>
-              <Paperclip size={18} style={{ color: WA.meta }} className="shrink-0" />
-              <Camera size={18} style={{ color: WA.meta }} className="shrink-0" />
+              <Paperclip size={18} style={{ color: WA.meta }} className="shrink-0 pb-0.5" />
+              <Camera size={18} style={{ color: WA.meta }} className="shrink-0 pb-0.5" />
             </div>
             {/* Mic → Send arrow toggle: key-change triggers remount + scale-in.
                 No AnimatePresence = no layout gap = no shift. */}
