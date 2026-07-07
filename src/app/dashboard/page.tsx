@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -44,7 +44,10 @@ type Greeting = {
 };
 
 function useGreeting(name: string | null, lang: Lang): Greeting {
-  const hour = new Date().getHours();
+  const [hour, setHour] = useState<number>(12);
+  useEffect(() => {
+    setHour(new Date().getHours());
+  }, []);
   const isFirst = !name;
   const firstName = name?.split(" ")[0] ?? "";
   if (lang === "en") {
@@ -92,6 +95,16 @@ function CalmGreeting({
   const router = useRouter();
   const { greeting, sub } = useGreeting(name, lang);
   const [query, setQuery] = useState("");
+  const [dateStr, setDateStr] = useState("");
+  useEffect(() => {
+    setDateStr(
+      new Date().toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+      })
+    );
+  }, [lang]);
   const onSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
@@ -108,11 +121,7 @@ function CalmGreeting({
           className="text-xs font-medium text-[color:var(--ds-text-subtle)]"
           suppressHydrationWarning
         >
-          {new Date().toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
-            weekday: "long",
-            day: "2-digit",
-            month: "long",
-          })}
+          {dateStr}
         </p>
         <h1 className="mt-0.5 text-lg font-semibold tracking-tight text-[color:var(--ds-text)] md:text-xl">
           {greeting}
