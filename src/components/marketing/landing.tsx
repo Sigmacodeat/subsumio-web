@@ -33,8 +33,6 @@ import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { LANDING, PRICING, UI_STRINGS, p, type Lang } from "@/content/site";
 import { PricingGrid } from "./pricing-grid";
-import LiveDemo from "./live-demo";
-import ConversationShowreel from "./conversation-showreel";
 import ScrollPinnedDashboard from "./scroll-pinned-dashboard";
 import SuperbrainAdvantage from "./superbrain-advantage";
 import { TestimonialsSection } from "./testimonials";
@@ -218,7 +216,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 className="mb-8 flex justify-center lg:justify-start"
               >
                 <a
-                  href="#demo"
+                  href="#features"
                   className="inline-flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-muted)] transition-colors hover:text-[var(--brand-text)]"
                 >
                   <Play size={14} />
@@ -299,39 +297,6 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 );
               })}
             </div>
-          </motion.div>
-        </Section>
-
-        {/* Conversation Showreel — auto-playing multi-turn chat simulation
-            below the fold. Demonstrates a real lawyer workflow (case prep →
-            contradiction detection → reply brief drafting), then reveals an
-            interactive input so visitors can try the brain themselves.
-            tone="dark" to create a visual boundary from the hero. */}
-        <Section tone="dark" className="relative px-6 pt-8 pb-20">
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport}
-            transition={reduce ? { duration: 0 } : { duration: 0.55, ease: EASE.dramatic }}
-            id="demo"
-            data-tone="dashboard"
-            className="mx-auto max-w-3xl scroll-mt-24 rounded-2xl shadow-[0_16px_48px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.08]"
-          >
-            {"showreel" in t && t.showreel ? (
-              <ConversationShowreel
-                lang={lang}
-                turns={t.showreel.turns}
-                youLabel={t.demo.you}
-                sourcesLabel={t.demo.sourcesLabel}
-                windowTitle={t.demo.windowTitle}
-                demoQ={t.demo.q}
-                demoA={t.demo.a}
-                demoSourcesLabel={t.demo.sourcesLabel}
-                demoSources={t.demo.sources}
-              />
-            ) : (
-              <LiveDemo lang={lang} {...t.demo} />
-            )}
           </motion.div>
         </Section>
 
