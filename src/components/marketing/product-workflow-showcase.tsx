@@ -1,9 +1,8 @@
 "use client";
 
-import { useRef } from "react";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion, useScroll, useMotionValueEvent } from "framer-motion";
 import {
-  ArrowRight,
   Brain,
   CheckCircle2,
   FileText,
@@ -68,16 +67,78 @@ export default function ProductWorkflowShowcase({
   const signature = profile?.signature.title[l] ?? c.title;
   const sectionRef = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end start"] });
-  const yPanel = useTransform(scrollYProgress, [0, 1], reduced ? [0, 0] : [34, -34]);
-  const yGraph = useTransform(scrollYProgress, [0, 1], reduced ? [0, 0] : [-22, 26]);
-  const yCards = useTransform(scrollYProgress, [0, 1], reduced ? [0, 0] : [18, -18]);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start 80%", "end 20%"],
+  });
+
+  // ── Scroll-driven step phases ──────────────────────────────────────
+  // 0.00–0.15  Intro (text appears, step 0 active)
+  // 0.15–0.45  Step 0 → Step 1 (Capture: first source highlights)
+  // 0.45–0.75  Step 1 → Step 2 (Connect: all sources + graph links)
+  // 0.75–1.00  Step 2 → Step 3 (Answer: answer card + pills appear)
+  const [activeStep, setActiveStep] = useState(0);
+
+  // Mobile auto-showreel: when reduced or small screen, auto-cycle steps
+  const [autoStep, setAutoStep] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 1023px)");
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    setIsMobile(mq.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  // Auto-showreel for mobile / reduced motion
+  useEffect(() => {
+    if (!isMobile && !reduced) return;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const cycle = (step: number) => {
+      setAutoStep(step);
+      if (step < 2) {
+        timers.push(setTimeout(() => cycle(step + 1), 2200));
+      }
+    };
+    cycle(0);
+    return () => timers.forEach(clearTimeout);
+  }, [isMobile, reduced]);
+
+  const currentStep = isMobile || reduced ? autoStep : activeStep;
+
+  // Scroll progress → active step (desktop only)
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    if (isMobile || reduced) return;
+    if (v < 0.15) setActiveStep(0);
+    else if (v < 0.45) setActiveStep(0);
+    else if (v < 0.75) setActiveStep(1);
+    else setActiveStep(2);
+  });
+
+  // Source card opacity per step
+  const sourceOpacity = (idx: number) => {
+    if (reduced) return 1;
+    if (currentStep === 0) return idx === 0 ? 1 : 0.35;
+    if (currentStep === 1) return 1;
+    return 1;
+  };
+  const sourceScale = (idx: number) => {
+    if (reduced) return 1;
+    if (currentStep === 0) return idx === 0 ? 1.02 : 0.98;
+    return 1;
+  };
+
+  // Graph + answer visibility driven by currentStep (works for both scroll + auto)
+  const showGraph = currentStep >= 1 || reduced;
+  const showAnswer = currentStep >= 2 || reduced;
 
   return (
     <section
       ref={sectionRef}
       data-tone="light"
-      className="relative z-10 overflow-hidden px-4 py-24 sm:px-6 lg:px-8"
+      className="relative z-10 overflow-hidden px-4 py-24 sm:px-6 lg:px-8 lg:py-32"
       style={{ background: "var(--mk-bg)", ...(industry ? styleForIndustry(industry) : {}) }}
     >
       <div className="brand-glow-bg absolute inset-x-0 top-1/3 h-64 opacity-40 blur-3xl" />
@@ -105,20 +166,43 @@ export default function ProductWorkflowShowcase({
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, amount: 0.4 }}
                 transition={{ duration: 0.35, delay: i * 0.08 }}
-                className="flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface-2)]"
+                className={`relative flex items-center gap-3 overflow-hidden rounded-xl border px-4 py-3 transition-all duration-500 ${
+                  currentStep === i
+                    ? "brand-border brand-soft [border-color:var(--brand-primary)]"
+                    : "[border-color:var(--mk-border)] [background:var(--mk-surface-2)]"
+                }`}
               >
-                <span className="brand-soft brand-border brand-text flex h-7 w-7 items-center justify-center rounded-lg border font-mono text-xs">
+                {currentStep === i && (
+                  <motion.div
+                    layoutId="step-accent"
+                    className="brand-bg absolute inset-y-0 left-0 w-1"
+                    transition={{ duration: 0.4 }}
+                  />
+                )}
+                <span
+                  className={`flex h-7 w-7 items-center justify-center rounded-lg border font-mono text-xs transition-colors duration-300 ${
+                    currentStep === i
+                      ? "brand-bg brand-border border-transparent text-white"
+                      : "brand-soft brand-border brand-text"
+                  }`}
+                >
                   0{i + 1}
                 </span>
-                <span className="text-sm font-semibold [color:var(--mk-text)]">{step}</span>
-                <ArrowRight size={14} className="ml-auto [color:var(--mk-text-subtle)]" />
+                <span
+                  className={`text-sm transition-all duration-300 ${
+                    currentStep === i
+                      ? "font-bold [color:var(--brand-text)]"
+                      : "font-semibold [color:var(--mk-text)]"
+                  }`}
+                >
+                  {step}
+                </span>
               </motion.div>
             ))}
           </div>
         </motion.div>
 
-        <motion.div style={{ y: yPanel }} className="relative">
-          <div className="brand-glow-bg absolute -inset-6 rounded-full blur-3xl" />
+        <div className="relative">
           <div
             data-tone="dashboard"
             className="relative overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] shadow-2xl shadow-black/20 [background:var(--mk-bg)]"
@@ -166,7 +250,7 @@ export default function ProductWorkflowShowcase({
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
-                  <motion.div style={{ y: yCards }} className="space-y-3">
+                  <div className="space-y-3">
                     {[
                       { icon: FileText, label: c.sourceA, tone: "brand-soft brand-border" },
                       {
@@ -181,14 +265,17 @@ export default function ProductWorkflowShowcase({
                       },
                     ].map((source, i) => {
                       const Icon = source.icon;
+                      const isActive = currentStep === 0 ? i === 0 : true;
                       return (
-                        <motion.div
+                        <div
                           key={source.label}
-                          initial={{ opacity: 0, x: -14 }}
-                          whileInView={{ opacity: 1, x: 0 }}
-                          viewport={{ once: true, amount: 0.4 }}
-                          transition={{ duration: 0.35, delay: i * 0.08 }}
-                          className={`rounded-xl border ${source.tone} p-4`}
+                          style={{
+                            opacity: sourceOpacity(i),
+                            transform: `scale(${sourceScale(i)})`,
+                          }}
+                          className={`rounded-xl border ${source.tone} p-4 transition-all duration-500 ${
+                            isActive ? "shadow-md" : ""
+                          }`}
                         >
                           <div className="flex items-center gap-3">
                             <Icon size={17} className="brand-text" />
@@ -202,22 +289,24 @@ export default function ProductWorkflowShowcase({
                           </div>
                           <div className="mt-3 h-1.5 overflow-hidden rounded-full [background:var(--mk-border)]">
                             <motion.div
-                              initial={{ width: "20%" }}
-                              whileInView={{ width: `${72 + i * 8}%` }}
-                              viewport={{ once: true }}
-                              transition={{ duration: 0.8, delay: 0.2 + i * 0.1 }}
+                              initial={{ width: "0%" }}
+                              animate={{
+                                width: `${72 + i * 8}%`,
+                              }}
+                              transition={{
+                                duration: 0.8,
+                                delay: isMobile || reduced ? i * 0.3 : 0,
+                                ease: "easeOut",
+                              }}
                               className="brand-bg h-full"
                             />
                           </div>
-                        </motion.div>
+                        </div>
                       );
                     })}
-                  </motion.div>
+                  </div>
 
-                  <motion.div
-                    style={{ y: yGraph }}
-                    className="min-h-[250px] rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-bg)]"
-                  >
+                  <div className="min-h-[250px] rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-bg)]">
                     <div className="mb-4 flex items-center gap-2">
                       <GitBranch size={16} className="brand-text" />
                       <span className="text-sm font-semibold [color:var(--mk-text)]">
@@ -235,26 +324,75 @@ export default function ProductWorkflowShowcase({
                         <motion.div
                           key={label}
                           initial={{ scale: 0.8, opacity: 0 }}
-                          whileInView={{ scale: 1, opacity: 1 }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 0.35, delay: 0.12 * i }}
+                          animate={{
+                            scale: 1,
+                            opacity: showGraph ? 1 : 0.3,
+                          }}
+                          transition={{
+                            duration: 0.4,
+                            delay: reduced ? 0 : i * 0.08,
+                            ease: "easeOut",
+                          }}
                           className={`absolute ${pos} brand-border rounded-full border px-3 py-2 text-xs [color:var(--mk-text)] shadow-lg [background:var(--mk-surface)]`}
                         >
                           {label}
                         </motion.div>
                       ))}
                       <div className="absolute inset-6 rounded-full border border-dashed border-[var(--brand-primary)]/25" />
-                      <div className="brand-bg absolute inset-x-12 top-20 h-px opacity-50" />
-                      <div className="brand-bg absolute top-12 left-24 h-24 w-px rotate-45 opacity-40" />
+                      <svg className="absolute inset-0 h-full w-full" fill="none">
+                        <motion.line
+                          x1="20%"
+                          y1="30%"
+                          x2="50%"
+                          y2="15%"
+                          stroke="var(--brand-primary)"
+                          strokeWidth="1.5"
+                          initial={{ pathLength: 0, opacity: 0 }}
+                          animate={{ pathLength: showGraph ? 1 : 0, opacity: showGraph ? 0.6 : 0 }}
+                          transition={{ duration: 0.6, ease: "easeOut" }}
+                        />
+                        <motion.line
+                          x1="50%"
+                          y1="15%"
+                          x2="80%"
+                          y2="35%"
+                          stroke="var(--brand-primary)"
+                          strokeWidth="1.5"
+                          initial={{ pathLength: 0, opacity: 0 }}
+                          animate={{ pathLength: showGraph ? 1 : 0, opacity: showGraph ? 0.6 : 0 }}
+                          transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+                        />
+                        <motion.line
+                          x1="20%"
+                          y1="30%"
+                          x2="45%"
+                          y2="80%"
+                          stroke="var(--brand-primary)"
+                          strokeWidth="1.5"
+                          initial={{ pathLength: 0, opacity: 0 }}
+                          animate={{ pathLength: showGraph ? 1 : 0, opacity: showGraph ? 0.6 : 0 }}
+                          transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+                        />
+                        <motion.line
+                          x1="45%"
+                          y1="80%"
+                          x2="75%"
+                          y2="70%"
+                          stroke="var(--brand-primary)"
+                          strokeWidth="1.5"
+                          initial={{ pathLength: 0, opacity: 0 }}
+                          animate={{ pathLength: showGraph ? 1 : 0, opacity: showGraph ? 0.6 : 0 }}
+                          transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+                        />
+                      </svg>
                     </div>
-                  </motion.div>
+                  </div>
                 </div>
 
                 <motion.div
-                  initial={{ opacity: 0, y: 14 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.35 }}
-                  transition={{ duration: 0.45, delay: 0.25 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: showAnswer ? 1 : 0, y: showAnswer ? 0 : 20 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
                   className="brand-border mt-4 rounded-xl border p-4 [background:var(--mk-surface)]"
                 >
                   <div className="flex items-start gap-3">
@@ -277,7 +415,7 @@ export default function ProductWorkflowShowcase({
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
