@@ -294,9 +294,13 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   const confirm = useConfirm();
   const { addToast } = useToast();
   const params = useParams();
-  const slug = Array.isArray(params.slug) ? params.slug.join("/") : (params.slug as string);
   const router = useRouter();
   const { activeTab: contextTab, caseSlug: contextCaseSlug } = useMatterData();
+  // The case slug WITHOUT the tab suffix — the raw [...slug] params include the
+  // active tab segment (e.g. .../my-case/strategy), which is not a page slug.
+  const slug =
+    contextCaseSlug ||
+    (Array.isArray(params.slug) ? params.slug.join("/") : (params.slug as string));
   const { pendingCount: offlinePendingCount, syncing: offlineSyncing } = useMutationQueue();
 
   const activeTab: string = contextTab;

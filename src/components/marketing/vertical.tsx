@@ -3,7 +3,6 @@
 // Vertical funnel page template — one component, three industries, two languages.
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
@@ -11,14 +10,14 @@ import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { VERTICALS, type VerticalSlug } from "@/content/verticals";
 import { profileForIndustry } from "@/lib/industry-pack";
 import { styleForIndustry } from "@/lib/industry-theme";
-import { Section, SectionHeading, ICONS, H1_CLASS, H2_CTA_CLASS, BadgePill } from "./chrome";
+import { Section, SectionHeading, ICONS, BadgePill } from "./chrome";
 import LiveDemo from "./live-demo";
 import BranchPricing from "./branch-pricing";
 import IndustryHeroMotif from "./industry-hero-motif";
 import ProductWorkflowShowcase from "./product-workflow-showcase";
 import { WhatsAppSpotlight } from "./subsumio-showcase";
 import { AnimatedFaqList } from "./animated-faq";
-import { ClipReveal } from "./motion-system";
+import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
 /** Subsumio product branding — funnel body, hero, and signup deep-links. */
 export interface ProductBrand {
@@ -44,7 +43,9 @@ function SignatureBand({ industry, lang }: { industry: string; lang: Lang }) {
             <p className="brand-text mb-3 font-mono text-xs tracking-wider uppercase">
               {profile.brand} {UI_STRINGS[lang].signatureLabel}
             </p>
-            <h2 className={H2_CTA_CLASS}>{signature.title[locale]}</h2>
+            <h2 className="text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+              {signature.title[locale]}
+            </h2>
             <p className="mt-4 text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-base">
               {signature.proof[locale]}
             </p>
@@ -103,21 +104,17 @@ export default function VerticalPage({
               {product ? product.poweredBy : t.badge}
             </BadgePill>
             {product ? (
-              <ClipReveal delay={0.1} duration={0.7} direction="up">
-                <h1 className={`${H1_CLASS} mb-6`}>
-                  {product.name}
-                  <br />
-                  <span className="gradient-text glow-text">{product.claim}</span>
-                </h1>
-              </ClipReveal>
+              <h1 className="mb-6 text-4xl font-bold tracking-tight [color:var(--mk-text)] md:text-5xl lg:text-6xl">
+                {product.name}
+                <br />
+                <span className="gradient-text glow-text">{product.claim}</span>
+              </h1>
             ) : (
-              <ClipReveal delay={0.1} duration={0.7} direction="up">
-                <h1 className={`${H1_CLASS} mb-6`}>
-                  {t.h1a}
-                  <br />
-                  <span className="gradient-text glow-text">{t.h1b}</span>
-                </h1>
-              </ClipReveal>
+              <h1 className="mb-6 text-4xl font-bold tracking-tight [color:var(--mk-text)] md:text-5xl lg:text-6xl">
+                {t.h1a}
+                <br />
+                <span className="gradient-text glow-text">{t.h1b}</span>
+              </h1>
             )}
             <p className="mx-auto mb-12 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
               {t.sub}
@@ -178,26 +175,24 @@ export default function VerticalPage({
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={t.painsTitle} />
-          <div className="grid gap-5 md:grid-cols-3">
-            {t.pains.map((pain, i) => (
-              <motion.div
-                key={pain.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
-                whileHover={{ y: -4 }}
-                className="rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]"
-                style={{ boxShadow: "var(--mk-card-shadow)" }}
-              >
-                <AlertCircle size={18} className="brand-text mb-4" />
-                <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
-                  {pain.title}
-                </h3>
-                <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{pain.desc}</p>
-              </motion.div>
+          <StaggerContainer className="grid gap-5 md:grid-cols-3" stagger={0.08}>
+            {t.pains.map((pain) => (
+              <StaggerItem key={pain.title}>
+                <div
+                  className="rounded-2xl border [border-color:var(--mk-border)] p-6 transition-transform [background:var(--mk-surface)] hover:-translate-y-1"
+                  style={{ boxShadow: "var(--mk-card-shadow)" }}
+                >
+                  <AlertCircle size={18} className="brand-text mb-4" />
+                  <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
+                    {pain.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                    {pain.desc}
+                  </p>
+                </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </Section>
 
@@ -212,31 +207,29 @@ export default function VerticalPage({
               title={t.featuresTitle}
               sub={UI_STRINGS[lang].verticalFeaturesSub}
             />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {t.features.slice(0, 6).map((f, i) => {
+            <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" stagger={0.08}>
+              {t.features.slice(0, 6).map((f) => {
                 const Icon = ICONS[f.icon];
                 return (
-                  <motion.div
-                    key={f.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-60px" }}
-                    transition={{ duration: 0.4, delay: (i % 3) * 0.08 }}
-                    whileHover={{ y: -4 }}
-                    className="rounded-2xl border [border-color:var(--mk-border)] p-6 transition-colors [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
-                    style={{ boxShadow: "var(--mk-card-shadow)" }}
-                  >
-                    <div className="brand-soft brand-border mb-4 flex h-10 w-10 items-center justify-center rounded-lg border">
-                      {Icon && <Icon size={18} className="brand-text" />}
+                  <StaggerItem key={f.title}>
+                    <div
+                      className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)]"
+                      style={{ boxShadow: "var(--mk-card-shadow)" }}
+                    >
+                      <div className="brand-soft brand-border mb-4 flex h-10 w-10 items-center justify-center rounded-lg border">
+                        {Icon && <Icon size={18} className="brand-text" />}
+                      </div>
+                      <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
+                        {f.title}
+                      </h3>
+                      <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                        {f.desc}
+                      </p>
                     </div>
-                    <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
-                      {f.title}
-                    </h3>
-                    <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{f.desc}</p>
-                  </motion.div>
+                  </StaggerItem>
                 );
               })}
-            </div>
+            </StaggerContainer>
             <div className="mt-10 text-center">
               <Link href={p(lang, "/features")}>
                 <Button size="lg" variant="secondary">
@@ -250,35 +243,31 @@ export default function VerticalPage({
         <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">
             <SectionHeading title={t.featuresTitle} />
-            <div className="grid gap-5 md:grid-cols-2">
-              {t.features.map((f, i) => {
+            <StaggerContainer className="grid gap-5 md:grid-cols-2" stagger={0.1}>
+              {t.features.map((f) => {
                 const Icon = ICONS[f.icon];
                 return (
-                  <motion.div
-                    key={f.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-60px" }}
-                    transition={{ duration: 0.4, delay: (i % 2) * 0.1 }}
-                    whileHover={{ y: -4 }}
-                    className="flex gap-5 rounded-2xl border [border-color:var(--mk-border)] p-6 transition-colors [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
-                    style={{ boxShadow: "var(--mk-card-shadow)" }}
-                  >
-                    <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border">
-                      {Icon && <Icon size={18} className="brand-text" />}
+                  <StaggerItem key={f.title}>
+                    <div
+                      className="flex h-full gap-5 rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)]"
+                      style={{ boxShadow: "var(--mk-card-shadow)" }}
+                    >
+                      <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border">
+                        {Icon && <Icon size={18} className="brand-text" />}
+                      </div>
+                      <div>
+                        <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
+                          {f.title}
+                        </h3>
+                        <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                          {f.desc}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
-                        {f.title}
-                      </h3>
-                      <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                        {f.desc}
-                      </p>
-                    </div>
-                  </motion.div>
+                  </StaggerItem>
                 );
               })}
-            </div>
+            </StaggerContainer>
           </div>
         </Section>
       )}
@@ -286,23 +275,20 @@ export default function VerticalPage({
       {/* Proof — LIGHT section with visual flair */}
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.5 }}
-          >
+          <Reveal variant="up">
             <span
               className="brand-text mb-2 block font-serif text-8xl leading-none select-none"
               style={{ opacity: 0.12 }}
             >
               &ldquo;
             </span>
-            <h2 className={`-mt-6 mb-5 ${H2_CTA_CLASS}`}>{t.proofTitle}</h2>
+            <h2 className="-mt-6 mb-5 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+              {t.proofTitle}
+            </h2>
             <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
               {t.proof}
             </p>
-          </motion.div>
+          </Reveal>
         </div>
       </Section>
 
@@ -338,7 +324,9 @@ export default function VerticalPage({
       >
         <div className="mx-auto max-w-3xl">
           <SubsumioMark size={56} className="mx-auto mb-6" />
-          <h2 className={`${H2_CTA_CLASS} mb-4`}>{t.ctaTitle}</h2>
+          <h2 className="mb-4 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+            {t.ctaTitle}
+          </h2>
           <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
             {t.ctaSub}
           </p>

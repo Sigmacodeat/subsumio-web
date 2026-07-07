@@ -171,8 +171,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
         if (data.user) {
-          router.push(next);
-          router.refresh();
+          window.location.href = next;
           return;
         }
       }
@@ -229,8 +228,11 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
       } else {
         tracking.auth.signupSuccess("password");
       }
-      router.push(next);
-      router.refresh();
+      // Hard navigation — router.push + router.refresh races in Next.js 15
+      // and leaves the browser stuck on /login. The session cookie is already
+      // set by the Set-Cookie header in the API response, so a full page load
+      // to the dashboard is safe and reliable.
+      window.location.href = next;
     } catch {
       setError(t.errors.generic);
       setLoading(false);

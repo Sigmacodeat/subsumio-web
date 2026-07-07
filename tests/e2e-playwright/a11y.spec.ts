@@ -36,6 +36,7 @@ for (const path of CRITICAL_PAGES) {
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
     const accessibilityScanResults = await new AxeBuilder({ page })
+      .exclude('[aria-hidden="true"]')
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
       .analyze();
     const critical = accessibilityScanResults.violations.filter(

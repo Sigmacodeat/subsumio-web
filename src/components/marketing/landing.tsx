@@ -48,6 +48,7 @@ import {
   ScrollProgress,
   SplitTextReveal,
   GradientMesh,
+  VIEWPORT,
 } from "./motion-system";
 import IndustryHeroMotif from "./industry-hero-motif";
 import { WhatsAppSpotlight } from "./subsumio-showcase";
@@ -69,13 +70,11 @@ const TRUST_ICONS: Record<string, LucideIcon> = {
 
 const PAIN_ICONS = [ICONS.Search, ICONS.AlertTriangle, ICONS.FileClock, ICONS.Users];
 
-const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
-
 // Section/card scroll-reveal preset — subtle scale + Y for depth.
 const reveal = {
   initial: { opacity: 0, y: 24, scale: 0.98 },
   whileInView: { opacity: 1, y: 0, scale: 1 },
-  viewport,
+  viewport: VIEWPORT.gentle,
   transition: { duration: 0.5, ease: EASE.out },
 };
 

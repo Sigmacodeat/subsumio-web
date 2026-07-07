@@ -675,13 +675,13 @@
 [data-tone="dashboard"] {
   --mk-bg: hsl(225, 20%, 7%);
   --mk-surface: hsl(225, 16%, 12%);
-  --mk-surface-2: hsl(225, 14%, 16%);
+  --mk-surface-2: hsl(225, 14%, 13%);
   --mk-hover: hsl(225, 14%, 20%);
   --mk-border: hsl(225, 12%, 24%);
   --mk-border-strong: hsl(225, 10%, 36%);
   --mk-text: hsl(220, 10%, 94%);
-  --mk-text-muted: hsl(220, 8%, 76%);
-  --mk-text-subtle: hsl(220, 8%, 72%);
+  --mk-text-muted: hsl(220, 8%, 78%);
+  --mk-text-subtle: hsl(220, 8%, 74%);
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 hsla(0, 0%, 100%, 0.025) inset;
   --brand-primary: hsl(230, 45%, 48%);
   --brand-primary-hover: hsl(230, 45%, 55%);

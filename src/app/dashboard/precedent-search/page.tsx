@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   Loader2,
@@ -9,6 +9,8 @@ import {
   Scale,
   CheckCircle2,
   Calendar,
+  Sparkles,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,8 +21,134 @@ import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 
+interface PipelinePrecedentPage {
+  slug: string;
+  title: string;
+  content: string;
+  updated_at: string;
+}
+
+/** Lists the precedent analyses the case pipeline already computed
+ * (precedent-matches/{caseSlug} pages, see legal-pipeline.ts) so an existing
+ * result is the starting point before paying for a fresh on-demand search. */
+function PipelinePrecedentSection({ lang }: { lang: string }) {
+  const [pages, setPages] = useState<PipelinePrecedentPage[]>([]);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await api.brain.listPages({
+          slugPrefix: "precedent-matches/",
+          limit: 20,
+        });
+        if (!cancelled) {
+          setPages(
+            result.map((p) => ({
+              slug: p.slug,
+              title: p.title,
+              content: p.content ?? "",
+              updated_at: p.updated_at,
+            }))
+          );
+        }
+      } catch {
+        if (!cancelled) setPages([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // listPages omits page content — fetch the full page on first expand.
+  async function toggleExpand(slug: string, hasContent: boolean) {
+    const next = expanded === slug ? null : slug;
+    setExpanded(next);
+    if (next && !hasContent) {
+      try {
+        const full = await api.brain.getPage(slug);
+        setPages((prev) =>
+          prev.map((p) => (p.slug === slug ? { ...p, content: full.content ?? "" } : p))
+        );
+      } catch {
+        // keep the card usable without content
+      }
+    }
+  }
+
+  if (pages.length === 0) return null;
+
+  return (
+    <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+      <div className="flex items-center gap-2">
+        <Sparkles size={16} className="text-amber-500" />
+        <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+          {lang === "en"
+            ? "Automatic precedent analyses from your case pipelines"
+            : "Automatische Präzedenzfall-Analysen aus deinen Akten"}
+        </h3>
+        <Badge variant="default" className="text-[10px]">
+          {pages.length}
+        </Badge>
+      </div>
+      <p className="text-xs text-[color:var(--ds-text-muted)]">
+        {lang === "en"
+          ? "These were already computed during case analysis — check them before running a new search."
+          : "Diese wurden bei der Aktenanalyse bereits berechnet — erst hier nachsehen, bevor eine neue Suche gestartet wird."}
+      </p>
+      <div className="space-y-2">
+        {pages.map((p) => {
+          const caseSlug = p.slug.replace(/^precedent-matches\//, "");
+          const isOpen = expanded === p.slug;
+          return (
+            <div
+              key={p.slug}
+              className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]"
+            >
+              <button
+                onClick={() => void toggleExpand(p.slug, p.content.length > 0)}
+                className="flex w-full items-center gap-2 px-3 py-2.5 text-left"
+                aria-expanded={isOpen}
+              >
+                <ChevronRight
+                  size={14}
+                  className={`shrink-0 text-[color:var(--ds-text-muted)] transition-transform ${isOpen ? "rotate-90" : ""}`}
+                />
+                <span className="truncate text-xs font-medium text-[color:var(--ds-text)]">
+                  {p.title}
+                </span>
+                <span className="ml-auto shrink-0 text-xs text-[color:var(--ds-text-muted)]">
+                  {new Date(p.updated_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                </span>
+              </button>
+              {isOpen && (
+                <div className="space-y-2 border-t border-[color:var(--ds-border)] p-3">
+                  <div className="max-h-[300px] overflow-y-auto rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] p-2">
+                    <pre className="font-sans text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
+                      {p.content}
+                    </pre>
+                  </div>
+                  <a
+                    href={`/dashboard/cases/${encodeURIComponent(caseSlug)}`}
+                    className="brand-text inline-flex items-center gap-1 text-xs hover:underline"
+                  >
+                    <CheckCircle2 size={12} />
+                    {lang === "en" ? "Open case" : "Zur Akte"}
+                  </a>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function PrecedentSearchPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [query, setQuery] = useState("");
   const [jurisdiction, setJurisdiction] = useState<"at" | "de" | "ch" | "all">("all");
   const [legalArea, setLegalArea] = useState("");
@@ -144,6 +272,9 @@ export default function PrecedentSearchPage() {
           </div>
         </div>
       </div>
+
+      {/* Already-computed pipeline precedent analyses */}
+      <PipelinePrecedentSection lang={lang} />
 
       {/* Error */}
       {error && (

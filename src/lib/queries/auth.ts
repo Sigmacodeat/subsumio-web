@@ -34,14 +34,13 @@ export function useMe() {
 
 export function useLogin() {
   const qc = useQueryClient();
-  const router = useRouter();
   return useMutation({
     mutationFn: (input: LoginInput) => api.auth.login(input),
     onSuccess: (data) => {
       if (data?.user) {
         qc.setQueryData(["auth", "me"], { user: data.user });
         qc.invalidateQueries({ queryKey: ["auth", "me"] });
-        router.push("/dashboard");
+        window.location.href = "/dashboard";
       }
       // If 2fa_required, the caller (LoginForm) handles the challenge flow.
       // data.error === "2fa_required" + data.challengeToken
@@ -51,14 +50,13 @@ export function useLogin() {
 
 export function useVerify2FA() {
   const qc = useQueryClient();
-  const router = useRouter();
   return useMutation({
     mutationFn: (input: TwoFAVerifyInput) => api.auth.verify2FA(input),
     onSuccess: (data) => {
       if (data?.user) {
         qc.setQueryData(["auth", "me"], { user: data.user });
         qc.invalidateQueries({ queryKey: ["auth", "me"] });
-        router.push("/dashboard");
+        window.location.href = "/dashboard";
       }
     },
   });
@@ -66,13 +64,12 @@ export function useVerify2FA() {
 
 export function useRegister() {
   const qc = useQueryClient();
-  const router = useRouter();
   return useMutation({
     mutationFn: (input: RegisterInput) => api.auth.register(input),
     onSuccess: (data) => {
       if (data?.user) {
         qc.setQueryData(["auth", "me"], { user: data.user });
-        router.push("/dashboard");
+        window.location.href = "/dashboard";
       }
     },
   });

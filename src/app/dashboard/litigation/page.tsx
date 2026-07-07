@@ -97,6 +97,66 @@ const STEP_STATUS_COLORS: Record<StepStatus, string> = {
   skipped: "var(--ds-text-subtle)",
 };
 
+/** Surfaces the pipeline's automatically computed procedural-strategy page for
+ * the linked case (slug pattern from legal-pipeline.ts), so the already-paid
+ * analysis is the starting point instead of an unused by-product. */
+function PipelineStrategyCard({ caseSlug, lang }: { caseSlug: string; lang: string }) {
+  const [page, setPage] = useState<{ title: string; content: string; updated_at: string } | null>(
+    null
+  );
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const p = await api.brain.getPage(`procedural-strategy/${caseSlug}`);
+        if (!cancelled && p) {
+          setPage({ title: p.title, content: p.content ?? "", updated_at: p.updated_at });
+        }
+      } catch {
+        if (!cancelled) setPage(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [caseSlug]);
+
+  if (!page) return null;
+
+  const dateLabel = new Date(page.updated_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE");
+  return (
+    <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center gap-2 px-3 py-2.5 text-left"
+        aria-expanded={open}
+      >
+        <FileSearch size={14} className="shrink-0 text-[color:var(--ds-text-secondary)]" />
+        <span className="text-xs font-medium text-[color:var(--ds-text)]">
+          {lang === "en"
+            ? `Automatic procedural strategy from ${dateLabel}`
+            : `Automatische Verfahrensstrategie vom ${dateLabel}`}
+        </span>
+        <ChevronRight
+          size={14}
+          className={`ml-auto shrink-0 text-[color:var(--ds-text-muted)] transition-transform ${open ? "rotate-90" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className="border-t border-[color:var(--ds-border)] p-3">
+          <div className="max-h-[300px] overflow-y-auto rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] p-2">
+            <pre className="font-sans text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
+              {page.content}
+            </pre>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LitigationFlowPage() {
   const { t, lang } = useLang();
   const confirm = useConfirm();
@@ -494,6 +554,11 @@ export default function LitigationFlowPage() {
                 {t("litigation.delete" as DashboardKey)}
               </Button>
             </div>
+
+            {/* Pipeline procedural strategy for the linked case */}
+            {selectedMatter.frontmatter?.case_slug && (
+              <PipelineStrategyCard caseSlug={selectedMatter.frontmatter.case_slug} lang={lang} />
+            )}
 
             {/* Steps */}
             <div className="space-y-2">

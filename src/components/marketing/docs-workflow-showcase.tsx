@@ -6,7 +6,7 @@ import { Briefcase, CalendarClock, FileText } from "lucide-react";
 import { type Lang, UI_STRINGS } from "@/content/site";
 import { ICONS, H2_CTA_CLASS, Section } from "./chrome";
 import DashboardReel from "./dashboard-reel";
-import { EASE } from "./motion-system";
+import { EASE, VIEWPORT } from "./motion-system";
 
 interface DocsWorkflow {
   id: string;
@@ -81,8 +81,6 @@ const AUTO_ADVANCE_MS = 5200;
 const REEL_STEP_MS = 3200;
 const PAUSE_AFTER_CLICK_MS = 9000;
 
-const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
-
 export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
   const reduce = useReducedMotion();
   const workflows = lang === "en" ? WORKFLOWS_EN : WORKFLOWS_DE;
@@ -143,7 +141,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport}
+            viewport={VIEWPORT.gentle}
             transition={{ duration: 0.5, ease: EASE.out }}
           >
             <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
@@ -246,7 +244,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           whileInView={{ opacity: 1, scale: 1 }}
-          viewport={viewport}
+          viewport={VIEWPORT.gentle}
           transition={{ duration: 0.45, ease: EASE.out }}
           className="relative order-1 lg:order-2"
         >

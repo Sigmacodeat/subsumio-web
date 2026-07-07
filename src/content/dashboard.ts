@@ -8370,6 +8370,10 @@ export const D = {
     en: "Password required — re-upload",
   },
   "docstab.extraction_unsupported": { de: "Format nicht unterstützt", en: "Unsupported format" },
+  "docstab.jurisdiction_unverified": {
+    de: "Jurisdiktion nicht verifiziert — bitte prüfen",
+    en: "Jurisdiction unverified — please review",
+  },
   "evalgate.loading": { de: "Eval-Gate wird geladen...", en: "Loading eval gate..." },
   "evalgate.title": { de: "Unified Eval Gate", en: "Unified Eval Gate" },
   "evalgate.more": { de: "weitere", en: "more" },

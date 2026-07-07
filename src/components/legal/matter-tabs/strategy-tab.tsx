@@ -21,7 +21,15 @@ import {
   CalendarPlus,
   Plus,
   X,
+  Coins,
+  Handshake,
+  Gavel,
+  TrendingUp,
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLang } from "@/lib/use-lang";
@@ -30,6 +38,7 @@ import { RetrievalFeedbackButtons } from "@/components/legal/RetrievalFeedbackBu
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import { api } from "@/lib/api";
+import type { BrainPage } from "@/lib/types";
 
 const ChatPanel = lazy(() =>
   import("@/components/chat/chat-panel").then((m) => ({ default: m.ChatPanel }))
@@ -48,6 +57,156 @@ const ActIntelligencePanel = lazy(() =>
 const CaseInsightsPanel = lazy(() =>
   import("@/components/legal/CaseInsightsPanel").then((m) => ({ default: m.CaseInsightsPanel }))
 );
+
+/** Pipeline slug prefixes of the litigation-economics analyses (see
+ * server/src/core/minions/handlers/legal-pipeline.ts, Layer 5c–5f). */
+const ECONOMY_ANALYSES = [
+  {
+    slugPrefix: "cost-benefit",
+    icon: Coins,
+    labelDe: "Kosten-Nutzen-Analyse",
+    labelEn: "Cost-benefit analysis",
+    hintDe: "Erwartungswert, Break-Even, Risiko",
+    hintEn: "Expected value, break-even, risk",
+  },
+  {
+    slugPrefix: "settlement-analysis",
+    icon: Handshake,
+    labelDe: "Vergleichsanalyse",
+    labelEn: "Settlement analysis",
+    hintDe: "BATNA, ZOPA, Verhandlungsstrategie",
+    hintEn: "BATNA, ZOPA, negotiation strategy",
+  },
+  {
+    slugPrefix: "enforcement-analysis",
+    icon: Gavel,
+    labelDe: "Vollstreckungsanalyse",
+    labelEn: "Enforcement analysis",
+    hintDe: "Vollstreckung, Arrest, Sicherung",
+    hintEn: "Enforcement, attachment, securing",
+  },
+  {
+    slugPrefix: "appeal-risk",
+    icon: TrendingUp,
+    labelDe: "Berufungsrisiko",
+    labelEn: "Appeal risk",
+    hintDe: "Berufung, Revision, Instanzenzug",
+    hintEn: "Appeal, revision, court hierarchy",
+  },
+] as const;
+
+function ProzessOekonomieSection({ caseSlug, lang }: { caseSlug: string; lang: string }) {
+  const [pages, setPages] = useState<Record<string, BrainPage>>({});
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const slugs = ECONOMY_ANALYSES.map((a) => `${a.slugPrefix}/${caseSlug}`);
+        const result = await api.brain.getPages(slugs);
+        if (!cancelled) setPages(result);
+      } catch {
+        if (!cancelled) setPages({});
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [caseSlug]);
+
+  const available = ECONOMY_ANALYSES.filter((a) => pages[`${a.slugPrefix}/${caseSlug}`]);
+
+  return (
+    <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+      <div className="flex items-center gap-2">
+        <Coins size={16} className="text-[color:var(--ds-text-secondary)]" />
+        <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+          {lang === "en" ? "Litigation Economics" : "Prozess-Ökonomie"}
+        </h3>
+        {available.length > 0 && (
+          <Badge variant="default" className="text-[10px]">
+            {available.length}/{ECONOMY_ANALYSES.length}
+          </Badge>
+        )}
+      </div>
+      {loading ? (
+        <div className="flex items-center gap-2 py-3 text-sm text-[color:var(--ds-text-secondary)]">
+          <Loader2 size={14} className="animate-spin" />
+          {lang === "en" ? "Loading analyses..." : "Analysen werden geladen..."}
+        </div>
+      ) : available.length === 0 ? (
+        <p className="py-2 text-sm text-[color:var(--ds-text-secondary)]">
+          {lang === "en"
+            ? "No litigation-economics analyses yet. They are generated automatically when the case analysis pipeline runs after document upload."
+            : "Noch keine Prozess-Ökonomie-Analysen. Sie entstehen automatisch, wenn die Aktenanalyse nach dem Dokumenten-Upload läuft."}
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {available.map((a) => {
+            const slug = `${a.slugPrefix}/${caseSlug}`;
+            const page = pages[slug]!;
+            const Icon = a.icon;
+            const isOpen = expanded === slug;
+            return (
+              <div
+                key={slug}
+                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]"
+              >
+                <button
+                  onClick={() => setExpanded(isOpen ? null : slug)}
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left"
+                  aria-expanded={isOpen}
+                >
+                  {isOpen ? (
+                    <ChevronDown size={14} className="shrink-0 text-[color:var(--ds-text-muted)]" />
+                  ) : (
+                    <ChevronRight
+                      size={14}
+                      className="shrink-0 text-[color:var(--ds-text-muted)]"
+                    />
+                  )}
+                  <Icon size={14} className="shrink-0 text-[color:var(--ds-text-secondary)]" />
+                  <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                    {lang === "en" ? a.labelEn : a.labelDe}
+                  </span>
+                  <span className="hidden text-xs text-[color:var(--ds-text-muted)] sm:inline">
+                    {lang === "en" ? a.hintEn : a.hintDe}
+                  </span>
+                  <span className="ml-auto shrink-0 text-xs text-[color:var(--ds-text-muted)]">
+                    {new Date(page.updated_at).toLocaleDateString(
+                      lang === "en" ? "en-GB" : "de-DE"
+                    )}
+                  </span>
+                </button>
+                {isOpen && (
+                  <div className="space-y-2 border-t border-[color:var(--ds-border)] p-3">
+                    <div className="max-h-[300px] overflow-y-auto rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] p-2">
+                      <pre className="font-sans text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
+                        {page.content || ""}
+                      </pre>
+                    </div>
+                    <Link
+                      href={`/dashboard/brain/${encodeURIComponent(slug)}`}
+                      className="inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+                    >
+                      <ExternalLink size={12} />
+                      {lang === "en" ? "Open full analysis" : "Vollständige Analyse öffnen"}
+                    </Link>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function StrategyTab() {
   const ctx = useMatterDetail();
@@ -457,6 +616,11 @@ export function StrategyTab() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Litigation economics — pipeline layer 5c–5f outputs */}
+      <div className="max-w-3xl">
+        <ProzessOekonomieSection caseSlug={caseData.slug} lang={lang} />
       </div>
 
       {/* Pipeline Panel */}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Loader2,
   FileText,
@@ -26,9 +27,53 @@ import { csrfFetch } from "@/lib/csrf";
 import { api } from "@/lib/api";
 import { ActImportCockpit } from "@/components/legal/ActImportCockpit";
 
+interface DocJurisdiction {
+  jurisdiction: string;
+  confidence?: number;
+  unverified: boolean;
+}
+
 export function DocumentsTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
+  // Jurisdiction lives on the doc pages (stamped by the pipeline), not on the
+  // case's documents[] entries — batch-fetch it like the evidence tab does.
+  const [docJurisdictions, setDocJurisdictions] = useState<Record<string, DocJurisdiction>>({});
+  const docSlugsKey = (ctx.caseData?.documents ?? [])
+    .map((d) => d.slug || d.url || "")
+    .filter(Boolean)
+    .join(",");
+  useEffect(() => {
+    if (!docSlugsKey) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const slugs = docSlugsKey.split(",").slice(0, 50);
+        const pagesMap = await api.brain.getPages(slugs);
+        if (cancelled) return;
+        const next: Record<string, DocJurisdiction> = {};
+        for (const [pageSlug, page] of Object.entries(pagesMap)) {
+          const fm = (page?.frontmatter ?? {}) as Record<string, unknown>;
+          if (typeof fm.jurisdiction !== "string" || !fm.jurisdiction) continue;
+          next[pageSlug] = {
+            jurisdiction: fm.jurisdiction,
+            confidence:
+              typeof fm.jurisdiction_confidence === "number"
+                ? fm.jurisdiction_confidence
+                : undefined,
+            unverified:
+              fm.jurisdiction_unverified === true || fm.jurisdiction_unverified === "true",
+          };
+        }
+        setDocJurisdictions(next);
+      } catch {
+        // Best-effort enrichment — the tab stays fully usable without it
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [docSlugsKey]);
   if (!ctx.caseData) return null;
   const caseData = ctx.caseData;
 
@@ -454,6 +499,35 @@ export function DocumentsTab() {
                         {doc.doc_type_label}
                       </Badge>
                     )}
+                    {(() => {
+                      const jur = docJurisdictions[doc.slug || doc.url || ""];
+                      if (!jur) return null;
+                      return (
+                        <Badge
+                          variant="default"
+                          className={`shrink-0 border text-xs ${
+                            jur.unverified
+                              ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                              : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+                          }`}
+                          title={
+                            jur.unverified
+                              ? t("docstab.jurisdiction_unverified")
+                              : jur.confidence !== undefined
+                                ? `Confidence: ${Math.round(jur.confidence * 100)}%`
+                                : undefined
+                          }
+                        >
+                          {jur.jurisdiction.toUpperCase()}
+                          {jur.unverified && " ⚠"}
+                          {jur.confidence !== undefined && !jur.unverified && (
+                            <span className="ml-0.5 opacity-60">
+                              {Math.round(jur.confidence * 100)}%
+                            </span>
+                          )}
+                        </Badge>
+                      );
+                    })()}
                     {doc.privileged && (
                       <Badge variant="warning" className="shrink-0 text-xs">
                         {t("docstab.privileged")}
