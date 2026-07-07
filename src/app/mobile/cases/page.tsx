@@ -20,10 +20,10 @@ interface Matter {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  active: "#22c55e",
-  pending: "#f59e0b",
-  closed: "#6a6a8a",
-  urgent: "#ef4444",
+  active: "var(--signal-success-500)",
+  pending: "var(--signal-warning-500)",
+  closed: "var(--ds-text-muted)",
+  urgent: "var(--signal-danger-500)",
 };
 
 export default function MobileCasesPage() {
@@ -76,11 +76,18 @@ export default function MobileCasesPage() {
 
   return (
     <div
-      style={{ display: "flex", flexDirection: "column", height: "100%", background: "#06060f" }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        background: "var(--ds-bg)",
+      }}
     >
       {/* Header */}
-      <div style={{ padding: "14px 16px 10px", background: "#0a0a18" }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: "#e8e8f0", marginBottom: 10 }}>Akten</h1>
+      <div style={{ padding: "14px 16px 10px", background: "var(--ds-surface)" }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--ds-text)", marginBottom: 10 }}>
+          Akten
+        </h1>
         {/* Search */}
         <div style={{ position: "relative", marginBottom: 10 }}>
           <Search
@@ -90,7 +97,7 @@ export default function MobileCasesPage() {
               left: 10,
               top: "50%",
               transform: "translateY(-50%)",
-              color: "#6a6a8a",
+              color: "var(--ds-text-muted)",
             }}
           />
           <input
@@ -100,11 +107,11 @@ export default function MobileCasesPage() {
             style={
               {
                 width: "100%",
-                background: "#12122a",
-                border: "1px solid #1e1e3a",
+                background: "var(--ds-surface-2)",
+                border: "1px solid var(--ds-border)",
                 borderRadius: 10,
                 padding: "9px 12px 9px 32px",
-                color: "#e8e8f0",
+                color: "var(--ds-text)",
                 fontSize: 15,
                 outline: "none",
                 boxSizing: "border-box",
@@ -123,8 +130,8 @@ export default function MobileCasesPage() {
                 borderRadius: 20,
                 fontSize: 12,
                 border: "none",
-                background: statusFilter === s ? "#6366f1" : "#1e1e3a",
-                color: statusFilter === s ? "#fff" : "#8a8aa8",
+                background: statusFilter === s ? "var(--brand-500)" : "var(--ds-border)",
+                color: statusFilter === s ? "#fff" : "var(--ds-text-subtle)",
                 cursor: "pointer",
                 whiteSpace: "nowrap",
                 flexShrink: 0,
@@ -140,10 +147,13 @@ export default function MobileCasesPage() {
       <div style={{ flex: 1, overflowY: "auto" }}>
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-            <Loader2 size={24} style={{ color: "#6366f1", animation: "spin 1s linear infinite" }} />
+            <Loader2
+              size={24}
+              style={{ color: "var(--brand-500)", animation: "spin 1s linear infinite" }}
+            />
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "40px 20px", color: "#6a6a8a" }}>
+          <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--ds-text-muted)" }}>
             <FolderOpen size={32} style={{ margin: "0 auto 10px", opacity: 0.4 }} />
             <div style={{ fontSize: 14 }}>Keine Akten gefunden</div>
           </div>
@@ -157,7 +167,7 @@ export default function MobileCasesPage() {
                   display: "flex",
                   alignItems: "center",
                   padding: "13px 16px",
-                  borderBottom: "1px solid #0e0e20",
+                  borderBottom: "1px solid hsl(230, 10%, 12%)",
                   textDecoration: "none",
                   WebkitTapHighlightColor: "transparent",
                 } as React.CSSProperties
@@ -166,13 +176,16 @@ export default function MobileCasesPage() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
                   {m.urgent && (
-                    <AlertCircle size={13} style={{ color: "#ef4444", flexShrink: 0 }} />
+                    <AlertCircle
+                      size={13}
+                      style={{ color: "var(--signal-danger-500)", flexShrink: 0 }}
+                    />
                   )}
                   <span
                     style={{
                       fontSize: 15,
                       fontWeight: 500,
-                      color: "#e8e8f0",
+                      color: "var(--ds-text)",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -184,7 +197,7 @@ export default function MobileCasesPage() {
                 <div
                   style={{
                     fontSize: 12,
-                    color: "#6a6a8a",
+                    color: "var(--ds-text-muted)",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -210,11 +223,11 @@ export default function MobileCasesPage() {
                     width: 8,
                     height: 8,
                     borderRadius: "50%",
-                    background: STATUS_COLORS[m.status] ?? "#6a6a8a",
+                    background: STATUS_COLORS[m.status] ?? "var(--ds-text-muted)",
                   }}
                 />
                 {m.updatedAt && (
-                  <span style={{ fontSize: 10, color: "#4a4a6a" }}>
+                  <span style={{ fontSize: 10, color: "hsl(230, 8%, 35%)" }}>
                     {new Date(m.updatedAt).toLocaleDateString("de-AT", {
                       day: "2-digit",
                       month: "2-digit",
@@ -222,7 +235,10 @@ export default function MobileCasesPage() {
                   </span>
                 )}
               </div>
-              <ChevronRight size={16} style={{ color: "#2e2e5a", marginLeft: 6, flexShrink: 0 }} />
+              <ChevronRight
+                size={16}
+                style={{ color: "hsl(230, 10%, 30%)", marginLeft: 6, flexShrink: 0 }}
+              />
             </a>
           ))
         )}

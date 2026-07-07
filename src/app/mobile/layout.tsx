@@ -32,8 +32,8 @@ export default function MobileLayout({ children }: { children: ReactNode }) {
         display: "flex",
         flexDirection: "column",
         height: "100dvh", // dynamic viewport height (mobile keyboard safe)
-        background: "#06060f",
-        color: "#e8e8f0",
+        background: "var(--ds-bg)",
+        color: "var(--ds-text)",
         overflow: "hidden",
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         // Top safe area (status bar / notch)
@@ -58,8 +58,8 @@ export default function MobileLayout({ children }: { children: ReactNode }) {
       <nav
         style={{
           display: "flex",
-          background: "#0a0a18",
-          borderTop: "1px solid #1e1e3a",
+          background: "var(--ds-surface)",
+          borderTop: "1px solid var(--ds-border)",
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
           flexShrink: 0,
         }}
@@ -79,7 +79,7 @@ export default function MobileLayout({ children }: { children: ReactNode }) {
                   justifyContent: "center",
                   gap: 3,
                   padding: "8px 0 6px",
-                  color: active ? "#6366f1" : "#6a6a8a",
+                  color: active ? "var(--brand-500)" : "var(--ds-text-muted)",
                   textDecoration: "none",
                   transition: "color 0.1s",
                   WebkitTapHighlightColor: "transparent",

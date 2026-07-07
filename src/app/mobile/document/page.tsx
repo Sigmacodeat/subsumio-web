@@ -139,14 +139,19 @@ export default function MobileDocumentPage() {
   if (selected) {
     return (
       <div
-        style={{ display: "flex", flexDirection: "column", height: "100%", background: "#06060f" }}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          background: "var(--ds-bg)",
+        }}
       >
         {/* Header */}
         <div
           style={{
             padding: "12px 16px",
-            background: "#0a0a18",
-            borderBottom: "1px solid #1e1e3a",
+            background: "var(--ds-surface)",
+            borderBottom: "1px solid var(--ds-border)",
             display: "flex",
             alignItems: "center",
             gap: 10,
@@ -161,7 +166,7 @@ export default function MobileDocumentPage() {
               background: "none",
               border: "none",
               cursor: "pointer",
-              color: "#6366f1",
+              color: "var(--brand-500)",
               padding: 0,
               display: "flex",
             }}
@@ -173,7 +178,7 @@ export default function MobileDocumentPage() {
               style={{
                 fontSize: 14,
                 fontWeight: 600,
-                color: "#e8e8f0",
+                color: "var(--ds-text)",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -182,7 +187,7 @@ export default function MobileDocumentPage() {
               {selected.title}
             </div>
             {selected.created_at && (
-              <div style={{ fontSize: 11, color: "#6a6a8a" }}>
+              <div style={{ fontSize: 11, color: "var(--ds-text-muted)" }}>
                 {new Date(selected.created_at).toLocaleDateString("de-AT")}
               </div>
             )}
@@ -192,7 +197,7 @@ export default function MobileDocumentPage() {
               <button
                 onClick={() => setPdfOpen(true)}
                 style={{
-                  background: "#6366f1",
+                  background: "var(--brand-500)",
                   border: "none",
                   borderRadius: 8,
                   padding: "7px 10px",
@@ -213,12 +218,12 @@ export default function MobileDocumentPage() {
               onClick={share}
               disabled={sharing}
               style={{
-                background: "#1e1e3a",
+                background: "var(--ds-border)",
                 border: "none",
                 borderRadius: 8,
                 padding: "7px 8px",
                 cursor: "pointer",
-                color: "#c0c0d8",
+                color: "hsl(230, 8%, 80%)",
                 display: "flex",
               }}
             >
@@ -227,12 +232,12 @@ export default function MobileDocumentPage() {
             <a
               href={`/dashboard/pages/${selected.slug}`}
               style={{
-                background: "#1e1e3a",
+                background: "var(--ds-border)",
                 border: "none",
                 borderRadius: 8,
                 padding: "7px 8px",
                 cursor: "pointer",
-                color: "#c0c0d8",
+                color: "hsl(230, 8%, 80%)",
                 display: "flex",
                 textDecoration: "none",
               }}
@@ -252,11 +257,11 @@ export default function MobileDocumentPage() {
                 gap: 6,
                 padding: "8px 12px",
                 marginBottom: 12,
-                background: "#f59e0b20",
-                border: "1px solid #f59e0b30",
+                background: "hsla(40, 70%, 45%, 0.13)",
+                border: "1px solid hsla(40, 70%, 45%, 0.19)",
                 borderRadius: 8,
                 fontSize: 12,
-                color: "#f59e0b",
+                color: "var(--signal-warning-500)",
               }}
             >
               <WifiOff size={13} />
@@ -274,8 +279,8 @@ export default function MobileDocumentPage() {
                 textAlign: "center",
               }}
             >
-              <FileWarning size={40} style={{ color: "#6a6a8a", opacity: 0.5 }} />
-              <div style={{ fontSize: 14, color: "#8a8aa8" }}>
+              <FileWarning size={40} style={{ color: "var(--ds-text-muted)", opacity: 0.5 }} />
+              <div style={{ fontSize: 14, color: "var(--ds-text-subtle)" }}>
                 Offline — dieses Dokument wurde noch nicht geöffnet.
               </div>
             </div>
@@ -284,7 +289,7 @@ export default function MobileDocumentPage() {
             <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
               <Loader2
                 size={24}
-                style={{ color: "#6366f1", animation: "spin 1s linear infinite" }}
+                style={{ color: "var(--brand-500)", animation: "spin 1s linear infinite" }}
               />
             </div>
           ) : (
@@ -292,7 +297,7 @@ export default function MobileDocumentPage() {
               style={{
                 fontSize: 14,
                 lineHeight: 1.7,
-                color: "#c0c0d8",
+                color: "hsl(230, 8%, 80%)",
                 whiteSpace: "pre-wrap",
                 wordBreak: "break-word",
               }}
@@ -313,17 +318,22 @@ export default function MobileDocumentPage() {
 
   return (
     <div
-      style={{ display: "flex", flexDirection: "column", height: "100%", background: "#06060f" }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        background: "var(--ds-bg)",
+      }}
     >
       {/* Header */}
       <div
         style={{
           padding: "14px 16px 12px",
-          background: "#0a0a18",
-          borderBottom: "1px solid #1e1e3a",
+          background: "var(--ds-surface)",
+          borderBottom: "1px solid var(--ds-border)",
         }}
       >
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: "#e8e8f0", marginBottom: 10 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--ds-text)", marginBottom: 10 }}>
           Dokumente
         </h1>
         <div style={{ position: "relative" }}>
@@ -334,7 +344,7 @@ export default function MobileDocumentPage() {
               left: 10,
               top: "50%",
               transform: "translateY(-50%)",
-              color: "#6a6a8a",
+              color: "var(--ds-text-muted)",
             }}
           />
           {loading && (
@@ -345,7 +355,7 @@ export default function MobileDocumentPage() {
                 right: 10,
                 top: "50%",
                 transform: "translateY(-50%)",
-                color: "#6366f1",
+                color: "var(--brand-500)",
                 animation: "spin 1s linear infinite",
               }}
             />
@@ -358,11 +368,11 @@ export default function MobileDocumentPage() {
             style={
               {
                 width: "100%",
-                background: "#12122a",
-                border: "1px solid #1e1e3a",
+                background: "var(--ds-surface-2)",
+                border: "1px solid var(--ds-border)",
                 borderRadius: 10,
                 padding: "10px 36px",
-                color: "#e8e8f0",
+                color: "var(--ds-text)",
                 fontSize: 15,
                 outline: "none",
                 boxSizing: "border-box",
@@ -374,7 +384,7 @@ export default function MobileDocumentPage() {
 
       <div style={{ flex: 1, overflowY: "auto" }}>
         {!query && (
-          <div style={{ textAlign: "center", padding: "50px 20px", color: "#6a6a8a" }}>
+          <div style={{ textAlign: "center", padding: "50px 20px", color: "var(--ds-text-muted)" }}>
             <FileText size={32} style={{ margin: "0 auto 12px", opacity: 0.3 }} />
             <div style={{ fontSize: 14 }}>Suchbegriff eingeben</div>
             <div style={{ fontSize: 12, marginTop: 4 }}>Verträge, Urteile, Notizen, Memos…</div>
@@ -390,7 +400,7 @@ export default function MobileDocumentPage() {
                 display: "flex",
                 alignItems: "flex-start",
                 padding: "13px 16px",
-                borderBottom: "1px solid #0e0e20",
+                borderBottom: "1px solid hsl(230, 10%, 12%)",
                 background: "none",
                 border: "none",
                 cursor: "pointer",
@@ -401,14 +411,14 @@ export default function MobileDocumentPage() {
           >
             <FileText
               size={16}
-              style={{ color: "#6366f1", marginTop: 2, flexShrink: 0, marginRight: 10 }}
+              style={{ color: "var(--brand-500)", marginTop: 2, flexShrink: 0, marginRight: 10 }}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div
                 style={{
                   fontSize: 14,
                   fontWeight: 500,
-                  color: "#e8e8f0",
+                  color: "var(--ds-text)",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -422,7 +432,7 @@ export default function MobileDocumentPage() {
                   style={
                     {
                       fontSize: 12,
-                      color: "#6a6a8a",
+                      color: "var(--ds-text-muted)",
                       overflow: "hidden",
                       display: "-webkit-box",
                       WebkitLineClamp: 2,
@@ -434,7 +444,7 @@ export default function MobileDocumentPage() {
                 </div>
               )}
               {page.created_at && (
-                <div style={{ fontSize: 10, color: "#4a4a6a", marginTop: 4 }}>
+                <div style={{ fontSize: 10, color: "hsl(230, 8%, 35%)", marginTop: 4 }}>
                   {new Date(page.created_at).toLocaleDateString("de-AT")}
                 </div>
               )}

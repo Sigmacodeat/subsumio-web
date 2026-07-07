@@ -33,25 +33,25 @@ export interface IndustryProfile {
 }
 
 export const SUBSUMIO_THEME: IndustryTheme = {
-  primary: "#1e40af",
-  primaryHover: "#2563eb",
-  secondary: "#3b82f6",
-  tertiary: "#6366f1",
-  glow: "rgba(30, 64, 175, 0.12)",
-  gradientFrom: "#1e40af",
-  gradientVia: "#3b82f6",
-  gradientTo: "#6366f1",
+  primary: "var(--brand-500)",
+  primaryHover: "var(--brand-400)",
+  secondary: "var(--brand-400)",
+  tertiary: "hsl(260, 60%, 65%)",
+  glow: "hsla(230, 60%, 52%, 0.12)",
+  gradientFrom: "var(--brand-700)",
+  gradientVia: "var(--brand-400)",
+  gradientTo: "hsl(260, 60%, 65%)",
 };
 
 export const TAX_THEME: IndustryTheme = {
-  primary: "#047857",
-  primaryHover: "#059669",
-  secondary: "#10b981",
-  tertiary: "#14b8a6",
-  glow: "rgba(4, 120, 87, 0.12)",
-  gradientFrom: "#047857",
-  gradientVia: "#10b981",
-  gradientTo: "#14b8a6",
+  primary: "var(--tax-500)",
+  primaryHover: "var(--tax-400)",
+  secondary: "var(--tax-400)",
+  tertiary: "hsl(170, 55%, 50%)",
+  glow: "hsla(165, 55%, 42%, 0.12)",
+  gradientFrom: "var(--tax-700)",
+  gradientVia: "var(--tax-400)",
+  gradientTo: "hsl(170, 55%, 50%)",
 };
 
 export const INDUSTRY_PROFILES = {

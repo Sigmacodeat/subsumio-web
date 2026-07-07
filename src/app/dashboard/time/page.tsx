@@ -106,7 +106,7 @@ export default function TimeEntriesPage() {
       if (!printWindow) return;
       printWindow.document.write(`
         <html><head><title>Zeiteinträge Export</title>
-        <style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f5}</style>
+        <style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid hsl(230,8%,85%);padding:8px;text-align:left}th{background:hsl(230,8%,96%)}</style>
         </head><body>
         <h1>Zeiteinträge Export — ${new Date().toLocaleDateString("de-DE")}</h1>
         <table><thead><tr><th>Datum</th><th>Beschreibung</th><th>Akte</th><th>Minuten</th><th>Stunden</th><th>Abrechenbar</th><th>Satz</th><th>Betrag</th></tr></thead><tbody>

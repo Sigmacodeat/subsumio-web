@@ -107,16 +107,16 @@ function exportHtmlDocument(title: string, markdown: string): string {
   return `<!DOCTYPE html>
 <html lang="de"><head><meta charset="UTF-8"><title>${escapeHtml(title)}</title>
 <style>
-  body { font-family: Calibri, Arial, sans-serif; margin: 40px; color: #222; font-size: 12pt; line-height: 1.5; }
-  h1 { font-size: 20pt; color: #4338ca; border-bottom: 2px solid #6366f1; padding-bottom: 8px; }
-  h2 { font-size: 15pt; color: #4338ca; margin-top: 24px; }
-  h3 { font-size: 12.5pt; color: #333; margin-top: 16px; }
-  blockquote { background: #f3f0ff; border-left: 4px solid #6366f1; margin: 16px 0; padding: 10px 16px; color: #444; font-size: 10.5pt; }
+  body { font-family: Calibri, Arial, sans-serif; margin: 40px; color: hsl(230, 8%, 15%); font-size: 12pt; line-height: 1.5; }
+  h1 { font-size: 20pt; color: hsl(230, 60%, 40%); border-bottom: 2px solid hsl(230, 60%, 52%); padding-bottom: 8px; }
+  h2 { font-size: 15pt; color: hsl(230, 60%, 40%); margin-top: 24px; }
+  h3 { font-size: 12.5pt; color: hsl(230, 8%, 20%); margin-top: 16px; }
+  blockquote { background: hsl(230, 60%, 97%); border-left: 4px solid hsl(230, 60%, 52%); margin: 16px 0; padding: 10px 16px; color: hsl(230, 8%, 30%); font-size: 10.5pt; }
   table { border-collapse: collapse; width: 100%; margin: 12px 0; }
-  th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; font-size: 11pt; }
-  th { background: #f1f3f4; }
-  hr { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
-  em { color: #666; }
+  th, td { border: 1px solid hsl(230, 8%, 80%); padding: 6px 10px; text-align: left; font-size: 11pt; }
+  th { background: hsl(230, 8%, 94%); }
+  hr { border: none; border-top: 1px solid hsl(230, 8%, 85%); margin: 24px 0; }
+  em { color: hsl(230, 8%, 40%); }
 </style></head><body>
 ${markdownToHtml(markdown)}
 </body></html>`;

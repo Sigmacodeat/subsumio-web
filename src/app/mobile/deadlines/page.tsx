@@ -19,7 +19,12 @@ interface Deadline {
   done: boolean;
 }
 
-const PRIORITY_COLORS = { critical: "#ef4444", high: "#f59e0b", medium: "#6366f1", low: "#6a6a8a" };
+const PRIORITY_COLORS = {
+  critical: "var(--signal-danger-500)",
+  high: "var(--signal-warning-500)",
+  medium: "var(--brand-500)",
+  low: "var(--ds-text-muted)",
+};
 const PRIORITY_LABELS = { critical: "Kritisch", high: "Hoch", medium: "Mittel", low: "Niedrig" };
 
 function daysUntil(dateStr: string): number {
@@ -72,10 +77,15 @@ export default function MobileDeadlinesPage() {
 
   return (
     <div
-      style={{ display: "flex", flexDirection: "column", height: "100%", background: "#06060f" }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        background: "var(--ds-bg)",
+      }}
     >
       {/* Header */}
-      <div style={{ padding: "14px 16px 10px", background: "#0a0a18" }}>
+      <div style={{ padding: "14px 16px 10px", background: "var(--ds-surface)" }}>
         <div
           style={{
             display: "flex",
@@ -84,21 +94,21 @@ export default function MobileDeadlinesPage() {
             marginBottom: 10,
           }}
         >
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: "#e8e8f0" }}>Fristen</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--ds-text)" }}>Fristen</h1>
           {overdueCount > 0 && (
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
-                background: "#ef444415",
-                border: "1px solid #ef444430",
+                background: "hsla(0, 60%, 50%, 0.08)",
+                border: "1px solid hsla(0, 60%, 50%, 0.19)",
                 borderRadius: 20,
                 padding: "3px 10px",
               }}
             >
-              <AlertTriangle size={12} style={{ color: "#ef4444" }} />
-              <span style={{ fontSize: 12, color: "#ef4444", fontWeight: 600 }}>
+              <AlertTriangle size={12} style={{ color: "var(--signal-danger-500)" }} />
+              <span style={{ fontSize: 12, color: "var(--signal-danger-500)", fontWeight: 600 }}>
                 {overdueCount} überfällig
               </span>
             </div>
@@ -110,47 +120,51 @@ export default function MobileDeadlinesPage() {
           <div
             style={{
               flex: 1,
-              background: "#1a0a0a",
-              border: "1px solid #ef444430",
+              background: "hsla(0, 60%, 50%, 0.08)",
+              border: "1px solid hsla(0, 60%, 50%, 0.19)",
               borderRadius: 8,
               padding: "8px 10px",
               textAlign: "center",
             }}
           >
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#ef4444" }}>{overdueCount}</div>
-            <div style={{ fontSize: 10, color: "#8a3a3a" }}>Überfällig</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--signal-danger-500)" }}>
+              {overdueCount}
+            </div>
+            <div style={{ fontSize: 10, color: "hsl(0, 40%, 38%)" }}>Überfällig</div>
           </div>
           <div
             style={{
               flex: 1,
-              background: "#1a140a",
-              border: "1px solid #f59e0b30",
+              background: "hsla(40, 70%, 45%, 0.08)",
+              border: "1px solid hsla(40, 70%, 45%, 0.19)",
               borderRadius: 8,
               padding: "8px 10px",
               textAlign: "center",
             }}
           >
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#f59e0b" }}>{todayCount}</div>
-            <div style={{ fontSize: 10, color: "#8a7a3a" }}>Heute</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--signal-warning-500)" }}>
+              {todayCount}
+            </div>
+            <div style={{ fontSize: 10, color: "hsl(40, 40%, 38%)" }}>Heute</div>
           </div>
           <div
             style={{
               flex: 1,
-              background: "#0a0a1a",
-              border: "1px solid #6366f130",
+              background: "hsla(230, 60%, 52%, 0.06)",
+              border: "1px solid hsla(230, 60%, 52%, 0.19)",
               borderRadius: 8,
               padding: "8px 10px",
               textAlign: "center",
             }}
           >
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#6366f1" }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--brand-500)" }}>
               {
                 deadlines.filter(
                   (d) => !d.done && daysUntil(d.dueDate) >= 1 && daysUntil(d.dueDate) <= 7
                 ).length
               }
             </div>
-            <div style={{ fontSize: 10, color: "#5a5a8a" }}>7 Tage</div>
+            <div style={{ fontSize: 10, color: "hsl(230, 8%, 45%)" }}>7 Tage</div>
           </div>
         </div>
 
@@ -165,8 +179,8 @@ export default function MobileDeadlinesPage() {
                 borderRadius: 20,
                 fontSize: 12,
                 border: "none",
-                background: filter === f ? "#6366f1" : "#1e1e3a",
-                color: filter === f ? "#fff" : "#8a8aa8",
+                background: filter === f ? "var(--brand-500)" : "var(--ds-border)",
+                color: filter === f ? "#fff" : "var(--ds-text-subtle)",
                 cursor: "pointer",
               }}
             >
@@ -180,10 +194,13 @@ export default function MobileDeadlinesPage() {
       <div style={{ flex: 1, overflowY: "auto" }}>
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-            <Loader2 size={24} style={{ color: "#6366f1", animation: "spin 1s linear infinite" }} />
+            <Loader2
+              size={24}
+              style={{ color: "var(--brand-500)", animation: "spin 1s linear infinite" }}
+            />
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "40px 20px", color: "#6a6a8a" }}>
+          <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--ds-text-muted)" }}>
             <CheckCircle2 size={32} style={{ margin: "0 auto 10px", opacity: 0.4 }} />
             <div style={{ fontSize: 14 }}>Keine Fristen in diesem Zeitraum</div>
           </div>
@@ -191,7 +208,7 @@ export default function MobileDeadlinesPage() {
           filtered.map((d) => {
             const days = daysUntil(d.dueDate);
             const overdue = days < 0;
-            const color = overdue ? "#ef4444" : PRIORITY_COLORS[d.priority];
+            const color = overdue ? "var(--signal-danger-500)" : PRIORITY_COLORS[d.priority];
             return (
               <div
                 key={d.id}
@@ -199,7 +216,7 @@ export default function MobileDeadlinesPage() {
                   display: "flex",
                   alignItems: "center",
                   padding: "13px 16px",
-                  borderBottom: "1px solid #0e0e20",
+                  borderBottom: "1px solid hsl(230, 10%, 12%)",
                 }}
               >
                 <div
@@ -217,7 +234,7 @@ export default function MobileDeadlinesPage() {
                     style={{
                       fontSize: 14,
                       fontWeight: 500,
-                      color: "#e8e8f0",
+                      color: "var(--ds-text)",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -226,7 +243,7 @@ export default function MobileDeadlinesPage() {
                   >
                     {d.title}
                   </div>
-                  <div style={{ fontSize: 11, color: "#6a6a8a" }}>
+                  <div style={{ fontSize: 11, color: "var(--ds-text-muted)" }}>
                     {d.matter && <span>{d.matter} · </span>}
                     <span>
                       {new Date(d.dueDate).toLocaleDateString("de-AT", {
@@ -241,7 +258,7 @@ export default function MobileDeadlinesPage() {
                   <div style={{ fontSize: 13, fontWeight: 700, color }}>
                     {overdue ? `${Math.abs(days)}d überfällig` : days === 0 ? "Heute" : `${days}d`}
                   </div>
-                  <div style={{ fontSize: 10, color: "#4a4a6a" }}>
+                  <div style={{ fontSize: 10, color: "hsl(230, 8%, 35%)" }}>
                     {PRIORITY_LABELS[d.priority]}
                   </div>
                 </div>

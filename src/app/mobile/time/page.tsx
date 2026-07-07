@@ -175,21 +175,26 @@ export default function MobileTimePage() {
 
   return (
     <div
-      style={{ display: "flex", flexDirection: "column", height: "100%", background: "#06060f" }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        background: "var(--ds-bg)",
+      }}
     >
       {/* Header */}
       <div
         style={{
           padding: "14px 16px 12px",
-          background: "#0a0a18",
-          borderBottom: "1px solid #1e1e3a",
+          background: "var(--ds-surface)",
+          borderBottom: "1px solid var(--ds-border)",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: "#e8e8f0" }}>Zeiterfassung</h1>
-          <div style={{ fontSize: 12, color: "#6a6a8a" }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--ds-text)" }}>Zeiterfassung</h1>
+          <div style={{ fontSize: 12, color: "var(--ds-text-muted)" }}>
             Heute:{" "}
-            <span style={{ color: "#6366f1", fontWeight: 600 }}>
+            <span style={{ color: "var(--brand-500)", fontWeight: 600 }}>
               {formatDuration(totalTodaySecs)}
             </span>
           </div>
@@ -211,8 +216,8 @@ export default function MobileTimePage() {
                 fontSize: 12,
                 border: "none",
                 cursor: "pointer",
-                background: mode === m ? "#6366f1" : "#1e1e3a",
-                color: mode === m ? "#fff" : "#8a8aa8",
+                background: mode === m ? "var(--brand-500)" : "var(--ds-border)",
+                color: mode === m ? "#fff" : "var(--ds-text-subtle)",
               }}
             >
               {m === "timer" ? "Timer" : "Manuell"}
@@ -231,7 +236,7 @@ export default function MobileTimePage() {
                   fontSize: 56,
                   fontWeight: 700,
                   fontVariantNumeric: "tabular-nums",
-                  color: running ? "#6366f1" : "#e8e8f0",
+                  color: running ? "var(--brand-500)" : "var(--ds-text)",
                   letterSpacing: "-1px",
                   lineHeight: 1,
                 }}
@@ -253,11 +258,11 @@ export default function MobileTimePage() {
                       width: 6,
                       height: 6,
                       borderRadius: "50%",
-                      background: "#ef4444",
+                      background: "var(--signal-danger-500)",
                       animation: "pulse 1s infinite",
                     }}
                   />
-                  <span style={{ fontSize: 12, color: "#8a8aa8" }}>
+                  <span style={{ fontSize: 12, color: "var(--ds-text-subtle)" }}>
                     Läuft seit{" "}
                     {startTime?.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}
                   </span>
@@ -270,7 +275,7 @@ export default function MobileTimePage() {
                     onClick={start}
                     style={{
                       padding: "14px 32px",
-                      background: "#6366f1",
+                      background: "var(--brand-500)",
                       border: "none",
                       borderRadius: 50,
                       color: "#fff",
@@ -290,10 +295,10 @@ export default function MobileTimePage() {
                     onClick={pause}
                     style={{
                       padding: "14px 24px",
-                      background: "#1e1e3a",
-                      border: "1px solid #2e2e5a",
+                      background: "var(--ds-border)",
+                      border: "1px solid hsl(230, 10%, 30%)",
                       borderRadius: 50,
-                      color: "#c0c0d8",
+                      color: "hsl(230, 8%, 80%)",
                       fontSize: 15,
                       cursor: "pointer",
                       display: "flex",
@@ -310,7 +315,7 @@ export default function MobileTimePage() {
                       onClick={resume}
                       style={{
                         padding: "14px 24px",
-                        background: "#6366f1",
+                        background: "var(--brand-500)",
                         border: "none",
                         borderRadius: 50,
                         color: "#fff",
@@ -328,10 +333,10 @@ export default function MobileTimePage() {
                       onClick={stop}
                       style={{
                         padding: "14px 24px",
-                        background: "#ef444420",
-                        border: "1px solid #ef444430",
+                        background: "hsla(0, 60%, 50%, 0.13)",
+                        border: "1px solid hsla(0, 60%, 50%, 0.19)",
                         borderRadius: 50,
-                        color: "#ef4444",
+                        color: "var(--signal-danger-500)",
                         fontSize: 15,
                         cursor: "pointer",
                         display: "flex",
@@ -351,7 +356,12 @@ export default function MobileTimePage() {
             >
               <div>
                 <label
-                  style={{ fontSize: 10, color: "#6a6a8a", display: "block", marginBottom: 4 }}
+                  style={{
+                    fontSize: 10,
+                    color: "var(--ds-text-muted)",
+                    display: "block",
+                    marginBottom: 4,
+                  }}
                 >
                   Stunden
                 </label>
@@ -364,21 +374,26 @@ export default function MobileTimePage() {
                   placeholder="0"
                   style={{
                     width: 70,
-                    background: "#0d0d1a",
-                    border: "1px solid #1e1e3a",
+                    background: "var(--ds-surface-2)",
+                    border: "1px solid var(--ds-border)",
                     borderRadius: 10,
                     padding: "10px",
-                    color: "#e8e8f0",
+                    color: "var(--ds-text)",
                     fontSize: 22,
                     textAlign: "center",
                     outline: "none",
                   }}
                 />
               </div>
-              <span style={{ fontSize: 28, color: "#4a4a6a", marginTop: 16 }}>:</span>
+              <span style={{ fontSize: 28, color: "hsl(230, 8%, 35%)", marginTop: 16 }}>:</span>
               <div>
                 <label
-                  style={{ fontSize: 10, color: "#6a6a8a", display: "block", marginBottom: 4 }}
+                  style={{
+                    fontSize: 10,
+                    color: "var(--ds-text-muted)",
+                    display: "block",
+                    marginBottom: 4,
+                  }}
                 >
                   Minuten
                 </label>
@@ -391,11 +406,11 @@ export default function MobileTimePage() {
                   placeholder="00"
                   style={{
                     width: 70,
-                    background: "#0d0d1a",
-                    border: "1px solid #1e1e3a",
+                    background: "var(--ds-surface-2)",
+                    border: "1px solid var(--ds-border)",
                     borderRadius: 10,
                     padding: "10px",
-                    color: "#e8e8f0",
+                    color: "var(--ds-text)",
                     fontSize: 22,
                     textAlign: "center",
                     outline: "none",
@@ -416,11 +431,11 @@ export default function MobileTimePage() {
                   alignItems: "center",
                   gap: 8,
                   padding: "10px 12px",
-                  background: "#ef444420",
-                  border: "1px solid #ef444430",
+                  background: "hsla(0, 60%, 50%, 0.13)",
+                  border: "1px solid hsla(0, 60%, 50%, 0.19)",
                   borderRadius: 10,
                   fontSize: 13,
-                  color: "#ef4444",
+                  color: "var(--signal-danger-500)",
                 }}
               >
                 <AlertCircle size={15} />
@@ -431,7 +446,7 @@ export default function MobileTimePage() {
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#ef4444",
+                    color: "var(--signal-danger-500)",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
@@ -452,11 +467,11 @@ export default function MobileTimePage() {
                   alignItems: "center",
                   gap: 8,
                   padding: "10px 12px",
-                  background: "#f59e0b20",
-                  border: "1px solid #f59e0b30",
+                  background: "hsla(40, 70%, 45%, 0.13)",
+                  border: "1px solid hsla(40, 70%, 45%, 0.19)",
                   borderRadius: 10,
                   fontSize: 12,
-                  color: "#f59e0b",
+                  color: "var(--signal-warning-500)",
                 }}
               >
                 <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} />
@@ -470,11 +485,11 @@ export default function MobileTimePage() {
               style={
                 {
                   width: "100%",
-                  background: "#0d0d1a",
-                  border: "1px solid #1e1e3a",
+                  background: "var(--ds-surface-2)",
+                  border: "1px solid var(--ds-border)",
                   borderRadius: 10,
                   padding: "11px 14px",
-                  color: "#e8e8f0",
+                  color: "var(--ds-text)",
                   fontSize: 14,
                   outline: "none",
                   boxSizing: "border-box",
@@ -489,7 +504,7 @@ export default function MobileTimePage() {
                   left: 12,
                   top: "50%",
                   transform: "translateY(-50%)",
-                  color: "#6a6a8a",
+                  color: "var(--ds-text-muted)",
                 }}
               />
               <input
@@ -499,11 +514,11 @@ export default function MobileTimePage() {
                 style={
                   {
                     width: "100%",
-                    background: "#0d0d1a",
-                    border: "1px solid #1e1e3a",
+                    background: "var(--ds-surface-2)",
+                    border: "1px solid var(--ds-border)",
                     borderRadius: 10,
                     padding: "11px 14px 11px 34px",
-                    color: "#e8e8f0",
+                    color: "var(--ds-text)",
                     fontSize: 14,
                     outline: "none",
                     boxSizing: "border-box",
@@ -517,7 +532,12 @@ export default function MobileTimePage() {
               style={{
                 width: "100%",
                 padding: "13px",
-                background: currentSecs > 0 ? (saved ? "#22c55e" : "#6366f1") : "#1e1e3a",
+                background:
+                  currentSecs > 0
+                    ? saved
+                      ? "var(--signal-success-500)"
+                      : "var(--brand-500)"
+                    : "var(--ds-border)",
                 border: "none",
                 borderRadius: 12,
                 color: "#fff",
@@ -552,7 +572,7 @@ export default function MobileTimePage() {
             <div
               style={{
                 fontSize: 11,
-                color: "#6a6a8a",
+                color: "var(--ds-text-muted)",
                 textTransform: "uppercase",
                 letterSpacing: "0.4px",
                 marginBottom: 10,
@@ -568,17 +588,20 @@ export default function MobileTimePage() {
                   justifyContent: "space-between",
                   alignItems: "center",
                   padding: "8px 0",
-                  borderBottom: "1px solid #0e0e20",
+                  borderBottom: "1px solid hsl(230, 10%, 12%)",
                   fontSize: 13,
                 }}
               >
                 <div>
-                  <span style={{ color: "#c0c0d8" }}>{e.description}</span>
+                  <span style={{ color: "hsl(230, 8%, 80%)" }}>{e.description}</span>
                   {e.matter && (
-                    <span style={{ color: "#6a6a8a", fontSize: 11 }}> · {e.matter}</span>
+                    <span style={{ color: "var(--ds-text-muted)", fontSize: 11 }}>
+                      {" "}
+                      · {e.matter}
+                    </span>
                   )}
                 </div>
-                <span style={{ color: "#6366f1", fontWeight: 600 }}>
+                <span style={{ color: "var(--brand-500)", fontWeight: 600 }}>
                   {formatDuration(e.duration)}
                 </span>
               </div>

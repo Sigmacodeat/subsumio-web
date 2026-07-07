@@ -167,14 +167,14 @@ export default function MobileNotePage() {
           textAlign: "center",
         }}
       >
-        <CheckCircle2 size={48} style={{ color: "#22c55e", marginBottom: 16 }} />
-        <div style={{ fontSize: 18, fontWeight: 600, color: "#e8e8f0", marginBottom: 8 }}>
+        <CheckCircle2 size={48} style={{ color: "var(--signal-success-500)", marginBottom: 16 }} />
+        <div style={{ fontSize: 18, fontWeight: 600, color: "var(--ds-text)", marginBottom: 8 }}>
           Notiz gespeichert
         </div>
         <div
           style={{
             fontSize: 13,
-            color: "#8a8aa8",
+            color: "var(--ds-text-subtle)",
             marginBottom: 6,
             maxWidth: 280,
             lineHeight: 1.5,
@@ -183,7 +183,7 @@ export default function MobileNotePage() {
           {saved.text.slice(0, 120)}
           {saved.text.length > 120 ? "…" : ""}
         </div>
-        <div style={{ fontSize: 11, color: "#4a4a6a", marginBottom: 28 }}>
+        <div style={{ fontSize: 11, color: "hsl(230, 8%, 35%)", marginBottom: 28 }}>
           {new Date(saved.timestamp).toLocaleString("de-AT")}
         </div>
         <div style={{ display: "flex", gap: 10 }}>
@@ -191,7 +191,7 @@ export default function MobileNotePage() {
             onClick={() => setSaved(null)}
             style={{
               padding: "10px 20px",
-              background: "#6366f1",
+              background: "var(--brand-500)",
               border: "none",
               borderRadius: 10,
               color: "#fff",
@@ -206,10 +206,10 @@ export default function MobileNotePage() {
             href={`/dashboard/pages/${saved.slug}`}
             style={{
               padding: "10px 20px",
-              background: "#1e1e3a",
-              border: "1px solid #2e2e5a",
+              background: "var(--ds-border)",
+              border: "1px solid hsl(230, 10%, 30%)",
               borderRadius: 10,
-              color: "#c0c0d8",
+              color: "hsl(230, 8%, 80%)",
               fontSize: 14,
               textDecoration: "none",
             }}
@@ -223,18 +223,23 @@ export default function MobileNotePage() {
 
   return (
     <div
-      style={{ display: "flex", flexDirection: "column", height: "100%", background: "#06060f" }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        background: "var(--ds-bg)",
+      }}
     >
       {/* Header */}
       <div
         style={{
           padding: "14px 16px 12px",
-          background: "#0a0a18",
-          borderBottom: "1px solid #1e1e3a",
+          background: "var(--ds-surface)",
+          borderBottom: "1px solid var(--ds-border)",
         }}
       >
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: "#e8e8f0" }}>Schnellnotiz</h1>
-        <p style={{ fontSize: 12, color: "#6a6a8a", marginTop: 2 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--ds-text)" }}>Schnellnotiz</h1>
+        <p style={{ fontSize: 12, color: "var(--ds-text-muted)", marginTop: 2 }}>
           Gesprochen oder getippt — direkt ins Brain
         </p>
       </div>
@@ -258,11 +263,11 @@ export default function MobileNotePage() {
           style={
             {
               width: "100%",
-              background: "#0d0d1a",
-              border: "1px solid #1e1e3a",
+              background: "var(--ds-surface-2)",
+              border: "1px solid var(--ds-border)",
               borderRadius: 12,
               padding: "12px 14px",
-              color: "#e8e8f0",
+              color: "var(--ds-text)",
               fontSize: 15,
               lineHeight: 1.6,
               resize: "none",
@@ -288,9 +293,9 @@ export default function MobileNotePage() {
             width: "100%",
             padding: "16px",
             borderRadius: 14,
-            background: recording ? "#ef444420" : "#6366f120",
-            border: `2px solid ${recording ? "#ef4444" : "#6366f1"}`,
-            color: recording ? "#ef4444" : "#6366f1",
+            background: recording ? "hsla(0, 60%, 50%, 0.13)" : "hsla(230, 60%, 52%, 0.13)",
+            border: `2px solid ${recording ? "var(--signal-danger-500)" : "var(--brand-500)"}`,
+            color: recording ? "var(--signal-danger-500)" : "var(--brand-500)",
             fontSize: 14,
             fontWeight: 600,
             cursor: "pointer",
@@ -317,7 +322,7 @@ export default function MobileNotePage() {
           <label
             style={{
               fontSize: 11,
-              color: "#6a6a8a",
+              color: "var(--ds-text-muted)",
               display: "flex",
               alignItems: "center",
               gap: 4,
@@ -333,11 +338,11 @@ export default function MobileNotePage() {
             style={
               {
                 width: "100%",
-                background: "#0d0d1a",
-                border: "1px solid #1e1e3a",
+                background: "var(--ds-surface-2)",
+                border: "1px solid var(--ds-border)",
                 borderRadius: 10,
                 padding: "9px 12px",
-                color: "#e8e8f0",
+                color: "var(--ds-text)",
                 fontSize: 14,
                 outline: "none",
                 boxSizing: "border-box",
@@ -351,7 +356,7 @@ export default function MobileNotePage() {
           <label
             style={{
               fontSize: 11,
-              color: "#6a6a8a",
+              color: "var(--ds-text-muted)",
               display: "flex",
               alignItems: "center",
               gap: 4,
@@ -367,11 +372,11 @@ export default function MobileNotePage() {
             style={
               {
                 width: "100%",
-                background: "#0d0d1a",
-                border: "1px solid #1e1e3a",
+                background: "var(--ds-surface-2)",
+                border: "1px solid var(--ds-border)",
                 borderRadius: 10,
                 padding: "9px 12px",
-                color: "#e8e8f0",
+                color: "var(--ds-text)",
                 fontSize: 14,
                 outline: "none",
                 boxSizing: "border-box",
@@ -386,14 +391,14 @@ export default function MobileNotePage() {
               display: "flex",
               alignItems: "center",
               gap: 6,
-              background: "#ef444415",
-              border: "1px solid #ef444430",
+              background: "hsla(0, 60%, 50%, 0.08)",
+              border: "1px solid hsla(0, 60%, 50%, 0.19)",
               borderRadius: 8,
               padding: "8px 12px",
             }}
           >
-            <X size={14} style={{ color: "#ef4444" }} />
-            <span style={{ fontSize: 13, color: "#ef4444" }}>{error}</span>
+            <X size={14} style={{ color: "var(--signal-danger-500)" }} />
+            <span style={{ fontSize: 13, color: "var(--signal-danger-500)" }}>{error}</span>
           </div>
         )}
 
@@ -405,9 +410,9 @@ export default function MobileNotePage() {
             width: "100%",
             padding: "14px",
             borderRadius: 14,
-            background: text.trim() ? "#6366f1" : "#1e1e3a",
+            background: text.trim() ? "var(--brand-500)" : "var(--ds-border)",
             border: "none",
-            color: text.trim() ? "#fff" : "#6a6a8a",
+            color: text.trim() ? "#fff" : "var(--ds-text-muted)",
             fontSize: 15,
             fontWeight: 600,
             cursor: text.trim() ? "pointer" : "not-allowed",
