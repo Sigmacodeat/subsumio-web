@@ -35,3 +35,22 @@
 		import proxy-transport
 	}
 }
+
+# Sanicura shop — auto-HTTPS reverse proxy
+sanicura.com {
+    encode zstd gzip br
+    handle {
+        reverse_proxy sanicura:4173 {
+            flush_interval -1
+            transport http {
+                read_timeout 300s
+                write_timeout 300s
+                dial_timeout 30s
+            }
+        }
+    }
+}
+
+www.sanicura.com {
+    redir https://sanicura.com{uri} permanent
+}
