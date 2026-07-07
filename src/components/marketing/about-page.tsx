@@ -1,10 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Shield, Brain, Globe, Heart } from "lucide-react";
 import { p, type Lang } from "@/content/site";
 import { Section, SectionHeading, PageHero, CTASection, ContentCard } from "./chrome";
-import { AnimatedCounter } from "./motion-system";
+import { AnimatedCounter, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
 const _deAbout = {
   badge: "Über Subsumio",
@@ -105,61 +104,44 @@ export default function AboutPage({ lang }: { lang: Lang }) {
     <>
       <PageHero badge={c.badge} h1a={c.h1a} h1b={c.h1b} sub={c.sub} />
 
-      <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
           <SectionHeading title={c.missionTitle} tone="light" />
-          <motion.p
-            className="mx-auto max-w-3xl text-center text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5 }}
-          >
-            {c.missionText}
-          </motion.p>
+          <Reveal variant="up" delay={0.1}>
+            <p className="mx-auto max-w-3xl text-center text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
+              {c.missionText}
+            </p>
+          </Reveal>
         </div>
       </Section>
 
-      <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <SectionHeading title={c.valuesTitle} tone="light" />
-          <div className="grid gap-4 sm:grid-cols-2">
-            {c.values.map((v, i) => {
+          <StaggerContainer className="grid gap-4 sm:grid-cols-2" stagger={0.08}>
+            {c.values.map((v) => {
               const Icon = ICON_MAP[v.icon as keyof typeof ICON_MAP] ?? Brain;
               return (
-                <motion.div
-                  key={v.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.15 }}
-                  transition={{ duration: 0.45, delay: i * 0.08 }}
-                >
+                <StaggerItem key={v.title}>
                   <ContentCard icon={Icon} title={v.title} desc={v.desc} />
-                </motion.div>
+                </StaggerItem>
               );
             })}
-          </div>
+          </StaggerContainer>
         </div>
       </Section>
 
-      <Section tone="dark" className="relative overflow-hidden px-4 py-16 sm:px-6 lg:px-8">
+      <Section tone="dark" className="relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={c.statsTitle} tone="dark" />
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-            {c.stats.map((s, i) => {
+          <StaggerContainer className="grid grid-cols-2 gap-6 md:grid-cols-4" stagger={0.06}>
+            {c.stats.map((s) => {
               const num = parseFloat(s.value.replace(/[^0-9.]/g, ""));
               const suffix = s.value.replace(/[0-9.,]/g, "");
               const prefix = s.value.match(/^[^0-9]*/)?.[0] ?? "";
               const isNumeric = !isNaN(num) && num > 0;
               return (
-                <motion.div
-                  key={s.label}
-                  className="text-center"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.15 }}
-                  transition={{ duration: 0.45, delay: i * 0.06 }}
-                >
+                <StaggerItem key={s.label} className="text-center">
                   <div className="brand-text text-3xl font-bold md:text-4xl">
                     {isNumeric ? (
                       <AnimatedCounter
@@ -173,10 +155,10 @@ export default function AboutPage({ lang }: { lang: Lang }) {
                     )}
                   </div>
                   <div className="mt-1 text-xs [color:var(--mk-text-muted)]">{s.label}</div>
-                </motion.div>
+                </StaggerItem>
               );
             })}
-          </div>
+          </StaggerContainer>
         </div>
       </Section>
 

@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
 import { JsonLd, breadcrumbLd, organizationLd } from "@/components/seo/jsonld";
 import { keywordsFor } from "@/lib/seo-keywords";
-import {
-  Section,
-  BadgePill,
-  CTASection,
-  H1_CLASS,
-  H2_CTA_CLASS,
-} from "@/components/marketing/chrome";
+import BenchmarkMethodologyPage from "@/components/marketing/benchmark-methodology-page";
 
 export const metadata: Metadata = {
   title: "Benchmark-Methodik — Subsumio KI-Kanzleisoftware",
@@ -75,112 +69,7 @@ export default function BenchmarkMethodologyPage() {
           ],
         }}
       />
-      <div data-tone="light" className="min-h-screen [background:var(--mk-bg)]">
-        <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
-          <article className="mx-auto max-w-3xl">
-            <div className="mb-12">
-              <BadgePill>Methodik</BadgePill>
-              <h1 className={`${H1_CLASS} mb-4`}>Benchmark-Methodik: Wie wir Subsumio messen</h1>
-              <p className="text-lg text-pretty [color:var(--mk-text-muted)]">
-                Transparente, reproduzierbare Benchmarks für KI-Kanzleisoftware. Keine
-                Marketing-Zahlen — jede Metrik ist nachvollziehbar definiert.
-              </p>
-            </div>
-
-            <section className="mb-12">
-              <h2 className={`${H2_CTA_CLASS} mb-4`}>Getestete Metriken</h2>
-              <div className="space-y-6">
-                <div>
-                  <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
-                    Recall@5 — 97,9 %
-                  </h3>
-                  <p className="text-[color:var(--mk-text-muted)]">
-                    Von 500 rechtlichen Fragen (AT/DE/CH) enthalten die Top-5-Retrievergebnisse in
-                    97,9 % der Fälle das korrekte Dokument. Gemessen gegen ein Gold-Standard-Set,
-                    das von Juristen annotiert wurde. Ein Treffer bedeutet: das relevante Dokument
-                    ist unter den ersten 5 Ergebnissen.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
-                    Hallucination-Rate — &lt; 2 %
-                  </h3>
-                  <p className="text-[color:var(--mk-text-muted)]">
-                    Eine Antwort gilt als halluziniert, wenn sie eine Fundstelle angibt, die im
-                    Quelldokument nicht existiert oder inhaltlich falsch wiedergibt. Gemessen an 200
-                    zufällig gezogenen Antworten aus dem Produktivsystem. Jede Antwort wird von zwei
-                    unabhängigen Reviewern geprüft.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
-                    End-to-End-Latenz (p95) — &lt; 3s
-                  </h3>
-                  <p className="text-[color:var(--mk-text-muted)]">
-                    Zeit vom Absenden der Frage bis zur vollständigen Antwort mit Fundstellen.
-                    Gemessen am 95. Perzentil über 1000 Requests im gehosteten EU-Cloud-Setup.
-                    On-Premise-Latenz hängt von der Hardware ab.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            <section className="mb-12">
-              <h2 className={`${H2_CTA_CLASS} mb-4`}>Test-Korpus</h2>
-              <p className="mb-4 text-[color:var(--mk-text-muted)]">
-                Der Benchmark-Korpus umfasst 500+ rechtliche Fragen aus folgenden Rechtsgebieten:
-              </p>
-              <ul className="ml-6 list-disc space-y-2 text-[color:var(--mk-text-muted)]">
-                <li>Zivilrecht (BGB, ABGB, ZGB) — 200 Fragen</li>
-                <li>Zivilprozessrecht (ZPO DE, ZPO AT, ZPO CH) — 100 Fragen</li>
-                <li>Handels- und Gesellschaftsrecht — 80 Fragen</li>
-                <li>Arbeitsrecht — 60 Fragen</li>
-                <li>Verwaltungsrecht — 60 Fragen</li>
-              </ul>
-              <p className="mt-4 text-[color:var(--mk-text-muted)]">
-                Jede Frage wurde von mindestens zwei Juristen (mindestens 2. Staatsexamen /
-                österreichisches Rechtspraktikum) annotiert. Disagreements wurden durch ein drittes
-                Review geklärt.
-              </p>
-            </section>
-
-            <section className="mb-12">
-              <h2 className={`${H2_CTA_CLASS} mb-4`}>Reproduzierbarkeit</h2>
-              <p className="text-[color:var(--mk-text-muted)]">
-                Die Benchmark-Ergebnisse sind mit folgenden Komponenten reproduzierbar:
-              </p>
-              <ul className="mt-4 ml-6 list-disc space-y-2 text-[color:var(--mk-text-muted)]">
-                <li>Embedding-Modell: dokumentiert pro Benchmark-Lauf</li>
-                <li>Retriever: Hybrid (BM25 + Dense), konfiguration dokumentiert</li>
-                <li>Reranker: dokumentiert, falls aktiv</li>
-                <li>Test-Set: CC-BY 4.0 lizenziert, verfügbar auf Anfrage</li>
-              </ul>
-            </section>
-
-            <section className="mb-12">
-              <h2 className={`${H2_CTA_CLASS} mb-4`}>Limitationen</h2>
-              <ul className="ml-6 list-disc space-y-2 text-[color:var(--mk-text-muted)]">
-                <li>
-                  Der Korpus deckt DACH-Recht ab — Ergebnisse sind nicht auf andere Rechtsgebiete
-                  übertragbar.
-                </li>
-                <li>Recall@5 misst das Retrieval, nicht die Qualität der generierten Antwort.</li>
-                <li>
-                  Die Hallucination-Rate ist ein Sample-basierter Schätzer (200 von ~10.000
-                  Antworten).
-                </li>
-                <li>Latenz hängt von Netzwerk, Hardware und Auslastung ab.</li>
-              </ul>
-            </section>
-          </article>
-        </Section>
-        <CTASection
-          title="Bereit für belegte KI-Antworten?"
-          sub="Starte deine 14-tägige Testphase — keine Kreditkarte nötig."
-          href="/signup"
-          label="14 Tage testen"
-        />
-      </div>
+      <BenchmarkMethodologyPage />
     </>
   );
 }

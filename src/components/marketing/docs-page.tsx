@@ -139,7 +139,7 @@ function StickyCategoryNav({
                 }`}
               >
                 {cat.title}
-                <span className="ml-1 text-[10px] opacity-60">{cat.count}</span>
+                <span className="ml-1 text-[10px] [color:var(--mk-text-muted)]">{cat.count}</span>
               </a>
             ))}
           </nav>

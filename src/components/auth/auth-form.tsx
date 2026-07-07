@@ -447,7 +447,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
               {m.switchText}{" "}
               <Link
                 href={`${p(lang, mode === "login" ? "/signup" : "/login")}${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`}
-                className="font-medium text-[var(--brand-primary)] hover:underline"
+                className="font-medium text-[var(--brand-text)] hover:underline"
               >
                 {m.switchCta}
               </Link>

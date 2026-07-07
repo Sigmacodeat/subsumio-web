@@ -477,7 +477,7 @@ function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
             </Link>
             <button
               onClick={handleDismiss}
-              className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 [color:var(--mk-text-subtle)] transition-colors hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+              className="absolute top-1/2 right-3 flex min-h-[24px] min-w-[24px] -translate-y-1/2 items-center justify-center rounded p-1 [color:var(--mk-text-subtle)] transition-colors hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
               aria-label={UI_STRINGS[lang].dismissAnnouncement}
             >
               <X size={12} />
@@ -741,11 +741,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
             aria-label={UI_STRINGS[lang].ariaMainNav}
           >
             <div className="flex items-center justify-between gap-4">
-              <Link
-                href={p(lang, "")}
-                aria-label={UI_STRINGS[lang].ariaLanguage}
-                className="shrink-0"
-              >
+              <Link href={p(lang, "")} aria-label={UI_STRINGS[lang].ariaHome} className="shrink-0">
                 <BrandLogo />
               </Link>
 
@@ -1005,7 +1001,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                   </Button>
                 </Link>
                 {/* Compact CTA icon for xs screens */}
-                <Link href={p(lang, "/signup")} className="sm:hidden">
+                <Link href={p(lang, "/signup")} className="sm:hidden" aria-label={nav.cta}>
                   <Button size="sm" variant="primary" className="group min-h-[36px] px-3">
                     <ChevronRight
                       size={16}
@@ -1364,7 +1360,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="LinkedIn"
-                className="hover:brand-text [color:var(--mk-text-subtle)] transition-colors"
+                className="hover:brand-text flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-colors"
               >
                 <SocialLinkedIn size={16} />
               </a>
@@ -1373,7 +1369,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="GitHub"
-                className="hover:brand-text [color:var(--mk-text-subtle)] transition-colors"
+                className="hover:brand-text flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-colors"
               >
                 <SocialGitHub size={16} />
               </a>
@@ -1382,7 +1378,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="X (Twitter)"
-                className="hover:brand-text [color:var(--mk-text-subtle)] transition-colors"
+                className="hover:brand-text flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-colors"
               >
                 <SocialX size={16} />
               </a>
@@ -1680,9 +1676,13 @@ export function ContentCard({
   );
 }
 
-/** Standard page hero — badge, two-part H1 (title + accent claim), subtitle.
- *  Uses ClipReveal for the H1 and motion for badge + subtitle.
- *  All sub-pages should use this instead of rolling their own hero markup. */
+/** Standard page hero — badge, two-part H1 (title + accent claim), subtitle,
+ *  optional CTA actions, optional badge icon, optional visual (right column).
+ *  Uses ClipReveal for the H1 and motion for badge + subtitle + actions.
+ *  All sub-pages should use this instead of rolling their own hero markup.
+ *
+ *  When `visual` is provided, renders a two-column split (text center on mobile,
+ *  text-left / visual-right on lg). When omitted, renders centered single-column. */
 export function PageHero({
   badge,
   h1a,
@@ -1690,6 +1690,9 @@ export function PageHero({
   sub,
   tone = "light",
   accentVariant = "brand",
+  icon: BadgeIcon,
+  actions,
+  visual,
 }: {
   badge?: string;
   h1a: string;
@@ -1697,6 +1700,9 @@ export function PageHero({
   sub: string;
   tone?: Tone;
   accentVariant?: "brand" | "gradient" | "gradient-premium";
+  icon?: LucideIcon;
+  actions?: React.ReactNode;
+  visual?: React.ReactNode;
 }) {
   const accentClass =
     accentVariant === "gradient"
@@ -1705,37 +1711,73 @@ export function PageHero({
         ? "gradient-text-premium glow-text"
         : "brand-text";
 
-  return (
-    <Section tone={tone} className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl text-center">
-        {badge && (
-          <motion.span
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, ease: EASE.out }}
-          >
-            <BadgePill>{badge}</BadgePill>
-          </motion.span>
-        )}
-        <ClipReveal delay={0.1} duration={0.7} direction="up">
-          <h1 className={H1_CLASS}>
-            {h1a}
-            {h1b && (
-              <>
-                <br />
-                <span className={accentClass}>{h1b}</span>
-              </>
-            )}
-          </h1>
-        </ClipReveal>
+  const textCol = (
+    <div className={visual ? "text-center lg:text-left" : "text-center"}>
+      {badge && (
+        <motion.span
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, ease: EASE.out }}
+          className={visual ? "inline-flex lg:mx-0" : "inline-flex"}
+        >
+          <BadgePill>
+            {BadgeIcon && <BadgeIcon size={14} className="brand-text" />}
+            {badge}
+          </BadgePill>
+        </motion.span>
+      )}
+      <ClipReveal delay={0.1} duration={0.7} direction="up">
+        <h1 className={H1_CLASS}>
+          {h1a}
+          {h1b && (
+            <>
+              <br />
+              <span className={accentClass}>{h1b}</span>
+            </>
+          )}
+        </h1>
+      </ClipReveal>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.55, delay: 0.1, ease: EASE.out }}
+      >
+        <HeroSub>{sub}</HeroSub>
+      </motion.div>
+      {actions && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.1, ease: EASE.out }}
+          transition={{ duration: 0.55, delay: 0.2, ease: EASE.out }}
+          className={`mt-8 flex flex-col items-center gap-3 sm:flex-row ${visual ? "lg:justify-start" : "justify-center"}`}
         >
-          <HeroSub>{sub}</HeroSub>
+          {actions}
         </motion.div>
-      </div>
+      )}
+    </div>
+  );
+
+  if (visual) {
+    return (
+      <Section tone={tone} className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[55%_45%]">
+          {textCol}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, ease: EASE.out, delay: 0.1 }}
+            className="relative order-first lg:order-last"
+          >
+            {visual}
+          </motion.div>
+        </div>
+      </Section>
+    );
+  }
+
+  return (
+    <Section tone={tone} className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl text-center">{textCol}</div>
     </Section>
   );
 }

@@ -700,6 +700,7 @@ export function SplitTextReveal({
       variants={container}
       className={className}
       aria-label={children.replace(/\n/g, " ")}
+      role="text"
       style={{ willChange: "transform, opacity" }}
     >
       {lineData.map((line) => (

@@ -1041,6 +1041,7 @@ function StickyCTA({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
       transition={{ duration: 0.3, ease: EASE.out }}
       className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 px-4 pb-[env(safe-area-inset-bottom)]"
       aria-hidden={!visible}
+      {...(!visible ? { inert: true } : {})}
     >
       <Link href={p(lang, "/signup")}>
         <div className="brand-border-strong brand-soft-strong flex items-center gap-3 rounded-full border px-5 py-3 shadow-2xl backdrop-blur-md">

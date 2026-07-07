@@ -15,9 +15,10 @@ import {
   CTASection,
   H1_CLASS,
   H2_CTA_CLASS,
+  BadgePill,
 } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { GlowCard, ClipReveal, EASE } from "./motion-system";
+import { GlowCard, ClipReveal, EASE, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
 /** Per-vertical hero motif: a small floating constellation built from this
  *  vertical's own first 3 feature icons, so each of the 4 /solutions/* pages
@@ -55,13 +56,12 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           <motion.span
-            className="brand-soft brand-text brand-border mb-6 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, ease: EASE.out }}
+            className="inline-flex"
           >
-            <span className="brand-bg h-1.5 w-1.5 rounded-full" />
-            {content.badge}
+            <BadgePill>{content.badge}</BadgePill>
           </motion.span>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
             <h1 className={H1_CLASS}>
@@ -107,15 +107,9 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={content.painsTitle} tone="light" />
-          <div className="grid gap-4 md:grid-cols-3">
-            {content.pains.map((pain, i) => (
-              <motion.div
-                key={pain.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.15 }}
-                transition={{ duration: 0.45, delay: i * 0.08, ease: EASE.out }}
-              >
+          <StaggerContainer className="grid gap-4 md:grid-cols-3" stagger={0.08}>
+            {content.pains.map((pain) => (
+              <StaggerItem key={pain.title}>
                 <GlowCard
                   glowColor="var(--signal-rose)"
                   intensity={0.1}
@@ -129,9 +123,9 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
                     {pain.desc}
                   </p>
                 </GlowCard>
-              </motion.div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </Section>
 
@@ -139,17 +133,11 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <SectionHeading title={content.featuresTitle} tone="light" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {content.features.map((feat, i) => {
+          <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" stagger={0.06}>
+            {content.features.map((feat) => {
               const Icon = ICONS[feat.icon] ?? ICONS.Layers;
               return (
-                <motion.div
-                  key={feat.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.15 }}
-                  transition={{ duration: 0.45, delay: (i % 4) * 0.06, ease: EASE.out }}
-                >
+                <StaggerItem key={feat.title}>
                   <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-5 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-lg">
                     <div
                       className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl border transition-transform duration-300 hover:scale-110 ${accentTile("violet", "light")}`}
@@ -163,31 +151,27 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
                       {feat.desc}
                     </p>
                   </GlowCard>
-                </motion.div>
+                </StaggerItem>
               );
             })}
-          </div>
+          </StaggerContainer>
         </div>
       </Section>
 
       {/* Proof band */}
       <Section tone="dark" className="relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.15 }}
-            transition={{ duration: 0.5, ease: EASE.out }}
-            className="rounded-3xl border [border-color:var(--mk-border)] p-8 [background:var(--mk-surface)] md:p-12"
-          >
-            <div className="brand-soft brand-border mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border">
-              <CheckCircle size={24} className="brand-text" />
+          <Reveal variant="scale" delay={0.1}>
+            <div className="rounded-3xl border [border-color:var(--mk-border)] p-8 [background:var(--mk-surface)] md:p-12">
+              <div className="brand-soft brand-border mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border">
+                <CheckCircle size={24} className="brand-text" />
+              </div>
+              <h2 className={`${H2_CTA_CLASS} mb-4`}>{content.proofTitle}</h2>
+              <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
+                {content.proof}
+              </p>
             </div>
-            <h2 className={`${H2_CTA_CLASS} mb-4`}>{content.proofTitle}</h2>
-            <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
-              {content.proof}
-            </p>
-          </motion.div>
+          </Reveal>
         </div>
       </Section>
 

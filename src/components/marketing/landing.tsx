@@ -530,7 +530,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                     <th className="py-3 pr-4 text-left font-semibold text-[color:var(--mk-text)]">
                       {ui.comparisonFeature}
                     </th>
-                    <th className="rounded-lg px-4 py-3 text-left font-semibold text-[color:var(--brand-text)] [background:color-mix(in_srgb,var(--brand-primary)_6%,transparent)]">
+                    <th className="border-l-2 border-[color:var(--brand-primary)] px-4 py-3 text-left font-semibold text-[color:var(--brand-text)]">
                       Subsumio
                     </th>
                     <th className="py-3 pl-4 text-left font-semibold text-[color:var(--mk-text-subtle)]">
@@ -551,7 +551,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                       <td className="py-4 pr-4 font-medium text-[color:var(--mk-text)]">
                         {row.feature}
                       </td>
-                      <td className="rounded-lg px-4 py-4 text-[color:var(--mk-text-muted)] [background:color-mix(in_srgb,var(--brand-primary)_4%,transparent)]">
+                      <td className="border-l-2 border-[color:var(--brand-primary)]/30 px-4 py-4 text-[color:var(--mk-text-muted)]">
                         <span className="inline-flex items-start gap-2">
                           <Check
                             size={16}
@@ -669,6 +669,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           data-tone="dark"
           className="fixed right-0 bottom-0 left-0 z-50 border-t [border-color:var(--mk-border)] pb-[env(safe-area-inset-bottom)] backdrop-blur-lg [background:color-mix(in_srgb,var(--mk-surface)_92%,transparent)]"
           aria-hidden={!stickyVisible}
+          {...(!stickyVisible ? { inert: true } : {})}
         >
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
             <div className="flex items-center gap-3">

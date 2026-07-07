@@ -153,7 +153,7 @@ export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset";
                   </p>
                   <a
                     href={devResetUrl}
-                    className="text-xs break-all text-[var(--brand-primary)] hover:underline"
+                    className="text-xs break-all text-[var(--brand-text)] hover:underline"
                   >
                     {devResetUrl}
                   </a>
@@ -161,7 +161,7 @@ export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset";
               )}
               <Link
                 href={p(lang, "/login")}
-                className="inline-flex items-center gap-1.5 text-sm text-[var(--brand-primary)] hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm text-[var(--brand-text)] hover:underline"
               >
                 {mode === "reset"
                   ? ((COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de).reset

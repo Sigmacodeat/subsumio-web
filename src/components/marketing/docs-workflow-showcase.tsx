@@ -213,8 +213,10 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
                       </span>
                     </div>
                     <span
-                      className={`brand-text brand-soft flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold transition-opacity ${
-                        active ? "opacity-100" : "opacity-40"
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold transition-colors ${
+                        active
+                          ? "brand-text brand-soft"
+                          : "[color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"
                       }`}
                     >
                       0{i + 1}

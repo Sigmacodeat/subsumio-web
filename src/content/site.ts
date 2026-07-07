@@ -2464,6 +2464,7 @@ export const LANDING = {
 const _uiStringsDe: Record<string, string> = {
   skipToContent: "Zum Inhalt springen",
   ariaMainNav: "Hauptnavigation",
+  ariaHome: "Subsumio Startseite",
   ariaMobileNav: "Mobile Navigation",
   ariaCloseMenu: "Menü schließen",
   ariaLanguage: "Sprache",
@@ -2665,6 +2666,7 @@ const _uiStringsDe: Record<string, string> = {
 const _uiStringsEn: Record<string, string> = {
   skipToContent: "Skip to content",
   ariaMainNav: "Main navigation",
+  ariaHome: "Subsumio home",
   ariaMobileNav: "Mobile navigation",
   ariaCloseMenu: "Close menu",
   ariaLanguage: "Language",

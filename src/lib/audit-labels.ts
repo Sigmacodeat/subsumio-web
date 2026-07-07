@@ -153,7 +153,13 @@ export type AuditAction =
   | "bea.retry"
   | "autopilot.run"
   | "system.alert"
-  | "system.integrity_check";
+  | "system.integrity_check"
+  | "rciid.case_submitted"
+  | "rciid.webhook_received"
+  | "rciid.status_updated"
+  | "rciid.report_downloaded"
+  | "rciid.billing_auto"
+  | "rciid.wallet_detected";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -241,6 +247,12 @@ const ACTION_LABELS: Record<string, string> = {
   "litigation.create": "Verfahren angelegt",
   "litigation.update": "Verfahren aktualisiert",
   "litigation.delete": "Verfahren gelöscht",
+  "rciid.case_submitted": "RCIID Krypto-Forensik übermittelt",
+  "rciid.webhook_received": "RCIID Webhook empfangen",
+  "rciid.status_updated": "RCIID Status aktualisiert",
+  "rciid.report_downloaded": "RCIID Bericht heruntergeladen",
+  "rciid.billing_auto": "RCIID Forensik automatisch abgerechnet",
+  "rciid.wallet_detected": "Krypto-Wallet in Fall erkannt",
   "litigation.phase_advance": "Phase gewechselt",
   "litigation.step_update": "Schritt aktualisiert",
   "legal.commentary_synthesize": "Kommentierung synthetisiert",

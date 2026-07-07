@@ -680,8 +680,8 @@
   --mk-border: hsl(225, 12%, 24%);
   --mk-border-strong: hsl(225, 10%, 36%);
   --mk-text: hsl(220, 10%, 94%);
-  --mk-text-muted: hsl(220, 8%, 72%);
-  --mk-text-subtle: hsl(220, 8%, 64%);
+  --mk-text-muted: hsl(220, 8%, 76%);
+  --mk-text-subtle: hsl(220, 8%, 72%);
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 hsla(0, 0%, 100%, 0.025) inset;
   --brand-primary: hsl(230, 45%, 48%);
   --brand-primary-hover: hsl(230, 45%, 55%);
@@ -691,7 +691,7 @@
   --brand-gradient-from: var(--brand-400);
   --brand-gradient-via: hsl(260, 60%, 65%);
   --brand-gradient-to: hsl(255, 60%, 55%);
-  --brand-text: var(--brand-300);
+  --brand-text: var(--brand-200);
   --accent-premium: hsl(260, 60%, 75%);
   --accent-premium-soft: hsla(260, 60%, 75%, 0.1);
   --accent-premium-border: hsla(260, 60%, 75%, 0.22);

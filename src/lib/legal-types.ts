@@ -296,6 +296,40 @@ export interface CaseFrontmatter {
   }>;
   contradictions_checked_at?: string;
   contradiction_count?: number;
+  /** RCIID Krypto-Forensik Integration — Wallet-Adressen und Untersuchungsstatus */
+  crypto_forensics?: {
+    rciid_case_id?: string;
+    status?:
+      | "none"
+      | "submitted"
+      | "received"
+      | "investigating"
+      | "tracing"
+      | "analyzing"
+      | "reporting"
+      | "completed"
+      | "rejected";
+    wallets?: Array<{
+      address: string;
+      blockchain: string;
+      label?: string;
+      detected_at?: string;
+      detected_by?: "ai" | "manual";
+      source_document?: string;
+    }>;
+    submitted_at?: string;
+    completed_at?: string;
+    report_slug?: string;
+    billing_expense_id?: string;
+    pricing?: { amount: number; currency: string; type: "flat" | "hourly" };
+    progress_percent?: number;
+    current_phase?: string;
+    timeline?: Array<{
+      phase: string;
+      timestamp: string;
+      description: string;
+    }>;
+  };
 }
 
 export interface InvoiceExpenseEntry {

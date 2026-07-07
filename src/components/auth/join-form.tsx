@@ -121,7 +121,7 @@ export default function JoinForm({
               </div>
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-1.5 text-sm text-[var(--brand-primary)] hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm text-[var(--brand-text)] hover:underline"
               >
                 {t.toDashboard} <ArrowRight size={13} />
               </Link>
