@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu";
 
-export default function BenchmarkMethodologyPage() {
+export default function BenchmarkMethodologyRoute() {
   return (
     <>
       <JsonLd data={organizationLd()} />

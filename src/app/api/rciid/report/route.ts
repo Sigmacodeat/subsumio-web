@@ -33,7 +33,7 @@ export const POST = createHandler(
     try {
       if (body.format === "pdf") {
         const pdfBuffer = await downloadReportPdf(body.rciidCaseId);
-        return new Response(pdfBuffer, {
+        return new Response(new Uint8Array(pdfBuffer), {
           headers: {
             "Content-Type": "application/pdf",
             "Content-Disposition": `attachment; filename="rciid-report-${body.rciidCaseId}.pdf"`,
