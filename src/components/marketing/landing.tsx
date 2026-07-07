@@ -530,7 +530,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                     <th className="py-3 pr-4 text-left font-semibold text-[color:var(--mk-text)]">
                       {ui.comparisonFeature}
                     </th>
-                    <th className="border-l-2 border-[color:var(--brand-primary)] px-4 py-3 text-left font-semibold text-[color:var(--brand-text)]">
+                    <th className="px-4 py-3 text-left font-semibold text-[color:var(--brand-text)]">
                       Subsumio
                     </th>
                     <th className="py-3 pl-4 text-left font-semibold text-[color:var(--mk-text-subtle)]">
@@ -551,7 +551,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                       <td className="py-4 pr-4 font-medium text-[color:var(--mk-text)]">
                         {row.feature}
                       </td>
-                      <td className="border-l-2 border-[color:var(--brand-primary)]/30 px-4 py-4 text-[color:var(--mk-text-muted)]">
+                      <td className="px-4 py-4 text-[color:var(--mk-text)]">
                         <span className="inline-flex items-start gap-2">
                           <Check
                             size={16}
