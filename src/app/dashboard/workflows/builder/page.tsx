@@ -659,11 +659,11 @@ export default function WorkflowBuilderPage() {
                 rows={5}
                 style={{
                   width: "100%",
-                  background: "#0a0a18",
-                  border: "1px solid #1e1e3a",
+                  background: "var(--ds-surface-2)",
+                  border: "1px solid var(--ds-border)",
                   borderRadius: 5,
                   padding: "6px 8px",
-                  color: "#e8e8f0",
+                  color: "var(--ds-text)",
                   fontSize: 12,
                   resize: "vertical",
                 }}

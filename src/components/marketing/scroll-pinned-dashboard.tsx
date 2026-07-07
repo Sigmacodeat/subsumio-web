@@ -1,7 +1,7 @@
 "use client";
 
 // Scroll-pinned dashboard showcase — agency-level 2026 pattern.
-// As the user scrolls through a 200vh container, the dashboard stays pinned
+// As the user scrolls through a 150vh container, the dashboard stays pinned
 // (position: sticky) and gently zooms from 0.92→1 scale while a spring-smoothed
 // guided cursor glides to key interaction points. At scroll milestones (35%, 70%)
 // the dashboard view transitions (Matters → Brain → Deadlines).
@@ -11,7 +11,7 @@
 //   stiffness: 100, damping: 30, restDelta: 0.001
 // - Scale range 0.92→1 (Linear/Arc sweet spot — 0.88 was too aggressive)
 // - No blur filter (useSpring on string values is unreliable — caused stuck blur)
-// - Container 200vh (220vh was too long = boring middle section)
+// - Container 150vh (200vh was too long = boring middle section)
 // - Ease-out cubic interpolation via intermediate keyframes
 // - Cursor positions spring-smoothed for buttery glide
 //
@@ -164,8 +164,8 @@ export default function ScrollPinnedDashboard({
   }
 
   return (
-    <div ref={containerRef} style={{ height: "200vh" }} className="relative">
-      {/* Sticky inner — stays pinned while scrolling through 200vh */}
+    <div ref={containerRef} style={{ height: "150vh" }} className="relative">
+      {/* Sticky inner — stays pinned while scrolling through 150vh */}
       <div className="sticky top-0 flex h-screen flex-col items-center justify-center overflow-hidden">
         {/* Heading — fades out smoothly as you scroll */}
         <motion.div

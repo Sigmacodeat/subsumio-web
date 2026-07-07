@@ -1864,9 +1864,9 @@ const _landingDe = {
   ],
   h1a: "Deine Kanzlei vergisst.",
   h1b: "Subsumio nicht.",
-  heroTagline: "Das Kanzlei-Gedächtnis, das vorausdenkt — und jede Antwort belegt.",
+  heroTagline: "KI-Kanzleisoftware für Anwälte in AT · DE · CH — mit belegten Antworten.",
   h1Keyword: "KI-Kanzleisoftware & Anwaltssoftware mit belegten Antworten",
-  sub: "Nie wieder eine Frist übersehen. Nie wieder einen Widerspruch verpassen. Du fragst in normaler Sprache — Subsumio antwortet mit Fundstellen. Für Anwälte in AT, DE und CH.",
+  sub: "Nie wieder eine Frist übersehen. Du fragst in normaler Sprache — Subsumio antwortet mit Fundstellen.",
   heroTrustItems: [
     { icon: "CreditCard", label: "Keine Kreditkarte" },
     { icon: "Scale", label: "§ 203 StGB" },
@@ -2127,9 +2127,9 @@ const _landingEn = {
   ],
   h1a: "Your firm forgets.",
   h1b: "Subsumio doesn't.",
-  heroTagline: "The firm memory that thinks ahead — and cites every answer.",
+  heroTagline: "AI legal software for lawyers in AT · DE · CH — with cited answers.",
   h1Keyword: "AI legal software with cited answers for law firms",
-  sub: "Never miss a deadline. Never miss a contradiction. Ask in plain language — Subsumio answers with citations. For lawyers in AT, DE and CH.",
+  sub: "Never miss a deadline. Ask in plain language — Subsumio answers with citations.",
   heroTrustItems: [
     { icon: "CreditCard", label: "No credit card" },
     { icon: "Scale", label: "§ 203 StGB" },

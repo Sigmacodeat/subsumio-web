@@ -414,17 +414,17 @@ export default function ReviewSetsPage() {
                 {
                   label: t("review_sets.stats_responsive" as DashboardKey),
                   value: selectedSet.frontmatter?.statistics?.responsive ?? 0,
-                  color: "#22c55e",
+                  color: "var(--ds-success-text)",
                 },
                 {
                   label: t("review_sets.stats_privileged" as DashboardKey),
                   value: selectedSet.frontmatter?.statistics?.privileged ?? 0,
-                  color: "#f59e0b",
+                  color: "var(--ds-warning-text)",
                 },
                 {
                   label: t("review_sets.stats_redacted" as DashboardKey),
                   value: selectedSet.frontmatter?.statistics?.redacted ?? 0,
-                  color: "#ef4444",
+                  color: "var(--ds-danger-text)",
                 },
                 {
                   label: t("review_sets.stats_unreviewed" as DashboardKey),

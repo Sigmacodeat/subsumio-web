@@ -34,10 +34,10 @@ const NODE_COLOR_VARS: Record<string, string> = {
 };
 
 const NODE_COLOR_FALLBACKS: Record<string, string> = {
-  person: "#60a5fa",
-  company: "#34d399",
+  person: "#6b8eff",
+  company: "#30a776",
   idea: "#a78bfa",
-  document: "#fbbf24",
+  document: "#c29622",
   event: "#f97316",
   place: "#2dd4bf",
 };
@@ -133,7 +133,11 @@ export default function GraphPage() {
     const themeRoot =
       (canvas.closest('[data-app="dashboard"]') as HTMLElement | null) ?? document.documentElement;
     let lastTheme = "";
-    const palette = { text: "#15151d", subtle: "#8a8a98", accentGlow: "rgba(47, 107, 255, 0.15)" };
+    const palette = {
+      text: "hsl(225, 20%, 12%)",
+      subtle: "hsl(220, 8%, 40%)",
+      accentGlow: "hsla(230, 60%, 52%, 0.15)",
+    };
     let resolvedNodeColors = NODE_COLOR_FALLBACKS;
     const readPalette = () => {
       const cs = getComputedStyle(themeRoot);

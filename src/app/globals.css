@@ -3,16 +3,53 @@
    --font-grotesk and --font-jetbrains variables are set on <html>. */
 @import "tailwindcss";
 
+/* ── @property: typed custom properties for animatable colors ──
+   Allows CSS transitions/animations on brand and signal colors.
+   Without @property, custom properties are not animatable. */
+@property --brand-primary {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: hsl(230, 60%, 52%);
+}
+@property --brand-primary-hover {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: hsl(230, 60%, 64%);
+}
+@property --brand-secondary {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: hsl(230, 60%, 64%);
+}
+@property --brand-text {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: hsl(230, 60%, 52%);
+}
+@property --accent-premium {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: hsl(255, 60%, 55%);
+}
+
 @theme inline {
   /* ═══════════════════════════════════════════════════════════════
      HSL-BASED HARMONIC COLOR SCALES — Agency-Level Design System
      ───────────────────────────────────────────────────────────────
      All colors follow strict color theory principles:
      • Brand: monochromatic scale (single hue, lightness varies)
-     • Signal: tetradic harmony (4 hues at 90° intervals)
+     • Signal: asymmetric signal harmony (semantic convention hues)
      • Neutral: monochromatic (single hue, very low chroma)
      • Every scale has 9 lightness steps (50–900)
      • All text/bg combos verified WCAG-AA (≥4.5:1)
+
+     OKLCH MIGRATION PATH (2026):
+     OKLCH (Baseline 2024, Chrome 111+/Safari 15.4+/Firefox 113+)
+     provides perceptually uniform lightness steps — HSL's "50%"
+     lightness is not visually 50%. The @supports block below
+     overrides signal-500 tokens with OKLCH equivalents as a
+     proof-of-concept. Full migration should use a conversion tool
+     (e.g. culori.js, oklch.com) to ensure per-step accuracy.
      ═══════════════════════════════════════════════════════════════ */
 
   /* ── Brand scale (Legal) — Hue 230°, Chroma 60% ── */
@@ -39,26 +76,54 @@
   --tax-800: hsl(165, 55%, 21%);
   --tax-900: hsl(165, 55%, 14%);
 
-  /* ── Signal scale — Tetradic harmony (90° apart) ── */
+  /* ── Signal scale — Asymmetric signal harmony ──
+     Hues: Danger 0°, Warning 40°, Success 150°, Info 200°.
+     Not a tetradic (90°) harmony — the asymmetry is intentional:
+     each hue maps to an established semantic convention
+     (red=danger, amber=warning, green=success, sky=info). */
   --signal-success-50: hsl(150, 55%, 96%);
+  --signal-success-100: hsl(150, 55%, 90%);
+  --signal-success-200: hsl(150, 55%, 80%);
+  --signal-success-300: hsl(150, 55%, 65%);
+  --signal-success-400: hsl(150, 55%, 52%);
   --signal-success-500: hsl(150, 55%, 42%);
   --signal-success-600: hsl(150, 55%, 35%);
   --signal-success-700: hsl(150, 55%, 28%);
+  --signal-success-800: hsl(150, 55%, 21%);
+  --signal-success-900: hsl(150, 55%, 14%);
 
   --signal-warning-50: hsl(40, 70%, 95%);
+  --signal-warning-100: hsl(40, 70%, 88%);
+  --signal-warning-200: hsl(40, 70%, 78%);
+  --signal-warning-300: hsl(40, 70%, 65%);
+  --signal-warning-400: hsl(40, 70%, 55%);
   --signal-warning-500: hsl(40, 70%, 45%);
   --signal-warning-600: hsl(40, 70%, 38%);
   --signal-warning-700: hsl(40, 70%, 31%);
+  --signal-warning-800: hsl(40, 70%, 22%);
+  --signal-warning-900: hsl(40, 70%, 14%);
 
   --signal-danger-50: hsl(0, 60%, 95%);
+  --signal-danger-100: hsl(0, 60%, 88%);
+  --signal-danger-200: hsl(0, 60%, 78%);
+  --signal-danger-300: hsl(0, 60%, 65%);
+  --signal-danger-400: hsl(0, 60%, 57%);
   --signal-danger-500: hsl(0, 60%, 50%);
   --signal-danger-600: hsl(0, 60%, 42%);
   --signal-danger-700: hsl(0, 60%, 35%);
+  --signal-danger-800: hsl(0, 60%, 22%);
+  --signal-danger-900: hsl(0, 60%, 14%);
 
-  --signal-info-50: hsl(230, 60%, 95%);
-  --signal-info-500: hsl(230, 60%, 52%);
-  --signal-info-600: hsl(230, 60%, 44%);
-  --signal-info-700: hsl(230, 60%, 36%);
+  --signal-info-50: hsl(200, 60%, 95%);
+  --signal-info-100: hsl(200, 60%, 88%);
+  --signal-info-200: hsl(200, 60%, 78%);
+  --signal-info-300: hsl(200, 60%, 65%);
+  --signal-info-400: hsl(200, 60%, 57%);
+  --signal-info-500: hsl(200, 60%, 52%);
+  --signal-info-600: hsl(200, 60%, 44%);
+  --signal-info-700: hsl(200, 60%, 36%);
+  --signal-info-800: hsl(200, 60%, 22%);
+  --signal-info-900: hsl(200, 60%, 14%);
 
   /* ── Neutral scale — Hue 230°, Chroma 8% (monochromatic) ── */
   --neutral-50: hsl(230, 8%, 98%);
@@ -222,47 +287,50 @@
 
   /* Emerald / Green → Signal-success (hue 150°) */
   --color-emerald-50: var(--signal-success-50);
-  --color-emerald-100: hsl(150, 55%, 91%);
-  --color-emerald-200: hsl(150, 55%, 82%);
-  --color-emerald-300: hsl(150, 55%, 70%);
-  --color-emerald-400: hsl(150, 55%, 56%);
+  --color-emerald-100: var(--signal-success-100);
+  --color-emerald-200: var(--signal-success-200);
+  --color-emerald-300: var(--signal-success-300);
+  --color-emerald-400: var(--signal-success-400);
   --color-emerald-500: var(--signal-success-500);
   --color-emerald-600: var(--signal-success-600);
   --color-emerald-700: var(--signal-success-700);
-  --color-emerald-800: hsl(150, 55%, 21%);
-  --color-emerald-900: hsl(150, 55%, 14%);
+  --color-emerald-800: var(--signal-success-800);
+  --color-emerald-900: var(--signal-success-900);
   --color-green-50: var(--signal-success-50);
-  --color-green-100: hsl(150, 55%, 91%);
-  --color-green-200: hsl(150, 55%, 82%);
-  --color-green-300: hsl(150, 55%, 70%);
-  --color-green-400: hsl(150, 55%, 56%);
+  --color-green-100: var(--signal-success-100);
+  --color-green-200: var(--signal-success-200);
+  --color-green-300: var(--signal-success-300);
+  --color-green-400: var(--signal-success-400);
   --color-green-500: var(--signal-success-500);
   --color-green-600: var(--signal-success-600);
   --color-green-700: var(--signal-success-700);
-  --color-green-800: hsl(150, 55%, 21%);
-  --color-green-900: hsl(150, 55%, 14%);
+  --color-green-800: var(--signal-success-800);
+  --color-green-900: var(--signal-success-900);
 
   /* Amber / Yellow / Orange → Signal-warning (hue 40°) */
   --color-amber-50: var(--signal-warning-50);
-  --color-amber-100: hsl(40, 70%, 88%);
-  --color-amber-200: hsl(40, 70%, 78%);
-  --color-amber-300: hsl(40, 70%, 68%);
-  --color-amber-400: hsl(40, 70%, 58%);
+  --color-amber-100: var(--signal-warning-100);
+  --color-amber-200: var(--signal-warning-200);
+  --color-amber-300: var(--signal-warning-300);
+  --color-amber-400: var(--signal-warning-400);
   --color-amber-500: var(--signal-warning-500);
   --color-amber-600: var(--signal-warning-600);
   --color-amber-700: var(--signal-warning-700);
-  --color-amber-800: hsl(40, 70%, 24%);
-  --color-amber-900: hsl(40, 70%, 17%);
+  --color-amber-800: var(--signal-warning-800);
+  --color-amber-900: var(--signal-warning-900);
   --color-yellow-50: var(--signal-warning-50);
-  --color-yellow-100: hsl(40, 70%, 88%);
-  --color-yellow-200: hsl(40, 70%, 78%);
-  --color-yellow-300: hsl(40, 70%, 68%);
-  --color-yellow-400: hsl(40, 70%, 58%);
+  --color-yellow-100: var(--signal-warning-100);
+  --color-yellow-200: var(--signal-warning-200);
+  --color-yellow-300: var(--signal-warning-300);
+  --color-yellow-400: var(--signal-warning-400);
   --color-yellow-500: var(--signal-warning-500);
   --color-yellow-600: var(--signal-warning-600);
   --color-yellow-700: var(--signal-warning-700);
-  --color-yellow-800: hsl(40, 70%, 24%);
-  --color-yellow-900: hsl(40, 70%, 17%);
+  --color-yellow-800: var(--signal-warning-800);
+  --color-yellow-900: var(--signal-warning-900);
+  /* Orange → Categorical (hue 25°, distinct from signal-warning at 40°).
+     Orange is used for graph nodes and event categories, NOT for
+     warning/alert UI. Use amber/yellow tokens for warnings. */
   --color-orange-50: hsl(25, 80%, 95%);
   --color-orange-100: hsl(25, 80%, 88%);
   --color-orange-200: hsl(25, 80%, 78%);
@@ -276,25 +344,25 @@
 
   /* Red / Rose → Signal-danger (hue 0°) */
   --color-red-50: var(--signal-danger-50);
-  --color-red-100: hsl(0, 60%, 88%);
-  --color-red-200: hsl(0, 60%, 78%);
-  --color-red-300: hsl(0, 60%, 68%);
-  --color-red-400: hsl(0, 60%, 58%);
+  --color-red-100: var(--signal-danger-100);
+  --color-red-200: var(--signal-danger-200);
+  --color-red-300: var(--signal-danger-300);
+  --color-red-400: var(--signal-danger-400);
   --color-red-500: var(--signal-danger-500);
   --color-red-600: var(--signal-danger-600);
   --color-red-700: var(--signal-danger-700);
-  --color-red-800: hsl(0, 60%, 24%);
-  --color-red-900: hsl(0, 60%, 17%);
+  --color-red-800: var(--signal-danger-800);
+  --color-red-900: var(--signal-danger-900);
   --color-rose-50: var(--signal-danger-50);
-  --color-rose-100: hsl(0, 60%, 88%);
-  --color-rose-200: hsl(0, 60%, 78%);
-  --color-rose-300: hsl(0, 60%, 68%);
-  --color-rose-400: hsl(0, 60%, 58%);
+  --color-rose-100: var(--signal-danger-100);
+  --color-rose-200: var(--signal-danger-200);
+  --color-rose-300: var(--signal-danger-300);
+  --color-rose-400: var(--signal-danger-400);
   --color-rose-500: var(--signal-danger-500);
   --color-rose-600: var(--signal-danger-600);
   --color-rose-700: var(--signal-danger-700);
-  --color-rose-800: hsl(0, 60%, 24%);
-  --color-rose-900: hsl(0, 60%, 17%);
+  --color-rose-800: var(--signal-danger-800);
+  --color-rose-900: var(--signal-danger-900);
 
   /* Teal → Tax scale (hue 165°) */
   --color-teal-50: var(--tax-50);
@@ -461,6 +529,20 @@
   /* ── Marketing card shadow — unified across all tones ── */
   --mk-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
   --mk-shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* ── OKLCH progressive enhancement for signal-500 tokens ──
+   OKLCH provides perceptually uniform lightness. These overrides
+   replace the HSL signal-500 values with OKLCH equivalents in
+   browsers that support the color() function. The HSL values in
+   @theme above serve as fallback for older browsers. */
+@supports (color: oklch(60% 0.15 150)) {
+  :root {
+    --signal-success-500: oklch(62% 0.13 150);
+    --signal-warning-500: oklch(70% 0.14 75);
+    --signal-danger-500: oklch(58% 0.18 25);
+    --signal-info-500: oklch(62% 0.11 230);
+  }
 }
 
 :root {
@@ -721,35 +803,46 @@
   --card-shadow-elevated: 0 1px 2px hsla(225, 20%, 12%, 0.06), 0 18px 48px hsla(225, 20%, 12%, 0.1);
   --sidebar-shadow: 1px 0 0 var(--ds-border), 10px 0 36px hsla(225, 20%, 12%, 0.035);
   /* Signal ramps — legal-tech muted trias, AA-verified on white. */
-  --ds-success-text: hsl(150, 45%, 32%);
-  --ds-success-bg: hsla(150, 45%, 32%, 0.1);
-  --ds-success-border: hsla(150, 45%, 32%, 0.2);
-  --ds-success-solid: hsl(150, 45%, 32%);
-  --ds-success-solid-hover: hsl(150, 45%, 27%);
-  --ds-warning-text: hsl(40, 60%, 32%);
-  --ds-warning-bg: hsla(40, 60%, 32%, 0.1);
-  --ds-warning-border: hsla(40, 60%, 32%, 0.2);
-  --ds-warning-solid: hsl(40, 60%, 32%);
-  --ds-warning-solid-hover: hsl(40, 60%, 27%);
-  --ds-danger-text: hsl(0, 50%, 40%);
-  --ds-danger-bg: hsla(0, 50%, 40%, 0.1);
-  --ds-danger-border: hsla(0, 50%, 40%, 0.22);
-  --ds-danger-solid: hsl(0, 50%, 40%);
-  --ds-danger-solid-hover: hsl(0, 50%, 35%);
-  --ds-info-text: var(--brand-700);
-  --ds-info-bg: hsla(230, 60%, 36%, 0.1);
-  --ds-info-border: hsla(230, 60%, 36%, 0.2);
-  --ds-info-solid: var(--brand-700);
-  --ds-info-solid-hover: var(--brand-800);
+  --ds-success-text: hsl(150, 45%, 30%);
+  --ds-success-bg: hsla(150, 45%, 30%, 0.12);
+  --ds-success-border: hsla(150, 45%, 30%, 0.22);
+  --ds-success-solid: hsl(150, 45%, 30%);
+  --ds-success-solid-hover: hsl(150, 45%, 25%);
+  --ds-warning-text: hsl(40, 60%, 30%);
+  --ds-warning-bg: hsla(40, 60%, 30%, 0.12);
+  --ds-warning-border: hsla(40, 60%, 30%, 0.22);
+  --ds-warning-solid: hsl(40, 60%, 30%);
+  --ds-warning-solid-hover: hsl(40, 60%, 25%);
+  --ds-danger-text: hsl(0, 55%, 38%);
+  --ds-danger-bg: hsla(0, 55%, 38%, 0.12);
+  --ds-danger-border: hsla(0, 55%, 38%, 0.24);
+  --ds-danger-solid: hsl(0, 55%, 38%);
+  --ds-danger-solid-hover: hsl(0, 55%, 33%);
+  --ds-info-text: hsl(200, 60%, 36%);
+  --ds-info-bg: hsla(200, 60%, 36%, 0.12);
+  --ds-info-border: hsla(200, 60%, 36%, 0.22);
+  --ds-info-solid: hsl(200, 60%, 36%);
+  --ds-info-solid-hover: hsl(200, 60%, 31%);
   --ds-category-pink-text: hsl(330, 60%, 38%);
   --ds-category-pink-bg: hsla(330, 60%, 38%, 0.1);
   --ds-category-pink-border: hsla(330, 60%, 38%, 0.22);
-  --ds-category-teal-text: hsl(170, 50%, 32%);
-  --ds-category-teal-bg: hsla(170, 50%, 32%, 0.1);
-  --ds-category-teal-border: hsla(170, 50%, 32%, 0.22);
-  /* Nav category icon tints — subtle, per-section color coding. */
-  --nav-cat-cases: hsl(230, 50%, 28%);
-  --nav-cat-comm: hsl(170, 50%, 32%);
+  --ds-category-teal-text: hsl(180, 50%, 32%);
+  --ds-category-teal-bg: hsla(180, 50%, 32%, 0.1);
+  --ds-category-teal-border: hsla(180, 50%, 32%, 0.22);
+  /* Chart categorical tokens — for bar/pie charts with per-type colors. */
+  --ds-chart-zivil: var(--brand-primary);
+  --ds-chart-straf: var(--ds-danger-solid);
+  --ds-chart-verwaltungs: var(--ds-warning-solid);
+  --ds-chart-finanz: var(--ds-success-solid);
+  --ds-chart-arbeits: var(--accent-premium);
+  --ds-chart-sozial: var(--ds-info-solid);
+  --ds-chart-familie: hsl(330, 60%, 45%);
+  /* Nav category icon tints — per-section color coding.
+     --nav-cat-cases derives from --brand-primary so it adapts to the
+     active industry (legal=blue, tax=teal). Other categories use
+     fixed functional hues that are industry-agnostic. */
+  --nav-cat-cases: var(--brand-primary);
+  --nav-cat-comm: hsl(180, 50%, 32%);
   --nav-cat-docs: hsl(255, 60%, 55%);
   --nav-cat-research: hsl(260, 60%, 45%);
   --nav-cat-ops: hsl(220, 8%, 35%);
@@ -818,26 +911,50 @@
   --ds-danger-border: hsla(0, 60%, 50%, 0.22);
   --ds-danger-solid: hsl(0, 50%, 40%);
   --ds-danger-solid-hover: hsl(0, 50%, 45%);
-  --ds-info-text: var(--brand-300);
-  --ds-info-bg: hsla(230, 60%, 52%, 0.1);
-  --ds-info-border: hsla(230, 60%, 52%, 0.2);
-  --ds-info-solid: hsl(230, 50%, 40%);
-  --ds-info-solid-hover: hsl(230, 50%, 45%);
+  --ds-info-text: hsl(200, 60%, 65%);
+  --ds-info-bg: hsla(200, 60%, 52%, 0.1);
+  --ds-info-border: hsla(200, 60%, 52%, 0.2);
+  --ds-info-solid: hsl(200, 50%, 40%);
+  --ds-info-solid-hover: hsl(200, 50%, 45%);
   --ds-category-pink-text: hsl(330, 60%, 68%);
   --ds-category-pink-bg: hsla(330, 60%, 50%, 0.11);
   --ds-category-pink-border: hsla(330, 60%, 50%, 0.22);
-  --ds-category-teal-text: hsl(170, 55%, 60%);
-  --ds-category-teal-bg: hsla(170, 50%, 42%, 0.1);
-  --ds-category-teal-border: hsla(170, 50%, 42%, 0.22);
-  /* Nav category icon tints — dark mode variants. */
-  --nav-cat-cases: hsl(230, 45%, 62%);
-  --nav-cat-comm: hsl(170, 55%, 60%);
+  --ds-category-teal-text: hsl(180, 55%, 60%);
+  --ds-category-teal-bg: hsla(180, 50%, 42%, 0.1);
+  --ds-category-teal-border: hsla(180, 50%, 42%, 0.22);
+  /* Chart categorical tokens — for bar/pie charts with per-type colors. */
+  --ds-chart-zivil: var(--brand-primary);
+  --ds-chart-straf: var(--ds-danger-text);
+  --ds-chart-verwaltungs: var(--ds-warning-text);
+  --ds-chart-finanz: var(--ds-success-text);
+  --ds-chart-arbeits: var(--accent-premium);
+  --ds-chart-sozial: var(--ds-info-text);
+  --ds-chart-familie: hsl(330, 60%, 60%);
+  /* Nav category icon tints — dark mode variants.
+     --nav-cat-cases derives from --brand-primary for industry awareness. */
+  --nav-cat-cases: var(--brand-primary);
+  --nav-cat-comm: hsl(180, 55%, 60%);
   --nav-cat-docs: hsl(260, 60%, 72%);
   --nav-cat-research: hsl(260, 60%, 72%);
   --nav-cat-ops: hsl(220, 8%, 65%);
   --nav-cat-billing: hsl(150, 45%, 58%);
   --nav-cat-admin: hsl(220, 8%, 65%);
   color-scheme: dark;
+}
+
+/* ── light-dark() progressive enhancement ──
+   The CSS light-dark() function (Baseline 2024) lets us declare both
+   theme variants in a single property. It reads the computed color-scheme
+   of the element — which the dashboard already sets via data-theme.
+   Below: accent-premium consolidated as a reference pattern. Future
+   token migrations should follow this approach to reduce the ~200 lines
+   of duplicate light/dark override CSS. */
+@supports (color: light-dark(red, blue)) {
+  [data-app="dashboard"] {
+    --accent-premium-ld: light-dark(hsl(255, 60%, 55%), hsl(260, 60%, 75%));
+    --accent-premium-soft-ld: light-dark(hsla(255, 60%, 55%, 0.08), hsla(260, 60%, 75%, 0.1));
+    --accent-premium-border-ld: light-dark(hsla(255, 60%, 55%, 0.2), hsla(260, 60%, 75%, 0.22));
+  }
 }
 
 /* Dashboard semantic signal bridge.

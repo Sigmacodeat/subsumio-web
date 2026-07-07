@@ -507,13 +507,13 @@ function ProcedureBar({ distribution }: { distribution: Record<ProcedureType, nu
   if (total === 0) return <p className="text-sm text-[color:var(--ds-text-muted)]">—</p>;
   const entries = Object.entries(distribution) as [ProcedureType, number][];
   const colors: Record<ProcedureType, string> = {
-    zivil: "#6366f1",
-    straf: "#ef4444",
-    verwaltungs: "#f59e0b",
-    finanz: "#10b981",
-    arbeits: "#8b5cf6",
-    sozial: "#06b6d4",
-    familie: "#ec4899",
+    zivil: "var(--ds-chart-zivil)",
+    straf: "var(--ds-chart-straf)",
+    verwaltungs: "var(--ds-chart-verwaltungs)",
+    finanz: "var(--ds-chart-finanz)",
+    arbeits: "var(--ds-chart-arbeits)",
+    sozial: "var(--ds-chart-sozial)",
+    familie: "var(--ds-chart-familie)",
   };
   return (
     <div className="space-y-2">

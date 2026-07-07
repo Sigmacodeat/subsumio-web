@@ -34,7 +34,6 @@ import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { LANDING, PRICING, UI_STRINGS, p, type Lang } from "@/content/site";
 import { PricingGrid } from "./pricing-grid";
 import ScrollPinnedDashboard from "./scroll-pinned-dashboard";
-import SuperbrainAdvantage from "./superbrain-advantage";
 import { TestimonialsSection } from "./testimonials";
 import AudienceTabs from "./audience-tabs";
 import { Section, SectionHeading, ICONS, accentTile, H2_CTA_CLASS } from "./chrome";
@@ -372,9 +371,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </Section>
         )}
 
-        <SuperbrainAdvantage lang={lang} />
-
-        {/* Features — what it does (light, after unique mechanism) */}
+        {/* Features — what it does (directly after Pain, solution = benefits) */}
         <Section
           tone="light"
           id="features"
@@ -417,6 +414,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </div>
         </Section>
 
+        {/* Audience segments — early relevance: "this is for my firm type" */}
+        <AudienceTabs lang={lang} />
+
         {/* Dashboard in action — scroll-pinned zoom with guided cursor.
             Kept on the light page: the 200vh sticky viewport is taller than the
             reel, so a dark/slate frame would expose a large empty void below the
@@ -440,41 +440,6 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             </Button>
           </Link>
         </WhatsAppSpotlight>
-
-        {/* Use cases — who it's for */}
-        <Section
-          tone="light"
-          className="px-4 py-24 sm:px-6 lg:px-8"
-          aria-label={ui.ariaRealWorkflows}
-        >
-          <div className="mx-auto max-w-7xl">
-            <motion.div {...reveal}>
-              <SectionHeading title={t.scenariosTitle} sub={t.scenariosSub} />
-            </motion.div>
-            <div className="grid gap-6 md:grid-cols-3">
-              {t.scenarios.map((s, i) => (
-                <motion.div
-                  key={s.role}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={viewport}
-                  transition={{ duration: 0.4, delay: i * 0.08 }}
-                  className="rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl"
-                >
-                  <p className="mb-3 text-xs font-semibold tracking-wider [color:var(--brand-text)] uppercase">
-                    {s.role}
-                  </p>
-                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)] md:text-base">
-                    {s.text}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </Section>
-
-        {/* Audience segments — homepage teaser linking to /solutions/* */}
-        <AudienceTabs lang={lang} />
 
         {/* Testimonials — social proof from real lawyers */}
         <TestimonialsSection lang={lang} />

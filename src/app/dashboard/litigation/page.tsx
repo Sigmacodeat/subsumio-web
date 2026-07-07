@@ -92,8 +92,8 @@ const PHASE_ICONS: Record<LitigationPhase, React.ReactNode> = {
 const STEP_STATUS_COLORS: Record<StepStatus, string> = {
   pending: "var(--ds-text-muted)",
   in_progress: "var(--brand-primary)",
-  completed: "#22c55e",
-  blocked: "#ef4444",
+  completed: "var(--ds-success-text)",
+  blocked: "var(--ds-danger-text)",
   skipped: "var(--ds-text-subtle)",
 };
 

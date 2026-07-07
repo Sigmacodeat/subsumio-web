@@ -245,7 +245,7 @@ export default function OnboardingPage() {
       className="flex min-h-full items-center justify-center p-4 md:p-8"
       style={{
         background:
-          "linear-gradient(135deg, var(--brand-gradient-from, #14b8a6) 0%, var(--brand-gradient-via, #1d4ed8) 50%, var(--brand-gradient-to, #0f172a) 100%)",
+          "linear-gradient(135deg, var(--brand-gradient-from, hsl(230, 60%, 36%)) 0%, var(--brand-gradient-via, hsl(230, 60%, 64%)) 50%, var(--brand-gradient-to, hsl(260, 60%, 65%)) 100%)",
       }}
     >
       <div className="w-full max-w-2xl">

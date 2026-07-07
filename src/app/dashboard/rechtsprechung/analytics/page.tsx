@@ -335,7 +335,7 @@ export default function LitigationAnalyticsPage() {
                 cursor: "pointer",
                 background: jurisdiction === j ? "var(--accent-premium)" : "var(--ds-surface)",
                 border: `1px solid ${jurisdiction === j ? "var(--accent-premium)" : "var(--ds-border)"}`,
-                color: jurisdiction === j ? "#fff" : "var(--ds-text-subtle)",
+                color: jurisdiction === j ? "var(--ds-surface)" : "var(--ds-text-subtle)",
               }}
             >
               {j === "all" ? "Alle" : j.toUpperCase()}
