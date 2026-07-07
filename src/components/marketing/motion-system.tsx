@@ -838,20 +838,25 @@ interface MagneticButtonProps {
 export function MagneticButton({ children, className = "", strength = 0.3 }: MagneticButtonProps) {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
+  const [isTouch, setIsTouch] = useState(false);
+
+  useEffect(() => {
+    setIsTouch(window.matchMedia("(hover: none)").matches);
+  }, []);
 
   const x = useSpring(useMotionValue(0), { stiffness: 300, damping: 20 });
   const y = useSpring(useMotionValue(0), { stiffness: 300, damping: 20 });
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (reduce || !ref.current) return;
+      if (reduce || isTouch || !ref.current) return;
       const rect = ref.current.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       x.set((e.clientX - cx) * strength);
       y.set((e.clientY - cy) * strength);
     },
-    [reduce, strength, x, y]
+    [reduce, isTouch, strength, x, y]
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -859,7 +864,8 @@ export function MagneticButton({ children, className = "", strength = 0.3 }: Mag
     y.set(0);
   }, [x, y]);
 
-  if (reduce) return <div className={`inline-flex [&>a]:inline-flex ${className}`}>{children}</div>;
+  if (reduce || isTouch)
+    return <div className={`inline-flex [&>a]:inline-flex ${className}`}>{children}</div>;
 
   return (
     <motion.div

@@ -445,7 +445,7 @@ export default function DashboardReel({
         </div>
       </div>
 
-      <div className="grid h-[480px] grid-cols-[180px_1fr]">
+      <div className="grid h-[480px] grid-cols-1 sm:grid-cols-[180px_1fr]">
         {/* sidebar */}
         <div className="hidden flex-col gap-1 border-r [border-color:var(--mk-border)] p-3 [background:var(--mk-surface-2)] sm:flex">
           {/* firm header */}

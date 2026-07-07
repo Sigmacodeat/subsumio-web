@@ -36,7 +36,7 @@ function SignatureBand({ industry, lang }: { industry: string; lang: Lang }) {
   const locale = lang === "en" ? "en" : "de";
 
   return (
-    <Section tone="light" className="px-6 pb-20">
+    <Section tone="light" className="px-4 pb-20 sm:px-6 lg:px-8">
       <div className="brand-border relative mx-auto max-w-5xl overflow-hidden rounded-2xl border p-6 [background:var(--mk-surface)] md:p-8">
         <div className="brand-glow-bg absolute inset-y-0 left-0 w-1/2 blur-3xl" />
         <div className="relative grid gap-6 md:grid-cols-[1.1fr_1fr] md:items-center">
@@ -91,7 +91,7 @@ export default function VerticalPage({
       style={styleForIndustry(industry)}
     >
       {/* HERO — slate editorial surface for stronger contrast */}
-      <Section tone="slate" className="px-6 pt-16 pb-24">
+      <Section tone="slate" className="px-4 pt-16 pb-24 sm:px-6 lg:px-8">
         <div className="relative mx-auto max-w-7xl text-center">
           <IndustryHeroMotif
             industry={industry}

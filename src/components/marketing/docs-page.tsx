@@ -124,7 +124,7 @@ function StickyCategoryNav({
 }) {
   const t = UI_STRINGS[lang];
   return (
-    <div className="sticky top-[56px] z-30 border-b [border-color:var(--mk-border)] backdrop-blur-md [background:var(--mk-bg)]/80">
+    <div className="sticky top-[var(--header-h,56px)] z-30 border-b [border-color:var(--mk-border)] backdrop-blur-md [background:var(--mk-bg)]/80">
       <div className="mx-auto max-w-7xl px-6 py-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <nav className="-mx-1 flex scrollbar-none gap-1.5 overflow-x-auto px-1 sm:flex-wrap sm:overflow-visible">

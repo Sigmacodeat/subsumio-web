@@ -164,9 +164,9 @@ export default function ScrollPinnedDashboard({
   }
 
   return (
-    <div ref={containerRef} style={{ height: "150vh" }} className="relative">
-      {/* Sticky inner — stays pinned while scrolling through 150vh */}
-      <div className="sticky top-0 flex h-screen flex-col items-center justify-center overflow-hidden">
+    <div ref={containerRef} style={{ height: "150dvh" }} className="relative">
+      {/* Sticky inner — stays pinned while scrolling through 150dvh */}
+      <div className="sticky top-0 flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden">
         {/* Heading — fades out smoothly as you scroll */}
         <motion.div
           style={{ opacity: headingOpacity, y: headingY }}
@@ -232,12 +232,7 @@ export default function ScrollPinnedDashboard({
         >
           <span className="flex items-center gap-1.5">
             {UI_STRINGS[lang].scrollToExplore}
-            <motion.span
-              animate={{ y: [0, 4, 0] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-            >
-              ↓
-            </motion.span>
+            <span>↓</span>
           </span>
         </motion.div>
       </div>

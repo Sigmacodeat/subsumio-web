@@ -15,7 +15,6 @@ import {
 import { type Lang, UI_STRINGS } from "@/content/site";
 import { profileForIndustry } from "@/lib/industry-pack";
 import { styleForIndustry } from "@/lib/industry-theme";
-import { GuidedCursor } from "./motion-system";
 import { H2_CTA_CLASS } from "./chrome";
 
 const copy = {
@@ -124,13 +123,6 @@ export default function ProductWorkflowShowcase({
             data-tone="dashboard"
             className="relative overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] shadow-2xl shadow-black/20 [background:var(--mk-bg)]"
           >
-            <GuidedCursor
-              x={["63%", "35%", "74%", "58%"]}
-              y={["24%", "45%", "53%", "82%"]}
-              label={UI_STRINGS[lang].followContext}
-              className="hidden md:flex"
-              duration={7.2}
-            />
             <div className="flex items-center gap-3 border-b [border-color:var(--mk-border)] px-4 py-2.5 [background:var(--mk-surface)]">
               <div className="flex items-center gap-2">
                 <div className="brand-bg flex h-6 w-6 shrink-0 items-center justify-center rounded-md">
@@ -167,15 +159,11 @@ export default function ProductWorkflowShowcase({
               </div>
 
               <div className="relative p-4 md:p-6">
-                <motion.div
-                  animate={reduced ? undefined : { scale: [1, 1.012, 1] }}
-                  transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
-                  className="mb-5 flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]"
-                >
+                <div className="mb-5 flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]">
                   <Search size={16} className="brand-text" />
                   <span className="text-sm [color:var(--mk-text)]">{c.query}</span>
                   <CheckCircle2 size={16} className="ml-auto [color:var(--brand-secondary)]" />
-                </motion.div>
+                </div>
 
                 <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
                   <motion.div style={{ y: yCards }} className="space-y-3">
@@ -269,27 +257,22 @@ export default function ProductWorkflowShowcase({
                   transition={{ duration: 0.45, delay: 0.25 }}
                   className="brand-border mt-4 rounded-xl border p-4 [background:var(--mk-surface)]"
                 >
-                  <motion.div
-                    animate={reduced ? undefined : { scale: [1, 1.014, 1] }}
-                    transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Brain size={18} className="brand-text mt-0.5" />
-                      <div>
-                        <p className="mb-1 text-sm font-semibold [color:var(--mk-text)]">
-                          {c.answer}
-                        </p>
-                        <div className="flex flex-wrap gap-2 text-xs">
-                          <span className="brand-soft brand-text rounded-full px-2 py-1">
-                            {c.risk}
-                          </span>
-                          <span className="rounded-full px-2 py-1 [color:var(--mk-text-muted)] [background:var(--mk-border)]">
-                            {c.route}
-                          </span>
-                        </div>
+                  <div className="flex items-start gap-3">
+                    <Brain size={18} className="brand-text mt-0.5" />
+                    <div>
+                      <p className="mb-1 text-sm font-semibold [color:var(--mk-text)]">
+                        {c.answer}
+                      </p>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        <span className="brand-soft brand-text rounded-full px-2 py-1">
+                          {c.risk}
+                        </span>
+                        <span className="rounded-full px-2 py-1 [color:var(--mk-text-muted)] [background:var(--mk-border)]">
+                          {c.route}
+                        </span>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 </motion.div>
               </div>
             </div>

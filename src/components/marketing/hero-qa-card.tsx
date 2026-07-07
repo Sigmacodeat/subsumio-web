@@ -71,9 +71,13 @@ export default function HeroQACard({
     };
   }, [answer, reduce]);
 
+  const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches;
+
   return (
     <motion.div
-      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 28, rotate: -1.5 }}
+      initial={
+        reduce ? { opacity: 0 } : { opacity: 0, y: 28, ...(isMobile ? {} : { rotate: -1.5 }) }
+      }
       animate={{ opacity: 1, y: 0, rotate: 0 }}
       transition={
         reduce

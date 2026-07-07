@@ -374,7 +374,8 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
 
   useEffect(() => {
     if (reduce) return;
-    const id = setInterval(() => setStep((s) => (s + 1) % panels.length), 2400);
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
+    const id = setInterval(() => setStep((s) => (s + 1) % panels.length), isMobile ? 3500 : 2400);
     return () => clearInterval(id);
   }, [panels.length, reduce]);
 
@@ -468,7 +469,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
                     }
                     className={`w-full rounded-lg border p-3 text-left transition-all ${
                       active
-                        ? "brand-border [background:var(--mk-surface)]"
+                        ? "brand-border ring-2 ring-[color-mix(in_srgb,var(--brand-primary)_22%,transparent)] [background:var(--mk-surface)]"
                         : "[border-color:var(--mk-border)] [background:var(--mk-surface-2)]"
                     }`}
                   >

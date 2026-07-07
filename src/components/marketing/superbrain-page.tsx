@@ -34,7 +34,7 @@ function HeroSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
   const opacityOrb = useTransform(scrollY, [0, 600], [1, 0]);
 
   return (
-    <Section tone="slate" className="relative overflow-hidden px-6 pt-20 pb-28">
+    <Section tone="slate" className="relative overflow-hidden px-4 pt-20 pb-28 sm:px-6 lg:px-8">
       <motion.div
         style={{ y: yOrb, opacity: opacityOrb }}
         className="brand-glow-bg absolute top-1/4 left-1/2 h-[500px] w-[800px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
@@ -173,7 +173,7 @@ function BrainVisualization({ t }: { t: SuperbrainCopyDe }) {
 
 function StatsBand({ t }: { t: SuperbrainCopyDe }) {
   return (
-    <Section tone="light" className="px-6 py-16">
+    <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 md:grid-cols-4">
         {t.stats.map((stat, i) => (
           <motion.div
@@ -212,7 +212,11 @@ function OthersSection({ t }: { t: SuperbrainCopyDe }) {
   }, [reduce, t.othersSteps.length]);
 
   return (
-    <Section tone="light" className="px-6 py-24" aria-label="Wie andere KI arbeitet">
+    <Section
+      tone="light"
+      className="px-4 py-24 sm:px-6 lg:px-8"
+      aria-label="Wie andere KI arbeitet"
+    >
       <div className="mx-auto max-w-5xl">
         <div className="mb-16 text-center">
           <motion.div
@@ -317,7 +321,11 @@ function OursSection({ t }: { t: SuperbrainCopyDe }) {
   }, [reduce, t.oursSteps.length]);
 
   return (
-    <Section tone="slate" className="px-6 py-24" aria-label="Wie das SuperBrain arbeitet">
+    <Section
+      tone="slate"
+      className="px-4 py-24 sm:px-6 lg:px-8"
+      aria-label="Wie das SuperBrain arbeitet"
+    >
       <div className="relative z-10 mx-auto max-w-5xl">
         <div className="mb-16 text-center">
           <motion.div
@@ -446,7 +454,7 @@ function OursSection({ t }: { t: SuperbrainCopyDe }) {
 
 function ArchitectureSection({ t }: { t: SuperbrainCopyDe }) {
   return (
-    <Section tone="light" className="px-6 py-24" aria-label="5-Ebenen-Architektur">
+    <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="5-Ebenen-Architektur">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -532,7 +540,7 @@ function DreamCycleSection({ t }: { t: SuperbrainCopyDe }) {
   }, [reduce, t.cycleSteps.length]);
 
   return (
-    <Section tone="slate" className="px-6 py-24" aria-label="Dream Cycle">
+    <Section tone="slate" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Dream Cycle">
       <div className="relative z-10 mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -615,7 +623,7 @@ function DreamCycleSection({ t }: { t: SuperbrainCopyDe }) {
 
 function CompareSection({ t }: { t: SuperbrainCopyDe }) {
   return (
-    <Section tone="light" className="px-6 py-24" aria-label="Vergleich">
+    <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Vergleich">
       <div className="mx-auto max-w-5xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -629,12 +637,46 @@ function CompareSection({ t }: { t: SuperbrainCopyDe }) {
           </motion.p>
         </div>
 
+        {/* Mobile: stacked card layout */}
+        <div className="mt-8 space-y-3 md:hidden">
+          {t.compareRows.map((row, i) => (
+            <motion.div
+              key={row.feature}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.3, delay: i * 0.05 }}
+              className="rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]"
+            >
+              <p className="mb-3 text-sm font-semibold [color:var(--mk-text)]">{row.feature}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="mb-1 text-xs font-semibold [color:var(--mk-text-muted)]">
+                    {copy.de === t ? "Andere Kanzlei-KI" : "Other legal AI"}
+                  </p>
+                  <div className="flex items-start gap-1.5 text-xs [color:var(--mk-text-muted)]">
+                    <span className="shrink-0 text-rose-400">✕</span>
+                    {row.others}
+                  </div>
+                </div>
+                <div>
+                  <p className="brand-text mb-1 text-xs font-semibold">Subsumio SuperBrain</p>
+                  <div className="flex items-start gap-1.5 text-xs font-medium [color:var(--mk-text)]">
+                    <CheckCircle2 size={13} className="brand-text mt-0.5 shrink-0" />
+                    {row.subsumio}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+        {/* Desktop: table layout */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.6, ease: EASE.out }}
-          className="overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] shadow-xl"
+          className="hidden overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] shadow-xl md:block"
         >
           <table
             className="w-full text-left text-sm"
@@ -691,7 +733,7 @@ function CompareSection({ t }: { t: SuperbrainCopyDe }) {
 // ── FINE-TUNING / LEGAL ENGINE ──
 function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
   return (
-    <Section tone="slate" className="px-6 py-24" aria-label="Subsumio Legal Engine">
+    <Section tone="slate" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Subsumio Legal Engine">
       <div className="relative z-10 mx-auto max-w-5xl">
         <div className="mb-16 text-center">
           <motion.div
@@ -769,7 +811,7 @@ function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
 
 function PrivacySection({ t }: { t: SuperbrainCopyDe }) {
   return (
-    <Section tone="light" className="px-6 py-24" aria-label="Privacy & DSGVO">
+    <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Privacy & DSGVO">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -808,7 +850,11 @@ function PrivacySection({ t }: { t: SuperbrainCopyDe }) {
 
 function UseCasesSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
   return (
-    <Section tone="light" className="px-6 py-24" aria-label={UI_STRINGS[lang].ariaUseCases}>
+    <Section
+      tone="light"
+      className="px-4 py-24 sm:px-6 lg:px-8"
+      aria-label={UI_STRINGS[lang].ariaUseCases}
+    >
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -860,7 +906,11 @@ function UseCasesSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
 
 function TrustSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
   return (
-    <Section tone="light" className="px-6 py-24" aria-label={UI_STRINGS[lang].ariaCompliance}>
+    <Section
+      tone="light"
+      className="px-4 py-24 sm:px-6 lg:px-8"
+      aria-label={UI_STRINGS[lang].ariaCompliance}
+    >
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -937,7 +987,11 @@ function TrustSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
 function FAQSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
   const faqItems = t.faq.map((item) => ({ q: item.q, a: item.a }));
   return (
-    <Section tone="light" className="px-6 py-24" aria-label={UI_STRINGS[lang].ariaFaq}>
+    <Section
+      tone="light"
+      className="px-4 py-24 sm:px-6 lg:px-8"
+      aria-label={UI_STRINGS[lang].ariaFaq}
+    >
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -985,7 +1039,7 @@ function StickyCTA({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
       initial={false}
       animate={{ y: visible ? 0 : 100, opacity: visible ? 1 : 0 }}
       transition={{ duration: 0.3, ease: EASE.out }}
-      className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 px-4"
+      className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 px-4 pb-[env(safe-area-inset-bottom)]"
       aria-hidden={!visible}
     >
       <Link href={p(lang, "/signup")}>
@@ -1003,7 +1057,7 @@ function StickyCTA({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
 
 function CTASection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
   return (
-    <Section tone="dark" className="px-6 py-24" aria-label="Call to action">
+    <Section tone="dark" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Call to action">
       <div className="brand-glow-bg absolute inset-x-0 top-1/2 h-72 -translate-y-1/2 opacity-30 blur-3xl" />
       <div className="relative z-10 mx-auto max-w-3xl text-center">
         <motion.div

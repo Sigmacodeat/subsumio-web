@@ -40,7 +40,6 @@ import AudienceTabs from "./audience-tabs";
 import { Section, SectionHeading, ICONS, accentTile, H2_CTA_CLASS } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import {
-  GlowCard,
   StaggerContainer,
   StaggerItem,
   EASE,
@@ -52,6 +51,7 @@ import {
 } from "./motion-system";
 import IndustryHeroMotif from "./industry-hero-motif";
 import { WhatsAppSpotlight } from "./subsumio-showcase";
+import SuperbrainAdvantage from "./superbrain-advantage";
 import ProductWorkflowShowcase from "./product-workflow-showcase";
 import LogoMarquee from "./logo-marquee";
 import HeroQACard from "./hero-qa-card";
@@ -222,7 +222,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   className="inline-flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-muted)] transition-colors hover:text-[var(--brand-text)]"
                 >
                   <Play size={14} />
-                  {ui.watchDemo}
+                  {ui.seeFeatures}
                 </a>
               </motion.div>
 
@@ -357,26 +357,30 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 className="mt-14 grid grid-cols-2 gap-8 text-center md:grid-cols-4"
                 stagger={0.09}
               >
-                {t.stats.map((stat) => {
+                {t.stats.map((stat, i) => {
                   const num = parseFloat(stat.value.replace(/[^0-9.]/g, ""));
                   const suffix = stat.value.replace(/[0-9.,]/g, "");
                   const prefix = stat.value.match(/^[^0-9]*/)?.[0] ?? "";
                   const isNumeric = !isNaN(num) && num > 0;
                   return (
                     <StaggerItem key={stat.label}>
-                      <p className="mb-1 text-4xl font-bold [color:var(--brand-text)] md:text-5xl">
-                        {isNumeric ? (
-                          <AnimatedCounter
-                            to={num}
-                            prefix={prefix}
-                            suffix={suffix}
-                            decimals={stat.value.includes(".") ? 1 : 0}
-                          />
-                        ) : (
-                          stat.value
-                        )}
-                      </p>
-                      <p className="text-sm [color:var(--mk-text-muted)]">{stat.label}</p>
+                      <div
+                        className={`relative ${i > 0 ? "md:before:absolute md:before:top-1/2 md:before:left-0 md:before:h-12 md:before:w-px md:before:-translate-y-1/2 md:before:[background:var(--mk-border)]" : ""}`}
+                      >
+                        <p className="mb-1 text-4xl font-bold [color:var(--brand-text)] md:text-5xl">
+                          {isNumeric ? (
+                            <AnimatedCounter
+                              to={num}
+                              prefix={prefix}
+                              suffix={suffix}
+                              decimals={stat.value.includes(".") ? 1 : 0}
+                            />
+                          ) : (
+                            stat.value
+                          )}
+                        </p>
+                        <p className="text-sm [color:var(--mk-text-muted)]">{stat.label}</p>
+                      </div>
                     </StaggerItem>
                   );
                 })}
@@ -414,14 +418,11 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 const Icon = ICONS[f.icon];
                 return (
                   <StaggerItem key={f.title}>
-                    <GlowCard
-                      className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl"
-                      style={{ boxShadow: "var(--mk-card-shadow)" } as React.CSSProperties}
-                    >
+                    <div className="group relative h-full overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl">
                       <div
-                        className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg border ${accentTile(f.color, "light")}`}
+                        className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl border ${accentTile(f.color, "light")}`}
                       >
-                        {Icon && <Icon size={18} />}
+                        {Icon && <Icon size={22} />}
                       </div>
                       <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
                         {f.title}
@@ -429,13 +430,16 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                       <p className="text-sm leading-relaxed [color:var(--mk-text-muted)] md:text-base">
                         {f.desc}
                       </p>
-                    </GlowCard>
+                    </div>
                   </StaggerItem>
                 );
               })}
             </StaggerContainer>
           </div>
         </Section>
+
+        {/* Superbrain Advantage — three trust pillars (slate tone breaks the light run) */}
+        <SuperbrainAdvantage lang={lang} />
 
         {/* Audience segments — early relevance: "this is for my firm type" */}
         <AudienceTabs lang={lang} />
@@ -474,7 +478,49 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <Section tone="dark" className="px-4 py-24 sm:px-6 lg:px-8" aria-label={ui.ariaComparison}>
           <motion.div {...reveal} className="mx-auto max-w-5xl">
             <SectionHeading title={t.comparisonTitle} sub={t.comparisonSub} />
-            <div className="overflow-x-auto">
+            {/* Mobile: stacked card layout */}
+            <div className="mt-10 space-y-3 md:hidden">
+              {t.comparison.map((row, i) => (
+                <motion.div
+                  key={row.feature}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.3, delay: i * 0.05 }}
+                  className="rounded-xl border border-[color:var(--mk-border)] p-4"
+                >
+                  <p className="mb-3 text-sm font-semibold text-[color:var(--mk-text)]">
+                    {row.feature}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="mb-1 text-xs font-semibold text-[color:var(--brand-text)]">
+                        Subsumio
+                      </p>
+                      <span className="inline-flex items-start gap-1.5 text-xs text-[color:var(--mk-text-muted)]">
+                        <Check
+                          size={14}
+                          className="mt-0.5 shrink-0 text-[color:var(--signal-green)]"
+                          aria-hidden
+                        />
+                        {row.subsumio}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="mb-1 text-xs font-semibold text-[color:var(--mk-text-subtle)]">
+                        {ui.comparisonOthers}
+                      </p>
+                      <span className="inline-flex items-start gap-1.5 text-xs text-[color:var(--mk-text-subtle)]">
+                        <X size={14} className="mt-0.5 shrink-0 opacity-50" aria-hidden />
+                        {row.others}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            {/* Desktop: table layout */}
+            <div className="hidden overflow-x-auto md:block">
               <table
                 className="mt-10 w-full border-collapse text-sm"
                 aria-label={ui.comparisonTableLabel}
@@ -484,7 +530,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                     <th className="py-3 pr-4 text-left font-semibold text-[color:var(--mk-text)]">
                       {ui.comparisonFeature}
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold text-[color:var(--brand-text)]">
+                    <th className="rounded-lg px-4 py-3 text-left font-semibold text-[color:var(--brand-text)] [background:color-mix(in_srgb,var(--brand-primary)_6%,transparent)]">
                       Subsumio
                     </th>
                     <th className="py-3 pl-4 text-left font-semibold text-[color:var(--mk-text-subtle)]">
@@ -505,7 +551,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                       <td className="py-4 pr-4 font-medium text-[color:var(--mk-text)]">
                         {row.feature}
                       </td>
-                      <td className="px-4 py-4 text-[color:var(--mk-text-muted)]">
+                      <td className="rounded-lg px-4 py-4 text-[color:var(--mk-text-muted)] [background:color-mix(in_srgb,var(--brand-primary)_4%,transparent)]">
                         <span className="inline-flex items-start gap-2">
                           <Check
                             size={16}
@@ -621,7 +667,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           }}
           transition={{ duration: 0.3, ease: EASE.out }}
           data-tone="dark"
-          className="fixed right-0 bottom-0 left-0 z-50 border-t [border-color:var(--mk-border)] backdrop-blur-lg [background:color-mix(in_srgb,var(--mk-surface)_92%,transparent)]"
+          className="fixed right-0 bottom-0 left-0 z-50 border-t [border-color:var(--mk-border)] pb-[env(safe-area-inset-bottom)] backdrop-blur-lg [background:color-mix(in_srgb,var(--mk-surface)_92%,transparent)]"
           aria-hidden={!stickyVisible}
         >
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">

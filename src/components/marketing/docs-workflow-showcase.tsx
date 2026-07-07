@@ -134,6 +134,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
       <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14">
         {/* Left: Interactive workflow selector */}
         <div
+          className="order-2 lg:order-1"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => {
             if (!pauseTimerRef.current) setPaused(false);
@@ -245,7 +246,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={viewport}
           transition={{ duration: 0.45, ease: EASE.out }}
-          className="relative"
+          className="relative order-1 lg:order-2"
         >
           <div className="brand-glow-bg absolute -inset-6 rounded-full opacity-30 blur-3xl" />
           <AnimatePresence mode="wait">

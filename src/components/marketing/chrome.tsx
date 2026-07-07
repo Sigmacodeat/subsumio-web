@@ -305,7 +305,7 @@ export function MarketingBackground() {
   const yGrid = useTransform(scrollY, [0, 2400], [0, 110 * span]);
 
   return (
-    <div className="pointer-events-none fixed inset-0 overflow-hidden">
+    <div className="pointer-events-none fixed inset-0 hidden overflow-hidden md:block">
       {/* Gradient orbs (existing) */}
       <motion.div
         style={{ y: yViolet }}

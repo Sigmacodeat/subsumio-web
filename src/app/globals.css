@@ -596,6 +596,9 @@
   --mk-text-subtle: hsl(230, 8%, 62%);
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 
+  /* Marketing header height — used by sticky sub-navs (docs, etc.) */
+  --header-h: 56px;
+
   /* Tone reference variables — for cross-tone gradients.
      NOT overridden by [data-tone] scopes. */
   --tone-light-bg: var(--neutral-100);
