@@ -146,6 +146,7 @@ const SETTINGS_DESC_MAP: Record<string, DashboardKey> = {
   "/dashboard/settings/security": "settings.tile_security_desc_full",
   "/dashboard/directory": "settings.tile_directory_desc",
   "/dashboard/connectors": "settings.tile_connectors_desc",
+  "/dashboard/crypto-forensics": "settings.tile_rciid_desc",
   "/dashboard/agents": "settings.tile_agents_desc",
   "/dashboard/settings/scim": "settings.tile_scim_desc_full",
   "/dashboard/monitoring": "settings.tile_monitoring_desc",

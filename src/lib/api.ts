@@ -3200,6 +3200,114 @@ export const api = {
       return request(`/api/feature-flags${qs}`);
     },
   },
+
+  rciid: {
+    submit(input: {
+      caseSlug: string;
+      caseTitle?: string;
+      clientReference?: string;
+      lawyerReference?: string;
+      jurisdiction?: "DE" | "AT" | "CH" | "EU";
+      caseType?: string;
+      wallets: Array<{
+        address: string;
+        blockchain: "BTC" | "ETH" | "USDT" | "SOL" | "LTC" | "XRP" | "TRX" | "UNKNOWN";
+        label?: string;
+        notes?: string;
+      }>;
+      description?: string;
+      priority?: "low" | "medium" | "high" | "urgent";
+      webhookUrl?: string;
+    }): Promise<{
+      ok: boolean;
+      caseId: string;
+      status: string;
+      pricing?: { amount: number; currency: string; type: "flat" | "hourly" };
+      estimatedCompletionDays?: number;
+      webhookRegistered?: boolean;
+    }> {
+      return request("/api/rciid/submit", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+
+    getStatus(rciidCaseId: string): Promise<{
+      ok: boolean;
+      caseId: string;
+      status: string;
+      progressPercent: number;
+      currentPhase: string;
+      estimatedCompletionDays?: number;
+      pricing?: { amount: number; currency: string; type: "flat" | "hourly" };
+      timeline?: Array<{ phase: string; timestamp: string; description: string }>;
+      updatedAt?: string;
+    }> {
+      return request("/api/rciid/status", {
+        method: "POST",
+        body: JSON.stringify({ rciidCaseId }),
+      });
+    },
+
+    getReport(
+      rciidCaseId: string,
+      format?: "json" | "pdf"
+    ): Promise<{
+      ok: boolean;
+      caseId: string;
+      status: string;
+      reportUrl?: string;
+      summary?: string;
+      findings?: Array<{
+        title: string;
+        description: string;
+        severity: "info" | "low" | "medium" | "high" | "critical";
+        evidence?: string[];
+      }>;
+      generatedAt?: string;
+    }> {
+      return request("/api/rciid/report", {
+        method: "POST",
+        body: JSON.stringify({ rciidCaseId, format: format ?? "json" }),
+      });
+    },
+
+    detectWallets(input: { text?: string; caseSlug?: string }): Promise<{
+      ok: boolean;
+      wallets: Array<{
+        address: string;
+        blockchain: string;
+        confidence: number;
+        context?: string;
+        isKnownFraud: boolean;
+      }>;
+      count: number;
+    }> {
+      return request("/api/rciid/detect-wallets", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+
+    listCases(params?: { status?: string; limit?: number; offset?: number }): Promise<{
+      ok: boolean;
+      cases: Array<{
+        case_id: string;
+        status: string;
+        progress_percent: number;
+        current_phase: string;
+        updated_at?: string;
+      }>;
+      total?: number;
+    }> {
+      const qs = new URLSearchParams();
+      if (params?.status) qs.set("status", params.status);
+      if (params?.limit) qs.set("limit", String(params.limit));
+      if (params?.offset) qs.set("offset", String(params.offset));
+      const q = qs.toString();
+      return request(`/api/rciid/cases${q ? `?${q}` : ""}`);
+    },
+  },
 };
 
 export type {

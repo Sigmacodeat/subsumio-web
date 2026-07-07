@@ -13,17 +13,16 @@ import {
   AnimatedCounter,
   StaggerContainer,
   StaggerItem,
+  VIEWPORT,
 } from "./motion-system";
 import { Section, accentTile, BadgePill, H1_CLASS, H2_CTA_CLASS } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { copy, getCopy, type SuperbrainCopyDe } from "./superbrain-content";
 
-const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
-
 const reveal = {
   initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
-  viewport,
+  viewport: VIEWPORT.gentle,
   transition: { duration: 0.5, ease: EASE.out },
 };
 
@@ -180,7 +179,7 @@ function StatsBand({ t }: { t: SuperbrainCopyDe }) {
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport}
+            viewport={VIEWPORT.gentle}
             transition={{ duration: 0.45, delay: i * 0.1 }}
             className="text-center"
           >
@@ -222,7 +221,7 @@ function OthersSection({ t }: { t: SuperbrainCopyDe }) {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport}
+            viewport={VIEWPORT.gentle}
             transition={{ duration: 0.4 }}
             className="mb-4 inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 [background:var(--mk-surface-2)]"
           >
@@ -331,7 +330,7 @@ function OursSection({ t }: { t: SuperbrainCopyDe }) {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport}
+            viewport={VIEWPORT.gentle}
             transition={{ duration: 0.4 }}
             className="brand-border brand-soft mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5"
           >
@@ -739,7 +738,7 @@ function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport}
+            viewport={VIEWPORT.gentle}
             transition={{ duration: 0.4 }}
             className="brand-border brand-soft mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5"
           >

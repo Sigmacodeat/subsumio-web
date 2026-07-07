@@ -101,6 +101,7 @@ import {
   Flag,
   Shield,
   Filter,
+  Radar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -775,6 +776,14 @@ const ADMIN_SECTION: NavSection = {
       audienceTier: "erweitert",
     },
     {
+      href: "/dashboard/crypto-forensics",
+      icon: Radar,
+      labelKey: "nav.crypto_forensics",
+      keywords: "krypto forensik rciid wallet bitcoin ethereum blockchain fraud",
+      tier: "pro",
+      audienceTier: "erweitert",
+    },
+    {
       href: "/dashboard/connectors",
       icon: Plug,
       labelKey: "nav.connectors",
@@ -1317,6 +1326,14 @@ const TAX_ADMIN_SECTION: NavSection = {
       icon: Bot,
       labelKey: "nav.agents",
       keywords: "agenten bots automation ki agents",
+      tier: "pro",
+      audienceTier: "erweitert",
+    },
+    {
+      href: "/dashboard/crypto-forensics",
+      icon: Radar,
+      labelKey: "nav.crypto_forensics",
+      keywords: "krypto forensik rciid wallet bitcoin ethereum blockchain fraud",
       tier: "pro",
       audienceTier: "erweitert",
     },

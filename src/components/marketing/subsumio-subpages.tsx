@@ -8,115 +8,13 @@
 // VERTICALS[lang].legal so claims stay consistent with the engine.
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight, MessageSquare, Clock, Paperclip, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
-import { Section, SectionHeading, H1_CLASS, H2_CTA_CLASS, BadgePill } from "./chrome";
+import { Section, SectionHeading, PageHero, CTASection } from "./chrome";
 import { PhoneCopilot } from "./subsumio-showcase";
-import { Reveal, EASE } from "./motion-system";
-
-const reveal = {
-  initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: "0px 0px 80px 0px", amount: 0.12 },
-  transition: { duration: 0.5, ease: EASE.out },
-};
-
-// --- Shared subpage shell --------------------------------------------------
-
-function Shell({ lang, children }: { lang: Lang; children: React.ReactNode }) {
-  return (
-    <div
-      data-tone="light"
-      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
-      lang={lang}
-      style={styleForIndustry("legal")}
-    >
-      {children}
-    </div>
-  );
-}
-
-function Hero({
-  lang,
-  eyebrow,
-  title,
-  claim,
-  sub,
-  primaryHref,
-  primaryLabel,
-}: {
-  lang: Lang;
-  eyebrow: string;
-  title: string;
-  claim: string;
-  sub: string;
-  primaryHref: string;
-  primaryLabel: string;
-}) {
-  return (
-    <Section tone="light" className="px-6 pt-16 pb-20">
-      <div className="mx-auto max-w-4xl text-center">
-        <motion.div {...reveal}>
-          <BadgePill className="mb-6">{eyebrow}</BadgePill>
-          <h1 className={`${H1_CLASS} mb-5`}>
-            {title}
-            <br />
-            <span className="gradient-text">{claim}</span>
-          </h1>
-          <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
-            {sub}
-          </p>
-          <div className="flex flex-col justify-center gap-3 sm:flex-row">
-            <Link href={primaryHref}>
-              <Button size="xl" variant="primary" className="min-w-[220px]">
-                {primaryLabel}
-              </Button>
-            </Link>
-            <Link href={p(lang, "/")}>
-              <Button size="xl" variant="secondary" className="min-w-[180px]">
-                {UI_STRINGS[lang].backToOverview} <ArrowRight size={16} />
-              </Button>
-            </Link>
-          </div>
-        </motion.div>
-      </div>
-    </Section>
-  );
-}
-
-function CtaClose({
-  title,
-  sub,
-  href,
-  label,
-}: {
-  lang?: Lang;
-  title: string;
-  sub: string;
-  href: string;
-  label: string;
-}) {
-  return (
-    <Section tone="dark" className="px-4 py-24 text-center sm:px-6 lg:px-8">
-      <Reveal variant="upLg" className="mx-auto max-w-3xl">
-        <SubsumioMark size={56} className="mx-auto mb-6" />
-        <h2 className={`${H2_CTA_CLASS} mb-4`}>{title}</h2>
-        <p className="mb-8 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
-          {sub}
-        </p>
-        <Link href={href}>
-          <Button size="xl" variant="primary">
-            {label} <ArrowRight size={18} />
-          </Button>
-        </Link>
-      </Reveal>
-    </Section>
-  );
-}
+import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
 // --- Copy ------------------------------------------------------------------
 
@@ -175,50 +73,64 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
     },
   ];
   return (
-    <Shell lang={lang}>
-      <Hero
-        lang={lang}
-        eyebrow={c.eyebrow}
-        title={c.title}
-        claim={c.claim}
+    <div
+      data-tone="light"
+      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
+      lang={lang}
+      style={styleForIndustry("legal")}
+    >
+      <PageHero
+        badge={c.eyebrow}
+        h1a={c.title}
+        h1b={c.claim}
         sub={c.sub}
-        primaryHref={signup}
-        primaryLabel={c.ctaLabel}
+        accentVariant="gradient"
+        actions={
+          <>
+            <Link href={signup}>
+              <Button size="xl" variant="primary" className="min-w-[220px]">
+                {c.ctaLabel}
+              </Button>
+            </Link>
+            <Link href={p(lang, "/")}>
+              <Button size="xl" variant="secondary" className="min-w-[180px]">
+                {UI_STRINGS[lang].backToOverview} <ArrowRight size={16} />
+              </Button>
+            </Link>
+          </>
+        }
       />
       <Section tone="dark" className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-md">
           <PhoneCopilot lang={lang} />
         </div>
       </Section>
-      <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={c.flowsTitle} />
-          <div className="grid gap-5 md:grid-cols-3">
-            {flows.map((f, i) => (
-              <motion.div
-                key={f.t}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.4, delay: i * 0.08, ease: EASE.out }}
-                className="rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]"
-                style={{ boxShadow: "var(--mk-card-shadow)" }}
-              >
-                <div className="brand-soft brand-border mb-4 flex h-10 w-10 items-center justify-center rounded-lg border">
-                  <f.icon size={18} className="brand-text" />
+          <StaggerContainer className="grid gap-5 md:grid-cols-3" stagger={0.08}>
+            {flows.map((f) => (
+              <StaggerItem key={f.t}>
+                <div
+                  className="rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]"
+                  style={{ boxShadow: "var(--mk-card-shadow)" }}
+                >
+                  <div className="brand-soft brand-border mb-4 flex h-10 w-10 items-center justify-center rounded-lg border">
+                    <f.icon size={18} className="brand-text" />
+                  </div>
+                  <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">{f.t}</h3>
+                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{f.d}</p>
                 </div>
-                <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">{f.t}</h3>
-                <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{f.d}</p>
-              </motion.div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
           <p className="mx-auto mt-8 inline-flex w-full max-w-2xl items-center justify-center gap-2 text-center text-sm [color:var(--mk-text-subtle)]">
             <MessageSquare size={14} className="brand-text shrink-0" />
             {UI_STRINGS[lang].subpagesConfirmationNote}
           </p>
         </div>
       </Section>
-      <CtaClose lang={lang} title={c.ctaTitle} sub={c.ctaSub} href={signup} label={c.ctaLabel} />
-    </Shell>
+      <CTASection title={c.ctaTitle} sub={c.ctaSub} href={signup} label={c.ctaLabel} />
+    </div>
   );
 }

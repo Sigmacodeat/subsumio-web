@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
   FileText,
   CalendarClock,
@@ -17,17 +16,11 @@ import { styleForIndustry } from "@/lib/industry-theme";
 import {
   Section,
   SectionHeading,
-  BadgePill,
-  H1_CLASS,
+  PageHero,
   ContentCard,
   CTASection,
 } from "@/components/marketing/chrome";
-import {
-  ClipReveal,
-  StaggerContainer,
-  StaggerItem,
-  EASE,
-} from "@/components/marketing/motion-system";
+import { StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
 
 const FEATURES = [
   {
@@ -77,39 +70,14 @@ export default function TaxPage() {
       style={styleForIndustry("tax")}
     >
       {/* Hero */}
-      <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, ease: EASE.out }}
-          >
-            <BadgePill>
-              <Calculator size={12} /> Subsumio Tax
-            </BadgePill>
-          </motion.div>
-          <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className={H1_CLASS}>
-              Mandantengedächtnis mit
-              <br />
-              <span className="brand-text">Steuerfristen-Disziplin</span>
-            </h1>
-          </ClipReveal>
-          <motion.p
-            className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.1, ease: EASE.out }}
-          >
-            Die KI-Wissensbasis für Steuerberatung und Buchhaltung. Steuererklärungen, Bescheide,
-            Fristen und Dokumente bleiben als Finanz-Graph verbunden.
-          </motion.p>
-          <motion.div
-            className="mt-8 flex flex-col justify-center gap-3 sm:flex-row"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.2, ease: EASE.out }}
-          >
+      <PageHero
+        badge="Subsumio Tax"
+        h1a="Mandantengedächtnis mit"
+        h1b="Steuerfristen-Disziplin"
+        sub="Die KI-Wissensbasis für Steuerberatung und Buchhaltung. Steuererklärungen, Bescheide, Fristen und Dokumente bleiben als Finanz-Graph verbunden."
+        icon={Calculator}
+        actions={
+          <>
             <Link href="/signup">
               <Button size="xl" variant="primary" className="group min-w-[220px]">
                 Kostenlos starten
@@ -124,9 +92,9 @@ export default function TaxPage() {
                 Preise ansehen
               </Button>
             </Link>
-          </motion.div>
-        </div>
-      </Section>
+          </>
+        }
+      />
 
       {/* Signature Items */}
       <Section tone="light" className="px-4 py-12 sm:px-6 lg:px-8">
@@ -145,7 +113,7 @@ export default function TaxPage() {
       </Section>
 
       {/* Features */}
-      <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading
             badge="Features"

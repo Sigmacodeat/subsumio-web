@@ -8,9 +8,9 @@
 // prefers-reduced-motion via <MotionConfig reducedMotion="user">; the count-up
 // and infinite graph pulse fall back to static under reduced motion.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence, useInView, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
@@ -19,16 +19,26 @@ import SubsumioShowcase from "./subsumio-showcase";
 import {
   ICONS,
   useSiteBrand,
-  BadgePill,
-  H1_CLASS,
-  H2_CTA_CLASS,
+  PageHero,
+  SectionHeading,
   CTASection,
   Section,
+  H2_CTA_CLASS,
+  H1_CLASS,
+  BadgePill,
 } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { GuidedCursor, GlowCard, ClipReveal } from "./motion-system";
-
-const viewport = { once: true, margin: "-60px" } as const;
+import {
+  GuidedCursor,
+  GlowCard,
+  AnimatedCounter,
+  CountUp,
+  ClipReveal,
+  Reveal,
+  StaggerContainer,
+  StaggerItem,
+  VIEWPORT,
+} from "./motion-system";
 
 // --- Animated knowledge-graph hero visual --------------------------------
 
@@ -157,36 +167,6 @@ function GraphHero({ lang }: { lang: Lang }) {
   );
 }
 
-// --- Count-up stat -------------------------------------------------------
-
-function CountUp({ to, decimals = 0 }: { to: number; decimals?: number }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-40px" });
-  const reduce = useReducedMotion();
-  const [val, setVal] = useState(0);
-
-  useEffect(() => {
-    if (!inView) return;
-    if (reduce) {
-      setVal(to);
-      return;
-    }
-    const duration = 1100;
-    const start = performance.now();
-    let raf = 0;
-    const tick = (now: number) => {
-      const t = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
-      setVal(to * eased);
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [inView, to, reduce]);
-
-  return <span ref={ref}>{val.toFixed(decimals)}</span>;
-}
-
 // --- "How it works" pipeline (sequential reveal + animated connector) ----
 
 const _deHow = {
@@ -260,20 +240,14 @@ function HowItWorks({ lang }: { lang: Lang }) {
   const h = (HOW as unknown as Record<string, typeof HOW.de>)[lang] ?? HOW.de;
   return (
     <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={viewport}
-        transition={{ duration: 0.4 }}
-        className="mb-14 text-center"
-      >
-        <h2 className={`${H2_CTA_CLASS} mb-3`}>{h.title}</h2>
-        <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
-          {h.sub}
-        </p>
-      </motion.div>
+      <Reveal variant="up" className="mb-14 text-center">
+        <SectionHeading title={h.title} sub={h.sub} />
+      </Reveal>
 
-      <div className="relative grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+      <StaggerContainer
+        className="relative grid gap-5 md:grid-cols-2 lg:grid-cols-4"
+        stagger={0.18}
+      >
         {/* animated connector line (lg+) */}
         <motion.div
           aria-hidden
@@ -289,14 +263,7 @@ function HowItWorks({ lang }: { lang: Lang }) {
         {h.steps.map((s, i) => {
           const Icon = ICONS[s.icon];
           return (
-            <motion.div
-              key={s.title}
-              initial={{ opacity: 0, y: 22 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={viewport}
-              transition={{ duration: 0.45, delay: i * 0.18, ease: [0.21, 0.5, 0.27, 1] }}
-              className="relative"
-            >
+            <StaggerItem key={s.title} className="relative">
               <div className="brand-soft brand-border relative z-10 mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border shadow-lg shadow-black/40">
                 {Icon && <Icon size={22} className="brand-text" />}
                 <span className="brand-bg absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white shadow-md">
@@ -312,10 +279,10 @@ function HowItWorks({ lang }: { lang: Lang }) {
                   {s.tag}
                 </span>
               </div>
-            </motion.div>
+            </StaggerItem>
           );
         })}
-      </div>
+      </StaggerContainer>
     </Section>
   );
 }
@@ -410,7 +377,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewport}
+          viewport={VIEWPORT.tight}
           transition={{ duration: 0.4 }}
         >
           <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
@@ -425,7 +392,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           whileInView={{ opacity: 1, scale: 1 }}
-          viewport={viewport}
+          viewport={VIEWPORT.tight}
           transition={{ duration: 0.45 }}
           className="relative overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/15 [background:var(--mk-bg)]"
           data-tone="dashboard"
@@ -576,41 +543,21 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
       lang={lang}
     >
       {/* Hero — copy left, animated graph right */}
-      <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="text-center lg:text-left"
-          >
-            <BadgePill className="mb-8">{t.badge}</BadgePill>
-            <ClipReveal delay={0.1} duration={0.7} direction="up">
-              <h1 className={`${H1_CLASS} mb-6`}>
-                {t.h1a}
-                <span className="sr-only"> </span>
-                <br />
-                <span className="gradient-text glow-text">{t.h1b}</span>
-              </h1>
-            </ClipReveal>
-            <p className="mx-auto mb-8 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg lg:mx-0">
-              {t.sub}
-            </p>
-            <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
-              <Link href={p(lang, "/signup")}>
-                <Button size="lg" variant="primary">
-                  {t.ctaButton} <ArrowRight size={16} />
-                </Button>
-              </Link>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
-            className="relative"
-          >
+      <PageHero
+        badge={t.badge}
+        h1a={t.h1a}
+        h1b={t.h1b}
+        sub={t.sub}
+        accentVariant="gradient-premium"
+        actions={
+          <Link href={p(lang, "/signup")}>
+            <Button size="lg" variant="primary">
+              {t.ctaButton} <ArrowRight size={16} />
+            </Button>
+          </Link>
+        }
+        visual={
+          <div className="relative">
             <div className="brand-soft absolute inset-0 rounded-full blur-3xl" />
             <div className="glass relative rounded-3xl p-6 shadow-2xl shadow-black/40">
               <GraphHero lang={lang} />
@@ -618,9 +565,9 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                 {UI_STRINGS[lang].featuresGraphCaption}
               </p>
             </div>
-          </motion.div>
-        </div>
-      </Section>
+          </div>
+        }
+      />
 
       {/* Stats band */}
       <Section tone="light" className="px-4 pb-20 sm:px-6 lg:px-8">
@@ -630,7 +577,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
               key={s.label}
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={viewport}
+              viewport={VIEWPORT.tight}
               transition={{ duration: 0.4, delay: i * 0.08 }}
               className="rounded-2xl border [border-color:var(--mk-border)] p-5 text-center transition-colors [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
             >
@@ -708,7 +655,9 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                 <div className="brand-soft brand-border flex h-12 w-12 items-center justify-center rounded-xl border">
                   {CatIcon && <CatIcon size={22} className="brand-text" />}
                 </div>
-                <h2 className={H2_CTA_CLASS}>{cat.title}</h2>
+                <h2 className="text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+                  {cat.title}
+                </h2>
               </div>
               <p className="mb-8 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
                 {cat.intro}
@@ -790,7 +739,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewport}
+          viewport={VIEWPORT.tight}
           transition={{ duration: 0.45, ease: "easeOut" }}
           className="brand-border relative overflow-hidden rounded-3xl border p-8 text-center [background:var(--mk-surface)] md:p-12"
         >
@@ -830,7 +779,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                 }}
                 initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={viewport}
+                viewport={VIEWPORT.tight}
                 transition={{ duration: 0.35, delay: (i % 3) * 0.08 }}
                 className="group rounded-2xl text-left transition-all"
               >
@@ -860,7 +809,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport}
+            viewport={VIEWPORT.tight}
             transition={{ duration: 0.4 }}
             className="mb-10 text-center"
           >
