@@ -259,6 +259,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.3, ease: EASE.out }}
               className="relative"
+              aria-hidden
             >
               <DashboardReel lang={lang} controlledView={currentView} />
             </motion.div>

@@ -16,7 +16,7 @@
  *   - detectWalletsInCase(caseSlug): FoundWallet[] — scannt alle Fall-Dokumente
  */
 
-import type { BlockchainType } from "./rciid";
+import type { BlockchainType } from "./rciid-client";
 
 export interface FoundWallet {
   address: string;
@@ -55,9 +55,9 @@ const TRX_RE = /\bT[1-9A-HJ-NP-Za-km-z]{33}\b/g;
 const SOL_RE = /\b[1-9A-HJ-NP-Za-km-z]{32,44}\b/g;
 
 /**
- * Litecoin address pattern: L/M/3 + 25-34 base58
+ * Litecoin address pattern: L/M + 25-34 base58
  */
-const LTC_RE = /\b[LM3][a-km-zA-HJ-NP-Z1-9]{25,34}\b/g;
+const LTC_RE = /\b[LM][a-km-zA-HJ-NP-Z1-9]{25,34}\b/g;
 
 /**
  * Ripple address pattern: r + 24-34 alphanumeric
@@ -85,11 +85,11 @@ export function classifyBlockchain(address: string): BlockchainType {
   // Ripple: r + 24-34 alphanumeric
   if (/^r[0-9a-zA-Z]{24,34}$/.test(addr)) return "XRP";
 
-  // Litecoin: L/M/3 + 25-34 base58
-  if (/^[LM3][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(addr)) return "LTC";
-
-  // Bitcoin Legacy/P2SH: 1 or 3 + 25-34 base58
+  // Bitcoin Legacy/P2SH: 1 or 3 + 25-34 base58 (check before LTC — 3 overlaps)
   if (/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(addr)) return "BTC";
+
+  // Litecoin: L/M + 25-34 base58 (no 3 — that's BTC P2SH)
+  if (/^[LM][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(addr)) return "LTC";
 
   // Solana: 32-44 base58 (check last to avoid false positives)
   if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr)) return "SOL";

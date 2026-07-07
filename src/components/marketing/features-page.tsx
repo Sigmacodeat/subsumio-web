@@ -16,24 +16,12 @@ import { Button } from "@/components/ui/button";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { FEATURES_PAGE } from "@/content/features";
 import SubsumioShowcase from "./subsumio-showcase";
-import {
-  ICONS,
-  useSiteBrand,
-  PageHero,
-  SectionHeading,
-  CTASection,
-  Section,
-  H2_CTA_CLASS,
-  H1_CLASS,
-  BadgePill,
-} from "./chrome";
+import { ICONS, useSiteBrand, PageHero, SectionHeading, CTASection, Section } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import {
   GuidedCursor,
   GlowCard,
   AnimatedCounter,
-  CountUp,
-  ClipReveal,
   Reveal,
   StaggerContainer,
   StaggerItem,
@@ -383,10 +371,10 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
           <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
             {UI_STRINGS[lang].inDashboard}
           </p>
-          <h2 className={`${H2_CTA_CLASS} mb-4`}>{UI_STRINGS[lang].featuresWorkflowTitle}</h2>
-          <p className="max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
-            {UI_STRINGS[lang].featuresWorkflowSub}
-          </p>
+          <SectionHeading
+            title={UI_STRINGS[lang].featuresWorkflowTitle}
+            sub={UI_STRINGS[lang].featuresWorkflowSub}
+          />
         </motion.div>
 
         <motion.div
@@ -571,25 +559,20 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
 
       {/* Stats band */}
       <Section tone="light" className="px-4 pb-20 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {stats.map((s, i) => (
-            <motion.div
+        <StaggerContainer className="grid grid-cols-2 gap-4 lg:grid-cols-4" stagger={0.08}>
+          {stats.map((s) => (
+            <StaggerItem
               key={s.label}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={VIEWPORT.tight}
-              transition={{ duration: 0.4, delay: i * 0.08 }}
               className="rounded-2xl border [border-color:var(--mk-border)] p-5 text-center transition-colors [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
             >
               <div className="gradient-text mb-1 text-3xl font-bold md:text-4xl">
                 {s.prefix ?? ""}
-                <CountUp to={s.to} decimals={s.dec} />
-                {s.suffix ?? ""}
+                <AnimatedCounter to={s.to} decimals={s.dec} suffix={s.suffix ?? ""} />
               </div>
               <p className="text-xs leading-snug [color:var(--mk-text-muted)]">{s.label}</p>
-            </motion.div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       </Section>
 
       {/* How it works — sequential pipeline */}
@@ -736,85 +719,72 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
 
       {/* Security cross-link — replaces former Security & Teams category */}
       <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={VIEWPORT.tight}
-          transition={{ duration: 0.45, ease: "easeOut" }}
-          className="brand-border relative overflow-hidden rounded-3xl border p-8 text-center [background:var(--mk-surface)] md:p-12"
-        >
-          <div className="brand-soft absolute inset-0 opacity-30 blur-3xl" />
-          <div className="relative">
-            <div className="brand-soft brand-border mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border">
-              <Shield size={24} className="brand-text" />
+        <Reveal variant="up">
+          <div className="brand-border relative overflow-hidden rounded-3xl border p-8 text-center [background:var(--mk-surface)] md:p-12">
+            <div className="brand-soft absolute inset-0 opacity-30 blur-3xl" />
+            <div className="relative">
+              <div className="brand-soft brand-border mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border">
+                <Shield size={24} className="brand-text" />
+              </div>
+              <SectionHeading
+                title={UI_STRINGS[lang].featuresSecurityTitle}
+                sub={UI_STRINGS[lang].featuresSecuritySub}
+              />
+              <Link href={p(lang, "/security")}>
+                <Button size="lg" variant="secondary">
+                  {UI_STRINGS[lang].exploreSecurity} <ArrowRight size={16} />
+                </Button>
+              </Link>
             </div>
-            <h2 className={`${H2_CTA_CLASS} mb-3`}>{UI_STRINGS[lang].featuresSecurityTitle}</h2>
-            <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
-              {UI_STRINGS[lang].featuresSecuritySub}
-            </p>
-            <Link href={p(lang, "/security")}>
-              <Button size="lg" variant="secondary">
-                {UI_STRINGS[lang].exploreSecurity} <ArrowRight size={16} />
-              </Button>
-            </Link>
           </div>
-        </motion.div>
+        </Reveal>
       </Section>
 
       {/* Everything at a glance */}
       <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
-        <h2 className={`${H2_CTA_CLASS} mb-12 text-center`}>
+        <h2 className="mb-12 text-center text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
           {UI_STRINGS[lang].featuresGlanceTitle}
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {t.categories.map((c, i) => {
+        <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" stagger={0.08}>
+          {t.categories.map((c) => {
             const Icon = ICONS[c.icon];
             return (
-              <motion.button
-                key={c.id}
-                onClick={() => {
-                  setActive(c.id);
-                  if (typeof window !== "undefined")
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={VIEWPORT.tight}
-                transition={{ duration: 0.35, delay: (i % 3) * 0.08 }}
-                className="group rounded-2xl text-left transition-all"
-              >
-                <GlowCard className="hover:brand-border h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-hover)]">
-                  <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition-transform group-hover:scale-110">
-                    {Icon && <Icon size={20} className="brand-text" />}
-                  </div>
-                  <h3 className="mb-1.5 text-base font-semibold [color:var(--mk-text)]">
-                    {c.title}
-                  </h3>
-                  <p className="line-clamp-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                    {c.intro}
-                  </p>
-                  <span className="brand-text mt-4 inline-flex items-center gap-1 text-xs opacity-0 transition-opacity group-hover:opacity-100">
-                    {UI_STRINGS[lang].exploreLabel} <ArrowRight size={12} />
-                  </span>
-                </GlowCard>
-              </motion.button>
+              <StaggerItem key={c.id}>
+                <button
+                  onClick={() => {
+                    setActive(c.id);
+                    if (typeof window !== "undefined")
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className="group rounded-2xl text-left transition-all"
+                >
+                  <GlowCard className="hover:brand-border h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-hover)]">
+                    <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition-transform group-hover:scale-110">
+                      {Icon && <Icon size={20} className="brand-text" />}
+                    </div>
+                    <h3 className="mb-1.5 text-base font-semibold [color:var(--mk-text)]">
+                      {c.title}
+                    </h3>
+                    <p className="line-clamp-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                      {c.intro}
+                    </p>
+                    <span className="brand-text mt-4 inline-flex items-center gap-1 text-xs opacity-0 transition-opacity group-hover:opacity-100">
+                      {UI_STRINGS[lang].exploreLabel} <ArrowRight size={12} />
+                    </span>
+                  </GlowCard>
+                </button>
+              </StaggerItem>
             );
           })}
-        </div>
+        </StaggerContainer>
       </Section>
 
       {/* FAQ */}
       <Section tone="light" className="px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={VIEWPORT.tight}
-            transition={{ duration: 0.4 }}
-            className="mb-10 text-center"
-          >
-            <h2 className={H2_CTA_CLASS}>{t.faqTitle}</h2>
-          </motion.div>
+          <Reveal variant="up" className="mb-10 text-center">
+            <SectionHeading title={t.faqTitle} />
+          </Reveal>
           <AnimatedFaqList items={t.faq} tone="light" />
         </div>
       </Section>

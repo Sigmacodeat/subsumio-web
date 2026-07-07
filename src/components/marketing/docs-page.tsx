@@ -5,17 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getDocs } from "@/content/docs";
 import { type Lang } from "@/content/site";
 import { p, UI_STRINGS } from "@/content/site";
-import { ICONS, H1_CLASS, H2_CTA_CLASS, BadgePill, CTASection, Section } from "./chrome";
+import { ICONS, PageHero, CTASection, Section } from "./chrome";
 import DocsWorkflowShowcase from "./docs-workflow-showcase";
-import { GlowCard, ClipReveal, EASE } from "./motion-system";
-
-const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
-const reveal = {
-  initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport,
-  transition: { duration: 0.5, ease: EASE.out },
-};
+import { GlowCard, Reveal, StaggerContainer, StaggerItem, VIEWPORT } from "./motion-system";
 
 function FeatureCard({
   icon,
@@ -35,7 +27,7 @@ function FeatureCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={viewport}
+      viewport={VIEWPORT.tight}
       transition={{ duration: 0.4, delay: (index % 3) * 0.06 }}
       className={
         dimmed ? "opacity-30 transition-opacity duration-300" : "transition-opacity duration-300"
@@ -60,44 +52,30 @@ function FeatureCard({
 
 function QuickStartSection({ d }: { d: ReturnType<typeof getDocs> }) {
   return (
-    <Section tone="light" className="px-6 py-20">
+    <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <motion.div {...reveal} className="mb-10 text-center">
-          <h2 className={`${H2_CTA_CLASS} mb-3`}>{d.quickstart.title}</h2>
+        <Reveal variant="up" className="mb-10 text-center">
+          <h2 className="mb-3 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+            {d.quickstart.title}
+          </h2>
           <p className="text-sm text-pretty [color:var(--mk-text-muted)]">{d.quickstart.sub}</p>
-        </motion.div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {d.quickstart.steps.map((step, i) => (
-            <motion.div
-              key={step.num}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={viewport}
-              transition={{ duration: 0.4, delay: i * 0.08 }}
-            >
+        </Reveal>
+        <StaggerContainer
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5"
+          stagger={0.08}
+        >
+          {d.quickstart.steps.map((step) => (
+            <StaggerItem key={step.num}>
               <div className="relative h-full rounded-2xl border [border-color:var(--mk-border)] p-5 transition-all duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-md">
                 <div className="brand-text mb-3 text-2xl font-bold tabular-nums">{step.num}</div>
                 <h4 className="mb-1.5 text-sm font-semibold [color:var(--mk-text)]">
                   {step.title}
                 </h4>
                 <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">{step.desc}</p>
-                {i < d.quickstart.steps.length - 1 && (
-                  <div className="absolute top-1/2 -right-2 hidden -translate-y-1/2 text-[var(--mk-border)] lg:block">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M6 4l4 4-4 4"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                )}
               </div>
-            </motion.div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       </div>
     </Section>
   );
@@ -252,26 +230,16 @@ export default function DocsPage({ lang }: { lang: Lang }) {
       lang={lang}
     >
       {/* Hero */}
-      <Section tone="light" className="px-6 pt-20 pb-16 text-center">
-        <motion.div
-          className="relative z-10"
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, ease: "easeOut" }}
-        >
-          <BadgePill className="mb-8">{d.hero.badge}</BadgePill>
-          <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className={`${H1_CLASS} mb-5`}>
-              {d.hero.title}
-              <span className="sr-only"> </span>
-              <br />
-              <span className="gradient-text">{d.hero.claim}</span>
-            </h1>
-          </ClipReveal>
-          <p className="mx-auto mb-6 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
-            {d.hero.sub}
-          </p>
-          <p className="mx-auto mb-8 max-w-xl text-sm leading-relaxed [color:var(--mk-text-subtle)]">
+      <PageHero
+        badge={d.hero.badge}
+        h1a={d.hero.title}
+        h1b={d.hero.claim}
+        sub={d.hero.sub}
+        accentVariant="gradient"
+      />
+      <Section tone="light" className="-mt-8 px-4 pb-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="mx-auto mb-6 max-w-xl text-sm leading-relaxed [color:var(--mk-text-subtle)]">
             {d.intro}
           </p>
           {/* Stats badges */}
@@ -288,7 +256,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
               {t.docsStatsBadge ?? "Fully documented"}
             </span>
           </div>
-        </motion.div>
+        </div>
       </Section>
 
       <DocsWorkflowShowcase lang={lang} />
@@ -313,7 +281,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
       />
 
       {/* Categories */}
-      <Section tone="light" className="px-6 pt-12 pb-28">
+      <Section tone="light" className="px-4 pt-12 pb-28 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl space-y-20">
           {filteredCategories.length === 0 && search && (
             <div className="py-20 text-center">
@@ -350,23 +318,28 @@ export default function DocsPage({ lang }: { lang: Lang }) {
             </div>
           )}
           {filteredCategories.map((cat) => (
-            <motion.div
+            <Reveal
               key={cat.id}
               id={`cat-${cat.id}`}
-              {...reveal}
-              onViewportEnter={() => setActiveId(cat.id)}
+              variant="up"
               className="scroll-mt-[120px]"
+              onViewportEnter={() => setActiveId(cat.id)}
             >
               <div className="mb-8 flex items-end justify-between gap-4">
                 <div>
-                  <h2 className={`${H2_CTA_CLASS} mb-2`}>{cat.title}</h2>
+                  <h2 className="mb-2 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+                    {cat.title}
+                  </h2>
                   <p className="text-sm [color:var(--mk-text-muted)]">{cat.sub}</p>
                 </div>
                 <span className="shrink-0 rounded-full border [border-color:var(--mk-border)] px-2.5 py-1 text-[10px] font-medium [color:var(--mk-text-muted)] [background:var(--mk-surface)]">
                   {cat.features.length}
                 </span>
               </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <StaggerContainer
+                className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+                stagger={0.06}
+              >
                 {cat.features.map((f, i) => (
                   <FeatureCard
                     key={f.title}
@@ -376,8 +349,8 @@ export default function DocsPage({ lang }: { lang: Lang }) {
                     index={i}
                   />
                 ))}
-              </div>
-            </motion.div>
+              </StaggerContainer>
+            </Reveal>
           ))}
         </div>
       </Section>
@@ -385,11 +358,16 @@ export default function DocsPage({ lang }: { lang: Lang }) {
       {/* Architecture */}
       <Section tone="light" className="px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <motion.div {...reveal} className="mb-12 text-center">
-            <h2 className={`${H2_CTA_CLASS} mb-3`}>{d.arch.title}</h2>
+          <Reveal variant="up" className="mb-12 text-center">
+            <h2 className="mb-3 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+              {d.arch.title}
+            </h2>
             <p className="text-sm text-pretty [color:var(--mk-text-muted)]">{d.arch.sub}</p>
-          </motion.div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          </Reveal>
+          <StaggerContainer
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            stagger={0.06}
+          >
             {d.arch.items.map((item, i) => (
               <FeatureCard
                 key={item.title}
@@ -399,7 +377,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
                 index={i}
               />
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </Section>
 

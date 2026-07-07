@@ -155,6 +155,7 @@ export default function ScrollPinnedDashboard({
           <div
             className="rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/20"
             data-tone="dashboard"
+            aria-hidden
           >
             <DashboardReel lang={lang} />
           </div>
@@ -189,6 +190,7 @@ export default function ScrollPinnedDashboard({
           <div
             className="rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/30"
             data-tone="dashboard"
+            aria-hidden
           >
             <DashboardReel lang={lang} controlledView={currentView} showCursor={false} />
           </div>

@@ -456,10 +456,11 @@ function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
               "linear-gradient(90deg, color-mix(in srgb, var(--brand-primary) 5%, var(--mk-bg)), color-mix(in srgb, var(--brand-primary) 2%, var(--mk-bg)))",
           }}
         >
-          <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-1.5 text-center sm:px-6 lg:px-8">
+          <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-2 text-center sm:px-6 lg:px-8">
             <Link
               href={p(lang, nav.announcement.href)}
-              className="group hover:brand-text flex items-center gap-2 text-xs font-medium [color:var(--mk-text)] transition-colors"
+              className="group hover:brand-text flex min-h-[28px] items-center gap-2 text-xs font-medium [color:var(--mk-text)] transition-colors"
+              aria-label={`${nav.announcement.badge ? nav.announcement.badge + ": " : ""}${nav.announcement.text}`}
             >
               {nav.announcement.badge && (
                 <span className="relative inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] leading-none font-bold text-white">
@@ -477,10 +478,10 @@ function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
             </Link>
             <button
               onClick={handleDismiss}
-              className="absolute top-1/2 right-3 flex min-h-[24px] min-w-[24px] -translate-y-1/2 items-center justify-center rounded p-1 [color:var(--mk-text-subtle)] transition-colors hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+              className="absolute top-1/2 right-3 flex min-h-[28px] min-w-[28px] -translate-y-1/2 items-center justify-center rounded p-1.5 [color:var(--mk-text-subtle)] transition-colors hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
               aria-label={UI_STRINGS[lang].dismissAnnouncement}
             >
-              <X size={12} />
+              <X size={14} />
             </button>
           </div>
         </motion.div>
@@ -1002,7 +1003,13 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                 </Link>
                 {/* Compact CTA icon for xs screens */}
                 <Link href={p(lang, "/signup")} className="sm:hidden" aria-label={nav.cta}>
-                  <Button size="sm" variant="primary" className="group min-h-[36px] px-3">
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    className="group min-h-[36px] px-3"
+                    aria-hidden
+                    tabIndex={-1}
+                  >
                     <ChevronRight
                       size={16}
                       className="transition-transform duration-200 group-hover:translate-x-0.5"

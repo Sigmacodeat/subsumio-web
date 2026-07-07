@@ -1,24 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import type { SolutionContent, SolutionSlug } from "@/content/solutions";
 import { SOLUTION_SLUGS, SOLUTION_CROSS_LINKS } from "@/content/solutions";
-import {
-  Section,
-  SectionHeading,
-  ICONS,
-  accentTile,
-  CTASection,
-  H1_CLASS,
-  H2_CTA_CLASS,
-  BadgePill,
-} from "./chrome";
+import { Section, SectionHeading, ICONS, accentTile, CTASection, PageHero } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { GlowCard, ClipReveal, EASE, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
+import { GlowCard, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
 /** Per-vertical hero motif: a small floating constellation built from this
  *  vertical's own first 3 feature icons, so each of the 4 /solutions/* pages
@@ -26,12 +16,7 @@ import { GlowCard, ClipReveal, EASE, Reveal, StaggerContainer, StaggerItem } fro
 function HeroIconConstellation({ content }: { content: SolutionContent }) {
   const icons = content.features.slice(0, 3);
   return (
-    <motion.div
-      className="mt-10 flex items-center justify-center gap-4"
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.55, delay: 0.3, ease: EASE.out }}
-    >
+    <div className="mt-10 flex items-center justify-center gap-4">
       {icons.map((feat) => {
         const Icon = ICONS[feat.icon] ?? ICONS.Layers;
         return (
@@ -44,7 +29,7 @@ function HeroIconConstellation({ content }: { content: SolutionContent }) {
           </div>
         );
       })}
-    </motion.div>
+    </div>
   );
 }
 
@@ -53,37 +38,13 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
   return (
     <>
       {/* Hero */}
-      <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl text-center">
-          <motion.span
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, ease: EASE.out }}
-            className="inline-flex"
-          >
-            <BadgePill>{content.badge}</BadgePill>
-          </motion.span>
-          <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className={H1_CLASS}>
-              {content.h1a}
-              <br />
-              <span className="brand-text">{content.h1b}</span>
-            </h1>
-          </ClipReveal>
-          <motion.p
-            className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.1, ease: EASE.out }}
-          >
-            {content.sub}
-          </motion.p>
-          <motion.div
-            className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.2, ease: EASE.out }}
-          >
+      <PageHero
+        badge={content.badge}
+        h1a={content.h1a}
+        h1b={content.h1b}
+        sub={content.sub}
+        actions={
+          <>
             <Link href={p(lang, "/signup")}>
               <Button size="lg" variant="primary" className="group min-h-[48px]">
                 {content.ctaButton}
@@ -98,10 +59,12 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
                 {ui.seePlatform}
               </Button>
             </Link>
-          </motion.div>
-          <HeroIconConstellation content={content} />
-        </div>
-      </Section>
+          </>
+        }
+      />
+      <div className="mx-auto -mt-8 max-w-4xl text-center">
+        <HeroIconConstellation content={content} />
+      </div>
 
       {/* Pains */}
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
@@ -166,7 +129,9 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
               <div className="brand-soft brand-border mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border">
                 <CheckCircle size={24} className="brand-text" />
               </div>
-              <h2 className={`${H2_CTA_CLASS} mb-4`}>{content.proofTitle}</h2>
+              <h2 className="mb-4 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+                {content.proofTitle}
+              </h2>
               <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
                 {content.proof}
               </p>

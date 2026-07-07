@@ -4,7 +4,7 @@ import { Mail, MessageSquare, FileText, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import { Section, SectionHeading, PageHero, CTASection, IconTile } from "./chrome";
-import { GlowCard, EASE, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
+import { GlowCard, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
 const _deContact = {
   badge: "Kontakt",

@@ -7,9 +7,9 @@
 import { Check, Shield, Layers, Lock, Eye, type LucideIcon } from "lucide-react";
 import { p, type Lang } from "@/content/site";
 import { SECURITY } from "@/content/security";
-import { SectionHeading, CTASection, BadgePill, H1_CLASS, Section } from "./chrome";
+import { SectionHeading, CTASection, PageHero, Section } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal } from "./motion-system";
+import { Reveal, StaggerContainer, StaggerItem, GlowCard } from "./motion-system";
 
 const PILLAR_ICONS: Record<string, LucideIcon> = { Shield, Layers, Lock, Eye };
 
@@ -23,22 +23,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       lang={lang}
     >
       {/* Hero */}
-      <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
-        <Reveal variant="up" className="mx-auto max-w-4xl text-center">
-          <BadgePill>{t.badge}</BadgePill>
-          <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className={H1_CLASS}>
-              {t.h1a}
-              <span className="sr-only"> </span>
-              <br />
-              <span className="brand-text">{t.h1b}</span>
-            </h1>
-          </ClipReveal>
-          <p className="mx-auto max-w-3xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
-            {t.sub}
-          </p>
-        </Reveal>
-      </Section>
+      <PageHero badge={t.badge} h1a={t.h1a} h1b={t.h1b} sub={t.sub} icon={Shield} />
 
       {/* Pillars */}
       <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">

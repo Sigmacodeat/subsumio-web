@@ -4,24 +4,15 @@
 // Full motion: MotionConfig, ScrollProgress, scroll-reveal on every section,
 // GlowCards on tiers, StaggerContainer on grids, reduced-motion safe.
 
-import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Check, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Lang } from "@/content/site";
 import { UI_STRINGS } from "@/content/site";
 import { PARTNERS } from "@/content/partners";
-import {
-  SectionHeading,
-  ICONS,
-  CTASection,
-  BadgePill,
-  H1_CLASS,
-  H2_CTA_CLASS,
-  Section,
-} from "./chrome";
+import { SectionHeading, ICONS, CTASection, PageHero, Section } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal } from "./motion-system";
+import { Reveal, StaggerContainer, StaggerItem, GlowCard } from "./motion-system";
 
 export default function PartnersPage({ lang }: { lang: Lang }) {
   const t = PARTNERS[lang];
@@ -32,27 +23,14 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
       className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
       lang={lang}
     >
-      {/* Hero — animate on mount */}
-      <Section tone="light" className="mx-auto max-w-7xl px-6 pt-20 pb-20 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-        >
-          <BadgePill className="mb-8">{t.badge}</BadgePill>
-          <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className={`${H1_CLASS} mb-6`}>
-              {t.h1a}
-              <span className="sr-only"> </span>
-              <br />
-              <span className="gradient-text-premium glow-text">{t.h1b}</span>
-            </h1>
-          </ClipReveal>
-          <p className="mx-auto mb-4 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
-            {t.sub}
-          </p>
-        </motion.div>
-      </Section>
+      {/* Hero */}
+      <PageHero
+        badge={t.badge}
+        h1a={t.h1a}
+        h1b={t.h1b}
+        sub={t.sub}
+        accentVariant="gradient-premium"
+      />
 
       {/* Tiers — staggered reveal + GlowCard */}
       <Section id="affiliate" tone="light" className="mx-auto max-w-6xl px-6 pb-24">
@@ -143,7 +121,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
       <Section tone="light" className="px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <Reveal variant="up" className="mx-auto max-w-3xl text-center">
           <TrendingUp size={28} className="brand-text mx-auto mb-6" />
-          <h2 className={`${H2_CTA_CLASS} mb-5`}>{t.calcTitle}</h2>
+          <SectionHeading title={t.calcTitle} />
           <p className="mb-6 text-lg leading-relaxed text-pretty [color:var(--mk-text)]">
             {t.calcSub}
           </p>

@@ -14,7 +14,7 @@ import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
 import { Section, SectionHeading, PageHero, CTASection } from "./chrome";
 import { PhoneCopilot } from "./subsumio-showcase";
-import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
+import { StaggerContainer, StaggerItem } from "./motion-system";
 
 // --- Copy ------------------------------------------------------------------
 

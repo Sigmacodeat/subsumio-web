@@ -25,25 +25,15 @@ import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { DOWNLOAD } from "@/content/download";
-import {
-  Section,
-  SectionHeading,
-  BadgePill,
-  H1_CLASS,
-  H2_CTA_CLASS,
-  CTASection,
-  IconTile,
-} from "./chrome";
+import { Section, SectionHeading, PageHero, CTASection, IconTile } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { GlowCard, ClipReveal } from "./motion-system";
+import { GlowCard, StaggerContainer, StaggerItem } from "./motion-system";
 
 const PLATFORM_ICONS: Record<string, LucideIcon> = { Apple, Smartphone, Monitor };
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
 }
-
-const viewport = { once: true, margin: "-60px" } as const;
 
 // --- Animated phone mockup -----------------------------------------------
 
@@ -169,69 +159,48 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
       lang={lang}
     >
       {/* Hero — copy left, phone mockup right */}
-      <Section tone="light" className="px-6 pt-20 pb-16">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="text-center lg:text-left"
-          >
-            <BadgePill className="mb-8">{t.badge}</BadgePill>
-            <ClipReveal delay={0.1} duration={0.7} direction="up">
-              <h1 className={`${H1_CLASS} mb-6`}>
-                {t.h1a}
-                <br />
-                <span className="gradient-text glow-text">{t.h1b}</span>
-              </h1>
-            </ClipReveal>
-            <p className="mx-auto mb-10 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg lg:mx-0">
-              {t.sub}
-            </p>
-
-            <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
-              {installEvent ? (
-                <Button
-                  size="xl"
-                  variant="primary"
-                  className="min-w-[240px]"
-                  onClick={() => installEvent.prompt()}
-                >
-                  <DownloadIcon size={18} />
-                  {UI_STRINGS[lang].installNow}
-                </Button>
-              ) : (
-                <Link href={p(lang, "/signup")} className="inline-flex">
-                  <Button size="xl" variant="primary">
-                    {UI_STRINGS[lang].getStarted} <ArrowRight size={18} />
-                  </Button>
-                </Link>
-              )}
-              <Link href={p(lang, "/features")} className="inline-flex">
-                <Button size="xl" variant="secondary">
-                  {UI_STRINGS[lang].seeFeatures}
+      <PageHero
+        badge={t.badge}
+        h1a={t.h1a}
+        h1b={t.h1b}
+        sub={t.sub}
+        accentVariant="gradient"
+        actions={
+          <>
+            {installEvent ? (
+              <Button
+                size="xl"
+                variant="primary"
+                className="min-w-[240px]"
+                onClick={() => installEvent.prompt()}
+              >
+                <DownloadIcon size={18} />
+                {UI_STRINGS[lang].installNow}
+              </Button>
+            ) : (
+              <Link href={p(lang, "/signup")} className="inline-flex">
+                <Button size="xl" variant="primary">
+                  {UI_STRINGS[lang].getStarted} <ArrowRight size={18} />
                 </Button>
               </Link>
-            </div>
-          </motion.div>
-
-          <PhoneMockup lang={lang} />
-        </div>
-      </Section>
+            )}
+            <Link href={p(lang, "/features")} className="inline-flex">
+              <Button size="xl" variant="secondary">
+                {UI_STRINGS[lang].seeFeatures}
+              </Button>
+            </Link>
+          </>
+        }
+        visual={<PhoneMockup lang={lang} />}
+      />
 
       {/* Platform cards */}
-      <Section tone="light" className="px-6 pb-20">
-        <div className="grid gap-5 md:grid-cols-3">
-          {t.platforms.map((platform, idx) => {
+      <Section tone="light" className="px-4 pb-20 sm:px-6 lg:px-8">
+        <StaggerContainer className="grid gap-5 md:grid-cols-3" stagger={0.08}>
+          {t.platforms.map((platform) => {
             const Icon = PLATFORM_ICONS[platform.icon] ?? Monitor;
             return (
-              <motion.div
-                key={platform.id}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={viewport}
-                transition={{ delay: idx * 0.08, duration: 0.3 }}
-              >
+              <StaggerItem key={platform.id}>
                 <GlowCard
                   glowColor="var(--brand-primary)"
                   intensity={0.12}
@@ -259,19 +228,16 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                     </p>
                   )}
                 </GlowCard>
-              </motion.div>
+              </StaggerItem>
             );
           })}
-        </div>
+        </StaggerContainer>
       </Section>
 
       {/* Store preview */}
       <Section tone="light" className="px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className={`${H2_CTA_CLASS} mb-4`}>{t.storesTitle}</h2>
-          <p className="mb-8 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
-            {t.storesSub}
-          </p>
+          <SectionHeading title={t.storesTitle} sub={t.storesSub} />
 
           <div className="mb-8 flex flex-wrap items-center justify-center gap-4">
             {[

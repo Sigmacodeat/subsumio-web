@@ -4,13 +4,12 @@
 // MotionConfig wraps the whole page; ScrollProgress shows reading position;
 // every section scroll-reveals; value-props use signal-colored tiles.
 
-import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { PRICING, PRICING_FAQ, VALUE_PROPS, UI_STRINGS, p, type Lang } from "@/content/site";
-import { SectionHeading, CTASection, BadgePill, H1_CLASS, Section } from "./chrome";
+import { SectionHeading, CTASection, PageHero, Section } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { PricingGrid } from "./pricing-grid";
-import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal } from "./motion-system";
+import { Reveal, StaggerContainer, StaggerItem, GlowCard } from "./motion-system";
 
 export default function PricingPage({ lang }: { lang: Lang }) {
   const pricing = PRICING[lang];
@@ -26,26 +25,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
       lang={lang}
     >
       {/* Hero */}
-      <Section tone="light" className="px-6 pt-20 pb-16">
-        <div className="mx-auto max-w-4xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          >
-            <BadgePill className="mb-6">
-              <Check size={12} className="brand-text" />
-              {ui.transparentFair}
-            </BadgePill>
-            <ClipReveal delay={0.1} duration={0.7} direction="up">
-              <h1 className={`${H1_CLASS} mb-5`}>{pricing.title}</h1>
-            </ClipReveal>
-            <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
-              {pricing.sub}
-            </p>
-          </motion.div>
-        </div>
-      </Section>
+      <PageHero badge={ui.transparentFair} h1a={pricing.title} sub={pricing.sub} icon={Check} />
 
       {/* Pricing Grid */}
       <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">

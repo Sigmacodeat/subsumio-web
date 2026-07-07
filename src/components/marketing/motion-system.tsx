@@ -213,6 +213,8 @@ interface RevealProps {
   className?: string;
   viewport?: { once?: boolean; margin?: string; amount?: number };
   as?: "div" | "section" | "article";
+  onViewportEnter?: () => void;
+  id?: string;
 }
 
 export function Reveal({
@@ -222,16 +224,20 @@ export function Reveal({
   className = "",
   viewport = VIEWPORT.gentle,
   as: Tag = "div",
+  onViewportEnter,
+  id,
 }: RevealProps) {
   const variants = REVEAL[variant](delay);
   const MotionTag = motion[Tag];
   return (
     <MotionTag
+      id={id}
       initial="hidden"
       whileInView="visible"
       viewport={viewport}
       variants={variants}
       className={className}
+      onViewportEnter={onViewportEnter}
     >
       {children}
     </MotionTag>

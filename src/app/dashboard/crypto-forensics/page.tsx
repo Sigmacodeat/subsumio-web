@@ -44,7 +44,7 @@ import {
   isRciidCaseDone,
   type RciidCaseStatus,
   type BlockchainType,
-} from "@/lib/rciid";
+} from "@/lib/rciid-client";
 import { BLOCKCHAIN_LABELS, BLOCKCHAIN_COLORS } from "@/lib/crypto-wallet-detector";
 
 interface RciidCaseRow {
