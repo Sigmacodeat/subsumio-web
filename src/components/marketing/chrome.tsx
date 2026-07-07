@@ -62,6 +62,7 @@ import {
   Workflow,
   GitCompare,
   FileSearch,
+  Mic,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -144,6 +145,7 @@ export const ICONS: Record<string, LucideIcon> = {
   Workflow,
   GitCompare,
   FileSearch,
+  Mic,
 };
 
 // Tone-aware accent icon-tiles. On light surfaces the -700/-50/-200 shades

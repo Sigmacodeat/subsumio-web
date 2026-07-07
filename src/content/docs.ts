@@ -156,7 +156,12 @@ const DE: DocsContent = {
         {
           icon: "Database",
           title: "DMS-Integrationen",
-          desc: "Native Anbindung an NetDocuments, iManage, Google Drive. Bi-direktionale Synchronisation.",
+          desc: "Native Anbindung an NetDocuments, iManage, Google Drive, Box. Bi-direktionale Synchronisation.",
+        },
+        {
+          icon: "Users",
+          title: "Co-Editing & Presence",
+          desc: "Echtzeit-Präsenzanzeige: sieh, wer gerade an welchem Dokument arbeitet. Live-Cursor, Avatars, kollaborative Notizen — WebSocket-basiert.",
         },
         {
           icon: "Layers",
@@ -343,6 +348,11 @@ const DE: DocsContent = {
           icon: "Network",
           title: "Mandanten-Isolation",
           desc: "Jede Akte ist strikt getrennt. Ein Nutzer auf Akte A kann Akte B nicht sehen — per Design garantiert, fuzz-getestet auf zero leaks.",
+        },
+        {
+          icon: "ShieldCheck",
+          title: "Ethical Walls",
+          desc: "Strikte Informationsbarrieren zwischen Akten und Teams. Konfigurierbare Zugriffsblockaden verhindern Interessenkonflikte — durchgesetzt auf Datenbankebene.",
         },
         {
           icon: "ShieldAlert",
@@ -638,6 +648,11 @@ const DE: DocsContent = {
           icon: "Zap",
           title: "Mobile App",
           desc: "Native iOS und Android App. Zeitbuchung, Upload, Aktenzugriff, Chat — unterwegs genauso mächtig.",
+        },
+        {
+          icon: "Mic",
+          title: "Voice-to-Prompt",
+          desc: "Spracheingabe für Prompts auf Mobile und Desktop. Web Speech API, transkribiert in Echtzeit, sendet als Text — ideal für Diktat nach dem Termin.",
         },
         {
           icon: "Database",
@@ -957,7 +972,12 @@ const EN: DocsContent = {
         {
           icon: "Database",
           title: "DMS Integrations",
-          desc: "Native connection to NetDocuments, iManage, Google Drive. Bi-directional synchronization.",
+          desc: "Native connection to NetDocuments, iManage, Google Drive, Box. Bi-directional synchronization.",
+        },
+        {
+          icon: "Users",
+          title: "Co-Editing & Presence",
+          desc: "Real-time presence indicator: see who is working on which document. Live cursors, avatars, collaborative notes — WebSocket-based.",
         },
         {
           icon: "Layers",
@@ -1144,6 +1164,11 @@ const EN: DocsContent = {
           icon: "Network",
           title: "Client Isolation",
           desc: "Every case is walled off from others. A user on case A cannot see case B — guaranteed by design, fuzz-tested for zero leaks.",
+        },
+        {
+          icon: "ShieldCheck",
+          title: "Ethical Walls",
+          desc: "Strict information barriers between cases and teams. Configurable access blocks prevent conflicts of interest — enforced at the database level.",
         },
         {
           icon: "ShieldAlert",
@@ -1439,6 +1464,11 @@ const EN: DocsContent = {
           icon: "Zap",
           title: "Mobile App",
           desc: "Native iOS and Android app. Time tracking, upload, case access, chat — equally powerful on the go.",
+        },
+        {
+          icon: "Mic",
+          title: "Voice-to-Prompt",
+          desc: "Voice input for prompts on mobile and desktop. Web Speech API, real-time transcription, sends as text — ideal for post-hearing dictation.",
         },
         {
           icon: "Database",

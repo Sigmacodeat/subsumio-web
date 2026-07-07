@@ -190,7 +190,7 @@ export default function ScrollPinnedDashboard({
             className="rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/30"
             data-tone="dashboard"
           >
-            <DashboardReel lang={lang} controlledView={currentView} />
+            <DashboardReel lang={lang} controlledView={currentView} showCursor={false} />
           </div>
 
           {/* Spring-smoothed guided cursor — pinned to dashboard tone so

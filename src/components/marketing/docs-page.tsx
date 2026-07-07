@@ -6,7 +6,7 @@ import { getDocs } from "@/content/docs";
 import { type Lang } from "@/content/site";
 import { p, UI_STRINGS } from "@/content/site";
 import { ICONS, H1_CLASS, H2_CTA_CLASS, BadgePill, CTASection, Section } from "./chrome";
-import DashboardReel from "./dashboard-reel";
+import DocsWorkflowShowcase from "./docs-workflow-showcase";
 import { GlowCard, ClipReveal, EASE } from "./motion-system";
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
@@ -192,85 +192,6 @@ function StickyCategoryNav({
   );
 }
 
-function DocsProof({ lang }: { lang: Lang }) {
-  const items =
-    lang !== "en"
-      ? [
-          {
-            icon: "FolderOpen",
-            title: "Akten",
-            desc: "Akte, Quellen, Fristen und Beteiligte bleiben in einem prüfbaren Kontext.",
-          },
-          {
-            icon: "MessageSquare",
-            title: "Copilot",
-            desc: "Fragen, Zeitbuchungen und Uploads landen dort, wo die Arbeit passiert.",
-          },
-          {
-            icon: "Shield",
-            title: "Kontrolle",
-            desc: "Berechtigungen, Audit-Trail und On-Premise-Option sind Teil des Produktkerns.",
-          },
-        ]
-      : [
-          {
-            icon: "FolderOpen",
-            title: "Matters",
-            desc: "Matter files, sources, deadlines and parties stay in one verifiable context.",
-          },
-          {
-            icon: "MessageSquare",
-            title: "Copilot",
-            desc: "Questions, time entries and uploads land where the work actually happens.",
-          },
-          {
-            icon: "Shield",
-            title: "Control",
-            desc: "Permissions, audit trail and self-hosting are part of the product core.",
-          },
-        ];
-
-  return (
-    <Section tone="light" className="px-6 pb-24">
-      <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-        <motion.div {...reveal}>
-          <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
-            {UI_STRINGS[lang].dashboardNotDatasheet}
-          </p>
-          <h2 className={`${H2_CTA_CLASS} mb-4`}>{UI_STRINGS[lang].docsTitle}</h2>
-          <p className="mb-6 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
-            {UI_STRINGS[lang].docsSub}
-          </p>
-          <div className="grid gap-3">
-            {items.map((item) => {
-              const Icon = ICONS[item.icon];
-              return (
-                <div
-                  key={item.title}
-                  className="flex gap-3 rounded-lg border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]"
-                >
-                  <div className="brand-soft flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
-                    {Icon && <Icon size={17} className="brand-text" />}
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold [color:var(--mk-text)]">{item.title}</h3>
-                    <p className="mt-1 text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                      {item.desc}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </motion.div>
-        <motion.div {...reveal}>
-          <DashboardReel lang={lang} />
-        </motion.div>
-      </div>
-    </Section>
-  );
-}
-
 export default function DocsPage({ lang }: { lang: Lang }) {
   const d = getDocs(lang);
   const t = UI_STRINGS[lang];
@@ -370,7 +291,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
         </motion.div>
       </Section>
 
-      <DocsProof lang={lang} />
+      <DocsWorkflowShowcase lang={lang} />
 
       {/* Quick Start */}
       <QuickStartSection d={d} />

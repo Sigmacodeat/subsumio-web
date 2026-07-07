@@ -24,6 +24,10 @@ import {
   CheckCircle2,
   ChevronRight,
   Zap,
+  CalendarDays,
+  PenLine,
+  FileCheck,
+  ShieldCheck,
 } from "lucide-react";
 import type { Lang } from "@/content/site";
 import { UI_STRINGS } from "@/content/site";
@@ -34,6 +38,28 @@ interface ViewContent {
   matters: { id: string; title: string; client: string; status: string; statusColor: string }[];
   brain: { question: string; file: string; answer: string; sources: string[] };
   deadlines: { date: string; title: string; matter: string; urgent: boolean }[];
+  calendar: {
+    day: string;
+    weekday: string;
+    entries: { time: string; title: string; matter: string; tone: string }[];
+  };
+  review: {
+    fileName: string;
+    riskAreas: { line: string; text: string; severity: "high" | "medium" | "low" }[];
+    summary: string;
+    clauses: { name: string; status: "ok" | "flag" | "missing" }[];
+  };
+  approval: {
+    items: {
+      title: string;
+      type: string;
+      submittedBy: string;
+      submittedAt: string;
+      status: string;
+      statusColor: string;
+    }[];
+    auditTrail: { action: string; user: string; time: string }[];
+  };
 }
 
 interface Branch {
@@ -92,6 +118,70 @@ const _deBranches: ViewContent = {
     { date: "25.07.", title: "Gutachten Klein", matter: "AZ-2026-031", urgent: false },
     { date: "01.08.", title: "Replik Schwarz", matter: "AZ-2026-038", urgent: false },
   ],
+  calendar: {
+    day: "12",
+    weekday: "Freitag",
+    entries: [
+      { time: "09:00", title: "Verhandlung Bauer", matter: "AZ-2026-041", tone: "amber" },
+      { time: "11:30", title: "Mandantengespräch Schwarz", matter: "AZ-2026-038", tone: "blue" },
+      { time: "14:00", title: "Frist Klageerwiderung", matter: "AZ-2026-041", tone: "rose" },
+      { time: "16:00", title: "Aktennotiz Müller", matter: "AZ-2026-035", tone: "violet" },
+    ],
+  },
+  review: {
+    fileName: "Vertrag_Bauer-Hofer_v3.pdf",
+    riskAreas: [
+      {
+        line: "§ 4 Abs. 2",
+        text: "Haftungsbegrenzung fehlt — Vollhaftung ohne Deckel",
+        severity: "high",
+      },
+      { line: "§ 7 Abs. 1", text: "Kündigungsfrist 6 Wochen — unüblich kurz", severity: "medium" },
+      { line: "§ 12 Abs. 3", text: "Schriftformklausel ohne AGB-Verweis", severity: "low" },
+    ],
+    summary: "3 Risiken erkannt — 1 kritisch, 1 moderat, 1 niedrig. § 4 vor Signatur verhandeln.",
+    clauses: [
+      { name: "Gewährleistung", status: "ok" },
+      { name: "Haftungsbegrenzung", status: "missing" },
+      { name: "Kündigungsfrist", status: "flag" },
+      { name: "Schriftform", status: "ok" },
+      { name: "Geheimhaltung", status: "ok" },
+    ],
+  },
+  approval: {
+    items: [
+      {
+        title: "Schriftsatz Klageerwiderung Bauer",
+        type: "document_finalize",
+        submittedBy: "Dr. Weber",
+        submittedAt: "vor 12 Min",
+        status: "Wartet auf Freigabe",
+        statusColor: "amber",
+      },
+      {
+        title: "Rechnung AZ-2026-038 Schwarz",
+        type: "invoice_create",
+        submittedBy: "Fr. Klein",
+        submittedAt: "vor 1 Std",
+        status: "Zur Freigabe",
+        statusColor: "blue",
+      },
+      {
+        title: "Vertragsentwurf Müller",
+        type: "document_finalize",
+        submittedBy: "Hr. Schmidt",
+        submittedAt: "vor 3 Std",
+        status: "Überarbeitet",
+        statusColor: "violet",
+      },
+    ],
+    auditTrail: [
+      { action: "Entwurf hochgeladen", user: "Dr. Weber", time: "09:14" },
+      { action: "KI-Review durchgeführt", user: "Brain", time: "09:15" },
+      { action: "Zur Freigabe gesendet", user: "Dr. Weber", time: "09:22" },
+      { action: "Wartet auf Partner", user: "System", time: "09:22" },
+    ],
+  },
 } as const;
 
 const BRANCHES: Record<string, Branch> = {
@@ -163,6 +253,79 @@ const BRANCHES: Record<string, Branch> = {
           { date: "Jul 25", title: "Expert report — Klein", matter: "AZ-2026-031", urgent: false },
           { date: "Aug 01", title: "Reply brief — Schwarz", matter: "AZ-2026-038", urgent: false },
         ],
+        calendar: {
+          day: "12",
+          weekday: "Friday",
+          entries: [
+            { time: "09:00", title: "Hearing — Bauer", matter: "AZ-2026-041", tone: "amber" },
+            { time: "11:30", title: "Client call — Schwarz", matter: "AZ-2026-038", tone: "blue" },
+            { time: "14:00", title: "Filing deadline", matter: "AZ-2026-041", tone: "rose" },
+            { time: "16:00", title: "Case note — Müller", matter: "AZ-2026-035", tone: "violet" },
+          ],
+        },
+        review: {
+          fileName: "Contract_Bauer-Hofer_v3.pdf",
+          riskAreas: [
+            {
+              line: "§ 4 para. 2",
+              text: "Liability cap missing — full liability without ceiling",
+              severity: "high",
+            },
+            {
+              line: "§ 7 para. 1",
+              text: "Notice period 6 weeks — unusually short",
+              severity: "medium",
+            },
+            {
+              line: "§ 12 para. 3",
+              text: "Written-form clause without AGB reference",
+              severity: "low",
+            },
+          ],
+          summary:
+            "3 risks detected — 1 critical, 1 moderate, 1 low. Negotiate § 4 before signing.",
+          clauses: [
+            { name: "Warranty", status: "ok" },
+            { name: "Liability cap", status: "missing" },
+            { name: "Notice period", status: "flag" },
+            { name: "Written form", status: "ok" },
+            { name: "NDA", status: "ok" },
+          ],
+        },
+        approval: {
+          items: [
+            {
+              title: "Defense brief — Bauer",
+              type: "document_finalize",
+              submittedBy: "Dr. Weber",
+              submittedAt: "12 min ago",
+              status: "Awaiting approval",
+              statusColor: "amber",
+            },
+            {
+              title: "Invoice AZ-2026-038 Schwarz",
+              type: "invoice_create",
+              submittedBy: "Fr. Klein",
+              submittedAt: "1 hr ago",
+              status: "For approval",
+              statusColor: "blue",
+            },
+            {
+              title: "Contract draft — Müller",
+              type: "document_finalize",
+              submittedBy: "Hr. Schmidt",
+              submittedAt: "3 hrs ago",
+              status: "Revised",
+              statusColor: "violet",
+            },
+          ],
+          auditTrail: [
+            { action: "Draft uploaded", user: "Dr. Weber", time: "09:14" },
+            { action: "AI review completed", user: "Brain", time: "09:15" },
+            { action: "Sent for approval", user: "Dr. Weber", time: "09:22" },
+            { action: "Awaiting partner", user: "System", time: "09:22" },
+          ],
+        },
       },
     },
   },
@@ -196,11 +359,13 @@ export default function DashboardReel({
   industry = "legal",
   className = "",
   controlledView,
+  showCursor = true,
 }: {
   lang: Lang;
   industry?: string;
   className?: string;
   controlledView?: number;
+  showCursor?: boolean;
 }) {
   const reduce = useReducedMotion();
   const branch = BRANCHES[industry] ?? BRANCHES.legal;
@@ -245,32 +410,21 @@ export default function DashboardReel({
     UI_STRINGS[lang].navIntake,
     UI_STRINGS[lang].navChat,
   ];
-  const cursorTarget =
-    view === 0
-      ? {
-          x: "72%",
-          y: "42%",
-          label: UI_STRINGS[lang].openMatter,
-        }
-      : view === 1
-        ? {
-            x: "74%",
-            y: "87%",
-            label: UI_STRINGS[lang].sendQuestion,
-          }
-        : {
-            x: "70%",
-            y: "52%",
-            label: UI_STRINGS[lang].checkDeadline,
-          };
+  const cursorTargets: Record<number, { x: string; y: string; label: string }> = {
+    0: { x: "72%", y: "42%", label: UI_STRINGS[lang].openMatter },
+    1: { x: "74%", y: "87%", label: UI_STRINGS[lang].sendQuestion },
+    2: { x: "70%", y: "52%", label: UI_STRINGS[lang].checkDeadline },
+    3: { x: "68%", y: "38%", label: lang === "en" ? "Open calendar" : "Kalender öffnen" },
+    4: { x: "72%", y: "45%", label: lang === "en" ? "Review risk" : "Risiko prüfen" },
+    5: { x: "66%", y: "58%", label: lang === "en" ? "Approve" : "Freigeben" },
+  };
+  const cursorTarget = cursorTargets[view] ?? cursorTargets[0];
 
   return (
     <div
       className={`relative overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/20 [background:var(--mk-bg)] ${className}`}
     >
-      {controlledView === undefined && (
-        <GuidedCursor {...cursorTarget} className="hidden sm:flex" />
-      )}
+      {showCursor && <GuidedCursor {...cursorTarget} className="hidden sm:flex" />}
       {/* top bar — matches real dashboard topbar structure */}
       <div className="flex items-center gap-3 border-b [border-color:var(--mk-border)] px-4 py-2.5 [background:var(--mk-surface)]">
         <div className="flex items-center gap-2">
@@ -313,8 +467,14 @@ export default function DashboardReel({
           {sidebar.map((item, i) => {
             const Icon = item.icon;
             const isActive =
-              (view === 0 && i === 1) || (view === 1 && i === 4) || (view === 2 && i === 2);
+              (view === 0 && i === 1) ||
+              (view === 1 && i === 4) ||
+              (view === 2 && i === 2) ||
+              (view === 3 && i === 2) ||
+              (view === 4 && i === 1) ||
+              (view === 5 && i === 3);
             // view 0: Akten (i=1), view 1: Chat/Brain (i=4), view 2: Fristen (i=2)
+            // view 3: Calendar→Fristen (i=2), view 4: Review→Akten (i=1), view 5: Approval→Intake (i=3)
             return (
               <div
                 key={i}
@@ -543,6 +703,297 @@ export default function DashboardReel({
                       </span>
                     </motion.div>
                   ))}
+                </motion.div>
+              )}
+
+              {/* View 3: Calendar */}
+              {view === 3 && (
+                <motion.div
+                  key="calendar"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.25, ease: [0.45, 0, 0.55, 1] }}
+                  className="space-y-3"
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays size={15} className="brand-text" />
+                      <h3 className="text-sm font-semibold [color:var(--mk-text)]">
+                        {lang === "en" ? "Calendar" : "Kalender"}
+                      </h3>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-bold [color:var(--mk-text)]">{v.calendar.day}</p>
+                      <p className="text-xs [color:var(--mk-text-subtle)]">{v.calendar.weekday}</p>
+                    </div>
+                  </div>
+                  {/* Mini calendar grid */}
+                  <div className="mb-3 grid grid-cols-7 gap-1">
+                    {Array.from({ length: 31 }, (_, i) => {
+                      const day = i + 1;
+                      const isToday = day === Number(v.calendar.day);
+                      const hasEntry = [5, 12, 18, 25].includes(day);
+                      return (
+                        <div
+                          key={day}
+                          className={`flex h-7 items-center justify-center rounded text-xs transition-colors ${
+                            isToday
+                              ? "brand-bg font-bold text-white"
+                              : hasEntry
+                                ? "brand-soft brand-text font-medium"
+                                : "[color:var(--mk-text-subtle)] hover:bg-[var(--mk-surface-2)]"
+                          }`}
+                        >
+                          {day}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* Day entries */}
+                  <div className="space-y-2">
+                    {v.calendar.entries.map((e, i) => {
+                      const sc = STATUS_COLORS[e.tone] ?? STATUS_COLORS.blue;
+                      return (
+                        <motion.div
+                          key={e.title}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.08 }}
+                          className="flex items-center gap-3 rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 [background:var(--mk-surface)]"
+                        >
+                          <div
+                            className="flex h-8 w-12 shrink-0 flex-col items-center justify-center rounded-lg"
+                            style={{ background: sc.bg }}
+                          >
+                            <span className="text-xs font-bold" style={{ color: sc.text }}>
+                              {e.time}
+                            </span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-medium [color:var(--mk-text)]">
+                              {e.title}
+                            </p>
+                            <p className="font-mono text-xs [color:var(--mk-text-subtle)]">
+                              {e.matter}
+                            </p>
+                          </div>
+                          <ChevronRight size={14} className="[color:var(--mk-text-subtle)]" />
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* View 4: Document Review */}
+              {view === 4 && (
+                <motion.div
+                  key="review"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.25, ease: [0.45, 0, 0.55, 1] }}
+                  className="flex h-full flex-col"
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <PenLine size={15} className="brand-text" />
+                      <h3 className="text-sm font-semibold [color:var(--mk-text)]">
+                        {lang === "en" ? "Document Review" : "Dokumenten-Analyse"}
+                      </h3>
+                    </div>
+                    <span className="brand-text brand-soft rounded-full px-2 py-0.5 text-xs font-medium">
+                      {v.review.fileName}
+                    </span>
+                  </div>
+
+                  {/* AI Summary */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-3 rounded-xl border [border-color:var(--mk-border)] p-3 [background:var(--mk-surface)]"
+                  >
+                    <div className="mb-1.5 flex items-center gap-2">
+                      <Brain size={13} className="brand-text" />
+                      <span className="text-xs font-semibold [color:var(--mk-text)]">
+                        {lang === "en" ? "AI Summary" : "KI-Zusammenfassung"}
+                      </span>
+                    </div>
+                    <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">
+                      {v.review.summary}
+                    </p>
+                  </motion.div>
+
+                  {/* Risk areas */}
+                  <div className="mb-3 space-y-2">
+                    {v.review.riskAreas.map((r, i) => {
+                      const colors = {
+                        high: {
+                          text: "var(--signal-rose)",
+                          bg: "color-mix(in srgb, var(--signal-rose) 10%, transparent)",
+                          border: "color-mix(in srgb, var(--signal-rose) 22%, transparent)",
+                        },
+                        medium: {
+                          text: "var(--signal-amber)",
+                          bg: "color-mix(in srgb, var(--signal-amber) 10%, transparent)",
+                          border: "color-mix(in srgb, var(--signal-amber) 22%, transparent)",
+                        },
+                        low: {
+                          text: "var(--signal-green)",
+                          bg: "color-mix(in srgb, var(--signal-green) 10%, transparent)",
+                          border: "color-mix(in srgb, var(--signal-green) 22%, transparent)",
+                        },
+                      };
+                      const c = colors[r.severity];
+                      return (
+                        <motion.div
+                          key={r.line}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.1 }}
+                          className="rounded-lg border p-3"
+                          style={{ borderColor: c.border, background: c.bg }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono text-xs font-bold" style={{ color: c.text }}>
+                              {r.line}
+                            </span>
+                            <span
+                              className="rounded-full px-2 py-0.5 text-xs font-medium uppercase"
+                              style={{ color: c.text, background: c.bg }}
+                            >
+                              {r.severity}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs leading-relaxed [color:var(--mk-text-muted)]">
+                            {r.text}
+                          </p>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Clause checklist */}
+                  <div className="mt-auto">
+                    <p className="mb-2 text-xs font-semibold [color:var(--mk-text)]">
+                      {lang === "en" ? "Clauses" : "Klauseln"}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {v.review.clauses.map((c) => {
+                        const icon =
+                          c.status === "ok"
+                            ? CheckCircle2
+                            : c.status === "flag"
+                              ? AlertTriangle
+                              : FileCheck;
+                        const color =
+                          c.status === "ok"
+                            ? "var(--signal-green)"
+                            : c.status === "flag"
+                              ? "var(--signal-amber)"
+                              : "var(--signal-rose)";
+                        const Icon = icon;
+                        return (
+                          <span
+                            key={c.name}
+                            className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-2.5 py-1 text-xs [background:var(--mk-surface)]"
+                          >
+                            <Icon size={11} style={{ color }} />
+                            <span className="[color:var(--mk-text-muted)]">{c.name}</span>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* View 5: Approval Queue */}
+              {view === 5 && (
+                <motion.div
+                  key="approval"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.25, ease: [0.45, 0, 0.55, 1] }}
+                  className="flex h-full flex-col"
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck size={15} className="brand-text" />
+                      <h3 className="text-sm font-semibold [color:var(--mk-text)]">
+                        {lang === "en" ? "Approvals" : "Freigaben"}
+                      </h3>
+                    </div>
+                    <span className="text-xs font-medium [color:var(--signal-amber)]">
+                      {v.approval.items.length} {lang === "en" ? "pending" : "offen"}
+                    </span>
+                  </div>
+
+                  {/* Approval items */}
+                  <div className="mb-3 space-y-2">
+                    {v.approval.items.map((item, i) => {
+                      const sc = STATUS_COLORS[item.statusColor] ?? STATUS_COLORS.amber;
+                      return (
+                        <motion.div
+                          key={item.title}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.1 }}
+                          className="rounded-lg border [border-color:var(--mk-border)] p-3 [background:var(--mk-surface)]"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-xs font-medium [color:var(--mk-text)]">
+                                {item.title}
+                              </p>
+                              <p className="mt-0.5 text-xs [color:var(--mk-text-subtle)]">
+                                {item.submittedBy} · {item.submittedAt}
+                              </p>
+                            </div>
+                            <span
+                              className="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
+                              style={{ color: sc.text, background: sc.bg }}
+                            >
+                              {item.status}
+                            </span>
+                          </div>
+                          <div className="mt-2 flex items-center gap-2">
+                            <button className="brand-bg flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-white">
+                              <CheckCircle2 size={11} />
+                              {lang === "en" ? "Approve" : "Freigeben"}
+                            </button>
+                            <button className="rounded-md border [border-color:var(--mk-border)] px-2.5 py-1 text-xs font-medium [color:var(--mk-text-muted)]">
+                              {lang === "en" ? "Review" : "Prüfen"}
+                            </button>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Audit trail */}
+                  <div className="mt-auto rounded-xl border [border-color:var(--mk-border)] p-3 [background:var(--mk-surface-2)]">
+                    <p className="mb-2 text-xs font-semibold [color:var(--mk-text)]">
+                      {lang === "en" ? "Audit Trail" : "Audit-Trail"}
+                    </p>
+                    <div className="space-y-1.5">
+                      {v.approval.auditTrail.map((a, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, x: -6 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.3 + i * 0.08 }}
+                          className="flex items-center gap-2 text-xs"
+                        >
+                          <span className="font-mono [color:var(--mk-text-subtle)]">{a.time}</span>
+                          <span className="[color:var(--mk-text-muted)]">{a.action}</span>
+                          <span className="brand-text font-medium">· {a.user}</span>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

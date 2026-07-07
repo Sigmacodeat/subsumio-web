@@ -29,6 +29,7 @@ import {
   Play,
   type LucideIcon,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { LANDING, PRICING, UI_STRINGS, p, type Lang } from "@/content/site";
@@ -65,6 +66,8 @@ const TRUST_ICONS: Record<string, LucideIcon> = {
   FileCheck,
   Server,
 };
+
+const PAIN_ICONS = [ICONS.Search, ICONS.AlertTriangle, ICONS.FileClock, ICONS.Users];
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
 
@@ -318,29 +321,40 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2"
                 stagger={0.08}
               >
-                {(t as { pains: { value: string; label: string }[] }).pains.map((p) => (
-                  <StaggerItem key={p.label}>
-                    <GlowCard
-                      glowColor="var(--signal-rose)"
-                      intensity={0.1}
-                      className="h-full rounded-xl border [border-color:var(--mk-border)] p-5 transition-all duration-300 [background:var(--mk-surface-2)] hover:-translate-y-1 hover:shadow-lg"
-                    >
-                      <div className="flex items-start gap-4">
-                        <p className="w-[88px] shrink-0 text-2xl leading-[1.1] font-bold tracking-tight text-balance [color:var(--brand-text)]">
+                {(t as { pains: { value: string; label: string }[] }).pains.map((p, i) => {
+                  const Icon = PAIN_ICONS[i];
+                  return (
+                    <StaggerItem key={p.label}>
+                      <div className="group relative h-full overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl">
+                        {/* Top accent — signal-rose into brand-primary */}
+                        <div
+                          aria-hidden
+                          className="absolute inset-x-0 top-0 h-1"
+                          style={{
+                            background:
+                              "linear-gradient(90deg, var(--signal-rose), var(--brand-primary) 70%)",
+                          }}
+                        />
+                        <div
+                          className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl border ${accentTile("rose", "light")}`}
+                        >
+                          {Icon && <Icon size={22} />}
+                        </div>
+                        <p className="mb-2 text-3xl font-bold tracking-tight text-balance [color:var(--brand-text)] md:text-4xl">
                           {p.value}
                         </p>
-                        <p className="text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)]">
+                        <p className="text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-base">
                           {p.label}
                         </p>
                       </div>
-                    </GlowCard>
-                  </StaggerItem>
-                ))}
+                    </StaggerItem>
+                  );
+                })}
               </StaggerContainer>
 
               {/* Proof stats — directly below pain, same section */}
               <StaggerContainer
-                className="mt-12 grid grid-cols-2 gap-8 text-center md:grid-cols-4"
+                className="mt-14 grid grid-cols-2 gap-8 text-center md:grid-cols-4"
                 stagger={0.09}
               >
                 {t.stats.map((stat) => {
@@ -367,6 +381,15 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   );
                 })}
               </StaggerContainer>
+
+              {(t as { statsNote?: string }).statsNote && (
+                <motion.p
+                  {...reveal}
+                  className="mx-auto mt-8 max-w-2xl text-center text-sm [color:var(--mk-text-subtle)]"
+                >
+                  {(t as { statsNote: string }).statsNote}
+                </motion.p>
+              )}
             </motion.div>
           </Section>
         )}
