@@ -27,7 +27,7 @@ import { useKanzleiCockpitData } from "@/components/dashboard/widget-dashboard";
 import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
-import type { BrainStats, RecentQuery } from "@/lib/types";
+import type { BrainStats } from "@/lib/types";
 import { StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
 
 const WidgetBoard = dynamic(() =>
@@ -40,8 +40,14 @@ const MorningBriefing = dynamic(
   () => import("@/components/dashboard/morning-briefing").then((m) => m.MorningBriefing),
   { ssr: false }
 );
-const TodayView = dynamic(() => import("@/components/dashboard/today-view").then((m) => m.TodayView), { ssr: false });
-const WeeklyReview = dynamic(() => import("@/components/dashboard/weekly-review").then((m) => m.WeeklyReview), { ssr: false });
+const TodayView = dynamic(
+  () => import("@/components/dashboard/today-view").then((m) => m.TodayView),
+  { ssr: false }
+);
+const WeeklyReview = dynamic(
+  () => import("@/components/dashboard/weekly-review").then((m) => m.WeeklyReview),
+  { ssr: false }
+);
 
 type Greeting = {
   greeting: string;
@@ -87,15 +93,7 @@ function useGreeting(name: string | null, lang: Lang): Greeting {
   };
 }
 
-function CalmGreeting({
-  name,
-  engineOnline,
-  degraded,
-}: {
-  name: string | null;
-  engineOnline: boolean;
-  degraded: boolean;
-}) {
+function CalmGreeting({ name }: { name: string | null }) {
   const { t, lang } = useLang();
   const router = useRouter();
   const { greeting, sub } = useGreeting(name, lang);
@@ -142,17 +140,9 @@ function CalmGreeting({
         <h1 className="mt-0.5 text-lg font-semibold tracking-tight text-[color:var(--ds-text)] md:text-xl">
           {greeting}
         </h1>
-        <p className="mt-1 text-[13px] text-[color:var(--ds-text-muted)]">
-          {sub}
-          {!degraded && engineOnline && (
-            <span className="ml-2 inline-flex items-center gap-1 text-[color:var(--ds-success-text)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--ds-success-text)]" />
-              {t("dashboard.connected")}
-            </span>
-          )}
-        </p>
+        <p className="mt-1 text-[13px] text-[color:var(--ds-text-muted)]">{sub}</p>
       </div>
-      <form onSubmit={onSubmit} className="relative w-full shrink-0 lg:w-72">
+      <form onSubmit={onSubmit} className="relative w-full shrink-0 lg:w-96">
         <Search
           size={14}
           className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
@@ -295,13 +285,17 @@ function ProactiveActionBanner() {
                 <Link
                   key={action.href}
                   href={action.href}
-                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-opacity hover:opacity-80 ${variantClasses[action.variant]}`}
+                  className={`group inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-[opacity,transform] hover:opacity-90 active:scale-95 ${variantClasses[action.variant]}`}
                 >
                   <Icon size={13} />
                   <span>{action.label}</span>
-                  <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-xs font-bold">
+                  <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-xs font-bold tabular-nums">
                     {action.count}
                   </span>
+                  <ArrowRight
+                    size={11}
+                    className="ml-0.5 opacity-60 transition-transform group-hover:translate-x-0.5"
+                  />
                 </Link>
               );
             })}
@@ -315,8 +309,8 @@ function ProactiveActionBanner() {
 function DashboardQuickActions() {
   const { t } = useLang();
   const actions = [
-    { label: t("cockpit.action_case"), icon: Briefcase, event: "subsumio:create-case" },
     { label: t("dashboard.quick_deadline"), icon: CalendarPlus, event: "subsumio:create-deadline" },
+    { label: t("cockpit.action_case"), icon: Briefcase, event: "subsumio:create-case" },
     { label: t("dashboard.quick_upload"), icon: Upload, href: "/dashboard/upload" },
     { label: t("dashboard.quick_drafting"), icon: FileText, href: "/dashboard/drafting" },
     { label: t("dashboard.quick_research"), icon: Gavel, href: "/dashboard/research" },
@@ -325,12 +319,39 @@ function DashboardQuickActions() {
     <section aria-label={t("dashboard.quick_actions")} className="overflow-x-auto">
       <div className="flex min-w-max gap-2">
         {actions.map(({ label, icon: Icon, event, href }) => {
-          const content = <><Icon size={14} aria-hidden="true" /><span>{label}</span></>;
-          const classes = "inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]";
-          return href ? <Link key={label} href={href} className={classes}>{content}</Link> : (
-            <button key={label} type="button" className={classes} onClick={() => window.dispatchEvent(new CustomEvent(event!))}>{content}</button>
+          const content = (
+            <>
+              <Icon size={14} aria-hidden="true" />
+              <span>{label}</span>
+            </>
+          );
+          const classes =
+            "inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]";
+          return href ? (
+            <Link key={label} href={href} className={classes}>
+              {content}
+            </Link>
+          ) : (
+            <button
+              key={label}
+              type="button"
+              className={classes}
+              onClick={() => window.dispatchEvent(new CustomEvent(event!))}
+            >
+              {content}
+            </button>
           );
         })}
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded-lg border border-[color:var(--brand-primary)]/40 bg-[color:var(--brand-glow)] px-3 py-2 text-xs font-medium text-[color:var(--brand-primary)] transition-[background-color,border-color] hover:border-[color:var(--brand-primary)]/70 hover:bg-[color:var(--brand-glow)]"
+          onClick={() => {
+            window.dispatchEvent(new CustomEvent("subsumio:copilot:open"));
+          }}
+        >
+          <Search size={14} aria-hidden="true" />
+          <span>{t("cockpit.ask_placeholder")}</span>
+        </button>
       </div>
     </section>
   );
@@ -344,21 +365,8 @@ export default function DashboardPage() {
   const { t } = useLang();
 
   const stats = (statsQuery.data ?? null) as BrainStats | null;
-  const recent = (recentQuery.data ?? []) as RecentQuery[];
   const loading = statsQuery.isLoading && recentQuery.isLoading;
   const degraded = statsQuery.isError;
-
-  const engineOnline = useMemo(() => {
-    if (stats) {
-      return stats.total_pages > 0 || stats.total_edges > 0 || stats.total_queries > 0;
-    }
-    if (recent.length > 0) return true;
-    return false;
-  }, [stats, recent.length]);
-
-  if (loading) {
-    return <PageSkeleton />;
-  }
 
   const isFirstTime =
     !loading && !degraded && (stats?.total_pages ?? 0) === 0 && (stats?.total_queries ?? 0) === 0;
@@ -372,6 +380,10 @@ export default function DashboardPage() {
     setDashboardView(view);
     localStorage.setItem("subsumio:dashboard-view", view);
   };
+
+  if (loading) {
+    return <PageSkeleton />;
+  }
 
   const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? null;
   const industry = meQuery.data?.user?.industry ?? "legal";
@@ -424,12 +436,31 @@ export default function DashboardPage() {
         </StaggerContainer>
       )}
 
-      <CalmGreeting name={userName} engineOnline={engineOnline} degraded={degraded} />
+      <CalmGreeting name={userName} />
 
       <DashboardQuickActions />
 
-      <div className="flex w-fit rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1" role="tablist" aria-label={t("today.view_selector")}>
-        {(["today", "dashboard"] as const).map((view) => <button key={view} type="button" role="tab" aria-selected={dashboardView === view} onClick={() => selectDashboardView(view)} className={dashboardView === view ? "rounded-md bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm font-medium text-[color:var(--ds-text)]" : "rounded-md px-3 py-1.5 text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"}>{t(view === "today" ? "today.title" : "today.dashboard")}</button>)}
+      <div
+        className="flex w-fit rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1"
+        role="tablist"
+        aria-label={t("today.view_selector")}
+      >
+        {(["today", "dashboard"] as const).map((view) => (
+          <button
+            key={view}
+            type="button"
+            role="tab"
+            aria-selected={dashboardView === view}
+            onClick={() => selectDashboardView(view)}
+            className={
+              dashboardView === view
+                ? "rounded-md bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm font-medium text-[color:var(--ds-text)]"
+                : "rounded-md px-3 py-1.5 text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+            }
+          >
+            {t(view === "today" ? "today.title" : "today.dashboard")}
+          </button>
+        ))}
       </div>
 
       {!isFirstTime && <MorningBriefing />}

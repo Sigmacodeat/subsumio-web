@@ -27,6 +27,7 @@ function ChatPageInner() {
         initialQuery={initialQuery}
         initialSessionId={initialSessionId}
         className="flex-1"
+        features={{ modeSelector: true }}
       />
     </div>
   );

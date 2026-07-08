@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Sparkles, RefreshCw, AlertCircle, Clock, Mail, FileCheck, ArrowRight } from "lucide-react";
+import { Sparkles, RefreshCw, Clock, Mail, FileCheck, ArrowRight } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import { csrfFetch } from "@/lib/csrf";
 import { StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
@@ -146,28 +146,25 @@ export function MorningBriefing() {
 
   if (error && !briefing) {
     return (
-      <StaggerContainer>
-        <StaggerItem>
-          <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
-            <div className="flex items-center gap-3">
-              <AlertCircle size={16} className="shrink-0 text-[color:var(--ds-warning-text)]" />
-              <p className="text-sm text-[color:var(--ds-warning-text)]">
-                {lang === "en"
-                  ? "Briefing temporarily unavailable."
-                  : "Briefing vorübergehend nicht verfügbar."}
-              </p>
-              <button
-                type="button"
-                onClick={() => fetchBriefing(true)}
-                className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)]"
-              >
-                <RefreshCw size={12} />
-                {lang === "en" ? "Retry" : "Erneut"}
-              </button>
-            </div>
-          </div>
-        </StaggerItem>
-      </StaggerContainer>
+      <div className="flex items-center justify-between rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Sparkles size={14} className="shrink-0 text-[color:var(--ds-text-subtle)]" />
+          <p className="text-[13px] text-[color:var(--ds-text-muted)]">
+            {lang === "en"
+              ? "KI-Morgenbriefing nicht verfügbar"
+              : "KI-Morgenbriefing nicht verfügbar"}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => fetchBriefing(true)}
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+          title={lang === "en" ? "Retry" : "Aktualisieren"}
+        >
+          <RefreshCw size={11} />
+          {lang === "en" ? "Retry" : "Erneut"}
+        </button>
+      </div>
     );
   }
 
@@ -207,7 +204,12 @@ export function MorningBriefing() {
     });
   }
   if (stats!.followUpsToday > 0) {
-    quickStats.push({ icon: Clock, count: stats!.followUpsToday, label: t("today.followups"), variant: "info" });
+    quickStats.push({
+      icon: Clock,
+      count: stats!.followUpsToday,
+      label: t("today.followups"),
+      variant: "info",
+    });
   }
   if (stats!.pendingReviews > 0) {
     quickStats.push({

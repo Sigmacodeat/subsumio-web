@@ -1079,8 +1079,11 @@ export const D = {
   "sidebar.main_nav": { de: "Hauptnavigation", en: "Main navigation" },
 
   // ── Topbar ──
-  "topbar.search_placeholder": { de: "Wissensbasis durchsuchen…", en: "Search knowledge base…" },
-  "topbar.search_aria": { de: "Wissensbasis durchsuchen", en: "Search knowledge base" },
+  "topbar.search_placeholder": {
+    de: "KI fragen, Akten, Fristen…",
+    en: "Ask AI, cases, deadlines…",
+  },
+  "topbar.search_aria": { de: "Suche und KI-Assistent öffnen", en: "Open search and AI assistant" },
   "topbar.theme_light": { de: "Zu hellem Design wechseln", en: "Switch to light theme" },
   "topbar.theme_dark": { de: "Zu dunklem Design wechseln", en: "Switch to dark theme" },
   "topbar.theme_light_aria": { de: "Helles Design aktivieren", en: "Activate light theme" },
@@ -1117,7 +1120,7 @@ export const D = {
   "topbar.language_de": { de: "Deutsch", en: "German" },
   "topbar.language_en": { de: "Englisch", en: "English" },
   "topbar.language_switch": { de: "Sprache wechseln", en: "Switch language" },
-  "topbar.quick_create": { de: "Schnellerstellen", en: "Quick Create" },
+  "topbar.quick_create": { de: "Neu", en: "New" },
   "topbar.utilities": { de: "Weitere Optionen", en: "More options" },
   "mobile.quick_create_description": {
     de: "Was möchtest du erstellen?",
@@ -1344,7 +1347,10 @@ export const D = {
   "cockpit.na_signatures": { de: "Signaturen verfolgen", en: "Track signatures" },
   "cockpit.na_gaps": { de: "Unzugeordnete Dokumente", en: "Unassigned documents" },
   "cockpit.na_clear": { de: "Nichts offen", en: "Nothing pending" },
-  "cockpit.ask_placeholder": { de: "KI fragen…", en: "Ask AI anything…" },
+  "cockpit.ask_placeholder": {
+    de: "Frist prüfen, Schriftsatz entwerfen, §§ suchen…",
+    en: "Check deadline, draft brief, search §§…",
+  },
   "quickcreate.this_matter": { de: "Diese Akte", en: "This Matter" },
   "quickcreate.general": { de: "Allgemein", en: "General" },
   "quickcreate.add_deadline": { de: "Frist hinzufügen", en: "Add Deadline" },

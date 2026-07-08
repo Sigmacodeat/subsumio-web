@@ -366,7 +366,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   } = useResizable({
     minWidth: 280,
     maxWidth: 560,
-    initialWidth: typeof window !== "undefined" && window.innerWidth < 1024 ? 300 : 360,
+    initialWidth: typeof window !== "undefined" && window.innerWidth < 1024 ? 300 : 400,
     storageKey: "subsumio-copilot-width",
     side: "right",
   });
@@ -375,7 +375,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   useEffect(() => {
     if (typeof window === "undefined") return;
     const handleOrientationChange = () => {
-      const maxW = window.innerWidth < 1024 ? 300 : 360;
+      const maxW = window.innerWidth < 1024 ? 300 : 400;
       setPanelWidth((w) => {
         if (w <= maxW) return w;
         return Math.min(w, maxW);

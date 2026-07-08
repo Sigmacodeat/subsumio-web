@@ -152,7 +152,7 @@ export interface ChatFeatures {
 
 export const DEFAULT_FEATURES: Required<ChatFeatures> = {
   modelSelector: true,
-  modeSelector: true,
+  modeSelector: false,
   caseSelector: true,
   jurisdictionSelector: true,
   fileUpload: true,

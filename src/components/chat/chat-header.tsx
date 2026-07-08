@@ -15,13 +15,10 @@ import {
   Tag,
   Share2,
   MoreVertical,
-  Cpu,
-  Check,
   Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
-import { ModelSelector } from "@/components/dashboard/model-selector";
 import { useBrainStats } from "@/lib/queries/brain";
 import { useLang } from "@/lib/use-lang";
 import { type QueryMode } from "@/lib/matter-context-types";
@@ -146,8 +143,8 @@ export function ChatHeader(props: ChatHeaderProps) {
           </div>
         </div>
 
-        {/* Controls toolbar — single line, no wrap */}
-        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto rounded-xl bg-[color:var(--ds-surface-2)] p-1">
+        {/* Controls toolbar — wraps gracefully, never overflows */}
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1 rounded-xl bg-[color:var(--ds-surface-2)] p-1">
           {/* ── Combined Sessions + Case dropdown ── */}
           {props.sessions && props.onSelectSession ? (
             <div ref={sessionsRef} className="relative">
