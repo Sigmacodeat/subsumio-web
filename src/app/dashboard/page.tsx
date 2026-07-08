@@ -16,6 +16,9 @@ import {
   FileCheck,
   PenSquare,
   Zap,
+  X,
+  CalendarPlus,
+  Gavel,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/dashboard/skeleton";
@@ -37,6 +40,8 @@ const MorningBriefing = dynamic(
   () => import("@/components/dashboard/morning-briefing").then((m) => m.MorningBriefing),
   { ssr: false }
 );
+const TodayView = dynamic(() => import("@/components/dashboard/today-view").then((m) => m.TodayView), { ssr: false });
+const WeeklyReview = dynamic(() => import("@/components/dashboard/weekly-review").then((m) => m.WeeklyReview), { ssr: false });
 
 type Greeting = {
   greeting: string;
@@ -109,7 +114,18 @@ function CalmGreeting({
     (e: React.FormEvent) => {
       e.preventDefault();
       if (!query.trim()) return;
-      router.push(`/dashboard/chat?q=${encodeURIComponent(query.trim())}`);
+      const value = query.trim();
+      try {
+        window.dispatchEvent(new CustomEvent("subsumio:copilot:open"));
+        window.setTimeout(() => {
+          window.dispatchEvent(
+            new CustomEvent("subsumio:copilot:send", { detail: { query: value } })
+          );
+        }, 50);
+        setQuery("");
+      } catch {
+        router.push(`/dashboard/chat?q=${encodeURIComponent(value)}`);
+      }
     },
     [query, router]
   );
@@ -161,8 +177,9 @@ function CalmGreeting({
 }
 
 function ProactiveActionBanner() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const cockpit = useKanzleiCockpitData();
+  const [dismissedSignature, setDismissedSignature] = useState<string | null>(null);
 
   const actions = useMemo(() => {
     const items: Array<{
@@ -211,7 +228,7 @@ function ProactiveActionBanner() {
       items.push({
         href: "/dashboard/docusign",
         icon: PenSquare,
-        label: lang === "en" ? "Signatures" : "Signaturen",
+        label: t("cockpit.stat_signatures"),
         count: sigCount,
         variant: "warning",
       });
@@ -229,9 +246,16 @@ function ProactiveActionBanner() {
     }
 
     return items;
-  }, [cockpit, t, lang]);
+  }, [cockpit, t]);
 
-  if (actions.length === 0) return null;
+  const actionSignature = actions.map((action) => `${action.href}:${action.count}`).join("|");
+  useEffect(() => {
+    try {
+      setDismissedSignature(sessionStorage.getItem("subsumio:dashboard-actions-dismissed"));
+    } catch {}
+  }, []);
+
+  if (actions.length === 0 || dismissedSignature === actionSignature) return null;
 
   const variantClasses = {
     danger:
@@ -248,8 +272,21 @@ function ProactiveActionBanner() {
           <div className="mb-2.5 flex items-center gap-2">
             <Zap size={14} className="text-[color:var(--brand-primary)]" />
             <span className="text-xs font-semibold text-[color:var(--ds-text)]">
-              {lang === "en" ? "Action needed" : "Handlungsbedarf"}
+              {t("cockpit.action_needed")}
             </span>
+            <button
+              type="button"
+              className="ml-auto flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              aria-label={t("common.close")}
+              onClick={() => {
+                try {
+                  sessionStorage.setItem("subsumio:dashboard-actions-dismissed", actionSignature);
+                } catch {}
+                setDismissedSignature(actionSignature);
+              }}
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
           </div>
           <div className="flex flex-wrap gap-2">
             {actions.map((action) => {
@@ -275,7 +312,32 @@ function ProactiveActionBanner() {
   );
 }
 
+function DashboardQuickActions() {
+  const { t } = useLang();
+  const actions = [
+    { label: t("cockpit.action_case"), icon: Briefcase, event: "subsumio:create-case" },
+    { label: t("dashboard.quick_deadline"), icon: CalendarPlus, event: "subsumio:create-deadline" },
+    { label: t("dashboard.quick_upload"), icon: Upload, href: "/dashboard/upload" },
+    { label: t("dashboard.quick_drafting"), icon: FileText, href: "/dashboard/drafting" },
+    { label: t("dashboard.quick_research"), icon: Gavel, href: "/dashboard/research" },
+  ];
+  return (
+    <section aria-label={t("dashboard.quick_actions")} className="overflow-x-auto">
+      <div className="flex min-w-max gap-2">
+        {actions.map(({ label, icon: Icon, event, href }) => {
+          const content = <><Icon size={14} aria-hidden="true" /><span>{label}</span></>;
+          const classes = "inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]";
+          return href ? <Link key={label} href={href} className={classes}>{content}</Link> : (
+            <button key={label} type="button" className={classes} onClick={() => window.dispatchEvent(new CustomEvent(event!))}>{content}</button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export default function DashboardPage() {
+  const [dashboardView, setDashboardView] = useState<"today" | "dashboard">("today");
   const statsQuery = useBrainStats();
   const recentQuery = useRecentQueries(5);
   const meQuery = useMe();
@@ -301,6 +363,16 @@ export default function DashboardPage() {
   const isFirstTime =
     !loading && !degraded && (stats?.total_pages ?? 0) === 0 && (stats?.total_queries ?? 0) === 0;
 
+  useEffect(() => {
+    const stored = localStorage.getItem("subsumio:dashboard-view");
+    if (stored === "today" || stored === "dashboard") setDashboardView(stored);
+  }, []);
+
+  const selectDashboardView = (view: "today" | "dashboard") => {
+    setDashboardView(view);
+    localStorage.setItem("subsumio:dashboard-view", view);
+  };
+
   const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? null;
   const industry = meQuery.data?.user?.industry ?? "legal";
   const isTax = industry === "tax";
@@ -308,6 +380,7 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       {!isFirstTime && <ProactiveActionBanner />}
+      <WeeklyReview />
 
       {isFirstTime && (
         <StaggerContainer>
@@ -353,9 +426,15 @@ export default function DashboardPage() {
 
       <CalmGreeting name={userName} engineOnline={engineOnline} degraded={degraded} />
 
-      {!isFirstTime && !isTax && <MorningBriefing />}
+      <DashboardQuickActions />
 
-      {isTax ? <TaxWidgetBoard /> : <WidgetBoard />}
+      <div className="flex w-fit rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1" role="tablist" aria-label={t("today.view_selector")}>
+        {(["today", "dashboard"] as const).map((view) => <button key={view} type="button" role="tab" aria-selected={dashboardView === view} onClick={() => selectDashboardView(view)} className={dashboardView === view ? "rounded-md bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm font-medium text-[color:var(--ds-text)]" : "rounded-md px-3 py-1.5 text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"}>{t(view === "today" ? "today.title" : "today.dashboard")}</button>)}
+      </div>
+
+      {!isFirstTime && <MorningBriefing />}
+
+      {dashboardView === "today" ? <TodayView /> : isTax ? <TaxWidgetBoard /> : <WidgetBoard />}
     </div>
   );
 }

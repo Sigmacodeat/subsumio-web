@@ -527,7 +527,7 @@ export function InvoiceQuickCreateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0">
+      <DialogContent className="max-w-4xl p-0">
         <form onSubmit={handleSubmit} className="flex max-h-[85vh] flex-col">
           <DialogHeader className="px-6 pt-6 pb-4">
             <div className="flex items-center gap-2">
@@ -738,6 +738,23 @@ export function InvoiceQuickCreateDialog({
                 )}
               </div>
             )}
+
+            <aside aria-label={t("inv.preview_title")} className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-5 lg:sticky lg:bottom-0">
+              <div className="mb-4 flex items-center justify-between border-b border-[color:var(--ds-border)] pb-3">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-[color:var(--ds-text-subtle)]">{t("inv.preview_title")}</p>
+                  <p className="mt-1 text-base font-semibold text-[color:var(--ds-text)]">{nextInvoiceNumber(invoices)}</p>
+                </div>
+                <FileText size={22} className="text-emerald-600" aria-hidden="true" />
+              </div>
+              <dl className="space-y-2 text-sm">
+                <div className="flex justify-between gap-4"><dt className="text-[color:var(--ds-text-muted)]">{t("inv.preview_client")}</dt><dd className="text-right font-medium text-[color:var(--ds-text)]">{selectedCase?.client || "—"}</dd></div>
+                <div className="flex justify-between gap-4"><dt className="text-[color:var(--ds-text-muted)]">{t("inv.preview_positions")}</dt><dd className="font-medium text-[color:var(--ds-text)]">{openTime.length + openExpenses.length}</dd></div>
+                <div className="flex justify-between gap-4"><dt className="text-[color:var(--ds-text-muted)]">{t("inv.preview_subtotal")}</dt><dd className="font-medium text-[color:var(--ds-text)]">{(rvgResult?.summeNetto ?? estimatedFee).toFixed(2)} €</dd></div>
+                <div className="flex justify-between gap-4"><dt className="text-[color:var(--ds-text-muted)]">{t("inv.preview_vat")}</dt><dd className="font-medium text-[color:var(--ds-text)]">{(((rvgResult?.summeNetto ?? estimatedFee) + expenseTotal) * 0.19).toFixed(2)} €</dd></div>
+                <div className="flex justify-between gap-4 border-t border-[color:var(--ds-border)] pt-3 text-base"><dt className="font-semibold text-[color:var(--ds-text)]">{t("inv.preview_total")}</dt><dd className="font-bold text-emerald-600">{(((rvgResult?.summeNetto ?? estimatedFee) + expenseTotal) * 1.19 - (parseFloat(advancePayment) || 0)).toFixed(2)} €</dd></div>
+              </dl>
+            </aside>
           </div>
 
           <DialogFooter className="border-t border-[color:var(--ds-border)] px-6 py-4">

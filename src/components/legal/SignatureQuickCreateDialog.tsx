@@ -29,6 +29,7 @@ import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import { signatureRequestSchema, type SignatureRequestFormData } from "@/lib/schemas/signature";
 import type { BrainPage } from "@/lib/types";
+import { enqueueMutation, isOnline } from "@/lib/offline-store";
 
 interface SignatureQuickCreateDialogProps {
   open: boolean;
@@ -46,6 +47,7 @@ export function SignatureQuickCreateDialog({
   const { t } = useLang();
   const { addToast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [createAnother, setCreateAnother] = useState(false);
 
   const sigForm = useForm<SignatureRequestFormData>({
     resolver: zodResolver(signatureRequestSchema) as never,
@@ -82,7 +84,7 @@ export function SignatureQuickCreateDialog({
       .slice(0, 60)}`;
     const expiresAt = new Date(Date.now() + parseInt(data.expiresDays) * 86400000).toISOString();
     try {
-      await api.brain.createPage({
+      const payload = {
         slug,
         title: `Signatur: ${data.documentName.trim()}`,
         type: "signature_request",
@@ -98,8 +100,14 @@ export function SignatureQuickCreateDialog({
           provider: "external",
           case_slug: presetCaseSlug || undefined,
         },
-      });
+      };
+      if (isOnline()) await api.brain.createPage(payload);
+      else await enqueueMutation({ type: "createPage", payload });
       addToast({ type: "success", title: t("signature.quick_created" as DashboardKey) });
+      if (createAnother) {
+        resetForm();
+        return;
+      }
       onOpenChange(false);
       if (onCreated) onCreated();
     } catch (err) {
@@ -223,6 +231,10 @@ export function SignatureQuickCreateDialog({
           </div>
 
           <DialogFooter className="border-t border-[color:var(--ds-border)] px-6 py-4">
+            <label className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+              <input type="checkbox" checked={createAnother} onChange={(event) => setCreateAnother(event.target.checked)} />
+              {t("common.create_another")}
+            </label>
             <div className="flex gap-2">
               <Button
                 type="button"

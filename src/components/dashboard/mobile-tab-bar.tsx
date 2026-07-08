@@ -55,6 +55,9 @@ import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import type { DashboardKey } from "@/content/dashboard";
+import { useSidebarBadges } from "@/lib/queries/sidebar-badges";
+import { useBrainSelector } from "@/lib/use-brain-selector";
+import { navForIndustry } from "@/components/dashboard/sidebar";
 
 interface MobileTabBarProps {
   onCopilotToggle: () => void;
@@ -110,6 +113,8 @@ export function MobileTabBar({
   const pathname = usePathname();
   const { t } = useLang();
   const [moreOpen, setMoreOpen] = useState(false);
+  const badges = useSidebarBadges().data ?? {};
+  const { brains, activeBrain, selectBrain } = useBrainSelector();
   const moreRef = useRef<HTMLDivElement>(null);
   const {
     reduceMotion,
@@ -156,6 +161,13 @@ export function MobileTabBar({
   const tabs = tabsForIndustry(industry);
   const activeTab = tabs.findIndex((tab) => isActive(pathname, tab.href));
   const copilotActive = copilotOpen;
+  const navigationSections = [
+    ...navForIndustry(industry).sections,
+    navForIndustry(industry).adminSection,
+  ].map((section) => ({
+    ...section,
+    items: section.items.filter((item) => !item.comingSoon),
+  }));
 
   return (
     <>
@@ -189,7 +201,7 @@ export function MobileTabBar({
         }}
         transition={sheetTransition}
         role="dialog"
-        aria-label="Mehr Aktionen"
+        aria-label={t("mobile.more_actions")}
         aria-modal={moreOpen ? "true" : undefined}
         aria-hidden={!moreOpen}
         tabIndex={-1}
@@ -203,11 +215,11 @@ export function MobileTabBar({
 
           {/* Header */}
           <div className="flex items-center justify-between px-5 pt-1 pb-3">
-            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Mehr</h3>
+            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">{t("mobile.more")}</h3>
             <button
               onClick={() => setMoreOpen(false)}
               className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-              aria-label="Schließen"
+              aria-label={t("topbar.close")}
             >
               <X size={18} />
             </button>
@@ -217,7 +229,7 @@ export function MobileTabBar({
           <div className="grid grid-cols-4 gap-1 px-3 pb-3">
             <MoreSheetButton
               icon={PanelRightOpen}
-              label="Copilot"
+              label={t("copilot.copilot")}
               active={copilotActive}
               onClick={() => {
                 onCopilotToggle();
@@ -226,7 +238,7 @@ export function MobileTabBar({
             />
             <MoreSheetButton
               icon={theme === "dark" ? Sun : Moon}
-              label={theme === "dark" ? "Hell" : "Dunkel"}
+              label={theme === "dark" ? t("mobile.light") : t("mobile.dark")}
               onClick={() => {
                 toggleTheme();
                 setMoreOpen(false);
@@ -234,7 +246,7 @@ export function MobileTabBar({
             />
             <MoreSheetButton
               icon={HelpCircle}
-              label="Guide"
+              label={t("mobile.guide")}
               onClick={() => {
                 onGuideOpen();
                 setMoreOpen(false);
@@ -242,13 +254,39 @@ export function MobileTabBar({
             />
             <MoreSheetButton
               icon={LayoutDashboard}
-              label="Menü"
+              label={t("mobile.menu")}
               onClick={() => {
                 onMobileMenuOpen();
                 setMoreOpen(false);
               }}
             />
           </div>
+
+          {brains.length > 1 && (
+            <div className="border-b border-[color:var(--ds-border)] px-4 py-3">
+              <div className="mb-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                {t("topbar.brain_selector_aria")}
+              </div>
+              <div className="flex gap-2 overflow-x-auto">
+                {brains.map((brain) => (
+                  <button
+                    key={brain.slug}
+                    type="button"
+                    onClick={() => selectBrain(brain)}
+                    aria-pressed={brain.slug === activeBrain?.slug}
+                    className={cn(
+                      "shrink-0 rounded-lg border px-3 py-2 text-xs font-medium",
+                      brain.slug === activeBrain?.slug
+                        ? "brand-soft brand-border brand-text"
+                        : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]"
+                    )}
+                  >
+                    {brain.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Quick Create row */}
           <div className="border-b border-[color:var(--ds-border)] px-3 py-3">
@@ -314,6 +352,19 @@ export function MobileTabBar({
 
           {/* Categorized navigation */}
           <div className="max-h-[50vh] overflow-y-auto px-3 py-3">
+            {navigationSections.map((section) => (
+              <MoreSheetSection key={section.titleKey} title={t(section.titleKey)}>
+                {section.items.map((item) => (
+                  <MoreSheetLink
+                    key={item.href}
+                    href={item.href}
+                    icon={item.icon}
+                    label={t(item.labelKey)}
+                  />
+                ))}
+              </MoreSheetSection>
+            ))}
+            <div className="hidden" aria-hidden>
             {/* Mandanten & Kommunikation */}
             <MoreSheetSection title={t("nav.section.clients_comm")}>
               <MoreSheetLink href="/dashboard/contacts" icon={Users} label={t("nav.contacts")} />
@@ -466,6 +517,7 @@ export function MobileTabBar({
               />
               <MoreSheetLink href="/dashboard/monitoring" icon={Bell} label={t("nav.monitoring")} />
             </MoreSheetSection>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -487,7 +539,7 @@ export function MobileTabBar({
       {/* Bottom tab bar */}
       <nav
         className="fixed right-0 bottom-0 left-0 z-40 border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pb-[env(safe-area-inset-bottom)] md:hidden"
-        aria-label="Mobile Navigation"
+        aria-label={t("mobile.navigation")}
       >
         {/* Active indicator bar */}
         <div className="relative h-1">
@@ -523,7 +575,15 @@ export function MobileTabBar({
                     : "text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text-muted)]"
                 )}
               >
-                <Icon size={22} className="shrink-0" strokeWidth={active ? 2.5 : 2} />
+                <div className="relative">
+                  <Icon size={22} className="shrink-0" strokeWidth={active ? 2.5 : 2} />
+                  {(badges[tab.href]?.count ?? 0) > 0 && (
+                    <span
+                      className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[color:var(--ds-danger-text)] ring-2 ring-[var(--ds-surface)]"
+                      aria-label={String(badges[tab.href].count)}
+                    />
+                  )}
+                </div>
                 <span className="text-xs leading-none font-medium">{t(tab.labelKey)}</span>
               </Link>
             );
@@ -534,7 +594,7 @@ export function MobileTabBar({
             onClick={onCopilotToggle}
             whileTap={reduceMotion ? undefined : { scale: 0.94 }}
             transition={softTransition}
-            aria-label="Copilot"
+            aria-label={t("copilot.copilot")}
             aria-pressed={copilotActive}
             className={cn(
               "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[var(--ds-ease-smooth)]",
@@ -553,7 +613,7 @@ export function MobileTabBar({
                 <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-[color:var(--brand-primary)]" />
               )}
             </div>
-            <span className="text-xs leading-none font-medium">Copilot</span>
+            <span className="text-xs leading-none font-medium">{t("copilot.copilot")}</span>
           </motion.button>
 
           {/* More tab — opens more-sheet */}
@@ -566,7 +626,7 @@ export function MobileTabBar({
             }}
             whileTap={reduceMotion ? undefined : { scale: 0.94 }}
             transition={softTransition}
-            aria-label="Mehr Aktionen"
+            aria-label={t("mobile.more_actions")}
             aria-haspopup="dialog"
             aria-expanded={moreOpen}
             className={cn(
@@ -577,7 +637,7 @@ export function MobileTabBar({
             )}
           >
             <MoreHorizontal size={22} className="shrink-0" strokeWidth={moreOpen ? 2.5 : 2} />
-            <span className="text-xs leading-none font-medium">Mehr</span>
+            <span className="text-xs leading-none font-medium">{t("mobile.more")}</span>
           </motion.button>
         </div>
       </nav>

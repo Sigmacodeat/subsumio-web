@@ -19,6 +19,7 @@ interface BriefingData {
   unassignedDocs: number;
   reviewGaps: number;
   overdueReconciliations: number;
+  followUpsToday: number;
   topDeadlines: Array<{ title: string; due: string; daysLeft: number }>;
   topCases: Array<{ title: string; status: string }>;
 }
@@ -35,6 +36,7 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
 
     const cases = pages.legal_case ?? [];
     const deadlines = pages.legal_deadline ?? [];
+    const followUps = pages.legal_follow_up ?? [];
     const invoices = pages.invoice ?? [];
     const intake = pages.intake_request ?? [];
     const bea = pages.bea_draft ?? [];
@@ -65,6 +67,7 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
 
     const now = new Date();
     now.setHours(0, 0, 0, 0);
+    const todayKey = now.toLocaleDateString("en-CA");
 
     const deadlineItems = deadlines
       .map((p: Record<string, unknown>) => {
@@ -141,6 +144,10 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
       unassignedDocs: unassignedDocs.length,
       reviewGaps: reviewGaps.length,
       overdueReconciliations: 0,
+      followUpsToday: followUps.filter((page: Record<string, unknown>) => {
+        const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+        return String(fm.date ?? "").slice(0, 10) === todayKey && fm.completed !== true;
+      }).length,
       topDeadlines: deadlineItems
         .slice(0, 5)
         .map((d: { title: string; due: string; daysLeft: number }) => ({
@@ -170,6 +177,7 @@ function buildBriefingPrompt(data: BriefingData, language: "de" | "en"): string 
     parts.push(`Critical deadlines (≤3 days): ${data.criticalDeadlines}`);
     parts.push(`Overdue deadlines: ${data.overdueDeadlines}`);
     parts.push(`Inbox items: ${data.inboxItems}`);
+    parts.push(`Follow-ups today: ${data.followUpsToday}`);
     parts.push(`Pending reviews: ${data.pendingReviews}`);
     parts.push(`Pending signatures: ${data.pendingSignatures}`);
     parts.push(`Open invoices: ${data.openInvoices}`);
@@ -208,6 +216,7 @@ function buildBriefingPrompt(data: BriefingData, language: "de" | "en"): string 
   parts.push(`Kritische Fristen (≤3 Tage): ${data.criticalDeadlines}`);
   parts.push(`Überfällige Fristen: ${data.overdueDeadlines}`);
   parts.push(`Eingänge: ${data.inboxItems}`);
+  parts.push(`Wiedervorlagen heute: ${data.followUpsToday}`);
   parts.push(`Offene Freigaben: ${data.pendingReviews}`);
   parts.push(`Offene Signaturen: ${data.pendingSignatures}`);
   parts.push(`Offene Rechnungen: ${data.openInvoices}`);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { DEFAULT_WIDGET_PREFS, mergeWithDefaults, type WidgetPref } from "@/lib/widget-registry";
+import { getWidgetPreset, mergeWithDefaults, type WidgetPref, type WidgetPreset } from "@/lib/widget-registry";
 import { csrfFetch } from "@/lib/csrf";
 
 const STORAGE_KEY = "subsumio:widget-prefs";
@@ -28,8 +28,9 @@ function writeLocal(prefs: WidgetPref[]) {
   } catch {}
 }
 
-export function useWidgetPrefs() {
-  const [prefs, setPrefs] = useState<WidgetPref[]>(DEFAULT_WIDGET_PREFS);
+export function useWidgetPrefs(preset: WidgetPreset = "associate") {
+  const presetPrefs = getWidgetPreset(preset);
+  const [prefs, setPrefs] = useState<WidgetPref[]>(presetPrefs);
   const [loaded, setLoaded] = useState(false);
 
   // Guard: once the user has interacted, don't let a late-arriving
@@ -67,10 +68,13 @@ export function useWidgetPrefs() {
         if (cancelled) return;
         // Don't overwrite if the user already interacted (race condition guard)
         if (userTouched.current) return;
-        if (data?.widgets && Array.isArray(data.widgets)) {
+        if (data?.widgets && Array.isArray(data.widgets) && data.widgets.length > 0) {
           const merged = mergeWithDefaults(data.widgets);
           setPrefs(merged);
           writeLocal(merged);
+        } else if (!local) {
+          setPrefs(presetPrefs);
+          writeLocal(presetPrefs);
         }
       })
       .catch((err) =>
@@ -94,7 +98,7 @@ export function useWidgetPrefs() {
       window.removeEventListener("storage", onChange);
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
-  }, []);
+  }, [preset]);
 
   const save = useCallback(
     (next: WidgetPref[]) => {
@@ -138,11 +142,11 @@ export function useWidgetPrefs() {
 
   const reset = useCallback(() => {
     userTouched.current = true;
-    const defaults = [...DEFAULT_WIDGET_PREFS];
+    const defaults = [...presetPrefs];
     setPrefs(defaults);
     writeLocal(defaults);
     persistToServer(defaults);
-  }, [persistToServer]);
+  }, [persistToServer, preset]);
 
   return { prefs, loaded, save, toggleVisible, reorder, reset };
 }

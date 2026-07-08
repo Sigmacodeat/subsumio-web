@@ -20,6 +20,11 @@ import {
   Circle,
   Loader2,
   Maximize2,
+  History,
+  Mail,
+  ShieldAlert,
+  Inbox,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
@@ -37,6 +42,8 @@ import { api } from "@/lib/api";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { useRealtime } from "@/lib/realtime";
 import { caseSlugFromDashboardPath } from "@/lib/matter-route-path";
+import { listSessions } from "@/components/chat/chat-session-store";
+import type { ChatSession } from "@/components/chat/chat-types";
 
 interface CopilotSidebarProps {
   open: boolean;
@@ -59,6 +66,7 @@ interface QuickAction {
   label: string;
   query?: string;
   href?: string;
+  event?: "subsumio:create-case" | "subsumio:create-deadline" | "subsumio:create-contract";
   icon: "case" | "deadline" | "research" | "draft" | "search" | "generic";
 }
 
@@ -946,6 +954,7 @@ interface ActivityItem {
 
 function ActivityFeedPanel({ lang }: { lang: Lang }) {
   const { t } = useLang();
+  const router = useRouter();
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -1027,7 +1036,19 @@ function ActivityFeedPanel({ lang }: { lang: Lang }) {
               ? "text-[color:var(--brand-primary)]"
               : "text-[color:var(--ds-text-subtle)]";
           return (
-            <div key={item.slug} className="flex items-center gap-2.5 py-1.5 text-[13px]">
+            <button
+              key={item.slug}
+              onClick={() => {
+                const href = item.type === "legal_case"
+                  ? `/dashboard/cases/${encodeURIComponent(item.slug)}`
+                  : item.type
+                    ? `/dashboard/${encodeURIComponent(item.type)}s/${encodeURIComponent(item.slug)}`
+                    : "/dashboard";
+                router.push(href);
+              }}
+              className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-1 py-1.5 text-left text-[13px] transition-colors hover:bg-[color:var(--ds-hover)]"
+              aria-label={`${item.title} ${t("copilot.activity_open")}`}
+            >
               <Icon
                 size={14}
                 className={`shrink-0 ${iconClass} ${isRunning ? "animate-spin" : ""}`}
@@ -1042,7 +1063,7 @@ function ActivityFeedPanel({ lang }: { lang: Lang }) {
                   month: "short",
                 })}
               </span>
-            </div>
+            </button>
           );
         })}
       </div>
@@ -1137,11 +1158,81 @@ function MatterContextCard({ info, lang }: { info: MatterContextInfo; lang: Lang
 }
 
 interface ProactiveAlertsProps {
-  alerts: Array<{ label: string; query: string; severity: "urgent" | "warning" }>;
+  alerts: ProactiveAlert[];
   onQuery: (query: string) => void;
   onDismiss: (key: string) => void;
   t: TFunc;
   className?: string;
+}
+
+interface ProactiveAlert {
+  label: string;
+  query: string;
+  severity: "urgent" | "warning" | "info";
+  icon: "deadline" | "mail" | "approval" | "conflict" | "intake" | "document";
+}
+
+const ALERT_ICONS: Record<ProactiveAlert["icon"], typeof Clock> = {
+  deadline: Clock,
+  mail: Mail,
+  approval: CheckSquare,
+  conflict: ShieldAlert,
+  intake: Inbox,
+  document: FileText,
+};
+
+function SessionHistoryButton({
+  open,
+  sessions,
+  onToggle,
+  onSelect,
+  t,
+  lang,
+}: {
+  open: boolean;
+  sessions: ChatSession[];
+  onToggle: () => void;
+  onSelect: (id: string) => void;
+  t: TFunc;
+  lang: Lang;
+}) {
+  return (
+    <div className="relative">
+      <button
+        onClick={onToggle}
+        className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+        aria-label={t("copilot.history")}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <History size={13} />
+      </button>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute top-9 right-0 z-50 w-64 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5 shadow-xl"
+          role="menu"
+        >
+          {sessions.length === 0 ? (
+            <p className="px-2 py-3 text-xs text-[color:var(--ds-text-muted)]">{t("copilot.history_empty")}</p>
+          ) : sessions.map((session) => (
+            <button
+              key={session.id}
+              onClick={() => onSelect(session.id)}
+              className="flex w-full flex-col rounded-md px-2 py-1.5 text-left hover:bg-[color:var(--ds-hover)]"
+              role="menuitem"
+            >
+              <span className="w-full truncate text-xs font-medium text-[color:var(--ds-text)]">{session.title}</span>
+              <span className="text-[11px] text-[color:var(--ds-text-subtle)]">
+                {new Date(session.updatedAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+              </span>
+            </button>
+          ))}
+        </motion.div>
+      )}
+    </div>
+  );
 }
 
 function ProactiveAlerts({ alerts, onQuery, onDismiss, t, className }: ProactiveAlertsProps) {
@@ -1151,6 +1242,7 @@ function ProactiveAlerts({ alerts, onQuery, onDismiss, t, className }: Proactive
       <div className="space-y-1">
         {alerts.map((alert) => {
           const alertKey = `${alert.label}-${alert.query}`;
+          const Icon = ALERT_ICONS[alert.icon];
           return (
             <button
               key={alertKey}
@@ -1159,10 +1251,12 @@ function ProactiveAlerts({ alerts, onQuery, onDismiss, t, className }: Proactive
                 "group/alert flex w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left text-xs transition-[background-color,border-color] duration-200 ease-[var(--ds-ease-smooth)]",
                 alert.severity === "urgent"
                   ? "border-l-2 border-l-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg-hover)]"
-                  : "border-l-2 border-l-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] hover:bg-[color:var(--ds-warning-bg-hover)]"
+                  : alert.severity === "warning"
+                    ? "border-l-2 border-l-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] hover:bg-[color:var(--ds-warning-bg-hover)]"
+                    : "border-l-2 border-l-[color:var(--brand-primary)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
               )}
             >
-              <Clock size={11} className="shrink-0" />
+              <Icon size={11} className="shrink-0" aria-hidden />
               <span className="min-w-0 flex-1 truncate">{alert.label}</span>
               <span
                 onClick={(e) => {
@@ -1311,12 +1405,17 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   const swipeOpacity = useTransform(swipeX, [0, 0.5, 1], [1, 0.6, 0]);
   const swipeScale = useTransform(swipeX, [0, 1], [1, 0.96]);
   const [actionsExpanded, setActionsExpanded] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [recentSessions, setRecentSessions] = useState<ChatSession[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [panelMode, setPanelMode] = useState<PanelMode>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("copilot-panel-mode");
-      if (saved === "chat" || saved === "activity") return saved;
-    }
+    try {
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem("copilot-panel-mode");
+        if (saved === "chat" || saved === "activity") return saved;
+      }
+    } catch {}
     return "chat";
   });
   const [activitySubTab, setActivitySubTab] = useState<ActivitySubTab>("feed");
@@ -1329,7 +1428,9 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
 
   // Persist panel mode preference
   useEffect(() => {
-    localStorage.setItem("copilot-panel-mode", panelMode);
+    try {
+      localStorage.setItem("copilot-panel-mode", panelMode);
+    } catch {}
   }, [panelMode]);
 
   // Fetch matter context info when on a matter page
@@ -1432,9 +1533,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   }, [pathname, open, isMobile]);
 
   // ── G6: Proactive Suggestions — fetch from /api/notifications (unified) ──
-  const [proactiveAlerts, setProactiveAlerts] = useState<
-    Array<{ label: string; query: string; severity: "urgent" | "warning" }>
-  >([]);
+  const [proactiveAlerts, setProactiveAlerts] = useState<ProactiveAlert[]>([]);
   const alertsCacheRef = useRef<{ data: typeof proactiveAlerts; ts: number } | null>(null);
   const ALERTS_TTL_MS = 60_000;
 
@@ -1460,11 +1559,11 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           createdAt: string;
         }> = data.notifications ?? [];
 
-        // Filter for deadline-related notifications
-        const deadlineNotifs = notifs.filter(
-          (n) =>
-            n.type === "deadline" || n.type === "deadline_alert" || n.type === "deadline_overdue"
-        );
+        const supportedTypes = new Set([
+          "deadline", "deadline_alert", "deadline_overdue", "bea_incoming",
+          "document_processed", "approval_needed", "conflict_alert", "intake_received",
+        ]);
+        const deadlineNotifs = notifs.filter((n) => supportedTypes.has(n.type));
 
         if (deadlineNotifs.length === 0) {
           setProactiveAlerts([]);
@@ -1473,6 +1572,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         }
 
         const alerts = deadlineNotifs.slice(0, 3).map((n) => {
+          const isDeadline = n.type.startsWith("deadline");
           const isOverdue =
             n.type === "deadline_overdue" ||
             (n.data?.daysRemaining !== undefined && (n.data.daysRemaining as number) < 0);
@@ -1483,6 +1583,16 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           const days = n.data?.daysRemaining as number | undefined;
 
           const isEn = lang === "en";
+          if (!isDeadline) {
+            const config: Record<string, { icon: ProactiveAlert["icon"]; severity: ProactiveAlert["severity"]; label: string; query: string }> = {
+              bea_incoming: { icon: "mail", severity: "info", label: `${t("copilot.alert.bea")}: ${title}`, query: isEn ? `Summarize the new beA message "${title}" and identify required actions.` : `Fasse die neue beA-Nachricht „${title}“ zusammen und nenne erforderliche Schritte.` },
+              document_processed: { icon: "document", severity: "info", label: `${t("copilot.alert.document")}: ${title}`, query: isEn ? `Summarize the processed document "${title}" and flag important findings.` : `Fasse das analysierte Dokument „${title}“ zusammen und markiere wichtige Erkenntnisse.` },
+              approval_needed: { icon: "approval", severity: "warning", label: `${t("copilot.alert.approval")}: ${title}`, query: isEn ? `What needs to be reviewed before approving "${title}"?` : `Was muss vor der Freigabe von „${title}“ geprüft werden?` },
+              conflict_alert: { icon: "conflict", severity: "urgent", label: `${t("copilot.alert.conflict")}: ${title}`, query: isEn ? `Explain the conflict alert "${title}" and recommend next steps.` : `Erläutere den Konflikthinweis „${title}“ und empfehle nächste Schritte.` },
+              intake_received: { icon: "intake", severity: "info", label: `${t("copilot.alert.intake")}: ${title}`, query: isEn ? `Review the new intake "${title}" and list the next steps.` : `Prüfe die neue Mandatsanfrage „${title}“ und liste die nächsten Schritte auf.` },
+            };
+            return config[n.type];
+          }
           return {
             label: isOverdue
               ? `${t("copilot.alert.overdue_prefix")} ${title}${days !== undefined ? ` (${Math.abs(days)}${isEn ? "d" : "T"})` : ""}`
@@ -1495,8 +1605,9 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 ? `What are the details for deadline "${title}"?`
                 : `Welche Details gibt es zur Frist "${title}"?`,
             severity: isOverdue ? ("urgent" as const) : ("warning" as const),
+            icon: "deadline" as const,
           };
-        });
+        }).filter((alert): alert is ProactiveAlert => Boolean(alert));
         setProactiveAlerts(alerts);
         alertsCacheRef.current = { data: alerts, ts: Date.now() };
       } catch {
@@ -1512,6 +1623,12 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   }, [open, mobileOpen, pathname, t, lang]);
 
   const routeContext = useMemo(() => resolveRouteContext(pathname, t, lang), [pathname, t, lang]);
+  const quickActions = useMemo<QuickAction[]>(() => [
+    ...routeContext.quickActions,
+    { label: t("copilot.quick_create.case"), event: "subsumio:create-case", icon: "case" },
+    { label: t("copilot.quick_create.deadline"), event: "subsumio:create-deadline", icon: "deadline" },
+    { label: t("copilot.quick_create.contract"), event: "subsumio:create-contract", icon: "draft" },
+  ], [routeContext.quickActions, t]);
 
   // Keyboard shortcut: Cmd+J toggles on desktop and switches to chat mode, opens on mobile
   useEffect(() => {
@@ -1592,15 +1709,43 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
 
   const handleQuickAction = useCallback(
     (action: QuickAction) => {
-      if (action.href) {
+      if (action.event) {
+        window.dispatchEvent(new CustomEvent(action.event));
+        if (isMobile) {
+          setMobileOpen(false);
+          if (open) onToggleRef.current();
+        }
+      } else if (action.href) {
         quickActionNavRef.current = true;
+        if (isMobile) {
+          setMobileOpen(false);
+          if (open) onToggleRef.current();
+        }
         router.push(action.href);
+        window.setTimeout(() => { quickActionNavRef.current = false; }, 300);
       } else if (action.query) {
         chatRef.current?.sendMessage(action.query);
       }
     },
-    [router]
+    [router, isMobile, open]
   );
+
+  useEffect(() => {
+    const handleExternalSend = (event: Event) => {
+      const query = (event as CustomEvent<{ query?: string }>).detail?.query?.trim();
+      if (!query) return;
+      setPanelMode("chat");
+      window.setTimeout(() => chatRef.current?.sendMessage(query), 0);
+    };
+    window.addEventListener("subsumio:copilot:send", handleExternalSend);
+    return () => window.removeEventListener("subsumio:copilot:send", handleExternalSend);
+  }, []);
+
+  const handleToggleHistory = useCallback(async () => {
+    const next = !historyOpen;
+    setHistoryOpen(next);
+    if (next) setRecentSessions((await listSessions()).slice(0, 5));
+  }, [historyOpen]);
 
   // Panel → fullscreen handoff: carry the running session into /dashboard/chat
   const handleOpenFullscreen = useCallback(() => {
@@ -1699,6 +1844,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               >
                 <MessageSquareText size={13} />
                 {t("copilot.tab_chat")}
+                {isStreaming && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--brand-primary)]" aria-label={t("copilot.thinking")} />}
               </button>
               <button
                 onClick={() => setPanelMode("activity")}
@@ -1715,6 +1861,9 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               </button>
             </div>
             <div className="flex items-center gap-0.5">
+              {panelMode === "chat" && (
+                <SessionHistoryButton open={historyOpen} sessions={recentSessions} onToggle={handleToggleHistory} onSelect={(id) => { void chatRef.current?.loadSession(id); setHistoryOpen(false); }} t={t} lang={lang} />
+              )}
               <button
                 onClick={handleOpenFullscreen}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -1753,7 +1902,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
 
           {/* Quick actions — mobile */}
           <QuickActionsChips
-            actions={routeContext.quickActions}
+            actions={quickActions}
             onAction={(action) => {
               if (action.query) setPanelMode("chat");
               handleQuickAction(action);
@@ -1784,6 +1933,8 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 placeholder={
                   routeContext.caseSlug ? t("chat.placeholder_case") : t("chat.placeholder_global")
                 }
+                onStreamingChange={setIsStreaming}
+                exampleQueries={routeContext.quickActions.flatMap((action) => action.query ? [action.query] : []).slice(0, 4)}
               />
             )
           )}
@@ -1825,7 +1976,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               } else if (e.key === "ArrowRight") {
                 e.preventDefault();
                 setPanelWidth((w) => {
-                  const nw = Math.min(600, w + 24);
+                  const nw = Math.min(560, w + 24);
                   try {
                     localStorage.setItem("subsumio-copilot-width", String(nw));
                   } catch {}
@@ -1845,7 +1996,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             tabIndex={0}
             aria-valuenow={panelWidth}
             aria-valuemin={280}
-            aria-valuemax={600}
+            aria-valuemax={560}
           />
         )}
         {/* Inner wrapper — fixed width matches panel, never reflows. Only outer aside clips. */}
@@ -1905,6 +2056,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                   >
                     <MessageSquareText size={12} />
                     {t("copilot.tab_chat")}
+                    {isStreaming && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--brand-primary)]" aria-label={t("copilot.thinking")} />}
                   </button>
                   <button
                     onClick={() => setPanelMode("activity")}
@@ -1921,6 +2073,9 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                   </button>
                 </div>
                 <div className="flex items-center gap-0.5">
+                  {panelMode === "chat" && (
+                    <SessionHistoryButton open={historyOpen} sessions={recentSessions} onToggle={handleToggleHistory} onSelect={(id) => { void chatRef.current?.loadSession(id); setHistoryOpen(false); }} t={t} lang={lang} />
+                  )}
                   <button
                     onClick={handleOpenFullscreen}
                     className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -1957,7 +2112,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
 
             {/* Quick actions — contextual icon chips */}
             <QuickActionsChips
-              actions={routeContext.quickActions}
+              actions={quickActions}
               onAction={(action) => {
                 if (action.query) setPanelMode("chat");
                 handleQuickAction(action);
@@ -1991,6 +2146,8 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                         ? t("chat.placeholder_case")
                         : t("chat.placeholder_global")
                     }
+                    onStreamingChange={setIsStreaming}
+                    exampleQueries={routeContext.quickActions.flatMap((action) => action.query ? [action.query] : []).slice(0, 4)}
                   />
                 )}
               </div>

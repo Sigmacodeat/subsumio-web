@@ -37,6 +37,7 @@ import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import type { DashboardKey } from "@/content/dashboard";
 import { navForIndustry } from "@/components/dashboard/sidebar";
 import { tracking } from "@/lib/tracking";
+import { useRecentMatters } from "@/lib/use-recent-matters";
 
 interface CommandItem {
   id: string;
@@ -188,6 +189,7 @@ export function CommandPalette({
 }: CommandPaletteProps) {
   const router = useRouter();
   const { t } = useLang();
+  const { recent: recentMatters } = useRecentMatters();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -310,6 +312,7 @@ export function CommandPalette({
     cmds.push({
       id: "create-case",
       label: t("cmd.action.new_case"),
+      hint: "N",
       icon: Briefcase,
       action: () => {
         window.dispatchEvent(new CustomEvent("subsumio:create-case"));
@@ -320,6 +323,7 @@ export function CommandPalette({
     cmds.push({
       id: "create-deadline",
       label: t("cmd.action.new_deadline"),
+      hint: "D",
       icon: CalendarClock,
       action: () => {
         window.dispatchEvent(new CustomEvent("subsumio:create-deadline"));
@@ -330,6 +334,7 @@ export function CommandPalette({
     cmds.push({
       id: "create-invoice",
       label: t("cmd.action.new_invoice"),
+      hint: "I",
       icon: FileText,
       action: () => {
         window.dispatchEvent(new CustomEvent("subsumio:create-invoice"));
@@ -415,7 +420,7 @@ export function CommandPalette({
     });
     cmds.push({
       id: "power-brain",
-      label: "Brain — Wissensbasis-Explorer",
+      label: t("cmd.nav.brain"),
       icon: Brain,
       href: "/dashboard/brain",
       section: t("cmd.section.admin"),
@@ -423,7 +428,7 @@ export function CommandPalette({
     });
     cmds.push({
       id: "power-graph",
-      label: "Graph — Entitäts-Netzwerk",
+      label: t("cmd.nav.graph"),
       icon: Network,
       href: "/dashboard/graph",
       section: t("cmd.section.admin"),
@@ -431,7 +436,7 @@ export function CommandPalette({
     });
     cmds.push({
       id: "power-sources",
-      label: "Sources — Quellen-Verwaltung",
+      label: t("cmd.nav.sources"),
       icon: Database,
       href: "/dashboard/sources",
       section: t("cmd.section.admin"),
@@ -516,6 +521,26 @@ export function CommandPalette({
       .filter((cmd): cmd is CommandItem => !!cmd);
   }, [open, query, allCommands]);
 
+  const emptyStateItems = useMemo<CommandItem[]>(() => {
+    if (query.trim()) return [];
+    return [
+      {
+        id: "ask-copilot-empty",
+        label: t("cmd.ask_copilot"),
+        icon: MessageSquareText,
+        href: "/dashboard/chat",
+        section: t("cmd.section.actions"),
+      },
+      ...recentMatters.slice(0, 5).map((matter) => ({
+        id: `recent-matter-${matter.slug}`,
+        label: matter.title ?? matter.slug,
+        icon: Briefcase,
+        href: `/dashboard/cases/${encodeURIComponent(matter.slug)}`,
+        section: t("cmd.recent_matters"),
+      })),
+    ];
+  }, [query, recentMatters, t]);
+
   const searchCommands = useMemo<CommandItem[]>(() => {
     if (!query.trim() || searchResults.length === 0) return [];
     return searchResults.map((r) => ({
@@ -546,7 +571,7 @@ export function CommandPalette({
         id: `fed-contact-${r.slug}`,
         label: r.title,
         icon: Users,
-        href: `/dashboard/contacts`,
+        href: `/dashboard/contacts?slug=${encodeURIComponent(r.slug)}`,
         section: t("nav.contacts"),
         keywords: r.snippet,
       });
@@ -556,7 +581,7 @@ export function CommandPalette({
         id: `fed-deadline-${r.slug}`,
         label: r.title,
         icon: CalendarClock,
-        href: `/dashboard/deadlines`,
+        href: `/dashboard/deadlines?slug=${encodeURIComponent(r.slug)}`,
         section: t("nav.deadlines"),
         keywords: r.snippet,
       });
@@ -566,7 +591,7 @@ export function CommandPalette({
         id: `fed-doc-${r.slug}`,
         label: r.title,
         icon: FolderOpen,
-        href: `/dashboard/vault`,
+        href: `/dashboard/vault?slug=${encodeURIComponent(r.slug)}`,
         section: t("nav.vault"),
         keywords: r.snippet,
       });
@@ -612,8 +637,8 @@ export function CommandPalette({
   }, [filtered, searchCommands, fedCommands, t, query]);
 
   const flatList = useMemo(
-    () => [...recentItems, ...grouped.flatMap(([, items]) => items)],
-    [grouped, recentItems]
+    () => [...emptyStateItems, ...recentItems, ...grouped.flatMap(([, items]) => items)],
+    [emptyStateItems, grouped, recentItems]
   );
 
   const navigate = useCallback(
@@ -646,6 +671,20 @@ export function CommandPalette({
       } else if (e.key === "Escape") {
         e.preventDefault();
         onClose();
+      } else if (!query.trim() && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const shortcutId =
+          e.key.toLowerCase() === "n"
+            ? "create-case"
+            : e.key.toLowerCase() === "d"
+              ? "create-deadline"
+              : e.key.toLowerCase() === "i"
+                ? "create-invoice"
+                : null;
+        const command = shortcutId ? allCommands.find((item) => item.id === shortcutId) : null;
+        if (command) {
+          e.preventDefault();
+          navigate(command);
+        }
       } else if (e.key === "Tab") {
         // Focus-trap: keep Tab within the palette
         e.preventDefault();
@@ -664,7 +703,7 @@ export function CommandPalette({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [open, activeIndex, flatList, navigate, onClose]);
+  }, [open, activeIndex, flatList, navigate, onClose, query, allCommands]);
 
   useEffect(() => {
     if (!listRef.current) return;
@@ -743,6 +782,48 @@ export function CommandPalette({
                 </div>
               ) : (
                 <>
+                  {emptyStateItems.length > 0 && !query.trim() && (
+                    <div className="mb-1.5">
+                      {Array.from(new Set(emptyStateItems.map((item) => item.section))).map(
+                        (section) => (
+                          <div key={section}>
+                            <div className="px-4 py-1.5">
+                              <span className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                                {section}
+                              </span>
+                            </div>
+                            {emptyStateItems
+                              .filter((item) => item.section === section)
+                              .map((cmd) => {
+                                runningIdx++;
+                                const idx = runningIdx;
+                                const Icon = cmd.icon;
+                                const isActive = idx === activeIndex;
+                                return (
+                                  <button
+                                    key={cmd.id}
+                                    data-idx={idx}
+                                    onClick={() => navigate(cmd)}
+                                    onMouseEnter={() => setActiveIndex(idx)}
+                                    className={cn(
+                                      "flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left transition-colors",
+                                      isActive
+                                        ? "brand-soft brand-text"
+                                        : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
+                                    )}
+                                    role="option"
+                                    aria-selected={isActive}
+                                  >
+                                    <Icon size={16} className="shrink-0" />
+                                    <span className="flex-1 text-sm font-medium">{cmd.label}</span>
+                                  </button>
+                                );
+                              })}
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
                   {recentItems.length > 0 && !query.trim() && (
                     <div className="mb-1.5">
                       <div className="px-4 py-1.5">
@@ -835,6 +916,12 @@ export function CommandPalette({
             {/* Footer */}
             <div className="flex h-11 items-center justify-between border-t border-[color:var(--ds-border)] px-4 text-xs text-[color:var(--ds-text-subtle)]">
               <div className="flex items-center gap-4">
+                <span className="hidden items-center gap-1.5 sm:flex">
+                  <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">N</kbd>
+                  <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">D</kbd>
+                  <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">I</kbd>
+                  {t("cmd.section.create")}
+                </span>
                 <span className="flex items-center gap-1.5">
                   <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
                     ↑↓

@@ -98,7 +98,7 @@ const ICON_MAP = { Mail, MessageSquare, FileText };
 export default function ContactPage({ lang }: { lang: Lang }) {
   const c = (CONTENT as unknown as Record<string, typeof CONTENT.de>)[lang] ?? CONTENT.de;
   return (
-    <>
+    <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]" lang={lang}>
       <PageHero badge={c.badge} h1a={c.h1a} h1b={c.h1b} sub={c.sub} />
 
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
@@ -212,6 +212,6 @@ export default function ContactPage({ lang }: { lang: Lang }) {
       </Section>
 
       <CTASection title={c.ctaTitle} sub={c.ctaSub} href={p(lang, "/signup")} label={c.ctaButton} />
-    </>
+    </div>
   );
 }

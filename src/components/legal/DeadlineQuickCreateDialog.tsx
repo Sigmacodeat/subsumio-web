@@ -456,17 +456,17 @@ export function DeadlineQuickCreateDialog({
                 {atFristLoading && (
                   <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
                     <Loader2 size={12} className="animate-spin" />
-                    AT-Engine wird befragt…
+                    {t("deadlines.at_engine_loading")}
                   </div>
                 )}
                 {atFristError && (
                   <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-700">
-                    ⚠ AT-Engine nicht erreichbar — Web-Lib als Fallback genutzt
+                    {t("deadlines.at_engine_error")}
                   </div>
                 )}
                 {atFristResult && atFristResult.hinweise.length > 0 && (
                   <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2">
-                    <p className="mb-1 text-xs font-medium text-blue-700">AT-Engine-Hinweise:</p>
+                    <p className="mb-1 text-xs font-medium text-blue-700">{t("deadlines.at_engine_hints")}</p>
                     <ul className="space-y-0.5 text-xs text-blue-600">
                       {atFristResult.hinweise.map((h, i) => (
                         <li key={i}>• {h}</li>
@@ -474,7 +474,7 @@ export function DeadlineQuickCreateDialog({
                     </ul>
                     {atFristResult.vorfrist && (
                       <p className="mt-1.5 text-xs font-medium text-blue-700">
-                        Vorfrist (Engine): {atFristResult.vorfrist}
+                        {t("deadlines.at_engine_vorfrist")}: {atFristResult.vorfrist}
                       </p>
                     )}
                   </div>
@@ -510,11 +510,11 @@ export function DeadlineQuickCreateDialog({
                       <div className="flex items-center gap-1.5">
                         <ShieldCheck size={13} className="text-amber-600" />
                         <span className="text-xs font-medium text-[color:var(--ds-text)]">
-                          Notfrist (Vier-Augen-Kontrolle)
+                          {t("deadlines.notfrist_label")}
                         </span>
                       </div>
                       <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                        Gesetzliche Frist mit zwingender Zweiprüfung vor Erledigung.
+                        {t("deadlines.notfrist_desc")}
                       </p>
                     </div>
                   </label>

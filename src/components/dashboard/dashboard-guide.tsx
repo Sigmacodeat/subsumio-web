@@ -8,6 +8,7 @@ import { BookOpen, CheckCircle2, LifeBuoy, Mail, Route, X, Sparkles } from "luci
 import { useLang } from "@/lib/use-lang";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useTour } from "@/components/dashboard/guided-tour";
+import type { DashboardKey } from "@/content/dashboard";
 
 interface DashboardGuideProps {
   open: boolean;
@@ -16,46 +17,68 @@ interface DashboardGuideProps {
 
 const ROUTE_HELP: Array<{
   match: string;
-  title: string;
-  desc: string;
-  links: Array<{ href: string; label: string }>;
+  title: DashboardKey;
+  desc: DashboardKey;
+  links: Array<{ href: string; label: DashboardKey }>;
 }> = [
   {
     match: "/dashboard/deadlines",
-    title: "Fristen sicher steuern",
-    desc: "Prüfe kritische Fristen zuerst, bestätige erkannte Termine und exportiere nur geprüfte Kalenderdaten.",
+    title: "guide.route.deadlines_title",
+    desc: "guide.route.deadlines_desc",
     links: [
-      { href: "/dashboard/case-scanner", label: "Akten-Scanner" },
-      { href: "/dashboard/calendar-export", label: "Kalender" },
+      { href: "/dashboard/case-scanner", label: "nav.case_scanner" },
+      { href: "/dashboard/calendar-export", label: "nav.calendar_export" },
     ],
   },
   {
     match: "/dashboard/cases",
-    title: "Akten sauber führen",
-    desc: "Jede Akte sollte Mandant, Gegner, Fristen, Dokumente und nächste Aufgabe enthalten.",
+    title: "guide.route.cases_title",
+    desc: "guide.route.cases_desc",
     links: [
-      { href: "/dashboard/cases", label: "Neue Akte" },
-      { href: "/dashboard/contacts", label: "Kontakte" },
+      { href: "/dashboard/cases", label: "sidebar.create_case" },
+      { href: "/dashboard/contacts", label: "nav.contacts" },
     ],
   },
   {
     match: "/dashboard/intake",
-    title: "Eingang triagieren",
-    desc: "Ordne neue Eingänge einer Akte zu, erkenne Fristen und markiere Unklares für Review.",
+    title: "guide.route.intake_title",
+    desc: "guide.route.intake_desc",
     links: [
-      { href: "/dashboard/bea", label: "beA" },
-      { href: "/dashboard/email-import", label: "E-Mail-Import" },
+      { href: "/dashboard/bea", label: "nav.bea" },
+      { href: "/dashboard/email-import", label: "nav.email_import" },
     ],
   },
   {
     match: "/dashboard/invoicing",
-    title: "Abrechnung vorbereiten",
-    desc: "Pflege Kanzlei- und Bankdaten, prüfe offene Leistungen und erstelle Rechnungen aus Akten.",
+    title: "guide.route.invoicing_title",
+    desc: "guide.route.invoicing_desc",
     links: [
-      { href: "/dashboard/settings/kanzlei", label: "Kanzlei-Daten" },
-      { href: "/dashboard/controlling", label: "Kanzlei-Kennzahlen" },
+      { href: "/dashboard/settings/kanzlei", label: "nav.kanzlei" },
+      { href: "/dashboard/controlling", label: "nav.controlling" },
     ],
   },
+  ...[
+    ["vault", "nav.vault"],
+    ["drafting", "nav.drafting"],
+    ["contracts", "nav.contracts"],
+    ["research", "nav.legal_research"],
+    ["litigation", "nav.litigation"],
+    ["compliance", "nav.compliance"],
+    ["workflows", "nav.workflows"],
+    ["settings", "nav.settings"],
+    ["team", "nav.team"],
+    ["review-queue", "nav.review_queue"],
+    ["signature", "nav.signature"],
+    ["bea", "nav.bea"],
+    ["whatsapp", "nav.whatsapp"],
+    ["contacts", "nav.contacts"],
+    ["opponents", "nav.opponents"],
+  ].map(([route, label]) => ({
+    match: `/dashboard/${route}`,
+    title: `guide.route.${route.replace("-", "_")}_title` as DashboardKey,
+    desc: `guide.route.${route.replace("-", "_")}_desc` as DashboardKey,
+    links: [{ href: `/dashboard/${route}`, label: label as DashboardKey }],
+  })),
 ];
 
 export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
@@ -76,15 +99,22 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
-  const routeHelp = ROUTE_HELP.find((item) => pathname.startsWith(item.match)) ?? {
-    title: t("guide.default_title"),
-    desc: t("guide.default_desc"),
-    links: [
-      { href: "/dashboard/cases", label: t("cockpit.action_case") },
-      { href: "/dashboard/deadlines", label: t("nav.deadlines") },
-      { href: "/dashboard/settings/kanzlei", label: t("nav.kanzlei") },
-    ],
-  };
+  const routeHelp = ROUTE_HELP.find((item) => pathname.startsWith(item.match));
+  const resolvedHelp = routeHelp
+    ? {
+        title: t(routeHelp.title),
+        desc: t(routeHelp.desc),
+        links: routeHelp.links.map((link) => ({ ...link, label: t(link.label) })),
+      }
+    : {
+        title: t("guide.default_title"),
+        desc: t("guide.default_desc"),
+        links: [
+          { href: "/dashboard/cases", label: t("cockpit.action_case") },
+          { href: "/dashboard/deadlines", label: t("nav.deadlines") },
+          { href: "/dashboard/settings/kanzlei", label: t("nav.kanzlei") },
+        ],
+      };
 
   return (
     <AnimatePresence initial={false}>
@@ -138,14 +168,14 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
                 <div className="mb-3 flex items-center gap-2">
                   <Route size={15} className="brand-text" />
                   <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                    {routeHelp.title}
+                    {resolvedHelp.title}
                   </h2>
                 </div>
                 <p className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-                  {routeHelp.desc}
+                  {resolvedHelp.desc}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {routeHelp.links.map((link) => (
+                  {resolvedHelp.links.map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}
@@ -213,7 +243,7 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
                 className="mb-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-primary)]/5 px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--brand-primary)]/10 active:scale-95"
               >
                 <Sparkles size={15} className="brand-text" />
-                Tour erneut starten
+                {t("guide.restart_tour")}
               </button>
               <a
                 href="mailto:support@subsumio.com"

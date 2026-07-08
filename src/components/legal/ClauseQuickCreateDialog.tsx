@@ -24,6 +24,7 @@ import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
+import { enqueueMutation, isOnline } from "@/lib/offline-store";
 
 interface ClauseQuickCreateDialogProps {
   open: boolean;
@@ -56,6 +57,7 @@ export function ClauseQuickCreateDialog({
   const [category, setCategory] = useState("general");
   const [content, setContent] = useState("");
   const [creating, setCreating] = useState(false);
+  const [createAnother, setCreateAnother] = useState(false);
 
   const resetForm = useCallback(() => {
     setTitle("");
@@ -72,14 +74,20 @@ export function ClauseQuickCreateDialog({
     if (!title.trim() || !content.trim()) return;
     setCreating(true);
     try {
-      await api.brain.createPage({
+      const payload = {
         slug: `clause/${category}/${Date.now()}`,
         title: title.trim(),
         type: "clause_library",
         content: content.trim(),
         frontmatter: { category, tags: [category], case_slug: presetCaseSlug || undefined },
-      });
+      };
+      if (isOnline()) await api.brain.createPage(payload);
+      else await enqueueMutation({ type: "createPage", payload });
       addToast({ type: "success", title: t("clauses.toast_created" as DashboardKey) });
+      if (createAnother) {
+        resetForm();
+        return;
+      }
       onOpenChange(false);
       if (onCreated) onCreated();
     } catch (err) {
@@ -157,6 +165,10 @@ export function ClauseQuickCreateDialog({
           </div>
 
           <DialogFooter className="border-t border-[color:var(--ds-border)] px-6 py-4">
+            <label className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+              <input type="checkbox" checked={createAnother} onChange={(event) => setCreateAnother(event.target.checked)} />
+              {t("common.create_another")}
+            </label>
             <div className="flex gap-2">
               <Button
                 type="button"
@@ -164,7 +176,7 @@ export function ClauseQuickCreateDialog({
                 onClick={() => onOpenChange(false)}
                 className="text-[color:var(--ds-text-muted)]"
               >
-                {t("signature.btn_cancel" as DashboardKey)}
+                {t("common.cancel")}
               </Button>
               <Button
                 type="submit"

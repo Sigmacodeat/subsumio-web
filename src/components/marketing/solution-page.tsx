@@ -36,7 +36,7 @@ function HeroIconConstellation({ content }: { content: SolutionContent }) {
 export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionContent }) {
   const ui = UI_STRINGS[lang];
   return (
-    <>
+    <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]" lang={lang}>
       {/* Hero */}
       <PageHero
         badge={content.badge}
@@ -181,6 +181,6 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
         label={content.ctaButton}
         showLogo={false}
       />
-    </>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from "react";
 import Script from "next/script";
 import { usePathname, useRouter } from "next/navigation";
 import { ensureRealtime } from "@/lib/realtime";
@@ -29,6 +29,9 @@ const ClauseQuickCreateDialog = dynamic(() =>
 const ContractQuickCreateDialog = dynamic(() =>
   import("@/components/legal/ContractQuickCreateDialog").then((m) => m.ContractQuickCreateDialog)
 );
+const PracticeQuickCreateDialogs = dynamic(() =>
+  import("@/components/legal/PracticeQuickCreateDialogs").then((m) => m.PracticeQuickCreateDialogs)
+);
 const TaxQuickCreateDialog = dynamic(() =>
   import("@/components/tax/TaxQuickCreateDialog").then((m) => m.TaxQuickCreateDialog)
 );
@@ -41,7 +44,9 @@ import { Topbar, type Theme } from "@/components/dashboard/topbar";
 import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
 import { MobileSyncBanner } from "@/components/mobile/mobile-sync-banner";
 import { TourProvider, useAutoStartTour } from "@/components/dashboard/guided-tour";
+import { AnimatePresence } from "framer-motion";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
+import { ErrorBoundary } from "@/components/error-boundary/error-boundary";
 import { useBrainStats } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
 import { useIsMediumScreen } from "@/lib/use-media-query";
@@ -53,23 +58,92 @@ import { useLang } from "@/lib/use-lang";
 import { identifyUser } from "@/lib/tracking";
 
 function useTheme(): [Theme, () => void] {
-  const [theme, setTheme] = useState<Theme>("light");
-  useEffect(() => {
-    const stored = localStorage.getItem("subsumio-theme") as Theme | null;
-    const next =
-      stored ?? (window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-    setTheme(next);
+  const subscribe = useCallback((notify: () => void) => {
+    window.addEventListener("storage", notify);
+    window.addEventListener("subsumio:theme-change", notify);
+    return () => {
+      window.removeEventListener("storage", notify);
+      window.removeEventListener("subsumio:theme-change", notify);
+    };
   }, []);
-  const toggle = () => {
-    setTheme((prev) => {
-      const next: Theme = prev === "light" ? "dark" : "light";
-      try {
-        localStorage.setItem("subsumio-theme", next);
-      } catch {}
-      return next;
-    });
-  };
+  const getSnapshot = useCallback((): Theme => {
+    const stored = localStorage.getItem("subsumio-theme");
+    if (stored === "light" || stored === "dark") return stored;
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }, []);
+  const theme = useSyncExternalStore(subscribe, getSnapshot, () => "light" as Theme);
+  const toggle = useCallback(() => {
+    const next: Theme = getSnapshot() === "light" ? "dark" : "light";
+    localStorage.setItem("subsumio-theme", next);
+    document.documentElement.dataset.theme = next;
+    window.dispatchEvent(new Event("subsumio:theme-change"));
+  }, [getSnapshot]);
   return [theme, toggle];
+}
+
+type OverlayName =
+  | "mobile"
+  | "command"
+  | "guide"
+  | "shortcuts"
+  | "copilot"
+  | "case"
+  | "deadline"
+  | "invoice"
+  | "signature"
+  | "clause"
+  | "contract";
+type OverlayState = Record<OverlayName, boolean>;
+const QUICK_OVERLAYS: OverlayName[] = [
+  "case",
+  "deadline",
+  "invoice",
+  "signature",
+  "clause",
+  "contract",
+];
+
+function useOverlayManager() {
+  const [overlays, setOverlays] = useState<OverlayState>(() => ({
+    mobile: false,
+    command: false,
+    guide: false,
+    shortcuts: false,
+    copilot: false,
+    case: false,
+    deadline: false,
+    invoice: false,
+    signature: false,
+    clause: false,
+    contract: false,
+  }));
+  const setOverlay = useCallback(
+    (name: OverlayName, value: boolean | ((current: boolean) => boolean)) => {
+      setOverlays((current) => ({
+        ...current,
+        [name]: typeof value === "function" ? value(current[name]) : value,
+      }));
+    },
+    []
+  );
+  const closeAllOverlays = useCallback(
+    () =>
+      setOverlays(
+        (current) =>
+          Object.fromEntries(Object.keys(current).map((key) => [key, false])) as OverlayState
+      ),
+    []
+  );
+  const closeTopOverlay = useCallback(() => {
+    setOverlays((current) => {
+      const priority: OverlayName[] = [...QUICK_OVERLAYS]
+        .reverse()
+        .concat(["command", "shortcuts", "guide", "copilot", "mobile"]);
+      const top = priority.find((name) => current[name]);
+      return top ? { ...current, [top]: false } : current;
+    });
+  }, []);
+  return { overlays, setOverlay, closeAllOverlays, closeTopOverlay };
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -82,14 +156,67 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const { overlays, setOverlay, closeAllOverlays, closeTopOverlay } = useOverlayManager();
+  const {
+    mobile: mobileOpen,
+    command: cmdOpen,
+    guide: guideOpen,
+    shortcuts: shortcutsOpen,
+    copilot: copilotOpen,
+    case: globalQuickCreateOpen,
+    deadline: globalDeadlineCreateOpen,
+    invoice: globalInvoiceCreateOpen,
+    signature: globalSignatureCreateOpen,
+    clause: globalClauseCreateOpen,
+    contract: globalContractCreateOpen,
+  } = overlays;
+  const setMobileOpen = useCallback(
+    (value: boolean | ((v: boolean) => boolean)) => setOverlay("mobile", value),
+    [setOverlay]
+  );
+  const setCmdOpen = useCallback(
+    (value: boolean | ((v: boolean) => boolean)) => setOverlay("command", value),
+    [setOverlay]
+  );
+  const setGuideOpen = useCallback(
+    (value: boolean | ((v: boolean) => boolean)) => setOverlay("guide", value),
+    [setOverlay]
+  );
+  const setShortcutsOpen = useCallback(
+    (value: boolean | ((v: boolean) => boolean)) => setOverlay("shortcuts", value),
+    [setOverlay]
+  );
+  const setCopilotOpen = useCallback(
+    (value: boolean | ((v: boolean) => boolean)) => setOverlay("copilot", value),
+    [setOverlay]
+  );
+  const setGlobalQuickCreateOpen = useCallback(
+    (value: boolean) => setOverlay("case", value),
+    [setOverlay]
+  );
+  const setGlobalDeadlineCreateOpen = useCallback(
+    (value: boolean) => setOverlay("deadline", value),
+    [setOverlay]
+  );
+  const setGlobalInvoiceCreateOpen = useCallback(
+    (value: boolean) => setOverlay("invoice", value),
+    [setOverlay]
+  );
+  const setGlobalSignatureCreateOpen = useCallback(
+    (value: boolean) => setOverlay("signature", value),
+    [setOverlay]
+  );
+  const setGlobalClauseCreateOpen = useCallback(
+    (value: boolean) => setOverlay("clause", value),
+    [setOverlay]
+  );
+  const setGlobalContractCreateOpen = useCallback(
+    (value: boolean) => setOverlay("contract", value),
+    [setOverlay]
+  );
   const [theme, toggleTheme] = useTheme();
   const statsQuery = useBrainStats();
   const meQuery = useMe();
-  const [cmdOpen, setCmdOpen] = useState(false);
-  const [guideOpen, setGuideOpen] = useState(false);
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const [copilotOpen, setCopilotOpen] = useState(true);
   const isMediumScreen = useIsMediumScreen();
   const nativeFeatures = useNativeFeatures();
   useKeyboardAwareScroll();
@@ -99,21 +226,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     isCmdOpen: cmdOpen,
     isGuideOpen: guideOpen,
     isShortcutsOpen: shortcutsOpen,
-    closeAll: () => {
-      setMobileOpen(false);
-      setCopilotOpen(false);
-      setCmdOpen(false);
-      setGuideOpen(false);
-      setShortcutsOpen(false);
-    },
+    closeAll: closeAllOverlays,
   });
-  const [globalQuickCreateOpen, setGlobalQuickCreateOpen] = useState(false);
-  const [globalDeadlineCreateOpen, setGlobalDeadlineCreateOpen] = useState(false);
-  const [globalInvoiceCreateOpen, setGlobalInvoiceCreateOpen] = useState(false);
-  const [globalSignatureCreateOpen, setGlobalSignatureCreateOpen] = useState(false);
-  const [globalClauseCreateOpen, setGlobalClauseCreateOpen] = useState(false);
-  const [globalContractCreateOpen, setGlobalContractCreateOpen] = useState(false);
   const [presetCaseSlug, setPresetCaseSlug] = useState<string | undefined>(undefined);
+  const copilotPersistenceReady = useRef(false);
 
   // Auto-collapse sidebar when copilot opens on medium screens to maximize content space
   useEffect(() => {
@@ -125,13 +241,22 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   // Persist copilot panel state
   useEffect(() => {
     const stored = localStorage.getItem("subsumio-copilot-open");
-    if (stored !== null) setCopilotOpen(stored === "true");
-  }, []);
+    setCopilotOpen(stored !== null ? stored === "true" : window.innerWidth >= 1024);
+  }, [setCopilotOpen]);
   useEffect(() => {
+    if (!copilotPersistenceReady.current) {
+      copilotPersistenceReady.current = true;
+      return;
+    }
     try {
       localStorage.setItem("subsumio-copilot-open", String(copilotOpen));
     } catch {}
   }, [copilotOpen]);
+  useEffect(() => {
+    const openCopilot = () => setCopilotOpen(true);
+    window.addEventListener("subsumio:copilot:open", openCopilot);
+    return () => window.removeEventListener("subsumio:copilot:open", openCopilot);
+  }, [setCopilotOpen]);
   const drawerRef = useRef<HTMLElement>(null);
   const touchStartX = useRef<number | null>(null);
   const touchCurrentX = useRef<number | null>(null);
@@ -192,7 +317,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       const copilotMobileOpen =
         copilotOpen && typeof window !== "undefined" && window.innerWidth < 1024;
       const anyOverlayOpen =
-        mobileOpen || cmdOpen || guideOpen || shortcutsOpen || copilotMobileOpen;
+        mobileOpen ||
+        cmdOpen ||
+        guideOpen ||
+        shortcutsOpen ||
+        QUICK_OVERLAYS.some((name) => overlays[name]) ||
+        copilotMobileOpen;
       document.body.style.overflow = anyOverlayOpen ? "hidden" : "";
       document.body.dataset.overlay = anyOverlayOpen ? "open" : "closed";
     };
@@ -203,7 +333,57 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       document.body.style.overflow = "";
       document.body.dataset.overlay = "closed";
     };
-  }, [mobileOpen, cmdOpen, guideOpen, shortcutsOpen, copilotOpen]);
+  }, [mobileOpen, cmdOpen, guideOpen, shortcutsOpen, copilotOpen, overlays]);
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || !Object.values(overlays).some(Boolean)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      closeTopOverlay();
+    };
+    window.addEventListener("keydown", handler, true);
+    return () => window.removeEventListener("keydown", handler, true);
+  }, [overlays, closeTopOverlay]);
+
+  useEffect(() => {
+    if (!Object.values(overlays).some(Boolean)) return;
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    let activeDialog: HTMLElement | null = null;
+    const frame = requestAnimationFrame(() => {
+      const dialogs = document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]');
+      activeDialog = dialogs.item(dialogs.length - 1);
+      const first = activeDialog?.querySelector<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      first?.focus();
+    });
+    const trap = (event: KeyboardEvent) => {
+      if (event.key !== "Tab" || !activeDialog) return;
+      const focusable = Array.from(
+        activeDialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", trap);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", trap);
+      previouslyFocused?.focus();
+    };
+  }, [overlays]);
 
   // Focus-trap for mobile drawer
   useEffect(() => {
@@ -280,71 +460,34 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       drawer.removeEventListener("touchmove", onTouchMove);
       drawer.removeEventListener("touchend", onTouchEnd);
     };
-  }, [mobileOpen]);
+  }, [mobileOpen, setMobileOpen]);
 
   useEffect(() => {
     ensureRealtime();
   }, []);
 
   useEffect(() => {
-    const handler = () => setGlobalQuickCreateOpen(true);
-    window.addEventListener("subsumio:create-case", handler);
-    window.addEventListener("subsumio:quick-create", handler);
-    return () => {
-      window.removeEventListener("subsumio:create-case", handler);
-      window.removeEventListener("subsumio:quick-create", handler);
+    const eventMap: Record<string, OverlayName> = {
+      "subsumio:create-case": "case",
+      "subsumio:quick-create": "case",
+      "subsumio:create-deadline": "deadline",
+      "subsumio:create-invoice": "invoice",
+      "subsumio:create-signature": "signature",
+      "subsumio:create-clause": "clause",
+      "subsumio:create-contract": "contract",
     };
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { caseSlug?: string } | undefined;
-      setPresetCaseSlug(detail?.caseSlug);
-      setGlobalDeadlineCreateOpen(true);
-    };
-    window.addEventListener("subsumio:create-deadline", handler);
-    return () => window.removeEventListener("subsumio:create-deadline", handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { caseSlug?: string } | undefined;
-      setPresetCaseSlug(detail?.caseSlug);
-      setGlobalInvoiceCreateOpen(true);
-    };
-    window.addEventListener("subsumio:create-invoice", handler);
-    return () => window.removeEventListener("subsumio:create-invoice", handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { caseSlug?: string } | undefined;
-      setPresetCaseSlug(detail?.caseSlug);
-      setGlobalSignatureCreateOpen(true);
-    };
-    window.addEventListener("subsumio:create-signature", handler);
-    return () => window.removeEventListener("subsumio:create-signature", handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { caseSlug?: string } | undefined;
-      setPresetCaseSlug(detail?.caseSlug);
-      setGlobalClauseCreateOpen(true);
-    };
-    window.addEventListener("subsumio:create-clause", handler);
-    return () => window.removeEventListener("subsumio:create-clause", handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { caseSlug?: string } | undefined;
-      setPresetCaseSlug(detail?.caseSlug);
-      setGlobalContractCreateOpen(true);
-    };
-    window.addEventListener("subsumio:create-contract", handler);
-    return () => window.removeEventListener("subsumio:create-contract", handler);
-  }, []);
+    const handlers = Object.entries(eventMap).map(([eventName, overlay]) => {
+      const handler = (event: Event) => {
+        const detail = (event as CustomEvent<{ caseSlug?: string }>).detail;
+        setPresetCaseSlug(detail?.caseSlug);
+        setOverlay(overlay, true);
+      };
+      window.addEventListener(eventName, handler);
+      return { eventName, handler };
+    });
+    return () =>
+      handlers.forEach(({ eventName, handler }) => window.removeEventListener(eventName, handler));
+  }, [setOverlay]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -373,6 +516,21 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "a") {
         e.preventDefault();
         router.push("/dashboard/chat");
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        setCopilotOpen((value) => !value);
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "h") {
+        e.preventDefault();
+        setGuideOpen(true);
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        window.dispatchEvent(new Event("subsumio:open-notifications"));
         return;
       }
       // Quick-create shortcuts (single key, no modifiers, only when not typing)
@@ -423,7 +581,19 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [toggleTheme, router]);
+  }, [
+    toggleTheme,
+    router,
+    setCmdOpen,
+    setShortcutsOpen,
+    setCopilotOpen,
+    setGuideOpen,
+    setGlobalQuickCreateOpen,
+    setGlobalDeadlineCreateOpen,
+    setGlobalInvoiceCreateOpen,
+    setGlobalSignatureCreateOpen,
+    setGlobalContractCreateOpen,
+  ]);
 
   return (
     <div
@@ -508,9 +678,18 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           role="main"
           className="dashboard-main-scroll flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip overflow-y-auto pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0"
         >
-          <div key={pathname} className="widget-fade-in flex min-h-0 min-w-0 flex-1 flex-col">
-            {children}
-          </div>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={pathname}
+              className="flex min-h-0 min-w-0 flex-1 flex-col"
+              initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
+              transition={overlayTransition}
+            >
+              <ErrorBoundary>{children}</ErrorBoundary>
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 
@@ -551,7 +730,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <button
             onClick={nativeFeatures.clearPushNotification}
             className="shrink-0 text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
-            aria-label="Schließen"
+            aria-label={t("common.close")}
           >
             <svg
               width="16"
@@ -614,6 +793,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           />
         </>
       )}
+
+      <PracticeQuickCreateDialogs />
 
       {/* Mobile bottom tab bar — agency-level navigation */}
       <MobileTabBar

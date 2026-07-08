@@ -17,6 +17,7 @@ interface BriefingData {
   unassignedDocs: number;
   reviewGaps: number;
   overdueReconciliations: number;
+  followUpsToday: number;
   topDeadlines: Array<{ title: string; due: string; daysLeft: number }>;
   topCases: Array<{ title: string; status: string }>;
 }
@@ -119,7 +120,8 @@ export function MorningBriefing() {
       stats.inboxItems > 0 ||
       stats.pendingReviews > 0 ||
       stats.pendingSignatures > 0 ||
-      stats.unassignedDocs > 0);
+      stats.unassignedDocs > 0 ||
+      stats.followUpsToday > 0);
 
   if (loading) {
     return (
@@ -203,6 +205,9 @@ export function MorningBriefing() {
       label: lang === "en" ? "Inbox" : "Eingang",
       variant: "info",
     });
+  }
+  if (stats!.followUpsToday > 0) {
+    quickStats.push({ icon: Clock, count: stats!.followUpsToday, label: t("today.followups"), variant: "info" });
   }
   if (stats!.pendingReviews > 0) {
     quickStats.push({

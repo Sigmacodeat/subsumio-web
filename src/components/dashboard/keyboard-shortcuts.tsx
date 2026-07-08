@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { X, Keyboard, Command } from "lucide-react";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
@@ -18,6 +18,7 @@ interface ShortcutGroup {
 }
 
 export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
+  const [singleKeyEnabled, setSingleKeyEnabled] = useState(true);
   const { t } = useLang();
   const { reduceMotion, panelTransition, modalInitial, modalAnimate, modalExit } =
     useDashboardMotion();
@@ -40,6 +41,10 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, handleKeyDown]);
 
+  useEffect(() => {
+    if (open) setSingleKeyEnabled(localStorage.getItem("single-key-shortcuts") !== "false");
+  }, [open]);
+
   const groups: ShortcutGroup[] = [
     {
       title: t("cmd.shortcuts.global"),
@@ -55,6 +60,9 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
         { keys: ["⌘", "Shift", "L"], label: t("cmd.shortcuts.theme") },
         { keys: ["⌘", "B"], label: t("cmd.shortcuts.sidebar") },
         { keys: ["⌘", "Shift", "A"], label: t("cmd.shortcuts.assistant") },
+        { keys: ["⌘", "Shift", "C"], label: t("cmd.shortcuts.copilot") },
+        { keys: ["⌘", "Shift", "H"], label: t("cmd.shortcuts.guide") },
+        { keys: ["⌘", "Shift", "N"], label: t("cmd.shortcuts.notifications") },
       ],
     },
     {
@@ -68,9 +76,6 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
       ],
     },
   ];
-
-  const _singleKeyEnabled =
-    typeof window === "undefined" || localStorage.getItem("single-key-shortcuts") !== "false";
 
   return (
     <AnimatePresence initial={false}>
@@ -149,9 +154,42 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
                       ))}
                     </div>
                     {group.title === t("cmd.shortcuts.quick_create") && (
-                      <p className="mt-2 rounded-lg bg-[color:var(--ds-surface-2)] px-3 py-2 text-xs text-[color:var(--ds-text-subtle)]">
-                        {t("cmd.shortcuts.single_key_hint")}
-                      </p>
+                      <div className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-[color:var(--ds-surface-2)] px-3 py-2">
+                        <div>
+                          <p className="text-xs font-medium text-[color:var(--ds-text)]">
+                            {t("cmd.shortcuts.single_key_toggle")}
+                          </p>
+                          <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                            {t("cmd.shortcuts.single_key_hint")}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={singleKeyEnabled}
+                          aria-label={t("cmd.shortcuts.single_key_toggle")}
+                          onClick={() =>
+                            setSingleKeyEnabled((enabled) => {
+                              const next = !enabled;
+                              localStorage.setItem("single-key-shortcuts", String(next));
+                              return next;
+                            })
+                          }
+                          className={cn(
+                            "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+                            singleKeyEnabled
+                              ? "bg-[color:var(--brand-primary)]"
+                              : "bg-[color:var(--ds-border)]"
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
+                              singleKeyEnabled ? "translate-x-5" : "translate-x-0.5"
+                            )}
+                          />
+                        </button>
+                      </div>
                     )}
                   </div>
                 ))}

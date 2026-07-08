@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Loader2, GraduationCap, Clock } from "lucide-react";
+import { Plus, Loader2, GraduationCap, Clock, FileDown, AlertTriangle, X } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,7 +55,7 @@ export default function FAOTrackingPage() {
       !form.topic ||
       !form.provider
     ) {
-      addToast({ type: "error", title: "Pflichtfelder fehlen" });
+      addToast({ type: "error", title: t("fao.missing_fields") });
       return;
     }
     setSaving(true);
@@ -74,7 +74,7 @@ export default function FAOTrackingPage() {
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      addToast({ type: "success", title: "Fortbildung erfasst" });
+      addToast({ type: "success", title: t("fao.created") });
       setShowCreate(false);
       setForm({
         lawyer_name: "",
@@ -89,7 +89,7 @@ export default function FAOTrackingPage() {
     } catch (e) {
       addToast({
         type: "error",
-        title: "Fehler",
+        title: t("fao.err_save"),
         description: e instanceof Error ? e.message : undefined,
       });
     } finally {
@@ -104,16 +104,62 @@ export default function FAOTrackingPage() {
   const remaining = Math.max(0, FAO_REQUIRED_HOURS - verifiedHours);
   const progress = Math.min(100, Math.round((verifiedHours / FAO_REQUIRED_HOURS) * 100));
 
+  const now = new Date();
+  const isQ4 = now.getMonth() >= 9;
+  const showWarning = isQ4 && remaining > 0 && !localStorage.getItem("subsumio:fao-warning-dismissed");
+  const [warningDismissed, setWarningDismissed] = useState(false);
+
+  function exportPDF() {
+    const win = window.open("", "_blank");
+    if (!win) {
+      addToast({ type: "error", title: t("fao.err_save") });
+      return;
+    }
+    const rows = entries
+      .map(
+        (e) => `<tr><td>${e.date.split("T")[0]}</td><td>${e.lawyer_name}</td><td>${e.specialist_title}</td><td>${e.topic}</td><td>${e.provider}</td><td>${e.hours}</td><td>${e.status}</td></tr>`
+      )
+      .join("");
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>FAO-Tracking ${year}</title><style>body{font-family:Arial,sans-serif;margin:40px}h1{font-size:18px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:12px}th{background:#f5f5f5}.summary{margin:20px 0;padding:12px;background:#f0f4ff;border-radius:8px}</style></head><body><h1>FAO-Tracking ${year}</h1><div class="summary"><p><strong>Verifizierte Stunden:</strong> ${verifiedHours} / ${FAO_REQUIRED_HOURS}</p><p><strong>Verbleibend:</strong> ${remaining}h</p></div><table><thead><tr><th>Datum</th><th>Anwalt</th><th>Fachanwaltsbezeichnung</th><th>Thema</th><th>Veranstalter</th><th>Stunden</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
+    win.document.close();
+    setTimeout(() => win.print(), 300);
+  }
+
   return (
     <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
+      {showWarning && !warningDismissed && (
+        <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4" role="alert">
+          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" aria-hidden="true" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-[color:var(--ds-warning-text)]">{t("fao.warning_title")}</p>
+            <p className="mt-1 text-sm text-[color:var(--ds-warning-text)]">{t("fao.warning_desc").replace("{remaining}", String(remaining))}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              localStorage.setItem("subsumio:fao-warning-dismissed", "1");
+              setWarningDismissed(true);
+            }}
+            aria-label={t("common.close")}
+            className="rounded-md p-1 text-[color:var(--ds-warning-text)] hover:bg-[color:var(--ds-hover)]"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
       <PageHeader
         title={t("fao.title")}
-        description={`§ 15 FAO — ${FAO_REQUIRED_HOURS} Stunden pro Jahr und Fachanwaltsbezeichnung`}
+        description={t("fao.section_fao").replace("{hours}", String(FAO_REQUIRED_HOURS))}
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("fao.title") }]}
         actions={
-          <Button onClick={() => setShowCreate(!showCreate)} className="brand-bg gap-2 text-white">
-            <Plus size={16} /> Fortbildung
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => exportPDF()} disabled={entries.length === 0}>
+              <FileDown size={15} aria-hidden="true" /> {t("fao.export_pdf")}
+            </Button>
+            <Button onClick={() => setShowCreate(!showCreate)} className="brand-bg gap-2 text-white">
+              <Plus size={16} /> {t("fao.add")}
+            </Button>
+          </div>
         }
       />
 
@@ -123,7 +169,7 @@ export default function FAOTrackingPage() {
           <div className="flex items-center gap-2">
             <Clock size={16} className="text-[color:var(--ds-text-muted)]" />
             <span className="text-sm font-medium">
-              {year}: {verifiedHours} / {FAO_REQUIRED_HOURS} Stunden
+              {year}: {verifiedHours} / {FAO_REQUIRED_HOURS} {t("fao.year_progress")}
             </span>
           </div>
           <Badge
@@ -136,7 +182,7 @@ export default function FAOTrackingPage() {
                   : ""
             }
           >
-            {remaining === 0 ? "Erfüllt" : `${remaining}h offen`}
+            {remaining === 0 ? t("fao.fulfilled") : `${remaining}${t("fao.hours_open")}`}
           </Badge>
         </div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
@@ -155,10 +201,10 @@ export default function FAOTrackingPage() {
             void handleCreate();
           }}
         >
-          <h2 className="text-sm font-semibold">Fortbildung erfassen</h2>
+          <h2 className="text-sm font-semibold">{t("fao.create_title")}</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Anwalt *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">{t("fao.lawyer")} *</Label>
               <Input
                 value={form.lawyer_name}
                 onChange={(e) => setForm({ ...form, lawyer_name: e.target.value })}
@@ -166,7 +212,7 @@ export default function FAOTrackingPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">E-Mail *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">{t("fao.email")} *</Label>
               <Input
                 type="email"
                 value={form.lawyer_email}
@@ -176,17 +222,17 @@ export default function FAOTrackingPage() {
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-[color:var(--ds-text-muted)]">
-                Fachanwaltsbezeichnung *
+                {t("fao.specialist_title")} *
               </Label>
               <Input
                 value={form.specialist_title}
                 onChange={(e) => setForm({ ...form, specialist_title: e.target.value })}
-                placeholder="Fachanwalt für Familienrecht"
+                placeholder={t("fao.specialist_placeholder")}
                 required
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Datum *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">{t("fao.date")} *</Label>
               <Input
                 type="date"
                 value={form.date}
@@ -195,7 +241,7 @@ export default function FAOTrackingPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Stunden *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">{t("fao.hours")} *</Label>
               <Input
                 type="number"
                 min="0"
@@ -207,7 +253,7 @@ export default function FAOTrackingPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Veranstalter *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">{t("fao.provider")} *</Label>
               <Input
                 value={form.provider}
                 onChange={(e) => setForm({ ...form, provider: e.target.value })}
@@ -215,7 +261,7 @@ export default function FAOTrackingPage() {
               />
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Thema *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">{t("fao.topic")} *</Label>
               <Input
                 value={form.topic}
                 onChange={(e) => setForm({ ...form, topic: e.target.value })}
@@ -225,7 +271,7 @@ export default function FAOTrackingPage() {
           </div>
           <Button type="submit" disabled={saving} className="brand-bg gap-2 text-white">
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-            Speichern
+            {t("fao.save")}
           </Button>
         </form>
       )}
@@ -237,9 +283,9 @@ export default function FAOTrackingPage() {
       ) : entries.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] py-16 text-center">
           <GraduationCap size={32} className="mb-3 text-[color:var(--ds-text-muted)]" />
-          <p className="text-sm font-medium">Keine Fortbildungen erfasst</p>
+          <p className="text-sm font-medium">{t("fao.empty_title")}</p>
           <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-            Erfassen Sie Fortbildungen für das § 15 FAO-Tracking.
+            {t("fao.empty_desc")}
           </p>
         </div>
       ) : (
@@ -257,10 +303,10 @@ export default function FAOTrackingPage() {
                     className={`text-xs ${entry.status === "verified" ? "border-green-500/30 text-green-600" : entry.status === "rejected" ? "border-red-500/30 text-red-600" : ""}`}
                   >
                     {entry.status === "verified"
-                      ? "Verifiziert"
+                      ? t("fao.verified")
                       : entry.status === "rejected"
-                        ? "Abgelehnt"
-                        : "Ausstehend"}
+                        ? t("fao.rejected")
+                        : t("fao.pending")}
                   </Badge>
                 </div>
                 <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback, forwardRef, type CSSProperties } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Brain,
@@ -102,6 +102,10 @@ import {
   Shield,
   Filter,
   Radar,
+  Plus,
+  LogOut,
+  ChevronsDownUp,
+  FilePlus2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -114,6 +118,9 @@ import type { DashboardKey } from "@/content/dashboard";
 import { MatterSidebarSection } from "@/components/dashboard/matter-sidebar-section";
 import { SidebarQuickAccess } from "@/components/dashboard/sidebar-quick-access";
 import { useSidebarBadges, type SidebarBadges } from "@/lib/queries/sidebar-badges";
+import { useResizable } from "@/lib/use-resizable";
+import { useLogout } from "@/lib/queries/auth";
+import { csrfFetch } from "@/lib/csrf";
 
 export type NavTier = "free" | "pro" | "enterprise" | "admin";
 export type AudienceTier = "quick-start" | "erweitert" | "dach-integration" | "system";
@@ -247,6 +254,12 @@ export const NAV_SECTIONS: NavSection[] = [
         labelKey: "nav.tasks",
         keywords: "aufgaben tasks todos",
         tooltipKey: "nav.tooltip.tasks",
+      },
+      {
+        href: "/dashboard/wiedervorlagen",
+        icon: CalendarClock,
+        labelKey: "nav.wiedervorlagen",
+        keywords: "wiedervorlage follow-up erinnerung intern",
       },
       {
         href: "/dashboard/time-suggestions",
@@ -646,6 +659,13 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: GraduationCap,
         labelKey: "nav.fao_tracking",
         keywords: "fao fortbildung nachweise fachanwalt",
+        audienceTier: "erweitert",
+      },
+      {
+        href: "/dashboard/team-meeting",
+        icon: Users,
+        labelKey: "nav.team_meeting",
+        keywords: "team besprechung agenda woechentlich",
         audienceTier: "erweitert",
       },
       {
@@ -1305,6 +1325,31 @@ const TAX_NAV_SECTIONS: NavSection[] = [
       },
     ],
   },
+  {
+    titleKey: "nav.section.tax_litigation",
+    descKey: "nav.section.desc.tax_litigation",
+    colorVar: "--nav-cat-cases",
+    items: [
+      {
+        href: "/dashboard/litigation",
+        icon: Hammer,
+        labelKey: "nav.litigation",
+        keywords: "finanzgericht finanzgerichtsbarkeit fg prozess litigation",
+      },
+      {
+        href: "/dashboard/process-strategy",
+        icon: Gavel,
+        labelKey: "nav.process_strategy",
+        keywords: "steuer prozessstrategie finanzgericht strategie",
+      },
+      {
+        href: "/dashboard/court-analytics",
+        icon: Scale,
+        labelKey: "nav.court_analytics",
+        keywords: "gericht analytics finanzgericht fg entscheidungen",
+      },
+    ],
+  },
 ];
 
 const TAX_ADMIN_SECTION: NavSection = {
@@ -1560,6 +1605,59 @@ function findActiveSection(
   )?.titleKey;
 }
 
+const ADMIN_GROUPS: Array<{ titleKey: DashboardKey; hrefs: string[] }> = [
+  {
+    titleKey: "nav.section.admin_system",
+    hrefs: [
+      "/dashboard/settings/ai-model",
+      "/dashboard/admin/feature-flags",
+      "/dashboard/admin/backup",
+      "/dashboard/monitoring",
+      "/dashboard/connectors",
+      "/dashboard/api-keys",
+    ],
+  },
+  {
+    titleKey: "nav.section.admin_users",
+    hrefs: [
+      "/dashboard/team",
+      "/dashboard/settings/scim",
+      "/dashboard/settings/security",
+      "/dashboard/audit",
+      "/dashboard/settings",
+      "/dashboard/settings/kanzlei",
+    ],
+  },
+  {
+    titleKey: "nav.section.admin_integrations",
+    hrefs: [
+      "/dashboard/import-kanzlei",
+      "/dashboard/datev-export",
+      "/dashboard/bea",
+      "/dashboard/whatsapp/templates",
+      "/dashboard/calendar-export",
+      "/dashboard/judgements-sync",
+    ],
+  },
+];
+
+function splitAdminSection(section: NavSection): NavSection[] {
+  const assigned = new Set(ADMIN_GROUPS.flatMap((group) => group.hrefs));
+  const groups = ADMIN_GROUPS.map((group) => ({
+    ...section,
+    titleKey: group.titleKey,
+    descKey: undefined,
+    items: section.items.filter((item) => group.hrefs.includes(item.href)),
+  }));
+  groups.push({
+    ...section,
+    titleKey: "nav.section.admin_plan",
+    descKey: undefined,
+    items: section.items.filter((item) => !assigned.has(item.href)),
+  });
+  return groups.filter((group) => group.items.length > 0);
+}
+
 function SyncStatus({ collapsed }: { collapsed: boolean }) {
   const { pendingCount, syncing, syncPending } = useMutationQueue();
   const { t } = useLang();
@@ -1609,10 +1707,12 @@ function NavBadge({
   count,
   variant,
   collapsed,
+  label,
 }: {
   count: number;
   variant: "danger" | "warning" | "info";
   collapsed: boolean;
+  label?: string;
 }) {
   if (count <= 0) return null;
   if (collapsed) {
@@ -1623,6 +1723,7 @@ function NavBadge({
           badgeVariantClasses[variant]
         )}
         aria-label={String(count)}
+        title={label ? `${label}: ${count}` : String(count)}
       >
         {count > 9 ? "9+" : count}
       </span>
@@ -1679,17 +1780,35 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   ref
 ) {
   const pathname = usePathname();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [openSections, setOpenSections] = useState<DashboardKey[]>([]);
   const [isDesktop, setIsDesktop] = useState(false);
   const [coreMode, setCoreMode] = useState(true);
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [dreamDetailsOpen, setDreamDetailsOpen] = useState(false);
+  const [dreamRunning, setDreamRunning] = useState(false);
+  const [dreamError, setDreamError] = useState(false);
+  const [recentHrefs, setRecentHrefs] = useState<string[]>([]);
   const isDesktopMQ = useIsDesktop();
   const { t, lang } = useLang();
   const { panelTransition: sidebarPanelTransition } = useDashboardMotion();
   const sidebarShellTransition = sidebarPanelTransition;
-  const sidebarWidth = collapsed && isDesktop ? 64 : 240;
+  const {
+    width: expandedWidth,
+    isResizing,
+    handleMouseDown,
+  } = useResizable({
+    minWidth: 200,
+    maxWidth: 320,
+    initialWidth: 240,
+    storageKey: "subsumio-sidebar-width",
+    side: "left",
+  });
+  const sidebarWidth = collapsed && isDesktop ? 64 : isDesktop ? expandedWidth : 240;
   const badgesQuery = useSidebarBadges();
   const badges: SidebarBadges = badgesQuery.data ?? {};
+  const logoutMutation = useLogout();
 
   const isTax = industry === "tax";
   const navConfig = navForIndustry(industry);
@@ -1758,7 +1877,12 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
       const base = navSections
         .map((section) => ({
           ...section,
-          items: section.items.filter((item) => !item.comingSoon && isTierVisible(item)),
+          items: section.items.filter(
+            (item) =>
+              !item.comingSoon &&
+              isTierVisible(item) &&
+              (!coreMode || !item.audienceTier || item.audienceTier === "quick-start")
+          ),
         }))
         .filter((section) => section.items.length > 0);
       return coreMode ? base.filter((s) => CORE_SECTION_KEYS.includes(s.titleKey)) : base;
@@ -1794,19 +1918,35 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     coreMode,
   ]);
 
+  const filteredPrimaryItems = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return primaryItems.filter(
+      (item) =>
+        isTierVisible(item) &&
+        (!q ||
+          t(item.labelKey).toLowerCase().includes(q) ||
+          (item.keywords ?? "").toLowerCase().includes(q))
+    );
+  }, [primaryItems, isTierVisible, searchQuery, t]);
+
   const filteredBottomItems = useMemo(() => {
     if (!searchQuery.trim()) return bottomItems.filter(isTierVisible);
     return [];
   }, [searchQuery, bottomItems, isTierVisible]);
 
-  const hasResults = filteredSections.length > 0 || filteredBottomItems.length > 0;
+  const hasResults =
+    filteredPrimaryItems.length > 0 ||
+    filteredSections.length > 0 ||
+    filteredBottomItems.length > 0;
   const accordionSections = useMemo<NavSection[]>(() => {
-    const sections = [...filteredSections];
+    const sections = filteredSections.flatMap((section) =>
+      section.titleKey === "nav.section.admin" ? splitAdminSection(section) : [section]
+    );
     if (filteredBottomItems.length > 0) {
       if (!searchQuery.trim()) {
-        sections.push(adminSection);
+        sections.push(...splitAdminSection(adminSection));
       } else {
-        sections.push({ ...adminSection, items: filteredBottomItems });
+        sections.push(...splitAdminSection({ ...adminSection, items: filteredBottomItems }));
       }
     }
     return sections;
@@ -1825,8 +1965,28 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     try {
       const stored = localStorage.getItem("sidebar-core-mode");
       if (stored !== null) setCoreMode(stored === "false" ? false : true);
+      const recent = JSON.parse(localStorage.getItem("subsumio-recent-nav") ?? "[]") as unknown;
+      if (Array.isArray(recent)) {
+        setRecentHrefs(
+          recent.filter((href): href is string => typeof href === "string").slice(0, 5)
+        );
+      }
     } catch {}
   }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      const index = Number(event.key) - 1;
+      const item = primaryItems[index];
+      if (!item || index < 0 || index > 4) return;
+      event.preventDefault();
+      router.push(item.href);
+      setMobileOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [primaryItems, router, setMobileOpen]);
 
   const toggleCoreMode = useCallback(() => {
     setCoreMode((prev) => {
@@ -1864,17 +2024,61 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     );
   };
 
-  const toggleSection = (titleKey: DashboardKey) => {
+  const trackRecent = useCallback(
+    (item: NavItem) => {
+      if (primaryItems.some((primary) => primary.href === item.href)) return;
+      setRecentHrefs((current) => {
+        const next = [item.href, ...current.filter((href) => href !== item.href)].slice(0, 5);
+        try {
+          localStorage.setItem("subsumio-recent-nav", JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    },
+    [primaryItems]
+  );
+
+  const recentItems = useMemo(
+    () =>
+      recentHrefs
+        .map((href) => allNavItems.find((item) => item.href === href))
+        .filter((item): item is NavItem => Boolean(item) && isTierVisible(item)),
+    [recentHrefs, allNavItems, isTierVisible]
+  );
+
+  const toggleSection = (titleKey: DashboardKey, event: React.MouseEvent<HTMLButtonElement>) => {
     setOpenSections((current) => {
       if (current.includes(titleKey)) {
         return current.filter((section) => section !== titleKey);
       }
-      if (searchQuery.trim()) {
+      if (event.shiftKey || searchQuery.trim()) {
         return [...current, titleKey];
       }
       return [titleKey];
     });
   };
+
+  const dispatchQuickCreate = useCallback(
+    (eventName: string) => {
+      window.dispatchEvent(new CustomEvent(eventName));
+      setQuickCreateOpen(false);
+      setMobileOpen(false);
+    },
+    [setMobileOpen]
+  );
+
+  const runDreamCycle = useCallback(async () => {
+    setDreamRunning(true);
+    setDreamError(false);
+    try {
+      const response = await csrfFetch("/api/brain/dream-cycle", { method: "POST" });
+      if (!response.ok) throw new Error(String(response.status));
+    } catch {
+      setDreamError(true);
+    } finally {
+      setDreamRunning(false);
+    }
+  }, []);
 
   return (
     <motion.aside
@@ -1911,8 +2115,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
       <div
         className={cn(
           "flex h-full flex-col transition-[width] duration-[var(--ds-duration-panel)] ease-[var(--ds-ease-panel)] motion-reduce:transition-none",
-          collapsed ? "w-16" : "w-[240px]"
+          collapsed && "w-16"
         )}
+        style={!collapsed ? { width: sidebarWidth } : undefined}
       >
         {/* Logo */}
         <div
@@ -1957,6 +2162,49 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               </>
             )}
           </Link>
+          <div className="relative ml-auto">
+            <button
+              type="button"
+              onClick={() =>
+                collapsed
+                  ? dispatchQuickCreate("subsumio:create-case")
+                  : setQuickCreateOpen((open) => !open)
+              }
+              className="brand-soft brand-text flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[color:var(--ds-hover)]"
+              aria-label={t("sidebar.quick_create")}
+              aria-expanded={collapsed ? undefined : quickCreateOpen}
+            >
+              <Plus size={16} aria-hidden />
+            </button>
+            {!collapsed && quickCreateOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute top-10 right-0 z-50 w-44 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1 shadow-xl"
+                role="menu"
+              >
+                {(
+                  [
+                    ["sidebar.create_case", "subsumio:create-case", Briefcase],
+                    ["sidebar.create_deadline", "subsumio:create-deadline", CalendarClock],
+                    ["sidebar.create_contact", "subsumio:create-contact", Users],
+                    ["sidebar.create_document", "subsumio:create-document", FilePlus2],
+                  ] as const
+                ).map(([labelKey, eventName, Icon]) => (
+                  <button
+                    key={eventName}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => dispatchQuickCreate(eventName)}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                  >
+                    <Icon size={14} aria-hidden />
+                    {t(labelKey)}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </div>
         </div>
 
         <div className="dashboard-scroll-shadow flex-1 overflow-x-clip overflow-y-auto pt-[env(safe-area-inset-top)] pb-3">
@@ -2051,10 +2299,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
 
           {/* Core / Extended toggle */}
           {!collapsed && !searchQuery.trim() && (
-            <div className="px-3 pt-2">
+            <div className="flex gap-1 px-3 pt-2">
               <button
                 onClick={toggleCoreMode}
-                className="flex w-full items-center justify-between rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                className="flex min-w-0 flex-1 items-center justify-between rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                 aria-pressed={!coreMode}
                 title={
                   coreMode ? t("sidebar.show_all_functions") : t("sidebar.show_core_functions")
@@ -2072,6 +2320,17 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                   )}
                 />
               </button>
+              {openSections.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setOpenSections([])}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                  aria-label={t("sidebar.collapse_all")}
+                  title={t("sidebar.collapse_all")}
+                >
+                  <ChevronsDownUp size={14} aria-hidden />
+                </button>
+              )}
             </div>
           )}
 
@@ -2088,11 +2347,13 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               </div>
             )}
             <div className={cn("space-y-0.5", collapsed && "hidden md:block")}>
-              {primaryItems.filter(isTierVisible).map((item, index) => {
+              {filteredPrimaryItems.map((item) => {
+                const index = primaryItems.findIndex((primary) => primary.href === item.href);
                 const Icon = item.icon;
                 const active = isActiveHref(pathname, item.href);
                 const colorVar = primaryColorVars[index] ?? "--nav-cat-cases";
-                const tooltip = item.tooltipKey ? t(item.tooltipKey) : undefined;
+                const shortcut = `Alt+${index + 1}`;
+                const tooltip = `${item.tooltipKey ? t(item.tooltipKey) : t(item.labelKey)} (${shortcut})`;
                 return (
                   <Link
                     key={`primary-${item.href}`}
@@ -2100,7 +2361,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     aria-current={active ? "page" : undefined}
                     aria-label={collapsed ? t(item.labelKey) : undefined}
                     onClick={() => setMobileOpen(false)}
-                    title={collapsed ? (tooltip ?? t(item.labelKey)) : tooltip}
+                    title={tooltip}
                     className={cn(
                       "group relative flex items-center gap-3 rounded-lg text-[13px] font-semibold transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                       collapsed ? "h-9 justify-center px-0" : "h-9 px-3",
@@ -2148,6 +2409,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                         count={badges[item.href].count}
                         variant={badges[item.href].variant}
                         collapsed={true}
+                        label={t(item.labelKey)}
                       />
                     )}
                   </Link>
@@ -2163,6 +2425,34 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             {/* Quick access — pinned & recently visited matters */}
             {!searchQuery.trim() && (
               <SidebarQuickAccess collapsed={collapsed} onNavigate={() => setMobileOpen(false)} />
+            )}
+
+            {!collapsed && !searchQuery.trim() && recentItems.length > 0 && (
+              <div className="mt-3 border-t border-[color:var(--ds-border)] pt-3">
+                <div className="mb-1 flex items-center gap-2 px-3 text-xs font-semibold text-[color:var(--ds-text-subtle)]">
+                  <Clock size={13} aria-hidden />
+                  <span>{t("sidebar.recent_functions")}</span>
+                </div>
+                <div className="space-y-0.5">
+                  {recentItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={`recent-${item.href}`}
+                        href={item.href}
+                        onClick={() => {
+                          trackRecent(item);
+                          setMobileOpen(false);
+                        }}
+                        className="flex h-8 items-center gap-3 rounded-md px-3 text-[13px] font-medium text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                      >
+                        <Icon size={15} aria-hidden />
+                        <span className="truncate">{t(item.labelKey)}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             )}
 
             {/* Collapsed: section-grouped icon list */}
@@ -2191,7 +2481,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                             href={item.href}
                             aria-current={active ? "page" : undefined}
                             aria-label={t(item.labelKey)}
-                            onClick={() => setMobileOpen(false)}
+                            onClick={() => {
+                              trackRecent(item);
+                              setMobileOpen(false);
+                            }}
                             title={item.tooltipKey ? t(item.tooltipKey) : t(item.labelKey)}
                             className={cn(
                               "group relative flex h-8 items-center justify-center rounded-lg text-[13px] transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
@@ -2222,6 +2515,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                 count={badges[item.href].count}
                                 variant={badges[item.href].variant}
                                 collapsed={true}
+                                label={t(item.labelKey)}
                               />
                             )}
                           </Link>
@@ -2248,7 +2542,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       key={section.titleKey}
                       className={cn(
                         "rounded-lg border transition-[background-color,border-color,box-shadow,opacity] duration-200 ease-[var(--ds-ease-smooth)]",
-                        section.titleKey === "nav.section.admin"
+                        section.titleKey.startsWith("nav.section.admin")
                           ? "border-[color:var(--ds-border)] bg-transparent"
                           : "border-transparent",
                         isOpen
@@ -2260,7 +2554,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     >
                       <button
                         type="button"
-                        onClick={() => toggleSection(section.titleKey)}
+                        onClick={(event) => toggleSection(section.titleKey, event)}
                         className="group flex h-9 w-full items-center gap-2 rounded-lg px-3 text-left text-[13px] font-semibold text-[color:var(--ds-text)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
                         aria-expanded={isOpen}
                         aria-controls={panelId}
@@ -2360,7 +2654,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                   key={item.href}
                                   href={item.href}
                                   aria-current={active ? "page" : undefined}
-                                  onClick={() => setMobileOpen(false)}
+                                  onClick={() => {
+                                    trackRecent(item);
+                                    setMobileOpen(false);
+                                  }}
                                   title={item.tooltipKey ? t(item.tooltipKey) : undefined}
                                   style={{ "--sidebar-item-index": index } as CSSProperties}
                                   className={cn(
@@ -2403,22 +2700,59 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           </nav>
 
           {/* Dream Cycle indicator — compact */}
-          <div
-            className={cn(
-              "mx-3 mt-2 mb-1 flex items-center gap-1.5 rounded-md px-2 py-1 transition-[opacity] duration-300 ease-[var(--ds-ease-smooth)]",
-              dreamCycle
-                ? "text-[color:var(--ds-success-text)]"
-                : "text-[color:var(--ds-warning-text)]",
-              collapsed ? "pointer-events-none h-0 overflow-hidden py-0 opacity-0" : "opacity-100"
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setDreamDetailsOpen((open) => !open)}
+              className={cn(
+                "mx-3 mt-2 mb-1 flex items-center gap-1.5 rounded-md px-2 py-1 transition-[opacity] duration-300 ease-[var(--ds-ease-smooth)]",
+                dreamCycle
+                  ? "text-[color:var(--ds-success-text)]"
+                  : "text-[color:var(--ds-warning-text)]",
+                collapsed ? "pointer-events-none h-0 overflow-hidden py-0 opacity-0" : "opacity-100"
+              )}
+              aria-expanded={dreamDetailsOpen}
+              title={
+                dreamCycle
+                  ? `${t("sidebar.dream_last_run")} ${new Date(dreamCycle).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
+                  : t("sidebar.dream_not_scheduled")
+              }
+            >
+              <Zap size={11} className="shrink-0" />
+              <span className="text-xs font-medium">{t("sidebar.dream_cycle")}</span>
+            </button>
+            {dreamDetailsOpen && !collapsed && (
+              <motion.div
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute right-3 bottom-full left-3 z-40 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 shadow-xl"
+                role="dialog"
+                aria-label={t("sidebar.dream_cycle")}
+              >
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  {dreamCycle
+                    ? `${t("sidebar.dream_last_run")} ${new Date(dreamCycle).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}`
+                    : t("sidebar.dream_not_scheduled")}
+                </p>
+                <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
+                  {t("sidebar.dream_next_scheduled")}
+                </p>
+                {dreamError && (
+                  <p role="alert" className="mt-2 text-xs text-[color:var(--ds-danger-text)]">
+                    {t("sidebar.dream_error")}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void runDreamCycle()}
+                  disabled={dreamRunning}
+                  className="brand-soft brand-text mt-3 flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-semibold disabled:opacity-50"
+                >
+                  <RefreshCw size={13} className={cn(dreamRunning && "animate-spin")} aria-hidden />
+                  {dreamRunning ? t("sidebar.dream_running") : t("sidebar.dream_run_now")}
+                </button>
+              </motion.div>
             )}
-            title={
-              dreamCycle
-                ? `${t("sidebar.dream_last_run")} ${new Date(dreamCycle).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
-                : t("sidebar.dream_not_scheduled")
-            }
-          >
-            <Zap size={11} className="shrink-0" />
-            <span className="text-xs font-medium">{t("sidebar.dream_cycle")}</span>
           </div>
 
           {/* User profile section */}
@@ -2455,6 +2789,20 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 </p>
               </div>
             </Link>
+            <button
+              type="button"
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+              title={t("topbar.logout")}
+              aria-label={t("topbar.logout")}
+              className={cn(
+                "mt-1 flex w-full items-center rounded-lg text-[13px] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-danger-text)] disabled:opacity-50",
+                collapsed ? "h-9 justify-center" : "gap-3 px-3 py-2"
+              )}
+            >
+              <LogOut size={15} aria-hidden />
+              {!collapsed && <span>{t("topbar.logout")}</span>}
+            </button>
           </div>
         </div>
 
@@ -2483,6 +2831,17 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             )}
           </button>
         </div>
+        {!collapsed && isDesktop && (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label={t("sidebar.resize")}
+            tabIndex={0}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleMouseDown}
+            className="absolute inset-y-0 right-0 z-50 w-1 cursor-col-resize bg-transparent transition-colors hover:bg-[color:var(--brand-primary)] focus:bg-[color:var(--brand-primary)] focus:outline-none"
+          />
+        )}
       </div>
     </motion.aside>
   );

@@ -26,6 +26,7 @@ import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
 import type { BrainPage } from "@/lib/types";
+import { useDialogFetch } from "@/lib/use-dialog-fetch";
 
 interface ContractQuickCreateDialogProps {
   open: boolean;
@@ -89,12 +90,20 @@ export function ContractQuickCreateDialog({
   const [parties, setParties] = useState("");
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
+  const [createAnother, setCreateAnother] = useState(false);
+  const [partyOne, setPartyOne] = useState("");
+  const [partyTwo, setPartyTwo] = useState("");
+  const { data: contacts } = useDialogFetch<BrainPage[]>(open, () =>
+    api.brain.listPages({ type: "legal_contact", limit: 500 })
+  );
 
   const resetForm = useCallback(() => {
     setTitle("");
     setType("Kaufvertrag");
     setParties("");
     setContent("");
+    setPartyOne("");
+    setPartyTwo("");
   }, []);
 
   useEffect(() => {
@@ -114,7 +123,8 @@ export function ContractQuickCreateDialog({
         content: content.trim(),
         frontmatter: {
           contract_type: type,
-          parties: parties.trim(),
+          parties: [partyOne, partyTwo].filter(Boolean).map((slug) => contacts?.find((contact) => contact.slug === slug)?.title).filter(Boolean).join(" / ") || parties.trim(),
+          party_slugs: [partyOne, partyTwo].filter(Boolean),
           contract_status: "draft",
           risk_level: null,
           risk_score: null,
@@ -142,6 +152,10 @@ export function ContractQuickCreateDialog({
       ];
       await setCache(OFFLINE_KEYS.contracts, nextContracts);
       addToast({ type: "success", title: t("contracts.quick_created" as DashboardKey) });
+      if (createAnother) {
+        resetForm();
+        return;
+      }
       onOpenChange(false);
       if (onCreated) onCreated();
     } catch (err) {
@@ -164,6 +178,18 @@ export function ContractQuickCreateDialog({
                 <FileText size={16} className="brand-text" />
               </div>
               <DialogTitle>{t("contracts.quick_title" as DashboardKey)}</DialogTitle>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {[{ id: "party-one", value: partyOne, set: setPartyOne, key: "contracts.party_one" }, { id: "party-two", value: partyTwo, set: setPartyTwo, key: "contracts.party_two" }].map((party) => (
+                <div key={party.id} className="space-y-1.5">
+                  <Label htmlFor={`quick-contract-${party.id}`} className="text-xs">{t(party.key as DashboardKey)}</Label>
+                  <Select value={party.value} onValueChange={party.set}>
+                    <SelectTrigger id={`quick-contract-${party.id}`}><SelectValue placeholder={t("contracts.select_contact" as DashboardKey)} /></SelectTrigger>
+                    <SelectContent>{(contacts ?? []).map((contact) => <SelectItem key={contact.slug} value={contact.slug}>{contact.title}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              ))}
             </div>
             <DialogDescription>{t("contracts.quick_desc" as DashboardKey)}</DialogDescription>
           </DialogHeader>
@@ -232,6 +258,10 @@ export function ContractQuickCreateDialog({
           </div>
 
           <DialogFooter className="border-t border-[color:var(--ds-border)] px-6 py-4">
+            <label className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+              <input type="checkbox" checked={createAnother} onChange={(event) => setCreateAnother(event.target.checked)} />
+              {t("common.create_another")}
+            </label>
             <div className="flex gap-2">
               <Button
                 type="button"

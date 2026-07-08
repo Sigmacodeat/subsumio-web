@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, memo, useMemo } from "react";
+import { useState, memo, useMemo, useEffect } from "react";
 import {
   Copy,
   Check,
@@ -14,6 +14,8 @@ import {
   Download,
   Reply,
   Lightbulb,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { CopilotExplanationPanel } from "@/components/copilot/copilot-explanation-panel";
 import { cn } from "@/lib/utils";
@@ -55,6 +57,7 @@ function ChatMessageBubbleInner({
 }: ChatMessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const [showExplain, setShowExplain] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const { t, lang } = useLang();
   const isUser = message.role === "user";
   const hasCitations = (message.citations?.length ?? 0) > 0;
@@ -68,6 +71,26 @@ function ChatMessageBubbleInner({
     } catch {
       // Clipboard API may be unavailable (non-HTTPS, permissions denied)
     }
+  }
+
+  useEffect(() => () => {
+    if (isSpeaking) window.speechSynthesis?.cancel();
+  }, [isSpeaking]);
+
+  function handleSpeak() {
+    if (!("speechSynthesis" in window)) return;
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(displayContent);
+    utterance.lang = lang === "en" ? "en-US" : "de-DE";
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
   }
 
   // Extract follow-up suggestions from AI response (💡 **Follow-Up:** ...)
@@ -246,6 +269,16 @@ function ChatMessageBubbleInner({
                 aria-label={t("chat.regenerate")}
               >
                 <RefreshCw size={12} />
+              </button>
+            )}
+            {!isUser && typeof window !== "undefined" && "speechSynthesis" in window && (
+              <button
+                onClick={handleSpeak}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                aria-label={isSpeaking ? t("chat.tts_stop") : t("chat.tts_play")}
+                aria-pressed={isSpeaking}
+              >
+                {isSpeaking ? <VolumeX size={12} /> : <Volume2 size={12} />}
               </button>
             )}
             {!isUser && (

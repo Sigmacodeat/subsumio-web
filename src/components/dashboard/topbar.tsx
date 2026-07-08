@@ -82,12 +82,26 @@ export function Topbar({
   const [brainOpen, setBrainOpen] = useState(false);
   const [brainActiveIdx, setBrainActiveIdx] = useState(0);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [notificationFilter, setNotificationFilter] = useState<
+    "all" | "deadline" | "mention" | "system"
+  >("all");
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const brainRef = useRef<HTMLDivElement>(null);
   const quickCreateRef = useRef<HTMLDivElement>(null);
   const { t, lang, setLang } = useLang();
   const { popoverTransition, popoverInitial, popoverAnimate, popoverExit } = useDashboardMotion();
+
+  useEffect(() => {
+    const openNotifications = () => {
+      setNotifOpen(true);
+      setUserMenuOpen(false);
+      setBrainOpen(false);
+      setQuickCreateOpen(false);
+    };
+    window.addEventListener("subsumio:open-notifications", openNotifications);
+    return () => window.removeEventListener("subsumio:open-notifications", openNotifications);
+  }, []);
 
   useEffect(() => {
     if (!notifOpen && !userMenuOpen && !brainOpen && !quickCreateOpen) return;
@@ -211,6 +225,7 @@ export function Topbar({
   // ── Sync: persist detected deadline alerts to /api/notifications ──
   // This ensures both the Topbar bell AND the Copilot Sidebar see the same alerts
   const lastSyncSignature = useRef("");
+  const notificationSyncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!deadlinesQuery.data || !Array.isArray(deadlinesQuery.data)) return;
     const now = new Date();
@@ -241,20 +256,25 @@ export function Topbar({
     // Skip if nothing changed since last sync
     const signature = deadlines.map((d) => `${d.caseSlug}:${d.deadlineDate}`).join("|");
     if (signature === lastSyncSignature.current) return;
-    lastSyncSignature.current = signature;
-    // Single batch request instead of N individual requests
-    if (deadlines.length > 0) {
-      void csrfFetch("/api/notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deadlines }),
-      }).catch((err) =>
-        console.warn(
-          "[topbar] Failed to sync deadline notifications:",
-          err instanceof Error ? err.message : err
-        )
-      );
-    }
+    if (notificationSyncTimer.current) clearTimeout(notificationSyncTimer.current);
+    notificationSyncTimer.current = setTimeout(() => {
+      lastSyncSignature.current = signature;
+      if (deadlines.length > 0) {
+        void csrfFetch("/api/notifications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ deadlines }),
+        }).catch((err) =>
+          console.warn(
+            "[topbar] Failed to sync deadline notifications:",
+            err instanceof Error ? err.message : err
+          )
+        );
+      }
+    }, 500);
+    return () => {
+      if (notificationSyncTimer.current) clearTimeout(notificationSyncTimer.current);
+    };
   }, [deadlinesQuery.data]);
 
   const notifications = useMemo(() => {
@@ -401,6 +421,16 @@ export function Topbar({
   }
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const filteredNotifications = notifications.filter((notification) => {
+    if (notificationFilter === "all") return true;
+    if (notificationFilter === "mention") {
+      return notification.type === "mention" || notification.type === "reply";
+    }
+    if (notificationFilter === "system") {
+      return notification.type === "system" || notification.type === "dream";
+    }
+    return notification.type === "deadline";
+  });
 
   return (
     <header
@@ -464,6 +494,35 @@ export function Topbar({
           <Search size={18} />
         </button>
       </div>
+      <nav
+        aria-label="Breadcrumb"
+        className="hidden min-w-0 flex-1 items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)] lg:flex"
+      >
+        {pathname
+          .replace(/^\/dashboard\/?/, "")
+          .split("/")
+          .filter(Boolean)
+          .slice(0, 3)
+          .map((segment, index, segments) => (
+            <span key={`${segment}-${index}`} className="flex min-w-0 items-center gap-1.5">
+              {index > 0 && <span aria-hidden>›</span>}
+              <span
+                className={cn(
+                  "truncate",
+                  index === segments.length - 1 && "font-medium text-[color:var(--ds-text)]"
+                )}
+              >
+                {segment === "cases"
+                  ? t("nav.cases")
+                  : segment === "deadlines"
+                    ? t("nav.deadlines")
+                    : segment === "vault"
+                      ? t("nav.vault")
+                      : decodeURIComponent(segment).replaceAll("-", " ")}
+              </span>
+            </span>
+          ))}
+      </nav>
       {/* Right controls — one group so gaps stay consistent instead of
           justify-between scattering switcher/bell/actions unevenly. */}
       <div className="flex shrink-0 items-center gap-1 md:gap-1.5">
@@ -531,8 +590,37 @@ export function Topbar({
                     </button>
                   </div>
                 </div>
+                <div
+                  className="flex gap-1 border-b border-[color:var(--ds-border)] p-2"
+                  role="tablist"
+                >
+                  {(
+                    [
+                      ["all", t("topbar.filter_all")],
+                      ["deadline", t("topbar.filter_deadlines")],
+                      ["mention", t("topbar.filter_mentions")],
+                      ["system", t("topbar.filter_system")],
+                    ] as const
+                  ).map(([filter, label]) => (
+                    <button
+                      key={filter}
+                      type="button"
+                      role="tab"
+                      aria-selected={notificationFilter === filter}
+                      onClick={() => setNotificationFilter(filter)}
+                      className={cn(
+                        "flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+                        notificationFilter === filter
+                          ? "brand-soft brand-text"
+                          : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
                 <div className="max-h-80 space-y-1.5 overflow-y-auto p-2">
-                  {notifications.length === 0 ? (
+                  {filteredNotifications.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-10 text-center">
                       <Bell
                         size={20}
@@ -544,7 +632,7 @@ export function Topbar({
                       </p>
                     </div>
                   ) : (
-                    notifications.map((n) => {
+                    filteredNotifications.map((n) => {
                       const notifHref = n.caseSlug
                         ? `/dashboard/cases/${encodeURIComponent(n.caseSlug)}?tab=deadlines`
                         : null;
@@ -613,16 +701,28 @@ export function Topbar({
                     })
                   )}
                 </div>
-                <div className="border-t border-[color:var(--ds-border)] p-2">
+                <div className="flex items-center gap-1 border-t border-[color:var(--ds-border)] p-2">
                   <button
                     onClick={() => {
                       router.push("/dashboard/notifications");
                       setNotifOpen(false);
                     }}
-                    className="brand-text flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition-opacity hover:opacity-80"
+                    className="brand-text flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition-opacity hover:opacity-80"
                   >
                     <Bell size={12} />
-                    Alle Benachrichtigungen
+                    {t("topbar.all_notifications")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      router.push("/dashboard/settings/notifications");
+                      setNotifOpen(false);
+                    }}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                    aria-label={t("topbar.notification_settings")}
+                    title={t("topbar.notification_settings")}
+                  >
+                    <Settings size={14} />
                   </button>
                 </div>
               </motion.div>

@@ -7,6 +7,8 @@ const MATTER_TABS = new Set([
   "evidence",
   "billing",
   "contacts",
+  "notes",
+  "phone-notes",
 ]);
 
 export function caseSlugFromDashboardPath(pathname: string): string | undefined {

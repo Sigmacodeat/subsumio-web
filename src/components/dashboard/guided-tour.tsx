@@ -14,6 +14,23 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, X, CheckCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { createT, type Lang, type TFunc } from "@/content/dashboard";
+
+function useTourTranslation(): TFunc {
+  const [lang, setLang] = useState<Lang>("de");
+  useEffect(() => {
+    const update = () => {
+      const stored = localStorage.getItem("dashboard-lang");
+      setLang(
+        stored === "en" || stored === "de" || stored === "at" || stored === "ch" ? stored : "de"
+      );
+    };
+    update();
+    window.addEventListener("dashboard-lang-change", update);
+    return () => window.removeEventListener("dashboard-lang-change", update);
+  }, []);
+  return useMemo(() => createT(lang), [lang]);
+}
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -60,96 +77,99 @@ export function useTour(): TourContextValue {
 
 // ── Tour Step Definitions ──────────────────────────────────────────────
 
-const TOUR_STEPS: TourStep[] = [
-  {
-    target: '[data-tour="sidebar"]',
-    title: "Navigation",
-    body: "Hier findest du alle Hauptbereiche: Akten, Fristen, Dokumente, Kontakte und mehr. Die Sidebar lässt sich mit Cmd+B einklappen.",
-    placement: "right",
-  },
-  {
-    target: '[data-tour="topbar"]',
-    title: "Top-Leiste",
-    body: "Schnellzugriff auf Command Palette (Cmd+K), Theme-Umschaltung, Guide und deinen Account.",
-    placement: "bottom",
-  },
-  {
-    target: '[data-tour="copilot-toggle"]',
-    title: "KI-Copilot",
-    body: "Der Copilot ist dein direkter Zugang zur KI. Stelle Fragen zu Akten, lasse Schriftsätze entwerfen oder Fristen prüfen — alles ohne das Dashboard zu verlassen.",
-    placement: "left",
-    mobile: false,
-  },
-  {
-    target: '[data-tour="quick-create"]',
-    title: "Schnellerstellung",
-    body: "Erstelle neue Akten, Fristen, Rechnungen, Verträge oder Klauseln mit einem Klick. Oder nutze das Tastatur-Shortcut Cmd+N.",
-    placement: "bottom",
-  },
-  {
-    target: '[data-tour="stats-overview"]',
-    title: "Übersicht",
-    body: "Hier siehst du die wichtigsten Kennzahlen: Seiten im Brain, Entitäten, letzter Dream-Cycle und ob die Engine erreichbar ist.",
-    placement: "bottom",
-    route: "/dashboard",
-  },
-  {
-    target: '[data-tour="deadlines-widget"]',
-    title: "Fristen-Management",
-    body: "Kritische Fristen werden automatisch erkannt und farbcodiert angezeigt. Exportiere geprüfte Fristen als Kalender-Datei.",
-    placement: "right",
-    route: "/dashboard/deadlines",
-  },
-  {
-    target: '[data-tour="cases-list"]',
-    title: "Akten-Übersicht",
-    body: "Alle deine Akten an einem Ort. Jede Akte enthält Mandant, Gegner, Fristen, Dokumente und den Akten-Graphen.",
-    placement: "right",
-    route: "/dashboard/cases",
-  },
-  {
-    target: '[data-tour="workflows-intro"]',
-    title: "Workflows",
-    body: "Abläufe verketten wiederkehrende Kanzlei-Schritte wie Dokumentanalyse, Fristnotierung, Versand oder Abrechnung. Risikoreiche Aktionen laufen über Freigaben.",
-    placement: "bottom",
-    route: "/dashboard/workflows",
-  },
-  {
-    target: '[data-tour="workflows-templates"]',
-    title: "Vorlagen starten",
-    body: "Wähle eine Vorlage, um einen Workflow zu starten. Jeder Workflow führt mehrere Schritte automatisch aus — von der Recherche bis zum Versand. Du kannst jeden Schritt nachverfolgen und Freigaben erteilen.",
-    placement: "top",
-    route: "/dashboard/workflows",
-  },
-  {
-    target: '[data-tour="workflows-list"]',
-    title: "Laufende Abläufe",
-    body: "Hier siehst du alle aktiven und abgeschlossenen Workflows. Filtere nach Status, klappe Details auf und verfolge den Fortschritt jedes Schritts in Echtzeit.",
-    placement: "top",
-    route: "/dashboard/workflows",
-    waitFor: '[data-tour="workflows-list"]',
-  },
-  {
-    target: '[data-tour="copilot-panel"]',
-    title: "Copilot-Panel",
-    body: "Der Copilot bleibt geöffnet während du arbeitest. Stelle Fragen, lasse analysieren oder entwerfen — kontextbezogen zur aktuellen Akte.",
-    placement: "left",
-    mobile: false,
-  },
-  {
-    target: '[data-tour="command-palette-hint"]',
-    title: "Command Palette",
-    body: "Mit Cmd+K öffnest du die Command Palette — suche nach Akten, Dokumenten, Kontakten oder führe Aktionen aus, ohne zu navigieren.",
-    placement: "bottom",
-    mobile: false,
-  },
-];
+function getTourSteps(t: TFunc): TourStep[] {
+  return [
+    {
+      target: '[data-tour="sidebar"]',
+      title: t("tour.step1.title"),
+      body: t("tour.step1.body"),
+      placement: "right",
+    },
+    {
+      target: '[data-tour="topbar"]',
+      title: t("tour.step2.title"),
+      body: t("tour.step2.body"),
+      placement: "bottom",
+    },
+    {
+      target: '[data-tour="copilot-toggle"]',
+      title: t("tour.step3.title"),
+      body: t("tour.step3.body"),
+      placement: "left",
+      mobile: false,
+    },
+    {
+      target: '[data-tour="quick-create"]',
+      title: t("tour.step4.title"),
+      body: t("tour.step4.body"),
+      placement: "bottom",
+    },
+    {
+      target: '[data-tour="stats-overview"]',
+      title: t("tour.step5.title"),
+      body: t("tour.step5.body"),
+      placement: "bottom",
+      route: "/dashboard",
+    },
+    {
+      target: '[data-tour="deadlines-widget"]',
+      title: t("tour.step6.title"),
+      body: t("tour.step6.body"),
+      placement: "right",
+      route: "/dashboard/deadlines",
+    },
+    {
+      target: '[data-tour="cases-list"]',
+      title: t("tour.step7.title"),
+      body: t("tour.step7.body"),
+      placement: "right",
+      route: "/dashboard/cases",
+    },
+    {
+      target: '[data-tour="workflows-intro"]',
+      title: t("tour.step8.title"),
+      body: t("tour.step8.body"),
+      placement: "bottom",
+      route: "/dashboard/workflows",
+    },
+    {
+      target: '[data-tour="workflows-templates"]',
+      title: t("tour.step9.title"),
+      body: t("tour.step9.body"),
+      placement: "top",
+      route: "/dashboard/workflows",
+    },
+    {
+      target: '[data-tour="workflows-list"]',
+      title: t("tour.step10.title"),
+      body: t("tour.step10.body"),
+      placement: "top",
+      route: "/dashboard/workflows",
+      waitFor: '[data-tour="workflows-list"]',
+    },
+    {
+      target: '[data-tour="copilot-panel"]',
+      title: t("tour.step11.title"),
+      body: t("tour.step11.body"),
+      placement: "left",
+      mobile: false,
+    },
+    {
+      target: '[data-tour="command-palette-hint"]',
+      title: t("tour.step12.title"),
+      body: t("tour.step12.body"),
+      placement: "bottom",
+      mobile: false,
+    },
+  ];
+}
 
 // ── Tour Provider ──────────────────────────────────────────────────────
 
 const STORAGE_KEY = "subsumio-tour-completed";
 
 export function TourProvider({ children }: { children: ReactNode }) {
+  const t = useTourTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [hasCompleted, setHasCompleted] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
@@ -201,8 +221,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const visibleSteps = useMemo(
-    () => TOUR_STEPS.filter((s) => s.mobile !== false || !isMobile),
-    [isMobile]
+    () => getTourSteps(t).filter((s) => s.mobile !== false || !isMobile),
+    [isMobile, t]
   );
 
   const nextStep = useCallback(() => {
@@ -272,6 +292,7 @@ function TourOverlay({
   onClose,
   onComplete,
 }: TourOverlayProps) {
+  const t = useTourTranslation();
   const router = useRouter();
   const step = steps[currentStep];
 
@@ -486,7 +507,7 @@ function TourOverlay({
           <button
             onClick={onClose}
             className="rounded-md p-1 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-            aria-label="Tour schließen"
+            aria-label={t("tour.close")}
           >
             <X size={16} />
           </button>
@@ -504,14 +525,14 @@ function TourOverlay({
         <div
           className="mb-4 flex items-center gap-1.5"
           role="tablist"
-          aria-label="Tour Fortschritt"
+          aria-label={t("tour.progress_label")}
         >
           {steps.map((_, i) => (
             <div
               key={i}
               role="tab"
               aria-selected={i === currentStep}
-              aria-label={`Schritt ${i + 1}`}
+              aria-label={t("tour.step_label").replace("{current}", String(i + 1))}
               className={`h-1.5 rounded-full transition-all duration-200 ${
                 i === currentStep
                   ? "w-6 bg-[color:var(--brand-primary)]"
@@ -526,21 +547,23 @@ function TourOverlay({
         {/* Footer */}
         <div className="flex items-center justify-between">
           <span className="text-xs text-[color:var(--ds-text-muted)]">
-            {currentStep + 1} / {steps.length}
+            {t("tour.progress")
+              .replace("{current}", String(currentStep + 1))
+              .replace("{total}", String(steps.length))}
           </span>
           <div className="flex items-center gap-2">
             {currentStep > 0 && (
               <Button variant="ghost" size="sm" onClick={onPrev}>
-                <ChevronLeft size={14} /> Zurück
+                <ChevronLeft size={14} /> {t("tour.back")}
               </Button>
             )}
             {isLastStep ? (
               <Button variant="glow" size="sm" onClick={onComplete}>
-                <CheckCircle2 size={14} /> Fertig
+                <CheckCircle2 size={14} /> {t("tour.finish")}
               </Button>
             ) : (
               <Button variant="glow" size="sm" onClick={onNext}>
-                Weiter <ChevronRight size={14} />
+                {t("tour.next")} <ChevronRight size={14} />
               </Button>
             )}
           </div>
@@ -551,7 +574,7 @@ function TourOverlay({
           onClick={onClose}
           className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
         >
-          Tour überspringen
+          {t("tour.skip")}
         </button>
       </div>
     </>,

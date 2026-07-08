@@ -39,6 +39,10 @@ import { CitationPanel, type CitationPanelData } from "@/components/legal/Citati
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
+import { HearingChecklist } from "@/components/legal/hearing-checklist";
+import { CaseHandover } from "@/components/legal/case-handover";
+import { ClientMeetingPrep } from "@/components/legal/client-meeting-prep";
+import { HearingFollowupWorkflow } from "@/components/legal/hearing-followup";
 
 const ChatPanel = lazy(() =>
   import("@/components/chat/chat-panel").then((m) => ({ default: m.ChatPanel }))
@@ -793,6 +797,14 @@ export function StrategyTab() {
           </div>
         )}
       </div>
+
+      {/* Hearing Checklist, Case Handover, Client Meeting Prep */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <HearingChecklist />
+        <CaseHandover />
+      </div>
+      <ClientMeetingPrep />
+      <HearingFollowupWorkflow />
     </div>
   );
 }

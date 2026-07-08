@@ -77,6 +77,8 @@ interface ChatPanelProps {
   /** Load this session on mount instead of the latest one (panel → fullscreen handoff). */
   initialSessionId?: string;
   placeholder?: string;
+  onStreamingChange?: (isStreaming: boolean) => void;
+  exampleQueries?: string[];
 }
 
 function queryModeToThinkMode(mode: QueryMode): ThinkMode {
@@ -467,6 +469,7 @@ export interface ChatPanelHandle {
   ) => void;
   /** Current session id — used to hand the conversation off to the fullscreen chat. */
   getActiveSessionId: () => string | undefined;
+  loadSession: (id: string) => Promise<void>;
 }
 
 function SuggestedFollowUps({
@@ -568,6 +571,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     initialQuery,
     initialSessionId,
     placeholder,
+    onStreamingChange,
+    exampleQueries: providedExampleQueries,
   },
   ref
 ) {
@@ -603,6 +608,9 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     []
   );
   const [isStreaming, setIsStreaming] = useState(false);
+  useEffect(() => {
+    onStreamingChange?.(isStreaming);
+  }, [isStreaming, onStreamingChange]);
   const [error, setError] = useState<string | null>(null);
   const [cases, setCases] = useState<Array<{ slug: string; title: string }>>([]);
   const [selectedCaseSlug, setSelectedCaseSlug] = useState(context.caseSlug ?? "");
@@ -1052,22 +1060,6 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     abortControllerRef.current?.abort();
   }, []);
 
-  // Imperative API for parent components (Quick Actions, Copilot Sidebar)
-  useImperativeHandle(
-    ref,
-    () => ({
-      sendMessage: (
-        text: string,
-        options?: {
-          attachments?: Array<{ name: string; slug: string }>;
-          replyTo?: { id: string; role: "user" | "assistant"; preview: string } | null;
-        }
-      ) => handleSend(text, options?.attachments, options?.replyTo ?? undefined),
-      getActiveSessionId: () => activeSessionId,
-    }),
-    [handleSend, activeSessionId]
-  );
-
   // ── G15: Tool Confirmation / Cancel handlers ──
   const handleToolConfirm = useCallback(
     async (toolCallId: string) => {
@@ -1349,6 +1341,22 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       setError(null);
     },
     [isStreaming, setMessages]
+  );
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      sendMessage: (
+        text: string,
+        options?: {
+          attachments?: Array<{ name: string; slug: string }>;
+          replyTo?: { id: string; role: "user" | "assistant"; preview: string } | null;
+        }
+      ) => handleSend(text, options?.attachments, options?.replyTo ?? undefined),
+      getActiveSessionId: () => activeSessionId,
+      loadSession: handleSelectSession,
+    }),
+    [handleSend, activeSessionId, handleSelectSession]
   );
 
   // Delete session
@@ -1774,6 +1782,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
 
   // Example queries
   const exampleQueries = useMemo(() => {
+    if (providedExampleQueries?.length) return providedExampleQueries;
     if (context.type === "case" && selectedCaseSlug) {
       const caseTitle = cases.find((c) => c.slug === selectedCaseSlug)?.title ?? selectedCaseSlug;
       if (lang === "en") {
@@ -1794,7 +1803,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       ];
     }
     return lang === "en" ? DEFAULT_EXAMPLE_QUERIES_EN : DEFAULT_EXAMPLE_QUERIES;
-  }, [context.type, selectedCaseSlug, cases, lang]);
+  }, [providedExampleQueries, context.type, selectedCaseSlug, cases, lang]);
 
   const contextLabel = useMemo(() => {
     if (context.type === "case" && selectedCaseSlug) {

@@ -6,3 +6,5 @@ export { EvidenceTab } from "./evidence-tab";
 export { StrategyTab } from "./strategy-tab";
 export { BillingTab } from "./billing-tab";
 export { ContactsTab } from "./contacts-tab";
+export { NotesTab } from "./notes-tab";
+export { PhoneNotesTab } from "./phone-notes-tab";

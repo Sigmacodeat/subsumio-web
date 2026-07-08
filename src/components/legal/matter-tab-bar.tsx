@@ -18,6 +18,8 @@ import {
   CircleDollarSign,
   Users,
   MoreHorizontal,
+  StickyNote,
+  Phone,
 } from "lucide-react";
 import {
   useMatterData,
@@ -38,6 +40,8 @@ const TAB_ICONS: Record<MatterTab, typeof FileText> = {
   evidence: ShieldAlert,
   billing: CircleDollarSign,
   contacts: Users,
+  notes: StickyNote,
+  "phone-notes": Phone,
 };
 
 const TAB_LABELS_DE: Record<MatterTab, string> = {
@@ -49,6 +53,8 @@ const TAB_LABELS_DE: Record<MatterTab, string> = {
   evidence: "Beweise",
   billing: "Kosten",
   contacts: "Kontakte",
+  notes: "Notizen",
+  "phone-notes": "Telefon",
 };
 
 const TAB_LABELS_EN: Record<MatterTab, string> = {
@@ -60,6 +66,8 @@ const TAB_LABELS_EN: Record<MatterTab, string> = {
   evidence: "Evidence",
   billing: "Billing",
   contacts: "Contacts",
+  notes: "Notes",
+  "phone-notes": "Phone",
 };
 
 export function MatterTabBar() {

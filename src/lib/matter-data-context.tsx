@@ -33,6 +33,8 @@ export const MATTER_TABS = [
   "evidence",
   "billing",
   "contacts",
+  "notes",
+  "phone-notes",
 ] as const;
 
 export type MatterTab = (typeof MATTER_TABS)[number];
@@ -44,7 +46,7 @@ export const PRIMARY_TABS: MatterTab[] = [
   "strategy",
   "evidence",
 ];
-export const SECONDARY_TABS: MatterTab[] = ["activity", "billing", "contacts"];
+export const SECONDARY_TABS: MatterTab[] = ["activity", "billing", "contacts", "notes", "phone-notes"];
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -129,6 +131,8 @@ const LEGACY_TAB_REDIRECT: Record<string, MatterTab> = {
   ai: "strategy",
   communications: "activity",
   deadlines_tasks: "deadlines",
+  notizen: "notes",
+  telefon: "phone-notes",
 };
 
 export function parseMatterSlug(slugSegments: string[]): {

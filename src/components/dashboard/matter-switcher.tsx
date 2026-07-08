@@ -14,6 +14,7 @@ import { Briefcase, ChevronDown, Pin, Search, FolderOpen, ArrowRight } from "luc
 import { useRecentMatters, type MatterRef } from "@/lib/use-recent-matters";
 import { useLang } from "@/lib/use-lang";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
 
 export function MatterSwitcher() {
   const { t, lang } = useLang();
@@ -22,6 +23,9 @@ export function MatterSwitcher() {
   const { pinned, recent, togglePin } = useRecentMatters();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [apiMatters, setApiMatters] = useState<MatterRef[]>([]);
+  const [searching, setSearching] = useState(false);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -82,6 +86,35 @@ export function MatterSwitcher() {
     }
     return combined;
   }, [pinned, recent]);
+
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    const query = searchQuery.trim();
+    if (query.length <= 2) {
+      setApiMatters([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const results = await api.search(query, 10, "case");
+        const localSlugs = new Set(allMatters.map((matter) => matter.slug));
+        setApiMatters(
+          results
+            .filter((result) => !localSlugs.has(result.slug))
+            .map((result) => ({ slug: result.slug, title: result.title }))
+        );
+      } catch {
+        setApiMatters([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 200);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, [searchQuery, allMatters]);
 
   const filtered = searchQuery.trim()
     ? allMatters.filter(
@@ -149,17 +182,13 @@ export function MatterSwitcher() {
 
           {/* List */}
           <div className="max-h-80 overflow-y-auto p-1.5">
-            {filtered.length === 0 ? (
+            {filtered.length === 0 && apiMatters.length === 0 && !searching ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <FolderOpen size={20} className="mb-2 text-[color:var(--ds-text-subtle)]" />
                 <p className="text-xs text-[color:var(--ds-text-muted)]">
                   {searchQuery.trim()
-                    ? lang === "en"
-                      ? "No matters found"
-                      : "Keine Akten gefunden"
-                    : lang === "en"
-                      ? "No recent matters"
-                      : "Keine recente Akten"}
+                    ? t("matterswitcher.no_results")
+                    : t("matterswitcher.no_recent")}
                 </p>
               </div>
             ) : (
@@ -203,6 +232,31 @@ export function MatterSwitcher() {
                         slug={m.slug}
                         title={m.title ?? m.slug}
                         isActive={m.slug === currentSlug}
+                        isPinned={false}
+                        onNavigate={navigateToMatter}
+                        onTogglePin={togglePin}
+                        lang={lang}
+                      />
+                    ))}
+                  </div>
+                )}
+                {searching && (
+                  <div className="px-2.5 py-3 text-xs text-[color:var(--ds-text-muted)]" role="status">
+                    {t("mobile.searching")}
+                  </div>
+                )}
+                {apiMatters.length > 0 && (
+                  <div className="mt-2 border-t border-[color:var(--ds-border)] pt-1">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                      <Search size={10} />
+                      {t("matterswitcher.all")}
+                    </div>
+                    {apiMatters.map((matter) => (
+                      <MatterSwitcherItem
+                        key={`api-${matter.slug}`}
+                        slug={matter.slug}
+                        title={matter.title ?? matter.slug}
+                        isActive={matter.slug === currentSlug}
                         isPinned={false}
                         onNavigate={navigateToMatter}
                         onTogglePin={togglePin}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   DndContext,
@@ -34,6 +34,7 @@ import {
   RotateCcw,
   Settings2,
   Sparkles,
+  Search,
 } from "lucide-react";
 import { StaggerContainer } from "@/components/marketing/motion-system";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +65,8 @@ import { SilentFailureWidget } from "./silent-failure-widget";
 import { DeadlineCheckWidget } from "./deadline-check-widget";
 import { MatterBudgetWidget } from "./matter-budget-widget";
 import { LegalHoldWidget } from "./legal-hold-widget";
+import { useMe } from "@/lib/queries/auth";
+import type { WidgetPreset } from "@/lib/widget-registry";
 
 const KanzleiInsights = dynamic(() => import("./kanzlei-insights").then((m) => m.KanzleiInsights), {
   loading: () => (
@@ -141,11 +144,11 @@ function SortableWidget({
   );
 }
 
-function EditModeToolbar({ onDone, onReset }: { onDone: () => void; onReset: () => void }) {
+function EditModeToolbar({ onDone, onReset, search, onSearch }: { onDone: () => void; onReset: () => void; search: string; onSearch: (value: string) => void }) {
   const { t } = useLang();
 
   return (
-    <div className="sticky top-0 z-20 flex items-center justify-between gap-3 rounded-lg border border-[color:var(--brand-primary)]/30 bg-[color:var(--ds-surface)] px-4 py-2.5 shadow-md">
+    <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[color:var(--brand-primary)]/30 bg-[color:var(--ds-surface)] px-4 py-2.5 shadow-md">
       <div className="flex items-center gap-2">
         <Settings2 size={15} className="brand-text" />
         <span className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -155,6 +158,10 @@ function EditModeToolbar({ onDone, onReset }: { onDone: () => void; onReset: () 
           {t("widget.drag_hint")}
         </span>
       </div>
+      <label className="relative min-w-48 flex-1 sm:max-w-xs">
+        <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-subtle)]" />
+        <input value={search} onChange={(event) => onSearch(event.target.value)} placeholder={t("widget.search_placeholder")} aria-label={t("widget.search_placeholder")} className="w-full rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pl-8 pr-3 text-xs text-[color:var(--ds-text)]" />
+      </label>
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -300,9 +307,28 @@ function RecentQueriesPanel({ data }: { data: CockpitData }) {
 export function WidgetBoard() {
   const { t } = useLang();
   const data = useKanzleiCockpitData();
-  const { prefs, loaded, toggleVisible, reorder, reset } = useWidgetPrefs();
+  const meQuery = useMe();
+  const preset: WidgetPreset = meQuery.data?.user?.industry === "tax" ? "tax" : (["partner", "admin", "associate"].includes(meQuery.data?.user?.role ?? "") ? meQuery.data?.user?.role as WidgetPreset : "associate");
+  const { prefs, loaded, toggleVisible, reorder, reset } = useWidgetPrefs(preset);
   const [editMode, setEditMode] = useState(false);
   const [activeId, setActiveId] = useState<WidgetId | null>(null);
+  const [search, setSearch] = useState("");
+  const [period, setPeriod] = useState<"today" | "week" | "all">("all");
+  useEffect(() => {
+    const saved = localStorage.getItem("subsumio:widget-period");
+    if (saved === "today" || saved === "week" || saved === "all") setPeriod(saved);
+  }, []);
+  const filteredData = useMemo(() => {
+    if (period === "all") return data;
+    const now = new Date();
+    const windowMs = period === "today" ? 86400000 : 7 * 86400000;
+    const relevant = (item: { created_at?: string; frontmatter?: Record<string, unknown> }) => {
+      const raw = item.frontmatter?.due_date ?? item.frontmatter?.date ?? item.created_at;
+      const time = raw ? new Date(String(raw)).getTime() : NaN;
+      return Number.isFinite(time) && Math.abs(time - now.getTime()) <= windowMs;
+    };
+    return { ...data, deadlines: data.deadlines.filter(relevant), criticalDeadlines: data.criticalDeadlines.filter(relevant), inboxItems: data.inboxItems.filter(relevant), pendingReviews: data.pendingReviews.filter(relevant) };
+  }, [data, period]);
 
   const showDegraded = data.degraded && !editMode;
 
@@ -315,8 +341,8 @@ export function WidgetBoard() {
   const orderedPrefs = useMemo(() => [...prefs].sort((a, b) => a.order - b.order), [prefs]);
 
   const visiblePrefs = useMemo(
-    () => orderedPrefs.filter((p) => p.visible || editMode),
-    [orderedPrefs, editMode]
+    () => orderedPrefs.filter((p) => (p.visible || editMode) && (!editMode || !search.trim() || [getWidgetMeta(p.id)?.labelKey, getWidgetMeta(p.id)?.descKey].some((key) => key && t(key as DashboardKey).toLowerCase().includes(search.trim().toLowerCase())))),
+    [orderedPrefs, editMode, search, t]
   );
 
   const orderedIds = useMemo(() => visiblePrefs.map((p) => p.id), [visiblePrefs]);
@@ -346,10 +372,10 @@ export function WidgetBoard() {
         return (
           <HeutePanel
             loading={data.loading}
-            criticalDeadlines={data.criticalDeadlines}
-            deadlines={data.deadlines}
-            inboxCount={data.inboxItems.length}
-            reviewCount={data.pendingReviews.length}
+            criticalDeadlines={filteredData.criticalDeadlines}
+            deadlines={filteredData.deadlines}
+            inboxCount={filteredData.inboxItems.length}
+            reviewCount={filteredData.pendingReviews.length}
             documentRequestCount={data.openDocumentRequests.length}
             signatureCount={data.pendingSignatures.length}
             gapsCount={data.unassignedDocs.length + data.reviewGaps.length}
@@ -387,9 +413,9 @@ export function WidgetBoard() {
       case "pinned-matters":
         return <PinnedMatters cases={data.cases} />;
       case "deadlines":
-        return <DeadlineList items={data.deadlines} />;
+        return <DeadlineList items={filteredData.deadlines} />;
       case "inbox":
-        return <InboxList items={data.inboxItems} />;
+        return <InboxList items={filteredData.inboxItems} />;
       case "review-gaps":
         return <ReviewGapsPanel data={data} />;
       case "quick-actions":
@@ -399,8 +425,8 @@ export function WidgetBoard() {
       case "ai-activity":
         return (
           <AIActivityFeed
-            reviews={data.pendingReviews}
-            agentActions={data.pendingReviews.filter((p) => p.type === "agent_action")}
+            reviews={filteredData.pendingReviews}
+            agentActions={filteredData.pendingReviews.filter((p) => p.type === "agent_action")}
           />
         );
       case "kanzlei-insights":
@@ -451,9 +477,12 @@ export function WidgetBoard() {
         </div>
       )}
       {editMode ? (
-        <EditModeToolbar onDone={() => setEditMode(false)} onReset={() => reset()} />
+        <EditModeToolbar onDone={() => setEditMode(false)} onReset={() => reset()} search={search} onSearch={setSearch} />
       ) : (
-        <div className="flex justify-end">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="inline-flex rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-0.5" role="group" aria-label={t("widget.period_label")}>
+            {(["today", "week", "all"] as const).map((value) => <button key={value} type="button" aria-pressed={period === value} onClick={() => { setPeriod(value); localStorage.setItem("subsumio:widget-period", value); }} className={`rounded px-2.5 py-1 text-xs ${period === value ? "brand-solid text-white" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}>{t(`widget.period_${value}` as DashboardKey)}</button>)}
+          </div>
           <button
             type="button"
             onClick={() => setEditMode(true)}
@@ -556,6 +585,7 @@ export function WidgetBoard() {
               <div className="rounded-lg border border-[color:var(--brand-primary)]/40 bg-[color:var(--ds-surface)] p-3 shadow-lg">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--ds-text)]">
                   <GripVertical size={14} className="text-[color:var(--ds-text-subtle)]" />
+                  {(() => { const ActiveIcon = activeMeta.icon; return <ActiveIcon size={14} aria-hidden="true" />; })()}
                   {t(activeMeta.labelKey as DashboardKey)}
                 </div>
               </div>

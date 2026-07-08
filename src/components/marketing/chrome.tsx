@@ -445,6 +445,7 @@ function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
       {!dismissed && (
         <motion.div
           key="announcement-bar"
+          data-tone="light"
           initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
           animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
           exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
@@ -458,7 +459,7 @@ function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-2 text-center sm:px-6 lg:px-8">
             <Link
               href={p(lang, nav.announcement.href)}
-              className="group hover:brand-text flex min-h-[28px] items-center gap-2 text-xs font-medium [color:var(--mk-text)] transition-colors"
+              className="group hover:[color:var(--brand-text)] flex min-h-[28px] items-center gap-2 text-xs font-medium [color:var(--mk-text)] transition-colors"
               aria-label={`${nav.announcement.badge ? nav.announcement.badge + ": " : ""}${nav.announcement.text}`}
             >
               {nav.announcement.badge && (
@@ -858,7 +859,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                           >
                                             <Icon
                                               size={16}
-                                              className={`group-hover:brand-text [color:var(--mk-text-muted)] ${item.featured ? "brand-text" : ""}`}
+                                              className={`group-hover:[color:var(--brand-text)] [color:var(--mk-text-muted)] ${item.featured ? "brand-text" : ""}`}
                                             />
                                           </div>
                                           <div className="min-w-0 flex-1">
@@ -892,7 +893,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                 <Link
                                   href={p(lang, section.ctaBottom.href)}
                                   onClick={() => setOpenSection(null)}
-                                  className="group hover:brand-text flex items-center justify-between border-t [border-color:var(--mk-border)] px-4 py-2.5 text-xs font-medium [color:var(--mk-text-muted)] transition-colors hover:[background:var(--mk-hover)]"
+                                  className="group hover:[color:var(--brand-text)] flex items-center justify-between border-t [border-color:var(--mk-border)] px-4 py-2.5 text-xs font-medium [color:var(--mk-text-muted)] transition-colors hover:[background:var(--mk-hover)]"
                                 >
                                   {section.ctaBottom.label}
                                   <ChevronRight
@@ -948,7 +949,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                         className="absolute top-full right-0 z-50 mt-1.5"
                       >
                         <div
-                          className="overflow-hidden rounded-xl border [border-color:var(--mk-border)] p-1.5 shadow-xl shadow-black/10 [background:var(--mk-surface)]"
+                          className="max-h-[400px] overflow-y-auto overflow-hidden rounded-xl border [border-color:var(--mk-border)] p-1.5 shadow-xl shadow-black/10 [background:var(--mk-surface)]"
                           role="menu"
                           aria-label={UI_STRINGS[lang].ariaLanguage}
                         >
@@ -980,7 +981,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="hover:brand-text text-xs [color:var(--mk-text-muted)]"
+                      className="hover:[color:var(--brand-text)] text-xs [color:var(--mk-text-muted)]"
                     >
                       {nav.ctaSecondary}
                     </Button>
@@ -1085,7 +1086,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                   : { type: "spring", stiffness: 400, damping: 38, mass: 0.8 }
               }
               style={{ paddingTop: "env(safe-area-inset-top)" }}
-              className="fixed top-0 right-0 bottom-0 z-[101] flex w-full max-w-[400px] flex-col overflow-y-auto border-l [border-color:var(--mk-border)] shadow-2xl [background:var(--mk-bg)] lg:hidden"
+              className="fixed top-0 right-0 bottom-0 z-[101] flex w-full max-w-[400px] flex-col overflow-y-auto border-l [border-color:var(--mk-border)] shadow-2xl [background:var(--mk-bg)] sm:max-w-[480px] lg:hidden"
             >
               {/* Drawer header — sticky with blur backdrop */}
               <div className="sticky top-0 z-10 flex items-center justify-between border-b [border-color:var(--mk-border)] bg-[color:var(--mk-bg)]/95 px-5 py-4 backdrop-blur-xl">
@@ -1366,7 +1367,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="LinkedIn"
-                className="hover:brand-text flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-colors"
+                className="hover:[color:var(--brand-text)] flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-colors"
               >
                 <SocialLinkedIn size={16} />
               </a>
@@ -1375,7 +1376,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="GitHub"
-                className="hover:brand-text flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-colors"
+                className="hover:[color:var(--brand-text)] flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-colors"
               >
                 <SocialGitHub size={16} />
               </a>
@@ -1384,7 +1385,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="X (Twitter)"
-                className="hover:brand-text flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-colors"
+                className="hover:[color:var(--brand-text)] flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-colors"
               >
                 <SocialX size={16} />
               </a>
@@ -1425,7 +1426,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
         </div>
         <div className="flex flex-col items-center justify-between gap-2 border-t [border-color:var(--mk-border)] pt-6 sm:flex-row">
           <p className="text-xs [color:var(--mk-text-subtle)]">
-            © 2025 Subsumio · {UI_STRINGS[lang].footerLegalTagline}
+            © {new Date().getFullYear()} Subsumio · {UI_STRINGS[lang].footerLegalTagline}
           </p>
           <p className="text-xs [color:var(--mk-text-subtle)]">
             {UI_STRINGS[lang].footerHostingLine}
@@ -1765,7 +1766,7 @@ export function PageHero({
 
   if (visual) {
     return (
-      <Section tone={tone} className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
+      <Section tone={tone} className="px-4 pt-20 pb-20 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[55%_45%]">
           {textCol}
           <motion.div
@@ -1782,7 +1783,7 @@ export function PageHero({
   }
 
   return (
-    <Section tone={tone} className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
+    <Section tone={tone} className="px-4 pt-20 pb-20 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl text-center">{textCol}</div>
     </Section>
   );
