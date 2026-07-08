@@ -9,9 +9,6 @@ import {
   Plus,
   MessageSquareText,
   Briefcase,
-  Scale,
-  Activity,
-  Search,
   X,
   Pin,
   Tag,
@@ -19,14 +16,14 @@ import {
   MoreVertical,
   Cpu,
   Check,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { ModelSelector } from "@/components/dashboard/model-selector";
 import { useBrainStats } from "@/lib/queries/brain";
-import { useModelPreference } from "@/lib/queries/settings";
 import { useLang } from "@/lib/use-lang";
-import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
+import { type QueryMode } from "@/lib/matter-context-types";
 import type { Jurisdiction, ChatSession } from "@/components/chat/chat-types";
 
 interface ChatHeaderProps {
@@ -39,7 +36,6 @@ interface ChatHeaderProps {
     tokenWidget: boolean;
     exportChat: boolean;
   };
-  compact?: boolean;
   modelOverride?: string;
   onModelChange: (model: string | undefined) => void;
   queryMode: QueryMode;
@@ -65,30 +61,24 @@ interface ChatHeaderProps {
   onSessionSearchChange?: (q: string) => void;
 }
 
-const JURISDICTIONS: Array<{ value: Jurisdiction; label: string }> = [
-  { value: "de", label: "DE" },
-  { value: "at", label: "AT" },
-  { value: "ch", label: "CH" },
-  { value: "eu", label: "EU" },
-];
-
 export function ChatHeader(props: ChatHeaderProps) {
   const { t, lang } = useLang();
-  const compact = props.compact ?? false;
   const statsQuery = useBrainStats();
-  const [showModeMenu, setShowModeMenu] = useState(false);
   const [showSessions, setShowSessions] = useState(false);
   const [showActions, setShowActions] = useState(false);
-  const modeRef = useRef<HTMLDivElement>(null);
   const sessionsRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
   const [activeCaseSlug, setActiveCaseSlug] = useState(props.selectedCaseSlug);
   useEffect(() => setActiveCaseSlug(props.selectedCaseSlug), [props.selectedCaseSlug]);
-  const modelPrefQuery = useModelPreference();
-  const modelData = modelPrefQuery.data?.data;
-  const modelList = modelData?.models ?? [];
-  const activeModelId = props.modelOverride ?? modelData?.preferredModelId ?? "auto";
-  const activeModelName = modelList.find((m) => m.id === activeModelId)?.name ?? "Auto";
+  // Agent-level 3-state toggle: Auto/Fast/Deep
+  const agentMode =
+    props.modelOverride === "auto"
+      ? "auto"
+      : props.queryMode === "conservative"
+        ? "fast"
+        : props.queryMode === "deep_matter"
+          ? "deep"
+          : "auto";
   const { popoverTransition, popoverInitial, popoverAnimate, popoverExit } = useDashboardMotion();
 
   const stats = statsQuery.data;
@@ -105,9 +95,6 @@ export function ChatHeader(props: ChatHeaderProps) {
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (modeRef.current && !modeRef.current.contains(e.target as Node)) {
-        setShowModeMenu(false);
-      }
       if (sessionsRef.current && !sessionsRef.current.contains(e.target as Node)) {
         setShowSessions(false);
       }
@@ -139,7 +126,7 @@ export function ChatHeader(props: ChatHeaderProps) {
           <h2 className="truncate text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
             {t("chat.title")}
           </h2>
-          {props.features.brainStatus && !compact && (
+          {props.features.brainStatus && (
             <span
               className="inline-flex shrink-0 items-center gap-1 text-xs text-[color:var(--ds-text-subtle)]"
               title={
@@ -393,144 +380,40 @@ export function ChatHeader(props: ChatHeaderProps) {
             </div>
           ) : null}
 
-          {/* Jurisdiction indicator — read-only, derived from case or user profile */}
-          {props.features.jurisdictionSelector && !compact && (
-            <div
-              className="flex items-center gap-1 rounded-lg bg-[color:var(--ds-surface)] px-2 py-1 text-xs font-medium text-[color:var(--ds-text-muted)]"
-              title={t("chat.jurisdiction_locked")}
-            >
-              <Scale size={10} className="text-[color:var(--ds-text-subtle)]" />
-              {JURISDICTIONS.find((j) => j.value === props.jurisdiction)?.label ?? "DE"}
-            </div>
-          )}
-
-          {/* ── Combined Mode + Model dropdown ── */}
+          {/* ── Agent-level 3-state toggle: Auto/Fast/Deep ── */}
           {props.features.modeSelector && (
-            <div ref={modeRef} className="relative ml-auto">
-              <button
-                onClick={() => setShowModeMenu((v) => !v)}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)] active:scale-95"
-              >
-                <Activity size={11} />
-                {QUERY_MODE_LABELS[props.queryMode].label}
-                {props.features.modelSelector && !compact && (
-                  <>
-                    <span className="text-[color:var(--ds-text-subtle)]">·</span>
-                    <Cpu size={11} className="text-[color:var(--ds-text-subtle)]" />
-                    <span>{activeModelName}</span>
-                  </>
-                )}
-                <ChevronDown
-                  size={11}
-                  className={cn("transition-transform", showModeMenu && "rotate-180")}
-                />
-              </button>
-              <AnimatePresence initial={false}>
-                {showModeMenu && (
-                  <motion.div
-                    className="absolute top-full right-0 z-50 mt-1 w-72 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5 shadow-lg"
-                    initial={popoverInitial}
-                    animate={popoverAnimate}
-                    exit={popoverExit}
-                    transition={popoverTransition}
-                  >
-                    {/* Mode section */}
-                    <p className="px-2 py-1 text-[10px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                      {t("chat.mode")}
-                    </p>
-                    {(Object.keys(QUERY_MODE_LABELS) as QueryMode[]).map((mode) => (
-                      <button
-                        key={mode}
-                        onClick={() => {
-                          props.onQueryModeChange(mode);
-                        }}
-                        className={cn(
-                          "flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[color:var(--ds-hover)]",
-                          props.queryMode === mode && "brand-soft"
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "text-xs font-medium",
-                            props.queryMode === mode ? "brand-text" : "text-[color:var(--ds-text)]"
-                          )}
-                        >
-                          {QUERY_MODE_LABELS[mode].label}
-                        </span>
-                        <span className="text-xs text-[color:var(--ds-text-subtle)]">
-                          {QUERY_MODE_LABELS[mode].description}
-                        </span>
-                      </button>
-                    ))}
-
-                    {/* Model section */}
-                    {props.features.modelSelector && !compact && (
-                      <>
-                        <div className="my-1 h-px bg-[color:var(--ds-border)]" />
-                        <p className="px-2 py-1 text-[10px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                          {t("chat.model")}
-                        </p>
-                        <div className="max-h-40 overflow-y-auto p-1">
-                          <button
-                            onClick={() => props.onModelChange("auto")}
-                            className={cn(
-                              "flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs transition-colors hover:bg-[color:var(--ds-hover)]",
-                              activeModelId === "auto" && "brand-soft"
-                            )}
-                          >
-                            <Cpu size={11} className="text-[color:var(--ds-text-subtle)]" />
-                            <span
-                              className={cn(
-                                "flex-1",
-                                activeModelId === "auto"
-                                  ? "brand-text font-medium"
-                                  : "text-[color:var(--ds-text)]"
-                              )}
-                            >
-                              Auto
-                            </span>
-                            {activeModelId === "auto" && <Check size={11} className="brand-text" />}
-                          </button>
-                          {modelList.map((model) => (
-                            <button
-                              key={model.id}
-                              onClick={() => props.onModelChange(model.id)}
-                              className={cn(
-                                "flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs transition-colors hover:bg-[color:var(--ds-hover)]",
-                                model.id === activeModelId && "brand-soft"
-                              )}
-                            >
-                              <Cpu size={11} className="text-[color:var(--ds-text-subtle)]" />
-                              <span
-                                className={cn(
-                                  "flex-1 truncate",
-                                  model.id === activeModelId
-                                    ? "brand-text font-medium"
-                                    : "text-[color:var(--ds-text)]"
-                                )}
-                              >
-                                {model.name}
-                              </span>
-                              {model.id === activeModelId && (
-                                <Check size={11} className="brand-text" />
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            <div className="flex items-center gap-1 rounded-lg bg-[color:var(--ds-surface-2)] p-1">
+              {[
+                { value: "auto", label: "Auto" },
+                { value: "fast", label: "Fast" },
+                { value: "deep", label: "Deep" },
+              ].map((mode) => (
+                <button
+                  key={mode.value}
+                  onClick={() => {
+                    if (mode.value === "auto") {
+                      props.onModelChange("auto");
+                      props.onQueryModeChange("balanced");
+                    } else if (mode.value === "fast") {
+                      props.onModelChange("auto");
+                      props.onQueryModeChange("conservative");
+                    } else if (mode.value === "deep") {
+                      props.onModelChange("auto");
+                      props.onQueryModeChange("deep_matter");
+                    }
+                  }}
+                  className={cn(
+                    "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                    agentMode === mode.value
+                      ? "bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] shadow-sm"
+                      : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                  )}
+                >
+                  {mode.label}
+                </button>
+              ))}
             </div>
           )}
-
-          {/* Model-only fallback when mode selector is disabled but model is enabled */}
-          {(!props.features.modeSelector || compact) &&
-            props.features.modelSelector &&
-            !compact && (
-              <ModelSelector selectedModelId={props.modelOverride} onSelect={props.onModelChange} />
-            )}
         </div>
 
         {/* Actions — more menu */}
