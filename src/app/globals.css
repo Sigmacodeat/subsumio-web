@@ -4,22 +4,49 @@
 @import "tailwindcss";
 
 /* ── BrainAvatar animations — Copilot identity ─────────────────────────
-   Single keyframe for the thinking state:
-   1. brain-ring: expanding + fading ring (single, subtle)
+   Modern AI-style motion:
+   1. brain-ripple:  three staggered circular rings expanding + fading
+   2. brain-breathe: subtle icon scale/opacity pulse while thinking
+   3. brain-halo:    soft background glow behind the orb
    ─────────────────────────────────────────────────────────────────────── */
 
 :root {
   --brain-glow: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+  --brain-halo: color-mix(in srgb, var(--brand-primary) 12%, transparent);
 }
 
-@keyframes brain-ring {
+@keyframes brain-ripple {
   0% {
-    transform: scale(1);
-    opacity: 0.4;
+    transform: scale(0.85);
+    opacity: 0.5;
   }
   100% {
-    transform: scale(1.5);
+    transform: scale(1.6);
     opacity: 0;
+  }
+}
+
+@keyframes brain-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 0.82;
+  }
+}
+
+@keyframes brain-halo {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.08);
   }
 }
 

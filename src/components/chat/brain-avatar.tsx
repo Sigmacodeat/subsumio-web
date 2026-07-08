@@ -8,6 +8,8 @@ interface BrainAvatarProps {
   thinking?: boolean;
   /** Size variant */
   size?: "sm" | "md" | "lg";
+  /** Render a soft circular orb behind the icon (ideal for empty states/hero placements) */
+  orb?: boolean;
   /** Additional className for the wrapper */
   className?: string;
   /** Accessible title shown on hover */
@@ -35,30 +37,54 @@ const SIZE_MAP = {
 /**
  * BrainAvatar — the visual identity of the Subsumio Copilot.
  *
- * Idle:    Brain icon in Brand-Primary, transparent background.
- * Thinking: Single pulse ring + subtle glow.
+ * Idle:    Brain icon in Brand-Primary, optional soft orb.
+ * Thinking: Three staggered circular ripples + soft halo + icon breathing.
  */
-export function BrainAvatar({ thinking = false, size = "md", className, title }: BrainAvatarProps) {
+export function BrainAvatar({
+  thinking = false,
+  size = "md",
+  orb = false,
+  className,
+  title,
+}: BrainAvatarProps) {
   const { wrapper, icon, glow } = SIZE_MAP[size];
 
   return (
     <div className={cn("relative shrink-0", wrapper, className)} title={title} aria-label={title}>
-      {/* Single pulse ring — only visible while thinking */}
-      {thinking && (
+      {/* Soft halo / orb background — idle + thinking */}
+      {orb && (
         <span
           className={cn(
-            "absolute inset-0 rounded-xl",
-            "animate-[brain-ring_2s_ease-out_infinite]",
-            "bg-[color:var(--brand-primary)] opacity-0"
+            "pointer-events-none absolute -inset-2 rounded-full",
+            "bg-[color:var(--brain-halo)] blur-md",
+            thinking && "animate-[brain-halo_3s_ease-in-out_infinite]"
           )}
           aria-hidden="true"
         />
       )}
 
+      {/* Three staggered ripple rings — only visible while thinking */}
+      {thinking && (
+        <>
+          {[0, 0.6, 1.2].map((delay, i) => (
+            <span
+              key={i}
+              className={cn(
+                "pointer-events-none absolute inset-0 rounded-full",
+                "border border-[color:var(--brand-primary)]/50",
+                "animate-[brain-ripple_2s_ease-out_infinite]"
+              )}
+              style={{ animationDelay: `${delay}s` }}
+              aria-hidden="true"
+            />
+          ))}
+        </>
+      )}
+
       {/* Brain icon — Brand-Primary, transparent background */}
       <div
         className={cn(
-          "relative flex h-full w-full items-center justify-center rounded-xl",
+          "relative flex h-full w-full items-center justify-center rounded-full",
           thinking ? glow : ""
         )}
       >
@@ -66,7 +92,7 @@ export function BrainAvatar({ thinking = false, size = "md", className, title }:
           size={icon}
           className={cn(
             "text-[color:var(--brand-primary)] transition-all duration-500",
-            thinking && "opacity-80"
+            thinking && "animate-[brain-breathe_2.4s_ease-in-out_infinite]"
           )}
           strokeWidth={1.75}
         />
