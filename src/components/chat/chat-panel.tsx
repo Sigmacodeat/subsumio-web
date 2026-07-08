@@ -1835,7 +1835,6 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       aria-label={title ?? t("chat.title")}
     >
       <ChatHeader
-        compact={isCompact}
         features={{
           modelSelector: resolvedFeatures.modelSelector,
           modeSelector: resolvedFeatures.modeSelector,

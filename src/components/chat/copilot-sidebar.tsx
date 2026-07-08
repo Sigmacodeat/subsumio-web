@@ -675,7 +675,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               <div className="flex items-center gap-1.5 rounded-md px-2 py-1">
                 <MessageSquareText size={13} className="text-[color:var(--brand-primary)]" />
                 <span className="text-xs font-medium text-[color:var(--ds-text)]">
-                  {t("copilot.tab_chat")}
+                  {t("copilot.chat")}
                 </span>
                 {isStreaming && (
                   <span
@@ -850,7 +850,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 <div className="flex items-center gap-1.5 rounded-md px-2 py-1">
                   <MessageSquareText size={12} className="text-[color:var(--brand-primary)]" />
                   <span className="text-xs font-medium text-[color:var(--ds-text)]">
-                    {t("copilot.tab_chat")}
+                    {t("copilot.chat")}
                   </span>
                   {isStreaming && (
                     <span
