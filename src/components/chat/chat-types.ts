@@ -41,6 +41,8 @@ export type ToolType =
   | "search_cases"
   | "search_deadlines"
   | "search_knowledge"
+  | "search_tasks"
+  | "search_calendar"
   | "create_case"
   | "case_summary"
   | "email_draft"
@@ -102,10 +104,42 @@ export interface DeadlineCardItem {
   deadlineSlug?: string;
 }
 
+export interface CalendarCardItem {
+  label: string;
+  startTime?: string;
+  endTime?: string;
+  date?: string;
+  eventType?: "hearing" | "appointment" | "deadline" | "meeting" | "other";
+  caseTitle?: string;
+  caseSlug?: string;
+  location?: string;
+  href?: string;
+}
+
+export interface TaskCardItem {
+  label: string;
+  href?: string;
+  priority?: "low" | "medium" | "high" | "critical";
+  dueDate?: string;
+  daysUntil?: number;
+  caseTitle?: string;
+  caseSlug?: string;
+  done?: boolean;
+  taskSlug?: string;
+}
+
 export interface ToolResultDisplay {
-  kind: "navigation" | "list" | "summary" | "confirmation" | "deadline_cards" | "client_overview";
+  kind:
+    | "navigation"
+    | "list"
+    | "summary"
+    | "confirmation"
+    | "deadline_cards"
+    | "client_overview"
+    | "calendar_cards"
+    | "task_cards";
   title: string;
-  items?: Array<DeadlineCardItem>;
+  items?: Array<DeadlineCardItem | CalendarCardItem | TaskCardItem>;
   href?: string;
   message?: string;
   filterHref?: string;

@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  MessageSquareText,
   X,
   PanelRightClose,
   Clock,
@@ -22,6 +21,7 @@ import { useResizable } from "@/lib/use-resizable";
 import { useLang, type TFunc } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import { ChatPanel, type ChatPanelHandle } from "@/components/chat/chat-panel";
+import { BrainAvatar } from "@/components/chat/brain-avatar";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useMotionValue, useTransform } from "framer-motion";
 import type { ChatContextType } from "@/components/chat/chat-types";
@@ -307,6 +307,57 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [matterContextInfo, setMatterContextInfo] = useState<MatterContextInfo | null>(null);
 
+  // AP2: Live dashboard snapshot — fetched once when panel opens, cached 60s
+  const [dashboardSnapshot, setDashboardSnapshot] = useState<{
+    criticalDeadlines: number;
+    overdueDeadlines: number;
+    inboxItems: number;
+    activeCases: number;
+    pendingReviews: number;
+    followUpsToday: number;
+  } | null>(null);
+  const snapshotCacheRef = useRef<{ data: typeof dashboardSnapshot; ts: number } | null>(null);
+  const SNAPSHOT_TTL_MS = 60_000;
+
+  useEffect(() => {
+    if (!open && !mobileOpen) return;
+    if (snapshotCacheRef.current && Date.now() - snapshotCacheRef.current.ts < SNAPSHOT_TTL_MS) {
+      setDashboardSnapshot(snapshotCacheRef.current.data);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await csrfFetch("/api/dashboard/briefing", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ language: lang }),
+        });
+        if (cancelled || !res.ok) return;
+        const json = await res.json();
+        const data = json.data ?? null;
+        if (!data) return;
+        const snapshot = {
+          criticalDeadlines: data.criticalDeadlines ?? 0,
+          overdueDeadlines: data.overdueDeadlines ?? 0,
+          inboxItems: data.inboxItems ?? 0,
+          activeCases: data.activeCases ?? 0,
+          pendingReviews: data.pendingReviews ?? 0,
+          followUpsToday: data.followUpsToday ?? 0,
+        };
+        if (!cancelled) {
+          setDashboardSnapshot(snapshot);
+          snapshotCacheRef.current = { data: snapshot, ts: Date.now() };
+        }
+      } catch {
+        // Non-blocking — snapshot enrichment is nice-to-have
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, mobileOpen, lang]);
+
   // Keep onToggle ref current to avoid stale closure in route-change effect
   useEffect(() => {
     onToggleRef.current = onToggle;
@@ -552,14 +603,61 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     const pageEntry =
       PAGE_CONTEXT_MAP[pathname ?? ""] ??
       Object.entries(PAGE_CONTEXT_MAP).find(([key]) => pathname?.startsWith(key + "/"))?.[1];
-    const pageLabel = pageEntry ? pageEntry[lang === "en" ? "en" : "de"] : undefined;
+    const baseLabel = pageEntry ? pageEntry[lang === "en" ? "en" : "de"] : undefined;
+
+    // AP2: Append live dashboard snapshot numbers to the page label so the
+    // system prompt is aware of the current state (critical deadlines, inbox, etc.)
+    let pageLabel = baseLabel;
+    if (dashboardSnapshot && !caseSlug) {
+      const isEn = lang === "en";
+      const parts: string[] = [];
+      if (dashboardSnapshot.overdueDeadlines > 0) {
+        parts.push(
+          isEn
+            ? `${dashboardSnapshot.overdueDeadlines} overdue deadline(s)`
+            : `${dashboardSnapshot.overdueDeadlines} überfällige Frist(en)`
+        );
+      } else if (dashboardSnapshot.criticalDeadlines > 0) {
+        parts.push(
+          isEn
+            ? `${dashboardSnapshot.criticalDeadlines} critical deadline(s)`
+            : `${dashboardSnapshot.criticalDeadlines} kritische Frist(en)`
+        );
+      }
+      if (dashboardSnapshot.inboxItems > 0) {
+        parts.push(
+          isEn
+            ? `${dashboardSnapshot.inboxItems} inbox item(s)`
+            : `${dashboardSnapshot.inboxItems} Eingang/Eingänge`
+        );
+      }
+      if (dashboardSnapshot.pendingReviews > 0) {
+        parts.push(
+          isEn
+            ? `${dashboardSnapshot.pendingReviews} pending review(s)`
+            : `${dashboardSnapshot.pendingReviews} offene Freigabe(n)`
+        );
+      }
+      if (dashboardSnapshot.followUpsToday > 0) {
+        parts.push(
+          isEn
+            ? `${dashboardSnapshot.followUpsToday} follow-up(s) today`
+            : `${dashboardSnapshot.followUpsToday} Wiedervorlage(n) heute`
+        );
+      }
+      if (parts.length > 0) {
+        const prefix = baseLabel ?? (isEn ? "Dashboard" : "Dashboard");
+        pageLabel = `${prefix} · ${parts.join(" · ")} · ${isEn ? `${dashboardSnapshot.activeCases} active case(s)` : `${dashboardSnapshot.activeCases} aktive Akte(n)`}`;
+      }
+    }
+
     return {
       type: (caseSlug ? "case" : "global") as ChatContextType,
       caseSlug,
       pageSlug: undefined,
       pageLabel,
     };
-  }, [pathname, lang]);
+  }, [pathname, lang, dashboardSnapshot]);
 
   const pageExampleQueries = useMemo(() => {
     if (!pathname) return undefined;
@@ -738,16 +836,13 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           )}
           {/* Mobile header bar — compact single-row */}
           <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">
-            <div className="flex items-center gap-1.5">
-              <div className="flex items-center gap-1.5 rounded-md px-2 py-1">
-                <MessageSquareText size={13} className="text-[color:var(--brand-primary)]" />
-                {isStreaming && (
-                  <span
-                    className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--brand-primary)]"
-                    aria-label={t("copilot.thinking")}
-                  />
-                )}
-              </div>
+            <div className="flex items-center gap-2">
+              <BrainAvatar
+                thinking={isStreaming}
+                size="sm"
+                title={isStreaming ? t("copilot.thinking") : "Subsumio Copilot"}
+              />
+              <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">Copilot</span>
             </div>
             <div className="flex items-center gap-0.5">
               <button

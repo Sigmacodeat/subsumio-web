@@ -236,12 +236,28 @@ const deadlineMarkDoneSchema = z.object({
   deadline_slug: z.string().min(1).max(300),
 });
 
+const searchTasksSchema = z.object({
+  case_slug: z.string().max(200).optional(),
+  status: z.enum(["open", "done", "all"]).default("open"),
+  priority: z.enum(["low", "medium", "high", "critical", "all"]).default("all"),
+  limit: z.number().min(1).max(50).default(15),
+});
+
+const searchCalendarSchema = z.object({
+  date: z.string().max(20).optional(),
+  range: z.enum(["today", "week", "month"]).default("week"),
+  case_slug: z.string().max(200).optional(),
+  limit: z.number().min(1).max(50).default(20),
+});
+
 const toolSchema = z.object({
   tool: z.enum([
     "navigate",
     "search_cases",
     "search_deadlines",
     "search_knowledge",
+    "search_tasks",
+    "search_calendar",
     "create_case",
     "case_summary",
     "email_draft",
@@ -273,12 +289,21 @@ interface ToolResponse {
   data?: unknown;
   error?: string;
   display: {
-    kind: "navigation" | "list" | "summary" | "confirmation" | "deadline_cards" | "client_overview";
+    kind:
+      | "navigation"
+      | "list"
+      | "summary"
+      | "confirmation"
+      | "deadline_cards"
+      | "client_overview"
+      | "calendar_cards"
+      | "task_cards";
     title: string;
     items?: Array<{
       label: string;
       value?: string;
       href?: string;
+      // deadline_cards
       deadlineStatus?: string;
       daysUntil?: number;
       dueDate?: string;
@@ -288,6 +313,19 @@ interface ToolResponse {
       isVorfrist?: boolean;
       needsSecondCheck?: boolean;
       deadlineSlug?: string;
+      // calendar_cards
+      startTime?: string;
+      endTime?: string;
+      date?: string;
+      eventType?: string;
+      location?: string;
+      // task_cards
+      priority?: string;
+      done?: boolean;
+      taskSlug?: string;
+      // case list enrichment (AP6)
+      caseStatus?: string;
+      openDeadlineCount?: number;
     }>;
     href?: string;
     message?: string;
@@ -1628,6 +1666,198 @@ function buildDeadlineItem(
   };
 }
 
+// ── Search Tasks (AP5) ────────────────────────────────────────────────
+
+async function executeSearchTasks(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof searchTasksSchema>
+): Promise<ToolResponse> {
+  try {
+    const urlParams = new URLSearchParams();
+    urlParams.set("type", "legal_task");
+    urlParams.set("limit", String(params.limit));
+    if (params.case_slug) urlParams.set("q", params.case_slug);
+    const res = await fetch(`${ENGINE_URL}/api/pages?${urlParams.toString()}`, {
+      headers: ctx.headers,
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const pages = (await res.json()) as Array<{
+      slug: string;
+      title: string;
+      frontmatter?: Record<string, unknown>;
+    }>;
+
+    const now = new Date();
+    now.setUTCHours(0, 0, 0, 0);
+
+    const items = pages
+      .map((p) => {
+        const fm = p.frontmatter ?? {};
+        const done = fm.done === true || String(fm.status ?? "").toLowerCase() === "done";
+        const priority = (fm.priority as string) ?? "medium";
+        const dueStr = (fm.due_date as string) ?? (fm.date as string) ?? undefined;
+        let daysUntil: number | undefined;
+        if (dueStr) {
+          const due = new Date(dueStr);
+          due.setUTCHours(0, 0, 0, 0);
+          daysUntil = Math.ceil((due.getTime() - now.getTime()) / 86_400_000);
+        }
+        return {
+          label: p.title,
+          href: `/dashboard/tasks`,
+          priority: priority as "low" | "medium" | "high" | "critical",
+          dueDate: dueStr,
+          daysUntil,
+          caseTitle: (fm.case_title as string) ?? undefined,
+          caseSlug: (fm.case_slug as string) ?? undefined,
+          done,
+          taskSlug: p.slug,
+        };
+      })
+      .filter((item) => {
+        if (params.status === "open") return !item.done;
+        if (params.status === "done") return item.done;
+        return true;
+      })
+      .filter((item) => {
+        if (params.priority === "all") return true;
+        return item.priority === params.priority;
+      })
+      .sort((a, b) => {
+        const pOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+        return (pOrder[a.priority] ?? 2) - (pOrder[b.priority] ?? 2);
+      });
+
+    const statusLabel =
+      params.status === "open" ? "offene" : params.status === "done" ? "erledigte" : "alle";
+
+    return {
+      success: true,
+      data: items,
+      display: {
+        kind: "task_cards",
+        title: `${items.length} ${statusLabel} Aufgaben`,
+        items,
+        filterHref: `/dashboard/tasks`,
+        message: items.length === 0 ? `Keine ${statusLabel} Aufgaben gefunden.` : undefined,
+      },
+    };
+  } catch (_err) {
+    return {
+      success: false,
+      error: "Tasks search failed",
+      display: {
+        kind: "task_cards",
+        title: "Aufgaben-Suche fehlgeschlagen",
+        message: "Engine nicht erreichbar",
+      },
+    };
+  }
+}
+
+// ── Search Calendar (AP3) ──────────────────────────────────────────────
+
+async function executeSearchCalendar(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof searchCalendarSchema>
+): Promise<ToolResponse> {
+  try {
+    const urlParams = new URLSearchParams();
+    urlParams.set("type", "calendar_event");
+    urlParams.set("limit", String(params.limit));
+    if (params.case_slug) urlParams.set("q", params.case_slug);
+    const res = await fetch(`${ENGINE_URL}/api/pages?${urlParams.toString()}`, {
+      headers: ctx.headers,
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const pages = (await res.json()) as Array<{
+      slug: string;
+      title: string;
+      frontmatter?: Record<string, unknown>;
+    }>;
+
+    const now = new Date();
+    now.setUTCHours(0, 0, 0, 0);
+    let rangeEnd: Date;
+    if (params.range === "today") {
+      rangeEnd = new Date(now);
+      rangeEnd.setDate(rangeEnd.getDate() + 1);
+    } else if (params.range === "month") {
+      rangeEnd = new Date(now);
+      rangeEnd.setDate(rangeEnd.getDate() + 30);
+    } else {
+      rangeEnd = new Date(now);
+      rangeEnd.setDate(rangeEnd.getDate() + 7);
+    }
+
+    const items = pages
+      .map((p) => {
+        const fm = p.frontmatter ?? {};
+        const dateStr =
+          (fm.start_date as string) ?? (fm.date as string) ?? (fm.due_date as string) ?? undefined;
+        if (!dateStr) return null;
+        const eventDate = new Date(dateStr);
+        if (Number.isNaN(eventDate.getTime())) return null;
+        const eventDay = new Date(eventDate);
+        eventDay.setUTCHours(0, 0, 0, 0);
+        if (eventDay < now || eventDay > rangeEnd) return null;
+        return {
+          label: p.title,
+          startTime: (fm.start_time as string) ?? dateStr,
+          endTime: (fm.end_time as string) ?? undefined,
+          date: dateStr,
+          eventType: ((fm.event_type as string) ?? (fm.type as string) ?? "other") as
+            | "hearing"
+            | "appointment"
+            | "deadline"
+            | "meeting"
+            | "other",
+          caseTitle: (fm.case_title as string) ?? undefined,
+          caseSlug: (fm.case_slug as string) ?? undefined,
+          location: (fm.location as string) ?? undefined,
+          href: (fm.case_slug as string)
+            ? `/dashboard/cases/${String(fm.case_slug).replace(/^cases\//, "")}`
+            : "/dashboard/calendar",
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null)
+      .sort(
+        (a, b) => new Date(a.startTime ?? "").getTime() - new Date(b.startTime ?? "").getTime()
+      );
+
+    const rangeLabel =
+      params.range === "today"
+        ? "heute"
+        : params.range === "month"
+          ? "diesen Monat"
+          : "diese Woche";
+
+    return {
+      success: true,
+      data: items,
+      display: {
+        kind: "calendar_cards",
+        title: `${items.length} Termine ${rangeLabel}`,
+        items,
+        filterHref: "/dashboard/calendar",
+        message: items.length === 0 ? `Keine Termine ${rangeLabel} gefunden.` : undefined,
+      },
+    };
+  } catch (_err) {
+    return {
+      success: false,
+      error: "Calendar search failed",
+      display: {
+        kind: "calendar_cards",
+        title: "Kalender-Suche fehlgeschlagen",
+        message: "Engine nicht erreichbar",
+      },
+    };
+  }
+}
+
 // ── Deadline Mark Done ─────────────────────────────────────────────────
 
 async function executeDeadlineMarkDone(
@@ -1856,6 +2086,16 @@ export const POST = createHandler(
         case "deadline_mark_done": {
           const params = deadlineMarkDoneSchema.parse(body.params);
           result = await executeDeadlineMarkDone(ctx, params);
+          break;
+        }
+        case "search_tasks": {
+          const params = searchTasksSchema.parse(body.params);
+          result = await executeSearchTasks(ctx, params);
+          break;
+        }
+        case "search_calendar": {
+          const params = searchCalendarSchema.parse(body.params);
+          result = await executeSearchCalendar(ctx, params);
           break;
         }
         default:

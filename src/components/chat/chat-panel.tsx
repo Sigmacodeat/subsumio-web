@@ -10,6 +10,7 @@ import {
   useImperativeHandle,
 } from "react";
 import { Reply, X, ArrowDown } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -318,6 +319,28 @@ const TOOL_RULES: ToolDetectionRule[] = [
     label: "chat.tool.deadline_mark_done",
     extractParams: (m) => ({ deadline_slug: m[1] }),
   },
+  {
+    pattern:
+      /\[TOOL:search_tasks(?:\s+case_slug="([^"]+)")?(?:\s+status="([^"]+)")?(?:\s+priority="([^"]+)")?\]/i,
+    tool: "search_tasks",
+    label: "chat.tool.search_tasks",
+    extractParams: (m) => ({
+      case_slug: m[1] || undefined,
+      status: (m[2] as "open" | "done" | "all") || "open",
+      priority: (m[3] as "low" | "medium" | "high" | "critical" | "all") || "all",
+    }),
+  },
+  {
+    pattern:
+      /\[TOOL:search_calendar(?:\s+date="([^"]+)")?(?:\s+range="([^"]+)")?(?:\s+case_slug="([^"]+)")?\]/i,
+    tool: "search_calendar",
+    label: "chat.tool.search_calendar",
+    extractParams: (m) => ({
+      date: m[1] || undefined,
+      range: (m[2] as "today" | "week" | "month") || "week",
+      case_slug: m[3] || undefined,
+    }),
+  },
 ];
 
 // Detect all tool markers in AI response — supports multiple tools per response (G16)
@@ -475,6 +498,103 @@ export interface ChatPanelHandle {
   loadSession: (id: string) => Promise<void>;
 }
 
+// AP4: Tool-type → specific follow-up suggestions
+const TOOL_FOLLOW_UPS_DE: Partial<Record<ToolType, Array<{ label: string; query: string }>>> = {
+  search_deadlines: [
+    { label: "Überfällige Fristen", query: "Welche Fristen sind bereits überfällig?" },
+    { label: "Kritische Fristen", query: "Welche Fristen laufen in den nächsten 3 Tagen ab?" },
+    { label: "Fristenseite öffnen", query: "Öffne die Fristen-Übersicht" },
+  ],
+  search_cases: [
+    { label: "Frist dieser Akte", query: "Welche Fristen hat diese Akte?" },
+    { label: "Aufgaben prüfen", query: "Welche Aufgaben sind noch offen?" },
+    { label: "Zur Akte", query: "Zeige mir die Details dieser Akte" },
+  ],
+  client_lookup: [
+    { label: "Fristen prüfen", query: "Welche Fristen hat dieser Mandant?" },
+    { label: "Status-Update", query: "Erstelle ein Mandantenupdate für diesen Fall" },
+    { label: "E-Mail entwerfen", query: "Entwerfe eine E-Mail an den Mandanten" },
+  ],
+  case_summary: [
+    { label: "Offene Fristen", query: "Welche Fristen sind in dieser Akte noch offen?" },
+    { label: "Nächste Schritte", query: "Was sind die nächsten Schritte in dieser Akte?" },
+    { label: "Mandantenupdate", query: "Erstelle ein Mandantenupdate aus dem Aktenstand" },
+  ],
+  deadline_extract: [
+    { label: "Frist anlegen", query: "Lege eine Frist für diese Deadline an" },
+    { label: "Wiedervorlage", query: "Setze eine Wiedervorlage für nächste Woche" },
+    { label: "Zur Fristenseite", query: "Öffne die Fristen-Übersicht" },
+  ],
+  email_draft: [
+    { label: "Formeller Ton", query: "Passe den Ton auf formell an" },
+    { label: "Kürzen", query: "Kürze die E-Mail auf das Wesentliche" },
+    { label: "Betreff anpassen", query: "Ändere den Betreff der E-Mail" },
+  ],
+  rvg_calculate: [
+    { label: "Andere Gebühr", query: "Berechne die Gebühr für einen anderen Streitwert" },
+    { label: "Rechnung erstellen", query: "Erstelle eine Honorarrechnung dafür" },
+    { label: "Zeiterfassung", query: "Erstelle einen Zeiteintrag für diese Akte" },
+  ],
+  conflict_check: [
+    { label: "Mandate prüfen", query: "Prüfe alle aktiven Mandate auf Konflikte" },
+    { label: "Neue Akte anlegen", query: "Lege eine neue Akte an" },
+    { label: "Mandatsaufnahme", query: "Erstelle eine neue Mandatsaufnahme" },
+  ],
+  navigate: [
+    { label: "Was ist dort?", query: "Was sind die wichtigsten Aufgaben auf dieser Seite?" },
+    { label: "Übersicht", query: "Gib mir eine Übersicht des aktuellen Status" },
+    { label: "Nächste Schritte", query: "Was sollte ich als nächstes tun?" },
+  ],
+};
+
+const TOOL_FOLLOW_UPS_EN: Partial<Record<ToolType, Array<{ label: string; query: string }>>> = {
+  search_deadlines: [
+    { label: "Overdue", query: "Which deadlines are already overdue?" },
+    { label: "Critical", query: "Which deadlines expire in the next 3 days?" },
+    { label: "Open deadlines page", query: "Open the deadlines overview" },
+  ],
+  search_cases: [
+    { label: "Case deadlines", query: "What deadlines does this case have?" },
+    { label: "Check tasks", query: "Which tasks are still open?" },
+    { label: "Case details", query: "Show me the details of this case" },
+  ],
+  client_lookup: [
+    { label: "Check deadlines", query: "What deadlines does this client have?" },
+    { label: "Status update", query: "Create a client status update for this case" },
+    { label: "Draft email", query: "Draft an email to the client" },
+  ],
+  case_summary: [
+    { label: "Open deadlines", query: "Which deadlines in this case are still open?" },
+    { label: "Next steps", query: "What are the next steps in this case?" },
+    { label: "Client update", query: "Create a client update from the case status" },
+  ],
+  deadline_extract: [
+    { label: "Create deadline", query: "Create a deadline entry for this" },
+    { label: "Follow-up", query: "Set a follow-up for next week" },
+    { label: "Open deadlines", query: "Open the deadlines overview" },
+  ],
+  email_draft: [
+    { label: "Formal tone", query: "Make the tone more formal" },
+    { label: "Shorten", query: "Shorten the email to the essentials" },
+    { label: "Change subject", query: "Change the subject of the email" },
+  ],
+  rvg_calculate: [
+    { label: "Different amount", query: "Calculate the fee for a different dispute value" },
+    { label: "Create invoice", query: "Create an invoice for this" },
+    { label: "Time entry", query: "Create a time entry for this case" },
+  ],
+  conflict_check: [
+    { label: "Check mandates", query: "Check all active cases for conflicts" },
+    { label: "New case", query: "Create a new case" },
+    { label: "Intake", query: "Create a new client intake" },
+  ],
+  navigate: [
+    { label: "What's here?", query: "What are the main tasks on this page?" },
+    { label: "Overview", query: "Give me an overview of the current status" },
+    { label: "Next steps", query: "What should I do next?" },
+  ],
+};
+
 function SuggestedFollowUps({
   lastMessage,
   onSelect,
@@ -488,10 +608,22 @@ function SuggestedFollowUps({
 }) {
   const isEn = lang === "en";
   const suggestions = useMemo(() => {
+    // AP4: Tool-specific follow-ups take priority
+    const toolTypes =
+      lastMessage.toolCalls
+        ?.filter((tc) => tc.status === "completed" && tc.result?.success)
+        .map((tc) => tc.type) ?? [];
+
+    const toolFollowUps = isEn ? TOOL_FOLLOW_UPS_EN : TOOL_FOLLOW_UPS_DE;
+    for (const toolType of toolTypes) {
+      const specific = toolFollowUps[toolType];
+      if (specific && specific.length > 0) return specific.slice(0, 3);
+    }
+
+    // Fallback: content-based suggestions
     const content = lastMessage.content.toLowerCase();
     const chips: Array<{ label: string; query: string }> = [];
 
-    // Context-aware suggestions based on content
     if (content.includes("frist") || content.includes("deadline")) {
       chips.push({
         label: t("chat.follow_up.deadlines"),
@@ -524,8 +656,6 @@ function SuggestedFollowUps({
           : "Kannst du das mit weiteren Quellen belegen?",
       });
     }
-
-    // Always offer email draft and more details
     if (chips.length < 3) {
       chips.push({
         label: t("chat.follow_up.more_details"),
@@ -581,6 +711,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   ref
 ) {
   const { t, lang } = useLang();
+  const router = useRouter();
   const confirm = useConfirm();
   const meQuery = useMe();
   const { groundAnswer } = useGroundedAnswer();
@@ -997,6 +1128,19 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           if (persistHistory && activeSessionId) {
             await saveMessage(activeSessionId, msgWithTools);
           }
+
+          // AP1: Auto-navigate — when the navigate tool completes, push the route
+          // immediately without requiring the user to click the card button.
+          const navCall = toolCalls.find(
+            (tc) => tc.type === "navigate" && tc.status === "completed" && tc.result?.success
+          );
+          if (navCall) {
+            const route = (navCall.result?.data as { route?: string })?.route;
+            if (route) {
+              // Small delay so the user sees the card before the page transitions
+              window.setTimeout(() => router.push(route), 400);
+            }
+          }
         }
       } catch (err) {
         const isAborted = err instanceof DOMException && err.name === "AbortError";
@@ -1050,6 +1194,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       modelOverride,
       persistHistory,
       queryMode,
+      router,
       selectedCaseSlug,
       t,
       isStreaming,
@@ -1841,6 +1986,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       aria-label={title ?? t("chat.title")}
     >
       <ChatHeader
+        isStreaming={isStreaming}
         features={{
           modelSelector: resolvedFeatures.modelSelector,
           modeSelector: resolvedFeatures.modeSelector,

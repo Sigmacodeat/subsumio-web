@@ -32,6 +32,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { useBrainSelector } from "@/lib/use-brain-selector";
+import { BrainAvatar } from "@/components/chat/brain-avatar";
 import { useBrainStats, usePages } from "@/lib/queries/brain";
 import { useLang } from "@/lib/use-lang";
 import { NetworkStatusBadge } from "@/components/dashboard/sidebar";
@@ -962,13 +963,11 @@ export function Topbar({
             aria-hidden={copilotOpen}
             tabIndex={copilotOpen ? -1 : 0}
             className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-lg transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
-              copilotOpen
-                ? "pointer-events-none invisible"
-                : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              "flex items-center justify-center rounded-lg transition-[background-color,opacity,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+              copilotOpen ? "pointer-events-none invisible" : "opacity-80 hover:opacity-100"
             )}
           >
-            <PanelRightOpen size={16} />
+            <BrainAvatar size="sm" title={t("copilot.expand_hint")} />
           </button>
         </div>
       </div>

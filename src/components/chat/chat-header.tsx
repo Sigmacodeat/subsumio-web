@@ -17,6 +17,7 @@ import {
   MoreVertical,
   Search,
 } from "lucide-react";
+import { BrainAvatar } from "@/components/chat/brain-avatar";
 import { cn } from "@/lib/utils";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useBrainStats } from "@/lib/queries/brain";
@@ -25,6 +26,7 @@ import { type QueryMode } from "@/lib/matter-context-types";
 import type { Jurisdiction, ChatSession } from "@/components/chat/chat-types";
 
 interface ChatHeaderProps {
+  isStreaming?: boolean;
   features: {
     modelSelector: boolean;
     modeSelector: boolean;
@@ -62,6 +64,7 @@ interface ChatHeaderProps {
 
 export function ChatHeader(props: ChatHeaderProps) {
   const { t, lang } = useLang();
+  const thinking = props.isStreaming ?? false;
   const statsQuery = useBrainStats();
   const [showSessions, setShowSessions] = useState(false);
   const [showActions, setShowActions] = useState(false);
@@ -117,21 +120,22 @@ export function ChatHeader(props: ChatHeaderProps) {
     <div className="border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
       {/* Single row: title + status + controls + actions — no wrapping */}
       <div className="flex items-center gap-2 px-3 py-2">
-        {/* Title + status badge */}
+        {/* Copilot Brain Identity */}
         <div className="flex shrink-0 items-center gap-2">
-          <div
-            className="relative flex h-7 w-7 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
-            title={
-              props.features.brainStatus
-                ? brainDegraded
-                  ? t("chat.brain_degraded")
-                  : brainOnline
-                    ? t("chat.brain_online")
-                    : t("chat.brain_offline")
-                : undefined
-            }
-          >
-            <MessageSquareText size={14} className="text-[color:var(--ds-text-muted)]" />
+          <div className="relative">
+            <BrainAvatar
+              thinking={thinking}
+              size="md"
+              title={
+                props.features.brainStatus
+                  ? brainDegraded
+                    ? t("chat.brain_degraded")
+                    : brainOnline
+                      ? t("chat.brain_online")
+                      : t("chat.brain_offline")
+                  : "Subsumio Copilot"
+              }
+            />
             {props.features.brainStatus && (
               <span
                 className={cn(

@@ -24,10 +24,21 @@ import {
   AlertTriangle,
   CalendarDays,
   Bell,
+  MapPin,
+  CheckSquare,
+  Square,
+  Gavel,
+  Calendar,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { ToolCall, ToolResultDisplay, DeadlineCardItem } from "@/components/chat/chat-types";
+import type {
+  ToolCall,
+  ToolResultDisplay,
+  DeadlineCardItem,
+  CalendarCardItem,
+  TaskCardItem,
+} from "@/components/chat/chat-types";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
@@ -38,6 +49,8 @@ const TOOL_ICONS: Record<string, typeof FileText> = {
   search_cases: FolderOpen,
   search_deadlines: CalendarClock,
   search_knowledge: Search,
+  search_tasks: CheckSquare,
+  search_calendar: Calendar,
   create_case: FileText,
   case_summary: FileText,
   email_draft: Mail,
@@ -247,6 +260,16 @@ function ToolResultCard({
     return <ClientOverviewDisplay display={display} onNavigate={onNavigate} />;
   }
 
+  // AP3: Calendar cards
+  if (display.kind === "calendar_cards") {
+    return <CalendarCardsDisplay display={display} onNavigate={onNavigate} />;
+  }
+
+  // AP5: Task cards
+  if (display.kind === "task_cards") {
+    return <TaskCardsDisplay display={display} onNavigate={onNavigate} />;
+  }
+
   return (
     <div className="overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
       {/* Header */}
@@ -274,29 +297,31 @@ function ToolResultCard({
       {/* Items list */}
       {hasItems && (
         <div className="max-h-48 overflow-y-auto">
-          {display.items!.map((item, idx) => (
-            <button
-              key={idx}
-              onClick={() => onNavigate(item.href)}
-              disabled={!item.href}
-              className={cn(
-                "flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors",
-                item.href && "hover:bg-[color:var(--ds-hover)]"
-              )}
-            >
-              <span className="min-w-0 flex-1 truncate text-xs text-[color:var(--ds-text)]">
-                {item.label}
-              </span>
-              {item.value && (
-                <span className="shrink-0 text-xs text-[color:var(--ds-text-subtle)]">
-                  {item.value}
+          {(display.items! as Array<{ label: string; value?: string; href?: string }>).map(
+            (item, idx) => (
+              <button
+                key={idx}
+                onClick={() => onNavigate(item.href)}
+                disabled={!item.href}
+                className={cn(
+                  "flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors",
+                  item.href && "hover:bg-[color:var(--ds-hover)]"
+                )}
+              >
+                <span className="min-w-0 flex-1 truncate text-xs text-[color:var(--ds-text)]">
+                  {item.label}
                 </span>
-              )}
-              {item.href && (
-                <ArrowRight size={11} className="shrink-0 text-[color:var(--ds-text-subtle)]" />
-              )}
-            </button>
-          ))}
+                {item.value && (
+                  <span className="shrink-0 text-xs text-[color:var(--ds-text-subtle)]">
+                    {item.value}
+                  </span>
+                )}
+                {item.href && (
+                  <ArrowRight size={11} className="shrink-0 text-[color:var(--ds-text-subtle)]" />
+                )}
+              </button>
+            )
+          )}
         </div>
       )}
 
@@ -358,6 +383,65 @@ const STATUS_STYLES: Record<
   },
 };
 
+const EVENT_TYPE_STYLES: Record<
+  string,
+  { bg: string; text: string; border: string; icon: typeof Clock }
+> = {
+  hearing: {
+    bg: "bg-red-50 dark:bg-red-950/30",
+    text: "text-red-700 dark:text-red-300",
+    border: "border-red-200 dark:border-red-900",
+    icon: Gavel,
+  },
+  appointment: {
+    bg: "bg-blue-50 dark:bg-blue-950/30",
+    text: "text-blue-700 dark:text-blue-300",
+    border: "border-blue-200 dark:border-blue-900",
+    icon: CalendarDays,
+  },
+  meeting: {
+    bg: "bg-purple-50 dark:bg-purple-950/30",
+    text: "text-purple-700 dark:text-purple-300",
+    border: "border-purple-200 dark:border-purple-900",
+    icon: Users,
+  },
+  deadline: {
+    bg: "bg-orange-50 dark:bg-orange-950/30",
+    text: "text-orange-700 dark:text-orange-300",
+    border: "border-orange-200 dark:border-orange-900",
+    icon: Clock,
+  },
+  other: {
+    bg: "bg-slate-50 dark:bg-slate-950/30",
+    text: "text-slate-700 dark:text-slate-300",
+    border: "border-slate-200 dark:border-slate-800",
+    icon: Calendar,
+  },
+};
+
+const PRIORITY_STYLES: Record<string, { bg: string; text: string; border: string }> = {
+  critical: {
+    bg: "bg-red-50 dark:bg-red-950/30",
+    text: "text-red-700 dark:text-red-300",
+    border: "border-red-200 dark:border-red-900",
+  },
+  high: {
+    bg: "bg-orange-50 dark:bg-orange-950/30",
+    text: "text-orange-700 dark:text-orange-300",
+    border: "border-orange-200 dark:border-orange-900",
+  },
+  medium: {
+    bg: "bg-amber-50 dark:bg-amber-950/30",
+    text: "text-amber-700 dark:text-amber-300",
+    border: "border-amber-200 dark:border-amber-900",
+  },
+  low: {
+    bg: "bg-slate-50 dark:bg-slate-950/30",
+    text: "text-slate-700 dark:text-slate-300",
+    border: "border-slate-200 dark:border-slate-800",
+  },
+};
+
 function StatusBadge({
   status,
   daysUntil,
@@ -391,6 +475,197 @@ function StatusBadge({
       {label}
       {daysLabel && <span className="opacity-70">· {daysLabel}</span>}
     </span>
+  );
+}
+
+// ── Calendar Card (AP3) ────────────────────────────────────────────────
+
+function CalendarCard({
+  item,
+  onNavigate,
+}: {
+  item: CalendarCardItem;
+  onNavigate: (href?: string) => void;
+}) {
+  const { lang } = useLang();
+  const eventType = item.eventType ?? "other";
+  const style = EVENT_TYPE_STYLES[eventType] ?? EVENT_TYPE_STYLES.other;
+  const Icon = style.icon;
+
+  const dateStr = item.date
+    ? new Date(item.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
+        weekday: "short",
+        day: "2-digit",
+        month: "short",
+      })
+    : "";
+  const timeStr = item.startTime
+    ? (() => {
+        try {
+          return new Date(item.startTime).toLocaleTimeString(lang === "en" ? "en-GB" : "de-DE", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        } catch {
+          return item.startTime;
+        }
+      })()
+    : "";
+
+  return (
+    <div
+      className={cn(
+        "border-b border-[color:var(--ds-border)] px-3 py-2.5 last:border-b-0",
+        style.bg
+      )}
+    >
+      <div className="flex items-start gap-2.5">
+        <div className="flex w-14 shrink-0 flex-col items-center gap-0.5 pt-0.5">
+          <span className="text-[10px] font-medium text-[color:var(--ds-text-muted)]">
+            {dateStr}
+          </span>
+          {timeStr && <span className={cn("text-[11px] font-bold", style.text)}>{timeStr}</span>}
+        </div>
+        <div className="min-w-0 flex-1">
+          <button
+            onClick={() => onNavigate(item.href)}
+            disabled={!item.href}
+            className={cn(
+              "block w-full truncate text-left text-xs font-medium text-[color:var(--ds-text)]",
+              item.href && "hover:text-[color:var(--brand-primary)]"
+            )}
+          >
+            {item.label}
+          </button>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium",
+                style.bg,
+                style.text,
+                style.border
+              )}
+            >
+              <Icon size={9} />
+              {eventType}
+            </span>
+            {item.caseTitle && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-[color:var(--ds-text-subtle)]">
+                <Briefcase size={9} />
+                <span className="max-w-[100px] truncate">{item.caseTitle}</span>
+              </span>
+            )}
+            {item.location && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-[color:var(--ds-text-subtle)]">
+                <MapPin size={9} />
+                {item.location}
+              </span>
+            )}
+          </div>
+        </div>
+        {item.href && (
+          <button
+            onClick={() => onNavigate(item.href)}
+            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] transition-colors hover:bg-[color:var(--ds-hover)]"
+          >
+            <ExternalLink size={10} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Task Card (AP5) ────────────────────────────────────────────────────
+
+function TaskCard({
+  item,
+  onNavigate,
+}: {
+  item: TaskCardItem;
+  onNavigate: (href?: string) => void;
+}) {
+  const { lang } = useLang();
+  const priority = item.priority ?? "medium";
+  const style = PRIORITY_STYLES[priority] ?? PRIORITY_STYLES.medium;
+
+  const dueStr = item.dueDate
+    ? new Date(item.dueDate).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
+        day: "2-digit",
+        month: "short",
+      })
+    : "";
+  const daysLabel =
+    item.daysUntil !== undefined
+      ? item.daysUntil < 0
+        ? `${Math.abs(item.daysUntil)}d überfällig`
+        : item.daysUntil === 0
+          ? "Heute"
+          : `${item.daysUntil}d`
+      : null;
+
+  return (
+    <div
+      className={cn(
+        "border-b border-[color:var(--ds-border)] px-3 py-2.5 last:border-b-0",
+        item.done && "opacity-50"
+      )}
+    >
+      <div className="flex items-start gap-2">
+        {item.done ? (
+          <CheckSquare size={14} className="mt-0.5 shrink-0 text-emerald-500" />
+        ) : (
+          <Square size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-text-muted)]" />
+        )}
+        <div className="min-w-0 flex-1">
+          <button
+            onClick={() => onNavigate(item.href)}
+            disabled={!item.href}
+            className={cn(
+              "block w-full truncate text-left text-xs font-medium text-[color:var(--ds-text)]",
+              item.href && "hover:text-[color:var(--brand-primary)]",
+              item.done && "line-through"
+            )}
+          >
+            {item.label}
+          </button>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            {priority !== "medium" && (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-[10px] font-medium",
+                  style.bg,
+                  style.text,
+                  style.border
+                )}
+              >
+                {priority}
+              </span>
+            )}
+            {dueStr && (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 text-[11px]",
+                  item.daysUntil !== undefined && item.daysUntil < 0
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-[color:var(--ds-text-muted)]"
+                )}
+              >
+                <CalendarDays size={9} />
+                {dueStr}
+                {daysLabel && <span className="opacity-70">({daysLabel})</span>}
+              </span>
+            )}
+            {item.caseTitle && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-[color:var(--ds-text-subtle)]">
+                <Briefcase size={9} />
+                <span className="max-w-[100px] truncate">{item.caseTitle}</span>
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -501,6 +776,100 @@ function DeadlineCard({
   );
 }
 
+// ── Calendar Cards Display (AP3) ──────────────────────────────────────
+
+function CalendarCardsDisplay({
+  display,
+  onNavigate,
+}: {
+  display: ToolResultDisplay;
+  onNavigate: (href?: string) => void;
+}) {
+  const { t } = useLang();
+  const items = (display.items ?? []) as CalendarCardItem[];
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
+      <div className="flex items-center gap-2 border-b border-[color:var(--ds-border)] px-3 py-2">
+        <Calendar size={14} className="text-[color:var(--brand-primary)]" />
+        <span className="flex-1 truncate text-xs font-semibold text-[color:var(--ds-text)]">
+          {display.title}
+        </span>
+        {display.filterHref && (
+          <button
+            onClick={() => onNavigate(display.filterHref)}
+            className="flex items-center gap-1 text-xs font-medium text-[color:var(--brand-primary)] transition-opacity hover:opacity-80"
+          >
+            {t("chat.tool.open_calendar" as never)}
+            <ArrowRight size={11} />
+          </button>
+        )}
+      </div>
+      {display.message && (
+        <p className="px-3 py-2 text-xs text-[color:var(--ds-text-muted)]">{display.message}</p>
+      )}
+      {items.length > 0 ? (
+        <div className="max-h-80 overflow-y-auto">
+          {items.map((item, idx) => (
+            <CalendarCard key={idx} item={item} onNavigate={onNavigate} />
+          ))}
+        </div>
+      ) : (
+        <div className="px-3 py-4 text-center text-xs text-[color:var(--ds-text-muted)]">
+          {t("chat.tool.no_events" as never)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Task Cards Display (AP5) ───────────────────────────────────────────
+
+function TaskCardsDisplay({
+  display,
+  onNavigate,
+}: {
+  display: ToolResultDisplay;
+  onNavigate: (href?: string) => void;
+}) {
+  const { t } = useLang();
+  const items = (display.items ?? []) as TaskCardItem[];
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
+      <div className="flex items-center gap-2 border-b border-[color:var(--ds-border)] px-3 py-2">
+        <CheckSquare size={14} className="text-[color:var(--brand-primary)]" />
+        <span className="flex-1 truncate text-xs font-semibold text-[color:var(--ds-text)]">
+          {display.title}
+        </span>
+        {display.filterHref && (
+          <button
+            onClick={() => onNavigate(display.filterHref)}
+            className="flex items-center gap-1 text-xs font-medium text-[color:var(--brand-primary)] transition-opacity hover:opacity-80"
+          >
+            {t("chat.tool.all_tasks" as never)}
+            <ArrowRight size={11} />
+          </button>
+        )}
+      </div>
+      {display.message && (
+        <p className="px-3 py-2 text-xs text-[color:var(--ds-text-muted)]">{display.message}</p>
+      )}
+      {items.length > 0 ? (
+        <div className="max-h-80 overflow-y-auto">
+          {items.map((item, idx) => (
+            <TaskCard key={item.taskSlug ?? idx} item={item} onNavigate={onNavigate} />
+          ))}
+        </div>
+      ) : (
+        <div className="px-3 py-4 text-center text-xs text-[color:var(--ds-text-muted)]">
+          {t("chat.tool.no_tasks" as never)}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Deadline Cards Display ─────────────────────────────────────────────
 
 function DeadlineCardsDisplay({
@@ -514,7 +883,7 @@ function DeadlineCardsDisplay({
   const { addToast } = useToast();
   const [markingSlug, setMarkingSlug] = useState<string | null>(null);
   const [doneSlugs, setDoneSlugs] = useState<Set<string>>(new Set());
-  const items = display.items ?? [];
+  const items = (display.items ?? []) as DeadlineCardItem[];
   const visibleItems = items.filter((i) => !doneSlugs.has(i.deadlineSlug ?? ""));
 
   const handleMarkDone = async (slug: string) => {
@@ -592,7 +961,7 @@ function ClientOverviewDisplay({
   const [markingSlug, setMarkingSlug] = useState<string | null>(null);
   const [doneSlugs, setDoneSlugs] = useState<Set<string>>(new Set());
   const s = display.summary;
-  const items = display.items ?? [];
+  const items = (display.items ?? []) as DeadlineCardItem[];
   const visibleItems = items.filter((i) => !doneSlugs.has(i.deadlineSlug ?? ""));
 
   const handleMarkDone = async (slug: string) => {
