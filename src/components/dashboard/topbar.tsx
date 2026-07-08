@@ -826,21 +826,9 @@ export function Topbar({
               )}
             </AnimatePresence>
           </div>
-          <button
-            onClick={onCopilotToggle}
-            data-tour="copilot-toggle"
-            aria-label={copilotOpen ? t("copilot.collapse") : t("copilot.expand")}
-            title={copilotOpen ? t("copilot.collapse") + " (Cmd+J)" : t("copilot.expand_hint")}
-            aria-pressed={copilotOpen}
-            className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-lg transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
-              copilotOpen
-                ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
-                : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-            )}
-          >
-            <PanelRightOpen size={16} />
-          </button>
+          {/* Divider — separates the primary create action from the
+              utility/status icons that follow. */}
+          <span className="mx-0.5 h-5 w-px shrink-0 bg-[color:var(--ds-border)]" aria-hidden />
           <button
             onClick={onGuideOpen}
             aria-label={t("guide.open")}
@@ -863,6 +851,26 @@ export function Topbar({
             <BrainSelector />
           </div>
           <NetworkStatusBadge />
+          {/* Divider + Copilot panel toggle — placed at the far right,
+              spatially adjacent to the right-docked copilot panel it
+              controls (established right-panel pattern), just left of the
+              account avatar. */}
+          <span className="mx-0.5 h-5 w-px shrink-0 bg-[color:var(--ds-border)]" aria-hidden />
+          <button
+            onClick={onCopilotToggle}
+            data-tour="copilot-toggle"
+            aria-label={copilotOpen ? t("copilot.collapse") : t("copilot.expand")}
+            title={copilotOpen ? t("copilot.collapse") + " (Cmd+J)" : t("copilot.expand_hint")}
+            aria-pressed={copilotOpen}
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-lg transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+              copilotOpen
+                ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
+                : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            )}
+          >
+            <PanelRightOpen size={16} />
+          </button>
           {/* User menu */}
           <div className="relative" ref={userMenuRef}>
             <button
