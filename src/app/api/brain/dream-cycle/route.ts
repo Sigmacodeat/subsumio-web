@@ -7,7 +7,7 @@ export const maxDuration = 300;
 export const POST = createHandler(
   {
     action: "brain.write",
-    rateTier: "expensive",
+    rateTier: "heavy",
   },
   async (ctx) => {
     const response = await fetch(`${ENGINE_URL}/api/admin/dream`, {

@@ -949,7 +949,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                         className="absolute top-full right-0 z-50 mt-1.5"
                       >
                         <div
-                          className="max-h-[400px] overflow-y-auto overflow-hidden rounded-xl border [border-color:var(--mk-border)] p-1.5 shadow-xl shadow-black/10 [background:var(--mk-surface)]"
+                          className="max-h-[400px] overflow-x-hidden overflow-y-auto rounded-xl border [border-color:var(--mk-border)] p-1.5 shadow-xl shadow-black/10 [background:var(--mk-surface)]"
                           role="menu"
                           aria-label={UI_STRINGS[lang].ariaLanguage}
                         >

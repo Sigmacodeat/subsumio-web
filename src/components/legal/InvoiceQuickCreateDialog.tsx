@@ -86,6 +86,7 @@ interface InvoiceCase {
   slug: string;
   title: string;
   caseNumber: string;
+  client?: string;
   clientName?: string;
   clientSlug?: string;
   timeEntries?: TimeEntry[];

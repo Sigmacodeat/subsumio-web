@@ -322,8 +322,8 @@ export function WidgetBoard() {
     if (period === "all") return data;
     const now = new Date();
     const windowMs = period === "today" ? 86400000 : 7 * 86400000;
-    const relevant = (item: { created_at?: string; frontmatter?: Record<string, unknown> }) => {
-      const raw = item.frontmatter?.due_date ?? item.frontmatter?.date ?? item.created_at;
+    const relevant = (item: { due?: Date; created_at?: string; frontmatter?: Record<string, unknown> }) => {
+      const raw = item.frontmatter?.due_date ?? item.frontmatter?.date ?? item.created_at ?? item.due;
       const time = raw ? new Date(String(raw)).getTime() : NaN;
       return Number.isFinite(time) && Math.abs(time - now.getTime()) <= windowMs;
     };

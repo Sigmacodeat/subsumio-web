@@ -2042,7 +2042,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     () =>
       recentHrefs
         .map((href) => allNavItems.find((item) => item.href === href))
-        .filter((item): item is NavItem => Boolean(item) && isTierVisible(item)),
+        .filter((item): item is NavItem => item != null && isTierVisible(item)),
     [recentHrefs, allNavItems, isTierVisible]
   );
 
