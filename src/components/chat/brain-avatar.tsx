@@ -16,19 +16,19 @@ interface BrainAvatarProps {
 
 const SIZE_MAP = {
   sm: {
-    wrapper: "h-6 w-6",
-    icon: 12,
-    glow: "shadow-[0_0_6px_1.5px_var(--brain-glow)]",
-  },
-  md: {
-    wrapper: "h-7 w-7",
-    icon: 14,
+    wrapper: "h-8 w-8",
+    icon: 16,
     glow: "shadow-[0_0_8px_2px_var(--brain-glow)]",
   },
-  lg: {
+  md: {
     wrapper: "h-9 w-9",
     icon: 18,
     glow: "shadow-[0_0_10px_2.5px_var(--brain-glow)]",
+  },
+  lg: {
+    wrapper: "h-12 w-12",
+    icon: 24,
+    glow: "shadow-[0_0_12px_3px_var(--brain-glow)]",
   },
 };
 
