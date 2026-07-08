@@ -571,6 +571,7 @@ export const NAV_SECTIONS: NavSection[] = [
         labelKey: "nav.absences",
         keywords: "urlaub vertretung absences vacation delegation abwesenheit",
         audienceTier: "erweitert",
+        tooltipKey: "nav.tooltip.absences",
       },
       {
         href: "/dashboard/case-assignment",

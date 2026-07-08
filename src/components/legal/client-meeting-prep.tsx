@@ -148,7 +148,7 @@ export function ClientMeetingPrep() {
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={lang === "en" ? "Meeting with client…" : "Gespräch mit Mandant…"}
+              placeholder={t("mattertab.client_meeting_placeholder")}
               required
             />
           </div>
@@ -156,31 +156,19 @@ export function ClientMeetingPrep() {
             <Label className="text-xs text-[color:var(--ds-text-muted)]">
               {t("mattertab.client_meeting_agenda")}
             </Label>
-            <Textarea
-              value={agenda}
-              onChange={(e) => setAgenda(e.target.value)}
-              rows={6}
-            />
+            <Textarea value={agenda} onChange={(e) => setAgenda(e.target.value)} rows={6} />
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-[color:var(--ds-text-muted)]">
               {t("mattertab.client_meeting_notes")}
             </Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={4}
-            />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} />
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-[color:var(--ds-text-muted)]">
               {t("mattertab.client_meeting_actions")}
             </Label>
-            <Textarea
-              value={actions}
-              onChange={(e) => setActions(e.target.value)}
-              rows={3}
-            />
+            <Textarea value={actions} onChange={(e) => setActions(e.target.value)} rows={3} />
           </div>
           <Button type="submit" disabled={saving} className="brand-bg gap-2 text-white">
             {saving && <Loader2 size={14} className="animate-spin" />}
@@ -201,7 +189,11 @@ export function ClientMeetingPrep() {
               className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3"
             >
               <div className="flex items-start gap-2">
-                <Clock size={12} className="mt-1 shrink-0 text-[color:var(--ds-text-subtle)]" aria-hidden="true" />
+                <Clock
+                  size={12}
+                  className="mt-1 shrink-0 text-[color:var(--ds-text-subtle)]"
+                  aria-hidden="true"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <h4 className="text-sm font-medium text-[color:var(--ds-text)]">
@@ -212,21 +204,24 @@ export function ClientMeetingPrep() {
                     </span>
                   </div>
                   {entry.agenda && (
-                    <p className="mt-1 whitespace-pre-wrap text-xs text-[color:var(--ds-text-muted)]">
+                    <p className="mt-1 text-xs whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
                       <strong>{t("mattertab.client_meeting_agenda")}:</strong>
-                      {"\n"}{entry.agenda}
+                      {"\n"}
+                      {entry.agenda}
                     </p>
                   )}
                   {entry.notes && (
-                    <p className="mt-1 whitespace-pre-wrap text-xs text-[color:var(--ds-text-muted)]">
+                    <p className="mt-1 text-xs whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
                       <strong>{t("mattertab.client_meeting_notes")}:</strong>
-                      {"\n"}{entry.notes}
+                      {"\n"}
+                      {entry.notes}
                     </p>
                   )}
                   {entry.actions && (
-                    <p className="mt-1 whitespace-pre-wrap text-xs text-[color:var(--ds-text-muted)]">
+                    <p className="mt-1 text-xs whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
                       <strong>{t("mattertab.client_meeting_actions")}:</strong>
-                      {"\n"}{entry.actions}
+                      {"\n"}
+                      {entry.actions}
                     </p>
                   )}
                 </div>

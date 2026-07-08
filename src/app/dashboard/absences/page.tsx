@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
+import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import type { AbsenceRecord } from "@/lib/absence";
 import { getAbsenceStatusBadge, isAbsenceActive } from "@/lib/absence";
 
 export default function AbsencePage() {
   const { addToast } = useToast();
+  const { t } = useLang();
   const [absences, setAbsences] = useState<AbsenceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -35,11 +37,11 @@ export default function AbsencePage() {
       const records = pages.map((p) => p.frontmatter as unknown as AbsenceRecord);
       setAbsences(records);
     } catch {
-      addToast({ type: "error", title: "Fehler beim Laden" });
+      addToast({ type: "error", title: t("absence.err_load") });
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, [addToast, t]);
 
   useEffect(() => {
     void loadAbsences();
@@ -47,7 +49,7 @@ export default function AbsencePage() {
 
   async function handleCreate() {
     if (!form.user_name || !form.delegate_name || !form.start_date || !form.end_date) {
-      addToast({ type: "error", title: "Bitte alle Pflichtfelder ausfüllen" });
+      addToast({ type: "error", title: t("absence.err_required") });
       return;
     }
     setSaving(true);
@@ -67,7 +69,7 @@ export default function AbsencePage() {
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      addToast({ type: "success", title: "Abwesenheit erstellt" });
+      addToast({ type: "success", title: t("absence.created") });
       setShowCreate(false);
       setForm({
         user_name: "",
@@ -83,7 +85,7 @@ export default function AbsencePage() {
     } catch (e) {
       addToast({
         type: "error",
-        title: "Fehler",
+        title: t("common.error"),
         description: e instanceof Error ? e.message : undefined,
       });
     } finally {
@@ -96,13 +98,13 @@ export default function AbsencePage() {
   return (
     <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Urlaubsvertretung"
-        description="Abwesenheiten verwalten, Fristen und Rundown-Items automatisch an Vertreter weiterleiten"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Urlaubsvertretung" }]}
+        title={t("absence.title")}
+        description={t("absence.desc")}
+        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("absence.title") }]}
         actions={
           <Button onClick={() => setShowCreate(!showCreate)} className="brand-bg gap-2 text-white">
             <Plus size={16} />
-            Abwesenheit planen
+            {t("absence.plan")}
           </Button>
         }
       />
@@ -112,8 +114,8 @@ export default function AbsencePage() {
         <div className="flex items-start gap-3 rounded-xl border border-orange-500/20 bg-orange-500/5 px-4 py-3">
           <AlertCircle size={16} className="mt-0.5 shrink-0 text-orange-600" />
           <p className="text-sm text-orange-600">
-            <strong>{activeCount}</strong> Abwesenheit{activeCount > 1 ? "en" : ""} aktiv — Fristen
-            und Rundown-Items werden an Vertreter weitergeleitet.
+            <strong>{activeCount}</strong>{" "}
+            {activeCount > 1 ? t("absence.active_banner_plural") : t("absence.active_banner")}
           </p>
         </div>
       )}
@@ -127,11 +129,11 @@ export default function AbsencePage() {
             void handleCreate();
           }}
         >
-          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Neue Abwesenheit</h2>
+          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">{t("absence.new")}</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <Label className="text-xs text-[color:var(--ds-text-muted)]">
-                Abwesender Mitarbeiter *
+                {t("absence.employee")} *
               </Label>
               <Input
                 value={form.user_name}
@@ -141,7 +143,9 @@ export default function AbsencePage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">E-Mail</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("absence.email")}
+              </Label>
               <Input
                 type="email"
                 value={form.user_email}
@@ -150,7 +154,9 @@ export default function AbsencePage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Vertreter *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("absence.delegate")} *
+              </Label>
               <Input
                 value={form.delegate_name}
                 onChange={(e) => setForm({ ...form, delegate_name: e.target.value })}
@@ -159,7 +165,9 @@ export default function AbsencePage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Vertreter E-Mail</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("absence.delegate_email")}
+              </Label>
               <Input
                 type="email"
                 value={form.delegate_email}
@@ -168,7 +176,9 @@ export default function AbsencePage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Von *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("absence.from")} *
+              </Label>
               <Input
                 type="date"
                 value={form.start_date}
@@ -177,7 +187,9 @@ export default function AbsencePage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Bis *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("absence.to")} *
+              </Label>
               <Input
                 type="date"
                 value={form.end_date}
@@ -187,26 +199,30 @@ export default function AbsencePage() {
             </div>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs text-[color:var(--ds-text-muted)]">Grund</Label>
+            <Label className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("absence.reason")}
+            </Label>
             <Input
               value={form.reason}
               onChange={(e) => setForm({ ...form, reason: e.target.value })}
-              placeholder="Urlaub, Krankheit, Fortbildung..."
+              placeholder={t("absence.reason_placeholder")}
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs text-[color:var(--ds-text-muted)]">Notizen</Label>
+            <Label className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("absence.notes")}
+            </Label>
             <textarea
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               rows={3}
               className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm text-[color:var(--ds-text)]"
-              placeholder="Zusätzliche Informationen für den Vertreter..."
+              placeholder={t("absence.notes_placeholder")}
             />
           </div>
           <Button type="submit" disabled={saving} className="brand-bg gap-2 text-white">
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-            Abwesenheit speichern
+            {t("absence.save")}
           </Button>
         </form>
       )}
@@ -220,10 +236,10 @@ export default function AbsencePage() {
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] py-16 text-center">
           <Plane size={32} className="mb-3 text-[color:var(--ds-text-muted)]" />
           <p className="text-sm font-medium text-[color:var(--ds-text)]">
-            Keine Abwesenheiten geplant
+            {t("absence.empty_title")}
           </p>
           <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-            Planen Sie eine Abwesenheit, um Fristen automatisch weiterzuleiten.
+            {t("absence.empty_desc")}
           </p>
         </div>
       ) : (
@@ -251,23 +267,23 @@ export default function AbsencePage() {
                       {absence.user_name}
                     </span>
                     <Badge variant="default" className={`border text-xs ${badge.className}`}>
-                      {badge.label}
+                      {t(badge.labelKey)}
                     </Badge>
                   </div>
                   <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)]">
                     <UserCheck size={10} />
-                    Vertreter: {absence.delegate_name}
+                    {t("absence.delegate_label")} {absence.delegate_name}
                     <span className="mx-1">·</span>
                     {absence.start_date.split("T")[0]} → {absence.end_date.split("T")[0]}
                   </div>
                   {absence.forwarded_deadlines.length > 0 && (
                     <div className="mt-1 text-xs text-blue-600">
-                      {absence.forwarded_deadlines.length} Frist(en) weitergeleitet
+                      {absence.forwarded_deadlines.length} {t("absence.deadlines_forwarded")}
                     </div>
                   )}
                   {absence.reassigned_rundown_items.length > 0 && (
                     <div className="text-xs text-blue-600">
-                      {absence.reassigned_rundown_items.length} Rundown-Item(s) neu zugewiesen
+                      {absence.reassigned_rundown_items.length} {t("absence.rundown_reassigned")}
                     </div>
                   )}
                 </div>

@@ -1,3 +1,5 @@
+import type { DashboardKey } from "@/content/dashboard";
+
 /**
  * Urlaubsvertretung (Vacation Delegation)
  * ========================================
@@ -156,17 +158,26 @@ export function getUpcomingAbsences(userEmail: string, absences: AbsenceRecord[]
 }
 
 export function getAbsenceStatusBadge(absence: AbsenceRecord): {
-  label: string;
+  labelKey: DashboardKey;
   className: string;
 } {
-  const styles: Record<AbsenceRecord["status"], { label: string; className: string }> = {
-    planned: { label: "Geplant", className: "border-blue-500/20 bg-blue-500/10 text-blue-600" },
-    active: { label: "Aktiv", className: "border-orange-500/20 bg-orange-500/10 text-orange-600" },
+  const styles: Record<AbsenceRecord["status"], { labelKey: DashboardKey; className: string }> = {
+    planned: {
+      labelKey: "absence.status_planned",
+      className: "border-blue-500/20 bg-blue-500/10 text-blue-600",
+    },
+    active: {
+      labelKey: "absence.status_active",
+      className: "border-orange-500/20 bg-orange-500/10 text-orange-600",
+    },
     completed: {
-      label: "Abgeschlossen",
+      labelKey: "absence.status_completed",
       className: "border-slate-500/20 bg-slate-500/10 text-slate-600",
     },
-    cancelled: { label: "Storniert", className: "border-red-500/20 bg-red-500/10 text-red-600" },
+    cancelled: {
+      labelKey: "absence.status_cancelled",
+      className: "border-red-500/20 bg-red-500/10 text-red-600",
+    },
   };
   return styles[absence.status];
 }

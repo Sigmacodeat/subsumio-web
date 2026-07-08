@@ -10,7 +10,7 @@ import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMe } from "@/lib/queries/auth";
 import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +27,7 @@ export function NotesTab() {
   const { t } = useLang();
   const ctx = useMatterDetail();
   const { addToast } = useToast();
-  const client = useQueryClient();
+  const { data: me } = useMe();
   const [notes, setNotes] = useState<NoteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -41,9 +41,7 @@ export function NotesTab() {
     if (!caseSlug) return;
     try {
       const pages = await api.brain.listPages({ type: "legal_note", limit: 500 });
-      const filtered = pages.filter(
-        (p) => p.frontmatter?.case_slug === caseSlug
-      );
+      const filtered = pages.filter((p) => p.frontmatter?.case_slug === caseSlug);
       const mapped: NoteItem[] = filtered.map((p: BrainPage) => ({
         slug: p.slug,
         title: p.title,
@@ -81,7 +79,7 @@ export function NotesTab() {
         content: content.trim(),
         frontmatter: {
           case_slug: caseSlug,
-          author: ctx.caseData?.clientName ?? "",
+          author: me?.user?.name ?? "",
           created_at: new Date().toISOString(),
           pinned: false,
         },
@@ -134,11 +132,7 @@ export function NotesTab() {
         <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
           {t("mattertab.notes_title")}
         </h2>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setShowCreate(!showCreate)}
-        >
+        <Button size="sm" variant="outline" onClick={() => setShowCreate(!showCreate)}>
           <Plus size={14} aria-hidden="true" /> {t("mattertab.notes_add")}
         </Button>
       </div>
@@ -152,11 +146,7 @@ export function NotesTab() {
             <Label className="text-xs text-[color:var(--ds-text-muted)]">
               {t("mattertab.notes_title_label")}
             </Label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-            />
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-[color:var(--ds-text-muted)]">
@@ -183,7 +173,11 @@ export function NotesTab() {
 
       {notes.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border)] py-16 text-center">
-          <StickyNote size={32} className="mb-3 text-[color:var(--ds-text-subtle)]" aria-hidden="true" />
+          <StickyNote
+            size={32}
+            className="mb-3 text-[color:var(--ds-text-subtle)]"
+            aria-hidden="true"
+          />
           <p className="text-sm font-medium text-[color:var(--ds-text-muted)]">
             {t("mattertab.notes_empty")}
           </p>
@@ -202,7 +196,11 @@ export function NotesTab() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     {note.pinned && (
-                      <Pin size={12} className="text-[color:var(--brand-primary)]" aria-hidden="true" />
+                      <Pin
+                        size={12}
+                        className="text-[color:var(--brand-primary)]"
+                        aria-hidden="true"
+                      />
                     )}
                     <h3 className="text-sm font-medium text-[color:var(--ds-text)]">
                       {note.title}
@@ -213,7 +211,7 @@ export function NotesTab() {
                       {note.author} · {new Date(note.created_at).toLocaleDateString("de-DE")}
                     </p>
                   )}
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-[color:var(--ds-text-muted)]">
+                  <p className="mt-2 text-sm whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
                     {note.content}
                   </p>
                 </div>

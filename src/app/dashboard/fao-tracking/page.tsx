@@ -106,8 +106,17 @@ export default function FAOTrackingPage() {
 
   const now = new Date();
   const isQ4 = now.getMonth() >= 9;
-  const showWarning = isQ4 && remaining > 0 && !localStorage.getItem("subsumio:fao-warning-dismissed");
   const [warningDismissed, setWarningDismissed] = useState(false);
+  const [warningChecked, setWarningChecked] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setWarningDismissed(Boolean(localStorage.getItem("subsumio:fao-warning-dismissed")));
+      setWarningChecked(true);
+    }
+  }, []);
+
+  const showWarning = isQ4 && remaining > 0 && !warningDismissed;
 
   function exportPDF() {
     const win = window.open("", "_blank");
@@ -117,22 +126,36 @@ export default function FAOTrackingPage() {
     }
     const rows = entries
       .map(
-        (e) => `<tr><td>${e.date.split("T")[0]}</td><td>${e.lawyer_name}</td><td>${e.specialist_title}</td><td>${e.topic}</td><td>${e.provider}</td><td>${e.hours}</td><td>${e.status}</td></tr>`
+        (e) =>
+          `<tr><td>${e.date.split("T")[0]}</td><td>${e.lawyer_name}</td><td>${e.specialist_title}</td><td>${e.topic}</td><td>${e.provider}</td><td>${e.hours}</td><td>${e.status}</td></tr>`
       )
       .join("");
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>FAO-Tracking ${year}</title><style>body{font-family:Arial,sans-serif;margin:40px}h1{font-size:18px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:12px}th{background:#f5f5f5}.summary{margin:20px 0;padding:12px;background:#f0f4ff;border-radius:8px}</style></head><body><h1>FAO-Tracking ${year}</h1><div class="summary"><p><strong>Verifizierte Stunden:</strong> ${verifiedHours} / ${FAO_REQUIRED_HOURS}</p><p><strong>Verbleibend:</strong> ${remaining}h</p></div><table><thead><tr><th>Datum</th><th>Anwalt</th><th>Fachanwaltsbezeichnung</th><th>Thema</th><th>Veranstalter</th><th>Stunden</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
+    win.document.write(
+      `<!DOCTYPE html><html><head><meta charset="utf-8"><title>FAO-Tracking ${year}</title><style>body{font-family:Arial,sans-serif;margin:40px}h1{font-size:18px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:12px}th{background:#f5f5f5}.summary{margin:20px 0;padding:12px;background:#f0f4ff;border-radius:8px}</style></head><body><h1>FAO-Tracking ${year}</h1><div class="summary"><p><strong>Verifizierte Stunden:</strong> ${verifiedHours} / ${FAO_REQUIRED_HOURS}</p><p><strong>Verbleibend:</strong> ${remaining}h</p></div><table><thead><tr><th>Datum</th><th>Anwalt</th><th>Fachanwaltsbezeichnung</th><th>Thema</th><th>Veranstalter</th><th>Stunden</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`
+    );
     win.document.close();
     setTimeout(() => win.print(), 300);
   }
 
   return (
     <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
-      {showWarning && !warningDismissed && (
-        <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4" role="alert">
-          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" aria-hidden="true" />
+      {showWarning && warningChecked && !warningDismissed && (
+        <div
+          className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4"
+          role="alert"
+        >
+          <AlertTriangle
+            size={18}
+            className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+            aria-hidden="true"
+          />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-[color:var(--ds-warning-text)]">{t("fao.warning_title")}</p>
-            <p className="mt-1 text-sm text-[color:var(--ds-warning-text)]">{t("fao.warning_desc").replace("{remaining}", String(remaining))}</p>
+            <p className="text-sm font-semibold text-[color:var(--ds-warning-text)]">
+              {t("fao.warning_title")}
+            </p>
+            <p className="mt-1 text-sm text-[color:var(--ds-warning-text)]">
+              {t("fao.warning_desc").replace("{remaining}", String(remaining))}
+            </p>
           </div>
           <button
             type="button"
@@ -156,7 +179,10 @@ export default function FAOTrackingPage() {
             <Button variant="outline" onClick={() => exportPDF()} disabled={entries.length === 0}>
               <FileDown size={15} aria-hidden="true" /> {t("fao.export_pdf")}
             </Button>
-            <Button onClick={() => setShowCreate(!showCreate)} className="brand-bg gap-2 text-white">
+            <Button
+              onClick={() => setShowCreate(!showCreate)}
+              className="brand-bg gap-2 text-white"
+            >
               <Plus size={16} /> {t("fao.add")}
             </Button>
           </div>
@@ -204,7 +230,9 @@ export default function FAOTrackingPage() {
           <h2 className="text-sm font-semibold">{t("fao.create_title")}</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">{t("fao.lawyer")} *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("fao.lawyer")} *
+              </Label>
               <Input
                 value={form.lawyer_name}
                 onChange={(e) => setForm({ ...form, lawyer_name: e.target.value })}
@@ -212,7 +240,9 @@ export default function FAOTrackingPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">{t("fao.email")} *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("fao.email")} *
+              </Label>
               <Input
                 type="email"
                 value={form.lawyer_email}
@@ -241,7 +271,9 @@ export default function FAOTrackingPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">{t("fao.hours")} *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("fao.hours")} *
+              </Label>
               <Input
                 type="number"
                 min="0"
@@ -253,7 +285,9 @@ export default function FAOTrackingPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">{t("fao.provider")} *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("fao.provider")} *
+              </Label>
               <Input
                 value={form.provider}
                 onChange={(e) => setForm({ ...form, provider: e.target.value })}
@@ -261,7 +295,9 @@ export default function FAOTrackingPage() {
               />
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">{t("fao.topic")} *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("fao.topic")} *
+              </Label>
               <Input
                 value={form.topic}
                 onChange={(e) => setForm({ ...form, topic: e.target.value })}
@@ -284,9 +320,7 @@ export default function FAOTrackingPage() {
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] py-16 text-center">
           <GraduationCap size={32} className="mb-3 text-[color:var(--ds-text-muted)]" />
           <p className="text-sm font-medium">{t("fao.empty_title")}</p>
-          <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-            {t("fao.empty_desc")}
-          </p>
+          <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">{t("fao.empty_desc")}</p>
         </div>
       ) : (
         <div className="space-y-2">

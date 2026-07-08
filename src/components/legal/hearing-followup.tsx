@@ -106,7 +106,7 @@ export function HearingFollowupWorkflow() {
           created_at: new Date().toISOString(),
         },
       });
-      addToast({ type: "success", title: t("mattertab.hearing_checklist_saved") });
+      addToast({ type: "success", title: t("mattertab.hearing_followup_created") });
       setTitle("");
       setHearingDate("");
       setOutcome("");
@@ -156,13 +156,17 @@ export function HearingFollowupWorkflow() {
     <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <CalendarCheck size={16} className="text-[color:var(--brand-primary)]" aria-hidden="true" />
+          <CalendarCheck
+            size={16}
+            className="text-[color:var(--brand-primary)]"
+            aria-hidden="true"
+          />
           <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-            {lang === "en" ? "Hearing Follow-up" : "Termin-Nachbereitung"}
+            {t("mattertab.hearing_followup")}
           </h3>
         </div>
         <Button size="sm" variant="outline" onClick={() => setShowCreate(!showCreate)}>
-          <Plus size={14} /> {lang === "en" ? "Add" : "Hinzufügen"}
+          <Plus size={14} /> {t("mattertab.hearing_followup_add")}
         </Button>
       </div>
 
@@ -171,18 +175,18 @@ export function HearingFollowupWorkflow() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <Label className="text-xs text-[color:var(--ds-text-muted)]">
-                {lang === "en" ? "Hearing" : "Termin"} *
+                {t("mattertab.hearing_followup_hearing")} *
               </Label>
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder={lang === "en" ? "e.g. Hearing at LG Munich" : "z.B. Verhandlung am LG München"}
+                placeholder={t("mattertab.hearing_followup_placeholder_hearing")}
                 required
               />
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-[color:var(--ds-text-muted)]">
-                {lang === "en" ? "Date" : "Datum"} *
+                {t("mattertab.hearing_followup_date")} *
               </Label>
               <Input
                 type="date"
@@ -194,23 +198,19 @@ export function HearingFollowupWorkflow() {
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-[color:var(--ds-text-muted)]">
-              {lang === "en" ? "Outcome" : "Ergebnis"}
+              {t("mattertab.hearing_followup_outcome")}
             </Label>
             <Input
               value={outcome}
               onChange={(e) => setOutcome(e.target.value)}
-              placeholder={lang === "en" ? "e.g. Ruling, adjourned, settlement" : "z.B. Urteil, Vertagt, Vergleich"}
+              placeholder={t("mattertab.hearing_followup_placeholder_outcome")}
             />
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-[color:var(--ds-text-muted)]">
               {t("mattertab.client_meeting_notes")}
             </Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-            />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
           </div>
           <Button type="submit" disabled={saving} className="brand-bg gap-2 text-white">
             {saving && <Loader2 size={14} className="animate-spin" />}
@@ -221,7 +221,7 @@ export function HearingFollowupWorkflow() {
 
       {followups.length === 0 ? (
         <p className="py-4 text-center text-sm text-[color:var(--ds-text-muted)]">
-          {lang === "en" ? "No hearing follow-ups yet" : "Keine Termin-Nachbereitungen vorhanden"}
+          {t("mattertab.hearing_followup_empty")}
         </p>
       ) : (
         <div className="space-y-2">
@@ -233,7 +233,11 @@ export function HearingFollowupWorkflow() {
                 className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3"
               >
                 <div className="flex items-start gap-2">
-                  <Clock size={12} className="mt-1 shrink-0 text-[color:var(--ds-text-subtle)]" aria-hidden="true" />
+                  <Clock
+                    size={12}
+                    className="mt-1 shrink-0 text-[color:var(--ds-text-subtle)]"
+                    aria-hidden="true"
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <h4 className="text-sm font-medium text-[color:var(--ds-text)]">
@@ -256,7 +260,8 @@ export function HearingFollowupWorkflow() {
                     </div>
                     {followup.outcome && (
                       <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                        <strong>{lang === "en" ? "Outcome" : "Ergebnis"}:</strong> {followup.outcome}
+                        <strong>{t("mattertab.hearing_followup_outcome")}:</strong>{" "}
+                        {followup.outcome}
                       </p>
                     )}
                     <div className="mt-2 space-y-1">
@@ -289,7 +294,7 @@ export function HearingFollowupWorkflow() {
                       ))}
                     </div>
                     {followup.notes && (
-                      <p className="mt-2 whitespace-pre-wrap text-xs text-[color:var(--ds-text-muted)]">
+                      <p className="mt-2 text-xs whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
                         {followup.notes}
                       </p>
                     )}

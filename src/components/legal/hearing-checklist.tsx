@@ -4,8 +4,6 @@ import { useState, useCallback, useEffect } from "react";
 import { Loader2, Plus, Trash2, Check, Gavel } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import { useToast } from "@/components/ui/toast";
@@ -20,7 +18,11 @@ interface ChecklistItem {
 }
 
 const DEFAULT_CHECKLIST_DE: ChecklistItem[] = [
-  { id: "akten", label: "Akten vollständig kopiert (für Gericht, Gegner, Mandant)", checked: false },
+  {
+    id: "akten",
+    label: "Akten vollständig kopiert (für Gericht, Gegner, Mandant)",
+    checked: false,
+  },
   { id: "antrag", label: "Antragsschrift finalisiert und unterschrieben", checked: false },
   { id: "beweise", label: "Beweisanträge vorbereitet", checked: false },
   { id: "zeugen", label: "Zeugenladung überprüft / Zeugenliste final", checked: false },
@@ -91,7 +93,11 @@ export function HearingChecklist() {
       if (pageSlug) {
         await api.brain.updatePage({
           slug,
-          frontmatter: { case_slug: caseSlug, items: updated, updated_at: new Date().toISOString() },
+          frontmatter: {
+            case_slug: caseSlug,
+            items: updated,
+            updated_at: new Date().toISOString(),
+          },
         });
       } else {
         await api.brain.createPage({
@@ -192,7 +198,7 @@ export function HearingChecklist() {
                 type="button"
                 onClick={() => deleteItem(item.id)}
                 aria-label={t("common.delete")}
-                className="rounded p-1 text-[color:var(--ds-text-subtle)] opacity-0 transition-opacity hover:text-[color:var(--ds-danger-text)] group-hover:opacity-100"
+                className="rounded p-1 text-[color:var(--ds-text-subtle)] opacity-0 transition-opacity group-hover:opacity-100 hover:text-[color:var(--ds-danger-text)]"
               >
                 <Trash2 size={12} />
               </button>
@@ -211,7 +217,7 @@ export function HearingChecklist() {
               addCustomItem();
             }
           }}
-          placeholder={lang === "en" ? "Add custom item…" : "Eigene Position hinzufügen…"}
+          placeholder={t("mattertab.checklist_custom_placeholder")}
           className="text-sm"
         />
         <Button size="sm" variant="outline" onClick={addCustomItem} disabled={!customLabel.trim()}>

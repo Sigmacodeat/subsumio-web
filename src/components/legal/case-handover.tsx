@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Loader2, ArrowRightCircle, Trash2, AlertCircle } from "lucide-react";
+import { Loader2, ArrowRightCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -124,7 +124,11 @@ export function CaseHandover() {
     <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ArrowRightCircle size={16} className="text-[color:var(--brand-primary)]" aria-hidden="true" />
+          <ArrowRightCircle
+            size={16}
+            className="text-[color:var(--brand-primary)]"
+            aria-hidden="true"
+          />
           <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
             {t("mattertab.handover")}
           </h3>
@@ -141,11 +145,7 @@ export function CaseHandover() {
               <Label className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("mattertab.handover_recipient")} *
               </Label>
-              <Input
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
-                required
-              />
+              <Input value={recipient} onChange={(e) => setRecipient(e.target.value)} required />
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-[color:var(--ds-text-muted)]">
@@ -159,9 +159,9 @@ export function CaseHandover() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Niedrig</SelectItem>
-                  <SelectItem value="medium">Mittel</SelectItem>
-                  <SelectItem value="high">Hoch</SelectItem>
+                  <SelectItem value="low">{t("mattertab.urgency_low")}</SelectItem>
+                  <SelectItem value="medium">{t("mattertab.urgency_medium")}</SelectItem>
+                  <SelectItem value="high">{t("mattertab.urgency_high")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -170,11 +170,7 @@ export function CaseHandover() {
             <Label className="text-xs text-[color:var(--ds-text-muted)]">
               {t("mattertab.handover_note")}
             </Label>
-            <Textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={4}
-            />
+            <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={4} />
           </div>
           <Button type="submit" disabled={saving} className="brand-bg gap-2 text-white">
             {saving && <Loader2 size={14} className="animate-spin" />}
@@ -209,14 +205,18 @@ export function CaseHandover() {
                           : ""
                     }
                   >
-                    {entry.urgency === "high" ? "Hoch" : entry.urgency === "medium" ? "Mittel" : "Niedrig"}
+                    {entry.urgency === "high"
+                      ? t("mattertab.urgency_high")
+                      : entry.urgency === "medium"
+                        ? t("mattertab.urgency_medium")
+                        : t("mattertab.urgency_low")}
                   </Badge>
                   <span className="text-xs text-[color:var(--ds-text-subtle)]">
                     {new Date(entry.created_at).toLocaleDateString("de-DE")}
                   </span>
                 </div>
                 {entry.note && (
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-[color:var(--ds-text-muted)]">
+                  <p className="mt-1 text-sm whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
                     {entry.note}
                   </p>
                 )}

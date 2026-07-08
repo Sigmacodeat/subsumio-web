@@ -1,12 +1,9 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Loader2, Plus, Trash2, Users, RefreshCw, CalendarDays } from "lucide-react";
+import { Loader2, Trash2, Users, RefreshCw, CalendarDays } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
@@ -35,8 +32,6 @@ export default function TeamMeetingPage() {
   const { t } = useLang();
   const [meetings, setMeetings] = useState<TeamMeeting[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
 
   const load = useCallback(async () => {
@@ -82,7 +77,7 @@ export default function TeamMeetingPage() {
       upcomingDeadlines.slice(0, 5).forEach((p) => {
         items.push({
           id: `dl-${p.slug}`,
-          title: `Frist: ${p.title}`,
+          title: t("team_meeting.item_deadline").replace("{title}", p.title),
           caseRef: String(p.frontmatter?.case_slug ?? ""),
           assignee: String(p.frontmatter?.responsible ?? ""),
           status: "open",
@@ -93,7 +88,7 @@ export default function TeamMeetingPage() {
       openFollowUps.slice(0, 5).forEach((p) => {
         items.push({
           id: `fu-${p.slug}`,
-          title: `Wiedervorlage: ${p.title}`,
+          title: t("team_meeting.item_followup").replace("{title}", p.title),
           caseRef: String(p.frontmatter?.case_slug ?? ""),
           assignee: String(p.frontmatter?.responsible ?? ""),
           status: "open",
@@ -103,9 +98,30 @@ export default function TeamMeetingPage() {
 
       if (items.length === 0) {
         items.push(
-          { id: "default-1", title: "Status offener Akten", caseRef: "", assignee: "", status: "open", priority: "medium" },
-          { id: "default-2", title: "Neue Mandate / Intake", caseRef: "", assignee: "", status: "open", priority: "medium" },
-          { id: "default-3", title: "Kosten / RVG-Abrechnungen", caseRef: "", assignee: "", status: "open", priority: "low" },
+          {
+            id: "default-1",
+            title: t("team_meeting.default_item_1"),
+            caseRef: "",
+            assignee: "",
+            status: "open",
+            priority: "medium",
+          },
+          {
+            id: "default-2",
+            title: t("team_meeting.default_item_2"),
+            caseRef: "",
+            assignee: "",
+            status: "open",
+            priority: "medium",
+          },
+          {
+            id: "default-3",
+            title: t("team_meeting.default_item_3"),
+            caseRef: "",
+            assignee: "",
+            status: "open",
+            priority: "low",
+          }
         );
       }
 
@@ -113,7 +129,7 @@ export default function TeamMeetingPage() {
       const dateStr = new Date().toISOString();
       await api.brain.createPage({
         slug,
-        title: `Team-Besprechung ${new Date().toLocaleDateString("de-DE")}`,
+        title: `${t("team_meeting.title")} ${new Date().toLocaleDateString("de-DE")}`,
         type: "legal_team_meeting",
         content: "",
         frontmatter: {
@@ -122,7 +138,7 @@ export default function TeamMeetingPage() {
           auto_generated: true,
         },
       });
-      addToast({ type: "success", title: "Agenda generiert" });
+      addToast({ type: "success", title: t("team_meeting.generate_success") });
       void load();
     } catch {
       addToast({ type: "error", title: t("common.error") });
@@ -142,7 +158,9 @@ export default function TeamMeetingPage() {
 
   async function toggleItem(meeting: TeamMeeting, itemId: string) {
     const updatedItems = meeting.items.map((item) =>
-      item.id === itemId ? { ...item, status: item.status === "open" ? "done" as const : "open" as const } : item
+      item.id === itemId
+        ? { ...item, status: item.status === "open" ? ("done" as const) : ("open" as const) }
+        : item
     );
     try {
       await api.brain.updatePage({
@@ -158,17 +176,21 @@ export default function TeamMeetingPage() {
   return (
     <div className="mx-auto max-w-[900px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Team-Besprechung"
-        description="Wöchentliche Agenda mit Auto-Generierung aus Fristen und Wiedervorlagen"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Team-Besprechung" }]}
+        title={t("team_meeting.title")}
+        description={t("team_meeting.desc")}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: t("team_meeting.title") },
+        ]}
         actions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={autoGenerate} disabled={generating}>
-              {generating ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
-              Agenda generieren
-            </Button>
-            <Button onClick={() => setShowCreate(!showCreate)} className="brand-bg gap-2 text-white">
-              <Plus size={16} /> Neue Besprechung
+              {generating ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <RefreshCw size={15} />
+              )}
+              {t("team_meeting.generate")}
             </Button>
           </div>
         }
@@ -181,9 +203,11 @@ export default function TeamMeetingPage() {
       ) : meetings.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] py-16 text-center">
           <Users size={32} className="mb-3 text-[color:var(--ds-text-subtle)]" aria-hidden="true" />
-          <p className="text-sm font-medium text-[color:var(--ds-text-muted)]">Keine Besprechungen</p>
+          <p className="text-sm font-medium text-[color:var(--ds-text-muted)]">
+            {t("team_meeting.empty_title")}
+          </p>
           <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-            Generieren Sie eine Agenda aus aktuellen Fristen und Wiedervorlagen.
+            {t("team_meeting.empty_desc")}
           </p>
         </div>
       ) : (
@@ -194,7 +218,11 @@ export default function TeamMeetingPage() {
               className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
             >
               <div className="flex items-center gap-2">
-                <CalendarDays size={14} className="text-[color:var(--brand-primary)]" aria-hidden="true" />
+                <CalendarDays
+                  size={14}
+                  className="text-[color:var(--brand-primary)]"
+                  aria-hidden="true"
+                />
                 <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
                   {meeting.title}
                 </h3>
@@ -238,7 +266,7 @@ export default function TeamMeetingPage() {
                       </span>
                       {item.priority === "high" && (
                         <Badge variant="default" className="border-red-500/30 text-xs text-red-600">
-                          Hoch
+                          {t("mattertab.urgency_high")}
                         </Badge>
                       )}
                       {item.assignee && (
@@ -252,7 +280,7 @@ export default function TeamMeetingPage() {
               )}
 
               {meeting.notes && (
-                <p className="mt-2 whitespace-pre-wrap text-sm text-[color:var(--ds-text-muted)]">
+                <p className="mt-2 text-sm whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
                   {meeting.notes}
                 </p>
               )}

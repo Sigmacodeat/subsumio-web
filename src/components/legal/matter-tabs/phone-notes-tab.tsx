@@ -42,9 +42,7 @@ export function PhoneNotesTab() {
     if (!caseSlug) return;
     try {
       const pages = await api.brain.listPages({ type: "legal_phone_note", limit: 500 });
-      const filtered = pages.filter(
-        (p) => p.frontmatter?.case_slug === caseSlug
-      );
+      const filtered = pages.filter((p) => p.frontmatter?.case_slug === caseSlug);
       const mapped: PhoneNoteItem[] = filtered.map((p: BrainPage) => ({
         slug: p.slug,
         title: p.title,
@@ -116,7 +114,7 @@ export function PhoneNotesTab() {
       const slug = `legal/time-entries/${Date.now().toString(36)}`;
       await api.brain.createPage({
         slug,
-        title: `Telefon mit ${note.caller}`,
+        title: t("mattertab.phone_time_title").replace("{caller}", note.caller),
         type: "legal_time_entry",
         content: note.content,
         frontmatter: {
@@ -124,7 +122,7 @@ export function PhoneNotesTab() {
           activity_type: "phone",
           duration_minutes: 10,
           date: note.occurred_at.split("T")[0],
-          description: `Telefon: ${note.title}`,
+          description: t("mattertab.phone_time_desc").replace("{subject}", note.title),
           created_at: new Date().toISOString(),
         },
       });
@@ -148,11 +146,7 @@ export function PhoneNotesTab() {
         <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
           {t("mattertab.phone_title")}
         </h2>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setShowCreate(!showCreate)}
-        >
+        <Button size="sm" variant="outline" onClick={() => setShowCreate(!showCreate)}>
           <Plus size={14} aria-hidden="true" /> {t("mattertab.phone_add")}
         </Button>
       </div>
@@ -167,21 +161,13 @@ export function PhoneNotesTab() {
               <Label className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("mattertab.phone_caller")} *
               </Label>
-              <Input
-                value={caller}
-                onChange={(e) => setCaller(e.target.value)}
-                required
-              />
+              <Input value={caller} onChange={(e) => setCaller(e.target.value)} required />
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("mattertab.phone_subject")} *
               </Label>
-              <Input
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                required
-              />
+              <Input value={subject} onChange={(e) => setSubject(e.target.value)} required />
             </div>
           </div>
           <div className="space-y-1">
@@ -199,20 +185,13 @@ export function PhoneNotesTab() {
             <Label className="text-xs text-[color:var(--ds-text-muted)]">
               {t("mattertab.phone_results")}
             </Label>
-            <Textarea
-              value={results}
-              onChange={(e) => setResults(e.target.value)}
-              rows={2}
-            />
+            <Textarea value={results} onChange={(e) => setResults(e.target.value)} rows={2} />
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-[color:var(--ds-text-muted)]">
               {t("mattertab.phone_followup")}
             </Label>
-            <Input
-              value={followUp}
-              onChange={(e) => setFollowUp(e.target.value)}
-            />
+            <Input value={followUp} onChange={(e) => setFollowUp(e.target.value)} />
           </div>
           <div className="flex gap-2">
             <Button type="submit" disabled={saving} className="brand-bg gap-2 text-white">
@@ -241,7 +220,11 @@ export function PhoneNotesTab() {
               className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
             >
               <div className="flex items-start gap-2">
-                <Phone size={14} className="mt-1 shrink-0 text-[color:var(--brand-primary)]" aria-hidden="true" />
+                <Phone
+                  size={14}
+                  className="mt-1 shrink-0 text-[color:var(--brand-primary)]"
+                  aria-hidden="true"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-medium text-[color:var(--ds-text)]">
@@ -256,10 +239,8 @@ export function PhoneNotesTab() {
                       })}
                     </span>
                   </div>
-                  <p className="text-xs text-[color:var(--ds-text-subtle)]">
-                    {note.caller}
-                  </p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-[color:var(--ds-text-muted)]">
+                  <p className="text-xs text-[color:var(--ds-text-subtle)]">{note.caller}</p>
+                  <p className="mt-2 text-sm whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
                     {note.content}
                   </p>
                   {note.results && (
