@@ -444,7 +444,7 @@ export function Topbar({
           onClick={onCmdOpen}
           aria-label={t("topbar.search_aria")}
           aria-haspopup="dialog"
-          className="group relative hidden flex-1 cursor-pointer rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pr-16 pl-9 text-left text-[13px] text-[color:var(--ds-text-subtle)] transition-[border-color,box-shadow] hover:border-[color:var(--ds-border-strong)] focus-visible:border-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none sm:block"
+          className="group relative hidden min-w-0 flex-1 cursor-pointer rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pr-16 pl-9 text-left text-[13px] text-[color:var(--ds-text-subtle)] transition-[border-color,box-shadow] hover:border-[color:var(--ds-border-strong)] focus-visible:border-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none sm:block"
         >
           <Search
             size={16}
