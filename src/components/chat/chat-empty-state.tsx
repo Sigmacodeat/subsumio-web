@@ -1,6 +1,7 @@
 "use client";
 
-import { MessageSquareText, Search, FileText, Scale, ArrowUpRight } from "lucide-react";
+import { Search, FileText, Scale, ArrowUpRight } from "lucide-react";
+import { BrainAvatar } from "@/components/chat/brain-avatar";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { DEFAULT_EXAMPLE_QUERIES, DEFAULT_EXAMPLE_QUERIES_EN } from "@/components/chat/chat-types";
@@ -33,9 +34,9 @@ export function ChatEmptyState({
         className
       )}
     >
-      {/* Claude-style: large icon with brand accent */}
-      <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[color:var(--brand-primary)]/10">
-        <MessageSquareText size={24} className="text-[color:var(--brand-primary)]" />
+      {/* Copilot Brain Identity — larger for empty state */}
+      <div className="mb-6">
+        <BrainAvatar size="lg" title="Subsumio Copilot" />
       </div>
 
       {/* Large editorial greeting */}

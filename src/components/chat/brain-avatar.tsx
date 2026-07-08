@@ -73,7 +73,7 @@ export function BrainAvatar({ thinking = false, size = "md", className, title }:
         className={cn(
           "relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl",
           "border border-[color:var(--ds-border)]",
-          "bg-gradient-to-br from-[#1a365d] via-[#9a7a1f] to-[#0f172a]",
+          "bg-gradient-to-br from-slate-800 via-blue-600 to-indigo-700",
           ring,
           thinking ? cn("ring-[color:var(--brand-primary)]/40", glow) : "ring-transparent",
           thinking && "animate-[brain-breathe_2.4s_ease-in-out_infinite]",
