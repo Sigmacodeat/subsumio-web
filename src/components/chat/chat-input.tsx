@@ -217,83 +217,13 @@ export function ChatInput({
         </div>
       )}
 
-      {/* Model + Mode selector row — compact pills above input */}
-      {(features?.modelSelector || features?.modeSelector) && (
-        <div className="flex items-center gap-1.5 px-3 pt-2">
-          {/* Mode selector */}
-          {features?.modeSelector && queryMode && onQueryModeChange && (
-            <div ref={modeRef} className="relative">
-              <button
-                onClick={() => setShowModeMenu((v) => !v)}
-                disabled={isStreaming || disabled}
-                className="inline-flex items-center gap-1 rounded-lg bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
-                aria-label={t("chat.mode")}
-              >
-                <Activity size={11} className="text-[color:var(--ds-text-subtle)]" />
-                {QUERY_MODE_LABELS[queryMode].label}
-                <ChevronDown
-                  size={10}
-                  className={cn("transition-transform", showModeMenu && "rotate-180")}
-                />
-              </button>
-              <AnimatePresence initial={false}>
-                {showModeMenu && (
-                  <motion.div
-                    className="absolute bottom-full left-0 z-50 mb-1.5 w-56 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5 shadow-lg"
-                    initial={popoverInitial}
-                    animate={popoverAnimate}
-                    exit={popoverExit}
-                    transition={popoverTransition}
-                  >
-                    {(Object.keys(QUERY_MODE_LABELS) as QueryMode[]).map((mode) => (
-                      <button
-                        key={mode}
-                        onClick={() => {
-                          onQueryModeChange(mode);
-                          setShowModeMenu(false);
-                        }}
-                        className={cn(
-                          "flex w-full flex-col items-start gap-0.5 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[color:var(--ds-hover)]",
-                          queryMode === mode && "brand-soft"
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "text-xs font-medium",
-                            queryMode === mode ? "brand-text" : "text-[color:var(--ds-text)]"
-                          )}
-                        >
-                          {QUERY_MODE_LABELS[mode].label}
-                        </span>
-                        <span className="text-xs text-[color:var(--ds-text-subtle)]">
-                          {QUERY_MODE_LABELS[mode].description}
-                        </span>
-                        <span className="text-xs text-[color:var(--ds-text-subtle)] opacity-70">
-                          {QUERY_MODE_LABELS[mode].hint}
-                        </span>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {/* Model selector */}
-          {features?.modelSelector && onModelChange && (
-            <ModelSelector
-              selectedModelId={modelOverride}
-              onSelect={onModelChange}
-              variant="compact"
-            />
-          )}
-        </div>
-      )}
-
-      <div className="px-4 pb-4">
+      {/* Single-row composer, state-of-the-art layout (Claude.ai/ChatGPT pattern):
+          textarea on top, one compact icon toolbar below — no separate
+          mode/model row taking up its own vertical band. */}
+      <div className="px-3 pb-3">
         <div
           className={cn(
-            "relative flex items-end gap-1.5 rounded-2xl border bg-[color:var(--ds-surface)] px-2.5 py-2 shadow-sm transition-[border-color,box-shadow] duration-200 focus-within:shadow-md",
+            "relative rounded-2xl border bg-[color:var(--ds-surface)] shadow-sm transition-[border-color,box-shadow] duration-200 focus-within:shadow-md",
             overLimit
               ? "border-red-500"
               : nearLimit
@@ -301,86 +231,6 @@ export function ChatInput({
                 : "border-[color:var(--ds-border)] focus-within:border-[color:var(--brand-primary)]/40"
           )}
         >
-          {/* Template picker — compact icon */}
-          <div ref={templateRef} className="relative">
-            <button
-              onClick={() => setShowTemplates((v) => !v)}
-              disabled={isStreaming || disabled}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
-              aria-label={t("chat.input.templates")}
-              title={t("chat.input.templates")}
-            >
-              <LayoutTemplate size={16} />
-            </button>
-            <AnimatePresence initial={false}>
-              {showTemplates && (
-                <motion.div
-                  className="absolute bottom-full left-0 z-50 mb-2 w-64 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg"
-                  initial={popoverInitial}
-                  animate={popoverAnimate}
-                  exit={popoverExit}
-                  transition={popoverTransition}
-                >
-                  <div className="border-b border-[color:var(--ds-border)] px-3 py-2 text-xs font-medium text-[color:var(--ds-text-muted)]">
-                    {t("chat.input.templates")}
-                  </div>
-                  <div className="max-h-64 overflow-y-auto p-1">
-                    {templates.map((tpl: ChatTemplate) => (
-                      <button
-                        key={tpl.id}
-                        onClick={() => {
-                          setText(tpl.template);
-                          setShowTemplates(false);
-                          autoFocus();
-                        }}
-                        className="flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[color:var(--ds-hover)]"
-                      >
-                        <span className="text-xs font-medium text-[color:var(--ds-text)]">
-                          {tpl.label}
-                        </span>
-                        <span className="text-xs text-[color:var(--ds-text-subtle)]">
-                          {tpl.category}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* File upload button */}
-          {features?.fileUpload !== false && (
-            <>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isStreaming || uploading || disabled}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
-                aria-label={t("chat.input.upload_file")}
-                title={t("chat.input.upload_file")}
-              >
-                <Paperclip size={16} />
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={handleFileSelect}
-                accept={UPLOAD_ACCEPT_ATTRIBUTE}
-              />
-            </>
-          )}
-
-          {/* Voice-to-Prompt button */}
-          <VoiceToPromptButton
-            onTranscript={(text) => {
-              setText((prev) => (prev ? prev + " " : "") + text);
-              textareaRef.current?.focus();
-            }}
-            className="shrink-0"
-          />
-
           {/* Textarea */}
           <textarea
             ref={textareaRef}
@@ -394,21 +244,15 @@ export function ChatInput({
             }
             rows={1}
             maxLength={50000}
-            className="min-h-[40px] flex-1 resize-none bg-transparent px-1 py-2 text-[14px] leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none disabled:opacity-50"
+            className="min-h-[36px] w-full resize-none bg-transparent px-3 pt-2.5 pb-1 text-[14px] leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none disabled:opacity-50"
             aria-label={t("chat.input.enter_message")}
           />
-          {/* Micro hint — Enter to send */}
-          {text.length === 0 && !isStreaming && (
-            <span className="pointer-events-none absolute right-14 bottom-2.5 hidden text-[11px] text-[color:var(--ds-text-subtle)]/50 sm:block">
-              ↵
-            </span>
-          )}
 
           {/* Char counter — visible when approaching limit */}
           {nearLimit && (
             <span
               className={cn(
-                "absolute right-12 bottom-1 text-xs font-medium",
+                "absolute top-2 right-3 text-xs font-medium",
                 overLimit ? "text-red-500" : "text-amber-500"
               )}
             >
@@ -416,30 +260,191 @@ export function ChatInput({
             </span>
           )}
 
-          {/* Send / Stop button */}
-          {isStreaming ? (
-            <button
-              onClick={() => onStop?.()}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500 transition-[background-color,transform] duration-200 hover:bg-red-500/20 active:scale-95"
-              aria-label={t("chat.input.stop_generation")}
-              title={t("chat.input.stop_esc")}
-            >
-              <Square size={13} className="fill-current" />
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={!canSend}
-              className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-primary)] text-white transition-[background-color,transform,opacity] duration-200 hover:bg-[color:var(--brand-primary-hover)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-30",
-                overLimit && "bg-red-500"
-              )}
-              aria-label={t("chat.send")}
-              title={t("chat.input.send_enter")}
-            >
-              <Send size={15} />
-            </button>
-          )}
+          {/* Icon toolbar — single row, everything lives here */}
+          <div className="flex items-center gap-0.5 px-1.5 pb-1.5">
+            {/* Template picker */}
+            <div ref={templateRef} className="relative">
+              <button
+                onClick={() => setShowTemplates((v) => !v)}
+                disabled={isStreaming || disabled}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
+                aria-label={t("chat.input.templates")}
+                title={t("chat.input.templates")}
+              >
+                <LayoutTemplate size={15} />
+              </button>
+              <AnimatePresence initial={false}>
+                {showTemplates && (
+                  <motion.div
+                    className="absolute bottom-full left-0 z-50 mb-2 w-64 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg"
+                    initial={popoverInitial}
+                    animate={popoverAnimate}
+                    exit={popoverExit}
+                    transition={popoverTransition}
+                  >
+                    <div className="border-b border-[color:var(--ds-border)] px-3 py-2 text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      {t("chat.input.templates")}
+                    </div>
+                    <div className="max-h-64 overflow-y-auto p-1">
+                      {templates.map((tpl: ChatTemplate) => (
+                        <button
+                          key={tpl.id}
+                          onClick={() => {
+                            setText(tpl.template);
+                            setShowTemplates(false);
+                            autoFocus();
+                          }}
+                          className="flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[color:var(--ds-hover)]"
+                        >
+                          <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                            {tpl.label}
+                          </span>
+                          <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                            {tpl.category}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* File upload button */}
+            {features?.fileUpload !== false && (
+              <>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isStreaming || uploading || disabled}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
+                  aria-label={t("chat.input.upload_file")}
+                  title={t("chat.input.upload_file")}
+                >
+                  <Paperclip size={15} />
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileSelect}
+                  accept={UPLOAD_ACCEPT_ATTRIBUTE}
+                />
+              </>
+            )}
+
+            {/* Voice-to-Prompt button */}
+            <VoiceToPromptButton
+              onTranscript={(text) => {
+                setText((prev) => (prev ? prev + " " : "") + text);
+                textareaRef.current?.focus();
+              }}
+              className="shrink-0"
+            />
+
+            {/* Mode selector — compact pill, same row as the icons */}
+            {features?.modeSelector && queryMode && onQueryModeChange && (
+              <div ref={modeRef} className="relative">
+                <button
+                  onClick={() => setShowModeMenu((v) => !v)}
+                  disabled={isStreaming || disabled}
+                  className="inline-flex h-7 items-center gap-1 rounded-lg px-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
+                  aria-label={t("chat.mode")}
+                >
+                  <Activity size={11} className="text-[color:var(--ds-text-subtle)]" />
+                  <span className="hidden sm:inline">{QUERY_MODE_LABELS[queryMode].label}</span>
+                  <ChevronDown
+                    size={10}
+                    className={cn("transition-transform", showModeMenu && "rotate-180")}
+                  />
+                </button>
+                <AnimatePresence initial={false}>
+                  {showModeMenu && (
+                    <motion.div
+                      className="absolute bottom-full left-0 z-50 mb-1.5 w-56 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5 shadow-lg"
+                      initial={popoverInitial}
+                      animate={popoverAnimate}
+                      exit={popoverExit}
+                      transition={popoverTransition}
+                    >
+                      {(Object.keys(QUERY_MODE_LABELS) as QueryMode[]).map((mode) => (
+                        <button
+                          key={mode}
+                          onClick={() => {
+                            onQueryModeChange(mode);
+                            setShowModeMenu(false);
+                          }}
+                          className={cn(
+                            "flex w-full flex-col items-start gap-0.5 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[color:var(--ds-hover)]",
+                            queryMode === mode && "brand-soft"
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "text-xs font-medium",
+                              queryMode === mode ? "brand-text" : "text-[color:var(--ds-text)]"
+                            )}
+                          >
+                            {QUERY_MODE_LABELS[mode].label}
+                          </span>
+                          <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                            {QUERY_MODE_LABELS[mode].description}
+                          </span>
+                          <span className="text-xs text-[color:var(--ds-text-subtle)] opacity-70">
+                            {QUERY_MODE_LABELS[mode].hint}
+                          </span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
+            {/* Model selector */}
+            {features?.modelSelector && onModelChange && (
+              <ModelSelector
+                selectedModelId={modelOverride}
+                onSelect={onModelChange}
+                variant="compact"
+              />
+            )}
+
+            {/* Spacer pushes send/stop to the far right */}
+            <div className="flex-1" />
+
+            {/* Micro hint — Enter to send */}
+            {text.length === 0 && !isStreaming && (
+              <span className="pointer-events-none hidden pr-1 text-[11px] text-[color:var(--ds-text-subtle)]/50 sm:block">
+                ↵
+              </span>
+            )}
+
+            {/* Send / Stop button */}
+            {isStreaming ? (
+              <button
+                onClick={() => onStop?.()}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500 transition-[background-color,transform] duration-200 hover:bg-red-500/20 active:scale-95"
+                aria-label={t("chat.input.stop_generation")}
+                title={t("chat.input.stop_esc")}
+              >
+                <Square size={12} className="fill-current" />
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={!canSend}
+                className={cn(
+                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-primary)] text-white transition-[background-color,transform,opacity] duration-200 hover:bg-[color:var(--brand-primary-hover)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-30",
+                  overLimit && "bg-red-500"
+                )}
+                aria-label={t("chat.send")}
+                title={t("chat.input.send_enter")}
+              >
+                <Send size={14} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

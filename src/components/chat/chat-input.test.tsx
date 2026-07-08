@@ -236,14 +236,16 @@ describe("ChatInput", () => {
   it("switches query mode via dropdown", async () => {
     const onQueryModeChange = vi.fn();
     renderChatInput({ onQueryModeChange });
-    fireEvent.click(screen.getByRole("button", { name: /chat.mode/i }));
-    // Query mode options are rendered as buttons; pick the first non-current one
-    const buttons = screen.getAllByRole("button");
-    const options = buttons.filter(
-      (b) =>
-        b.textContent &&
-        b.textContent !== "Akten + Recht" &&
-        b !== screen.getByRole("button", { name: /chat.mode/i })
+    const modeButton = screen.getByRole("button", { name: /chat.mode/i });
+    fireEvent.click(modeButton);
+    // Scope to the dropdown popover itself — the toolbar row also contains
+    // unrelated buttons (template, upload, voice, model, send), so picking
+    // "the first button that isn't the trigger" is DOM-order-dependent and
+    // brittle. The dropdown is the sibling rendered right after the trigger.
+    const dropdown = modeButton.parentElement?.querySelector('[class*="absolute"]');
+    expect(dropdown).toBeTruthy();
+    const options = Array.from(dropdown!.querySelectorAll("button")).filter(
+      (b) => b.textContent !== "Akten + Recht"
     );
     expect(options.length).toBeGreaterThan(0);
     fireEvent.click(options[0]);
