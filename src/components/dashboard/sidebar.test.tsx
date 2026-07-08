@@ -99,7 +99,7 @@ describe("Sidebar accordion", () => {
     renderSidebar();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Mandanten & Kommunikation/i })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: /Mandanten & Kontakte/i })).toHaveAttribute(
         "aria-expanded",
         "true"
       );
@@ -116,7 +116,7 @@ describe("Sidebar accordion", () => {
     renderSidebar();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Mandanten & Kommunikation/i })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: /Mandanten & Kontakte/i })).toHaveAttribute(
         "aria-expanded",
         "true"
       );
@@ -128,7 +128,7 @@ describe("Sidebar accordion", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Dokumente & Entwurf/i }));
-    expect(screen.getByRole("button", { name: /Mandanten & Kommunikation/i })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /Mandanten & Kontakte/i })).toHaveAttribute(
       "aria-expanded",
       "false"
     );

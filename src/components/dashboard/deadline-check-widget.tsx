@@ -81,7 +81,7 @@ export function DeadlineCheckWidget() {
         <div className="mb-2 flex items-center gap-2">
           <CalendarCheck size={15} className="text-[color:var(--ds-text-muted)]" />
           <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
-            {isEn ? "Deadline Post-Check" : "Fristen-Post-Check"}
+            {isEn ? "Deadline Verification" : "Fristen-Kontrolle"}
           </span>
         </div>
         <div className="flex h-20 items-center justify-center">
@@ -97,13 +97,13 @@ export function DeadlineCheckWidget() {
         <div className="mb-2 flex items-center gap-2">
           <CalendarCheck size={15} className="text-[color:var(--ds-text-muted)]" />
           <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
-            {isEn ? "Deadline Post-Check" : "Fristen-Post-Check"}
+            {isEn ? "Deadline Verification" : "Fristen-Kontrolle"}
           </span>
         </div>
         <p className="text-[13px] text-[color:var(--ds-text-muted)]">
           {isEn
-            ? "No deadline calendars found. Run a pipeline to extract deadlines for deterministic verification."
-            : "Keine Fristenkalender gefunden. Starten Sie eine Pipeline, um Fristen für deterministische Verifikation zu extrahieren."}
+            ? "No deadlines to verify yet. Deadlines detected by AI analysis are cross-checked here automatically."
+            : "Noch keine Fristen zu prüfen. KI-erkannte Fristen werden hier automatisch gegengeprüft."}
         </p>
       </section>
     );
@@ -117,7 +117,7 @@ export function DeadlineCheckWidget() {
         <div className="flex items-center gap-2">
           <CalendarCheck size={15} className="text-[color:var(--ds-text-muted)]" />
           <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
-            {isEn ? "Deadline Post-Check" : "Fristen-Post-Check"}
+            {isEn ? "Deadline Verification" : "Fristen-Kontrolle"}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -142,8 +142,8 @@ export function DeadlineCheckWidget() {
       {/* Summary line */}
       <p className="mb-3 text-[11px] text-[color:var(--ds-text-subtle)]">
         {isEn
-          ? `${stats.matched}/${stats.total} deadlines match deterministic calculation`
-          : `${stats.matched}/${stats.total} Fristen stimmen mit deterministischer Berechnung überein`}
+          ? `${stats.matched}/${stats.total} deadlines match the statutory calculation`
+          : `${stats.matched}/${stats.total} Fristen stimmen mit der gesetzlichen Fristberechnung überein`}
       </p>
 
       {/* Discrepancy list */}
@@ -198,8 +198,8 @@ export function DeadlineCheckWidget() {
           <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
           <p className="text-[12px] text-emerald-700">
             {isEn
-              ? "All deadlines match deterministic calculation."
-              : "Alle Fristen stimmen mit deterministischer Berechnung überein."}
+              ? "All deadlines match the statutory calculation."
+              : "Alle Fristen stimmen mit der gesetzlichen Fristberechnung überein."}
           </p>
         </div>
       )}

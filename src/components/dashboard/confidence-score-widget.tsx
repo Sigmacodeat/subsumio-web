@@ -81,7 +81,7 @@ export function ConfidenceScoreWidget() {
         <div className="mb-2 flex items-center gap-2">
           <Gauge size={15} className="text-[color:var(--ds-text-muted)]" />
           <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
-            {lang === "en" ? "Pipeline Confidence" : "Pipeline-Confidence"}
+            {lang === "en" ? "AI Analysis Quality" : "KI-Analyse-Qualität"}
           </span>
         </div>
         <div className="flex h-20 items-center justify-center">
@@ -97,13 +97,13 @@ export function ConfidenceScoreWidget() {
         <div className="mb-2 flex items-center gap-2">
           <Gauge size={15} className="text-[color:var(--ds-text-muted)]" />
           <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
-            {lang === "en" ? "Pipeline Confidence" : "Pipeline-Confidence"}
+            {lang === "en" ? "AI Analysis Quality" : "KI-Analyse-Qualität"}
           </span>
         </div>
         <p className="text-[13px] text-[color:var(--ds-text-muted)]">
           {lang === "en"
-            ? "No pipeline runs yet. Start a pipeline from a case to see confidence scores."
-            : "Noch keine Pipeline-Ausführungen. Starten Sie eine Pipeline aus einer Akte, um Confidence-Scores zu sehen."}
+            ? "No AI analyses yet. Open a case and start an analysis to see quality scores here."
+            : "Noch keine KI-Analysen. Öffnen Sie eine Akte und starten Sie eine Analyse — die Qualitätswerte erscheinen hier."}
         </p>
       </section>
     );
@@ -115,7 +115,7 @@ export function ConfidenceScoreWidget() {
         <div className="flex items-center gap-2">
           <Gauge size={15} className="text-[color:var(--ds-text-muted)]" />
           <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
-            {lang === "en" ? "Pipeline Confidence" : "Pipeline-Confidence"}
+            {lang === "en" ? "AI Analysis Quality" : "KI-Analyse-Qualität"}
           </span>
         </div>
         {stats.avg !== null && (

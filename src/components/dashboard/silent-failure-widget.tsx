@@ -215,7 +215,7 @@ export function SilentFailureWidget() {
         <div className="mb-2 flex items-center gap-2">
           <AlertCircle size={15} className="text-[color:var(--ds-text-muted)]" />
           <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
-            {isEn ? "Silent Failures" : "Stille Fehler"}
+            {isEn ? "Errors & Warnings" : "Fehler & Warnungen"}
           </span>
         </div>
         <div className="flex h-20 items-center justify-center">
@@ -231,13 +231,13 @@ export function SilentFailureWidget() {
         <div className="mb-2 flex items-center gap-2">
           <AlertCircle size={15} className="text-[color:var(--ds-text-muted)]" />
           <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
-            {isEn ? "Silent Failures" : "Stille Fehler"}
+            {isEn ? "Errors & Warnings" : "Fehler & Warnungen"}
           </span>
         </div>
         <p className="text-[13px] text-[color:var(--ds-text-muted)]">
           {isEn
-            ? "No pipeline failures, warnings, or stuck jobs detected."
-            : "Keine Pipeline-Fehler, Warnungen oder steckengebliebenen Jobs erkannt."}
+            ? "Everything is running smoothly — no errors or warnings."
+            : "Alles läuft reibungslos — keine Fehler oder Warnungen."}
         </p>
       </section>
     );
@@ -249,7 +249,7 @@ export function SilentFailureWidget() {
         <div className="flex items-center gap-2">
           <AlertCircle size={15} className="text-[color:var(--ds-text-muted)]" />
           <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
-            {isEn ? "Silent Failures" : "Stille Fehler"}
+            {isEn ? "Errors & Warnings" : "Fehler & Warnungen"}
           </span>
         </div>
         <div className="flex items-center gap-1.5">

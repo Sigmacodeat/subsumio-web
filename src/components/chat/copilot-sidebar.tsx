@@ -1190,7 +1190,6 @@ interface QuickActionsChipsProps {
   expanded: boolean;
   onToggleExpanded: () => void;
   t: TFunc;
-  variant?: "mobile" | "desktop";
 }
 
 function QuickActionsChips({
@@ -1199,44 +1198,46 @@ function QuickActionsChips({
   expanded,
   onToggleExpanded,
   t,
-  variant = "desktop",
 }: QuickActionsChipsProps) {
   if (actions.length === 0) return null;
-  const visibleActions = expanded ? actions : actions.slice(0, 4);
-  const isDesktop = variant === "desktop";
+  // Slim by default: a single row of at most 3 ghost chips. "+N" expands
+  // into the wrapped full list — keeps the panel from feeling overloaded
+  // while the route-aware entry points stay one tap away.
+  const MAX_COLLAPSED = 3;
+  const visibleActions = expanded ? actions : actions.slice(0, MAX_COLLAPSED);
   return (
-    <div
-      className={cn(
-        "shrink-0 border-b border-[color:var(--ds-border)]",
-        isDesktop ? "px-3 py-2" : "px-3 py-2"
-      )}
-    >
-      <div className="flex flex-wrap items-center gap-1.5">
+    <div className="shrink-0 border-b border-[color:var(--ds-border)] px-3 py-1.5">
+      <div
+        className={cn(
+          "flex items-center gap-1",
+          expanded ? "flex-wrap" : "[scrollbar-width:none] overflow-x-auto"
+        )}
+      >
         {visibleActions.map((action) => {
           const Icon = QUICK_ACTION_ICONS[action.icon];
           return (
             <button
               key={action.label}
               onClick={() => onAction(action)}
-              className="group/action inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-left text-xs text-[color:var(--ds-text-subtle)] transition-[border-color,background-color,color] duration-200 ease-[var(--ds-ease-smooth)] hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+              className="group/action inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-left text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
             >
               <Icon
                 size={11}
                 className="shrink-0 text-[color:var(--ds-text-subtle)] transition-colors group-hover/action:text-[color:var(--brand-primary)]"
               />
-              <span className="max-w-[110px] truncate">{action.label}</span>
+              <span className="max-w-[120px] truncate">{action.label}</span>
             </button>
           );
         })}
-        {actions.length > 4 && (
+        {actions.length > MAX_COLLAPSED && (
           <button
             onClick={onToggleExpanded}
-            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-[color,background-color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-[color,background-color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             aria-expanded={expanded}
             aria-label={expanded ? t("copilot.show_less_aria") : t("copilot.show_more_aria")}
           >
             {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            {expanded ? t("copilot.show_less") : `+${actions.length - 4}`}
+            {expanded ? t("copilot.show_less") : `+${actions.length - MAX_COLLAPSED}`}
           </button>
         )}
       </div>
@@ -1760,7 +1761,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             expanded={actionsExpanded}
             onToggleExpanded={() => setActionsExpanded((v) => !v)}
             t={t}
-            variant="mobile"
           />
 
           {/* Activity content (with sub-tabs) or Chat — mobile */}
@@ -1965,7 +1965,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               expanded={actionsExpanded}
               onToggleExpanded={() => setActionsExpanded((v) => !v)}
               t={t}
-              variant="desktop"
             />
 
             {/* Activity content (with sub-tabs) or Chat panel — desktop */}

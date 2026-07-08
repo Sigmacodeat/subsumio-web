@@ -626,13 +626,15 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   const [isCompact, setIsCompact] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Detect narrow panel for compact header mode
+  // Detect narrow panel for compact header mode. 420px so the docked
+  // Copilot sidebar (default 360px) gets the slim header — at full width
+  // the jurisdiction pill + model name would overflow the toolbar there.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        setIsCompact(entry.contentRect.width < 360);
+        setIsCompact(entry.contentRect.width < 420);
       }
     });
     observer.observe(el);

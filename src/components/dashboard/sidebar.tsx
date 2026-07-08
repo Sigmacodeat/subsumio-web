@@ -1687,7 +1687,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   const { t, lang } = useLang();
   const { panelTransition: sidebarPanelTransition } = useDashboardMotion();
   const sidebarShellTransition = sidebarPanelTransition;
-  const sidebarWidth = collapsed && isDesktop ? 64 : 220;
+  const sidebarWidth = collapsed && isDesktop ? 64 : 240;
   const badgesQuery = useSidebarBadges();
   const badges: SidebarBadges = badgesQuery.data ?? {};
 
@@ -1911,7 +1911,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
       <div
         className={cn(
           "flex h-full flex-col transition-[width] duration-[var(--ds-duration-panel)] ease-[var(--ds-ease-panel)] motion-reduce:transition-none",
-          collapsed ? "w-16" : "w-[220px]"
+          collapsed ? "w-16" : "w-[240px]"
         )}
       >
         {/* Logo */}
@@ -2261,7 +2261,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       <button
                         type="button"
                         onClick={() => toggleSection(section.titleKey)}
-                        className="group flex h-9 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[13px] font-semibold text-[color:var(--ds-text)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+                        className="group flex h-9 w-full items-center gap-2 rounded-lg px-3 text-left text-[13px] font-semibold text-[color:var(--ds-text)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
                         aria-expanded={isOpen}
                         aria-controls={panelId}
                       >
@@ -2275,13 +2275,17 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                 : `color-mix(in srgb, var(${catVar}) 55%, var(--ds-text-muted))`,
                           }}
                         />
+                        {/* Normal case (not uppercase/tracking-wider): at the old
+                            220px sidebar width the long German section names truncated
+                            into unreadable "MANDANTEN & K…" fragments. */}
                         <span
                           className={cn(
-                            "min-w-0 flex-1 truncate text-xs font-semibold tracking-wider uppercase",
+                            "min-w-0 flex-1 truncate text-[13px] font-semibold tracking-tight",
                             sectionActive || isOpen
                               ? "text-[color:var(--ds-text)]"
-                              : "text-[color:var(--ds-text-subtle)]"
+                              : "text-[color:var(--ds-text-muted)]"
                           )}
+                          title={t(section.titleKey)}
                         >
                           {t(section.titleKey)}
                         </span>

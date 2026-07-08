@@ -12,7 +12,6 @@ import {
   LogOut,
   X,
   ChevronDown,
-  Menu,
   Sun,
   Moon,
   Command,
@@ -406,7 +405,7 @@ export function Topbar({
   return (
     <header
       data-tour="topbar"
-      className="flex h-11 shrink-0 items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 pt-[env(safe-area-inset-top)] shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)] md:h-12 md:px-6 lg:px-8"
+      className="flex h-11 shrink-0 items-center justify-between gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 pt-[env(safe-area-inset-top)] shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)] md:h-12 md:px-6 lg:px-8"
     >
       <div className="flex max-w-xs min-w-0 flex-1 items-center gap-3 md:max-w-sm lg:max-w-lg">
         <button
@@ -445,7 +444,7 @@ export function Topbar({
           onClick={onCmdOpen}
           aria-label={t("topbar.search_aria")}
           aria-haspopup="dialog"
-          className="group relative hidden flex-1 cursor-pointer rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-16 pl-9 text-left text-[13px] text-[color:var(--ds-text-subtle)] transition-[border-color,box-shadow] hover:border-[color:var(--ds-border-strong)] focus-visible:border-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none sm:block"
+          className="group relative hidden flex-1 cursor-pointer rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pr-16 pl-9 text-left text-[13px] text-[color:var(--ds-text-subtle)] transition-[border-color,box-shadow] hover:border-[color:var(--ds-border-strong)] focus-visible:border-[color:var(--brand-primary)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none sm:block"
         >
           <Search
             size={16}
@@ -465,518 +464,531 @@ export function Topbar({
           <Search size={18} />
         </button>
       </div>
-      {/* Matter Switcher — quick switch between pinned/recent matters */}
-      <div className="hidden shrink-0 sm:block">
-        <MatterSwitcher />
-      </div>
-      {/* Notification bell — visible on all screen sizes */}
-      <div className="relative shrink-0" ref={notifRef}>
-        <button
-          onClick={() => {
-            if (!notifOpen) tracking.notifications.bellClicked();
-            setNotifOpen(!notifOpen);
-          }}
-          aria-label={
-            unreadCount > 0
-              ? `${t("topbar.notifications")} — ${unreadCount} ${t("topbar.unread_count")}`
-              : t("topbar.notifications")
-          }
-          aria-expanded={notifOpen}
-          aria-haspopup="menu"
-          className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
-        >
-          <Bell size={16} />
-          {unreadCount > 0 && (
-            <span
-              className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[color:var(--ds-danger-text)] px-1 text-xs leading-none font-bold text-white ring-2 ring-[var(--ds-surface)]"
-              aria-hidden
-            >
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
-          )}
-        </button>
-        <AnimatePresence initial={false}>
-          {notifOpen && (
-            <motion.div
-              className="card-shadow-elevated absolute top-12 right-0 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-              role="menu"
-              aria-label={t("topbar.notifications")}
-              initial={popoverInitial}
-              animate={popoverAnimate}
-              exit={popoverExit}
-              transition={popoverTransition}
-            >
-              <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] px-4 py-3.5">
-                <span className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  {t("topbar.notifications")}
-                </span>
-                <div className="flex items-center gap-2">
-                  {unreadCount > 0 && (
+      {/* Right controls — one group so gaps stay consistent instead of
+          justify-between scattering switcher/bell/actions unevenly. */}
+      <div className="flex shrink-0 items-center gap-1 md:gap-1.5">
+        {/* Matter Switcher — quick switch between pinned/recent matters */}
+        <div className="hidden shrink-0 sm:block">
+          <MatterSwitcher />
+        </div>
+        {/* Notification bell — visible on all screen sizes */}
+        <div className="relative shrink-0" ref={notifRef}>
+          <button
+            onClick={() => {
+              if (!notifOpen) tracking.notifications.bellClicked();
+              setNotifOpen(!notifOpen);
+            }}
+            aria-label={
+              unreadCount > 0
+                ? `${t("topbar.notifications")} — ${unreadCount} ${t("topbar.unread_count")}`
+                : t("topbar.notifications")
+            }
+            aria-expanded={notifOpen}
+            aria-haspopup="menu"
+            className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+          >
+            <Bell size={16} />
+            {unreadCount > 0 && (
+              <span
+                className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[color:var(--ds-danger-text)] px-1 text-xs leading-none font-bold text-white ring-2 ring-[var(--ds-surface)]"
+                aria-hidden
+              >
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+          <AnimatePresence initial={false}>
+            {notifOpen && (
+              <motion.div
+                className="card-shadow-elevated absolute top-12 right-0 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+                role="menu"
+                aria-label={t("topbar.notifications")}
+                initial={popoverInitial}
+                animate={popoverAnimate}
+                exit={popoverExit}
+                transition={popoverTransition}
+              >
+                <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] px-4 py-3.5">
+                  <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    {t("topbar.notifications")}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={markAllRead}
+                        disabled={loadingNotifs}
+                        className="brand-text text-xs transition-opacity hover:opacity-80 disabled:opacity-50"
+                      >
+                        {t("topbar.mark_all_read")}
+                      </button>
+                    )}
                     <button
-                      onClick={markAllRead}
-                      disabled={loadingNotifs}
-                      className="brand-text text-xs transition-opacity hover:opacity-80 disabled:opacity-50"
+                      onClick={() => setNotifOpen(false)}
+                      className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                      aria-label={t("topbar.close")}
                     >
-                      {t("topbar.mark_all_read")}
+                      <X size={18} />
                     </button>
+                  </div>
+                </div>
+                <div className="max-h-80 space-y-1.5 overflow-y-auto p-2">
+                  {notifications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-center">
+                      <Bell
+                        size={20}
+                        className="mb-3 text-[color:var(--ds-border-strong)]"
+                        aria-hidden
+                      />
+                      <p className="text-xs text-[color:var(--ds-text-muted)]">
+                        {t("topbar.no_notifications")}
+                      </p>
+                    </div>
+                  ) : (
+                    notifications.map((n) => {
+                      const notifHref = n.caseSlug
+                        ? `/dashboard/cases/${encodeURIComponent(n.caseSlug)}?tab=deadlines`
+                        : null;
+                      // Row is a plain div; the navigate action and the mark-read
+                      // action are sibling buttons (no nested interactive controls).
+                      return (
+                        <div
+                          key={n.id}
+                          className={`flex items-start gap-2 rounded-lg border p-3 ${n.type === "deadline" ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : n.type === "reply" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
+                        >
+                          {notifHref ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                router.push(notifHref);
+                                setNotifOpen(false);
+                              }}
+                              className="min-w-0 flex-1 cursor-pointer rounded-md text-left transition-colors hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                            >
+                              <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
+                                {n.title}
+                              </div>
+                              <div className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                                {n.message}
+                              </div>
+                            </button>
+                          ) : (
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
+                                {n.title}
+                              </div>
+                              <div className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                                {n.message}
+                              </div>
+                            </div>
+                          )}
+                          {!n.read && (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (n.id.startsWith("dl-")) {
+                                  setReadInlineIds((prev) => new Set(prev).add(n.id));
+                                  return;
+                                }
+                                try {
+                                  await csrfFetch("/api/notifications", {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ id: n.id }),
+                                  });
+                                  setApiNotifications((prev) =>
+                                    prev.map((item) =>
+                                      item.id === n.id ? { ...item, read: true } : item
+                                    )
+                                  );
+                                } catch {}
+                              }}
+                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                              aria-label={t("topbar.mark_read")}
+                            >
+                              <Check size={12} />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })
                   )}
+                </div>
+                <div className="border-t border-[color:var(--ds-border)] p-2">
                   <button
-                    onClick={() => setNotifOpen(false)}
-                    className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                    aria-label={t("topbar.close")}
+                    onClick={() => {
+                      router.push("/dashboard/notifications");
+                      setNotifOpen(false);
+                    }}
+                    className="brand-text flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition-opacity hover:opacity-80"
                   >
-                    <X size={18} />
+                    <Bell size={12} />
+                    Alle Benachrichtigungen
                   </button>
                 </div>
-              </div>
-              <div className="max-h-80 space-y-1.5 overflow-y-auto p-2">
-                {notifications.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <Bell
-                      size={20}
-                      className="mb-3 text-[color:var(--ds-border-strong)]"
-                      aria-hidden
-                    />
-                    <p className="text-xs text-[color:var(--ds-text-muted)]">
-                      {t("topbar.no_notifications")}
-                    </p>
-                  </div>
-                ) : (
-                  notifications.map((n) => {
-                    const notifHref = n.caseSlug
-                      ? `/dashboard/cases/${encodeURIComponent(n.caseSlug)}?tab=deadlines`
-                      : null;
-                    // Row is a plain div; the navigate action and the mark-read
-                    // action are sibling buttons (no nested interactive controls).
-                    return (
-                      <div
-                        key={n.id}
-                        className={`flex items-start gap-2 rounded-lg border p-3 ${n.type === "deadline" ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : n.type === "reply" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
-                      >
-                        {notifHref ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              router.push(notifHref);
-                              setNotifOpen(false);
-                            }}
-                            className="min-w-0 flex-1 cursor-pointer rounded-md text-left transition-colors hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
-                          >
-                            <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
-                              {n.title}
-                            </div>
-                            <div className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-                              {n.message}
-                            </div>
-                          </button>
-                        ) : (
-                          <div className="min-w-0 flex-1">
-                            <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
-                              {n.title}
-                            </div>
-                            <div className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-                              {n.message}
-                            </div>
-                          </div>
-                        )}
-                        {!n.read && (
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              if (n.id.startsWith("dl-")) {
-                                setReadInlineIds((prev) => new Set(prev).add(n.id));
-                                return;
-                              }
-                              try {
-                                await csrfFetch("/api/notifications", {
-                                  method: "PATCH",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ id: n.id }),
-                                });
-                                setApiNotifications((prev) =>
-                                  prev.map((item) =>
-                                    item.id === n.id ? { ...item, read: true } : item
-                                  )
-                                );
-                              } catch {}
-                            }}
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
-                            aria-label={t("topbar.mark_read")}
-                          >
-                            <Check size={12} />
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-              <div className="border-t border-[color:var(--ds-border)] p-2">
-                <button
-                  onClick={() => {
-                    router.push("/dashboard/notifications");
-                    setNotifOpen(false);
-                  }}
-                  className="brand-text flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition-opacity hover:opacity-80"
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+        <div className="flex shrink-0 items-center gap-1 max-md:hidden md:gap-1.5">
+          {/* Quick-Create */}
+          <div ref={quickCreateRef} className="relative">
+            <button
+              onClick={() => setQuickCreateOpen((v) => !v)}
+              aria-label={t("topbar.quick_create")}
+              title={t("topbar.quick_create")}
+              aria-expanded={quickCreateOpen}
+              className={cn(
+                "flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[13px] font-medium transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                quickCreateOpen
+                  ? "brand-soft brand-text"
+                  : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              )}
+            >
+              <Plus size={16} strokeWidth={2.5} />
+              <span className="hidden lg:inline">{t("topbar.quick_create")}</span>
+            </button>
+            <AnimatePresence initial={false}>
+              {quickCreateOpen && (
+                <motion.div
+                  className="card-shadow-elevated absolute top-12 right-0 z-50 w-56 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+                  role="menu"
+                  aria-label={t("topbar.quick_create")}
+                  initial={popoverInitial}
+                  animate={popoverAnimate}
+                  exit={popoverExit}
+                  transition={popoverTransition}
                 >
-                  <Bell size={12} />
-                  Alle Benachrichtigungen
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-      <div className="flex shrink-0 items-center gap-2 max-md:hidden">
-        {/* Quick-Create */}
-        <div ref={quickCreateRef} className="relative">
+                  <div className="border-b border-[color:var(--ds-border)] px-4 py-2.5">
+                    <span className="text-xs font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                      {t("topbar.quick_create")}
+                    </span>
+                  </div>
+                  <div className="p-1.5">
+                    {/* Matter-scoped actions — only when inside a matter */}
+                    {pathname?.startsWith("/dashboard/cases/") &&
+                      (() => {
+                        const matterSlug = decodeURIComponent(
+                          pathname.replace("/dashboard/cases/", "").split("/")[0] || ""
+                        );
+                        if (!matterSlug) return null;
+                        const matterItems = [
+                          {
+                            icon: CalendarClock,
+                            label: t("quickcreate.add_deadline"),
+                            event: "subsumio:create-deadline",
+                            detail: { caseSlug: matterSlug },
+                          },
+                          {
+                            icon: CheckSquare,
+                            label: t("quickcreate.add_task"),
+                            event: "subsumio:create-task",
+                            detail: { caseSlug: matterSlug },
+                          },
+                          {
+                            icon: FileUp,
+                            label: t("quickcreate.upload_document"),
+                            event: "subsumio:upload-document",
+                            detail: { caseSlug: matterSlug },
+                          },
+                          {
+                            icon: Clock,
+                            label: t("quickcreate.log_time"),
+                            event: "subsumio:log-time",
+                            detail: { caseSlug: matterSlug },
+                          },
+                          {
+                            icon: Receipt,
+                            label: t("quickcreate.create_invoice"),
+                            event: "subsumio:create-invoice",
+                            detail: { caseSlug: matterSlug },
+                          },
+                          {
+                            icon: FileSignature,
+                            label: t("quickcreate.request_signature"),
+                            event: "subsumio:create-signature",
+                            detail: { caseSlug: matterSlug },
+                          },
+                          {
+                            icon: FileCheck,
+                            label: t("quickcreate.create_contract"),
+                            event: "subsumio:create-contract",
+                            detail: { caseSlug: matterSlug },
+                          },
+                          {
+                            icon: Library,
+                            label: t("quickcreate.add_clause"),
+                            event: "subsumio:create-clause",
+                            detail: { caseSlug: matterSlug },
+                          },
+                          {
+                            icon: Users,
+                            label: t("quickcreate.add_contact"),
+                            event: "subsumio:create-contact",
+                            detail: { caseSlug: matterSlug },
+                          },
+                          {
+                            icon: MessageSquare,
+                            label: t("quickcreate.add_communication"),
+                            event: "subsumio:create-communication",
+                            detail: { caseSlug: matterSlug },
+                          },
+                        ];
+                        return (
+                          <>
+                            <div className="mb-1 px-3 pt-1 text-xs font-semibold tracking-wider text-[color:var(--brand-primary)] uppercase">
+                              {t("quickcreate.this_matter")}
+                            </div>
+                            {matterItems.map((item) => {
+                              const Icon = item.icon;
+                              return (
+                                <button
+                                  key={item.label}
+                                  onClick={() => {
+                                    setQuickCreateOpen(false);
+                                    window.dispatchEvent(
+                                      new CustomEvent(item.event, { detail: item.detail })
+                                    );
+                                  }}
+                                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                                  role="menuitem"
+                                >
+                                  <Icon size={15} className="shrink-0" />
+                                  {item.label}
+                                </button>
+                              );
+                            })}
+                            <div className="my-1.5 border-t border-[color:var(--ds-border)]" />
+                            <div className="mb-1 px-3 pt-1 text-xs font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                              {t("quickcreate.general")}
+                            </div>
+                          </>
+                        );
+                      })()}
+                    {[
+                      {
+                        icon: Briefcase,
+                        label: t("topbar.create_case"),
+                        event: "subsumio:create-case",
+                      },
+                      {
+                        icon: CalendarClock,
+                        label: t("topbar.create_deadline"),
+                        event: "subsumio:create-deadline",
+                      },
+                      {
+                        icon: Receipt,
+                        label: t("topbar.create_invoice"),
+                        event: "subsumio:create-invoice",
+                      },
+                      {
+                        icon: FileSignature,
+                        label: t("topbar.create_signature"),
+                        event: "subsumio:create-signature",
+                      },
+                      {
+                        icon: FileCheck,
+                        label: t("topbar.create_contract"),
+                        event: "subsumio:create-contract",
+                      },
+                      {
+                        icon: Library,
+                        label: t("topbar.create_clause"),
+                        event: "subsumio:create-clause",
+                      },
+                      {
+                        icon: PenTool,
+                        label: t("topbar.create_draft"),
+                        href: "/dashboard/drafting",
+                      },
+                    ].map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={item.label}
+                          onClick={() => {
+                            setQuickCreateOpen(false);
+                            if (item.event) {
+                              window.dispatchEvent(new Event(item.event));
+                            } else if (item.href) {
+                              router.push(item.href);
+                            }
+                          }}
+                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                          role="menuitem"
+                        >
+                          <Icon size={15} className="shrink-0" />
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           <button
-            onClick={() => setQuickCreateOpen((v) => !v)}
-            aria-label={t("topbar.quick_create")}
-            title={t("topbar.quick_create")}
-            aria-expanded={quickCreateOpen}
+            onClick={onCopilotToggle}
+            data-tour="copilot-toggle"
+            aria-label={copilotOpen ? t("copilot.collapse") : t("copilot.expand")}
+            title={copilotOpen ? t("copilot.collapse") + " (Cmd+J)" : t("copilot.expand_hint")}
+            aria-pressed={copilotOpen}
             className={cn(
-              "flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[13px] font-medium transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
-              quickCreateOpen
-                ? "brand-soft brand-text"
+              "flex h-9 w-9 items-center justify-center rounded-lg transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+              copilotOpen
+                ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
                 : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             )}
           >
-            <Plus size={16} strokeWidth={2.5} />
-            <span className="hidden lg:inline">{t("topbar.quick_create")}</span>
+            <PanelRightOpen size={16} />
           </button>
-          <AnimatePresence initial={false}>
-            {quickCreateOpen && (
-              <motion.div
-                className="card-shadow-elevated absolute top-12 right-0 z-50 w-56 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-                role="menu"
-                aria-label={t("topbar.quick_create")}
-                initial={popoverInitial}
-                animate={popoverAnimate}
-                exit={popoverExit}
-                transition={popoverTransition}
-              >
-                <div className="border-b border-[color:var(--ds-border)] px-4 py-2.5">
-                  <span className="text-xs font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
-                    {t("topbar.quick_create")}
-                  </span>
-                </div>
-                <div className="p-1.5">
-                  {/* Matter-scoped actions — only when inside a matter */}
-                  {pathname?.startsWith("/dashboard/cases/") &&
-                    (() => {
-                      const matterSlug = decodeURIComponent(
-                        pathname.replace("/dashboard/cases/", "").split("/")[0] || ""
-                      );
-                      if (!matterSlug) return null;
-                      const matterItems = [
-                        {
-                          icon: CalendarClock,
-                          label: t("quickcreate.add_deadline"),
-                          event: "subsumio:create-deadline",
-                          detail: { caseSlug: matterSlug },
-                        },
-                        {
-                          icon: CheckSquare,
-                          label: t("quickcreate.add_task"),
-                          event: "subsumio:create-task",
-                          detail: { caseSlug: matterSlug },
-                        },
-                        {
-                          icon: FileUp,
-                          label: t("quickcreate.upload_document"),
-                          event: "subsumio:upload-document",
-                          detail: { caseSlug: matterSlug },
-                        },
-                        {
-                          icon: Clock,
-                          label: t("quickcreate.log_time"),
-                          event: "subsumio:log-time",
-                          detail: { caseSlug: matterSlug },
-                        },
-                        {
-                          icon: Receipt,
-                          label: t("quickcreate.create_invoice"),
-                          event: "subsumio:create-invoice",
-                          detail: { caseSlug: matterSlug },
-                        },
-                        {
-                          icon: FileSignature,
-                          label: t("quickcreate.request_signature"),
-                          event: "subsumio:create-signature",
-                          detail: { caseSlug: matterSlug },
-                        },
-                        {
-                          icon: FileCheck,
-                          label: t("quickcreate.create_contract"),
-                          event: "subsumio:create-contract",
-                          detail: { caseSlug: matterSlug },
-                        },
-                        {
-                          icon: Library,
-                          label: t("quickcreate.add_clause"),
-                          event: "subsumio:create-clause",
-                          detail: { caseSlug: matterSlug },
-                        },
-                        {
-                          icon: Users,
-                          label: t("quickcreate.add_contact"),
-                          event: "subsumio:create-contact",
-                          detail: { caseSlug: matterSlug },
-                        },
-                        {
-                          icon: MessageSquare,
-                          label: t("quickcreate.add_communication"),
-                          event: "subsumio:create-communication",
-                          detail: { caseSlug: matterSlug },
-                        },
-                      ];
-                      return (
-                        <>
-                          <div className="mb-1 px-3 pt-1 text-xs font-semibold tracking-wider text-[color:var(--brand-primary)] uppercase">
-                            {t("quickcreate.this_matter")}
-                          </div>
-                          {matterItems.map((item) => {
-                            const Icon = item.icon;
-                            return (
-                              <button
-                                key={item.label}
-                                onClick={() => {
-                                  setQuickCreateOpen(false);
-                                  window.dispatchEvent(
-                                    new CustomEvent(item.event, { detail: item.detail })
-                                  );
-                                }}
-                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                                role="menuitem"
-                              >
-                                <Icon size={15} className="shrink-0" />
-                                {item.label}
-                              </button>
-                            );
-                          })}
-                          <div className="my-1.5 border-t border-[color:var(--ds-border)]" />
-                          <div className="mb-1 px-3 pt-1 text-xs font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
-                            {t("quickcreate.general")}
-                          </div>
-                        </>
-                      );
-                    })()}
-                  {[
-                    {
-                      icon: Briefcase,
-                      label: t("topbar.create_case"),
-                      event: "subsumio:create-case",
-                    },
-                    {
-                      icon: CalendarClock,
-                      label: t("topbar.create_deadline"),
-                      event: "subsumio:create-deadline",
-                    },
-                    {
-                      icon: Receipt,
-                      label: t("topbar.create_invoice"),
-                      event: "subsumio:create-invoice",
-                    },
-                    {
-                      icon: FileSignature,
-                      label: t("topbar.create_signature"),
-                      event: "subsumio:create-signature",
-                    },
-                    {
-                      icon: FileCheck,
-                      label: t("topbar.create_contract"),
-                      event: "subsumio:create-contract",
-                    },
-                    {
-                      icon: Library,
-                      label: t("topbar.create_clause"),
-                      event: "subsumio:create-clause",
-                    },
-                    { icon: PenTool, label: t("topbar.create_draft"), href: "/dashboard/drafting" },
-                  ].map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <button
-                        key={item.label}
-                        onClick={() => {
-                          setQuickCreateOpen(false);
-                          if (item.event) {
-                            window.dispatchEvent(new Event(item.event));
-                          } else if (item.href) {
-                            router.push(item.href);
-                          }
-                        }}
-                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                        role="menuitem"
-                      >
-                        <Icon size={15} className="shrink-0" />
-                        {item.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-        <button
-          onClick={onCopilotToggle}
-          data-tour="copilot-toggle"
-          aria-label={copilotOpen ? t("copilot.collapse") : t("copilot.expand")}
-          title={copilotOpen ? t("copilot.collapse") + " (Cmd+J)" : t("copilot.expand_hint")}
-          aria-pressed={copilotOpen}
-          className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-lg transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
-            copilotOpen
-              ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
-              : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-          )}
-        >
-          <PanelRightOpen size={16} />
-        </button>
-        <button
-          onClick={onGuideOpen}
-          aria-label={t("guide.open")}
-          title={t("guide.open")}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
-        >
-          <HelpCircle size={15} />
-        </button>
-        <button
-          onClick={toggleTheme}
-          title={theme === "dark" ? t("topbar.theme_light") : t("topbar.theme_dark")}
-          aria-label={theme === "dark" ? t("topbar.theme_light_aria") : t("topbar.theme_dark_aria")}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
-        >
-          {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
-        </button>
-        <div className="hidden md:block">
-          <BrainSelector />
-        </div>
-        <NetworkStatusBadge />
-        {/* User menu */}
-        <div className="relative" ref={userMenuRef}>
           <button
-            onClick={() => setUserMenuOpen(!userMenuOpen)}
-            className="flex items-center gap-2 rounded-lg px-1.5 py-1 transition-[background-color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
-            aria-label={t("topbar.user_menu")}
-            aria-expanded={userMenuOpen}
-            aria-haspopup="menu"
+            onClick={onGuideOpen}
+            aria-label={t("guide.open")}
+            title={t("guide.open")}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
           >
-            <div className="brand-soft brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-full border">
-              {userName ? (
-                <span className="brand-text text-xs font-bold uppercase">
-                  {userName.slice(0, 2)}
-                </span>
-              ) : (
-                <User size={13} className="brand-text" />
-              )}
-            </div>
-            <span className="hidden max-w-[100px] truncate text-[13px] font-medium text-[color:var(--ds-text)] md:block">
-              {userName ?? t("topbar.user_fallback")}
-            </span>
-            <ChevronDown size={13} className="hidden text-[color:var(--ds-text-subtle)] md:block" />
+            <HelpCircle size={15} />
           </button>
-          <AnimatePresence initial={false}>
-            {userMenuOpen && (
-              <motion.div
-                className="card-shadow-elevated absolute top-12 right-0 z-50 w-56 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-                role="menu"
-                aria-label={t("topbar.user_menu")}
-                initial={popoverInitial}
-                animate={popoverAnimate}
-                exit={popoverExit}
-                transition={popoverTransition}
-              >
-                <div className="border-b border-[color:var(--ds-border)] px-4 py-3.5">
-                  <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
-                    {userName ?? t("topbar.user_fallback")}
-                  </p>
-                  <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
-                    {userEmail ?? ""}
-                  </p>
-                </div>
-                <div className="p-1.5">
-                  <Link
-                    href="/dashboard/settings"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                    role="menuitem"
-                  >
-                    <Settings size={15} className="shrink-0" />
-                    {t("topbar.settings")}
-                  </Link>
-                  <button
-                    onClick={() => {
-                      toggleTheme();
-                      setUserMenuOpen(false);
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                    role="menuitem"
-                  >
-                    {theme === "dark" ? (
-                      <Sun size={15} className="shrink-0" />
-                    ) : (
-                      <Moon size={15} className="shrink-0" />
-                    )}
-                    {theme === "dark" ? t("topbar.theme_light") : t("topbar.theme_dark")}
-                  </button>
-                  {/* Language switcher */}
-                  <div
-                    className="px-3 py-2"
-                    role="menuitem"
-                    aria-label={t("topbar.language_switch")}
-                  >
-                    <div className="mb-1.5 flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
-                      <Languages size={13} className="shrink-0" />
-                      {t("topbar.language")}
-                    </div>
-                    <div className="flex gap-1.5">
-                      <button
-                        onClick={() => {
-                          setLang("de");
-                          setUserMenuOpen(false);
-                        }}
-                        className={cn(
-                          "flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[var(--ds-ease-smooth)]",
-                          lang !== "en"
-                            ? "brand-soft brand-text brand-border"
-                            : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
-                        )}
-                        aria-pressed={lang !== "en"}
-                      >
-                        DE
-                      </button>
-                      <button
-                        onClick={() => {
-                          setLang("en");
-                          setUserMenuOpen(false);
-                        }}
-                        className={cn(
-                          "flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[var(--ds-ease-smooth)]",
-                          lang === "en"
-                            ? "brand-soft brand-text brand-border"
-                            : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
-                        )}
-                        aria-pressed={lang === "en"}
-                      >
-                        EN
-                      </button>
-                    </div>
+          <button
+            onClick={toggleTheme}
+            title={theme === "dark" ? t("topbar.theme_light") : t("topbar.theme_dark")}
+            aria-label={
+              theme === "dark" ? t("topbar.theme_light_aria") : t("topbar.theme_dark_aria")
+            }
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+          >
+            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
+          <div className="hidden md:block">
+            <BrainSelector />
+          </div>
+          <NetworkStatusBadge />
+          {/* User menu */}
+          <div className="relative" ref={userMenuRef}>
+            <button
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              className="flex items-center gap-2 rounded-lg px-1.5 py-1 transition-[background-color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+              aria-label={t("topbar.user_menu")}
+              aria-expanded={userMenuOpen}
+              aria-haspopup="menu"
+            >
+              <div className="brand-soft brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-full border">
+                {userName ? (
+                  <span className="brand-text text-xs font-bold uppercase">
+                    {userName.slice(0, 2)}
+                  </span>
+                ) : (
+                  <User size={13} className="brand-text" />
+                )}
+              </div>
+              <span className="hidden max-w-[100px] truncate text-[13px] font-medium text-[color:var(--ds-text)] md:block">
+                {userName ?? t("topbar.user_fallback")}
+              </span>
+              <ChevronDown
+                size={13}
+                className="hidden text-[color:var(--ds-text-subtle)] md:block"
+              />
+            </button>
+            <AnimatePresence initial={false}>
+              {userMenuOpen && (
+                <motion.div
+                  className="card-shadow-elevated absolute top-12 right-0 z-50 w-56 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+                  role="menu"
+                  aria-label={t("topbar.user_menu")}
+                  initial={popoverInitial}
+                  animate={popoverAnimate}
+                  exit={popoverExit}
+                  transition={popoverTransition}
+                >
+                  <div className="border-b border-[color:var(--ds-border)] px-4 py-3.5">
+                    <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                      {userName ?? t("topbar.user_fallback")}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
+                      {userEmail ?? ""}
+                    </p>
                   </div>
-                  <button
-                    onClick={logout}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
-                    role="menuitem"
-                  >
-                    <LogOut size={15} className="shrink-0" />
-                    {t("topbar.logout")}
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  <div className="p-1.5">
+                    <Link
+                      href="/dashboard/settings"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                      role="menuitem"
+                    >
+                      <Settings size={15} className="shrink-0" />
+                      {t("topbar.settings")}
+                    </Link>
+                    <button
+                      onClick={() => {
+                        toggleTheme();
+                        setUserMenuOpen(false);
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                      role="menuitem"
+                    >
+                      {theme === "dark" ? (
+                        <Sun size={15} className="shrink-0" />
+                      ) : (
+                        <Moon size={15} className="shrink-0" />
+                      )}
+                      {theme === "dark" ? t("topbar.theme_light") : t("topbar.theme_dark")}
+                    </button>
+                    {/* Language switcher */}
+                    <div
+                      className="px-3 py-2"
+                      role="menuitem"
+                      aria-label={t("topbar.language_switch")}
+                    >
+                      <div className="mb-1.5 flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+                        <Languages size={13} className="shrink-0" />
+                        {t("topbar.language")}
+                      </div>
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => {
+                            setLang("de");
+                            setUserMenuOpen(false);
+                          }}
+                          className={cn(
+                            "flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[var(--ds-ease-smooth)]",
+                            lang !== "en"
+                              ? "brand-soft brand-text brand-border"
+                              : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
+                          )}
+                          aria-pressed={lang !== "en"}
+                        >
+                          DE
+                        </button>
+                        <button
+                          onClick={() => {
+                            setLang("en");
+                            setUserMenuOpen(false);
+                          }}
+                          className={cn(
+                            "flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[var(--ds-ease-smooth)]",
+                            lang === "en"
+                              ? "brand-soft brand-text brand-border"
+                              : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
+                          )}
+                          aria-pressed={lang === "en"}
+                        >
+                          EN
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      onClick={logout}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
+                      role="menuitem"
+                    >
+                      <LogOut size={15} className="shrink-0" />
+                      {t("topbar.logout")}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </header>
