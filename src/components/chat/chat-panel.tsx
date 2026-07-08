@@ -69,6 +69,7 @@ interface ChatPanelProps {
     type: ChatContextType;
     caseSlug?: string;
     pageSlug?: string;
+    pageLabel?: string;
   };
   features?: Partial<ChatFeatures>;
   persistHistory?: boolean;
@@ -885,6 +886,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         contextType: context.type,
         contextCaseSlug: context.caseSlug,
         pageSlug: context.pageSlug,
+        pageLabel: context.pageLabel,
         attachments,
         replyTo,
         userText: text,
@@ -1452,6 +1454,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           contextType: context.type,
           contextCaseSlug: context.caseSlug,
           pageSlug: context.pageSlug,
+          pageLabel: context.pageLabel,
           attachments: userMsg.attachments,
           replyTo: null,
           userText: userMsg.content,
@@ -2041,12 +2044,9 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         features={{
           fileUpload: resolvedFeatures.fileUpload,
           modelSelector: false,
-          modeSelector: false,
         }}
         modelOverride={modelOverride}
         onModelChange={setModelOverride}
-        queryMode={queryMode}
-        onQueryModeChange={setQueryMode}
       />
     </div>
   );

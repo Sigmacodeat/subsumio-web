@@ -12,18 +12,15 @@ const meta: Meta<typeof ChatInput> = {
   argTypes: {
     isStreaming: { control: "boolean" },
     disabled: { control: "boolean" },
-    queryMode: { control: "select", options: ["balanced", "precise", "creative"] },
   },
   args: {
     onSend: fn(),
     onStop: fn(),
-    onQueryModeChange: fn(),
     onModelChange: fn(),
     isStreaming: false,
     disabled: false,
     placeholder: "Frage den Copilot…",
-    features: { fileUpload: true, modelSelector: true, modeSelector: true },
-    queryMode: "balanced",
+    features: { fileUpload: true, modelSelector: true },
   },
 };
 
@@ -46,6 +43,6 @@ export const Disabled: Story = {
 
 export const WithFileUploadOnly: Story = {
   args: {
-    features: { fileUpload: true, modelSelector: false, modeSelector: false },
+    features: { fileUpload: true, modelSelector: false },
   },
 };

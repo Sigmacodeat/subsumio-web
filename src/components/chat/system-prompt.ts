@@ -194,6 +194,7 @@ interface PromptContextParams {
   contextType: string;
   contextCaseSlug?: string;
   pageSlug?: string;
+  pageLabel?: string;
   attachments?: Array<{ name: string; slug: string }>;
   replyTo?: { id: string; role: "user" | "assistant"; preview: string } | null;
   userText: string;
@@ -214,6 +215,7 @@ export async function buildPromptContext(
     contextType,
     contextCaseSlug: _contextCaseSlug,
     pageSlug,
+    pageLabel,
     attachments,
     replyTo,
     userText,
@@ -266,6 +268,13 @@ export async function buildPromptContext(
         : "";
     contextParts.push(
       `--- AKTENKONTEXT ---\nAktive Akte: ${selected?.title ?? selectedCaseSlug}\nSlug: ${selectedCaseSlug}${vitalsBlock}\nNutze Matter Context und zitiere nur belegte Aussagen.\n--- ENDE AKTENKONTEXT ---\n`
+    );
+  }
+
+  // Dashboard page context — injected by CopilotSidebar when known
+  if (pageLabel) {
+    contextParts.push(
+      `--- AKTUELLE DASHBOARD-SEITE ---\n${pageLabel}\nDer Nutzer befindet sich gerade auf dieser Dashboard-Seite. Beziehe deine Antworten und Vorschläge auf diesen Kontext, wenn relevant.\n--- ENDE SEITE ---\n`
     );
   }
 

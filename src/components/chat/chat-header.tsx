@@ -122,41 +122,28 @@ export function ChatHeader(props: ChatHeaderProps) {
       <div className="flex items-center gap-2 px-3 py-2">
         {/* Title + status badge */}
         <div className="flex shrink-0 items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
-            <MessageSquareText size={14} className="text-[color:var(--ds-text-muted)]" />
-          </div>
-          <h2 className="truncate text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
-            {t("chat.title")}
-          </h2>
-          {props.features.brainStatus && (
-            <span
-              className="inline-flex shrink-0 items-center gap-1 text-xs text-[color:var(--ds-text-subtle)]"
-              title={
-                brainDegraded
+          <div
+            className="relative flex h-7 w-7 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
+            title={
+              props.features.brainStatus
+                ? brainDegraded
                   ? t("chat.brain_degraded")
                   : brainOnline
                     ? t("chat.brain_online")
                     : t("chat.brain_offline")
-              }
-            >
+                : undefined
+            }
+          >
+            <MessageSquareText size={14} className="text-[color:var(--ds-text-muted)]" />
+            {props.features.brainStatus && (
               <span
                 className={cn(
-                  "h-1.5 w-1.5 rounded-full",
+                  "absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full ring-1 ring-[color:var(--ds-surface)]",
                   brainDegraded ? "bg-amber-500" : brainOnline ? "bg-emerald-500" : "bg-red-500"
                 )}
               />
-              {props.messageCount > 0 && (
-                <span>
-                  {props.messageCount} {t("chat.session_count")}
-                </span>
-              )}
-            </span>
-          )}
-          {props.messageCount > 0 && !props.features.brainStatus && (
-            <span className="shrink-0 text-xs text-[color:var(--ds-text-subtle)]">
-              {props.messageCount} {t("chat.session_count")}
-            </span>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Controls toolbar — single line, no wrap */}
@@ -298,10 +285,10 @@ export function ChatHeader(props: ChatHeaderProps) {
                                 {s.title}
                               </p>
                               <p className="truncate text-xs text-[color:var(--ds-text-subtle)]">
-                                {s.messageCount} {t("chat.session_count")} ·{" "}
                                 {new Date(s.updatedAt).toLocaleDateString(
                                   lang === "en" ? "en-GB" : "de-DE"
                                 )}
+                                {s.lastPreview && ` · ${s.lastPreview.slice(0, 40)}`}
                               </p>
                               {s.tags && s.tags.length > 0 && (
                                 <div className="mt-1 flex flex-wrap gap-1">

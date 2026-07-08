@@ -2,23 +2,13 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
-import {
-  Send,
-  Square,
-  Paperclip,
-  X,
-  FileText,
-  LayoutTemplate,
-  ChevronDown,
-  Activity,
-} from "lucide-react";
+import { Send, Square, Paperclip, X, FileText, LayoutTemplate } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { CHAT_TEMPLATES, CHAT_TEMPLATES_EN, type ChatTemplate } from "@/components/chat/chat-types";
 import { ModelSelector } from "@/components/dashboard/model-selector";
-import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
 import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
 import { maxUploadSizeFor } from "@/lib/upload-validation";
 import { VoiceToPromptButton } from "@/components/dashboard/voice-to-prompt-button";
@@ -33,13 +23,10 @@ interface ChatInputProps {
   features?: {
     fileUpload?: boolean;
     modelSelector?: boolean;
-    modeSelector?: boolean;
   };
   className?: string;
   modelOverride?: string;
   onModelChange?: (model: string | undefined) => void;
-  queryMode?: QueryMode;
-  onQueryModeChange?: (mode: QueryMode) => void;
 }
 
 export function ChatInput({
@@ -52,19 +39,15 @@ export function ChatInput({
   className,
   modelOverride,
   onModelChange,
-  queryMode,
-  onQueryModeChange,
 }: ChatInputProps) {
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState<Array<{ name: string; slug: string }>>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [showModeMenu, setShowModeMenu] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const templateRef = useRef<HTMLDivElement>(null);
-  const modeRef = useRef<HTMLDivElement>(null);
   const { t, lang } = useLang();
   const { popoverTransition, popoverInitial, popoverAnimate, popoverExit } = useDashboardMotion();
   const templates = lang === "en" ? CHAT_TEMPLATES_EN : CHAT_TEMPLATES;
@@ -88,15 +71,12 @@ export function ChatInput({
       if (templateRef.current && !templateRef.current.contains(e.target as Node)) {
         setShowTemplates(false);
       }
-      if (modeRef.current && !modeRef.current.contains(e.target as Node)) {
-        setShowModeMenu(false);
-      }
     }
-    if (showTemplates || showModeMenu) {
+    if (showTemplates) {
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [showTemplates, showModeMenu]);
+  }, [showTemplates]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -341,65 +321,6 @@ export function ChatInput({
               }}
               className="shrink-0"
             />
-
-            {/* Mode selector — compact pill, same row as the icons */}
-            {features?.modeSelector && queryMode && onQueryModeChange && (
-              <div ref={modeRef} className="relative">
-                <button
-                  onClick={() => setShowModeMenu((v) => !v)}
-                  disabled={isStreaming || disabled}
-                  className="inline-flex h-7 items-center gap-1 rounded-lg px-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
-                  aria-label={t("chat.mode")}
-                >
-                  <Activity size={11} className="text-[color:var(--ds-text-subtle)]" />
-                  <span className="hidden sm:inline">{QUERY_MODE_LABELS[queryMode].label}</span>
-                  <ChevronDown
-                    size={10}
-                    className={cn("transition-transform", showModeMenu && "rotate-180")}
-                  />
-                </button>
-                <AnimatePresence initial={false}>
-                  {showModeMenu && (
-                    <motion.div
-                      className="absolute bottom-full left-0 z-50 mb-1.5 w-56 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5 shadow-lg"
-                      initial={popoverInitial}
-                      animate={popoverAnimate}
-                      exit={popoverExit}
-                      transition={popoverTransition}
-                    >
-                      {(Object.keys(QUERY_MODE_LABELS) as QueryMode[]).map((mode) => (
-                        <button
-                          key={mode}
-                          onClick={() => {
-                            onQueryModeChange(mode);
-                            setShowModeMenu(false);
-                          }}
-                          className={cn(
-                            "flex w-full flex-col items-start gap-0.5 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[color:var(--ds-hover)]",
-                            queryMode === mode && "brand-soft"
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "text-xs font-medium",
-                              queryMode === mode ? "brand-text" : "text-[color:var(--ds-text)]"
-                            )}
-                          >
-                            {QUERY_MODE_LABELS[mode].label}
-                          </span>
-                          <span className="text-xs text-[color:var(--ds-text-subtle)]">
-                            {QUERY_MODE_LABELS[mode].description}
-                          </span>
-                          <span className="text-xs text-[color:var(--ds-text-subtle)] opacity-70">
-                            {QUERY_MODE_LABELS[mode].hint}
-                          </span>
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
 
             {/* Model selector */}
             {features?.modelSelector && onModelChange && (

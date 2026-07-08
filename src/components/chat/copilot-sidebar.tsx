@@ -11,7 +11,6 @@ import {
   FileText,
   CheckSquare,
   Maximize2,
-  History,
   Mail,
   ShieldAlert,
   Inbox,
@@ -29,8 +28,138 @@ import type { ChatContextType } from "@/components/chat/chat-types";
 import { api } from "@/lib/api";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { caseSlugFromDashboardPath } from "@/lib/matter-route-path";
-import { listSessions } from "@/components/chat/chat-session-store";
-import type { ChatSession } from "@/components/chat/chat-types";
+
+// ── Dashboard-Seiten-Kontext-Map ─────────────────────────────────────
+// Bildet bekannte Dashboard-Routen auf einen lesbaren Seitentitel ab.
+// Dieser Titel wird in den System-Prompt injiziert.
+
+const PAGE_CONTEXT_MAP: Record<string, { de: string; en: string }> = {
+  "/dashboard/deadlines": { de: "Fristen-Übersicht", en: "Deadlines" },
+  "/dashboard/tasks": { de: "Aufgaben", en: "Tasks" },
+  "/dashboard/calendar": { de: "Kalender", en: "Calendar" },
+  "/dashboard/documents": { de: "Dokumente", en: "Documents" },
+  "/dashboard/clients": { de: "Mandanten", en: "Clients" },
+  "/dashboard/billing": { de: "Abrechnung", en: "Billing" },
+  "/dashboard/time-tracking": { de: "Zeiterfassung", en: "Time Tracking" },
+  "/dashboard/cases": { de: "Akten-Übersicht", en: "Cases" },
+  "/dashboard/intake": { de: "Mandatsaufnahme", en: "Intake" },
+  "/dashboard/settings": { de: "Einstellungen", en: "Settings" },
+  "/dashboard/analytics": { de: "Analysen", en: "Analytics" },
+  "/dashboard/litigation": { de: "Prozessführung", en: "Litigation" },
+  "/dashboard/litigation-analytics": { de: "Prozess-Analysen", en: "Litigation Analytics" },
+  "/dashboard/review-sets": { de: "Review Sets", en: "Review Sets" },
+  "/dashboard/trust-accounting": { de: "Fremdgeld", en: "Trust Accounting" },
+  "/dashboard/compliance": { de: "Compliance", en: "Compliance" },
+  "/dashboard/bea": { de: "beA-Postfach", en: "beA Inbox" },
+  "/dashboard/email": { de: "E-Mail", en: "Email" },
+  "/dashboard/chat": { de: "KI-Assistent", en: "AI Assistant" },
+  "/dashboard/knowledge": { de: "Wissensbasis", en: "Knowledge Base" },
+  "/dashboard/tax-returns": { de: "Steuererklärungen", en: "Tax Returns" },
+  "/dashboard/tax-clients": { de: "Steuer-Mandanten", en: "Tax Clients" },
+  "/dashboard/tax-deadlines": { de: "Steuerfristen", en: "Tax Deadlines" },
+  "/dashboard/elster": { de: "ELSTER", en: "ELSTER" },
+};
+
+const PAGE_EXAMPLE_QUERIES: Record<string, { de: string[]; en: string[] }> = {
+  "/dashboard/deadlines": {
+    de: [
+      "Welche Fristen laufen diese Woche ab?",
+      "Zeige mir alle überfälligen Fristen",
+      "Welche kritischen Fristen habe ich nächsten Monat?",
+      "Erstelle eine Frist für die Klage Müller vs. Schulz",
+    ],
+    en: [
+      "Which deadlines expire this week?",
+      "Show me all overdue deadlines",
+      "What critical deadlines do I have next month?",
+      "Create a deadline for the Müller vs. Schulz case",
+    ],
+  },
+  "/dashboard/tasks": {
+    de: [
+      "Welche Aufgaben sind heute fällig?",
+      "Zeige mir alle offenen Aufgaben nach Priorität",
+      "Erstelle eine Aufgabe für die Vertragsprüfung",
+      "Welche Aufgaben sind dieser Woche überfällig?",
+    ],
+    en: [
+      "Which tasks are due today?",
+      "Show me all open tasks by priority",
+      "Create a task for contract review",
+      "Which tasks are overdue this week?",
+    ],
+  },
+  "/dashboard/documents": {
+    de: [
+      "Fasse das zuletzt hochgeladene Dokument zusammen",
+      "Welche Fristen enthält dieses Dokument?",
+      "Analysiere den Vertrag auf Haftungsklauseln",
+      "Extrahiere alle Vertragsparteien aus dem Dokument",
+    ],
+    en: [
+      "Summarize the last uploaded document",
+      "What deadlines does this document contain?",
+      "Analyze the contract for liability clauses",
+      "Extract all parties from the document",
+    ],
+  },
+  "/dashboard/billing": {
+    de: [
+      "Welche Rechnungen sind noch offen?",
+      "Berechne das RVG-Honorar für einen Streitwert von 50.000€",
+      "Zeige mir die Zeiterfassung dieser Woche",
+      "Erstelle eine Honorarrechnung für Mandant Müller",
+    ],
+    en: [
+      "Which invoices are still open?",
+      "Calculate the fee for a dispute value of €50,000",
+      "Show me this week's time tracking",
+      "Create an invoice for client Müller",
+    ],
+  },
+  "/dashboard/clients": {
+    de: [
+      "Zeige mir alle aktiven Mandate",
+      "Prüfe Interessenskonflikt für neuen Mandanten",
+      "Welche Mandate haben kritische Fristen?",
+      "Erstelle eine neue Mandatsaufnahme",
+    ],
+    en: [
+      "Show me all active matters",
+      "Check conflict of interest for new client",
+      "Which matters have critical deadlines?",
+      "Create a new client intake",
+    ],
+  },
+  "/dashboard/bea": {
+    de: [
+      "Fasse die neuesten beA-Nachrichten zusammen",
+      "Welche beA-Eingaben erfordern sofortiges Handeln?",
+      "Erstelle eine Antwort auf die letzte beA-Nachricht",
+      "Extrahiere Fristen aus der letzten beA-Nachricht",
+    ],
+    en: [
+      "Summarize the latest beA messages",
+      "Which beA messages require immediate action?",
+      "Draft a reply to the last beA message",
+      "Extract deadlines from the last beA message",
+    ],
+  },
+  "/dashboard/litigation": {
+    de: [
+      "Welche Verfahren sind in der Beweisaufnahme?",
+      "Zeige den aktuellen Status des Verfahrens Müller",
+      "Welche Fristen hat das Verfahren nächste Woche?",
+      "Erstelle einen Schriftsatz-Entwurf",
+    ],
+    en: [
+      "Which proceedings are in the evidence phase?",
+      "Show the current status of the Müller case",
+      "What deadlines does the proceeding have next week?",
+      "Create a brief draft",
+    ],
+  },
+};
 
 interface CopilotSidebarProps {
   open: boolean;
@@ -95,68 +224,6 @@ interface ProactiveAlertsProps {
   onDismiss: (key: string) => void;
   t: TFunc;
   className?: string;
-}
-
-function SessionHistoryButton({
-  open,
-  sessions,
-  onToggle,
-  onSelect,
-  t,
-  lang,
-}: {
-  open: boolean;
-  sessions: ChatSession[];
-  onToggle: () => void;
-  onSelect: (id: string) => void;
-  t: TFunc;
-  lang: Lang;
-}) {
-  return (
-    <div className="relative">
-      <button
-        onClick={onToggle}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-        aria-label={t("copilot.history")}
-        aria-haspopup="menu"
-        aria-expanded={open}
-      >
-        <History size={13} />
-      </button>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute top-9 right-0 z-50 w-64 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5 shadow-xl"
-          role="menu"
-        >
-          {sessions.length === 0 ? (
-            <p className="px-2 py-3 text-xs text-[color:var(--ds-text-muted)]">
-              {t("copilot.history_empty")}
-            </p>
-          ) : (
-            sessions.map((session) => (
-              <button
-                key={session.id}
-                onClick={() => onSelect(session.id)}
-                className="flex w-full flex-col rounded-md px-2 py-1.5 text-left hover:bg-[color:var(--ds-hover)]"
-                role="menuitem"
-              >
-                <span className="w-full truncate text-xs font-medium text-[color:var(--ds-text)]">
-                  {session.title}
-                </span>
-                <span className="text-[11px] text-[color:var(--ds-text-subtle)]">
-                  {new Date(session.updatedAt).toLocaleDateString(
-                    lang === "en" ? "en-GB" : "de-DE"
-                  )}
-                </span>
-              </button>
-            ))
-          )}
-        </motion.div>
-      )}
-    </div>
-  );
 }
 
 interface ProactiveAlert {
@@ -237,8 +304,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   const swipeOpacity = useTransform(swipeX, [0, 0.5, 1], [1, 0.6, 0]);
   const swipeScale = useTransform(swipeX, [0, 1], [1, 0.96]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [recentSessions, setRecentSessions] = useState<ChatSession[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [matterContextInfo, setMatterContextInfo] = useState<MatterContextInfo | null>(null);
 
@@ -476,16 +541,33 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     };
   }, [open, mobileOpen, pathname, t, lang]);
 
-  const routeContext: { type: ChatContextType; caseSlug?: string; pageSlug?: string } =
-    useMemo(() => {
-      // Derive context from pathname
-      const caseSlug = caseSlugFromDashboardPath(pathname);
-      return {
-        type: (caseSlug ? "case" : "global") as ChatContextType,
-        caseSlug,
-        pageSlug: undefined,
-      };
-    }, [pathname]);
+  const routeContext: {
+    type: ChatContextType;
+    caseSlug?: string;
+    pageSlug?: string;
+    pageLabel?: string;
+  } = useMemo(() => {
+    const caseSlug = caseSlugFromDashboardPath(pathname);
+    // Exact match first, then prefix match for nested routes
+    const pageEntry =
+      PAGE_CONTEXT_MAP[pathname ?? ""] ??
+      Object.entries(PAGE_CONTEXT_MAP).find(([key]) => pathname?.startsWith(key + "/"))?.[1];
+    const pageLabel = pageEntry ? pageEntry[lang === "en" ? "en" : "de"] : undefined;
+    return {
+      type: (caseSlug ? "case" : "global") as ChatContextType,
+      caseSlug,
+      pageSlug: undefined,
+      pageLabel,
+    };
+  }, [pathname, lang]);
+
+  const pageExampleQueries = useMemo(() => {
+    if (!pathname) return undefined;
+    const entry =
+      PAGE_EXAMPLE_QUERIES[pathname] ??
+      Object.entries(PAGE_EXAMPLE_QUERIES).find(([key]) => pathname.startsWith(key + "/"))?.[1];
+    return entry ? entry[lang === "en" ? "en" : "de"] : undefined;
+  }, [pathname, lang]);
 
   // Keyboard shortcut: Cmd+J toggles on desktop, opens on mobile
   useEffect(() => {
@@ -571,12 +653,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     window.addEventListener("subsumio:copilot:send", handleExternalSend);
     return () => window.removeEventListener("subsumio:copilot:send", handleExternalSend);
   }, []);
-
-  const handleToggleHistory = useCallback(async () => {
-    const next = !historyOpen;
-    setHistoryOpen(next);
-    if (next) setRecentSessions((await listSessions()).slice(0, 5));
-  }, [historyOpen]);
 
   // Panel → fullscreen handoff: carry the running session into /dashboard/chat
   const handleOpenFullscreen = useCallback(() => {
@@ -674,17 +750,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               </div>
             </div>
             <div className="flex items-center gap-0.5">
-              <SessionHistoryButton
-                open={historyOpen}
-                sessions={recentSessions}
-                onToggle={handleToggleHistory}
-                onSelect={(id) => {
-                  void chatRef.current?.loadSession(id);
-                  setHistoryOpen(false);
-                }}
-                t={t}
-                lang={lang}
-              />
               <button
                 onClick={handleOpenFullscreen}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -729,6 +794,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               routeContext.caseSlug ? t("chat.placeholder_case") : t("chat.placeholder_global")
             }
             onStreamingChange={setIsStreaming}
+            exampleQueries={pageExampleQueries}
           />
         </div>
       </motion.div>
@@ -840,6 +906,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                   routeContext.caseSlug ? t("chat.placeholder_case") : t("chat.placeholder_global")
                 }
                 onStreamingChange={setIsStreaming}
+                exampleQueries={pageExampleQueries}
                 headerActions={
                   <>
                     <button
