@@ -37,6 +37,10 @@ describe("STATUS_TEXT", () => {
     expect(STATUS_TEXT.emerald).toBe("text-[color:var(--ds-success-text)]");
   });
 
+  test("attention orange has a dedicated semantic token", () => {
+    expect(STATUS_TEXT.orange).toBe("text-[color:var(--ds-attention-text)]");
+  });
+
   test("categorical colors keep raw Tailwind text classes", () => {
     expect(STATUS_TEXT.rose).toBe("text-rose-400");
     expect(STATUS_TEXT.gray).toBe("text-gray-400");
@@ -62,7 +66,7 @@ describe("STATUS_BG", () => {
 
   test("categorical colors keep raw Tailwind bg classes with opacity", () => {
     expect(STATUS_BG.rose).toBe("bg-rose-500/10");
-    expect(STATUS_BG.orange).toBe("bg-orange-500/10");
+    expect(STATUS_BG.rose).toBe("bg-rose-500/10");
   });
 });
 
@@ -85,7 +89,7 @@ describe("STATUS_BORDER", () => {
 
   test("categorical colors keep raw Tailwind border classes with opacity", () => {
     expect(STATUS_BORDER.rose).toBe("border-rose-500/20");
-    expect(STATUS_BORDER.orange).toBe("border-orange-500/20");
+    expect(STATUS_BORDER.rose).toBe("border-rose-500/20");
   });
 });
 

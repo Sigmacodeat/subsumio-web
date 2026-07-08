@@ -13,6 +13,9 @@ import {
   AnimatedCounter,
   StaggerContainer,
   StaggerItem,
+  SplitTextReveal,
+  MagneticButton,
+  GradientMesh,
   VIEWPORT,
 } from "./motion-system";
 import { Section, accentTile, BadgePill } from "./chrome";
@@ -34,6 +37,7 @@ function HeroSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
 
   return (
     <Section tone="slate" className="relative overflow-hidden px-4 pt-20 pb-28 sm:px-6 lg:px-8">
+      <GradientMesh className="z-0" />
       <motion.div
         style={{ y: yOrb, opacity: opacityOrb }}
         className="brand-glow-bg absolute top-1/4 left-1/2 h-[500px] w-[800px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
@@ -44,19 +48,20 @@ function HeroSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
           {t.hero.eyebrow}
         </BadgePill>
 
-        <motion.h1
-          initial={reduce ? false : { opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={reduce ? { duration: 0 } : { duration: 0.6, ease: EASE.dramatic, delay: 0.1 }}
+        <SplitTextReveal
+          as="h1"
+          delay={0.1}
+          stagger={0.14}
+          useAnimate
           className={`mb-6 text-4xl font-bold tracking-tight [color:var(--mk-text)] md:text-5xl lg:text-6xl`}
         >
           {t.hero.title}
-        </motion.h1>
+        </SplitTextReveal>
 
         <motion.p
           initial={reduce ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={reduce ? { duration: 0 } : { duration: 0.55, ease: EASE.out, delay: 0.25 }}
+          transition={reduce ? { duration: 0 } : { duration: 0.55, ease: EASE.out, delay: 0.5 }}
           className="mx-auto mb-10 max-w-3xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
         >
           {t.hero.sub}
@@ -65,19 +70,23 @@ function HeroSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
         <motion.div
           initial={reduce ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={reduce ? { duration: 0 } : { duration: 0.5, delay: 0.4 }}
+          transition={reduce ? { duration: 0 } : { duration: 0.5, delay: 0.65 }}
           className="flex flex-col items-center justify-center gap-4 sm:flex-row"
         >
-          <Link href={p(lang, "/signup")}>
-            <Button size="lg" className="gap-2">
-              {t.hero.cta} <ArrowRight size={18} />
-            </Button>
-          </Link>
-          <Link href={p(lang, "/features")}>
-            <Button variant="outline" size="lg">
-              {t.hero.ctaSecondary}
-            </Button>
-          </Link>
+          <MagneticButton strength={0.35}>
+            <Link href={p(lang, "/signup")}>
+              <Button size="lg" className="gap-2">
+                {t.hero.cta} <ArrowRight size={18} />
+              </Button>
+            </Link>
+          </MagneticButton>
+          <MagneticButton strength={0.2}>
+            <Link href={p(lang, "/features")}>
+              <Button variant="outline" size="lg">
+                {t.hero.ctaSecondary}
+              </Button>
+            </Link>
+          </MagneticButton>
         </motion.div>
       </div>
 
@@ -117,12 +126,20 @@ function BrainVisualization({ t }: { t: SuperbrainCopyDe }) {
               animate={reduce ? undefined : { rotate: 360 }}
               transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
               className="absolute inset-0 rounded-full border border-dashed border-[var(--brand-primary)]/20"
-            />
+            >
+              {!reduce && (
+                <span className="brand-bg absolute top-0 left-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-[0_0_10px_var(--brand-primary)]" />
+              )}
+            </motion.div>
             <motion.div
               animate={reduce ? undefined : { rotate: -360 }}
               transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
               className="absolute inset-4 rounded-full border border-dashed border-[var(--brand-primary)]/15"
-            />
+            >
+              {!reduce && (
+                <span className="brand-bg absolute bottom-0 left-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-1/2 rounded-full opacity-70 shadow-[0_0_8px_var(--brand-primary)]" />
+              )}
+            </motion.div>
             <motion.div
               animate={reduce ? undefined : { scale: [1, 1.05, 1] }}
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -145,7 +162,7 @@ function BrainVisualization({ t }: { t: SuperbrainCopyDe }) {
                     scale: isActive ? 1.05 : 1,
                   }}
                   transition={{ duration: 0.3 }}
-                  className={`flex flex-col items-center gap-1.5 rounded-lg border p-2.5 text-center transition-colors ${
+                  className={`relative flex flex-col items-center gap-1.5 overflow-hidden rounded-lg border p-2.5 text-center transition-colors ${
                     isActive
                       ? "brand-border brand-soft"
                       : "[border-color:var(--mk-border)] [background:var(--mk-surface)]"
@@ -160,6 +177,15 @@ function BrainVisualization({ t }: { t: SuperbrainCopyDe }) {
                   >
                     {step.label}
                   </span>
+                  {isActive && !reduce && (
+                    <motion.span
+                      key={activePhase}
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ duration: 2.2, ease: "linear" }}
+                      className="brand-bg absolute inset-x-0 bottom-0 h-0.5 origin-left"
+                    />
+                  )}
                 </motion.div>
               );
             })}
@@ -185,6 +211,7 @@ function StatsBand({ t }: { t: SuperbrainCopyDe }) {
           >
             <AnimatedCounter
               to={stat.value}
+              decimals={Number.isInteger(stat.value) ? 0 : 1}
               suffix={stat.suffix}
               className="brand-text [font-family:var(--font-display)] text-4xl font-bold md:text-5xl"
             />
@@ -277,9 +304,12 @@ function OthersSection({ t }: { t: SuperbrainCopyDe }) {
                 </motion.div>
                 {i < t.othersSteps.length - 1 && (
                   <motion.div
-                    animate={{ opacity: [0.3, 1, 0.3] }}
-                    transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.8 }}
-                    className="text-rose-400/60"
+                    animate={{
+                      opacity: activeStep === i ? 1 : 0.25,
+                      scale: activeStep === i ? 1.15 : 1,
+                    }}
+                    transition={{ duration: 0.4, ease: EASE.out }}
+                    className="text-rose-400/70"
                   >
                     <ArrowRight size={20} className="rotate-90 md:rotate-0" />
                   </motion.div>
@@ -448,8 +478,8 @@ function OursSection({ t }: { t: SuperbrainCopyDe }) {
               </div>
               <p className="text-center text-sm leading-relaxed [color:var(--mk-text-muted)]">
                 {copy.de === t
-                  ? "Jede Nacht: 25 Phasen · 5 Ebenen · 1 Wissensgraph"
-                  : "Every night: 25 phases · 5 layers · 1 knowledge graph"}
+                  ? "Jede Nacht: 29 Phasen · 5 Ebenen · 1 Wissensgraph"
+                  : "Every night: 29 phases · 5 layers · 1 knowledge graph"}
               </p>
             </div>
           </div>
@@ -713,7 +743,9 @@ function CompareSection({ t }: { t: SuperbrainCopyDe }) {
                 <th className="px-5 py-4 font-semibold [color:var(--mk-text-muted)]">
                   {copy.de === t ? "Andere Kanzlei-KI" : "Other legal AI"}
                 </th>
-                <th className="brand-text px-5 py-4 font-semibold">Subsumio SuperBrain</th>
+                <th className="brand-text px-5 py-4 font-semibold [background:color-mix(in_srgb,var(--brand-primary)_6%,transparent)]">
+                  Subsumio SuperBrain
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -733,7 +765,7 @@ function CompareSection({ t }: { t: SuperbrainCopyDe }) {
                       {row.others}
                     </div>
                   </td>
-                  <td className="px-5 py-4 font-medium [color:var(--mk-text)]">
+                  <td className="px-5 py-4 font-medium [color:var(--mk-text)] [background:color-mix(in_srgb,var(--brand-primary)_4%,transparent)]">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 size={15} className="brand-text shrink-0" />
                       {row.subsumio}
@@ -1098,6 +1130,7 @@ function StickyCTA({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
 function CTASection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
   return (
     <Section tone="dark" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="Call to action">
+      <GradientMesh className="z-0" />
       <div className="brand-glow-bg absolute inset-x-0 top-1/2 h-72 -translate-y-1/2 opacity-30 blur-3xl" />
       <div className="relative z-10 mx-auto max-w-3xl text-center">
         <motion.div
@@ -1130,11 +1163,13 @@ function CTASection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.45, delay: 0.2 }}
         >
-          <Link href={p(lang, "/signup")}>
-            <Button size="lg" className="gap-2">
-              {t.ctaButton} <ArrowRight size={18} />
-            </Button>
-          </Link>
+          <MagneticButton strength={0.3}>
+            <Link href={p(lang, "/signup")}>
+              <Button size="lg" className="gap-2">
+                {t.ctaButton} <ArrowRight size={18} />
+              </Button>
+            </Link>
+          </MagneticButton>
         </motion.div>
       </div>
     </Section>

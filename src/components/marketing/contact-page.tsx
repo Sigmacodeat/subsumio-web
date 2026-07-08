@@ -163,7 +163,7 @@ export default function ContactPage({ lang }: { lang: Lang }) {
                   aria-label={c.formName}
                   autoComplete="name"
                   required
-                  className="w-full rounded-xl border [border-color:var(--mk-border)] px-4 py-3 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-xl border [border-color:var(--mk-control-border)] px-4 py-3 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--mk-focus-ring)] focus:ring-2 focus:ring-[var(--mk-focus-ring)] focus:outline-none"
                 />
                 <input
                   type="email"
@@ -172,7 +172,7 @@ export default function ContactPage({ lang }: { lang: Lang }) {
                   aria-label={c.formEmail}
                   autoComplete="email"
                   required
-                  className="w-full rounded-xl border [border-color:var(--mk-border)] px-4 py-3 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-xl border [border-color:var(--mk-control-border)] px-4 py-3 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--mk-focus-ring)] focus:ring-2 focus:ring-[var(--mk-focus-ring)] focus:outline-none"
                 />
               </div>
               <input
@@ -181,7 +181,7 @@ export default function ContactPage({ lang }: { lang: Lang }) {
                 placeholder={c.formFirm}
                 aria-label={c.formFirm}
                 autoComplete="organization"
-                className="w-full rounded-xl border [border-color:var(--mk-border)] px-4 py-3 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
+                className="w-full rounded-xl border [border-color:var(--mk-control-border)] px-4 py-3 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--mk-focus-ring)] focus:ring-2 focus:ring-[var(--mk-focus-ring)] focus:outline-none"
               />
               <textarea
                 name="message"
@@ -189,7 +189,7 @@ export default function ContactPage({ lang }: { lang: Lang }) {
                 aria-label={c.formMessage}
                 required
                 rows={5}
-                className="w-full rounded-xl border [border-color:var(--mk-border)] px-4 py-3 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
+                className="w-full rounded-xl border [border-color:var(--mk-control-border)] px-4 py-3 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--mk-focus-ring)] focus:ring-2 focus:ring-[var(--mk-focus-ring)] focus:outline-none"
               />
               <div className="flex items-center justify-between gap-4">
                 <p className="text-xs [color:var(--mk-text-subtle)]">{c.formNote}</p>

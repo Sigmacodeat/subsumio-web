@@ -13,7 +13,7 @@ import { keywordsFor } from "@/lib/seo-keywords";
 export const metadata: Metadata = {
   title: "SuperBrain — The AI Engine Behind Subsumio | Legal AI with 5-Layer Architecture",
   description:
-    "The Subsumio SuperBrain: 25 Dream Cycle phases, 5 correction layers, LEXam-validated, 119 languages. A learning knowledge base for your firm — with cited answers, nightly contradiction probing and DACH law fine-tuning.",
+    "The Subsumio SuperBrain: 29 Dream Cycle phases, 5 correction layers, LEXam-validated, 119 languages. A learning knowledge base for your firm — with cited answers, nightly contradiction probing and DACH law fine-tuning.",
   keywords: keywordsFor("superbrain"),
   alternates: {
     canonical: "/en/superbrain",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "SuperBrain — The AI Engine Behind Subsumio",
     description:
-      "25 Dream Cycle phases, 5 correction layers, LEXam-validated, 119 languages. A learning knowledge base for your firm.",
+      "29 Dream Cycle phases, 5 correction layers, LEXam-validated, 119 languages. A learning knowledge base for your firm.",
     url: "/en/superbrain",
     type: "website",
     siteName: "Subsumio",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SuperBrain — The AI Engine Behind Subsumio",
     description:
-      "25 Dream Cycle phases, 5 correction layers, LEXam-validated, 119 languages. Legal AI with knowledge graph.",
+      "29 Dream Cycle phases, 5 correction layers, LEXam-validated, 119 languages. Legal AI with knowledge graph.",
   },
 };
 

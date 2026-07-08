@@ -9,8 +9,8 @@
  * Die vier bedeutungstragenden Status (blue=info, amber=warning, red=danger,
  * emerald=success) routen über die `--ds-*`-Signal-Tokens — dieselbe
  * Harvey-kalibrierte Palette wie das Cockpit, automatisch AA in Light + Dark.
- * Die rohen `-400`-Klassen (rose/violet/orange/gray) bleiben für rein
- * kategoriale Farben, die keinen Status-Sinn tragen.
+ * Orange is the explicit high-attention tier, distinct from amber warnings.
+ * Rose/violet/gray remain categorical colors without status meaning.
  */
 
 export type StatusColor =
@@ -30,7 +30,7 @@ export const STATUS_TEXT: Record<StatusColor, string> = {
   rose: "text-rose-400",
   emerald: "text-[color:var(--ds-success-text)]",
   violet: "brand-text",
-  orange: "text-orange-400",
+  orange: "text-[color:var(--ds-attention-text)]",
   gray: "text-gray-400",
 };
 
@@ -41,7 +41,7 @@ export const STATUS_BG: Record<StatusColor, string> = {
   rose: "bg-rose-500/10",
   emerald: "bg-[color:var(--ds-success-bg)]",
   violet: "brand-soft",
-  orange: "bg-orange-500/10",
+  orange: "bg-[color:var(--ds-attention-bg)]",
   gray: "bg-gray-500/10",
 };
 
@@ -52,7 +52,7 @@ export const STATUS_BORDER: Record<StatusColor, string> = {
   rose: "border-rose-500/20",
   emerald: "border-[color:var(--ds-success-border)]",
   violet: "brand-border",
-  orange: "border-orange-500/20",
+  orange: "border-[color:var(--ds-attention-border)]",
   gray: "border-gray-500/20",
 };
 

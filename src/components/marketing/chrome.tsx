@@ -11,7 +11,6 @@ import {
   Brain,
   ChevronDown,
   ChevronRight,
-  Menu,
   X,
   Globe,
   Database,
@@ -336,7 +335,7 @@ export function MarketingBackground() {
 
 // --- Shared nav link styles (DRY — desktop + mobile use the same definitions) --
 const NAV_LINK_FOCUS =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)]";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)]";
 const NAV_LINK_BORDER = "border border-transparent";
 const NAV_LINK_INACTIVE =
   "[color:var(--mk-text-muted)] hover:[color:var(--brand-text)] hover:[background:var(--mk-hover)]";
@@ -478,7 +477,7 @@ function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
             </Link>
             <button
               onClick={handleDismiss}
-              className="absolute top-1/2 right-3 flex min-h-[28px] min-w-[28px] -translate-y-1/2 items-center justify-center rounded p-1.5 [color:var(--mk-text-subtle)] transition-colors hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+              className="absolute top-1/2 right-2 flex min-h-[36px] min-w-[36px] -translate-y-1/2 items-center justify-center rounded-lg p-2 [color:var(--mk-text-subtle)] transition-colors hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none"
               aria-label={UI_STRINGS[lang].dismissAnnouncement}
             >
               <X size={14} />
@@ -925,7 +924,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                 {/* Language switcher — click-to-open with keyboard support */}
                 <div ref={langRef} className="relative hidden lg:block">
                   <button
-                    className="flex min-h-[36px] items-center gap-1.5 rounded-full px-3 py-1.5 text-xs [color:var(--mk-text-muted)] transition-colors duration-200 [background:var(--mk-surface)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                    className="flex min-h-[36px] items-center gap-1.5 rounded-full px-3 py-1.5 text-xs [color:var(--mk-text-muted)] transition-colors duration-200 [background:var(--mk-surface)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none"
                     aria-label={UI_STRINGS[lang].ariaLanguage}
                     aria-haspopup="true"
                     aria-expanded={langOpen}
@@ -1018,7 +1017,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                 </Link>
                 <button
                   ref={hamburgerRef}
-                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 [color:var(--mk-text)] transition-colors hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none lg:hidden"
+                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 [color:var(--mk-text)] transition-colors hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none lg:hidden"
                   onClick={() => {
                     setMobileOpen(!mobileOpen);
                     if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
@@ -1094,7 +1093,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                   <BrandLogo />
                 </Link>
                 <button
-                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2 [color:var(--mk-text)] transition-all duration-200 hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-90"
+                  className="group flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2 [color:var(--mk-text)] transition-all duration-200 hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none active:scale-90"
                   onClick={() => {
                     setMobileOpen(false);
                     if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);

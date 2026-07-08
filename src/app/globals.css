@@ -3,6 +3,11 @@
    --font-grotesk and --font-jetbrains variables are set on <html>. */
 @import "tailwindcss";
 
+/* Tailwind's dark utilities follow the dashboard's explicit theme switch,
+   not the operating-system preference. This also covers typography plugins
+   such as dark:prose-invert without maintaining selector allow-lists. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* ── @property: typed custom properties for animatable colors ──
    Allows CSS transitions/animations on brand and signal colors.
    Without @property, custom properties are not animatable. */
@@ -43,13 +48,10 @@
      • Every scale has 9 lightness steps (50–900)
      • All text/bg combos verified WCAG-AA (≥4.5:1)
 
-     OKLCH MIGRATION PATH (2026):
-     OKLCH (Baseline 2024, Chrome 111+/Safari 15.4+/Firefox 113+)
-     provides perceptually uniform lightness steps — HSL's "50%"
-     lightness is not visually 50%. The @supports block below
-     overrides signal-500 tokens with OKLCH equivalents as a
-     proof-of-concept. Full migration should use a conversion tool
-     (e.g. culori.js, oklch.com) to ensure per-step accuracy.
+     The production ramps intentionally use one color space. A previous
+     partial OKLCH experiment changed only step 500 and produced different
+     inter-step relationships by browser; it was removed. Any future OKLCH
+     migration must convert and contrast-test every step atomically.
      ═══════════════════════════════════════════════════════════════ */
 
   /* ── Brand scale (Legal) — Hue 230°, Chroma 60% ── */
@@ -481,7 +483,7 @@
 
   /* ── Linear-Calm surface tokens ── */
   --ds-surface-elevated: #161630; /* modals, popovers — 1 step above --ds-surface-2 */
-  --ds-focus-ring: 0 0 0 2px var(--brand-primary); /* accessible focus */
+  --ds-focus-ring: 0 0 0 2px var(--ds-ring); /* accessible focus */
   --ds-transition-tap: 120ms cubic-bezier(0.22, 1, 0.36, 1);
 
   /* ── AI Activity Feed tokens ── */
@@ -529,20 +531,6 @@
   /* ── Marketing card shadow — unified across all tones ── */
   --mk-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
   --mk-shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-/* ── OKLCH progressive enhancement for signal-500 tokens ──
-   OKLCH provides perceptually uniform lightness. These overrides
-   replace the HSL signal-500 values with OKLCH equivalents in
-   browsers that support the color() function. The HSL values in
-   @theme above serve as fallback for older browsers. */
-@supports (color: oklch(60% 0.15 150)) {
-  :root {
-    --signal-success-500: oklch(62% 0.13 150);
-    --signal-warning-500: oklch(70% 0.14 75);
-    --signal-danger-500: oklch(58% 0.18 25);
-    --signal-info-500: oklch(62% 0.11 230);
-  }
 }
 
 :root {
@@ -594,6 +582,8 @@
   --mk-text: hsl(230, 8%, 92%);
   --mk-text-muted: hsl(230, 8%, 65%);
   --mk-text-subtle: hsl(230, 8%, 62%);
+  --mk-focus-ring: var(--brand-300);
+  --mk-control-border: hsl(230, 10%, 52%);
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 
   /* Marketing header height — used by sticky sub-navs (docs, etc.) */
@@ -623,6 +613,8 @@
   --mk-text: var(--neutral-900);
   --mk-text-muted: hsl(230, 8%, 35%);
   --mk-text-subtle: hsl(230, 8%, 42%);
+  --mk-focus-ring: var(--brand-700);
+  --mk-control-border: hsl(230, 10%, 54%);
   --mk-card-shadow:
     0 1px 2px hsla(230, 8%, 15%, 0.05), 0 8px 24px hsla(230, 8%, 15%, 0.07),
     0 1px 0 hsla(0, 0%, 100%, 0.7) inset;
@@ -639,6 +631,8 @@
   --mk-text: hsl(230, 10%, 97%);
   --mk-text-muted: hsl(230, 15%, 72%);
   --mk-text-subtle: hsl(230, 15%, 58%);
+  --mk-focus-ring: var(--brand-300);
+  --mk-control-border: hsl(230, 12%, 58%);
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   --brand-text: var(--brand-300);
   --signal-amber: var(--signal-warning-500);
@@ -658,6 +652,8 @@
   --mk-text: hsl(230, 8%, 92%);
   --mk-text-muted: hsl(230, 8%, 65%);
   --mk-text-subtle: hsl(230, 8%, 62%);
+  --mk-focus-ring: var(--brand-300);
+  --mk-control-border: hsl(230, 10%, 55%);
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 hsla(0, 0%, 100%, 0.04) inset;
   --brand-text: var(--brand-300);
   --signal-amber: var(--signal-warning-500);
@@ -783,11 +779,12 @@
   --ds-border: hsl(220, 10%, 91%);
   --ds-border-strong: hsl(220, 10%, 78%);
   --ds-border-hover: hsl(220, 10%, 84%);
-  --ds-control-border: hsl(220, 10%, 78%);
+  /* Interactive boundaries must reach WCAG 1.4.11's 3:1 threshold. */
+  --ds-control-border: hsl(220, 12%, 54%);
   --ds-text: hsl(225, 20%, 12%);
   --ds-text-muted: hsl(220, 8%, 35%);
   --ds-text-subtle: hsl(220, 8%, 40%);
-  --ds-ring: var(--brand-primary);
+  --ds-ring: hsl(230, 65%, 38%);
   --ds-accent: var(--brand-primary);
   --brand-primary: hsl(230, 50%, 28%);
   --brand-primary-hover: hsl(230, 50%, 35%);
@@ -826,6 +823,11 @@
   --ds-info-border: hsla(200, 60%, 36%, 0.22);
   --ds-info-solid: hsl(200, 60%, 36%);
   --ds-info-solid-hover: hsl(200, 60%, 31%);
+  --ds-attention-text: hsl(25, 72%, 34%);
+  --ds-attention-bg: hsla(25, 72%, 34%, 0.11);
+  --ds-attention-border: hsla(25, 72%, 34%, 0.3);
+  --ds-attention-solid: hsl(25, 72%, 34%);
+  --ds-attention-solid-hover: hsl(25, 72%, 29%);
   --ds-category-pink-text: hsl(330, 60%, 38%);
   --ds-category-pink-bg: hsla(330, 60%, 38%, 0.1);
   --ds-category-pink-border: hsla(330, 60%, 38%, 0.22);
@@ -851,6 +853,15 @@
   --nav-cat-ops: hsl(220, 8%, 35%);
   --nav-cat-billing: hsl(150, 45%, 32%);
   --nav-cat-admin: hsl(220, 8%, 35%);
+  /* Theme-specific categorical graph palette: every primary mark is >=3:1
+     against the dashboard canvas. Labels and icons remain the second cue. */
+  --graph-person: hsl(230, 55%, 42%);
+  --graph-company: hsl(150, 48%, 31%);
+  --graph-idea: hsl(270, 52%, 42%);
+  --graph-document: hsl(40, 72%, 30%);
+  --graph-event: hsl(25, 72%, 36%);
+  --graph-place: hsl(180, 58%, 27%);
+  --graph-fallback: hsl(220, 8%, 40%);
   color-scheme: light;
 }
 
@@ -875,11 +886,11 @@
   --ds-border: hsl(225, 12%, 24%);
   --ds-border-strong: hsl(225, 10%, 36%);
   --ds-border-hover: hsl(225, 12%, 30%);
-  --ds-control-border: hsl(225, 10%, 36%);
+  --ds-control-border: hsl(225, 12%, 52%);
   --ds-text: hsl(220, 10%, 94%);
   --ds-text-muted: hsl(220, 8%, 72%);
   --ds-text-subtle: hsl(220, 8%, 64%);
-  --ds-ring: var(--brand-primary);
+  --ds-ring: hsl(230, 75%, 72%);
   --ds-accent: var(--brand-primary);
   --brand-primary: hsl(230, 45%, 48%);
   --brand-primary-hover: hsl(230, 45%, 55%);
@@ -919,6 +930,11 @@
   --ds-info-border: hsla(200, 60%, 52%, 0.2);
   --ds-info-solid: hsl(200, 50%, 40%);
   --ds-info-solid-hover: hsl(200, 50%, 45%);
+  --ds-attention-text: hsl(25, 78%, 68%);
+  --ds-attention-bg: hsla(25, 72%, 52%, 0.12);
+  --ds-attention-border: hsla(25, 78%, 68%, 0.34);
+  --ds-attention-solid: hsl(25, 58%, 40%);
+  --ds-attention-solid-hover: hsl(25, 58%, 46%);
   --ds-category-pink-text: hsl(330, 60%, 68%);
   --ds-category-pink-bg: hsla(330, 60%, 50%, 0.11);
   --ds-category-pink-border: hsla(330, 60%, 50%, 0.22);
@@ -942,6 +958,13 @@
   --nav-cat-ops: hsl(220, 8%, 65%);
   --nav-cat-billing: hsl(150, 45%, 58%);
   --nav-cat-admin: hsl(220, 8%, 65%);
+  --graph-person: hsl(225, 78%, 72%);
+  --graph-company: hsl(150, 56%, 62%);
+  --graph-idea: hsl(270, 70%, 74%);
+  --graph-document: hsl(42, 82%, 66%);
+  --graph-event: hsl(25, 88%, 68%);
+  --graph-place: hsl(180, 62%, 60%);
+  --graph-fallback: hsl(220, 8%, 68%);
   color-scheme: dark;
 }
 
@@ -1618,6 +1641,53 @@
   background-color: var(--ds-surface-2);
 }
 
+/* Orange is the high-attention tier, intentionally distinct from amber
+   warnings. These rules come after the legacy bridge so severity survives
+   old Tailwind class names while components migrate to semantic tokens. */
+[data-app="dashboard"] .text-orange-100,
+[data-app="dashboard"] .text-orange-200,
+[data-app="dashboard"] .text-orange-300,
+[data-app="dashboard"] .text-orange-400,
+[data-app="dashboard"] .text-orange-500,
+[data-app="dashboard"] .text-orange-600,
+[data-app="dashboard"] .text-orange-700,
+[data-app="dashboard"] .text-orange-800,
+[data-app="dashboard"] .text-orange-900,
+[data-app="dashboard"] .hover\:text-orange-400:hover,
+[data-app="dashboard"] .hover\:text-orange-500:hover,
+[data-app="dashboard"] .hover\:text-orange-600:hover,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-orange-400 {
+  color: var(--ds-attention-text);
+}
+
+[data-app="dashboard"] .bg-orange-50,
+[data-app="dashboard"] .bg-orange-100,
+[data-app="dashboard"] .bg-orange-500\/5,
+[data-app="dashboard"] .bg-orange-500\/10,
+[data-app="dashboard"] .bg-orange-950\/30,
+[data-app="dashboard"] .hover\:bg-orange-500\/10:hover,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-orange-950,
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-orange-950\/30 {
+  background-color: var(--ds-attention-bg);
+}
+
+[data-app="dashboard"] .border-orange-200,
+[data-app="dashboard"] .border-orange-500\/20,
+[data-app="dashboard"] .border-orange-500\/30,
+[data-app="dashboard"] .focus\:border-orange-500\/50:focus {
+  border-color: var(--ds-attention-border);
+}
+
+[data-app="dashboard"] .bg-orange-500,
+[data-app="dashboard"] .bg-orange-600 {
+  background-color: var(--ds-attention-solid);
+}
+
+[data-app="dashboard"] .hover\:bg-orange-600:hover,
+[data-app="dashboard"] .hover\:bg-orange-700:hover {
+  background-color: var(--ds-attention-solid-hover);
+}
+
 [data-app="dashboard"] .bg-gray-50,
 [data-app="dashboard"] .bg-slate-50 {
   background-color: var(--ds-surface);
@@ -1951,7 +2021,7 @@ body {
 
 /* Focus */
 :focus-visible {
-  outline: 2px solid var(--brand-primary);
+  outline: 2px solid var(--mk-focus-ring, var(--brand-primary));
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -2131,9 +2201,9 @@ body {
 .gradient-text {
   background: linear-gradient(
     135deg,
-    var(--brand-400) 0%,
-    var(--brand-500) 52%,
-    hsl(260, 60%, 70%) 100%
+    var(--brand-300) 0%,
+    var(--brand-400) 52%,
+    hsl(260, 60%, 75%) 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -2156,9 +2226,9 @@ body {
 .gradient-text-premium {
   background: linear-gradient(
     135deg,
-    var(--brand-400) 0%,
-    var(--brand-500) 50%,
-    hsl(260, 60%, 70%) 100%
+    var(--brand-300) 0%,
+    var(--brand-400) 50%,
+    hsl(260, 60%, 75%) 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

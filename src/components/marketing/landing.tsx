@@ -162,7 +162,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 }
                 className="mb-3 text-lg font-semibold md:text-xl"
                 style={{
-                  background: "linear-gradient(90deg, var(--brand-primary), var(--brand-tertiary))",
+                  background: "linear-gradient(90deg, var(--brand-text), var(--brand-tertiary))",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",

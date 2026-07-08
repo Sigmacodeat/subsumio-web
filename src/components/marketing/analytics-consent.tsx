@@ -67,7 +67,7 @@ export default function AnalyticsConsentBanner() {
       role="dialog"
       aria-live="polite"
       aria-label={isGerman ? "Analytics-Einwilligung" : "Analytics consent"}
-      className="fixed right-3 bottom-3 left-3 z-[99] rounded-xl border [border-color:var(--mk-border)] p-3 shadow-xl shadow-black/35 [background:var(--mk-surface)] sm:left-auto sm:max-w-sm sm:p-4"
+      className="fixed right-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 z-[99] rounded-xl border [border-color:var(--mk-control-border)] p-3 shadow-xl shadow-black/35 [background:var(--mk-surface)] sm:left-auto sm:max-w-sm sm:p-4"
     >
       <p className="mb-1 text-xs font-semibold [color:var(--mk-text)] sm:text-sm">
         {isGerman ? "Analytics-Cookies" : "Analytics cookies"}
@@ -80,13 +80,13 @@ export default function AnalyticsConsentBanner() {
       <div className="flex gap-2">
         <button
           onClick={accept}
-          className="rounded-md bg-[var(--brand-primary)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--brand-primary-hover)]"
+          className="min-h-10 rounded-lg bg-[var(--brand-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none"
         >
           {isGerman ? "Einverstanden" : "Accept"}
         </button>
         <button
           onClick={decline}
-          className="rounded-md border [border-color:var(--mk-border)] px-3 py-1.5 text-xs font-medium [color:var(--mk-text-muted)] transition-colors hover:[border-color:var(--mk-border-strong)]"
+          className="min-h-10 rounded-lg border [border-color:var(--mk-control-border)] px-4 py-2 text-xs font-medium [color:var(--mk-text)] transition-colors hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none"
         >
           {isGerman ? "Ablehnen" : "Decline"}
         </button>

@@ -21,8 +21,9 @@ export const copy = {
   de: {
     hero: {
       eyebrow: "Das Subsumio SuperBrain",
-      title: "Nicht nur KI. Ein künstliches Gehirn für deine Kanzlei — das jede Nacht regeneriert.",
-      sub: "Andere KI-Tools erinnern sich an Chat-Verläufe. Subsumio versteht deine Akten. Jede Nacht baut das SuperBrain ein lebendiges juristisches Gedächtnis auf — mit Fakten, Takes, Widerspruchsprüfung und fünf Qualitäts-Ebenen. Wie der menschliche Hippocampus Erinnerungen im Schlaf konsolidiert und versteht, konsolidiert das SuperBrain deine Akten zu verlässlichem Wissen. Mit Fundstellen. Ohne Halluzinationen.",
+      title:
+        "Nicht nur KI.\nEin künstliches Gehirn für deine Kanzlei — das jede Nacht regeneriert.",
+      sub: "Andere KI-Tools erinnern sich an Chat-Verläufe. Subsumio versteht deine Akten: Jede Nacht konsolidiert das SuperBrain sie zu einem lebendigen juristischen Gedächtnis — wie der menschliche Hippocampus im Schlaf. Fünf Qualitäts-Ebenen, Widerspruchsprüfung, Fundstellen. Ohne Halluzinationen.",
       cta: "14 Tage kostenlos testen",
       ctaSecondary: "Features ansehen",
     },
@@ -62,7 +63,7 @@ export const copy = {
     ],
     othersPain: [
       "Chat-Verlauf-Speicherung statt Wissensgraph — Chats werden gespeichert, nicht verstanden",
-      "Keine nächtliche Konsolidierung — Wissen accumuliert sich nicht",
+      "Keine nächtliche Konsolidierung — Wissen baut sich nicht auf",
       "Halluzinationen werden im Prompt-Level bekämpft (hoffnungsbasiert)",
       "Keine Widerspruchserkennung zwischen Antworten",
       "Premium-Preise für ein einzelnes Front-End-Modell ohne Gedächtnis",
@@ -284,7 +285,7 @@ export const copy = {
       {
         label: "Fine-Tuning",
         value: "LoRA",
-        desc: "Parameter-effizientes Fine-Tuning · Open-Weight · Keine Vendor-Lock-in",
+        desc: "Parameter-effizientes Fine-Tuning · Open-Weight · Kein Vendor-Lock-in",
       },
       {
         label: "Deployment",
@@ -411,7 +412,7 @@ export const copy = {
       },
       {
         q: "Welche Sprachen unterstützt das SuperBrain?",
-        a: "119 Sprachen über die Qwen3.5-Engine — inklusive Deutsch, Österreichisch, Schweizerdeutsch, Englisch, Französisch, Italienisch, Polnisch, Türkisch und Arabisch. Perfekt für internationale Kanzleien.",
+        a: "119 Sprachen über die Qwen3.5-Engine — inklusive Deutsch (DE, AT, CH), Englisch, Französisch, Italienisch, Polnisch, Türkisch und Arabisch. Perfekt für internationale Kanzleien.",
       },
       {
         q: "Was ist die Subsumio Legal Engine?",
@@ -419,13 +420,12 @@ export const copy = {
       },
       {
         q: "Was kostet das SuperBrain?",
-        a: "Das SuperBrain ist in allen Subsumio-Abos enthalten. Du zahlst pro Nutzer — ohne versteckte API-Kosten, ohne Token-Berechnung. 14 Tage kostenlos, keine Kreditkarte. Die Preise findest du auf unserer Pricing-Seite.",
+        a: "Das SuperBrain ist in allen Subsumio-Abos enthalten. Du zahlst pro Nutzer — ohne versteckte API-Kosten, ohne Token-Berechnung. 14 Tage kostenlos, keine Kreditkarte. Alle Preise findest du auf unserer Preisseite.",
       },
     ],
     // ── STICKY CTA ──
     stickyCtaText: "14 Tage kostenlos testen",
-    stickyCtaHint:
-      "Keine Kreditkarte · Dein Brain wird jede Nacht schlauer — wie ein Mensch, der schläft",
+    stickyCtaHint: "Keine Kreditkarte · Lernt jede Nacht dazu",
     ctaTitle: "Erlebe das SuperBrain",
     ctaSub:
       "Starte heute. Dein juristisches Gehirn wächst ab der ersten Akte — jede Nacht, automatisch, und gewinnt an Verständnis. 14 Tage kostenlos, keine Kreditkarte.",
@@ -434,8 +434,8 @@ export const copy = {
   en: {
     hero: {
       eyebrow: "The Subsumio SuperBrain",
-      title: "Not just AI. An artificial brain for your firm — regenerating every night.",
-      sub: "Other AI tools remember chat histories. Subsumio understands your cases. Every night, the SuperBrain builds a living legal memory — with facts, takes, contradiction probing and five-layer legal quality control. Just as the human hippocampus consolidates and understands memories during sleep, the SuperBrain consolidates your cases into reliable knowledge. With citations. Zero hallucinations.",
+      title: "Not just AI.\nAn artificial brain for your firm — regenerating every night.",
+      sub: "Other AI tools remember chat histories. Subsumio understands your cases: every night, the SuperBrain consolidates them into a living legal memory — like the human hippocampus during sleep. Five quality layers, contradiction probing, citations. Zero hallucinations.",
       cta: "Start 14-day free trial",
       ctaSecondary: "Explore features",
     },
@@ -809,7 +809,7 @@ export const copy = {
       },
       {
         q: "What languages does the SuperBrain support?",
-        a: "119 languages via the Qwen3.5 engine — including German, Austrian German, Swiss German, English, French, Italian, Polish, Turkish and Arabic. Perfect for international firms.",
+        a: "119 languages via the Qwen3.5 engine — including German (DE, AT, CH), English, French, Italian, Polish, Turkish and Arabic. Perfect for international firms.",
       },
       {
         q: "What is the Subsumio Legal Engine?",
@@ -822,7 +822,7 @@ export const copy = {
     ],
     // ── STICKY CTA ──
     stickyCtaText: "Start 14-day free trial",
-    stickyCtaHint: "No credit card · Your brain gets smarter every night — like a person sleeping",
+    stickyCtaHint: "No credit card · Learns every night",
     ctaTitle: "Experience the SuperBrain",
     ctaSub:
       "Start today. Your legal brain grows from the first matter — every night, automatically, gaining understanding. 14 days free, no credit card.",

@@ -34,19 +34,19 @@ const NODE_COLOR_VARS: Record<string, string> = {
 };
 
 const NODE_COLOR_FALLBACKS: Record<string, string> = {
-  person: "#6b8eff",
-  company: "#30a776",
-  idea: "#a78bfa",
-  document: "#c29622",
-  event: "#f97316",
-  place: "#2dd4bf",
+  person: "#3047a6",
+  company: "#29824f",
+  idea: "#6840a3",
+  document: "#846416",
+  event: "#9e4b1a",
+  place: "#1d6d6d",
 };
 
 // Used where a hex literal is required for string-concatenated alpha
 // (`color + "20"`) — `var(--graph-fallback)` can't be used there since
 // you can't append an alpha suffix to an unresolved var() reference.
 // Keep in sync with --graph-fallback in globals.css.
-const GRAPH_FALLBACK_HEX = "#585866";
+const GRAPH_FALLBACK_HEX = "#5e626d";
 
 function resolveNodeColors(root: HTMLElement): Record<string, string> {
   const cs = getComputedStyle(root);
