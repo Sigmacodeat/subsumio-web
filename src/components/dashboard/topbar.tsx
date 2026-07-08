@@ -1,15 +1,12 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
 import {
   Search,
   Bell,
-  User,
   Settings,
-  LogOut,
   X,
   ChevronDown,
   Sun,
@@ -19,7 +16,6 @@ import {
   Brain as BrainIcon,
   HelpCircle,
   PanelRightOpen,
-  Languages,
   Plus,
   Briefcase,
   CalendarClock,
@@ -33,10 +29,10 @@ import {
   Users,
   CheckSquare,
   MessageSquare,
+  MoreHorizontal,
 } from "lucide-react";
 import { useBrainSelector } from "@/lib/use-brain-selector";
 import { useBrainStats, usePages } from "@/lib/queries/brain";
-import { useLogout } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
 import { NetworkStatusBadge } from "@/components/dashboard/sidebar";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
@@ -51,8 +47,6 @@ export type Theme = "light" | "dark";
 interface TopbarProps {
   theme: Theme;
   toggleTheme: () => void;
-  userName: string | null;
-  userEmail: string | null;
   mobileOpen: boolean;
   onMobileMenuOpen: () => void;
   onMobileMenuClose: () => void;
@@ -65,8 +59,6 @@ interface TopbarProps {
 export function Topbar({
   theme,
   toggleTheme,
-  userName,
-  userEmail,
   mobileOpen,
   onMobileMenuOpen,
   onMobileMenuClose,
@@ -78,47 +70,47 @@ export function Topbar({
   const router = useRouter();
   const pathname = usePathname();
   const [notifOpen, setNotifOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [brainOpen, setBrainOpen] = useState(false);
   const [brainActiveIdx, setBrainActiveIdx] = useState(0);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [utilitiesOpen, setUtilitiesOpen] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState<
     "all" | "deadline" | "mention" | "system"
   >("all");
   const notifRef = useRef<HTMLDivElement>(null);
-  const userMenuRef = useRef<HTMLDivElement>(null);
   const brainRef = useRef<HTMLDivElement>(null);
   const quickCreateRef = useRef<HTMLDivElement>(null);
-  const { t, lang, setLang } = useLang();
+  const utilitiesRef = useRef<HTMLDivElement>(null);
+  const { t } = useLang();
   const { popoverTransition, popoverInitial, popoverAnimate, popoverExit } = useDashboardMotion();
 
   useEffect(() => {
     const openNotifications = () => {
       setNotifOpen(true);
-      setUserMenuOpen(false);
       setBrainOpen(false);
       setQuickCreateOpen(false);
+      setUtilitiesOpen(false);
     };
     window.addEventListener("subsumio:open-notifications", openNotifications);
     return () => window.removeEventListener("subsumio:open-notifications", openNotifications);
   }, []);
 
   useEffect(() => {
-    if (!notifOpen && !userMenuOpen && !brainOpen && !quickCreateOpen) return;
+    if (!notifOpen && !brainOpen && !quickCreateOpen && !utilitiesOpen) return;
     const onMouseDown = (e: MouseEvent) => {
       const target = e.target as Node;
       if (notifRef.current && !notifRef.current.contains(target)) setNotifOpen(false);
-      if (userMenuRef.current && !userMenuRef.current.contains(target)) setUserMenuOpen(false);
       if (brainRef.current && !brainRef.current.contains(target)) setBrainOpen(false);
       if (quickCreateRef.current && !quickCreateRef.current.contains(target))
         setQuickCreateOpen(false);
+      if (utilitiesRef.current && !utilitiesRef.current.contains(target)) setUtilitiesOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setNotifOpen(false);
-        setUserMenuOpen(false);
         setBrainOpen(false);
         setQuickCreateOpen(false);
+        setUtilitiesOpen(false);
       }
     };
     document.addEventListener("mousedown", onMouseDown);
@@ -127,11 +119,10 @@ export function Topbar({
       document.removeEventListener("mousedown", onMouseDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [notifOpen, userMenuOpen, brainOpen, quickCreateOpen]);
+  }, [notifOpen, brainOpen, quickCreateOpen, utilitiesOpen]);
 
   const statsQuery = useBrainStats();
   const deadlinesQuery = usePages({ type: "legal_deadline", limit: 20 });
-  const logoutMutation = useLogout();
 
   // API-based notifications (mentions, replies, system, deadline)
   const [apiNotifications, setApiNotifications] = useState<
@@ -338,10 +329,6 @@ export function Topbar({
     return notifs;
   }, [deadlinesQuery.data, statsQuery.data, t, apiNotifications, readInlineIds]);
 
-  function logout() {
-    logoutMutation.mutate();
-  }
-
   const { brains, activeBrain, selectBrain, loading: brainLoading } = useBrainSelector();
 
   const selectBrainIdx = useCallback(
@@ -494,35 +481,6 @@ export function Topbar({
           <Search size={18} />
         </button>
       </div>
-      <nav
-        aria-label="Breadcrumb"
-        className="hidden min-w-0 flex-1 items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)] lg:flex"
-      >
-        {pathname
-          .replace(/^\/dashboard\/?/, "")
-          .split("/")
-          .filter(Boolean)
-          .slice(0, 3)
-          .map((segment, index, segments) => (
-            <span key={`${segment}-${index}`} className="flex min-w-0 items-center gap-1.5">
-              {index > 0 && <span aria-hidden>›</span>}
-              <span
-                className={cn(
-                  "truncate",
-                  index === segments.length - 1 && "font-medium text-[color:var(--ds-text)]"
-                )}
-              >
-                {segment === "cases"
-                  ? t("nav.cases")
-                  : segment === "deadlines"
-                    ? t("nav.deadlines")
-                    : segment === "vault"
-                      ? t("nav.vault")
-                      : decodeURIComponent(segment).replaceAll("-", " ")}
-              </span>
-            </span>
-          ))}
-      </nav>
       {/* Right controls — one group so gaps stay consistent instead of
           justify-between scattering switcher/bell/actions unevenly. */}
       <div className="flex shrink-0 items-center gap-1 md:gap-1.5">
@@ -929,174 +887,89 @@ export function Topbar({
           {/* Divider — separates the primary create action from the
               utility/status icons that follow. */}
           <span className="mx-0.5 h-5 w-px shrink-0 bg-[color:var(--ds-border)]" aria-hidden />
-          <button
-            onClick={onGuideOpen}
-            aria-label={t("guide.open")}
-            title={t("guide.open")}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
-          >
-            <HelpCircle size={15} />
-          </button>
-          <button
-            onClick={toggleTheme}
-            title={theme === "dark" ? t("topbar.theme_light") : t("topbar.theme_dark")}
-            aria-label={
-              theme === "dark" ? t("topbar.theme_light_aria") : t("topbar.theme_dark_aria")
-            }
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
-          >
-            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
-          </button>
-          <div className="hidden md:block">
-            <BrainSelector />
-          </div>
-          <NetworkStatusBadge />
-          {/* Divider + Copilot panel toggle — placed at the far right,
-              spatially adjacent to the right-docked copilot panel it
-              controls (established right-panel pattern), just left of the
-              account avatar. */}
-          <span className="mx-0.5 h-5 w-px shrink-0 bg-[color:var(--ds-border)]" aria-hidden />
-          <button
-            onClick={onCopilotToggle}
-            data-tour="copilot-toggle"
-            aria-label={copilotOpen ? t("copilot.collapse") : t("copilot.expand")}
-            title={copilotOpen ? t("copilot.collapse") + " (Cmd+J)" : t("copilot.expand_hint")}
-            aria-pressed={copilotOpen}
-            className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-lg transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
-              copilotOpen
-                ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
-                : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-            )}
-          >
-            <PanelRightOpen size={16} />
-          </button>
-          {/* User menu */}
-          <div className="relative" ref={userMenuRef}>
+          <div ref={utilitiesRef} className="relative">
             <button
-              onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex items-center gap-2 rounded-lg px-1.5 py-1 transition-[background-color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
-              aria-label={t("topbar.user_menu")}
-              aria-expanded={userMenuOpen}
+              type="button"
+              onClick={() => setUtilitiesOpen((open) => !open)}
+              aria-label={t("topbar.utilities")}
+              title={t("topbar.utilities")}
               aria-haspopup="menu"
+              aria-expanded={utilitiesOpen}
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                utilitiesOpen && "brand-soft brand-text"
+              )}
             >
-              <div className="brand-soft brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-full border">
-                {userName ? (
-                  <span className="brand-text text-xs font-bold uppercase">
-                    {userName.slice(0, 2)}
-                  </span>
-                ) : (
-                  <User size={13} className="brand-text" />
-                )}
-              </div>
-              <span className="hidden max-w-[100px] truncate text-[13px] font-medium text-[color:var(--ds-text)] md:block">
-                {userName ?? t("topbar.user_fallback")}
-              </span>
-              <ChevronDown
-                size={13}
-                className="hidden text-[color:var(--ds-text-subtle)] md:block"
-              />
+              <MoreHorizontal size={16} aria-hidden />
             </button>
             <AnimatePresence initial={false}>
-              {userMenuOpen && (
+              {utilitiesOpen && (
                 <motion.div
-                  className="card-shadow-elevated absolute top-12 right-0 z-50 w-56 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
                   role="menu"
-                  aria-label={t("topbar.user_menu")}
+                  aria-label={t("topbar.utilities")}
+                  className="card-shadow-elevated absolute top-12 right-0 z-50 w-52 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5"
                   initial={popoverInitial}
                   animate={popoverAnimate}
                   exit={popoverExit}
                   transition={popoverTransition}
                 >
-                  <div className="border-b border-[color:var(--ds-border)] px-4 py-3.5">
-                    <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
-                      {userName ?? t("topbar.user_fallback")}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
-                      {userEmail ?? ""}
-                    </p>
-                  </div>
-                  <div className="p-1.5">
-                    <Link
-                      href="/dashboard/settings"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                      role="menuitem"
-                    >
-                      <Settings size={15} className="shrink-0" />
-                      {t("topbar.settings")}
-                    </Link>
-                    <button
-                      onClick={() => {
-                        toggleTheme();
-                        setUserMenuOpen(false);
-                      }}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                      role="menuitem"
-                    >
-                      {theme === "dark" ? (
-                        <Sun size={15} className="shrink-0" />
-                      ) : (
-                        <Moon size={15} className="shrink-0" />
-                      )}
-                      {theme === "dark" ? t("topbar.theme_light") : t("topbar.theme_dark")}
-                    </button>
-                    {/* Language switcher */}
-                    <div
-                      className="px-3 py-2"
-                      role="menuitem"
-                      aria-label={t("topbar.language_switch")}
-                    >
-                      <div className="mb-1.5 flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
-                        <Languages size={13} className="shrink-0" />
-                        {t("topbar.language")}
-                      </div>
-                      <div className="flex gap-1.5">
-                        <button
-                          onClick={() => {
-                            setLang("de");
-                            setUserMenuOpen(false);
-                          }}
-                          className={cn(
-                            "flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[var(--ds-ease-smooth)]",
-                            lang !== "en"
-                              ? "brand-soft brand-text brand-border"
-                              : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
-                          )}
-                          aria-pressed={lang !== "en"}
-                        >
-                          DE
-                        </button>
-                        <button
-                          onClick={() => {
-                            setLang("en");
-                            setUserMenuOpen(false);
-                          }}
-                          className={cn(
-                            "flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[var(--ds-ease-smooth)]",
-                            lang === "en"
-                              ? "brand-soft brand-text brand-border"
-                              : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
-                          )}
-                          aria-pressed={lang === "en"}
-                        >
-                          EN
-                        </button>
-                      </div>
-                    </div>
-                    <button
-                      onClick={logout}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
-                      role="menuitem"
-                    >
-                      <LogOut size={15} className="shrink-0" />
-                      {t("topbar.logout")}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setUtilitiesOpen(false);
+                      onGuideOpen();
+                    }}
+                    className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-sm text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                  >
+                    <HelpCircle size={16} aria-hidden />
+                    {t("guide.open")}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setUtilitiesOpen(false);
+                      toggleTheme();
+                    }}
+                    className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-sm text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                  >
+                    {theme === "dark" ? (
+                      <Sun size={16} aria-hidden />
+                    ) : (
+                      <Moon size={16} aria-hidden />
+                    )}
+                    {theme === "dark" ? t("topbar.theme_light") : t("topbar.theme_dark")}
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
+          <div className="hidden md:block">
+            <BrainSelector />
+          </div>
+          <NetworkStatusBadge />
+          {/* The right-docked panel control is intentionally the final item. */}
+          <span className="mx-0.5 h-5 w-px shrink-0 bg-[color:var(--ds-border)]" aria-hidden />
+          <button
+            type="button"
+            onClick={onCopilotToggle}
+            data-tour="copilot-toggle"
+            aria-label={copilotOpen ? t("copilot.collapse") : t("copilot.expand")}
+            title={copilotOpen ? t("copilot.collapse") + " (Cmd+J)" : t("copilot.expand_hint")}
+            aria-expanded={copilotOpen}
+            aria-controls="brain-copilot-panel"
+            aria-hidden={copilotOpen}
+            tabIndex={copilotOpen ? -1 : 0}
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-lg transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+              copilotOpen
+                ? "pointer-events-none invisible"
+                : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            )}
+          >
+            <PanelRightOpen size={16} />
+          </button>
         </div>
       </div>
     </header>

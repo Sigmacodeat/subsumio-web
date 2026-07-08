@@ -24,6 +24,7 @@ import {
   Languages,
   Shield,
   ArrowLeft,
+  RefreshCw,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -59,6 +60,7 @@ import { AclSettings } from "@/components/dashboard/acl-settings";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { SettingsHub } from "@/components/dashboard/settings-hub";
+import { csrfFetch } from "@/lib/csrf";
 
 type SettingsTab = { id: string; labelKey: DashboardKey; icon: LucideIcon; allowed: string[] };
 
@@ -206,6 +208,8 @@ function SettingsPageInner() {
   );
   const [searchMode, setSearchMode] = useState("balanced");
   const [dreamEnabled, setDreamEnabled] = useState(false);
+  const [dreamRunning, setDreamRunning] = useState(false);
+  const [dreamError, setDreamError] = useState(false);
   const [singleKeyShortcuts, setSingleKeyShortcuts] = useState(() => {
     if (typeof window === "undefined") return true;
     return localStorage.getItem("single-key-shortcuts") !== "false";
@@ -223,6 +227,19 @@ function SettingsPageInner() {
   const saveKeysMutation = useSaveSettingsApiKeys();
   const statsQuery = useBrainStats();
   const updateRoleMutation = useUpdateTeamRole();
+
+  const runDreamCycle = async () => {
+    setDreamRunning(true);
+    setDreamError(false);
+    try {
+      const response = await csrfFetch("/api/brain/dream-cycle", { method: "POST" });
+      if (!response.ok) throw new Error(String(response.status));
+    } catch {
+      setDreamError(true);
+    } finally {
+      setDreamRunning(false);
+    }
+  };
 
   // Kanzlei form — RHF + Zod
   const kanzleiForm = useForm<KanzleiSettingsFormData>({
@@ -715,6 +732,29 @@ function SettingsPageInner() {
                       </li>
                     ))}
                   </ul>
+                </Field>
+                <Field label={t("sidebar.dream_cycle")} desc={t("sidebar.dream_next_scheduled")}>
+                  <div className="space-y-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void runDreamCycle()}
+                      disabled={dreamRunning}
+                    >
+                      <RefreshCw
+                        size={14}
+                        className={cn(dreamRunning && "animate-spin")}
+                        aria-hidden
+                      />
+                      {dreamRunning ? t("sidebar.dream_running") : t("sidebar.dream_run_now")}
+                    </Button>
+                    {dreamError && (
+                      <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+                        {t("sidebar.dream_error")}
+                      </p>
+                    )}
+                  </div>
                 </Field>
               </div>
             </Card>

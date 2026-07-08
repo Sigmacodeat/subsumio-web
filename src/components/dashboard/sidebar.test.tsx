@@ -21,6 +21,7 @@ let pathname = "/dashboard";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => pathname,
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
 vi.mock("next/link", () => ({
@@ -70,6 +71,10 @@ vi.mock("@/lib/queries/sidebar-badges", () => ({
   }),
 }));
 
+vi.mock("@/lib/queries/auth", () => ({
+  useLogout: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 function renderSidebar(props: Partial<ComponentProps<typeof Sidebar>> = {}) {
   return render(
     <Sidebar
@@ -79,7 +84,6 @@ function renderSidebar(props: Partial<ComponentProps<typeof Sidebar>> = {}) {
       setMobileOpen={vi.fn()}
       pages={2}
       entities={0}
-      dreamCycle={null}
       userName={null}
       userEmail={null}
       brainReachable
@@ -92,6 +96,15 @@ describe("Sidebar accordion", () => {
   beforeEach(() => {
     pathname = "/dashboard";
     localStorage.clear();
+  });
+
+  test("exposes the profile footer as the account settings destination", () => {
+    renderSidebar({ userName: "Ismet Mesic", userEmail: "ismet@example.com" });
+
+    expect(screen.getByRole("link", { name: /Kontoeinstellungen: Ismet Mesic/i })).toHaveAttribute(
+      "href",
+      "/dashboard/settings?tab=account"
+    );
   });
 
   test("opens the active section and renders its links as real anchors", async () => {

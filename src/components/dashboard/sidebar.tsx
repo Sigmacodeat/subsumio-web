@@ -102,10 +102,8 @@ import {
   Shield,
   Filter,
   Radar,
-  Plus,
   LogOut,
   ChevronsDownUp,
-  FilePlus2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -120,7 +118,6 @@ import { SidebarQuickAccess } from "@/components/dashboard/sidebar-quick-access"
 import { useSidebarBadges, type SidebarBadges } from "@/lib/queries/sidebar-badges";
 import { useResizable } from "@/lib/use-resizable";
 import { useLogout } from "@/lib/queries/auth";
-import { csrfFetch } from "@/lib/csrf";
 
 export type NavTier = "free" | "pro" | "enterprise" | "admin";
 export type AudienceTier = "quick-start" | "erweitert" | "dach-integration" | "system";
@@ -1749,7 +1746,6 @@ interface SidebarProps {
   setMobileOpen: (v: boolean) => void;
   pages: number;
   entities: number;
-  dreamCycle: string | null;
   userName: string | null;
   userEmail: string | null;
   /** Real engine-reachability signal — undefined while the first stats load is in flight. */
@@ -1770,7 +1766,6 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     setMobileOpen,
     pages,
     entities,
-    dreamCycle,
     userName,
     userEmail,
     brainReachable,
@@ -1786,13 +1781,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   const [openSections, setOpenSections] = useState<DashboardKey[]>([]);
   const [isDesktop, setIsDesktop] = useState(false);
   const [coreMode, setCoreMode] = useState(true);
-  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
-  const [dreamDetailsOpen, setDreamDetailsOpen] = useState(false);
-  const [dreamRunning, setDreamRunning] = useState(false);
-  const [dreamError, setDreamError] = useState(false);
   const [recentHrefs, setRecentHrefs] = useState<string[]>([]);
   const isDesktopMQ = useIsDesktop();
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { panelTransition: sidebarPanelTransition } = useDashboardMotion();
   const sidebarShellTransition = sidebarPanelTransition;
   const {
@@ -2059,28 +2050,6 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     });
   };
 
-  const dispatchQuickCreate = useCallback(
-    (eventName: string) => {
-      window.dispatchEvent(new CustomEvent(eventName));
-      setQuickCreateOpen(false);
-      setMobileOpen(false);
-    },
-    [setMobileOpen]
-  );
-
-  const runDreamCycle = useCallback(async () => {
-    setDreamRunning(true);
-    setDreamError(false);
-    try {
-      const response = await csrfFetch("/api/brain/dream-cycle", { method: "POST" });
-      if (!response.ok) throw new Error(String(response.status));
-    } catch {
-      setDreamError(true);
-    } finally {
-      setDreamRunning(false);
-    }
-  }, []);
-
   return (
     <motion.aside
       ref={ref}
@@ -2163,105 +2132,63 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               </>
             )}
           </Link>
-          <div className="relative ml-auto">
-            <button
-              type="button"
-              onClick={() =>
-                collapsed
-                  ? dispatchQuickCreate("subsumio:create-case")
-                  : setQuickCreateOpen((open) => !open)
-              }
-              className="brand-soft brand-text flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[color:var(--ds-hover)]"
-              aria-label={t("sidebar.quick_create")}
-              aria-expanded={collapsed ? undefined : quickCreateOpen}
-            >
-              <Plus size={16} aria-hidden />
-            </button>
-            {!collapsed && quickCreateOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="absolute top-10 right-0 z-50 w-44 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1 shadow-xl"
-                role="menu"
-              >
-                {(
-                  [
-                    ["sidebar.create_case", "subsumio:create-case", Briefcase],
-                    ["sidebar.create_deadline", "subsumio:create-deadline", CalendarClock],
-                    ["sidebar.create_contact", "subsumio:create-contact", Users],
-                    ["sidebar.create_document", "subsumio:create-document", FilePlus2],
-                  ] as const
-                ).map(([labelKey, eventName, Icon]) => (
-                  <button
-                    key={eventName}
-                    type="button"
-                    role="menuitem"
-                    onClick={() => dispatchQuickCreate(eventName)}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                  >
-                    <Icon size={14} aria-hidden />
-                    {t(labelKey)}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </div>
         </div>
 
         <div className="dashboard-scroll-shadow flex-1 overflow-x-clip overflow-y-auto pt-[env(safe-area-inset-top)] pb-3">
-          {/* Brain status — expanded version */}
-          <div
-            className={cn(
-              "mx-3 mt-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 transition-[opacity,height,padding] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)]",
-              collapsed
-                ? "pointer-events-none h-0 overflow-hidden border-0 py-0 opacity-0"
-                : "opacity-100"
-            )}
-            role="status"
-            aria-label={`${t("sidebar.brain_status")}: ${brainStatusLabel}, ${pages} pages, ${entities} entities`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[color:var(--ds-text-subtle)]">
-                {t("sidebar.brain_status")}
-              </span>
-              <div className="flex items-center gap-1.5">
+          {brainReachable !== true && (
+            <>
+              {/* Healthy status stays quiet; only checking/offline states occupy navigation space. */}
+              <div
+                className={cn(
+                  "mx-3 mt-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 transition-[opacity,height,padding] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)]",
+                  collapsed
+                    ? "pointer-events-none h-0 overflow-hidden border-0 py-0 opacity-0"
+                    : "opacity-100"
+                )}
+                role="status"
+                aria-label={`${t("sidebar.brain_status")}: ${brainStatusLabel}, ${pages} pages, ${entities} entities`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-[color:var(--ds-text-subtle)]">
+                    {t("sidebar.brain_status")}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        "h-1.5 w-1.5 rounded-full",
+                        brainReachable === false && "bg-[color:var(--ds-danger-text)]",
+                        brainReachable === undefined && "bg-[color:var(--ds-text-subtle)]"
+                      )}
+                      aria-hidden
+                    />
+                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      {brainStatusLabel}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-1 font-mono text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
+                  {pages} pages · {entities} entities
+                </div>
+              </div>
+              <div
+                className={cn(
+                  "mt-4 hidden items-center justify-center transition-[opacity] duration-300 ease-[var(--ds-ease-smooth)] md:flex",
+                  collapsed ? "opacity-100" : "pointer-events-none h-0 overflow-hidden opacity-0"
+                )}
+                title={`${t("sidebar.brain_status")}: ${brainStatusLabel}`}
+              >
                 <span
                   className={cn(
-                    "h-1.5 w-1.5 rounded-full",
-                    brainReachable === true && "bg-[color:var(--ds-success-text)]",
+                    "h-2 w-2 rounded-full",
                     brainReachable === false && "bg-[color:var(--ds-danger-text)]",
-                    brainReachable === undefined && "bg-[color:var(--ds-text-subtle)]"
+                    brainReachable === undefined && "animate-pulse bg-[color:var(--ds-text-subtle)]"
                   )}
-                  aria-hidden
+                  role="status"
+                  aria-label={`${t("sidebar.brain_status")}: ${brainStatusLabel}`}
                 />
-                <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-                  {brainStatusLabel}
-                </span>
               </div>
-            </div>
-            <div className="mt-1 font-mono text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
-              {pages} pages · {entities} entities
-            </div>
-          </div>
-          {/* Brain status — collapsed dot */}
-          <div
-            className={cn(
-              "mt-4 hidden items-center justify-center transition-[opacity] duration-300 ease-[var(--ds-ease-smooth)] md:flex",
-              collapsed ? "opacity-100" : "pointer-events-none h-0 overflow-hidden opacity-0"
-            )}
-            title={`${t("sidebar.brain_status")}: ${brainStatusLabel}`}
-          >
-            <span
-              className={cn(
-                "h-2 w-2 rounded-full",
-                brainReachable === true && "animate-pulse bg-[color:var(--ds-success-text)]",
-                brainReachable === false && "bg-[color:var(--ds-danger-text)]",
-                brainReachable === undefined && "animate-pulse bg-[color:var(--ds-text-subtle)]"
-              )}
-              role="status"
-              aria-label={`${t("sidebar.brain_status")}: ${brainStatusLabel}`}
-            />
-          </div>
+            </>
+          )}
 
           {/* Sync status */}
           <SyncStatus collapsed={collapsed} />
@@ -2700,62 +2627,6 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             )}
           </nav>
 
-          {/* Dream Cycle indicator — compact */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setDreamDetailsOpen((open) => !open)}
-              className={cn(
-                "mx-3 mt-2 mb-1 flex items-center gap-1.5 rounded-md px-2 py-1 transition-[opacity] duration-300 ease-[var(--ds-ease-smooth)]",
-                dreamCycle
-                  ? "text-[color:var(--ds-success-text)]"
-                  : "text-[color:var(--ds-warning-text)]",
-                collapsed ? "pointer-events-none h-0 overflow-hidden py-0 opacity-0" : "opacity-100"
-              )}
-              aria-expanded={dreamDetailsOpen}
-              title={
-                dreamCycle
-                  ? `${t("sidebar.dream_last_run")} ${new Date(dreamCycle).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
-                  : t("sidebar.dream_not_scheduled")
-              }
-            >
-              <Zap size={11} className="shrink-0" />
-              <span className="text-xs font-medium">{t("sidebar.dream_cycle")}</span>
-            </button>
-            {dreamDetailsOpen && !collapsed && (
-              <motion.div
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="absolute right-3 bottom-full left-3 z-40 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 shadow-xl"
-                role="dialog"
-                aria-label={t("sidebar.dream_cycle")}
-              >
-                <p className="text-xs text-[color:var(--ds-text-muted)]">
-                  {dreamCycle
-                    ? `${t("sidebar.dream_last_run")} ${new Date(dreamCycle).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}`
-                    : t("sidebar.dream_not_scheduled")}
-                </p>
-                <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
-                  {t("sidebar.dream_next_scheduled")}
-                </p>
-                {dreamError && (
-                  <p role="alert" className="mt-2 text-xs text-[color:var(--ds-danger-text)]">
-                    {t("sidebar.dream_error")}
-                  </p>
-                )}
-                <button
-                  type="button"
-                  onClick={() => void runDreamCycle()}
-                  disabled={dreamRunning}
-                  className="brand-soft brand-text mt-3 flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-semibold disabled:opacity-50"
-                >
-                  <RefreshCw size={13} className={cn(dreamRunning && "animate-spin")} aria-hidden />
-                  {dreamRunning ? t("sidebar.dream_running") : t("sidebar.dream_run_now")}
-                </button>
-              </motion.div>
-            )}
-          </div>
-
           {/* User profile section */}
           <div
             className={cn(
@@ -2764,12 +2635,13 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             )}
           >
             <Link
-              href="/dashboard/settings"
+              href="/dashboard/settings?tab=account"
               onClick={() => setMobileOpen(false)}
               title={collapsed ? (userName ?? t("sidebar.user")) : undefined}
+              aria-label={`${t("sidebar.account_settings")}: ${userName ?? t("sidebar.user")}${userEmail ? `, ${userEmail}` : ""}`}
               className={cn(
-                "group flex items-center rounded-lg transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)]",
-                collapsed ? "h-9 justify-center px-0" : "gap-3 px-3 py-1.5"
+                "group flex min-h-11 items-center rounded-lg transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                collapsed ? "justify-center px-0" : "gap-3 px-3 py-1.5"
               )}
             >
               <div className="brand-soft brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-full border">
@@ -2789,6 +2661,13 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                   {userEmail ?? ""}
                 </p>
               </div>
+              {!collapsed && (
+                <Settings
+                  size={15}
+                  className="shrink-0 text-[color:var(--ds-text-subtle)] transition-colors group-hover:text-[color:var(--ds-text)]"
+                  aria-hidden
+                />
+              )}
             </Link>
             <button
               type="button"
@@ -2797,8 +2676,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               title={t("topbar.logout")}
               aria-label={t("topbar.logout")}
               className={cn(
-                "mt-1 flex w-full items-center rounded-lg text-[13px] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-danger-text)] disabled:opacity-50",
-                collapsed ? "h-9 justify-center" : "gap-3 px-3 py-2"
+                "mt-1 flex min-h-11 w-full items-center rounded-lg text-[13px] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none disabled:opacity-50",
+                collapsed ? "justify-center" : "gap-3 px-3 py-2"
               )}
             >
               <LogOut size={15} aria-hidden />

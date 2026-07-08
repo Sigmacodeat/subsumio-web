@@ -6,24 +6,15 @@ import {
   MessageSquareText,
   X,
   PanelRightClose,
-  PanelRightOpen,
   Clock,
   Briefcase,
-  CalendarClock,
-  Search,
   FileText,
-  ChevronDown,
-  ChevronUp,
   CheckSquare,
-  Circle,
-  Loader2,
   Maximize2,
   History,
   Mail,
   ShieldAlert,
   Inbox,
-  Plus,
-  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
@@ -674,9 +665,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             <div className="flex items-center gap-1.5">
               <div className="flex items-center gap-1.5 rounded-md px-2 py-1">
                 <MessageSquareText size={13} className="text-[color:var(--brand-primary)]" />
-                <span className="text-xs font-medium text-[color:var(--ds-text)]">
-                  {t("copilot.chat")}
-                </span>
                 {isStreaming && (
                   <span
                     className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--brand-primary)]"
@@ -747,6 +735,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
 
       {/* ── Desktop: Persistent collapsible side panel ── */}
       <motion.aside
+        id="brain-copilot-panel"
         data-tour="copilot-panel"
         initial={false}
         animate={{
@@ -814,22 +803,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           )}
           style={{ width: panelWidth }}
         >
-          {/* Collapse toggle — premium vertical tab */}
-          <button
-            onClick={onToggle}
-            className={cn(
-              "group absolute top-1/2 -left-6 z-30 flex h-14 w-6 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-sm transition-[width,background-color,opacity] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:w-7 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none",
-              !open && "pointer-events-none opacity-0"
-            )}
-            aria-label={t("copilot.collapse")}
-            title={t("copilot.collapse")}
-          >
-            <PanelRightClose
-              size={12}
-              className="text-[color:var(--ds-text-muted)] transition-colors group-hover:text-[color:var(--ds-text)]"
-            />
-          </button>
-
           {/* Panel content — stays mounted during transition for smooth animation */}
           <motion.div
             initial={false}
@@ -844,53 +817,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             )}
             {...(!open ? { inert: true } : {})}
           >
-            {/* Context header — compact single-row */}
-            <div className="relative shrink-0 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 rounded-md px-2 py-1">
-                  <MessageSquareText size={12} className="text-[color:var(--brand-primary)]" />
-                  <span className="text-xs font-medium text-[color:var(--ds-text)]">
-                    {t("copilot.chat")}
-                  </span>
-                  {isStreaming && (
-                    <span
-                      className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--brand-primary)]"
-                      aria-label={t("copilot.thinking")}
-                    />
-                  )}
-                </div>
-                <div className="flex items-center gap-0.5">
-                  <SessionHistoryButton
-                    open={historyOpen}
-                    sessions={recentSessions}
-                    onToggle={handleToggleHistory}
-                    onSelect={(id) => {
-                      void chatRef.current?.loadSession(id);
-                      setHistoryOpen(false);
-                    }}
-                    t={t}
-                    lang={lang}
-                  />
-                  <button
-                    onClick={handleOpenFullscreen}
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                    aria-label={t("copilot.open_fullscreen")}
-                    title={t("copilot.open_fullscreen")}
-                  >
-                    <Maximize2 size={13} />
-                  </button>
-                  <button
-                    onClick={onToggle}
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                    aria-label={t("copilot.close_panel")}
-                    title={t("copilot.close_panel")}
-                  >
-                    <PanelRightClose size={14} />
-                  </button>
-                </div>
-              </div>
-            </div>
-
             {/* Matter context card — desktop */}
             {matterContextInfo && <MatterContextCard info={matterContextInfo} lang={lang} />}
 
@@ -914,41 +840,33 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                   routeContext.caseSlug ? t("chat.placeholder_case") : t("chat.placeholder_global")
                 }
                 onStreamingChange={setIsStreaming}
+                headerActions={
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleOpenFullscreen}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                      aria-label={t("copilot.open_fullscreen")}
+                      title={t("copilot.open_fullscreen")}
+                    >
+                      <Maximize2 size={14} aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onToggle}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                      aria-label={t("copilot.close_panel")}
+                      title={t("copilot.close_panel")}
+                    >
+                      <PanelRightClose size={15} aria-hidden />
+                    </button>
+                  </>
+                }
               />
             </div>
           </motion.div>
         </motion.div>
       </motion.aside>
-
-      {/* Desktop expand button — premium vertical tab with hover label */}
-      <motion.button
-        onClick={onToggle}
-        initial={false}
-        animate={{
-          x: open ? panelWidth + 20 : 0,
-          opacity: open ? 0 : 1,
-          scale: open ? 0.96 : 1,
-        }}
-        whileHover={reduceMotion || open ? undefined : { x: -2, scale: 1.015 }}
-        whileTap={reduceMotion || open ? undefined : { scale: 0.965 }}
-        transition={softTransition}
-        className={cn(
-          "group fixed top-1/2 right-0 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-4 pr-2 pl-2.5 shadow-md transition-[padding,box-shadow] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-panel)] hover:pl-3 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none lg:flex",
-          open && "pointer-events-none"
-        )}
-        aria-label={t("copilot.expand")}
-        title={t("copilot.expand_hint")}
-        aria-hidden={open}
-        tabIndex={open ? -1 : 0}
-      >
-        <PanelRightOpen
-          size={16}
-          className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-muted)] transition-colors"
-        />
-        <span className="max-w-0 overflow-hidden text-xs font-medium whitespace-nowrap text-[color:var(--ds-text-muted)] opacity-0 transition-[max-width,opacity,color] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)] group-hover:max-w-[100px] group-hover:text-[color:var(--ds-text)] group-hover:opacity-100">
-          {t("copilot.copilot")}
-        </span>
-      </motion.button>
     </>
   );
 }

@@ -62,6 +62,7 @@ import { ChatMessageBubble } from "@/components/chat/chat-message";
 import { ChatEmptyState } from "@/components/chat/chat-empty-state";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import type { TFunc } from "@/content/dashboard";
+import type { ReactNode } from "react";
 
 interface ChatPanelProps {
   context?: {
@@ -79,6 +80,7 @@ interface ChatPanelProps {
   placeholder?: string;
   onStreamingChange?: (isStreaming: boolean) => void;
   exampleQueries?: string[];
+  headerActions?: ReactNode;
 }
 
 function queryModeToThinkMode(mode: QueryMode): ThinkMode {
@@ -573,6 +575,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     placeholder,
     onStreamingChange,
     exampleQueries: providedExampleQueries,
+    headerActions,
   },
   ref
 ) {
@@ -1884,6 +1887,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         onTagSession={handleTagSession}
         sessionSearch={sessionSearch}
         onSessionSearchChange={setSessionSearch}
+        trailingActions={headerActions}
       />
 
       {/* Messages area */}

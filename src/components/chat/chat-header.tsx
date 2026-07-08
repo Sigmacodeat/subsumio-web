@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import { AnimatePresence } from "framer-motion";
 import {
   ChevronDown,
@@ -59,6 +60,7 @@ interface ChatHeaderProps {
   onTagSession?: (id: string, tags: string[]) => void;
   sessionSearch?: string;
   onSessionSearchChange?: (q: string) => void;
+  trailingActions?: ReactNode;
 }
 
 export function ChatHeader(props: ChatHeaderProps) {
@@ -479,6 +481,7 @@ export function ChatHeader(props: ChatHeaderProps) {
               </AnimatePresence>
             </>
           )}
+          {props.trailingActions}
         </div>
       </div>
     </div>

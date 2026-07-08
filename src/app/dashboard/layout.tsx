@@ -305,7 +305,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   const pages = statsQuery.data?.total_pages ?? 0;
   const entities = statsQuery.data?.total_entities ?? 0;
-  const dreamCycle = statsQuery.data?.dream_cycle_last ?? null;
   // Real reachability signal (see /api/stats) — `undefined` while the first
   // load is still in flight, so the sidebar pill can show a neutral
   // "checking" state instead of flashing "Active" then "Offline".
@@ -649,7 +648,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         setMobileOpen={setMobileOpen}
         pages={pages}
         entities={entities}
-        dreamCycle={dreamCycle}
         userName={userName}
         userEmail={userEmail}
         brainReachable={brainReachable}
@@ -662,8 +660,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         <Topbar
           theme={theme}
           toggleTheme={toggleTheme}
-          userName={userName}
-          userEmail={userEmail}
           mobileOpen={mobileOpen}
           onMobileMenuOpen={() => setMobileOpen(true)}
           onMobileMenuClose={() => setMobileOpen(false)}
