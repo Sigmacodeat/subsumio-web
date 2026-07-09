@@ -12,3 +12,6 @@ server/.env
 server/deploy/hetzner/.env
 *.log
 tsconfig.tsbuildinfo
+
+# Server/engine code is not needed by the Next.js web build
+server/
