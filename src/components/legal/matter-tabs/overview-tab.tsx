@@ -50,6 +50,7 @@ import { api } from "@/lib/api";
 import type { DashboardKey } from "@/content/dashboard";
 import type { CaseDetail } from "@/lib/matter-detail-types";
 import { MatterWorkflowCockpit } from "@/components/legal/MatterWorkflowCockpit";
+import { VerjaehrungPanel } from "@/components/legal/VerjaehrungPanel";
 
 export function OverviewTab() {
   const ctx = useMatterDetail();
@@ -225,6 +226,8 @@ export function OverviewTab() {
       </div>
 
       <MatterWorkflowCockpit />
+
+      <VerjaehrungPanel caseSlug={caseData.slug} />
 
       {/* Status Change Dialog */}
       {ctx.showStatusDialog && (

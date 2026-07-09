@@ -420,6 +420,7 @@ export const api = {
         second_check_at?: string;
         erv_zustelldatum?: string;
         review_status?: string;
+        reviewed_by?: string;
         reminder_sent_at?: string;
         calculation_note?: string;
       }>;

@@ -1,12 +1,21 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, CalendarClock, Inbox, Scale, CheckCircle2, ArrowRight } from "lucide-react";
+import {
+  CalendarDays,
+  CalendarClock,
+  Inbox,
+  Scale,
+  CheckCircle2,
+  ArrowRight,
+  AlertTriangle,
+} from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import type { BrainPage } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 const TYPES = ["legal_deadline", "legal_follow_up", "legal_intake", "legal_calendar_event"];
 
@@ -88,9 +97,17 @@ export function TodayView() {
       aria-label={t("today.title")}
     >
       {columns.map(({ type, title, icon: Icon }) => {
-        const items = (query.data?.[type] ?? []).filter(
-          (item) => dateOf(item) === today && !Boolean(item.frontmatter?.completed)
-        );
+        const showOverdue = type === "legal_deadline" || type === "legal_follow_up";
+        const items = (query.data?.[type] ?? [])
+          .filter((item) => {
+            if (Boolean(item.frontmatter?.completed)) return false;
+            const d = dateOf(item);
+            if (!d) return false;
+            if (showOverdue) return d <= today;
+            return d === today;
+          })
+          .sort((a, b) => dateOf(a).localeCompare(dateOf(b)));
+        const overdueCount = showOverdue ? items.filter((item) => dateOf(item) < today).length : 0;
         const meta = COLUMN_META[type];
         return (
           <section
@@ -101,26 +118,51 @@ export function TodayView() {
               <Icon size={16} className="text-[color:var(--brand-primary)]" aria-hidden="true" />
               <h2 className="text-sm font-semibold">{title}</h2>
               {items.length > 0 && (
-                <span className="ml-auto rounded-full bg-[color:var(--ds-surface-2)] px-2 py-0.5 text-xs tabular-nums">
-                  {items.length}
+                <span className="ml-auto flex items-center gap-1.5">
+                  {overdueCount > 0 && (
+                    <span className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600 tabular-nums">
+                      <AlertTriangle size={10} aria-hidden="true" />
+                      {overdueCount}
+                    </span>
+                  )}
+                  <span className="rounded-full bg-[color:var(--ds-surface-2)] px-2 py-0.5 text-xs tabular-nums">
+                    {items.length}
+                  </span>
                 </span>
               )}
             </div>
             {items.length > 0 ? (
               <ul className="space-y-2">
-                {items.map((item) => (
-                  <li
-                    key={item.slug}
-                    className="rounded-lg bg-[color:var(--ds-surface-2)] p-2.5 text-sm text-[color:var(--ds-text)]"
-                  >
-                    {item.title}
-                  </li>
-                ))}
+                {items.map((item) => {
+                  const isOverdue = showOverdue && dateOf(item) < today;
+                  return (
+                    <li
+                      key={item.slug}
+                      className={cn(
+                        "rounded-lg p-2.5 text-sm",
+                        isOverdue
+                          ? "border border-red-500/20 bg-red-500/5 text-red-700"
+                          : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
+                      )}
+                    >
+                      <div className="flex items-start gap-2">
+                        {isOverdue && (
+                          <AlertTriangle
+                            size={12}
+                            className="mt-0.5 shrink-0 text-red-500"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <span className="min-w-0 flex-1">{item.title}</span>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <div className="flex flex-col items-center justify-center gap-3 py-10">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--ds-surface-2)]">
-                  <CheckCircle2 size={18} className="text-[color:var(--ds-success-text,#22c55e)]" />
+                  <CheckCircle2 size={18} className="text-[color:var(--ds-success-text)]" />
                 </div>
                 <p className="text-center text-[13px] font-medium text-[color:var(--ds-text-muted)]">
                   {lang === "en" ? meta.emptyEn : meta.emptyDe}

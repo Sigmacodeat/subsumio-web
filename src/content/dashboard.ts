@@ -1846,6 +1846,10 @@ export const D = {
   "deadlines.second_check_pending": { de: "Zweiprüfung ausstehend", en: "Second check pending" },
   "deadlines.second_check_done": { de: "Zweiprüfung bestätigt", en: "Second check confirmed" },
   "deadlines.second_check_by": { de: "Geprüft von", en: "Checked by" },
+  "deadlines.second_check_self_blocked": {
+    de: "Selbstprüfung nicht erlaubt — Vier-Augen-Prinzip",
+    en: "Self-check not allowed — four-eyes principle",
+  },
   "deadlines.unreviewed": { de: "Ungeprüft", en: "Unreviewed" },
   "deadlines.source_pipeline": { de: "Pipeline", en: "Pipeline" },
   "deadlines.source_manual": { de: "Manuell", en: "Manual" },

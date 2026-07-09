@@ -52,6 +52,7 @@ export interface Frist {
   second_check_at?: string;
   erv_zustelldatum?: string;
   review_status?: string;
+  reviewed_by?: string;
   reminder_sent_at?: string;
   calculation_note?: string;
   created_at?: string;
@@ -195,6 +196,7 @@ export const GET = createHandler(
             erv_zustelldatum:
               typeof fm.erv_zustelldatum === "string" ? fm.erv_zustelldatum : undefined,
             review_status: typeof fm.review_status === "string" ? fm.review_status : undefined,
+            reviewed_by: typeof fm.reviewed_by === "string" ? fm.reviewed_by : undefined,
             reminder_sent_at:
               typeof fm.reminder_sent_at === "string" ? fm.reminder_sent_at : undefined,
             calculation_note:
@@ -238,6 +240,7 @@ export const GET = createHandler(
               second_check_at: d.second_check_at,
               erv_zustelldatum: d.erv_zustelldatum,
               review_status: d.review_status,
+              reviewed_by: d.reviewed_by,
               reminder_sent_at: d.reminder_sent_at,
               calculation_note: d.calculation_note,
             };

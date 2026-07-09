@@ -23,6 +23,7 @@ import { deriveMatterWorkflowActions, type MatterWorkflowAction } from "@/lib/ma
 import { cn } from "@/lib/utils";
 import { MatterAnalysisReview } from "@/components/legal/MatterAnalysisReview";
 import { MatterReviewInbox } from "@/components/legal/MatterReviewInbox";
+import { QuickTimeEntry } from "@/components/legal/QuickTimeEntry";
 
 const PRIORITY_STYLES: Record<MatterWorkflowAction["priority"], string> = {
   critical: "border-red-500/30 bg-red-500/5 text-red-700",
@@ -41,6 +42,7 @@ export function MatterWorkflowCockpit() {
   const ctx = useMatterDetail();
   const { addToast } = useToast();
   const [understanding, setUnderstanding] = useState<MatterUnderstandingPanel | null>(null);
+  const [understandingError, setUnderstandingError] = useState(false);
   const [calendarDeadlineIds, setCalendarDeadlineIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -49,10 +51,17 @@ export function MatterWorkflowCockpit() {
   const load = useCallback(async () => {
     if (!matter) return;
     setLoading(true);
+    setUnderstandingError(false);
     try {
       const [understandingResponse, appointments] = await Promise.all([
-        fetch(`/api/matter-context/${encodeURIComponent(matter.slug)}/understanding`).then((res) =>
-          res.ok ? (res.json() as Promise<MatterUnderstandingPanel>) : null
+        fetch(`/api/matter-context/${encodeURIComponent(matter.slug)}/understanding`).then(
+          async (res) => {
+            if (!res.ok) {
+              if (res.status >= 500) setUnderstandingError(true);
+              return null;
+            }
+            return (await res.json()) as MatterUnderstandingPanel;
+          }
         ),
         api.brain.listPages({ type: "appointment", limit: 300 }).catch(() => [] as BrainPage[]),
       ]);
@@ -234,6 +243,11 @@ export function MatterWorkflowCockpit() {
             className="animate-spin text-[color:var(--ds-text-muted)]"
             aria-label="Aktenverständnis wird geladen"
           />
+        ) : understandingError ? (
+          <Badge variant="default" className="gap-1.5 border-red-500/30 bg-red-500/10 text-red-700">
+            <AlertTriangle size={13} aria-hidden="true" />
+            Superbrain nicht erreichbar
+          </Badge>
         ) : (
           <Badge
             variant="default"
@@ -327,6 +341,10 @@ export function MatterWorkflowCockpit() {
             </div>
           ))
         )}
+      </div>
+
+      <div className="mt-4 flex items-center justify-end gap-2">
+        <QuickTimeEntry caseSlug={currentMatter.slug} />
       </div>
 
       <MatterReviewInbox understanding={understanding} />

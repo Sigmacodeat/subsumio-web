@@ -65,6 +65,7 @@ interface DeadlineItem {
   status: "pending" | "warning" | "critical" | "overdue" | "done" | "completed" | "vorfrist";
   type: "deadline" | "event" | "hearing" | "filing";
   reviewStatus?: string;
+  reviewedBy?: string;
   law?: string;
   reminderSentAt?: string;
   slug?: string;
@@ -166,6 +167,7 @@ export default function DeadlinesPage() {
           ? f.type
           : "deadline") as DeadlineItem["type"],
         reviewStatus: f.review_status,
+        reviewedBy: f.reviewed_by,
         law: f.law,
         reminderSentAt: f.reminder_sent_at,
         vorfristDate: f.vorfrist_date,
@@ -230,6 +232,13 @@ export default function DeadlinesPage() {
   async function confirmSecondCheck(item: DeadlineItem) {
     if (!item.slug) return;
     const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? "Unknown";
+    if (item.reviewedBy && item.reviewedBy === userName) {
+      addToast({
+        type: "error",
+        title: t("deadlines.second_check_self_blocked"),
+      });
+      return;
+    }
     const now = new Date().toISOString();
     setSecondCheckBusy(true);
     try {

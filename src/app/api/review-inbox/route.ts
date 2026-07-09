@@ -90,6 +90,16 @@ export const GET = createHandler(
 
     const items: ReviewInboxItem[] = [];
 
+    // Build case title lookup from fetched case pages
+    const caseTitleMap = new Map<string, string>();
+    for (const cp of casePages) {
+      if (cp.slug && cp.title) caseTitleMap.set(cp.slug, cp.title);
+    }
+    const lookupCaseTitle = (slug: string | null): string | null => {
+      if (!slug) return null;
+      return caseTitleMap.get(slug) ?? null;
+    };
+
     // ── Document Requests (open, not fulfilled) ──
     for (const page of docRequests) {
       const f = fm(page);
@@ -108,7 +118,7 @@ export const GET = createHandler(
         title: page.title || "Dokumentenanfrage",
         description: openItems.join(", ") || str(f.message_draft).slice(0, 180),
         caseSlug: str(f.case_slug) || null,
-        caseTitle: null,
+        caseTitle: lookupCaseTitle(str(f.case_slug) || null),
         priority: status === "draft" ? "medium" : "low",
         source: str(f.channel) || "manual",
         createdAt: dateStr(f.created_at) || dateStr(page.created_at),
@@ -163,7 +173,7 @@ export const GET = createHandler(
           ? `${dueDate}${daysUntil !== null ? ` (${daysUntil < 0 ? `${Math.abs(daysUntil)} Tage überfällig` : `${daysUntil} Tage`})` : ""}${str(f.source_quote) ? ` · "${str(f.source_quote).slice(0, 90)}"` : ""}`
           : str(f.description).slice(0, 180),
         caseSlug: str(f.case_slug) || null,
-        caseTitle: null,
+        caseTitle: lookupCaseTitle(str(f.case_slug) || null),
         priority,
         source: str(f.source) || "ai",
         createdAt: dateStr(f.created_at) || dateStr(page.created_at),
@@ -204,7 +214,7 @@ export const GET = createHandler(
           str(f.normalized_text || page.content).slice(0, 180) ||
           "Neue WhatsApp-Einreichung prüfen.",
         caseSlug: str(f.case_slug) || null,
-        caseTitle: null,
+        caseTitle: lookupCaseTitle(str(f.case_slug) || null),
         priority: "high",
         source: str(f.source) || "WhatsApp",
         createdAt: dateStr(f.created_at) || dateStr(page.created_at),
