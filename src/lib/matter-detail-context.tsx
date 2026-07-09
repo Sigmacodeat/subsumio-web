@@ -306,11 +306,11 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   const activeTab: string = contextTab;
 
   const navigateToTab = useCallback(
-    (tab: string) => {
+    (tab: string, action?: string) => {
       const encoded = contextCaseSlug.split("/").map(encodeURIComponent).join("/");
-      const url =
+      const baseUrl =
         tab === "overview" ? `/dashboard/cases/${encoded}` : `/dashboard/cases/${encoded}/${tab}`;
-      router.push(url);
+      router.push(action ? `${baseUrl}?action=${encodeURIComponent(action)}` : baseUrl);
     },
     [contextCaseSlug, router]
   );
@@ -451,12 +451,14 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
       const detail = (e as CustomEvent).detail as { caseSlug?: string } | undefined;
       if (detail?.caseSlug && detail.caseSlug !== contextCaseSlug) return;
       const eventType = e.type;
-      if (eventType === "subsumio:create-deadline" || eventType === "subsumio:create-task") {
+      if (eventType === "subsumio:create-deadline") {
         navigateToTab("deadlines");
+      } else if (eventType === "subsumio:create-task") {
+        navigateToTab("deadlines", "task");
       } else if (eventType === "subsumio:upload-document") {
-        navigateToTab("documents");
+        navigateToTab("documents", "upload");
       } else if (eventType === "subsumio:log-time") {
-        navigateToTab("billing");
+        navigateToTab("billing", "time");
       } else if (eventType === "subsumio:create-contact") {
         navigateToTab("contacts");
       } else if (eventType === "subsumio:create-communication") {
@@ -574,7 +576,13 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
         return;
       }
       const updated = caseData.suggestedDeadlines.map((sd, i) =>
-        i === index ? { ...sd, confirmed } : sd
+        i === index
+          ? {
+              ...sd,
+              confirmed: true,
+              review_status: confirmed ? ("approved" as const) : ("rejected" as const),
+            }
+          : sd
       );
       setCaseData({ ...caseData, suggestedDeadlines: updated });
       try {
@@ -604,7 +612,13 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
         return;
       }
       const updated = caseData.suggestedParties.map((sp, i) =>
-        i === index ? { ...sp, confirmed } : sp
+        i === index
+          ? {
+              ...sp,
+              confirmed: true,
+              review_status: confirmed ? ("approved" as const) : ("rejected" as const),
+            }
+          : sp
       );
       setCaseData({ ...caseData, suggestedParties: updated });
       try {
@@ -868,8 +882,8 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
                               ? `Gericht zugewiesen: ${updates.courtName ?? caseData.courtName ?? "—"}`
                               : t("cases.detail_audit_general"),
         };
-        const existingAudit = caseData.auditLog ?? [];
-        const newAudit = [...existingAudit, auditEntry];
+        const existingAudit = updates.auditLog ?? caseData.auditLog ?? [];
+        const newAudit = updates.auditLog ? existingAudit : [...existingAudit, auditEntry];
         const frontmatter: Record<string, unknown> = {
           type: "legal_case",
           case_number: updates.caseNumber ?? caseData.caseNumber,
@@ -898,6 +912,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
           timeline_events: updates.timelineEvents ?? caseData.timelineEvents,
           evidence: updates.evidence ?? evidenceList,
           deadlines: updates.deadlines ?? deadlinesList,
+          knowledge_reviews: updates.knowledgeReviews ?? caseData.knowledgeReviews,
           portal_enabled: updates.portalEnabled ?? caseData.portalEnabled,
           portal_note: updates.portalNote ?? caseData.portalNote,
           audit_log: newAudit,

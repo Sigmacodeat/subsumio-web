@@ -1,4 +1,9 @@
 import type { IntakeRequestFrontmatter } from "@/lib/intake";
+import {
+  buildCaseMandateAcceptance,
+  validateAcceptanceForConversion,
+  type CaseMandateAcceptance,
+} from "@/lib/intake-acceptance";
 
 export interface IntakeConversionInput {
   slug: string;
@@ -23,6 +28,8 @@ export interface ConvertedCasePage {
   type: "legal_case";
   content: string;
   frontmatter: Record<string, unknown>;
+  /** Mandatsannahme-Prüfdaten, separat typisiert. */
+  mandate_acceptance: CaseMandateAcceptance;
 }
 
 function safeSlugPart(input: string): string {
@@ -66,11 +73,19 @@ export function buildCaseFromIntake(
       : "",
   ].filter(Boolean);
 
+  const mandateAcceptance = buildCaseMandateAcceptance(
+    intake.slug,
+    fm.acceptance,
+    options.convertedBy ?? "system",
+    at
+  );
+
   return {
     slug,
     title,
     type: "legal_case",
     content: contentParts.join("\n\n"),
+    mandate_acceptance: mandateAcceptance,
     frontmatter: {
       type: "legal_case",
       case_number: caseNumber,
@@ -109,6 +124,7 @@ export function buildCaseFromIntake(
       version: 0,
       converted_from_intake_at: at.toISOString(),
       converted_from_intake_by: options.convertedBy,
+      mandate_acceptance: mandateAcceptance,
     },
   };
 }

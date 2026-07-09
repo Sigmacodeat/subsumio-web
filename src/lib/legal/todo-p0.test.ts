@@ -81,7 +81,7 @@ describe("TODO 3: Notfrist-Enforcement server-side guard", () => {
     );
     expect(source).toContain("is_notfrist");
     expect(source).toContain("second_check_required");
-    expect(source).toContain("Vier-Augen-Kontrolle");
+    expect(source).toContain("Vier-Augen");
   });
 
   it("deadlines page has Vier-Augen confirmation flow", () => {

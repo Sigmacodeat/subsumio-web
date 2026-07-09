@@ -15,6 +15,7 @@ import {
   Clock,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,9 @@ export function DeadlinesTasksTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
   const [showDeadlineForm, setShowDeadlineForm] = useState(false);
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const [secondCheckIndex, setSecondCheckIndex] = useState<number | null>(null);
   const [secondCheckBusy, setSecondCheckBusy] = useState(false);
 
@@ -38,6 +42,15 @@ export function DeadlinesTasksTab() {
   useEffect(() => {
     if (ctx.editingDeadlineIndex !== null) setShowDeadlineForm(true);
   }, [ctx.editingDeadlineIndex]);
+
+  useEffect(() => {
+    if (searchParams.get("action") !== "task") return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("matter-new-task")?.focus();
+      router.replace(pathname, { scroll: false });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname, router, searchParams]);
 
   if (!ctx.caseData) return null;
   const caseData = ctx.caseData;
@@ -734,6 +747,7 @@ export function DeadlinesTasksTab() {
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <input
+              id="matter-new-task"
               value={ctx.newTask}
               onChange={(e) => ctx.setNewTask(e.target.value)}
               onKeyDown={(e) => {

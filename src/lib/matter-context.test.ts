@@ -490,6 +490,92 @@ describe("buildFacts", () => {
     expect(facts[0].confidence).toBe("high");
     expect(facts[1].confidence).toBe("low");
   });
+
+  it("marks extracted facts as pending until reviewed", () => {
+    const fm: CaseFrontmatter = {
+      claims: ["Die Gegenseite schuldet Zahlung"],
+    };
+    const facts = buildFacts(fm);
+    expect(facts[0].review_status).toBe("pending");
+  });
+
+  it("keeps approved facts in the matter knowledge base", () => {
+    const fm: CaseFrontmatter = {
+      claims: ["Die Gegenseite schuldet Zahlung"],
+      knowledge_reviews: [
+        {
+          fact_id: "claim-0",
+          status: "approved",
+          original_statement: "Die Gegenseite schuldet Zahlung",
+          source: "case_frontmatter.claims",
+          reviewed_at: "2026-07-08T12:00:00.000Z",
+        },
+      ],
+    };
+    const facts = buildFacts(fm);
+    expect(facts[0].statement).toBe("Die Gegenseite schuldet Zahlung");
+    expect(facts[0].review_status).toBe("approved");
+  });
+
+  it("uses corrected fact statements while preserving the original extraction", () => {
+    const fm: CaseFrontmatter = {
+      claims: ["Zahlung war am 1. Juni fällig"],
+      knowledge_reviews: [
+        {
+          fact_id: "claim-0",
+          status: "corrected",
+          original_statement: "Zahlung war am 1. Juni fällig",
+          corrected_statement: "Zahlung war laut Vertrag am 3. Juni fällig",
+          source: "case_frontmatter.claims",
+          reviewed_at: "2026-07-08T12:00:00.000Z",
+        },
+      ],
+    };
+    const facts = buildFacts(fm);
+    expect(facts[0].statement).toBe("Zahlung war laut Vertrag am 3. Juni fällig");
+    expect(facts[0].original_statement).toBe("Zahlung war am 1. Juni fällig");
+    expect(facts[0].review_status).toBe("corrected");
+  });
+
+  it("removes rejected facts from the matter knowledge base", () => {
+    const fm: CaseFrontmatter = {
+      claims: ["Falsch extrahierter Sachverhalt"],
+      knowledge_reviews: [
+        {
+          fact_id: "claim-0",
+          status: "rejected",
+          original_statement: "Falsch extrahierter Sachverhalt",
+          source: "case_frontmatter.claims",
+          reviewed_at: "2026-07-08T12:00:00.000Z",
+        },
+      ],
+    };
+    expect(buildFacts(fm)).toEqual([]);
+  });
+
+  it("includes manually added knowledge reviews even without a prior extracted fact", () => {
+    const fm: CaseFrontmatter = {
+      knowledge_reviews: [
+        {
+          fact_id: "client-submission-wamid-1",
+          status: "approved",
+          original_statement: "Mandant hat per WhatsApp eine Datei eingereicht.",
+          source: "WhatsApp Mandant",
+          reviewed_at: "2026-07-08T12:00:00.000Z",
+        },
+      ],
+    };
+
+    const facts = buildFacts(fm);
+    expect(facts).toEqual([
+      expect.objectContaining({
+        id: "client-submission-wamid-1",
+        statement: "Mandant hat per WhatsApp eine Datei eingereicht.",
+        source: "WhatsApp Mandant",
+        review_status: "approved",
+      }),
+    ]);
+  });
 });
 
 // ── detectContradictions ──────────────────────────────────────────────

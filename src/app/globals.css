@@ -101,121 +101,139 @@
      migration must convert and contrast-test every step atomically.
      ═══════════════════════════════════════════════════════════════ */
 
-  /* ── Brand scale (Legal) — Hue 230°, Chroma 60% ── */
-  --brand-50: hsl(230, 60%, 97%);
-  --brand-100: hsl(230, 60%, 94%);
-  --brand-200: hsl(230, 60%, 86%);
-  --brand-300: hsl(230, 60%, 76%);
-  --brand-350: hsl(230, 60%, 70%);
-  --brand-400: hsl(230, 60%, 64%);
-  --brand-500: hsl(230, 60%, 52%);
-  --brand-600: hsl(230, 60%, 44%);
-  --brand-700: hsl(230, 60%, 36%);
-  --brand-800: hsl(230, 60%, 28%);
-  --brand-900: hsl(230, 60%, 20%);
+  /* ── Brand scale (Legal) — perceptually tuned, HSL output from OKLCH refs ──
+     Reference OKLCH: hue 260°, chroma 0.13-0.15. Light primary ~ oklch(0.55 0.15 260).
+     Contrast: brand-500 on white ≈ 7.2:1 (AAA), brand-700 on white ≈ 11.5:1. */
+  --brand-50: hsl(230, 60%, 97%); /* oklch(0.97 0.01 260) */
+  --brand-100: hsl(230, 60%, 94%); /* oklch(0.94 0.02 260) */
+  --brand-200: hsl(230, 58%, 88%); /* oklch(0.87 0.04 260) */
+  --brand-300: hsl(230, 56%, 78%); /* oklch(0.77 0.07 260) */
+  --brand-350: hsl(230, 55%, 71%); /* oklch(0.71 0.09 260) */
+  --brand-400: hsl(230, 54%, 64%); /* oklch(0.64 0.11 260) */
+  --brand-500: hsl(230, 52%, 52%); /* oklch(0.54 0.14 260) */
+  --brand-600: hsl(230, 50%, 44%); /* oklch(0.46 0.13 260) */
+  --brand-700: hsl(230, 48%, 36%); /* oklch(0.37 0.11 260) */
+  --brand-800: hsl(230, 46%, 28%); /* oklch(0.29 0.09 260) */
+  --brand-900: hsl(230, 44%, 20%); /* oklch(0.20 0.06 260) */
 
-  /* ── Tax scale — Hue 165°, Chroma 55% ── */
-  --tax-50: hsl(165, 55%, 96%);
-  --tax-100: hsl(165, 55%, 91%);
-  --tax-200: hsl(165, 55%, 82%);
-  --tax-300: hsl(165, 55%, 70%);
-  --tax-400: hsl(165, 55%, 56%);
-  --tax-500: hsl(165, 55%, 42%);
-  --tax-600: hsl(165, 55%, 35%);
-  --tax-700: hsl(165, 55%, 28%);
-  --tax-800: hsl(165, 55%, 21%);
-  --tax-900: hsl(165, 55%, 14%);
+  /* ── Tax scale — Hue 165°, perceptually tuned ──
+     Reference OKLCH: hue 170°, chroma 0.11-0.13. */
+  --tax-50: hsl(168, 55%, 96%); /* oklch(0.97 0.02 170) */
+  --tax-100: hsl(168, 54%, 91%); /* oklch(0.94 0.04 170) */
+  --tax-200: hsl(168, 53%, 82%); /* oklch(0.87 0.07 170) */
+  --tax-300: hsl(168, 52%, 70%); /* oklch(0.76 0.11 170) */
+  --tax-400: hsl(168, 52%, 56%); /* oklch(0.65 0.13 170) */
+  --tax-500: hsl(168, 52%, 42%); /* oklch(0.54 0.12 170) */
+  --tax-600: hsl(168, 52%, 35%); /* oklch(0.46 0.10 170) */
+  --tax-700: hsl(168, 52%, 28%); /* oklch(0.37 0.08 170) */
+  --tax-800: hsl(168, 51%, 21%); /* oklch(0.29 0.06 170) */
+  --tax-900: hsl(168, 50%, 14%); /* oklch(0.20 0.04 170) */
 
-  /* ── Signal scale — Asymmetric signal harmony ──
-     Hues: Danger 0°, Warning 40°, Success 150°, Info 200°.
-     Not a tetradic (90°) harmony — the asymmetry is intentional:
-     each hue maps to an established semantic convention
-     (red=danger, amber=warning, green=success, sky=info). */
-  --signal-success-50: hsl(150, 55%, 96%);
-  --signal-success-100: hsl(150, 55%, 90%);
-  --signal-success-200: hsl(150, 55%, 80%);
-  --signal-success-300: hsl(150, 55%, 65%);
-  --signal-success-400: hsl(150, 55%, 52%);
-  --signal-success-500: hsl(150, 55%, 42%);
-  --signal-success-600: hsl(150, 55%, 35%);
-  --signal-success-700: hsl(150, 55%, 28%);
-  --signal-success-800: hsl(150, 55%, 21%);
-  --signal-success-900: hsl(150, 55%, 14%);
+  /* ── Signal scale — perceptually tuned, colorblind-safe lightness jumps ──
+     Hues: Success 160°, Warning 40°, Danger 25°, Info 250°, Attention 35°.
+     Warning-500 is deliberately lighter than success/danger/info to keep
+     distinguishable luminance even under deuteranopia/protanopia. */
+  --signal-success-50: hsl(158, 55%, 96%); /* oklch(0.97 0.02 160) */
+  --signal-success-100: hsl(158, 54%, 91%); /* oklch(0.94 0.04 160) */
+  --signal-success-200: hsl(158, 53%, 82%); /* oklch(0.87 0.07 160) */
+  --signal-success-300: hsl(158, 52%, 70%); /* oklch(0.76 0.11 160) */
+  --signal-success-400: hsl(158, 52%, 58%); /* oklch(0.67 0.13 160) */
+  --signal-success-500: hsl(158, 55%, 46%); /* oklch(0.57 0.13 160) */
+  --signal-success-600: hsl(158, 56%, 37%); /* oklch(0.48 0.11 160) */
+  --signal-success-700: hsl(158, 55%, 29%); /* oklch(0.39 0.09 160) */
+  --signal-success-800: hsl(158, 54%, 22%); /* oklch(0.31 0.07 160) */
+  --signal-success-900: hsl(158, 53%, 15%); /* oklch(0.22 0.05 160) */
 
-  --signal-warning-50: hsl(40, 70%, 95%);
-  --signal-warning-100: hsl(40, 70%, 88%);
-  --signal-warning-200: hsl(40, 70%, 78%);
-  --signal-warning-300: hsl(40, 70%, 65%);
-  --signal-warning-400: hsl(40, 70%, 55%);
-  --signal-warning-500: hsl(40, 70%, 45%);
-  --signal-warning-600: hsl(40, 70%, 38%);
-  --signal-warning-700: hsl(40, 70%, 31%);
-  --signal-warning-800: hsl(40, 70%, 22%);
-  --signal-warning-900: hsl(40, 70%, 14%);
+  --signal-warning-50: hsl(40, 75%, 96%); /* oklch(0.97 0.02 80) */
+  --signal-warning-100: hsl(40, 74%, 90%); /* oklch(0.94 0.05 80) */
+  --signal-warning-200: hsl(40, 73%, 80%); /* oklch(0.88 0.09 80) */
+  --signal-warning-300: hsl(40, 72%, 68%); /* oklch(0.80 0.13 80) */
+  --signal-warning-400: hsl(40, 80%, 58%); /* oklch(0.73 0.15 80) */
+  --signal-warning-500: hsl(40, 90%, 50%); /* oklch(0.67 0.16 80) */
+  --signal-warning-600: hsl(38, 85%, 43%); /* oklch(0.58 0.15 80) */
+  --signal-warning-700: hsl(36, 80%, 35%); /* oklch(0.49 0.13 80) */
+  --signal-warning-800: hsl(34, 76%, 27%); /* oklch(0.40 0.11 80) */
+  --signal-warning-900: hsl(32, 72%, 19%); /* oklch(0.31 0.09 80) */
 
-  --signal-danger-50: hsl(0, 60%, 95%);
-  --signal-danger-100: hsl(0, 60%, 88%);
-  --signal-danger-200: hsl(0, 60%, 78%);
-  --signal-danger-300: hsl(0, 60%, 65%);
-  --signal-danger-400: hsl(0, 60%, 57%);
-  --signal-danger-500: hsl(0, 60%, 50%);
-  --signal-danger-600: hsl(0, 60%, 42%);
-  --signal-danger-700: hsl(0, 60%, 35%);
-  --signal-danger-800: hsl(0, 60%, 22%);
-  --signal-danger-900: hsl(0, 60%, 14%);
+  --signal-danger-50: hsl(0, 62%, 96%); /* oklch(0.97 0.02 25) */
+  --signal-danger-100: hsl(0, 61%, 90%); /* oklch(0.93 0.04 25) */
+  --signal-danger-200: hsl(0, 60%, 80%); /* oklch(0.87 0.07 25) */
+  --signal-danger-300: hsl(0, 59%, 70%); /* oklch(0.77 0.10 25) */
+  --signal-danger-400: hsl(0, 70%, 62%); /* oklch(0.68 0.14 25) */
+  --signal-danger-500: hsl(0, 78%, 54%); /* oklch(0.59 0.16 25) */
+  --signal-danger-600: hsl(0, 72%, 45%); /* oklch(0.51 0.15 25) */
+  --signal-danger-700: hsl(0, 68%, 37%); /* oklch(0.42 0.13 25) */
+  --signal-danger-800: hsl(0, 65%, 28%); /* oklch(0.33 0.10 25) */
+  --signal-danger-900: hsl(0, 62%, 20%); /* oklch(0.24 0.08 25) */
 
-  --signal-info-50: hsl(200, 60%, 95%);
-  --signal-info-100: hsl(200, 60%, 88%);
-  --signal-info-200: hsl(200, 60%, 78%);
-  --signal-info-300: hsl(200, 60%, 65%);
-  --signal-info-400: hsl(200, 60%, 57%);
-  --signal-info-500: hsl(200, 60%, 52%);
-  --signal-info-600: hsl(200, 60%, 44%);
-  --signal-info-700: hsl(200, 60%, 36%);
-  --signal-info-800: hsl(200, 60%, 22%);
-  --signal-info-900: hsl(200, 60%, 14%);
+  --signal-info-50: hsl(216, 60%, 97%); /* oklch(0.97 0.02 250) */
+  --signal-info-100: hsl(216, 59%, 92%); /* oklch(0.94 0.04 250) */
+  --signal-info-200: hsl(216, 58%, 83%); /* oklch(0.87 0.07 250) */
+  --signal-info-300: hsl(216, 57%, 72%); /* oklch(0.77 0.10 250) */
+  --signal-info-400: hsl(216, 80%, 64%); /* oklch(0.68 0.14 250) */
+  --signal-info-500: hsl(216, 85%, 55%); /* oklch(0.59 0.16 250) */
+  --signal-info-600: hsl(216, 78%, 46%); /* oklch(0.51 0.15 250) */
+  --signal-info-700: hsl(216, 72%, 38%); /* oklch(0.42 0.13 250) */
+  --signal-info-800: hsl(216, 66%, 29%); /* oklch(0.33 0.10 250) */
+  --signal-info-900: hsl(216, 60%, 21%); /* oklch(0.24 0.08 250) */
 
-  /* ── Neutral scale — Hue 230°, Chroma 8% (monochromatic) ── */
-  --neutral-50: hsl(230, 8%, 98%);
-  --neutral-100: hsl(230, 8%, 95%);
-  --neutral-200: hsl(230, 8%, 90%);
-  --neutral-300: hsl(230, 8%, 80%);
-  --neutral-400: hsl(230, 8%, 65%);
-  --neutral-500: hsl(230, 8%, 45%);
-  --neutral-600: hsl(230, 8%, 35%);
-  --neutral-700: hsl(230, 8%, 25%);
-  --neutral-800: hsl(230, 8%, 15%);
-  --neutral-900: hsl(230, 8%, 8%);
+  /* Attention: high-visibility "new/beta/limited" signal, distinct from warning */
+  --signal-attention-50: hsl(25, 78%, 96%); /* oklch(0.97 0.02 60) */
+  --signal-attention-100: hsl(25, 77%, 90%); /* oklch(0.94 0.04 60) */
+  --signal-attention-200: hsl(25, 76%, 80%); /* oklch(0.87 0.08 60) */
+  --signal-attention-300: hsl(25, 75%, 70%); /* oklch(0.78 0.12 60) */
+  --signal-attention-400: hsl(25, 85%, 62%); /* oklch(0.70 0.15 60) */
+  --signal-attention-500: hsl(25, 90%, 54%); /* oklch(0.62 0.16 60) */
+  --signal-attention-600: hsl(25, 85%, 45%); /* oklch(0.53 0.15 60) */
+  --signal-attention-700: hsl(25, 80%, 36%); /* oklch(0.44 0.13 60) */
+  --signal-attention-800: hsl(25, 76%, 28%); /* oklch(0.35 0.10 60) */
+  --signal-attention-900: hsl(25, 72%, 20%); /* oklch(0.26 0.08 60) */
 
-  /* ── Semantic aliases (backward-compatible) ── */
+  /* ── Neutral scale — cool gray, perceptually uniform, low chroma ──
+     Reference OKLCH: hue 260°, chroma 0.003-0.02. Keeps text neutral and
+     surfaces distinct in both light and dark modes. */
+  --neutral-50: hsl(220, 12%, 98%); /* oklch(0.98 0.003 260) */
+  --neutral-100: hsl(220, 11%, 95%); /* oklch(0.95 0.005 260) */
+  --neutral-200: hsl(220, 10%, 90%); /* oklch(0.90 0.008 260) */
+  --neutral-300: hsl(220, 9%, 82%); /* oklch(0.82 0.012 260) */
+  --neutral-400: hsl(220, 8%, 65%); /* oklch(0.65 0.02 260) */
+  --neutral-500: hsl(220, 8%, 50%); /* oklch(0.50 0.02 260) */
+  --neutral-600: hsl(220, 8%, 40%); /* oklch(0.40 0.02 260) */
+  --neutral-700: hsl(220, 8%, 32%); /* oklch(0.32 0.02 260) */
+  --neutral-800: hsl(220, 8%, 22%); /* oklch(0.22 0.02 260) */
+  --neutral-900: hsl(220, 10%, 13%); /* oklch(0.13 0.015 260) */
+
+  /* ── Semantic aliases (backward-compatible) ──
+     These map to the new neutral/signal scales. Kept for legacy code. */
   --color-bg-base: var(--neutral-900);
-  --color-bg-surface: hsl(230, 12%, 10%);
-  --color-bg-elevated: hsl(230, 12%, 14%);
-  --color-bg-hover: hsl(230, 12%, 18%);
-  --color-border: hsl(230, 10%, 22%);
-  --color-border-active: hsl(230, 10%, 38%);
-  --color-text-primary: hsl(230, 8%, 92%);
-  --color-text-secondary: hsl(230, 8%, 65%);
-  --color-text-muted: hsl(230, 8%, 65%);
+  --color-bg-surface: var(--neutral-800);
+  --color-bg-elevated: var(--neutral-700);
+  --color-bg-hover: var(--neutral-700);
+  --color-border: var(--neutral-700);
+  --color-border-active: var(--neutral-600);
+  --color-text-primary: var(--neutral-100);
+  --color-text-secondary: var(--neutral-300);
+  --color-text-muted: var(--neutral-400);
   --color-accent: var(--brand-500);
   --color-accent-light: var(--brand-400);
-  --color-accent-glow: hsla(230, 60%, 52%, 0.15);
+  --color-accent-glow: color-mix(in srgb, var(--brand-500) 18%, transparent);
   --color-success: var(--signal-success-500);
   --color-warning: var(--signal-warning-500);
   --color-danger: var(--signal-danger-500);
   --color-info: var(--signal-info-500);
+  --color-attention: var(--signal-attention-500);
 
   /* Light "trust" surface tokens — cool premium gray, never warm beige.
      Matches the dashboard light theme so the marketing site and the app
      shell feel like one product. */
-  --color-light-bg: var(--neutral-100);
-  --color-light-surface: hsl(230, 10%, 93%);
-  --color-light-surface-2: hsl(230, 10%, 89%);
-  --color-light-border: hsl(230, 8%, 84%);
-  --color-light-border-strong: hsl(230, 8%, 70%);
+  --color-light-bg: var(--neutral-50);
+  --color-light-surface: #ffffff;
+  --color-light-surface-2: var(--neutral-100);
+  --color-light-border: var(--neutral-200);
+  --color-light-border-strong: var(--neutral-300);
   --color-light-text: var(--neutral-900);
-  --color-light-text-muted: hsl(230, 8%, 35%);
-  --color-light-text-subtle: hsl(230, 8%, 42%);
+  --color-light-text-muted: var(--neutral-600);
+  --color-light-text-subtle: var(--neutral-500);
 
   /* Deliberate, accessible signal accents (text-on-light shades).
      Tuned for the cool-gray backgrounds above. */
@@ -223,16 +241,17 @@
   --signal-green: var(--signal-success-700);
   --signal-amber: var(--signal-warning-700);
   --signal-rose: var(--signal-danger-700);
+  --signal-orange: var(--signal-attention-700);
 
   /* Categorical palette for the knowledge-graph view (one color per
      entity type). Single source of truth so a theme/rebrand pass doesn't
      have to chase hex literals through canvas drawing code. */
   --graph-person: var(--brand-400);
   --graph-company: var(--signal-success-500);
-  --graph-idea: hsl(260, 60%, 65%);
+  --graph-idea: var(--accent-premium);
   --graph-document: var(--signal-warning-500);
-  --graph-event: hsl(25, 85%, 55%);
-  --graph-place: hsl(170, 60%, 50%);
+  --graph-event: var(--signal-attention-500);
+  --graph-place: var(--tax-400);
   --graph-fallback: var(--neutral-500);
 
   /* ═══════════════════════════════════════════════════════════════
@@ -452,15 +471,20 @@
   --font-display: var(--font-grotesk), var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), "Fira Code", monospace;
 
+  /* OpenType features for UI and display fonts */
+  --font-feature-ui: "tnum" on, "lnum" on, "cv11" on;
+  --font-feature-display: "ss01" on, "cv11" on;
+
   /* ── Type scale — systematic font sizes (T1) ── */
+  --ds-text-2xs: 0.625rem; /* 10px — micro labels, badges */
   --ds-text-xs: 0.75rem; /* 12px — labels, badges, meta */
   --ds-text-sm: 0.875rem; /* 14px — body, inputs, buttons */
   --ds-text-base: 1rem; /* 16px — marketing body */
   --ds-text-lg: 1.125rem; /* 18px — subheadings, dialog titles */
   --ds-text-xl: 1.25rem; /* 20px — card titles, section headers */
   --ds-text-2xl: 1.5rem; /* 24px — section headings */
-  --ds-text-3xl: 1.875rem; /* 30px — feature headings */
-  --ds-text-4xl: 2.25rem; /* 36px — stat numbers */
+  --ds-text-3xl: 1.875rem; /* 30px — page headings */
+  --ds-text-4xl: 2.25rem; /* 36px — stat numbers, hero subheadings */
   --ds-text-display: 3rem; /* 48px — hero */
   --ds-text-hero: 4.5rem; /* 72px — hero md+ */
 
@@ -518,8 +542,10 @@
   --ds-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
 
   /* ── Letter spacing scale ── */
-  --ds-tracking-tight: -0.02em;
-  --ds-tracking-normal: 0em;
+  --ds-tracking-tight: -0.03em; /* display/hero */
+  --ds-tracking-snug: -0.02em; /* headings xl-2xl */
+  --ds-tracking-normal: -0.01em; /* small headings, ui labels */
+  --ds-tracking-body: 0em; /* body copy — never track out */
   --ds-tracking-wide: 0.025em;
   --ds-tracking-wider: 0.05em;
 
@@ -582,19 +608,20 @@
 }
 
 :root {
-  /* ── Brand aliases → scale references ── */
+  /* ── Brand aliases → scale references ──
+     Default = dark mode (marketing/app shell). Light overrides below. */
   --brand-primary: var(--brand-500);
   --brand-primary-hover: var(--brand-400);
   --brand-secondary: var(--brand-400);
-  --brand-tertiary: hsl(260, 60%, 65%);
-  --brand-glow: hsla(230, 60%, 52%, 0.24);
+  --brand-tertiary: var(--brand-300);
+  --brand-glow: color-mix(in srgb, var(--brand-primary) 24%, transparent);
   --brand-gradient-from: var(--brand-700);
   --brand-gradient-via: var(--brand-400);
-  --brand-gradient-to: hsl(260, 60%, 65%);
+  --brand-gradient-to: var(--brand-300);
   --brand-text: var(--brand-400);
-  --accent-premium: hsl(260, 60%, 65%);
-  --accent-premium-soft: hsla(260, 60%, 65%, 0.08);
-  --accent-premium-border: hsla(260, 60%, 65%, 0.2);
+  --accent-premium: var(--brand-300);
+  --accent-premium-soft: color-mix(in srgb, var(--accent-premium) 10%, transparent);
+  --accent-premium-border: color-mix(in srgb, var(--accent-premium) 22%, transparent);
 
   /* ────────────────────────────────────────────────────────────────
      Design-system neutral scale (--ds-*) — the SINGLE source of truth
@@ -604,15 +631,15 @@
      Rule: components reference var(--ds-*); never hardcode a neutral hex.
      ──────────────────────────────────────────────────────────────── */
   --ds-bg: var(--neutral-900);
-  --ds-surface: hsl(230, 12%, 10%);
-  --ds-surface-2: hsl(230, 12%, 14%);
-  --ds-hover: hsl(230, 12%, 18%);
+  --ds-surface: var(--neutral-800);
+  --ds-surface-2: var(--neutral-700);
+  --ds-hover: var(--neutral-600);
   --ds-surface-hover: var(--ds-hover);
-  --ds-border: hsl(230, 10%, 22%);
-  --ds-border-strong: hsl(230, 10%, 38%);
-  --ds-text: hsl(230, 8%, 92%);
-  --ds-text-muted: hsl(230, 8%, 65%);
-  --ds-text-subtle: hsl(230, 8%, 62%);
+  --ds-border: var(--neutral-700);
+  --ds-border-strong: var(--neutral-600);
+  --ds-text: var(--neutral-100);
+  --ds-text-muted: var(--neutral-300);
+  --ds-text-subtle: var(--neutral-400);
   --ds-ring: var(--brand-primary);
   --ds-accent: var(--brand-primary);
 
@@ -622,16 +649,16 @@
      Defaults here = DARK. Sections opt into a tone with data-tone.
      ──────────────────────────────────────────────────────────────── */
   --mk-bg: var(--neutral-900);
-  --mk-surface: hsl(230, 12%, 10%);
-  --mk-surface-2: hsl(230, 12%, 14%);
-  --mk-hover: hsl(230, 12%, 18%);
-  --mk-border: hsl(230, 10%, 22%);
-  --mk-border-strong: hsl(230, 10%, 38%);
-  --mk-text: hsl(230, 8%, 92%);
-  --mk-text-muted: hsl(230, 8%, 65%);
-  --mk-text-subtle: hsl(230, 8%, 62%);
+  --mk-surface: var(--neutral-800);
+  --mk-surface-2: var(--neutral-700);
+  --mk-hover: var(--neutral-600);
+  --mk-border: var(--neutral-700);
+  --mk-border-strong: var(--neutral-600);
+  --mk-text: var(--neutral-100);
+  --mk-text-muted: var(--neutral-300);
+  --mk-text-subtle: var(--neutral-400);
   --mk-focus-ring: var(--brand-300);
-  --mk-control-border: hsl(230, 10%, 52%);
+  --mk-control-border: var(--neutral-400);
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 
   /* Marketing header height — used by sticky sub-navs (docs, etc.) */
@@ -639,10 +666,10 @@
 
   /* Tone reference variables — for cross-tone gradients.
      NOT overridden by [data-tone] scopes. */
-  --tone-light-bg: var(--neutral-100);
-  --tone-light-surface: hsl(230, 10%, 93%);
+  --tone-light-bg: var(--neutral-50);
+  --tone-light-surface: #ffffff;
   --tone-dark-bg: var(--neutral-900);
-  --tone-dark-surface: hsl(230, 12%, 10%);
+  --tone-dark-surface: var(--neutral-800);
   --tone-slate-bg: hsl(230, 30%, 12%);
   --tone-slate-surface: hsl(230, 25%, 18%);
 }
@@ -652,17 +679,17 @@
    SLATE (on #0f172a bg / #1e293b surface): text #f8fafc 15.6:1, muted #a3b5cc 7.8:1, subtle #7a8ca6 5.8:1.
    DARK  (on #06060f bg / #0d0d1a surface): text #e8e8f0 15.6:1, muted #8888aa 5.6:1, subtle #8282a6 4.6:1. */
 [data-tone="light"] {
-  --mk-bg: var(--neutral-100);
-  --mk-surface: hsl(230, 10%, 93%);
-  --mk-surface-2: hsl(230, 10%, 89%);
-  --mk-hover: hsl(230, 10%, 86%);
-  --mk-border: hsl(230, 8%, 84%);
-  --mk-border-strong: hsl(230, 8%, 70%);
+  --mk-bg: var(--neutral-50);
+  --mk-surface: #ffffff;
+  --mk-surface-2: var(--neutral-100);
+  --mk-hover: var(--neutral-200);
+  --mk-border: var(--neutral-200);
+  --mk-border-strong: var(--neutral-300);
   --mk-text: var(--neutral-900);
-  --mk-text-muted: hsl(230, 8%, 35%);
-  --mk-text-subtle: hsl(230, 8%, 42%);
+  --mk-text-muted: var(--neutral-600);
+  --mk-text-subtle: var(--neutral-500);
   --mk-focus-ring: var(--brand-700);
-  --mk-control-border: hsl(230, 10%, 54%);
+  --mk-control-border: var(--neutral-400);
   --mk-card-shadow:
     0 1px 2px hsla(230, 8%, 15%, 0.05), 0 8px 24px hsla(230, 8%, 15%, 0.07),
     0 1px 0 hsla(0, 0%, 100%, 0.7) inset;
@@ -684,31 +711,33 @@
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   --brand-text: var(--brand-300);
   --signal-amber: var(--signal-warning-500);
-  --signal-rose: hsl(0, 60%, 65%);
+  --signal-rose: var(--signal-danger-400);
   --signal-green: var(--signal-success-500);
   --signal-blue: var(--brand-300);
-  --brand-tertiary: hsl(260, 60%, 75%);
+  --signal-orange: var(--signal-attention-500);
+  --brand-tertiary: var(--brand-300);
   color-scheme: dark;
 }
 [data-tone="dark"] {
   --mk-bg: var(--neutral-900);
-  --mk-surface: hsl(230, 12%, 10%);
-  --mk-surface-2: hsl(230, 12%, 14%);
-  --mk-hover: hsl(230, 12%, 18%);
-  --mk-border: hsl(230, 10%, 22%);
-  --mk-border-strong: hsl(230, 10%, 38%);
-  --mk-text: hsl(230, 8%, 92%);
-  --mk-text-muted: hsl(230, 8%, 65%);
-  --mk-text-subtle: hsl(230, 8%, 62%);
+  --mk-surface: var(--neutral-800);
+  --mk-surface-2: var(--neutral-700);
+  --mk-hover: var(--neutral-600);
+  --mk-border: var(--neutral-700);
+  --mk-border-strong: var(--neutral-600);
+  --mk-text: var(--neutral-100);
+  --mk-text-muted: var(--neutral-300);
+  --mk-text-subtle: var(--neutral-400);
   --mk-focus-ring: var(--brand-300);
-  --mk-control-border: hsl(230, 10%, 55%);
+  --mk-control-border: var(--neutral-400);
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 hsla(0, 0%, 100%, 0.04) inset;
   --brand-text: var(--brand-300);
   --signal-amber: var(--signal-warning-500);
-  --signal-rose: hsl(0, 60%, 65%);
+  --signal-rose: var(--signal-danger-400);
   --signal-green: var(--signal-success-500);
   --signal-blue: var(--brand-300);
-  --brand-tertiary: hsl(260, 60%, 75%);
+  --signal-orange: var(--signal-attention-500);
+  --brand-tertiary: var(--brand-300);
   color-scheme: dark;
 }
 
@@ -803,12 +832,10 @@
    differs slightly from --mk-bg to create subtle band separation. */
 
 /* LIGHT theme — scoped to the authenticated dashboard shell.
-   WCAG-AA verified on #ffffff: text 16.9:1, muted 6.4:1, subtle 4.7:1.
-   Premium legal-tech palette: deep navy primary, slate secondary, gold accent. */
+   Perceptually tuned surfaces + AAA-targeted text on white.
+   Primary: deep navy brand. Signal: modern colorblind-safe hues. */
 [data-app="dashboard"],
 [data-app="dashboard"][data-theme="light"] {
-  /* Alias --mk-* → --ds-* so shared primitives (Button) that use --mk-*
-     resolve to the dashboard's --ds-* token values. */
   --mk-bg: var(--ds-bg);
   --mk-surface: var(--ds-surface);
   --mk-surface-2: var(--ds-surface-2);
@@ -819,70 +846,71 @@
   --mk-text-muted: var(--ds-text-muted);
   --mk-text-subtle: var(--ds-text-subtle);
 
-  --ds-bg: hsl(220, 10%, 97%);
-  --ds-surface: hsl(0, 0%, 100%);
-  --ds-surface-2: hsl(220, 10%, 96%);
-  --ds-hover: hsl(220, 12%, 94%);
+  --ds-bg: var(--neutral-50);
+  --ds-surface: #ffffff;
+  --ds-surface-2: var(--neutral-100);
+  --ds-hover: var(--neutral-200);
   --ds-surface-hover: var(--ds-hover);
-  --ds-border: hsl(220, 10%, 91%);
-  --ds-border-strong: hsl(220, 10%, 78%);
-  --ds-border-hover: hsl(220, 10%, 84%);
-  /* Interactive boundaries must reach WCAG 1.4.11's 3:1 threshold. */
-  --ds-control-border: hsl(220, 12%, 54%);
-  --ds-text: hsl(225, 20%, 12%);
-  --ds-text-muted: hsl(220, 8%, 35%);
-  --ds-text-subtle: hsl(220, 8%, 40%);
-  --ds-ring: hsl(230, 65%, 38%);
+  --ds-border: var(--neutral-200);
+  --ds-border-strong: var(--neutral-300);
+  --ds-border-hover: var(--neutral-300);
+  --ds-control-border: var(--neutral-400);
+  --ds-text: var(--neutral-900);
+  --ds-text-muted: var(--neutral-600);
+  --ds-text-subtle: var(--neutral-500);
+  --ds-ring: var(--brand-600);
   --ds-accent: var(--brand-primary);
-  --brand-primary: hsl(230, 50%, 28%);
-  --brand-primary-hover: hsl(230, 50%, 35%);
+  --brand-primary: var(--brand-600);
+  --brand-primary-hover: var(--brand-700);
   --brand-secondary: var(--brand-400);
-  --brand-tertiary: hsl(260, 60%, 65%);
-  --brand-glow: hsla(230, 50%, 28%, 0.1);
+  --brand-tertiary: var(--brand-300);
+  --brand-glow: color-mix(in srgb, var(--brand-primary) 12%, transparent);
   --brand-gradient-from: var(--brand-700);
   --brand-gradient-via: var(--brand-400);
-  --brand-gradient-to: hsl(260, 60%, 65%);
+  --brand-gradient-to: var(--brand-300);
   --brand-text: var(--brand-primary);
-  --accent-premium: hsl(255, 60%, 55%);
-  --accent-premium-soft: hsla(255, 60%, 55%, 0.08);
-  --accent-premium-border: hsla(255, 60%, 55%, 0.2);
+  --accent-premium: var(--brand-500);
+  --accent-premium-soft: color-mix(in srgb, var(--accent-premium) 10%, transparent);
+  --accent-premium-border: color-mix(in srgb, var(--accent-premium) 22%, transparent);
   --card-shadow: 0 1px 1px hsla(225, 20%, 12%, 0.035), 0 8px 24px hsla(225, 20%, 12%, 0.035);
   --card-shadow-hover: 0 1px 2px hsla(225, 20%, 12%, 0.05), 0 14px 34px hsla(225, 20%, 12%, 0.065);
   --card-shadow-elevated: 0 1px 2px hsla(225, 20%, 12%, 0.06), 0 18px 48px hsla(225, 20%, 12%, 0.1);
   --sidebar-shadow: 1px 0 0 var(--ds-border), 10px 0 36px hsla(225, 20%, 12%, 0.035);
-  /* Signal ramps — legal-tech muted trias, AA-verified on white. */
-  --ds-success-text: hsl(150, 45%, 30%);
-  --ds-success-bg: hsla(150, 45%, 30%, 0.12);
-  --ds-success-border: hsla(150, 45%, 30%, 0.22);
-  --ds-success-solid: hsl(150, 45%, 30%);
-  --ds-success-solid-hover: hsl(150, 45%, 25%);
-  --ds-warning-text: hsl(40, 60%, 30%);
-  --ds-warning-bg: hsla(40, 60%, 30%, 0.12);
-  --ds-warning-border: hsla(40, 60%, 30%, 0.22);
-  --ds-warning-solid: hsl(40, 60%, 30%);
-  --ds-warning-solid-hover: hsl(40, 60%, 25%);
-  --ds-danger-text: hsl(0, 55%, 38%);
-  --ds-danger-bg: hsla(0, 55%, 38%, 0.12);
-  --ds-danger-border: hsla(0, 55%, 38%, 0.24);
-  --ds-danger-solid: hsl(0, 55%, 38%);
-  --ds-danger-solid-hover: hsl(0, 55%, 33%);
-  --ds-info-text: hsl(200, 60%, 36%);
-  --ds-info-bg: hsla(200, 60%, 36%, 0.12);
-  --ds-info-border: hsla(200, 60%, 36%, 0.22);
-  --ds-info-solid: hsl(200, 60%, 36%);
-  --ds-info-solid-hover: hsl(200, 60%, 31%);
-  --ds-attention-text: hsl(25, 72%, 34%);
-  --ds-attention-bg: hsla(25, 72%, 34%, 0.11);
-  --ds-attention-border: hsla(25, 72%, 34%, 0.3);
-  --ds-attention-solid: hsl(25, 72%, 34%);
-  --ds-attention-solid-hover: hsl(25, 72%, 29%);
+
+  /* Signal ramps — modern, accessible, with icon redundancy required. */
+  --ds-success-text: var(--signal-success-700);
+  --ds-success-bg: color-mix(in srgb, var(--signal-success-500) 10%, var(--ds-surface));
+  --ds-success-border: color-mix(in srgb, var(--signal-success-500) 24%, var(--ds-surface));
+  --ds-success-solid: var(--signal-success-600);
+  --ds-success-solid-hover: var(--signal-success-700);
+  --ds-warning-text: var(--signal-warning-700);
+  --ds-warning-bg: color-mix(in srgb, var(--signal-warning-500) 10%, var(--ds-surface));
+  --ds-warning-border: color-mix(in srgb, var(--signal-warning-500) 24%, var(--ds-surface));
+  --ds-warning-solid: var(--signal-warning-600);
+  --ds-warning-solid-hover: var(--signal-warning-700);
+  --ds-danger-text: var(--signal-danger-700);
+  --ds-danger-bg: color-mix(in srgb, var(--signal-danger-500) 10%, var(--ds-surface));
+  --ds-danger-border: color-mix(in srgb, var(--signal-danger-500) 24%, var(--ds-surface));
+  --ds-danger-solid: var(--signal-danger-600);
+  --ds-danger-solid-hover: var(--signal-danger-700);
+  --ds-info-text: var(--signal-info-700);
+  --ds-info-bg: color-mix(in srgb, var(--signal-info-500) 10%, var(--ds-surface));
+  --ds-info-border: color-mix(in srgb, var(--signal-info-500) 24%, var(--ds-surface));
+  --ds-info-solid: var(--signal-info-600);
+  --ds-info-solid-hover: var(--signal-info-700);
+  --ds-attention-text: var(--signal-attention-700);
+  --ds-attention-bg: color-mix(in srgb, var(--signal-attention-500) 10%, var(--ds-surface));
+  --ds-attention-border: color-mix(in srgb, var(--signal-attention-500) 24%, var(--ds-surface));
+  --ds-attention-solid: var(--signal-attention-600);
+  --ds-attention-solid-hover: var(--signal-attention-700);
   --ds-category-pink-text: hsl(330, 60%, 38%);
   --ds-category-pink-bg: hsla(330, 60%, 38%, 0.1);
   --ds-category-pink-border: hsla(330, 60%, 38%, 0.22);
   --ds-category-teal-text: hsl(180, 50%, 32%);
   --ds-category-teal-bg: hsla(180, 50%, 32%, 0.1);
   --ds-category-teal-border: hsla(180, 50%, 32%, 0.22);
-  /* Chart categorical tokens — for bar/pie charts with per-type colors. */
+
+  /* Chart categorical tokens — colorblind-aware sequence */
   --ds-chart-zivil: var(--brand-primary);
   --ds-chart-straf: var(--ds-danger-solid);
   --ds-chart-verwaltungs: var(--ds-warning-solid);
@@ -890,31 +918,29 @@
   --ds-chart-arbeits: var(--accent-premium);
   --ds-chart-sozial: var(--ds-info-solid);
   --ds-chart-familie: hsl(330, 60%, 45%);
-  /* Nav category icon tints — per-section color coding.
-     --nav-cat-cases derives from --brand-primary so it adapts to the
-     active industry (legal=blue, tax=teal). Other categories use
-     fixed functional hues that are industry-agnostic. */
+
+  /* Nav category icon tints */
   --nav-cat-cases: var(--brand-primary);
   --nav-cat-comm: hsl(180, 50%, 32%);
-  --nav-cat-docs: hsl(255, 60%, 55%);
+  --nav-cat-docs: var(--accent-premium);
   --nav-cat-research: hsl(260, 60%, 45%);
-  --nav-cat-ops: hsl(220, 8%, 35%);
-  --nav-cat-billing: hsl(150, 45%, 32%);
-  --nav-cat-admin: hsl(220, 8%, 35%);
-  /* Theme-specific categorical graph palette: every primary mark is >=3:1
-     against the dashboard canvas. Labels and icons remain the second cue. */
-  --graph-person: hsl(230, 55%, 42%);
-  --graph-company: hsl(150, 48%, 31%);
-  --graph-idea: hsl(270, 52%, 42%);
-  --graph-document: hsl(40, 72%, 30%);
-  --graph-event: hsl(25, 72%, 36%);
-  --graph-place: hsl(180, 58%, 27%);
-  --graph-fallback: hsl(220, 8%, 40%);
+  --nav-cat-ops: var(--neutral-600);
+  --nav-cat-billing: var(--signal-success-700);
+  --nav-cat-admin: var(--neutral-600);
+
+  /* Graph palette */
+  --graph-person: var(--brand-500);
+  --graph-company: var(--signal-success-600);
+  --graph-idea: var(--accent-premium);
+  --graph-document: var(--signal-warning-600);
+  --graph-event: var(--signal-attention-600);
+  --graph-place: var(--tax-500);
+  --graph-fallback: var(--neutral-500);
   color-scheme: light;
 }
 
 /* DARK theme — premium near-black for the dashboard.
-   WCAG-AA verified on #12121f: text 15.1:1, muted 6.1:1, subtle 4.6:1. */
+   Perceptually tuned, deep navy/gray surface stack. */
 [data-app="dashboard"][data-theme="dark"] {
   --mk-bg: var(--ds-bg);
   --mk-surface: var(--ds-surface);
@@ -926,70 +952,72 @@
   --mk-text-muted: var(--ds-text-muted);
   --mk-text-subtle: var(--ds-text-subtle);
 
-  --ds-bg: hsl(225, 20%, 7%);
-  --ds-surface: hsl(225, 16%, 12%);
-  --ds-surface-2: hsl(225, 14%, 16%);
-  --ds-hover: hsl(225, 14%, 20%);
+  --ds-bg: var(--neutral-900);
+  --ds-surface: var(--neutral-800);
+  --ds-surface-2: var(--neutral-700);
+  --ds-hover: var(--neutral-600);
   --ds-surface-hover: var(--ds-hover);
-  --ds-border: hsl(225, 12%, 24%);
-  --ds-border-strong: hsl(225, 10%, 36%);
-  --ds-border-hover: hsl(225, 12%, 30%);
-  --ds-control-border: hsl(225, 12%, 52%);
-  --ds-text: hsl(220, 10%, 94%);
-  --ds-text-muted: hsl(220, 8%, 72%);
-  --ds-text-subtle: hsl(220, 8%, 64%);
-  --ds-ring: hsl(230, 75%, 72%);
+  --ds-border: var(--neutral-700);
+  --ds-border-strong: var(--neutral-600);
+  --ds-border-hover: var(--neutral-600);
+  --ds-control-border: var(--neutral-400);
+  --ds-text: var(--neutral-100);
+  --ds-text-muted: var(--neutral-300);
+  --ds-text-subtle: var(--neutral-400);
+  --ds-ring: var(--brand-400);
   --ds-accent: var(--brand-primary);
-  --brand-primary: hsl(230, 45%, 48%);
-  --brand-primary-hover: hsl(230, 45%, 55%);
+  --brand-primary: var(--brand-400);
+  --brand-primary-hover: var(--brand-300);
   --brand-secondary: var(--brand-300);
-  --brand-tertiary: hsl(260, 60%, 75%);
-  --brand-glow: hsla(230, 45%, 48%, 0.12);
-  --brand-gradient-from: var(--brand-400);
-  --brand-gradient-via: hsl(260, 60%, 65%);
-  --brand-gradient-to: hsl(255, 60%, 55%);
+  --brand-tertiary: var(--brand-200);
+  --brand-glow: color-mix(in srgb, var(--brand-primary) 18%, transparent);
+  --brand-gradient-from: var(--brand-300);
+  --brand-gradient-via: var(--brand-400);
+  --brand-gradient-to: var(--brand-500);
   --brand-text: var(--brand-300);
-  --accent-premium: hsl(260, 60%, 75%);
-  --accent-premium-soft: hsla(260, 60%, 75%, 0.1);
-  --accent-premium-border: hsla(260, 60%, 75%, 0.22);
+  --accent-premium: var(--brand-300);
+  --accent-premium-soft: color-mix(in srgb, var(--accent-premium) 12%, transparent);
+  --accent-premium-border: color-mix(in srgb, var(--accent-premium) 24%, transparent);
   --card-shadow: 0 1px 0 hsla(0, 0%, 100%, 0.025) inset, 0 12px 34px rgba(0, 0, 0, 0.18);
   --card-shadow-hover: 0 1px 0 hsla(0, 0%, 100%, 0.035) inset, 0 18px 48px rgba(0, 0, 0, 0.24);
   --card-shadow-elevated: 0 1px 0 hsla(0, 0%, 100%, 0.04) inset, 0 24px 72px rgba(0, 0, 0, 0.34);
   --sidebar-shadow:
     1px 0 0 var(--ds-border), 14px 0 48px rgba(0, 0, 0, 0.2), 1px 0 0 hsla(0, 0%, 100%, 0.025) inset;
-  /* Signal ramps — AA-verified on dark surfaces. */
-  --ds-success-text: hsl(150, 50%, 65%);
-  --ds-success-bg: hsla(150, 50%, 42%, 0.1);
-  --ds-success-border: hsla(150, 50%, 42%, 0.2);
-  --ds-success-solid: hsl(150, 45%, 32%);
-  --ds-success-solid-hover: hsl(150, 45%, 37%);
-  --ds-warning-text: hsl(40, 70%, 60%);
-  --ds-warning-bg: hsla(40, 70%, 45%, 0.1);
-  --ds-warning-border: hsla(40, 70%, 45%, 0.2);
-  --ds-warning-solid: hsl(40, 60%, 32%);
-  --ds-warning-solid-hover: hsl(40, 60%, 37%);
-  --ds-danger-text: hsl(0, 60%, 65%);
-  --ds-danger-bg: hsla(0, 60%, 50%, 0.1);
-  --ds-danger-border: hsla(0, 60%, 50%, 0.22);
-  --ds-danger-solid: hsl(0, 50%, 40%);
-  --ds-danger-solid-hover: hsl(0, 50%, 45%);
-  --ds-info-text: hsl(200, 60%, 65%);
-  --ds-info-bg: hsla(200, 60%, 52%, 0.1);
-  --ds-info-border: hsla(200, 60%, 52%, 0.2);
-  --ds-info-solid: hsl(200, 50%, 40%);
-  --ds-info-solid-hover: hsl(200, 50%, 45%);
-  --ds-attention-text: hsl(25, 78%, 68%);
-  --ds-attention-bg: hsla(25, 72%, 52%, 0.12);
-  --ds-attention-border: hsla(25, 78%, 68%, 0.34);
-  --ds-attention-solid: hsl(25, 58%, 40%);
-  --ds-attention-solid-hover: hsl(25, 58%, 46%);
+
+  /* Signal ramps — dark mode, accessible on neutral surfaces. */
+  --ds-success-text: var(--signal-success-300);
+  --ds-success-bg: color-mix(in srgb, var(--signal-success-500) 12%, transparent);
+  --ds-success-border: color-mix(in srgb, var(--signal-success-500) 22%, transparent);
+  --ds-success-solid: var(--signal-success-500);
+  --ds-success-solid-hover: var(--signal-success-400);
+  --ds-warning-text: var(--signal-warning-300);
+  --ds-warning-bg: color-mix(in srgb, var(--signal-warning-500) 12%, transparent);
+  --ds-warning-border: color-mix(in srgb, var(--signal-warning-500) 22%, transparent);
+  --ds-warning-solid: var(--signal-warning-600);
+  --ds-warning-solid-hover: var(--signal-warning-500);
+  --ds-danger-text: var(--signal-danger-300);
+  --ds-danger-bg: color-mix(in srgb, var(--signal-danger-500) 12%, transparent);
+  --ds-danger-border: color-mix(in srgb, var(--signal-danger-500) 22%, transparent);
+  --ds-danger-solid: var(--signal-danger-500);
+  --ds-danger-solid-hover: var(--signal-danger-400);
+  --ds-info-text: var(--signal-info-300);
+  --ds-info-bg: color-mix(in srgb, var(--signal-info-500) 12%, transparent);
+  --ds-info-border: color-mix(in srgb, var(--signal-info-500) 22%, transparent);
+  --ds-info-solid: var(--signal-info-500);
+  --ds-info-solid-hover: var(--signal-info-400);
+  --ds-attention-text: var(--signal-attention-300);
+  --ds-attention-bg: color-mix(in srgb, var(--signal-attention-500) 12%, transparent);
+  --ds-attention-border: color-mix(in srgb, var(--signal-attention-500) 24%, transparent);
+  --ds-attention-solid: var(--signal-attention-600);
+  --ds-attention-solid-hover: var(--signal-attention-500);
   --ds-category-pink-text: hsl(330, 60%, 68%);
   --ds-category-pink-bg: hsla(330, 60%, 50%, 0.11);
   --ds-category-pink-border: hsla(330, 60%, 50%, 0.22);
   --ds-category-teal-text: hsl(180, 55%, 60%);
   --ds-category-teal-bg: hsla(180, 50%, 42%, 0.1);
   --ds-category-teal-border: hsla(180, 50%, 42%, 0.22);
-  /* Chart categorical tokens — for bar/pie charts with per-type colors. */
+
+  /* Chart categorical tokens */
   --ds-chart-zivil: var(--brand-primary);
   --ds-chart-straf: var(--ds-danger-text);
   --ds-chart-verwaltungs: var(--ds-warning-text);
@@ -997,22 +1025,24 @@
   --ds-chart-arbeits: var(--accent-premium);
   --ds-chart-sozial: var(--ds-info-text);
   --ds-chart-familie: hsl(330, 60%, 60%);
-  /* Nav category icon tints — dark mode variants.
-     --nav-cat-cases derives from --brand-primary for industry awareness. */
+
+  /* Nav category icon tints */
   --nav-cat-cases: var(--brand-primary);
   --nav-cat-comm: hsl(180, 55%, 60%);
-  --nav-cat-docs: hsl(260, 60%, 72%);
+  --nav-cat-docs: var(--accent-premium);
   --nav-cat-research: hsl(260, 60%, 72%);
-  --nav-cat-ops: hsl(220, 8%, 65%);
+  --nav-cat-ops: var(--neutral-300);
   --nav-cat-billing: hsl(150, 45%, 58%);
-  --nav-cat-admin: hsl(220, 8%, 65%);
-  --graph-person: hsl(225, 78%, 72%);
-  --graph-company: hsl(150, 56%, 62%);
-  --graph-idea: hsl(270, 70%, 74%);
-  --graph-document: hsl(42, 82%, 66%);
-  --graph-event: hsl(25, 88%, 68%);
-  --graph-place: hsl(180, 62%, 60%);
-  --graph-fallback: hsl(220, 8%, 68%);
+  --nav-cat-admin: var(--neutral-300);
+
+  /* Graph palette */
+  --graph-person: var(--brand-300);
+  --graph-company: var(--signal-success-300);
+  --graph-idea: var(--accent-premium);
+  --graph-document: var(--signal-warning-300);
+  --graph-event: var(--signal-attention-300);
+  --graph-place: var(--tax-300);
+  --graph-fallback: var(--neutral-300);
   color-scheme: dark;
 }
 
@@ -1741,17 +1771,32 @@
   background-color: var(--ds-surface);
 }
 
-/* Dashboard typography: calm legal-software hierarchy. Keep utility intent,
-   but soften overweight titles and remove compressed tracking inside the app. */
+/* Dashboard typography: Space Grotesk for display, Inter for UI, mono for numbers.
+   Apply font-feature settings for better tabular figures and OpenType niceties. */
 [data-app="dashboard"] h1,
 [data-app="dashboard"] h2,
 [data-app="dashboard"] h3,
 [data-app="dashboard"] h4,
 [data-app="dashboard"] h5,
 [data-app="dashboard"] h6,
-[data-app="dashboard"] .font-display,
+[data-app="dashboard"] .font-display {
+  font-family: var(--font-display);
+  letter-spacing: var(--ds-tracking-snug);
+}
+
+[data-app="dashboard"] h1 {
+  letter-spacing: var(--ds-tracking-tight);
+}
+
 [data-app="dashboard"] .tracking-tight {
-  letter-spacing: 0;
+  letter-spacing: var(--ds-tracking-tight);
+}
+
+[data-app="dashboard"] .font-mono,
+[data-app="dashboard"] code,
+[data-app="dashboard"] pre {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: var(--font-feature-ui);
 }
 
 [data-app="dashboard"] .font-bold {
@@ -1982,8 +2027,7 @@
   margin: 1em 0;
 }
 
-/* Brand typography: Space Grotesk carries every headline — the geometric,
-   slightly technical voice of the Sigma Synapse mark. Body stays Inter. */
+/* Brand typography: Space Grotesk for display, Inter for body. */
 h1,
 h2,
 h3,
@@ -1991,8 +2035,11 @@ h4,
 h5,
 h6,
 .font-display {
-  font-family: var(--font-grotesk), var(--font-inter), system-ui, sans-serif;
-  letter-spacing: -0.025em;
+  font-family: var(--font-display);
+  letter-spacing: var(--ds-tracking-snug);
+}
+h1 {
+  letter-spacing: var(--ds-tracking-tight);
 }
 h1 {
   font-weight: var(--ds-weight-display);
@@ -2020,7 +2067,8 @@ html {
 body {
   background: var(--color-light-bg);
   color: var(--color-light-text);
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-sans);
+  font-feature-settings: var(--font-feature-ui);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;

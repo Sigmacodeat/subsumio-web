@@ -10,6 +10,7 @@ import type {
   AuditLogEntry,
   AdditionalOpponent,
 } from "@/lib/legal-types";
+import type { CaseMandateAcceptance } from "@/lib/intake-acceptance";
 import type { BrainPage } from "@/lib/types";
 import type { DeadlineStatus } from "@/lib/legal-deadlines";
 
@@ -20,6 +21,7 @@ export interface SuggestedDeadline {
   source: string;
   source_quote: string;
   confirmed: boolean;
+  review_status?: "pending" | "approved" | "rejected";
 }
 
 export interface SuggestedParty {
@@ -27,6 +29,16 @@ export interface SuggestedParty {
   role: string;
   source: string;
   confirmed: boolean;
+  review_status?: "pending" | "approved" | "rejected";
+}
+
+export interface KnowledgeReview {
+  fact_id: string;
+  status: "approved" | "party_assertion" | "corrected" | "rejected";
+  original_statement: string;
+  corrected_statement?: string;
+  source: string;
+  reviewed_at: string;
 }
 
 export interface ContradictionFinding {
@@ -83,11 +95,13 @@ export interface CaseDetail {
   suggestedDeadlines?: SuggestedDeadline[];
   suggestedParties?: SuggestedParty[];
   contradictions?: ContradictionFinding[];
+  knowledgeReviews: KnowledgeReview[];
   portalEnabled: boolean;
   portalNote?: string;
   auditLog?: AuditLogEntry[];
   archivedAt?: string;
   archivedBy?: string;
+  mandateAcceptance?: CaseMandateAcceptance;
   version: number;
 }
 
@@ -188,11 +202,18 @@ export function parseCaseDetail(page: BrainPage): CaseDetail {
     contradictions: Array.isArray(fm.contradictions)
       ? (fm.contradictions as ContradictionFinding[])
       : [],
+    knowledgeReviews: Array.isArray(fm.knowledge_reviews)
+      ? (fm.knowledge_reviews as KnowledgeReview[])
+      : [],
     portalEnabled: (fm.portal_enabled as boolean) || false,
     portalNote: (fm.portal_note as string) || undefined,
     auditLog: (fm.audit_log as AuditLogEntry[]) || [],
     archivedAt: typeof fm.archived_at === "string" ? fm.archived_at : undefined,
     archivedBy: typeof fm.archived_by === "string" ? fm.archived_by : undefined,
+    mandateAcceptance:
+      typeof fm.mandate_acceptance === "object" && fm.mandate_acceptance !== null
+        ? (fm.mandate_acceptance as CaseMandateAcceptance)
+        : undefined,
     version: (fm.version as number) || 0,
   };
 }

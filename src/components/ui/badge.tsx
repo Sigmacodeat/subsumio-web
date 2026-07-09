@@ -6,8 +6,10 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]",
-        accent: "brand-soft brand-text brand-border border",
+        default:
+          "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]",
+        accent:
+          "border border-[color:var(--accent-premium-border)] bg-[color:var(--accent-premium-soft)] text-[color:var(--accent-premium)]",
         success:
           "border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
         warning:
@@ -15,6 +17,8 @@ const badgeVariants = cva(
         danger:
           "border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
         info: "border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+        attention:
+          "border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]",
         // Same categorical entity-type palette as the knowledge-graph view
         // (--graph-* tokens in globals.css) — kept in sync so a badge and
         // its node on the graph always read as the same color.

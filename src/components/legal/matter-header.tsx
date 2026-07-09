@@ -24,6 +24,7 @@ import {
   FolderOpen,
   Clock,
   Receipt,
+  Upload,
 } from "lucide-react";
 import { useMatterData, type MatterVitals } from "@/lib/matter-data-context";
 import { useRecentMatters } from "@/lib/use-recent-matters";
@@ -86,6 +87,13 @@ const STATUS_LABELS_EN: Record<string, string> = {
   dormant: "Dormant",
   archived: "Archived",
 };
+
+const ACTIONS = [
+  { event: "subsumio:upload-document", icon: Upload, labelDe: "Dokument", labelEn: "Document" },
+  { event: "subsumio:create-deadline", icon: CalendarClock, labelDe: "Frist", labelEn: "Deadline" },
+  { event: "subsumio:create-task", icon: CheckSquare, labelDe: "Aufgabe", labelEn: "Task" },
+  { event: "subsumio:log-time", icon: Clock, labelDe: "Zeit", labelEn: "Time" },
+] as const;
 
 // ── Vitals Bar ────────────────────────────────────────────────────────
 
@@ -431,6 +439,39 @@ export function MatterHeader() {
           )}
         </div>
       </div>
+
+      {!isArchived && (
+        <div
+          className="flex items-center gap-2 overflow-x-auto border-t border-[color:var(--ds-border)] px-4 py-2 md:px-6"
+          role="group"
+          aria-label={lang === "en" ? "Matter actions" : "Aktionen für diese Akte"}
+        >
+          <span className="hidden shrink-0 text-xs font-medium text-[color:var(--ds-text-muted)] sm:inline">
+            {lang === "en" ? "Add:" : "Hinzufügen:"}
+          </span>
+          {ACTIONS.map(({ event, icon: Icon, labelDe, labelEn }, index) => {
+            const label = lang === "en" ? labelEn : labelDe;
+            return (
+              <Button
+                key={event}
+                type="button"
+                variant={index === 0 ? "primary" : "outline"}
+                size="sm"
+                className="h-11 shrink-0 gap-2 px-3"
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent(event, { detail: { caseSlug: matter.slug } })
+                  )
+                }
+                aria-label={`${label} ${lang === "en" ? "add to this matter" : "zu dieser Akte hinzufügen"}`}
+              >
+                <Icon size={15} aria-hidden="true" />
+                {label}
+              </Button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Row 2: Vitals Bar — key counts at-a-glance */}
       {matter.vitals && <VitalsBar vitals={matter.vitals} caseSlug={matter.slug} lang={lang} />}

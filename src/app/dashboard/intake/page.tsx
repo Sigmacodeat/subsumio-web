@@ -58,6 +58,8 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { tracking } from "@/lib/tracking";
+import { IntakeAcceptanceWizard } from "@/components/legal/IntakeAcceptanceWizard";
+import type { IntakeAcceptanceWorkflow } from "@/lib/intake-acceptance";
 
 type IntakeStatus = "new" | "needs_info" | "conflict_check" | "accepted" | "rejected" | "converted";
 
@@ -82,6 +84,8 @@ interface IntakeRecord {
     source_event_slug?: string;
     created_at: string;
     updated_at: string;
+    /** Mandatsannahme-Pipeline — Status aller Pflichtschritte. */
+    acceptance?: IntakeAcceptanceWorkflow;
   };
 }
 
@@ -137,6 +141,7 @@ export default function IntakePage() {
   const [search, setSearch] = useState("");
   const [conversionTargets, setConversionTargets] = useState<Record<string, string>>({});
   const [createOpen, setCreateOpen] = useState(false);
+  const [wizardItem, setWizardItem] = useState<IntakeRecord | null>(null);
   const [createForm, setCreateForm] = useState({
     source: "manual" as IntakeSource,
     summary: "",
@@ -184,22 +189,13 @@ export default function IntakePage() {
     },
   });
 
-  const convertMutation = useMutation({
-    mutationFn: api.intake.convert,
-    onSuccess: () => {
-      tracking.intake.approved("converted");
-      qc.invalidateQueries({ queryKey: ["intake", "list"] });
-      qc.invalidateQueries({ queryKey: ["brain", "pages"] });
-      addToast({ type: "success", title: t("intake.toast_converted") });
-    },
-    onError: (err) => {
-      addToast({
-        type: "error",
-        title: t("intake.toast_convert_failed"),
-        description: err instanceof Error ? err.message : undefined,
-      });
-    },
-  });
+  function handleConverted() {
+    tracking.intake.approved("converted");
+    qc.invalidateQueries({ queryKey: ["intake", "list"] });
+    qc.invalidateQueries({ queryKey: ["brain", "pages"] });
+    addToast({ type: "success", title: t("intake.toast_converted") });
+    setWizardItem(null);
+  }
 
   const items = useMemo(() => listFromResponse(listQuery.data), [listQuery.data]);
   const filtered = useMemo(() => {
@@ -269,25 +265,11 @@ export default function IntakePage() {
     }
   }
 
-  async function convertToCase(item: IntakeRecord) {
-    if (!canConvert(item)) {
-      addToast({
-        type: "error",
-        title: t("intake.toast_convert_blocked"),
-        description: t("intake.toast_convert_blocked_desc"),
-      });
+  function startAcceptance(item: IntakeRecord) {
+    if (item.frontmatter.status === "converted" || item.frontmatter.status === "rejected") {
       return;
     }
-    const desiredSlug = conversionTargets[item.slug]?.trim();
-    await convertMutation.mutateAsync({
-      slug: item.slug,
-      case_slug: desiredSlug || undefined,
-      title: item.frontmatter.client_name
-        ? `${item.frontmatter.client_name}${item.frontmatter.legal_area ? ` - ${item.frontmatter.legal_area}` : ""}`
-        : undefined,
-      priority: "medium",
-      portal_enabled: false,
-    });
+    setWizardItem(item);
   }
 
   async function createIntake() {
@@ -310,15 +292,8 @@ export default function IntakePage() {
     });
   }
 
-  function canConvert(item: IntakeRecord) {
-    if (item.frontmatter.status === "converted" || item.frontmatter.status === "rejected")
-      return false;
-    if (item.frontmatter.status !== "accepted") return false;
-    return (
-      item.frontmatter.conflict_check_status !== "pending" &&
-      item.frontmatter.conflict_check_status !== "needs_review" &&
-      item.frontmatter.conflict_check_status !== "conflict"
-    );
+  function canStartAcceptance(item: IntakeRecord) {
+    return item.frontmatter.status !== "converted" && item.frontmatter.status !== "rejected";
   }
 
   const loading = listQuery.isLoading;
@@ -827,17 +802,17 @@ export default function IntakePage() {
                           className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--brand-primary)]"
                         />
                         <Button
-                          onClick={() => void convertToCase(item)}
-                          disabled={convertMutation.isPending || !canConvert(item)}
+                          onClick={() => startAcceptance(item)}
+                          disabled={!canStartAcceptance(item)}
                           className="brand-bg gap-2 text-white"
-                          title={!canConvert(item) ? t("intake.convert_disabled_hint") : undefined}
+                          title={
+                            !canStartAcceptance(item)
+                              ? t("intake.convert_disabled_hint")
+                              : undefined
+                          }
                         >
-                          {convertMutation.isPending ? (
-                            <Loader2 size={14} className="animate-spin" />
-                          ) : (
-                            <Plus size={14} />
-                          )}
-                          {t("intake.action_convert")}
+                          <Plus size={14} />
+                          {t("intake.action_acceptance")}
                         </Button>
                       </div>
                     </div>
@@ -847,6 +822,20 @@ export default function IntakePage() {
             })}
           </div>
         </>
+      )}
+
+      {/* Mandatsannahme Wizard */}
+      {wizardItem && (
+        <IntakeAcceptanceWizard
+          open={Boolean(wizardItem)}
+          onOpenChange={(open) => {
+            if (!open) setWizardItem(null);
+          }}
+          item={wizardItem}
+          caseSlug={conversionTargets[wizardItem.slug]?.trim()}
+          onUpdated={() => void qc.invalidateQueries({ queryKey: ["intake", "list"] })}
+          onConverted={handleConverted}
+        />
       )}
 
       {/* Create Modal */}

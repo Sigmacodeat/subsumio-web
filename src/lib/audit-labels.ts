@@ -33,6 +33,7 @@ export type AuditAction =
   | "document.presign"
   | "document.confirm"
   | "document.presign_batch"
+  | "document.import_from_submission"
   | "deadline.create"
   | "deadline.update"
   | "deadline.delete"
@@ -159,7 +160,8 @@ export type AuditAction =
   | "rciid.status_updated"
   | "rciid.report_downloaded"
   | "rciid.billing_auto"
-  | "rciid.wallet_detected";
+  | "rciid.wallet_detected"
+  | "submission.review";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -184,6 +186,7 @@ const ACTION_LABELS: Record<string, string> = {
   "document.presign": "Upload vorbereitet (Presigned URL)",
   "document.confirm": "Upload bestätigt und verarbeitet",
   "document.presign_batch": "Batch-Upload vorbereitet",
+  "document.import_from_submission": "Dokument aus Mandanten-Einreichung importiert",
   "deadline.create": "Frist erstellt",
   "deadline.update": "Frist aktualisiert",
   "deadline.delete": "Frist gelöscht",
@@ -281,6 +284,7 @@ const ACTION_LABELS: Record<string, string> = {
   "tax.client_letter": "Mandantenbrief generiert",
   "inbox.mark_read": "Nachricht als gelesen markiert",
   "triage.action": "Triage-Aktion ausgeführt",
+  "submission.review": "Mandanteneingang geprüft",
   "bea.send": "beA-Versand gestartet",
   "bea.retry": "beA-Versand Retry",
   "system.alert": "System-Warnung",

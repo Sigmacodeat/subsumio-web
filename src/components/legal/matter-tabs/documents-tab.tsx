@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Loader2,
   FileText,
@@ -36,6 +37,18 @@ interface DocJurisdiction {
 export function DocumentsTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (searchParams.get("action") !== "upload") return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("matter-document-upload-zone")?.focus();
+      router.replace(pathname, { scroll: false });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname, router, searchParams]);
   // Jurisdiction lives on the doc pages (stamped by the pipeline), not on the
   // case's documents[] entries — batch-fetch it like the evidence tab does.
   const [docJurisdictions, setDocJurisdictions] = useState<Record<string, DocJurisdiction>>({});
@@ -82,6 +95,7 @@ export function DocumentsTab() {
       <ActImportCockpit caseSlug={caseData.slug} />
       {/* Upload zone */}
       <div
+        id="matter-document-upload-zone"
         onDragOver={(e) => {
           e.preventDefault();
           e.currentTarget.classList.add(

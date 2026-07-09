@@ -1090,6 +1090,8 @@ export const D = {
   "topbar.theme_dark_aria": { de: "Dunkles Design aktivieren", en: "Activate dark theme" },
   "topbar.notifications": { de: "Benachrichtigungen", en: "Notifications" },
   "topbar.all_notifications": { de: "Alle Benachrichtigungen", en: "All notifications" },
+  "topbar.enable_push": { de: "Push aktivieren", en: "Enable Push" },
+  "topbar.push_active": { de: "Push aktiv", en: "Push on" },
   "topbar.notification_settings": {
     de: "Benachrichtigungseinstellungen",
     en: "Notification settings",
@@ -5929,6 +5931,7 @@ export const D = {
   "intake.action_accept": { de: "Akzeptieren", en: "Accept" },
   "intake.action_reject": { de: "Ablehnen", en: "Reject" },
   "intake.action_convert": { de: "Akte anlegen", en: "Create case" },
+  "intake.action_acceptance": { de: "Mandatsannahme starten", en: "Start acceptance" },
   "intake.convert_disabled_hint": {
     de: "Erst akzeptieren und Kollision/Rückfragen klären.",
     en: "Accept first and clear conflicts/questions.",

@@ -79,6 +79,8 @@ export const GET = createHandler(
       docs,
       legalDocs,
       invoices,
+      submissions,
+      casePages,
     ] = await Promise.all([
       fetchPagesByType(ctx.headers, "legal_deadline", 100),
       fetchPagesByType(ctx.headers, "intake_request", 50),
@@ -90,6 +92,8 @@ export const GET = createHandler(
       fetchPagesByType(ctx.headers, "document", 100),
       fetchPagesByType(ctx.headers, "legal_document", 100),
       fetchPagesByType(ctx.headers, "invoice", 50),
+      fetchPagesByType(ctx.headers, "client_submission", 50),
+      fetchPagesByType(ctx.headers, "legal_case", 100),
     ]);
 
     const badges: BadgeCounts = {};
@@ -165,6 +169,43 @@ export const GET = createHandler(
     ).length;
     if (invoiceCount > 0) {
       badges["/dashboard/invoicing"] = { count: invoiceCount, variant: "warning" };
+    }
+
+    // Review Inbox — unreviewed items from client submissions + case frontmatter
+    let reviewInboxCount = 0;
+    for (const p of submissions) {
+      const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+      const rs = String(fm.review_status ?? "");
+      if (rs !== "reviewed" && rs !== "imported") reviewInboxCount++;
+    }
+    for (const p of casePages) {
+      const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+      const sds = Array.isArray(fm.suggested_deadlines)
+        ? (fm.suggested_deadlines as Array<Record<string, unknown>>)
+        : [];
+      for (const sd of sds) {
+        if (!sd.confirmed && sd.review_status !== "approved" && sd.review_status !== "rejected")
+          reviewInboxCount++;
+      }
+      const parties = Array.isArray(fm.suggested_parties)
+        ? (fm.suggested_parties as Array<Record<string, unknown>>)
+        : [];
+      for (const party of parties) {
+        if (
+          !party.confirmed &&
+          party.review_status !== "approved" &&
+          party.review_status !== "rejected"
+        )
+          reviewInboxCount++;
+      }
+      const facts = Array.isArray(fm.facts) ? (fm.facts as Array<Record<string, unknown>>) : [];
+      for (const fact of facts) {
+        const rs = String(fact.review_status ?? "pending");
+        if (rs === "pending") reviewInboxCount++;
+      }
+    }
+    if (reviewInboxCount > 0) {
+      badges["/dashboard/communications"] = { count: reviewInboxCount, variant: "warning" };
     }
 
     return apiSuccess(badges);

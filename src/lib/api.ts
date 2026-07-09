@@ -1958,6 +1958,7 @@ export const api = {
       converted_case_slug?: string;
       missing_documents?: string[];
       summary?: string;
+      acceptance?: Record<string, unknown>;
     }): Promise<Record<string, unknown>> {
       return request("/api/intake", { method: "PATCH", body: JSON.stringify(input) });
     },
@@ -1995,6 +1996,50 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify({ slug: input.slug, read: input.read ?? true }),
       });
+    },
+  },
+
+  reviewInbox: {
+    list(): Promise<{
+      items: Array<{
+        id: string;
+        type:
+          | "document_request"
+          | "suggested_deadline"
+          | "client_submission"
+          | "suggested_party"
+          | "pending_fact";
+        title: string;
+        description: string;
+        caseSlug: string | null;
+        caseTitle: string | null;
+        priority: "high" | "medium" | "low";
+        source: string;
+        createdAt: string;
+        status: string;
+        actionLabel: string;
+        secondaryLabel: string | null;
+        pageSlug: string;
+        requestSlug: string | null;
+        items: string[];
+        channel: string | null;
+        portalUrl: string | null;
+        messageDraft: string | null;
+        dueDate: string | null;
+        urgency: string | null;
+        law: string | null;
+        confidence: string | null;
+        sourceQuote: string | null;
+        partyName: string | null;
+        partyRole: string | null;
+        factId: string | null;
+        factStatement: string | null;
+        factConfidence: string | null;
+        arrayIndex: number | null;
+      }>;
+      total: number;
+    }> {
+      return request("/api/review-inbox");
     },
   },
 

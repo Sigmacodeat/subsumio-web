@@ -75,6 +75,10 @@ vi.mock("@/lib/queries/auth", () => ({
   useLogout: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
+vi.mock("@/lib/queries/review-inbox-realtime", () => ({
+  useReviewInboxRealtime: () => ({ pendingCount: 0 }),
+}));
+
 function renderSidebar(props: Partial<ComponentProps<typeof Sidebar>> = {}) {
   return render(
     <Sidebar

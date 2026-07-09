@@ -106,6 +106,17 @@ export interface MatterFactEntry {
   date?: string;
   superseded_by?: string;
   contradicts?: string[];
+  review_status?: "pending" | "approved" | "party_assertion" | "corrected";
+  original_statement?: string;
+}
+
+export interface MatterKnowledgeReview {
+  fact_id: string;
+  status: "approved" | "party_assertion" | "corrected" | "rejected";
+  original_statement: string;
+  corrected_statement?: string;
+  source: string;
+  reviewed_at: string;
 }
 
 // ── Communication Summary ─────────────────────────────────────────────

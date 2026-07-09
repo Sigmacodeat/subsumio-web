@@ -116,6 +116,7 @@ import type { DashboardKey } from "@/content/dashboard";
 import { MatterSidebarSection } from "@/components/dashboard/matter-sidebar-section";
 import { SidebarQuickAccess } from "@/components/dashboard/sidebar-quick-access";
 import { useSidebarBadges, type SidebarBadges } from "@/lib/queries/sidebar-badges";
+import { useReviewInboxRealtime } from "@/lib/queries/review-inbox-realtime";
 import { useResizable } from "@/lib/use-resizable";
 import { useLogout } from "@/lib/queries/auth";
 
@@ -1800,6 +1801,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   const sidebarWidth = collapsed && isDesktop ? 64 : isDesktop ? expandedWidth : 240;
   const badgesQuery = useSidebarBadges();
   const badges: SidebarBadges = badgesQuery.data ?? {};
+  useReviewInboxRealtime();
   const logoutMutation = useLogout();
 
   const isTax = industry === "tax";
@@ -2060,7 +2062,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
       }}
       transition={sidebarShellTransition}
       className={cn(
-        "sidebar-shadow z-50 shrink-0 overflow-hidden border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-transform duration-[var(--ds-duration-panel)] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width,transform] motion-reduce:transition-none",
+        "sidebar-shadow z-50 shrink-0 overflow-hidden border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] transition-transform duration-[var(--ds-duration-panel)] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width,transform] motion-reduce:transition-none",
         "fixed inset-y-0 left-0 md:static",
         mobileOpen
           ? "translate-x-0 shadow-2xl"
@@ -2291,10 +2293,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     onClick={() => setMobileOpen(false)}
                     title={tooltip}
                     className={cn(
-                      "group relative flex items-center gap-3 rounded-lg text-[13px] font-semibold transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                      "group relative flex items-center gap-3 rounded-lg text-[13px] font-semibold transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface-2)] focus-visible:outline-none",
                       collapsed ? "h-9 justify-center px-0" : "h-9 px-3",
                       active
-                        ? "brand-soft brand-text shadow-[0_0_12px_-2px_var(--brand-glow)]"
+                        ? "brand-soft brand-text border-l-[3px] border-[color:var(--brand-primary)]"
                         : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
                     )}
                   >
@@ -2415,9 +2417,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                             }}
                             title={item.tooltipKey ? t(item.tooltipKey) : t(item.labelKey)}
                             className={cn(
-                              "group relative flex h-8 items-center justify-center rounded-lg text-[13px] transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                              "group relative flex h-8 items-center justify-center rounded-lg text-[13px] transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface-2)] focus-visible:outline-none",
                               active
-                                ? "brand-soft brand-text"
+                                ? "brand-soft brand-text border-l-[3px] border-[color:var(--brand-primary)]"
                                 : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                             )}
                           >

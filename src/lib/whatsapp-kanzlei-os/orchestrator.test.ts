@@ -37,6 +37,28 @@ function okFetch() {
   return vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 }));
 }
 
+function caseFetch() {
+  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (init?.method === "POST") {
+      return new Response(JSON.stringify({ ok: true, slug: "ok" }), { status: 200 });
+    }
+    if (url.includes("/api/pages/legal/cases/2026-014")) {
+      return new Response(
+        JSON.stringify({
+          slug: "legal/cases/2026-014",
+          title: "Akte 2026-014",
+          type: "legal_case",
+          content: "Sachverhalt",
+          frontmatter: { type: "legal_case", knowledge_reviews: [] },
+        }),
+        { status: 200 }
+      );
+    }
+    return new Response(JSON.stringify({ ok: true }), { status: 200 });
+  });
+}
+
 describe("orchestrateWhatsAppMessage", () => {
   beforeEach(() => {
     wasBriefingSentTodayMock.mockReset().mockResolvedValue(false);
@@ -94,6 +116,73 @@ describe("orchestrateWhatsAppMessage", () => {
       related_intake_slug: intakeBody.slug,
     });
     expect(approvalBody.frontmatter.payload.message).toContain("Kanzlei aufgenommen");
+  });
+
+  it("routes verified client WhatsApp text directly into the scoped matter knowledge base", async () => {
+    const fetchImpl = caseFetch();
+    const handleText = vi.fn(async () => "should not happen");
+    const client = {
+      ...identity("client"),
+      matterScope: ["legal/cases/2026-014"],
+    };
+    const message: WhatsAppTextMessage = {
+      id: "wamid.CLIENT-SUBMISSION",
+      from: "+491701234567",
+      type: "text",
+      text: "Die Gegenseite hat heute telefonisch Zahlung zugesagt.",
+    };
+
+    const result = await orchestrateWhatsAppMessage(message, client, {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      handleText,
+    });
+
+    expect(result.status).toBe("routed");
+    expect(result.reply).toContain("sicher zur Akte genommen");
+    expect(handleText).not.toHaveBeenCalled();
+    expect(fetchImpl).toHaveBeenCalledTimes(4);
+    const submissionBody = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
+    expect(submissionBody.type).toBe("client_submission");
+    expect(submissionBody.frontmatter).toMatchObject({
+      channel: "whatsapp",
+      case_slug: "legal/cases/2026-014",
+      review_status: "pending",
+    });
+    const caseUpdateBody = JSON.parse(String(fetchImpl.mock.calls[3][1]?.body));
+    expect(caseUpdateBody.frontmatter.knowledge_reviews[0]).toMatchObject({
+      fact_id: "client-submission-wamid.CLIENT-SUBMISSION",
+      status: "party_assertion",
+      source: "WhatsApp Mandant Dr. Test",
+    });
+    expect(caseUpdateBody.frontmatter.audit_log[0]).toMatchObject({
+      action: "knowledge_mark_party_assertion",
+      source: expect.objectContaining({ type: "whatsapp" }),
+    });
+  });
+
+  it("asks verified clients with multiple matters for the case reference instead of guessing", async () => {
+    const fetchImpl = okFetch();
+    const handleText = vi.fn(async () => "should not happen");
+    const client = {
+      ...identity("client"),
+      matterScope: ["legal/cases/2026-014", "legal/cases/2026-099"],
+    };
+    const message: WhatsAppTextMessage = {
+      id: "wamid.CLIENT-AMBIGUOUS",
+      from: "+491701234567",
+      type: "text",
+      text: "Hier sind die neuen Informationen.",
+    };
+
+    const result = await orchestrateWhatsAppMessage(message, client, {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      handleText,
+    });
+
+    expect(result.status).toBe("routed");
+    expect(result.reply).toContain("Bitte nennen Sie das Aktenzeichen");
+    expect(handleText).not.toHaveBeenCalled();
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
   it("creates a document_request draft before approval for internal document requests", async () => {

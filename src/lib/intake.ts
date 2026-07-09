@@ -1,6 +1,12 @@
 import { createHash, randomUUID } from "node:crypto";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import type { BrainPage } from "@/lib/types";
+import {
+  defaultAcceptanceWorkflow,
+  inferKycRequired,
+  inferPoaRequired,
+  type IntakeAcceptanceWorkflow,
+} from "@/lib/intake-acceptance";
 
 export type IntakeStatus =
   | "new"
@@ -27,6 +33,8 @@ export interface IntakeRequestFrontmatter {
   source_event_slug?: string;
   created_at: string;
   updated_at: string;
+  /** Mandatsannahme-Pipeline — Status aller Pflichtschritte. */
+  acceptance: IntakeAcceptanceWorkflow;
 }
 
 export interface IntakeRequestInput {
@@ -104,6 +112,17 @@ export function buildIntakeRequest(
       source_event_slug: input.sourceEventSlug,
       created_at: created,
       updated_at: created,
+      acceptance: {
+        ...defaultAcceptanceWorkflow(),
+        kyc: {
+          ...defaultAcceptanceWorkflow().kyc,
+          required: inferKycRequired(input.legalArea, input.clientName),
+        },
+        poa: {
+          ...defaultAcceptanceWorkflow().poa,
+          required: inferPoaRequired(input.legalArea),
+        },
+      },
     },
   };
 }

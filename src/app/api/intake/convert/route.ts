@@ -3,6 +3,7 @@ import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { intakeFromPage } from "@/lib/intake";
 import { buildCaseFromIntake } from "@/lib/intake-conversion";
+import { validateAcceptanceForConversion } from "@/lib/intake-acceptance";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import type { BrainPage } from "@/lib/types";
 
@@ -42,6 +43,16 @@ export const POST = createHandler(
 
     const intakePage = intakeFromPage((await getRes.json()) as BrainPage);
     if (!intakePage) return apiError("not_intake_request", "Die Seite ist kein Intake", 400);
+
+    const workflow = intakePage.frontmatter.acceptance;
+    if (workflow) {
+      const validation = validateAcceptanceForConversion(workflow);
+      if (!validation.ok) {
+        return apiError("acceptance_incomplete", validation.error, 422, {
+          code: validation.code,
+        });
+      }
+    }
 
     const casePage = buildCaseFromIntake(intakePage, {
       caseSlug: body.case_slug,

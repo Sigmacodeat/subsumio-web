@@ -1262,7 +1262,40 @@ export function buildFacts(fm: CaseFrontmatter): MatterFactEntry[] {
     }
   }
 
-  return facts;
+  const reviews = Array.isArray(fm.knowledge_reviews) ? fm.knowledge_reviews : [];
+  const reviewedFacts = facts.flatMap<MatterFactEntry>((fact) => {
+    const review = reviews.find((item) => item.fact_id === fact.id);
+    if (!review) return [{ ...fact, review_status: "pending" as const }];
+    if (review.status === "rejected") return [];
+    if (review.status === "corrected" && review.corrected_statement) {
+      return [
+        {
+          ...fact,
+          statement: review.corrected_statement,
+          original_statement: fact.statement,
+          review_status: "corrected" as const,
+        },
+      ];
+    }
+    return [{ ...fact, review_status: review.status }];
+  });
+  const extractedIds = new Set(facts.map((fact) => fact.id));
+  const addedReviews = reviews.flatMap<MatterFactEntry>((review) => {
+    if (extractedIds.has(review.fact_id) || review.status === "rejected") return [];
+    return [
+      {
+        id: review.fact_id,
+        statement: review.corrected_statement ?? review.original_statement,
+        source: review.source,
+        confidence: review.status === "approved" ? "medium" : "low",
+        date: review.reviewed_at,
+        review_status: review.status === "corrected" ? "corrected" : review.status,
+        original_statement: review.corrected_statement ? review.original_statement : undefined,
+      },
+    ];
+  });
+
+  return [...reviewedFacts, ...addedReviews];
 }
 
 export function detectContradictions(fm: CaseFrontmatter): MatterGap[] {

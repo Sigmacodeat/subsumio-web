@@ -49,6 +49,7 @@ import { csrfFetch } from "@/lib/csrf";
 import { api } from "@/lib/api";
 import type { DashboardKey } from "@/content/dashboard";
 import type { CaseDetail } from "@/lib/matter-detail-types";
+import { MatterWorkflowCockpit } from "@/components/legal/MatterWorkflowCockpit";
 
 export function OverviewTab() {
   const ctx = useMatterDetail();
@@ -222,6 +223,8 @@ export function OverviewTab() {
           )}
         </div>
       </div>
+
+      <MatterWorkflowCockpit />
 
       {/* Status Change Dialog */}
       {ctx.showStatusDialog && (
@@ -403,10 +406,11 @@ export function OverviewTab() {
               {t("casesdetail.ai_parties")}
             </div>
             {caseData.suggestedParties
-              .filter((sp) => !sp.confirmed)
-              .map((sp, i) => (
+              .map((sp, originalIndex) => ({ sp, originalIndex }))
+              .filter(({ sp }) => !sp.confirmed)
+              .map(({ sp, originalIndex }) => (
                 <div
-                  key={i}
+                  key={originalIndex}
                   className="flex items-center justify-between rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2"
                 >
                   <div className="min-w-0">
@@ -441,7 +445,7 @@ export function OverviewTab() {
                         );
                         ctx.setContactDialogName(sp.name);
                         ctx.setContactDialogOpen(true);
-                        ctx.setPendingSuggestedPartyIndex(i);
+                        ctx.setPendingSuggestedPartyIndex(originalIndex);
                       }}
                     >
                       <Plus size={12} /> Als Kontakt
@@ -451,7 +455,7 @@ export function OverviewTab() {
                       size="sm"
                       disabled={caseData?.status === "archived"}
                       className="text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
-                      onClick={() => ctx.confirmSuggestedParty(i, false)}
+                      onClick={() => ctx.confirmSuggestedParty(originalIndex, false)}
                     >
                       <X size={12} />
                     </Button>

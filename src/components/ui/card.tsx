@@ -10,8 +10,8 @@ function Card({ className, glass, glow, ...props }: CardProps) {
     <div
       className={cn(
         "card-shadow hover:card-shadow-hover rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-all duration-200 hover:border-[color:var(--ds-border-strong)]",
-        glass && "bg-[color:var(--ds-surface)]/80 backdrop-blur-md",
-        glow && "shadow-lg shadow-[color:var(--brand-primary)]/10",
+        glass && "bg-[color:var(--ds-surface)]/95",
+        glow && "shadow-lg shadow-[color:var(--brand-glow)]",
         className
       )}
       {...props}
@@ -26,7 +26,10 @@ function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement
 function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn("text-base leading-tight font-semibold text-[color:var(--ds-text)]", className)}
+      className={cn(
+        "font-display text-base leading-tight font-semibold tracking-normal text-[color:var(--ds-text)]",
+        className
+      )}
       {...props}
     />
   );

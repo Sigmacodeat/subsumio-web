@@ -43,6 +43,7 @@ import { api } from "@/lib/api";
 import { encodeSlugPath } from "@/lib/utils";
 import { isOnline, enqueueMutation } from "@/lib/offline-store";
 import { useToast } from "@/components/ui/toast";
+import { useMe } from "@/lib/queries/auth";
 import {
   suggestCaseFromTitle,
   detectJurisdictionFromTitle,
@@ -51,6 +52,12 @@ import {
 } from "@/lib/legal-case-suggest";
 import type { ContactFrontmatter } from "@/lib/legal-types";
 import type { BrainPage } from "@/lib/types";
+import {
+  defaultAcceptanceWorkflow,
+  inferKycRequired,
+  inferPoaRequired,
+  updateConflictCheck,
+} from "@/lib/intake-acceptance";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -104,6 +111,7 @@ export function CaseQuickCreateDialog({
   const { t, lang } = useLang();
   const router = useRouter();
   const { addToast } = useToast();
+  const { data: me } = useMe();
 
   const [title, setTitle] = useState("");
   const [clientSlug, setClientSlug] = useState("");
@@ -119,6 +127,9 @@ export function CaseQuickCreateDialog({
   const [submitting, setSubmitting] = useState(false);
   const [createAnother, setCreateAnother] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [conflictCheck, setConflictCheck] = useState<
+    "idle" | "checking" | "critical" | "clear" | "error"
+  >("idle");
 
   const templates: Template[] = useMemo(
     () => [
@@ -287,6 +298,7 @@ export function CaseQuickCreateDialog({
     setSuggestion(null);
     setShowAdvanced(false);
     setSelectedTemplate(null);
+    setConflictCheck("idle");
   }, []);
 
   useEffect(() => {
@@ -298,12 +310,57 @@ export function CaseQuickCreateDialog({
     if (!title.trim()) return;
     setSubmitting(true);
 
+    const client = clients.find((c) => c.slug === clientSlug);
+    const opponent = opponents.find((c) => c.slug === opponentSlug);
+    const conflictName = client?.name?.trim() || title.trim();
+
+    let conflictResult: Awaited<ReturnType<typeof api.legal.conflictCheck>> | null = null;
+    if (isOnline()) {
+      setConflictCheck("checking");
+      try {
+        conflictResult = await api.legal.conflictCheck(conflictName);
+      } catch (err) {
+        setConflictCheck("error");
+        addToast({
+          type: "error",
+          title: err instanceof Error ? err.message : "Kollisionsprüfung fehlgeschlagen",
+        });
+        setSubmitting(false);
+        return;
+      }
+      if (conflictResult.severity === "critical") {
+        setConflictCheck("critical");
+        addToast({
+          type: "error",
+          title: "Kritische Kollision erkannt",
+          description: conflictResult.explanation,
+        });
+        setSubmitting(false);
+        return;
+      }
+      setConflictCheck("clear");
+    }
+
+    const now = new Date().toISOString();
+    const acceptance = updateConflictCheck(
+      defaultAcceptanceWorkflow(),
+      conflictResult ?? {
+        name: conflictName,
+        severity: "none",
+        explanation: "Offline/Quick-Create ohne Kollisionsprüfung",
+        matches: [],
+        checked_cases: 0,
+        disclaimer: "",
+      },
+      me?.email ?? "CaseQuickCreateDialog"
+    );
+
+    const kycRequired = inferKycRequired(legalArea, client?.name);
+    const poaRequired = inferPoaRequired(legalArea);
+
     const slug = `legal/cases/${caseNumber?.trim() || Date.now().toString(36)}-${title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")}`;
-
-    const client = clients.find((c) => c.slug === clientSlug);
-    const opponent = opponents.find((c) => c.slug === opponentSlug);
 
     const pagePayload = {
       slug,
@@ -322,6 +379,15 @@ export function CaseQuickCreateDialog({
         opponent_name: opponent?.name || undefined,
         opponent_slugs: opponentSlug ? [opponentSlug] : undefined,
         version: 0,
+        mandate_acceptance: {
+          intake_slug: "quick-create",
+          accepted_at: now,
+          accepted_by: me?.email ?? "CaseQuickCreateDialog",
+          conflict_check: acceptance.conflict_check,
+          kyc: { ...acceptance.kyc, required: kycRequired },
+          poa: { ...acceptance.poa, required: poaRequired },
+          engagement_letter: acceptance.engagement_letter,
+        },
       },
     };
 

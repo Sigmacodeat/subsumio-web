@@ -5,6 +5,7 @@
  */
 
 import type { DeadlineStatus } from "@/lib/legal-deadlines";
+import type { CaseMandateAcceptance } from "@/lib/intake-acceptance";
 
 export interface DeadlineEntry {
   id?: string;
@@ -233,6 +234,8 @@ export interface CaseFrontmatter {
   conflict_status?: "conflict_pending" | "conflict_clear" | "conflict_waived" | string;
   conflict_waiver_reason?: string;
   conflict_waived_at?: string;
+  /** Mandatsannahme-Pipeline — Pflichtnachweise aus der Intake-Konvertierung oder Quick-Create. */
+  mandate_acceptance?: CaseMandateAcceptance;
   own_lawyer_id?: string;
   own_lawyer_name?: string;
   /** Slug des verknüpften Bearbeiter-/Anwaltskontakts (role=lawyer). */
@@ -264,6 +267,14 @@ export interface CaseFrontmatter {
     role: string;
     source: string;
     confirmed: boolean;
+  }>;
+  knowledge_reviews?: Array<{
+    fact_id: string;
+    status: "approved" | "party_assertion" | "corrected" | "rejected";
+    original_statement: string;
+    corrected_statement?: string;
+    source: string;
+    reviewed_at: string;
   }>;
   timeline?: TimelineEntry[];
   timeline_events?: TimelineEntry[];
@@ -330,6 +341,53 @@ export interface CaseFrontmatter {
       description: string;
     }>;
   };
+  /** Verjährung — statute of limitations tracking per claim */
+  statute_of_limitations?: StatuteOfLimitations[];
+}
+
+export interface StatuteOfLimitations {
+  id: string;
+  claim_label: string;
+  claim_type: string;
+  law: string;
+  /** When the limitation period starts (Kenntniserlangung / Entstehung) */
+  start_date: string;
+  /** Regular limitation period in years (e.g., 3 for § 195 BGB) */
+  period_years: number;
+  /** Absolute maximum period in years (e.g., 10 for § 199 Abs. 3 BGB) */
+  max_period_years?: number;
+  /** Calculated end date of the regular limitation period */
+  regular_barred_date: string;
+  /** Calculated absolute end date (max_period_years from start_date) */
+  absolute_barred_date?: string;
+  /** Effective barred date considering interruptions — computed, not manually set */
+  effective_barred_date?: string;
+  status: "active" | "barred" | "interrupted" | "suspended";
+  /** Hemmung der Verjährung — interrupts the running period */
+  interruptions?: VerjaehrungInterruption[];
+  /** Ruhen der Verjährung — suspends the running period */
+  suspensions?: VerjaehrungSuspension[];
+  /** Whether a new deadline page should be auto-created for this limitation */
+  deadline_slug?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VerjaehrungInterruption {
+  at: string;
+  reason: string;
+  /** e.g., "Anerkenntnis", "Klageerhebung", "Mahnung", "Verhandlungen" */
+  kind: "acknowledgment" | "lawsuit" | "dunning" | "negotiation" | "other";
+  actor?: string;
+  note?: string;
+}
+
+export interface VerjaehrungSuspension {
+  start: string;
+  end?: string;
+  reason: string;
+  actor?: string;
+  note?: string;
 }
 
 export interface InvoiceExpenseEntry {
@@ -421,13 +479,21 @@ export interface AuditLogEntry {
     | "status_changed"
     | "time_added"
     | "deadline_added"
-    | "reminder_sent";
+    | "reminder_sent"
+    | "knowledge_add"
+    | "knowledge_approve"
+    | "knowledge_mark_party_assertion"
+    | "knowledge_correct"
+    | "knowledge_reject"
+    | "knowledge_supersede";
   actor?: string;
   actorId?: string;
+  actorType?: string;
   field?: string;
   oldValue?: string;
   newValue?: string;
   note?: string;
+  source?: unknown;
 }
 
 /** Frontmatter eines beliebigen Objekts typisiert lesen (fehlend → {}). */

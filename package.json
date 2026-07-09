@@ -125,6 +125,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4.4.0",
+    "colorjs.io": "^0.6.1",
     "eslint": "^9",
     "eslint-config-next": "^15.5.19",
     "fake-indexeddb": "^6.2.5",

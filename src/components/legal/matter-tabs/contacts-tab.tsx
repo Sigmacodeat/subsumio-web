@@ -21,6 +21,7 @@ import {
   ContactCreateDialog,
   type ContactCreateResult,
 } from "@/components/legal/ContactCreateDialog";
+import { WhatsAppClientInvitePanel } from "@/components/legal/WhatsAppClientInvitePanel";
 import type { CaseDetail } from "@/lib/matter-detail-types";
 
 const ROLE_LABELS_DE: Record<string, string> = {
@@ -72,6 +73,7 @@ export function ContactsTab() {
 
   const caseContacts = ctx.contacts.filter((c) => caseLinkedSlugs.has(c.slug));
   const otherContacts = ctx.contacts.filter((c) => !caseLinkedSlugs.has(c.slug));
+  const clientContact = ctx.contacts.find((c) => c.slug === caseData.clientSlug);
 
   const handleCreated = (contact: ContactCreateResult) => {
     ctx.setContactsList((prev) => [
@@ -227,6 +229,12 @@ export function ContactsTab() {
             {t("contactstab.add_contact")}
           </Button>
         </div>
+
+        <WhatsAppClientInvitePanel
+          caseData={caseData}
+          clientContact={clientContact}
+          disabled={isArchived}
+        />
 
         {/* Loading State */}
         {ctx.contactsLoading && (

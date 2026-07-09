@@ -321,10 +321,11 @@ export function StrategyTab() {
           <div className="space-y-2">
             {/* Suggested Deadlines */}
             {caseData.suggestedDeadlines
-              ?.filter((sd) => !sd.confirmed)
-              .map((sd, i) => (
+              ?.map((sd, originalIndex) => ({ sd, originalIndex }))
+              .filter(({ sd }) => !sd.confirmed)
+              .map(({ sd, originalIndex }) => (
                 <div
-                  key={`sd-${i}`}
+                  key={`sd-${originalIndex}`}
                   className="flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5"
                 >
                   <CalendarPlus size={14} className="mt-0.5 shrink-0 text-amber-600" />
@@ -371,7 +372,7 @@ export function StrategyTab() {
                         const updated = [...ctx.deadlinesList, entry];
                         ctx.setDeadlinesList(updated);
                         await ctx.saveCaseUpdate({ deadlines: updated });
-                        await ctx.confirmSuggestedDeadline(i, true);
+                        await ctx.confirmSuggestedDeadline(originalIndex, true);
                       }}
                       className="h-7 px-2 text-xs"
                     >
@@ -382,7 +383,7 @@ export function StrategyTab() {
                       variant="ghost"
                       size="sm"
                       disabled={isArchived}
-                      onClick={() => ctx.confirmSuggestedDeadline(i, false)}
+                      onClick={() => ctx.confirmSuggestedDeadline(originalIndex, false)}
                       className="h-7 px-2 text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
                     >
                       <X size={12} />
@@ -393,10 +394,11 @@ export function StrategyTab() {
 
             {/* Suggested Parties */}
             {caseData.suggestedParties
-              ?.filter((sp) => !sp.confirmed)
-              .map((sp, i) => (
+              ?.map((sp, originalIndex) => ({ sp, originalIndex }))
+              .filter(({ sp }) => !sp.confirmed)
+              .map(({ sp, originalIndex }) => (
                 <div
-                  key={`sp-${i}`}
+                  key={`sp-${originalIndex}`}
                   className="flex items-start gap-3 rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2.5"
                 >
                   <UserPlus size={14} className="mt-0.5 shrink-0 text-blue-600" />
@@ -430,7 +432,7 @@ export function StrategyTab() {
                         );
                         ctx.setContactDialogName(sp.name);
                         ctx.setContactDialogOpen(true);
-                        ctx.setPendingSuggestedPartyIndex(i);
+                        ctx.setPendingSuggestedPartyIndex(originalIndex);
                       }}
                       className="h-7 px-2 text-xs"
                     >
@@ -441,7 +443,7 @@ export function StrategyTab() {
                       variant="ghost"
                       size="sm"
                       disabled={isArchived}
-                      onClick={() => ctx.confirmSuggestedParty(i, false)}
+                      onClick={() => ctx.confirmSuggestedParty(originalIndex, false)}
                       className="h-7 px-2 text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
                     >
                       <X size={12} />

@@ -8,6 +8,7 @@ import {
   ArrowUpRight,
   Check,
   CheckCircle2,
+  ClipboardCheck,
   Clock,
   Landmark,
   Mail,
@@ -27,6 +28,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ReviewInboxTab } from "@/components/dashboard/review-inbox-tab";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -199,10 +201,13 @@ function tr(key: string, lang: Lang): string {
   return entry ? (lang === "en" ? entry.en : entry.de) : key;
 }
 
+type View = "messages" | "review";
+
 export default function CommunicationsPage() {
   const { lang } = useLang();
   const { addToast } = useToast();
   const qc = useQueryClient();
+  const [view, setView] = useState<View>("messages");
   const [channel, setChannel] = useState<Channel>("all");
   const [search, setSearch] = useState("");
 
@@ -293,6 +298,11 @@ export default function CommunicationsPage() {
     { key: "portal", icon: User, label: lang === "en" ? "Portal" : "Portal" },
   ];
 
+  const VIEW_TABS: Array<{ key: View; label: string; icon: React.ElementType }> = [
+    { key: "messages", label: lang === "en" ? "Messages" : "Nachrichten", icon: InboxIcon },
+    { key: "review", label: lang === "en" ? "Review" : "Eingang prüfen", icon: ClipboardCheck },
+  ];
+
   return (
     <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
@@ -303,7 +313,11 @@ export default function CommunicationsPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => void batchQuery.refetch()}
+            onClick={() =>
+              view === "messages"
+                ? void batchQuery.refetch()
+                : void qc.invalidateQueries({ queryKey: ["review-inbox"] })
+            }
             className="gap-2 text-xs"
           >
             <RefreshCw size={14} />
@@ -312,302 +326,334 @@ export default function CommunicationsPage() {
         }
       />
 
-      {/* Info banner */}
-      <div
-        className="brand-border brand-soft/5 flex items-start gap-3 rounded-xl border px-4 py-3"
-        role="note"
-      >
-        <AlertCircle size={16} className="brand-text mt-0.5 shrink-0" aria-hidden="true" />
-        <p className="brand-text/90 text-xs leading-relaxed">{tr("description", lang)}</p>
-      </div>
-
-      {/* Channel tabs */}
-      <div className="flex flex-wrap items-center gap-1 border-b border-[color:var(--ds-border)]">
-        {tabs.map((tab) => {
-          const isActive = channel === tab.key;
-          const count = counts[tab.key] || 0;
+      {/* View toggle: Messages vs Review */}
+      <div className="flex items-center gap-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-1">
+        {VIEW_TABS.map((tab) => {
+          const isActive = view === tab.key;
           return (
             <button
               key={tab.key}
-              onClick={() => setChannel(isActive ? "all" : tab.key)}
+              onClick={() => setView(tab.key)}
               className={cn(
-                "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-colors",
+                "flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 isActive
-                  ? "border-[color:var(--brand-primary)] font-medium text-[color:var(--ds-text)]"
-                  : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                  ? "brand-bg text-white"
+                  : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
               )}
             >
               <tab.icon size={15} />
               {tab.label}
-              {count > 0 && (
-                <span
-                  className={cn(
-                    "rounded-full px-1.5 py-0.5 text-xs font-medium",
-                    isActive
-                      ? "brand-bg text-white"
-                      : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]"
-                  )}
-                >
-                  {count}
-                </span>
-              )}
             </button>
           );
         })}
       </div>
 
-      {/* Search */}
-      {!loading && allMessages.length > 0 && (
-        <div className="relative">
-          <Search
-            size={15}
-            className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
-          />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={tr("search_placeholder", lang)}
-            aria-label={tr("search_placeholder", lang)}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-9 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
-              aria-label="Clear search"
-            >
-              <X size={15} />
-            </button>
-          )}
-        </div>
-      )}
+      {/* Review Inbox Tab */}
+      {view === "review" && <ReviewInboxTab />}
 
-      {/* Loading state */}
-      {loading && (
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-20 w-full rounded-xl" />
-          ))}
-        </div>
-      )}
-
-      {/* Error state */}
-      {error && !loading && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <AlertCircle size={32} className="text-[color:var(--ds-text-muted)]" />
-          <p className="text-sm text-[color:var(--ds-text-muted)]">{tr("error", lang)}</p>
-          <Button variant="ghost" size="sm" onClick={() => void batchQuery.refetch()}>
-            <RefreshCw size={14} className="mr-2" />
-            {tr("refresh", lang)}
-          </Button>
-        </div>
-      )}
-
-      {/* Empty state */}
-      {!loading && !error && filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <InboxIcon size={32} className="text-[color:var(--ds-text-muted)]" />
-          <p className="max-w-md text-sm text-[color:var(--ds-text-muted)]">{tr("empty", lang)}</p>
-        </div>
-      )}
-
-      {/* KI-Triage Summary Banner */}
-      {!loading &&
-        !error &&
-        filtered.length > 0 &&
-        triageSummary.critical + triageSummary.high > 0 && (
-          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Zap size={16} className="brand-text" />
-              <span className="text-sm font-semibold text-[color:var(--ds-text)]">
-                {tr("triage_title", lang)}
-              </span>
-            </div>
-            {triageSummary.critical > 0 && (
-              <Badge
-                variant="default"
-                className="border border-red-500/20 bg-red-500/10 text-xs text-red-600"
-              >
-                {triageSummary.critical} {lang === "en" ? "critical" : "kritisch"}
-              </Badge>
-            )}
-            {triageSummary.high > 0 && (
-              <Badge
-                variant="default"
-                className="border border-orange-500/20 bg-orange-500/10 text-xs text-orange-600"
-              >
-                {triageSummary.high} {lang === "en" ? "high" : "hoch"}
-              </Badge>
-            )}
-            {triageSummary.medium > 0 && (
-              <Badge
-                variant="default"
-                className="border border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
-              >
-                {triageSummary.medium} {lang === "en" ? "medium" : "mittel"}
-              </Badge>
-            )}
+      {/* Messages view */}
+      {view === "messages" && (
+        <>
+          {/* Info banner */}
+          <div
+            className="brand-border brand-soft/5 flex items-start gap-3 rounded-xl border px-4 py-3"
+            role="note"
+          >
+            <AlertCircle size={16} className="brand-text mt-0.5 shrink-0" aria-hidden="true" />
+            <p className="brand-text/90 text-xs leading-relaxed">{tr("description", lang)}</p>
           </div>
-        )}
 
-      {/* Message list */}
-      {!loading && !error && filtered.length > 0 && (
-        <div className="space-y-2">
-          {filtered.map((msg) => {
-            const Icon = CHANNEL_ICON[msg.channel];
-            const chLabel = CHANNEL_LABEL[msg.channel];
-            const card = triageMap.get(msg.slug);
-            return (
-              <div
-                key={msg.slug}
-                className={cn(
-                  "group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,background-color,box-shadow] duration-200 hover:border-[color:var(--brand-primary)]/30 hover:bg-[color:var(--ds-hover)]",
-                  !msg.read && "border-l-2 border-l-[color:var(--brand-primary)]",
-                  card?.urgency === "critical" && "border-l-2 border-l-red-500",
-                  card?.urgency === "high" && "border-l-2 border-l-orange-500"
-                )}
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
-                  <Icon size={16} className="text-[color:var(--ds-text-muted)]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
+          {/* Channel tabs */}
+          <div className="flex flex-wrap items-center gap-1 border-b border-[color:var(--ds-border)]">
+            {tabs.map((tab) => {
+              const isActive = channel === tab.key;
+              const count = counts[tab.key] || 0;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setChannel(isActive ? "all" : tab.key)}
+                  className={cn(
+                    "flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-colors",
+                    isActive
+                      ? "border-[color:var(--brand-primary)] font-medium text-[color:var(--ds-text)]"
+                      : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                  )}
+                >
+                  <tab.icon size={15} />
+                  {tab.label}
+                  {count > 0 && (
                     <span
                       className={cn(
-                        "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
-                        CHANNEL_BADGE[msg.channel]
+                        "rounded-full px-1.5 py-0.5 text-xs font-medium",
+                        isActive
+                          ? "brand-bg text-white"
+                          : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]"
                       )}
                     >
-                      {lang === "en" ? chLabel.en : chLabel.de}
+                      {count}
                     </span>
-                    {!msg.read && (
-                      <span className="h-2 w-2 shrink-0 rounded-full bg-[color:var(--brand-primary)]" />
-                    )}
-                    {card && (
-                      <span
-                        className={cn(
-                          "shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium",
-                          URGENCY_STYLES[card.urgency]
-                        )}
-                      >
-                        {card.urgency}
-                      </span>
-                    )}
-                    {card?.actionType && card.actionType !== "info" && (
-                      <span className="shrink-0 rounded-full border border-[color:var(--brand-primary)]/20 bg-[color:var(--brand-primary)]/5 px-2 py-0.5 text-xs font-medium text-[color:var(--brand-primary)]">
-                        {card.actionType}
-                      </span>
-                    )}
-                    {card?.deadline && (
-                      <span className="flex shrink-0 items-center gap-1 text-xs text-red-600">
-                        <AlertTriangle size={10} />
-                        {card.deadline}
-                      </span>
-                    )}
-                    <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
-                      {msg.title}
-                    </span>
-                  </div>
-                  {msg.body && (
-                    <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-                      {msg.body}
-                    </p>
                   )}
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[color:var(--ds-text-subtle)]">
-                    <span>{msg.sender}</span>
-                    {msg.createdAt && <span>{timeLabel(lang, msg.createdAt)}</span>}
-                    {msg.caseSlug && (
-                      <Link
-                        href={`/dashboard/cases/${msg.caseSlug}`}
-                        className="inline-flex items-center gap-1 text-[color:var(--brand-primary)] hover:underline"
-                      >
-                        {tr("to_case", lang)}
-                        <ArrowUpRight size={11} />
-                      </Link>
-                    )}
-                  </div>
-                  {/* Triage Actions */}
-                  {card && (
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      <button
-                        onClick={() =>
-                          void triageActionMutation.mutateAsync({
-                            slug: msg.slug,
-                            action: "accept",
-                          })
-                        }
-                        disabled={triageActionMutation.isPending}
-                        className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-2 py-1 text-xs text-emerald-600 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
-                      >
-                        <CheckCircle2 size={12} />
-                        {tr("triage_accept", lang)}
-                      </button>
-                      <button
-                        onClick={() =>
-                          void triageActionMutation.mutateAsync({
-                            slug: msg.slug,
-                            action: "reject",
-                          })
-                        }
-                        disabled={triageActionMutation.isPending}
-                        className="inline-flex items-center gap-1 rounded-lg border border-red-500/20 bg-red-500/5 px-2 py-1 text-xs text-red-600 transition-colors hover:bg-red-500/10 disabled:opacity-50"
-                      >
-                        <Ban size={12} />
-                        {tr("triage_reject", lang)}
-                      </button>
-                      {card.deadline && (
-                        <button
-                          onClick={() =>
-                            void triageActionMutation.mutateAsync({
-                              slug: msg.slug,
-                              action: "create_deadline",
-                              deadline_date: card.deadline,
-                              deadline_label: msg.title,
-                            })
-                          }
-                          disabled={triageActionMutation.isPending}
-                          className="inline-flex items-center gap-1 rounded-lg border border-orange-500/20 bg-orange-500/5 px-2 py-1 text-xs text-orange-600 transition-colors hover:bg-orange-500/10 disabled:opacity-50"
-                        >
-                          <Clock size={12} />
-                          {tr("triage_deadline", lang)}
-                        </button>
-                      )}
-                      <button
-                        onClick={() =>
-                          void triageActionMutation.mutateAsync({
-                            slug: msg.slug,
-                            action: "dismiss",
-                          })
-                        }
-                        disabled={triageActionMutation.isPending}
-                        className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] disabled:opacity-50"
-                      >
-                        <X size={12} />
-                        {tr("triage_dismiss", lang)}
-                      </button>
-                    </div>
-                  )}
-                </div>
-                {/* Mark read/unread */}
-                <button
-                  onClick={() =>
-                    void markReadMutation.mutateAsync({
-                      slug: msg.slug,
-                      read: !msg.read,
-                    })
-                  }
-                  disabled={markReadMutation.isPending}
-                  className="shrink-0 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
-                  title={msg.read ? tr("mark_unread", lang) : tr("mark_read", lang)}
-                  aria-label={msg.read ? tr("mark_unread", lang) : tr("mark_read", lang)}
-                >
-                  {msg.read ? <Mail size={14} /> : <Check size={14} />}
                 </button>
+              );
+            })}
+          </div>
+
+          {/* Search */}
+          {!loading && allMessages.length > 0 && (
+            <div className="relative">
+              <Search
+                size={15}
+                className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+              />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={tr("search_placeholder", lang)}
+                aria-label={tr("search_placeholder", lang)}
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-9 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+                  aria-label="Clear search"
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Loading state */}
+          {loading && (
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-20 w-full rounded-xl" />
+              ))}
+            </div>
+          )}
+
+          {/* Error state */}
+          {error && !loading && (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+              <AlertCircle size={32} className="text-[color:var(--ds-text-muted)]" />
+              <p className="text-sm text-[color:var(--ds-text-muted)]">{tr("error", lang)}</p>
+              <Button variant="ghost" size="sm" onClick={() => void batchQuery.refetch()}>
+                <RefreshCw size={14} className="mr-2" />
+                {tr("refresh", lang)}
+              </Button>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!loading && !error && filtered.length === 0 && (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+              <InboxIcon size={32} className="text-[color:var(--ds-text-muted)]" />
+              <p className="max-w-md text-sm text-[color:var(--ds-text-muted)]">
+                {tr("empty", lang)}
+              </p>
+            </div>
+          )}
+
+          {/* KI-Triage Summary Banner */}
+          {!loading &&
+            !error &&
+            filtered.length > 0 &&
+            triageSummary.critical + triageSummary.high > 0 && (
+              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Zap size={16} className="brand-text" />
+                  <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    {tr("triage_title", lang)}
+                  </span>
+                </div>
+                {triageSummary.critical > 0 && (
+                  <Badge
+                    variant="default"
+                    className="border border-red-500/20 bg-red-500/10 text-xs text-red-600"
+                  >
+                    {triageSummary.critical} {lang === "en" ? "critical" : "kritisch"}
+                  </Badge>
+                )}
+                {triageSummary.high > 0 && (
+                  <Badge
+                    variant="default"
+                    className="border border-orange-500/20 bg-orange-500/10 text-xs text-orange-600"
+                  >
+                    {triageSummary.high} {lang === "en" ? "high" : "hoch"}
+                  </Badge>
+                )}
+                {triageSummary.medium > 0 && (
+                  <Badge
+                    variant="default"
+                    className="border border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
+                  >
+                    {triageSummary.medium} {lang === "en" ? "medium" : "mittel"}
+                  </Badge>
+                )}
               </div>
-            );
-          })}
-        </div>
+            )}
+
+          {/* Message list */}
+          {!loading && !error && filtered.length > 0 && (
+            <div className="space-y-2">
+              {filtered.map((msg) => {
+                const Icon = CHANNEL_ICON[msg.channel];
+                const chLabel = CHANNEL_LABEL[msg.channel];
+                const card = triageMap.get(msg.slug);
+                return (
+                  <div
+                    key={msg.slug}
+                    className={cn(
+                      "group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,background-color,box-shadow] duration-200 hover:border-[color:var(--brand-primary)]/30 hover:bg-[color:var(--ds-hover)]",
+                      !msg.read && "border-l-2 border-l-[color:var(--brand-primary)]",
+                      card?.urgency === "critical" && "border-l-2 border-l-red-500",
+                      card?.urgency === "high" && "border-l-2 border-l-orange-500"
+                    )}
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
+                      <Icon size={16} className="text-[color:var(--ds-text-muted)]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={cn(
+                            "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
+                            CHANNEL_BADGE[msg.channel]
+                          )}
+                        >
+                          {lang === "en" ? chLabel.en : chLabel.de}
+                        </span>
+                        {!msg.read && (
+                          <span className="h-2 w-2 shrink-0 rounded-full bg-[color:var(--brand-primary)]" />
+                        )}
+                        {card && (
+                          <span
+                            className={cn(
+                              "shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium",
+                              URGENCY_STYLES[card.urgency]
+                            )}
+                          >
+                            {card.urgency}
+                          </span>
+                        )}
+                        {card?.actionType && card.actionType !== "info" && (
+                          <span className="shrink-0 rounded-full border border-[color:var(--brand-primary)]/20 bg-[color:var(--brand-primary)]/5 px-2 py-0.5 text-xs font-medium text-[color:var(--brand-primary)]">
+                            {card.actionType}
+                          </span>
+                        )}
+                        {card?.deadline && (
+                          <span className="flex shrink-0 items-center gap-1 text-xs text-red-600">
+                            <AlertTriangle size={10} />
+                            {card.deadline}
+                          </span>
+                        )}
+                        <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                          {msg.title}
+                        </span>
+                      </div>
+                      {msg.body && (
+                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                          {msg.body}
+                        </p>
+                      )}
+                      <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[color:var(--ds-text-subtle)]">
+                        <span>{msg.sender}</span>
+                        {msg.createdAt && <span>{timeLabel(lang, msg.createdAt)}</span>}
+                        {msg.caseSlug && (
+                          <Link
+                            href={`/dashboard/cases/${msg.caseSlug}`}
+                            className="inline-flex items-center gap-1 text-[color:var(--brand-primary)] hover:underline"
+                          >
+                            {tr("to_case", lang)}
+                            <ArrowUpRight size={11} />
+                          </Link>
+                        )}
+                      </div>
+                      {/* Triage Actions */}
+                      {card && (
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          <button
+                            onClick={() =>
+                              void triageActionMutation.mutateAsync({
+                                slug: msg.slug,
+                                action: "accept",
+                              })
+                            }
+                            disabled={triageActionMutation.isPending}
+                            className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-2 py-1 text-xs text-emerald-600 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
+                          >
+                            <CheckCircle2 size={12} />
+                            {tr("triage_accept", lang)}
+                          </button>
+                          <button
+                            onClick={() =>
+                              void triageActionMutation.mutateAsync({
+                                slug: msg.slug,
+                                action: "reject",
+                              })
+                            }
+                            disabled={triageActionMutation.isPending}
+                            className="inline-flex items-center gap-1 rounded-lg border border-red-500/20 bg-red-500/5 px-2 py-1 text-xs text-red-600 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+                          >
+                            <Ban size={12} />
+                            {tr("triage_reject", lang)}
+                          </button>
+                          {card.deadline && (
+                            <button
+                              onClick={() =>
+                                void triageActionMutation.mutateAsync({
+                                  slug: msg.slug,
+                                  action: "create_deadline",
+                                  deadline_date: card.deadline,
+                                  deadline_label: msg.title,
+                                })
+                              }
+                              disabled={triageActionMutation.isPending}
+                              className="inline-flex items-center gap-1 rounded-lg border border-orange-500/20 bg-orange-500/5 px-2 py-1 text-xs text-orange-600 transition-colors hover:bg-orange-500/10 disabled:opacity-50"
+                            >
+                              <Clock size={12} />
+                              {tr("triage_deadline", lang)}
+                            </button>
+                          )}
+                          <button
+                            onClick={() =>
+                              void triageActionMutation.mutateAsync({
+                                slug: msg.slug,
+                                action: "dismiss",
+                              })
+                            }
+                            disabled={triageActionMutation.isPending}
+                            className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] disabled:opacity-50"
+                          >
+                            <X size={12} />
+                            {tr("triage_dismiss", lang)}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {/* Mark read/unread */}
+                    <button
+                      onClick={() =>
+                        void markReadMutation.mutateAsync({
+                          slug: msg.slug,
+                          read: !msg.read,
+                        })
+                      }
+                      disabled={markReadMutation.isPending}
+                      className="shrink-0 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
+                      title={msg.read ? tr("mark_unread", lang) : tr("mark_read", lang)}
+                      aria-label={msg.read ? tr("mark_unread", lang) : tr("mark_read", lang)}
+                    >
+                      {msg.read ? <Mail size={14} /> : <Check size={14} />}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

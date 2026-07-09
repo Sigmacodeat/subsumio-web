@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildCaseFromIntake } from "./intake-conversion";
+import { defaultAcceptanceWorkflow } from "./intake-acceptance";
 import type { IntakeRequestFrontmatter } from "./intake";
 
 function intake(overrides: Partial<IntakeRequestFrontmatter> = {}) {
@@ -21,6 +22,16 @@ function intake(overrides: Partial<IntakeRequestFrontmatter> = {}) {
       source_event_slug: "legal/conversations/whatsapp/wamid",
       created_at: now,
       updated_at: now,
+      acceptance: {
+        ...defaultAcceptanceWorkflow(),
+        conflict_check: {
+          ...defaultAcceptanceWorkflow().conflict_check,
+          status: "clear",
+        },
+        kyc: { ...defaultAcceptanceWorkflow().kyc, status: "verified" },
+        poa: { ...defaultAcceptanceWorkflow().poa, status: "signed" },
+        engagement_letter: { status: "sent" },
+      },
       ...overrides,
     },
   } as const;

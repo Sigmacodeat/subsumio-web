@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { buildIntakeRequest, intakeFromPage, type IntakeRequestFrontmatter } from "@/lib/intake";
+import { type IntakeAcceptanceWorkflow } from "@/lib/intake-acceptance";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import type { BrainPage } from "@/lib/types";
 
@@ -32,6 +33,7 @@ const intakePatchSchema = z.object({
   converted_case_slug: z.string().optional(),
   missing_documents: z.array(z.string().min(1).max(120)).optional(),
   summary: z.string().max(10_000).optional(),
+  acceptance: z.record(z.unknown()).optional(),
 });
 
 function pagesFrom(data: unknown): BrainPage[] {
@@ -154,6 +156,9 @@ export const PATCH = createHandler(
       summary: body.summary,
       updated_at: new Date().toISOString(),
     };
+    if (body.acceptance && typeof body.acceptance === "object") {
+      patch.acceptance = body.acceptance as unknown as IntakeAcceptanceWorkflow;
+    }
     Object.keys(patch).forEach((key) => {
       if ((patch as Record<string, unknown>)[key] === undefined)
         delete (patch as Record<string, unknown>)[key];

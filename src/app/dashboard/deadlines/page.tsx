@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   EyeOff,
   Printer,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { DeadlineQuickCreateDialog } from "@/components/legal/DeadlineQuickCreateDialog";
+import { AiDeadlineSuggestions } from "@/components/legal/AiDeadlineSuggestions";
 import { useMe } from "@/lib/queries/auth";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import { getRechtsraumParams } from "@/lib/legal/rechtsraum";
@@ -136,6 +138,7 @@ export default function DeadlinesPage() {
     note: string;
   } | null>(null);
   const [showAiDetect, setShowAiDetect] = useState(false);
+  const [showAiSuggestions, setShowAiSuggestions] = useState(false);
   const [aiText, setAiText] = useState("");
   const [aiResults, setAiResults] = useState<
     Array<{ type: string; description: string; date?: string; confidence: string }>
@@ -699,6 +702,15 @@ export default function DeadlinesPage() {
               <FileSearch size={14} />
               {t("deadlines.detect")}
             </Button>
+            <Button
+              variant={showAiSuggestions ? "primary" : "ghost"}
+              size="sm"
+              onClick={() => setShowAiSuggestions(!showAiSuggestions)}
+              className="gap-2 text-xs"
+            >
+              <Sparkles size={14} />
+              {lang === "en" ? "AI Suggestions" : "KI-Vorschläge"}
+            </Button>
           </div>
         }
       />
@@ -914,6 +926,9 @@ export default function DeadlinesPage() {
           )}
         </div>
       )}
+
+      {/* AI Deadline Suggestions — global consolidated view */}
+      {showAiSuggestions && <AiDeadlineSuggestions />}
 
       {/* Alert banner */}
       {(counts.critical || 0) > 0 && (

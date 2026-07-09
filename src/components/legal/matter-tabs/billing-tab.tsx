@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Clock,
   Receipt,
@@ -37,6 +38,9 @@ export function BillingTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
   const { addToast } = useToast();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [unbillingId, setUnbillingId] = useState<string | null>(null);
   const [newEntry, setNewEntry] = useState({
@@ -50,6 +54,15 @@ export function BillingTab() {
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerStart, setTimerStart] = useState<number | null>(null);
   const [timerElapsed, setTimerElapsed] = useState(0);
+
+  useEffect(() => {
+    if (searchParams.get("action") !== "time") return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("matter-time-description")?.focus();
+      router.replace(pathname, { scroll: false });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname, router, searchParams]);
 
   const handleStartTimer = useCallback(() => {
     setTimerRunning(true);
@@ -248,6 +261,7 @@ export function BillingTab() {
           {/* Add Time Entry Form — essentials only (Progressive Disclosure) */}
           <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
             <input
+              id="matter-time-description"
               type="text"
               placeholder={t("cases.detail_time_activity_ph")}
               value={newEntry.description}

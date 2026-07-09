@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { Plus, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
@@ -15,14 +16,15 @@ import type { KYCVerification } from "@/lib/kyc";
 export default function KYCPage() {
   const { addToast } = useToast();
   const { t } = useLang();
+  const searchParams = useSearchParams();
   const [verifications, setVerifications] = useState<KYCVerification[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    case_slug: "",
-    client_name: "",
-    client_email: "",
+    case_slug: searchParams.get("case_slug") ?? "",
+    client_name: searchParams.get("client_name") ?? "",
+    client_email: searchParams.get("client_email") ?? "",
     provider: "manual" as KYCVerification["provider"],
     is_pep: false,
     is_high_risk_country: false,
@@ -30,6 +32,20 @@ export default function KYCPage() {
     complex_ownership: false,
     trust_or_company_structure: false,
   });
+
+  useEffect(() => {
+    const caseSlug = searchParams.get("case_slug");
+    const clientName = searchParams.get("client_name");
+    if (caseSlug || clientName) {
+      setForm((prev) => ({
+        ...prev,
+        case_slug: caseSlug ?? prev.case_slug,
+        client_name: clientName ?? prev.client_name,
+        client_email: searchParams.get("client_email") ?? prev.client_email,
+      }));
+      setShowCreate(true);
+    }
+  }, [searchParams]);
 
   const load = useCallback(async () => {
     try {

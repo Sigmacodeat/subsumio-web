@@ -38,6 +38,10 @@ import { useLang } from "@/lib/use-lang";
 import { NetworkStatusBadge } from "@/components/dashboard/sidebar";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useRealtime } from "@/lib/realtime";
+import {
+  requestNotificationPermission,
+  isNotificationSupported,
+} from "@/lib/queries/review-inbox-realtime";
 import { csrfFetch } from "@/lib/csrf";
 import { cn } from "@/lib/utils";
 import { MatterSwitcher } from "@/components/dashboard/matter-switcher";
@@ -75,6 +79,7 @@ export function Topbar({
   const [brainActiveIdx, setBrainActiveIdx] = useState(0);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [utilitiesOpen, setUtilitiesOpen] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState<
     "all" | "deadline" | "mention" | "system"
   >("all");
@@ -211,6 +216,10 @@ export function Topbar({
   }, []);
 
   // Listen for realtime notification events
+  useEffect(() => {
+    setPushEnabled(isNotificationSupported());
+  }, []);
+
   useRealtime("notification.created", () => void fetchNotifications());
   useRealtime("comment.added", () => void fetchNotifications());
 
@@ -423,7 +432,7 @@ export function Topbar({
   return (
     <header
       data-tour="topbar"
-      className="flex h-11 shrink-0 items-center justify-between gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 pt-[env(safe-area-inset-top)] shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)] md:h-12 md:px-6 lg:px-8"
+      className="flex h-11 shrink-0 items-center justify-between gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 pt-[env(safe-area-inset-top)] md:h-12 md:px-6 lg:px-8"
     >
       <div className="flex max-w-xs min-w-0 flex-1 items-center gap-3 md:max-w-sm lg:max-w-lg">
         <button
@@ -432,7 +441,7 @@ export function Topbar({
             else onMobileMenuOpen();
             if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
           }}
-          className="group flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-90 md:hidden"
+          className="group flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-90 md:hidden"
           aria-label={mobileOpen ? t("topbar.close_menu") : t("topbar.open_menu")}
           aria-expanded={mobileOpen}
         >
@@ -476,7 +485,7 @@ export function Topbar({
         {/* Mobile search icon — opens command palette */}
         <button
           onClick={onCmdOpen}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none md:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none md:hidden"
           aria-label={t("topbar.search_aria")}
         >
           <Search size={18} />
@@ -503,7 +512,7 @@ export function Topbar({
             }
             aria-expanded={notifOpen}
             aria-haspopup="menu"
-            className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+            className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--ds-ring)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
           >
             <Bell size={16} />
             {unreadCount > 0 && (
@@ -661,6 +670,26 @@ export function Topbar({
                   )}
                 </div>
                 <div className="flex items-center gap-1 border-t border-[color:var(--ds-border)] p-2">
+                  {typeof window !== "undefined" &&
+                    "Notification" in window &&
+                    Notification.permission === "default" && (
+                      <button
+                        onClick={async () => {
+                          const granted = await requestNotificationPermission();
+                          setPushEnabled(granted);
+                        }}
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-amber-500/10 py-2 text-xs font-medium text-amber-600 transition-opacity hover:opacity-80"
+                      >
+                        <Bell size={12} />
+                        {t("topbar.enable_push")}
+                      </button>
+                    )}
+                  {pushEnabled && (
+                    <span className="flex items-center gap-1 px-2 text-xs text-emerald-600">
+                      <Bell size={11} />
+                      {t("topbar.push_active")}
+                    </span>
+                  )}
                   <button
                     onClick={() => {
                       router.push("/dashboard/notifications");

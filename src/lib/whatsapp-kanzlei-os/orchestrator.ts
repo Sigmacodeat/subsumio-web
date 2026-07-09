@@ -30,6 +30,8 @@ import {
   type NotificationEvent,
 } from "@/lib/whatsapp-event-bus";
 import { executeApprovedAction, type ApprovalExecutionDeps } from "@/lib/approval-execution";
+import { ingestVerifiedClientWhatsAppSubmission } from "@/lib/whatsapp/client-ingest";
+import { verifyWhatsAppClientCode } from "@/lib/whatsapp/client-verification";
 import type { ActionType } from "@/lib/approval";
 
 /**
@@ -285,6 +287,47 @@ export async function orchestrateWhatsAppMessage(
         eventSlug: event.slug,
         actionSlug: approvalResult.actionSlug,
         status: "executed",
+      };
+    }
+  }
+
+  if (isClientRole(sender.role) && !sender.verifiedAt && normalizedText) {
+    const verification = await verifyWhatsAppClientCode({
+      sender,
+      text: normalizedText,
+      fetchImpl: deps.fetchImpl,
+    });
+    if (verification.reason !== "not_code") {
+      return {
+        reply: verification.reply,
+        eventSlug: event.slug,
+        workflowRunSlug: verification.inviteSlug,
+        status: verification.ok ? "executed" : "failed",
+      };
+    }
+  }
+
+  if (isClientRole(sender.role)) {
+    const clientMedia =
+      isMediaMessage(message) && message.type !== "voice"
+        ? (storedMedia ?? (await downloadMedia(message)))
+        : storedMedia;
+    const clientIngest = await ingestVerifiedClientWhatsAppSubmission(
+      {
+        sender,
+        message,
+        eventSlug: event.slug,
+        normalizedText,
+        media: clientMedia,
+      },
+      deps.fetchImpl
+    );
+    if (clientIngest.handled) {
+      return {
+        reply: clientIngest.reply,
+        eventSlug: event.slug,
+        workflowRunSlug: clientIngest.submissionSlug,
+        status: "routed",
       };
     }
   }

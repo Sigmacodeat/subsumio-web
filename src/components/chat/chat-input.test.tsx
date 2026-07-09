@@ -73,9 +73,7 @@ function renderChatInput(props: Partial<React.ComponentProps<typeof ChatInput>> 
       isStreaming={false}
       disabled={false}
       placeholder="Nachricht eingeben…"
-      features={{ fileUpload: true, modelSelector: true, modeSelector: true }}
-      queryMode="balanced"
-      onQueryModeChange={vi.fn()}
+      features={{ fileUpload: true, modelSelector: true }}
       {...props}
     />
   );
@@ -231,25 +229,6 @@ describe("ChatInput", () => {
     await waitFor(() => {
       expect(textarea).toHaveValue("Hallo Spracheingabe");
     });
-  });
-
-  it("switches query mode via dropdown", async () => {
-    const onQueryModeChange = vi.fn();
-    renderChatInput({ onQueryModeChange });
-    const modeButton = screen.getByRole("button", { name: /chat.mode/i });
-    fireEvent.click(modeButton);
-    // Scope to the dropdown popover itself — the toolbar row also contains
-    // unrelated buttons (template, upload, voice, model, send), so picking
-    // "the first button that isn't the trigger" is DOM-order-dependent and
-    // brittle. The dropdown is the sibling rendered right after the trigger.
-    const dropdown = modeButton.parentElement?.querySelector('[class*="absolute"]');
-    expect(dropdown).toBeTruthy();
-    const options = Array.from(dropdown!.querySelectorAll("button")).filter(
-      (b) => b.textContent !== "Akten + Recht"
-    );
-    expect(options.length).toBeGreaterThan(0);
-    fireEvent.click(options[0]);
-    await waitFor(() => expect(onQueryModeChange).toHaveBeenCalled());
   });
 
   it("selects a model via ModelSelector", async () => {

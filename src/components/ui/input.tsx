@@ -20,7 +20,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             className={cn(
               "w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-sm text-[color:var(--ds-text)]",
-              "placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)]/20 focus:outline-none",
+              "placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--ds-ring)] focus:ring-2 focus:ring-[color:var(--ds-ring)]/20 focus:outline-none",
               "transition-colors duration-150",
               icon && "pl-10",
               iconRight && "pr-10",
@@ -44,7 +44,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         ref={ref}
         className={cn(
           "w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)]",
-          "placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)]/20 focus:outline-none",
+          "placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--ds-ring)] focus:ring-2 focus:ring-[color:var(--ds-ring)]/20 focus:outline-none",
           "transition-colors duration-150",
           className
         )}
