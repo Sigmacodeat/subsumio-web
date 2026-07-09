@@ -147,7 +147,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
           className="mb-14 text-center"
         >
           <span
-            className="mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
+            className="mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold"
             style={{
               color: "var(--brand-text)",
               background: "color-mix(in srgb, var(--brand-text) 10%, transparent)",
@@ -165,7 +165,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
           </p>
         </motion.div>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {c.pillars.map((pillar, i) => {
             const Icon = pillar.icon;
             const sig = SIGNAL[pillar.signal];
@@ -190,7 +190,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
                     >
                       <Icon size={19} style={{ color: sig.text }} />
                     </div>
-                    <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
+                    <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
                       {pillar.t}
                     </h3>
                     <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">

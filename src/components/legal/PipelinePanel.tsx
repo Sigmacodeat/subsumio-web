@@ -144,11 +144,11 @@ function subTypeLabel(type: unknown): string | null {
 function layerStatusColor(status: string): string {
   switch (status) {
     case "completed":
-      return "text-emerald-600";
+      return "text-[color:var(--ds-success-text)]";
     case "running":
-      return "text-blue-600";
+      return "text-[color:var(--ds-info-text)]";
     case "failed":
-      return "text-red-600";
+      return "text-[color:var(--ds-danger-text)]";
     case "pending":
       return "text-[color:var(--ds-text-muted)]";
     default:
@@ -489,11 +489,11 @@ export function PipelinePanel({
               className={cn(
                 "border text-xs",
                 pipelineStatus === "completed"
-                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+                  ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                   : pipelineStatus === "running"
-                    ? "border-blue-500/30 bg-blue-500/10 text-blue-600"
+                    ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
                     : pipelineStatus === "failed"
-                      ? "border-red-500/30 bg-red-500/10 text-red-600"
+                      ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                       : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
               )}
             >
@@ -622,10 +622,10 @@ export function PipelinePanel({
                                   className={cn(
                                     "border text-xs",
                                     Number(fm.total_score) >= 70
-                                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+                                      ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                                       : Number(fm.total_score) >= 50
-                                        ? "border-amber-500/30 bg-amber-500/10 text-amber-600"
-                                        : "border-red-500/30 bg-red-500/10 text-red-600"
+                                        ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                                        : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                                   )}
                                 >
                                   Score: {String(fm.total_score)}
@@ -742,7 +742,7 @@ export function PipelinePanel({
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <Link2 size={18} className="text-blue-600" />
+              <Link2 size={18} className="text-[color:var(--ds-info-text)]" />
               <div>
                 <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
                   Cross-Case Analyse
@@ -776,7 +776,7 @@ export function PipelinePanel({
                     <Badge
                       key={lc}
                       variant="default"
-                      className="border border-blue-500/30 bg-blue-500/10 text-xs text-blue-600"
+                      className="border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
                     >
                       <Link2 size={10} className="mr-1" />
                       {lc}
@@ -794,9 +794,9 @@ export function PipelinePanel({
                       className={cn(
                         "rounded-lg border p-3",
                         finding.severity === "high"
-                          ? "border-red-500/30 bg-red-500/5"
+                          ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
                           : finding.severity === "medium"
-                            ? "border-amber-500/30 bg-amber-500/5"
+                            ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
                             : "border-[color:var(--ds-border)] bg-[color:var(--ds-bg)]"
                       )}
                     >
@@ -806,9 +806,9 @@ export function PipelinePanel({
                           className={cn(
                             "shrink-0",
                             finding.severity === "high"
-                              ? "text-red-600"
+                              ? "text-[color:var(--ds-danger-text)]"
                               : finding.severity === "medium"
-                                ? "text-amber-600"
+                                ? "text-[color:var(--ds-warning-text)]"
                                 : "text-[color:var(--ds-text-muted)]"
                           )}
                         />
@@ -826,9 +826,9 @@ export function PipelinePanel({
                           className={cn(
                             "ml-auto border text-xs",
                             finding.severity === "high"
-                              ? "border-red-500/30 bg-red-500/10 text-red-600"
+                              ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                               : finding.severity === "medium"
-                                ? "border-amber-500/30 bg-amber-500/10 text-amber-600"
+                                ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
                                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
                           )}
                         >
@@ -864,10 +864,10 @@ export function PipelinePanel({
       {/* Damage Overlap Warnings Panel */}
       {pipelineState?.damage_overlap_warnings &&
         pipelineState.damage_overlap_warnings.length > 0 && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+          <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <AlertTriangle size={18} className="text-amber-600" />
+                <AlertTriangle size={18} className="text-[color:var(--ds-warning-text)]" />
                 <div>
                   <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
                     Schadens-Doppelzählungs-Warnungen
@@ -892,9 +892,9 @@ export function PipelinePanel({
             {showDamageOverlaps && (
               <div className="mt-3 space-y-2">
                 {pipelineState.damage_overlap_warnings.map((warning, i) => (
-                  <div key={i} className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                  <div key={i} className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3">
                     <div className="flex items-start gap-2">
-                      <AlertTriangle size={14} className="mt-0.5 shrink-0 text-amber-600" />
+                      <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
                       <p className="text-xs leading-relaxed text-[color:var(--ds-text)]">
                         {warning}
                       </p>
@@ -912,15 +912,15 @@ export function PipelinePanel({
           className={cn(
             "rounded-xl border p-4",
             limitationExpiredCount > 0
-              ? "border-red-500/30 bg-red-500/5"
-              : "border-amber-500/30 bg-amber-500/5"
+              ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
+              : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
           )}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <AlertTriangle
                 size={18}
-                className={limitationExpiredCount > 0 ? "text-red-600" : "text-amber-600"}
+                className={limitationExpiredCount > 0 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-warning-text)]"}
               />
               <div>
                 <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -940,7 +940,7 @@ export function PipelinePanel({
               {limitationExpiredCount > 0 && (
                 <Badge
                   variant="default"
-                  className="border border-red-500/30 bg-red-500/10 text-xs text-red-600"
+                  className="border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
                 >
                   ⛔ {limitationExpiredCount} verjährt
                 </Badge>
@@ -948,7 +948,7 @@ export function PipelinePanel({
               {limitationUrgentCount > 0 && (
                 <Badge
                   variant="default"
-                  className="border border-amber-500/30 bg-amber-500/10 text-xs text-amber-600"
+                  className="border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
                 >
                   🚨 {limitationUrgentCount} dringend
                 </Badge>
@@ -970,10 +970,10 @@ export function PipelinePanel({
               {limitationExpiredClaims.map((claim, i) => (
                 <div
                   key={`expired-${i}`}
-                  className="rounded-lg border border-red-500/30 bg-red-500/5 p-3"
+                  className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3"
                 >
                   <div className="flex items-start gap-2">
-                    <AlertTriangle size={14} className="mt-0.5 shrink-0 text-red-600" />
+                    <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]" />
                     <div className="text-xs leading-relaxed text-[color:var(--ds-text)]">
                       <span className="font-semibold">{String(claim.anspruch ?? "Anspruch")}</span>
                       {claim.gegner ? ` gegen ${String(claim.gegner)}` : ""} — bereits verjährt
@@ -986,10 +986,10 @@ export function PipelinePanel({
               {limitationUrgentClaims.map((claim, i) => (
                 <div
                   key={`urgent-${i}`}
-                  className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3"
+                  className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3"
                 >
                   <div className="flex items-start gap-2">
-                    <AlertTriangle size={14} className="mt-0.5 shrink-0 text-amber-600" />
+                    <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
                     <div className="text-xs leading-relaxed text-[color:var(--ds-text)]">
                       <span className="font-semibold">{String(claim.anspruch ?? "Anspruch")}</span>
                       {claim.gegner ? ` gegen ${String(claim.gegner)}` : ""} — noch{" "}
@@ -1132,10 +1132,10 @@ export function PipelinePanel({
                   className={cn(
                     "border text-xs",
                     pipelineState.ensemble_verdict.consensus.narrative_coherence_score >= 70
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+                      ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : pipelineState.ensemble_verdict.consensus.narrative_coherence_score >= 50
-                        ? "border-amber-500/30 bg-amber-500/10 text-amber-600"
-                        : "border-red-500/30 bg-red-500/10 text-red-600"
+                        ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                        : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                   )}
                 >
                   <TrendingUp size={10} className="mr-1" />
@@ -1175,10 +1175,10 @@ export function PipelinePanel({
                   {pipelineState.ensemble_verdict.consensus.coherence_violations.map((v, i) => (
                     <div
                       key={i}
-                      className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3"
+                      className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3"
                     >
                       <div className="flex items-start gap-2">
-                        <AlertTriangle size={12} className="mt-0.5 shrink-0 text-amber-600" />
+                        <AlertTriangle size={12} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
                         <p className="text-xs leading-relaxed text-[color:var(--ds-text)]">{v}</p>
                       </div>
                     </div>
@@ -1196,9 +1196,9 @@ export function PipelinePanel({
 
       {/* Pipeline Warnings Summary */}
       {pipelineState?.warnings && pipelineState.warnings.length > 0 && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+        <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3">
           <div className="flex items-center gap-2">
-            <AlertTriangle size={14} className="text-amber-600" />
+            <AlertTriangle size={14} className="text-[color:var(--ds-warning-text)]" />
             <span className="text-xs font-semibold text-[color:var(--ds-text)]">
               Pipeline-Warnings ({pipelineState.warnings.length})
             </span>

@@ -123,10 +123,10 @@ export default function FeatureFlagsPage() {
       />
 
       {error && (
-        <Card className="border-rose-500/30 bg-rose-500/5">
+        <Card className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]">
           <CardContent className="flex items-center gap-3 pt-6">
-            <AlertCircle size={16} className="text-rose-500" />
-            <p className="text-sm text-rose-600">Fehler beim Laden der Feature Flags.</p>
+            <AlertCircle size={16} className="text-[color:var(--ds-danger-text)]" />
+            <p className="text-sm text-[color:var(--ds-danger-text)]">Fehler beim Laden der Feature Flags.</p>
           </CardContent>
         </Card>
       )}
@@ -168,7 +168,7 @@ export default function FeatureFlagsPage() {
                         title={flag.enabled ? "Deaktivieren" : "Aktivieren"}
                       >
                         {flag.enabled ? (
-                          <ToggleRight size={22} className="text-emerald-500" />
+                          <ToggleRight size={22} className="text-[color:var(--ds-success-text)]" />
                         ) : (
                           <ToggleLeft size={22} className="text-muted-foreground" />
                         )}
@@ -212,7 +212,7 @@ export default function FeatureFlagsPage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="text-rose-500 hover:text-rose-600"
+                      className="text-[color:var(--ds-danger-text)] hover:text-[color:var(--ds-danger-text)]"
                       onClick={() => setDeleteKey(flag.key)}
                     >
                       <Trash2 size={14} />
@@ -361,7 +361,7 @@ function CreateFlagDialog({
           <div className="flex items-center gap-2">
             <button onClick={() => setEnabled(!enabled)} className="flex items-center gap-1.5">
               {enabled ? (
-                <ToggleRight size={20} className="text-emerald-500" />
+                <ToggleRight size={20} className="text-[color:var(--ds-success-text)]" />
               ) : (
                 <ToggleLeft size={20} className="text-muted-foreground" />
               )}
@@ -392,7 +392,7 @@ function CreateFlagDialog({
                   onClick={() => togglePlan(plan)}
                   className={`rounded-lg border px-3 py-1 text-xs transition-colors ${
                     allowedPlans.includes(plan)
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+                      ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-muted-foreground"
                   }`}
                 >
@@ -412,7 +412,7 @@ function CreateFlagDialog({
                   onClick={() => toggleRole(role)}
                   className={`rounded-lg border px-3 py-1 text-xs transition-colors ${
                     allowedRoles.includes(role)
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+                      ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-muted-foreground"
                   }`}
                 >
@@ -507,7 +507,7 @@ function EditFlagDialog({
           <div className="flex items-center gap-2">
             <button onClick={() => setEnabled(!enabled)} className="flex items-center gap-1.5">
               {enabled ? (
-                <ToggleRight size={20} className="text-emerald-500" />
+                <ToggleRight size={20} className="text-[color:var(--ds-success-text)]" />
               ) : (
                 <ToggleLeft size={20} className="text-muted-foreground" />
               )}
@@ -538,7 +538,7 @@ function EditFlagDialog({
                   onClick={() => togglePlan(plan)}
                   className={`rounded-lg border px-3 py-1 text-xs transition-colors ${
                     allowedPlans.includes(plan)
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+                      ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-muted-foreground"
                   }`}
                 >
@@ -558,7 +558,7 @@ function EditFlagDialog({
                   onClick={() => toggleRole(role)}
                   className={`rounded-lg border px-3 py-1 text-xs transition-colors ${
                     allowedRoles.includes(role)
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+                      ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-muted-foreground"
                   }`}
                 >

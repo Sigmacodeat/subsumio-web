@@ -3,7 +3,8 @@ import Link from "next/link";
 import { JsonLd, breadcrumbLd, organizationLd, blogLd } from "@/components/seo/jsonld";
 import { getAllPosts } from "@/content/blog";
 import { keywordsFor } from "@/lib/seo-keywords";
-import { Section, BadgePill, CTASection, H1_CLASS } from "@/components/marketing/chrome";
+import { Section, BadgePill, CTASection, H1_CLASS, H3_CLASS } from "@/components/marketing/chrome";
+import { UI_STRINGS } from "@/content/site";
 
 export const metadata: Metadata = {
   title: "Subsumio Blog — KI-Kanzleisoftware Praxiswissen",
@@ -76,7 +77,7 @@ export default function BlogPage() {
                       })}{" "}
                       · {post.readMinutes} Min. Lesezeit
                     </time>
-                    <h2 className="mt-2 text-2xl font-bold tracking-tight text-balance [color:var(--mk-text)] group-hover:text-[color:var(--brand-text)]">
+                    <h2 className={`mt-2 ${H3_CLASS} group-hover:text-[color:var(--brand-text)]`}>
                       {post.title}
                     </h2>
                     <p className="mt-3 text-[color:var(--mk-text-muted)]">{post.description}</p>
@@ -101,6 +102,8 @@ export default function BlogPage() {
           sub="Starte deine 14-tägige Testphase — keine Kreditkarte nötig."
           href="/signup"
           label="14 Tage testen"
+          secondaryHref="/contact"
+          secondaryLabel={UI_STRINGS.de.writeUs}
         />
       </div>
     </>

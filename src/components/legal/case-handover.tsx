@@ -199,9 +199,9 @@ export function CaseHandover() {
                     variant="default"
                     className={
                       entry.urgency === "high"
-                        ? "border-red-500/30 text-red-600"
+                        ? "border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]"
                         : entry.urgency === "medium"
-                          ? "border-orange-500/30 text-orange-600"
+                          ? "border-[color:var(--ds-attention-border)] text-[color:var(--ds-attention-text)]"
                           : ""
                     }
                   >

@@ -139,7 +139,7 @@ const _verticalsDe = {
     ],
     proofTitle: "Engine-Klasse Retrieval, kein Chat-Wrapper",
     proof:
-      "Der Retrieval-Kern erreicht 97,9 % Recall@5 mit Hybrid-Suche und Wissensgraph — und weil er auf Infrastruktur läuft, die du kontrollierst, steuert deine IT jedes System, das Mandantendaten berührt.",
+      "Der Retrieval-Kern erreicht 99,8 % Recall@8 auf LongMemEval (500 Fragen) mit Hybrid-Suche und Wissensgraph — und weil er auf Infrastruktur läuft, die du kontrollierst, steuert deine IT jedes System, das Mandantendaten berührt.",
     faq: [
       {
         q: "Ist das Rechtsberatungs-Software?",
@@ -274,7 +274,7 @@ const _enVerticals: Record<VerticalSlug, VerticalContent> = {
     ],
     proofTitle: "Engine-grade retrieval, not a chat wrapper",
     proof:
-      "The retrieval core benchmarks at 97.9% Recall@5 with hybrid search and a knowledge graph — and because it runs on infrastructure you control, your IT governs every system that touches client data.",
+      "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) with hybrid search and a knowledge graph — and because it runs on infrastructure you control, your IT governs every system that touches client data.",
     faq: [
       {
         q: "Is this legal advice software?",
@@ -375,8 +375,8 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
       "Accesso scoped per pratica e per utente — fuzz-testato, zero leak tra pratiche o team.",
     // Proof + FAQ
     "Engine-grade retrieval, not a chat wrapper": "Retrieval di grado engine, non un chat wrapper",
-    "The retrieval core benchmarks at 97.9% Recall@5 with hybrid search and a knowledge graph — and because it runs on infrastructure you control, your IT governs every system that touches client data.":
-      "Il core di retrieval raggiunge 97,9% Recall@5 con ricerca ibrida e knowledge graph — e poiché gira su infrastruttura che controlli, la tua IT governa ogni sistema che tocca dati clienti.",
+    "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) with hybrid search and a knowledge graph — and because it runs on infrastructure you control, your IT governs every system that touches client data.":
+      "Il core di retrieval raggiunge 99,8% Recall@8 su LongMemEval (500 domande) con ricerca ibrida e knowledge graph — e poiché gira su infrastruttura che controlli, la tua IT governa ogni sistema che tocca dati clienti.",
     "Is this legal advice software?": "È software per consulenza legale?",
     "No. Subsumio organizes and synthesizes your documents and notes. Legal judgment stays with the lawyers — the brain just makes sure nothing in the file escapes them.":
       "No. Subsumio organizza e sintetizza i tuoi documenti e note. Il giudizio legale resta con gli avvocati — il brain si assicura solo che nulla nella pratica sfugga loro.",
@@ -461,8 +461,8 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
       "Acceso scoped por asunto y por usuario — fuzz-testeado, cero fugas entre asuntos o equipos.",
     // Proof + FAQ
     "Engine-grade retrieval, not a chat wrapper": "Retrieval de grado engine, no un chat wrapper",
-    "The retrieval core benchmarks at 97.9% Recall@5 with hybrid search and a knowledge graph — and because it runs on infrastructure you control, your IT governs every system that touches client data.":
-      "El core de retrieval alcanza 97,9% Recall@5 con búsqueda híbrida y knowledge graph — y como corre en infraestructura que controlas, tu IT gobierna cada sistema que toca datos de clientes.",
+    "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) with hybrid search and a knowledge graph — and because it runs on infrastructure you control, your IT governs every system that touches client data.":
+      "El core de retrieval alcanza 99,8% Recall@8 en LongMemEval (500 preguntas) con búsqueda híbrida y knowledge graph — y como corre en infraestructura que controlas, tu IT gobierna cada sistema que toca datos de clientes.",
     "Is this legal advice software?": "¿Es software de asesoría legal?",
     "No. Subsumio organizes and synthesizes your documents and notes. Legal judgment stays with the lawyers — the brain just makes sure nothing in the file escapes them.":
       "No. Subsumio organiza y sintetiza tus documentos y notas. El juicio legal queda con los abogados — el brain solo se asegura de que nada del asunto se les escape.",
@@ -548,8 +548,8 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
       "Dostęp scoped per sprawa i per użytkownik — fuzz-testowane, zero wycieków między sprawami lub zespołami.",
     // Proof + FAQ
     "Engine-grade retrieval, not a chat wrapper": "Retrieval klasy engine, nie chat wrapper",
-    "The retrieval core benchmarks at 97.9% Recall@5 with hybrid search and a knowledge graph — and because it runs on infrastructure you control, your IT governs every system that touches client data.":
-      "Rdzeń retrieval osiąga 97,9% Recall@5 z wyszukiwaniem hybrydowym i knowledge graph — a ponieważ działa na infrastrukturze, którą kontrolujesz, twoja IT zarządza każdym systemem, który dotyka danych klientów.",
+    "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) with hybrid search and a knowledge graph — and because it runs on infrastructure you control, your IT governs every system that touches client data.":
+      "Rdzeń retrieval osiąga 99,8% Recall@8 na LongMemEval (500 pytań) z wyszukiwaniem hybrydowym i knowledge graph — a ponieważ działa na infrastrukturze, którą kontrolujesz, twoja IT zarządza każdym systemem, który dotyka danych klientów.",
     "Is this legal advice software?": "Czy to software do porad prawnych?",
     "No. Subsumio organizes and synthesizes your documents and notes. Legal judgment stays with the lawyers — the brain just makes sure nothing in the file escapes them.":
       "Nie. Subsumio organizuje i syntetyzuje twoje dokumenty i notatki. Ocena prawna zostaje przy prawnikach — brain tylko dba, by nic z akt im nie umknęło.",
@@ -634,8 +634,8 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
       "Accès scoped par dossier et par utilisateur — fuzz-testé, zéro fuite entre dossiers ou équipes.",
     // Proof + FAQ
     "Engine-grade retrieval, not a chat wrapper": "Retrieval de grade engine, pas un chat wrapper",
-    "The retrieval core benchmarks at 97.9% Recall@5 with hybrid search and a knowledge graph — and because it runs on infrastructure you control, your IT governs every system that touches client data.":
-      "Le core de retrieval atteint 97,9% Recall@5 avec recherche hybride et knowledge graph — et comme il tourne sur une infrastructure que vous contrôlez, votre IT gouverne chaque système qui touche les données clients.",
+    "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) with hybrid search and a knowledge graph — and because it runs on infrastructure you control, your IT governs every system that touches client data.":
+      "Le core de retrieval atteint 99,8% Recall@8 sur LongMemEval (500 questions) avec recherche hybride et knowledge graph — et comme il tourne sur une infrastructure que vous contrôlez, votre IT gouverne chaque système qui touche les données clients.",
     "Is this legal advice software?": "Est-ce un logiciel de conseil juridique?",
     "No. Subsumio organizes and synthesizes your documents and notes. Legal judgment stays with the lawyers — the brain just makes sure nothing in the file escapes them.":
       "Non. Subsumio organise et synthétise vos documents et notes. Le jugement juridique reste avec les avocats — le brain s'assure juste que rien dans le dossier ne leur échappe.",
@@ -722,8 +722,8 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
     // Proof + FAQ
     "Engine-grade retrieval, not a chat wrapper":
       "Retrieval van engine-kwaliteit, geen chat wrapper",
-    "The retrieval core benchmarks at 97.9% Recall@5 with hybrid search and a knowledge graph — and because it runs on infrastructure you control, your IT governs every system that touches client data.":
-      "De retrieval-kern bereikt 97,9% Recall@5 met hybride zoek en een knowledge graph — en omdat het draait op infrastructuur die jij controleert, beheert jouw IT elk systeem dat klantdata aanraakt.",
+    "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) with hybrid search and a knowledge graph — and because it runs on infrastructure you control, your IT governs every system that touches client data.":
+      "De retrieval-kern bereikt 99,8% Recall@8 op LongMemEval (500 vragen) met hybride zoek en een knowledge graph — en omdat het draait op infrastructuur die jij controleert, beheert jouw IT elk systeem dat klantdata aanraakt.",
     "Is this legal advice software?": "Is dit software voor juridisch advies?",
     "No. Subsumio organizes and synthesizes your documents and notes. Legal judgment stays with the lawyers — the brain just makes sure nothing in the file escapes them.":
       "Nee. Subsumio organiseert en synthetiseert je documenten en notities. Juridisch oordeel blijft bij de advocaten — het brain zorgt er alleen voor dat niets in het dossier hen ontgaat.",

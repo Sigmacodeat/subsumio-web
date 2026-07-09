@@ -40,9 +40,9 @@ interface ReviewTableProps {
 }
 
 const FLAG_COLORS: Record<string, string> = {
-  red: "bg-red-100 text-red-700 border-red-300",
-  yellow: "bg-yellow-100 text-yellow-700 border-yellow-300",
-  green: "bg-green-100 text-green-700 border-green-300",
+  red: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)] border-red-300",
+  yellow: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)] border-yellow-300",
+  green: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] border-green-300",
 };
 
 const FLAG_LABELS: Record<string, string> = {
@@ -149,7 +149,7 @@ export function ReviewTable({ data, caseSlug }: ReviewTableProps) {
                             </span>
                           )}
                           {isExpanded && cell.quote && (
-                            <div className="mt-1.5 rounded border-l-2 border-blue-300 bg-blue-50 px-2 py-1.5 text-xs text-[color:var(--ds-text-muted)]">
+                            <div className="mt-1.5 rounded border-l-2 border-blue-300 bg-[color:var(--ds-info-solid)] px-2 py-1.5 text-xs text-[color:var(--ds-text-muted)]">
                               <div className="flex items-start gap-1">
                                 <MessageSquare size={12} className="mt-0.5 shrink-0" />
                                 <div>
@@ -197,7 +197,7 @@ export function ReviewTable({ data, caseSlug }: ReviewTableProps) {
             <button
               onClick={handleAsk}
               disabled={askLoading || !askQuery.trim()}
-              className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-md bg-[color:var(--ds-info-solid)] px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[color:var(--ds-info-solid)] disabled:opacity-50"
             >
               {askLoading ? (
                 <Loader2 size={14} className="animate-spin" />

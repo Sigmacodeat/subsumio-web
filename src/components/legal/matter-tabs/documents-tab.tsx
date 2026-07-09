@@ -145,7 +145,7 @@ export function DocumentsTab() {
           wird automatisch dieser Akte zugeordnet
         </p>
         {!isOnline() && (
-          <p className="mt-2 text-xs text-amber-600">{t("casesdetail.upload.offline_mode")}</p>
+          <p className="mt-2 text-xs text-[color:var(--ds-warning-text)]">{t("casesdetail.upload.offline_mode")}</p>
         )}
         <label className="mt-3 inline-block cursor-pointer">
           <input
@@ -241,9 +241,9 @@ export function DocumentsTab() {
               item.status === "processing" ? (
                 <Loader2 size={16} className="brand-text shrink-0 animate-spin" />
               ) : item.status === "done" ? (
-                <CheckCircle2 size={16} className="shrink-0 text-emerald-500" />
+                <CheckCircle2 size={16} className="shrink-0 text-[color:var(--ds-success-text)]" />
               ) : item.status === "error" ? (
-                <XIcon size={16} className="shrink-0 text-red-500" />
+                <XIcon size={16} className="shrink-0 text-[color:var(--ds-danger-text)]" />
               ) : (
                 <FileText size={16} className="brand-text shrink-0" />
               )}
@@ -290,19 +290,19 @@ export function DocumentsTab() {
                   <div
                     className={cn(
                       "h-full rounded-full transition-all",
-                      item.status === "error" ? "bg-red-500" : "brand-bg"
+                      item.status === "error" ? "bg-[color:var(--ds-danger-solid)]" : "brand-bg"
                     )}
                     style={{ width: `${item.progress}%` }}
                   />
                 </div>
                 {item.status === "error" && (
-                  <div className="mt-1 text-xs text-red-600">{item.error}</div>
+                  <div className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{item.error}</div>
                 )}
               </div>
               {item.status === "error" && (
                 <button
                   onClick={() => ctx.setUploadQueue((q) => q.filter((i) => i.id !== item.id))}
-                  className="text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
+                  className="text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                 >
                   Entfernen
                 </button>
@@ -313,13 +313,13 @@ export function DocumentsTab() {
       )}
 
       {ctx.uploadError && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           {ctx.uploadError}
         </div>
       )}
 
       {ctx.offlinePendingCount > 0 && (
-        <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-2.5 text-xs text-amber-700">
+        <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-2.5 text-xs text-[color:var(--ds-warning-text)]">
           <CloudUpload size={14} className="shrink-0" />
           <span>
             {ctx.offlinePendingCount} {t("casesdetail.upload.offline_queue")}
@@ -621,7 +621,7 @@ export function DocumentsTab() {
                     }
                     await ctx.refreshCaseData();
                   }}
-                  className="text-[color:var(--ds-text-muted)] transition-colors hover:text-red-600"
+                  className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-danger-text)]"
                 >
                   <Trash2 size={14} />
                 </button>

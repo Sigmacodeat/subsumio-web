@@ -107,8 +107,8 @@ export function ClauseQuickCreateDialog({
         <form onSubmit={handleSubmit} className="flex max-h-[85vh] flex-col">
           <DialogHeader className="px-6 pt-6 pb-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/10">
-                <Library size={16} className="text-emerald-600" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]">
+                <Library size={16} className="text-[color:var(--ds-success-text)]" />
               </div>
               <DialogTitle>{t("clauses.quick_title" as DashboardKey)}</DialogTitle>
             </div>
@@ -159,7 +159,7 @@ export function ClauseQuickCreateDialog({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={t("clauses.placeholder_body" as DashboardKey)}
-                className="h-32 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
+                className="h-32 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none"
               />
             </div>
           </div>
@@ -182,7 +182,7 @@ export function ClauseQuickCreateDialog({
                 type="submit"
                 variant="primary"
                 disabled={creating || !canSubmit}
-                className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
+                className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
               >
                 {creating ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
                 {t("clauses.btn_create" as DashboardKey)}

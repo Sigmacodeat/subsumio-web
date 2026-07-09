@@ -331,13 +331,13 @@ export default function TaxAssessmentsPage() {
 
       {/* Error with retry */}
       {loadError && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <span>{loadError}</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => void loadAssessments()}
-            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             <RotateCcw size={13} />
             {t("tax.assessments.retry")}
@@ -432,11 +432,11 @@ export default function TaxAssessmentsPage() {
                     </td>
                     <td className="px-5 py-3">
                       {a.contested ? (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-warning-text)]">
                           <AlertCircle size={12} /> {t("tax.assessments.stat_contested")}
                         </span>
                       ) : a.paidDate ? (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-success-text)]">
                           <CheckCircle2 size={12} /> {t("tax.assessments.status_paid")}
                         </span>
                       ) : (

@@ -207,7 +207,7 @@ export function ContactCreateDialog({
         </DialogHeader>
 
         {error && (
-          <div className="flex items-center gap-2 text-xs text-red-600">
+          <div className="flex items-center gap-2 text-xs text-[color:var(--ds-danger-text)]">
             <AlertTriangle size={14} /> {error}
           </div>
         )}
@@ -217,16 +217,16 @@ export function ContactCreateDialog({
             role="alert"
             className={
               conflict.severity === "critical"
-                ? "space-y-2 rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2.5 text-xs"
-                : "space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 text-xs"
+                ? "space-y-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2.5 text-xs"
+                : "space-y-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2.5 text-xs"
             }
           >
             <div className="flex items-start justify-between gap-3">
               <div
                 className={
                   conflict.severity === "critical"
-                    ? "flex items-center gap-2 font-medium text-red-700"
-                    : "flex items-center gap-2 font-medium text-amber-700"
+                    ? "flex items-center gap-2 font-medium text-[color:var(--ds-danger-text)]"
+                    : "flex items-center gap-2 font-medium text-[color:var(--ds-warning-text)]"
                 }
               >
                 <AlertTriangle size={14} className="shrink-0" />

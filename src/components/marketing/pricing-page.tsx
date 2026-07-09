@@ -4,7 +4,7 @@
 // MotionConfig wraps the whole page; ScrollProgress shows reading position;
 // every section scroll-reveals; value-props use signal-colored tiles.
 
-import { Check } from "lucide-react";
+import { Check, Shield, Clock, Globe, CreditCard } from "lucide-react";
 import { PRICING, PRICING_FAQ, VALUE_PROPS, UI_STRINGS, p, type Lang } from "@/content/site";
 import { SectionHeading, CTASection, PageHero, Section } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
@@ -28,11 +28,37 @@ export default function PricingPage({ lang }: { lang: Lang }) {
       <PageHero badge={ui.transparentFair} h1a={pricing.title} sub={pricing.sub} icon={Check} />
 
       {/* Pricing Grid */}
-      <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 pb-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <Reveal variant="up">
             <PricingGrid lang={lang} />
           </Reveal>
+        </div>
+      </Section>
+
+      {/* Trust signals */}
+      <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <StaggerContainer className="grid grid-cols-2 gap-4 sm:grid-cols-4" stagger={0.06}>
+            {[
+              { icon: Shield, label: UI_STRINGS[lang].trustedBy },
+              { icon: Clock, label: UI_STRINGS[lang].trialDaysFree },
+              { icon: Globe, label: UI_STRINGS[lang].euHosted },
+              { icon: CreditCard, label: UI_STRINGS[lang].noGamesTitle },
+            ].map((sig) => {
+              const Icon = sig.icon;
+              return (
+                <StaggerItem key={sig.label}>
+                  <GlowCard className="flex h-full flex-col items-center justify-center rounded-2xl border [border-color:var(--mk-border)] p-5 text-center transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)]">
+                    <div className="brand-soft brand-border mb-4 flex h-12 w-12 items-center justify-center rounded-xl border">
+                      <Icon size={22} className="brand-text" />
+                    </div>
+                    <h3 className="text-sm font-semibold leading-tight [color:var(--mk-text)]">{sig.label}</h3>
+                  </GlowCard>
+                </StaggerItem>
+              );
+            })}
+          </StaggerContainer>
         </div>
       </Section>
 
@@ -42,7 +68,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
           <Reveal variant="up">
             <SectionHeading title={ui.noGamesTitle} sub={ui.noGamesSub} />
           </Reveal>
-          <StaggerContainer className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4" stagger={0.08}>
+          <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4" stagger={0.08}>
             {valueProps.map((prop) => (
               <StaggerItem
                 key={prop.title}
@@ -52,7 +78,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
                   <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border [border-color:var(--signal-green-border)] transition-transform duration-300 [background:var(--signal-green-bg)] hover:scale-110">
                     <Check size={18} className="[color:var(--signal-green)]" />
                   </div>
-                  <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
+                  <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
                     {prop.title}
                   </h3>
                   <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
@@ -81,6 +107,8 @@ export default function PricingPage({ lang }: { lang: Lang }) {
         sub={ui.writeUs}
         href={p(lang, "/signup")}
         label={ui.startFree}
+        secondaryHref={p(lang, "/contact")}
+        secondaryLabel={ui.writeUs}
         showLogo={false}
       />
     </div>

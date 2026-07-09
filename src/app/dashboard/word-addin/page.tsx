@@ -68,7 +68,7 @@ export default function WordAddinPage() {
             className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
           >
             <div className="mb-1 flex items-center gap-2">
-              <CheckCircle2 size={14} className="text-emerald-600" />
+              <CheckCircle2 size={14} className="text-[color:var(--ds-success-text)]" />
               <h3 className="text-sm font-medium text-[color:var(--ds-text)]">{f.title}</h3>
             </div>
             <p className="text-xs text-[color:var(--ds-text-muted)]">{f.desc}</p>
@@ -103,7 +103,7 @@ export default function WordAddinPage() {
                   className="gap-1 text-xs"
                 >
                   {copied ? (
-                    <CheckCircle2 size={12} className="text-emerald-600" />
+                    <CheckCircle2 size={12} className="text-[color:var(--ds-success-text)]" />
                   ) : (
                     <Copy size={12} />
                   )}
@@ -163,7 +163,7 @@ export default function WordAddinPage() {
         </Link>
       </div>
 
-      <Badge variant="default" className="border-blue-500/20 bg-blue-500/10 text-xs text-blue-600">
+      <Badge variant="default" className="border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]">
         {t("wordaddin.version_badge")}
       </Badge>
     </div>

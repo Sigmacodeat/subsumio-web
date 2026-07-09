@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Lang } from "@/content/site";
+import { H1_CLASS, H3_CLASS, Section } from "@/components/marketing/chrome";
 
 // Bilingual legal content (EN + DE) — used by /privacy, /terms, /imprint
 // AND the /en/* routes. `home` sets the back-link per language path.
@@ -58,25 +59,25 @@ function Shell({
 }) {
   const t = (T as unknown as Record<string, typeof T.de>)[lang] ?? T.de;
   return (
-    <div data-tone="light" className="min-h-screen px-6 py-16 [background:var(--mk-bg)]">
-      <div className="mx-auto max-w-2xl">
-        <Link href={home} className="brand-text text-sm hover:underline">
-          {t.backLink}
-        </Link>
-        <h1 className="mt-8 mb-2 text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.12] font-black tracking-tight text-balance [color:var(--mk-text)]">
-          {title}
-        </h1>
-        <p className="mb-6 text-xs text-pretty [color:var(--mk-text-subtle)]">{subtitle}</p>
-        <div className="space-y-3 text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)]">
-          {children}
+    <div data-tone="light" className="min-h-screen [background:var(--mk-bg)]">
+      <Section tone="light" className="px-6 py-16">
+        <div className="mx-auto max-w-2xl">
+          <Link href={home} className="brand-text text-sm hover:underline">
+            {t.backLink}
+          </Link>
+          <h1 className={`mt-8 mb-2 ${H1_CLASS}`}>{title}</h1>
+          <p className="mb-6 text-xs text-pretty [color:var(--mk-text-subtle)]">{subtitle}</p>
+          <div className="space-y-3 text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)]">
+            {children}
+          </div>
         </div>
-      </div>
+      </Section>
     </div>
   );
 }
 
 function H2({ children }: { children: React.ReactNode }) {
-  return <h2 className="mt-8 mb-2 text-lg font-semibold [color:var(--mk-text)]">{children}</h2>;
+  return <h2 className={`mt-8 mb-2 ${H3_CLASS}`}>{children}</h2>;
 }
 
 function LegalLinks({

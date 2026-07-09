@@ -678,14 +678,14 @@ export function Topbar({
                           const granted = await requestNotificationPermission();
                           setPushEnabled(granted);
                         }}
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-amber-500/10 py-2 text-xs font-medium text-amber-600 transition-opacity hover:opacity-80"
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[color:var(--ds-warning-bg)] py-2 text-xs font-medium text-[color:var(--ds-warning-text)] transition-opacity hover:opacity-80"
                       >
                         <Bell size={12} />
                         {t("topbar.enable_push")}
                       </button>
                     )}
                   {pushEnabled && (
-                    <span className="flex items-center gap-1 px-2 text-xs text-emerald-600">
+                    <span className="flex items-center gap-1 px-2 text-xs text-[color:var(--ds-success-text)]">
                       <Bell size={11} />
                       {t("topbar.push_active")}
                     </span>

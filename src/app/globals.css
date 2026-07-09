@@ -556,7 +556,7 @@
   --ds-icon-xl: 24px;
 
   /* ── Linear-Calm surface tokens ── */
-  --ds-surface-elevated: #161630; /* modals, popovers — 1 step above --ds-surface-2 */
+  --ds-surface-elevated: var(--neutral-600); /* modals, popovers — 1 step above --ds-surface-2 */
   --ds-focus-ring: 0 0 0 2px var(--ds-ring); /* accessible focus */
   --ds-transition-tap: 120ms cubic-bezier(0.22, 1, 0.36, 1);
 
@@ -1790,6 +1790,11 @@
 
 [data-app="dashboard"] .tracking-tight {
   letter-spacing: var(--ds-tracking-tight);
+}
+
+[data-app="dashboard"] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: var(--font-feature-ui);
 }
 
 [data-app="dashboard"] .font-mono,

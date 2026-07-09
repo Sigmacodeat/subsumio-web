@@ -222,7 +222,25 @@ const signalTextTokens = [
   "--ds-info-text",
   "--ds-attention-text",
 ];
-const surfaceTokens = ["--ds-bg", "--ds-surface", "--ds-surface-2", "--ds-hover"];
+const surfaceTokens = ["--ds-bg", "--ds-surface", "--ds-surface-2", "--ds-hover", "--ds-surface-elevated"];
+
+const signalBgSolidTokens = [
+  "--ds-success-solid",
+  "--ds-warning-solid",
+  "--ds-danger-solid",
+  "--ds-info-solid",
+  "--ds-attention-solid",
+];
+
+const signalBgTintTokens = [
+  "--ds-success-bg",
+  "--ds-warning-bg",
+  "--ds-danger-bg",
+  "--ds-info-bg",
+  "--ds-attention-bg",
+];
+
+const whiteText = "#ffffff";
 
 function contrast(color1: string, color2: string): number {
   try {
@@ -236,6 +254,8 @@ function contrast(color1: string, color2: string): number {
 
 function auditScope(scope: Scope): { label: string; ratio: number }[] {
   const failures: { label: string; ratio: number }[] = [];
+
+  // 1. Text tokens on surface tokens (AA ≥ 4.5:1)
   for (const text of [...textTokens, ...signalTextTokens]) {
     const textValue = resolveExpression(text, scope);
     if (!textValue) continue;
@@ -248,6 +268,30 @@ function auditScope(scope: Scope): { label: string; ratio: number }[] {
       }
     }
   }
+
+  // 2. Signal text on signal-tinted backgrounds (AA ≥ 4.5:1)
+  for (const text of signalTextTokens) {
+    const textValue = resolveExpression(text, scope);
+    if (!textValue) continue;
+    const bgKey = text.replace("-text", "-bg");
+    const bgValue = resolveExpression(bgKey, scope);
+    if (!bgValue) continue;
+    const ratio = contrast(textValue, bgValue);
+    if (ratio < 4.5) {
+      failures.push({ label: `${text} on ${bgKey}`, ratio });
+    }
+  }
+
+  // 3. White text on solid signal backgrounds (AA ≥ 4.5:1 for normal text, ≥ 3:1 for large)
+  for (const solid of signalBgSolidTokens) {
+    const solidValue = resolveExpression(solid, scope);
+    if (!solidValue) continue;
+    const ratio = contrast(whiteText, solidValue);
+    if (ratio < 4.5) {
+      failures.push({ label: `white on ${solid}`, ratio });
+    }
+  }
+
   return failures.sort((a, b) => a.ratio - b.ratio);
 }
 

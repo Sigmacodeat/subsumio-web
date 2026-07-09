@@ -67,8 +67,8 @@ export default function AutonomousTasksPage() {
 
   const getPriorityBadge = (priority: string) => {
     const colors = {
-      urgent: "bg-red-500/10 text-red-500 border-red-500/20",
-      normal: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+      urgent: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
+      normal: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
       low: "bg-gray-500/10 text-gray-500 border-gray-500/20",
     };
     return (
@@ -79,15 +79,15 @@ export default function AutonomousTasksPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "pending":
-        return <Clock className="h-4 w-4 text-yellow-500" />;
+        return <Clock className="h-4 w-4 text-[color:var(--ds-warning-text)]" />;
       case "running":
-        return <RefreshCw className="h-4 w-4 animate-spin text-blue-500" />;
+        return <RefreshCw className="h-4 w-4 animate-spin text-[color:var(--ds-info-text)]" />;
       case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-[color:var(--ds-success-text)]" />;
       case "failed":
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <XCircle className="h-4 w-4 text-[color:var(--ds-danger-text)]" />;
       case "requires_approval":
-        return <AlertTriangle className="h-4 w-4 text-orange-500" />;
+        return <AlertTriangle className="h-4 w-4 text-[color:var(--ds-attention-text)]" />;
       default:
         return <Clock className="h-4 w-4 text-gray-500" />;
     }

@@ -122,17 +122,17 @@ export function DeadlineCheckWidget() {
         </div>
         <div className="flex items-center gap-1.5">
           {stats.critical > 0 && (
-            <span className="rounded-full border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold text-red-600">
+            <span className="rounded-full border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-1.5 py-0.5 text-[10px] font-bold text-[color:var(--ds-danger-text)]">
               {stats.critical} {isEn ? "critical" : "kritisch"}
             </span>
           )}
           {stats.warnings > 0 && (
-            <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-600">
+            <span className="rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-1.5 py-0.5 text-[10px] font-bold text-[color:var(--ds-warning-text)]">
               {stats.warnings} {isEn ? "warnings" : "Warnungen"}
             </span>
           )}
           {stats.matched > 0 && (
-            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600">
+            <span className="rounded-full border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-1.5 py-0.5 text-[10px] font-bold text-[color:var(--ds-success-text)]">
               {stats.matched} ✓
             </span>
           )}
@@ -152,11 +152,11 @@ export function DeadlineCheckWidget() {
           {discrepancies.slice(0, 8).map((r, i) => {
             const encoded = r.caseSlug.split("/").map(encodeURIComponent).join("/");
             const Icon = r.severity === "critical" ? AlertCircle : AlertTriangle;
-            const iconColor = r.severity === "critical" ? "text-red-600" : "text-amber-600";
+            const iconColor = r.severity === "critical" ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-warning-text)]";
             const borderClasses =
               r.severity === "critical"
-                ? "border-red-500/30 bg-red-500/5"
-                : "border-amber-500/30 bg-amber-500/5";
+                ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
+                : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]";
 
             return (
               <Link
@@ -194,9 +194,9 @@ export function DeadlineCheckWidget() {
           )}
         </div>
       ) : (
-        <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/5 px-2 py-1.5">
-          <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
-          <p className="text-[12px] text-emerald-700">
+        <div className="flex items-center gap-2 rounded-md border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1.5">
+          <CheckCircle2 size={14} className="shrink-0 text-[color:var(--ds-success-text)]" />
+          <p className="text-[12px] text-[color:var(--ds-success-text)]">
             {isEn
               ? "All deadlines match the statutory calculation."
               : "Alle Fristen stimmen mit der gesetzlichen Fristberechnung überein."}

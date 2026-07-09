@@ -274,7 +274,7 @@ export default function ReviewSetsPage() {
       />
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertCircle size={16} />
           {error}
           <button className="ml-auto text-xs underline" onClick={() => setError(null)}>
@@ -377,9 +377,9 @@ export default function ReviewSetsPage() {
                   </span>
                 </div>
                 <div className="mt-3 flex gap-3 text-xs">
-                  <span className="text-emerald-500">{stats.responsive} ✓</span>
-                  <span className="text-amber-500">{stats.privileged} ⚠</span>
-                  <span className="text-red-500">{stats.redacted} ✗</span>
+                  <span className="text-[color:var(--ds-success-text)]">{stats.responsive} ✓</span>
+                  <span className="text-[color:var(--ds-warning-text)]">{stats.privileged} ⚠</span>
+                  <span className="text-[color:var(--ds-danger-text)]">{stats.redacted} ✗</span>
                   <span className="text-[color:var(--ds-text-subtle)]">{stats.unreviewed} ?</span>
                 </div>
               </button>
@@ -460,7 +460,7 @@ export default function ReviewSetsPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="ml-auto gap-1.5 text-xs text-red-400 hover:text-red-500"
+                className="ml-auto gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:text-[color:var(--ds-danger-text)]"
                 onClick={handleDelete}
                 disabled={saving}
               >

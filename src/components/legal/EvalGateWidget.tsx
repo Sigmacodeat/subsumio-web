@@ -32,9 +32,9 @@ const STATUS_CONFIG: Record<
   string,
   { icon: React.ElementType; color: string; label: string; labelEn: string }
 > = {
-  pass: { icon: CheckCircle2, color: "text-emerald-600", label: "Pass", labelEn: "Pass" },
-  warn: { icon: AlertTriangle, color: "text-amber-600", label: "Warn", labelEn: "Warning" },
-  fail: { icon: XCircle, color: "text-red-600", label: "Fail", labelEn: "Failed" },
+  pass: { icon: CheckCircle2, color: "text-[color:var(--ds-success-text)]", label: "Pass", labelEn: "Pass" },
+  warn: { icon: AlertTriangle, color: "text-[color:var(--ds-warning-text)]", label: "Warn", labelEn: "Warning" },
+  fail: { icon: XCircle, color: "text-[color:var(--ds-danger-text)]", label: "Fail", labelEn: "Failed" },
   not_run: {
     icon: Clock,
     color: "text-[color:var(--ds-text-subtle)]",
@@ -88,7 +88,7 @@ export function EvalGateWidget() {
 
   if (error) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-600">
+      <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4 text-sm text-[color:var(--ds-danger-text)]">
         <AlertTriangle size={16} />
         {error}
       </div>
@@ -145,15 +145,15 @@ export function EvalGateWidget() {
 
       {/* Breaches */}
       {result.all_breaches.length > 0 && (
-        <div className="space-y-1 rounded-lg border border-red-500/20 bg-red-500/5 p-2">
+        <div className="space-y-1 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-2">
           {result.all_breaches.slice(0, 5).map((b, i) => (
-            <div key={i} className="flex items-start gap-1.5 text-xs text-red-600">
+            <div key={i} className="flex items-start gap-1.5 text-xs text-[color:var(--ds-danger-text)]">
               <XCircle size={10} className="mt-0.5 shrink-0" />
               <span>{b}</span>
             </div>
           ))}
           {result.all_breaches.length > 5 && (
-            <div className="text-xs text-red-600">
+            <div className="text-xs text-[color:var(--ds-danger-text)]">
               +{result.all_breaches.length - 5} {t("evalgate.more")}
             </div>
           )}

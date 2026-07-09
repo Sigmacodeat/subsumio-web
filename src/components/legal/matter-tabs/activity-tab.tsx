@@ -60,7 +60,7 @@ export function ActivityTab() {
           {caseData.timelineEvents?.map((ev) => (
             <div key={ev.id} className="relative">
               <div
-                className={`absolute -left-4 h-2 w-2 rounded-full ${ev.type === "deadline" ? "bg-amber-500" : ev.type === "hearing" ? "bg-blue-500" : ev.type === "filing" ? "bg-emerald-500" : ev.type === "status_change" ? "brand-soft" : "bg-[color:var(--ds-text-subtle)]"}`}
+                className={`absolute -left-4 h-2 w-2 rounded-full ${ev.type === "deadline" ? "bg-[color:var(--ds-warning-solid)]" : ev.type === "hearing" ? "bg-[color:var(--ds-info-solid)]" : ev.type === "filing" ? "bg-[color:var(--ds-success-solid)]" : ev.type === "status_change" ? "brand-soft" : "bg-[color:var(--ds-text-subtle)]"}`}
               />
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
                 <div className="flex items-center justify-between">
@@ -87,7 +87,7 @@ export function ActivityTab() {
           {/* Status changes */}
           {caseData.status !== "open" && (
             <div className="relative">
-              <div className="absolute -left-4 h-2 w-2 rounded-full bg-amber-500" />
+              <div className="absolute -left-4 h-2 w-2 rounded-full bg-[color:var(--ds-warning-solid)]" />
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
                   {new Date(caseData.updatedAt).toLocaleDateString(
@@ -106,7 +106,7 @@ export function ActivityTab() {
           {/* Strategy generated */}
           {caseData.strategy && (
             <div className="relative">
-              <div className="absolute -left-4 h-2 w-2 rounded-full bg-emerald-500" />
+              <div className="absolute -left-4 h-2 w-2 rounded-full bg-[color:var(--ds-success-solid)]" />
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
                   {new Date(caseData.strategy.generatedAt || caseData.updatedAt).toLocaleDateString(
@@ -141,8 +141,8 @@ export function ActivityTab() {
           </div>
           {caseData.clientName && (
             <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600/15">
-                <Users size={20} className="text-emerald-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--ds-success-bg)]">
+                <Users size={20} className="text-[color:var(--ds-success-text)]" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
@@ -156,8 +156,8 @@ export function ActivityTab() {
           )}
           {caseData.opponentName && (
             <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600/15">
-                <ShieldAlert size={20} className="text-red-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--ds-danger-bg)]">
+                <ShieldAlert size={20} className="text-[color:var(--ds-danger-text)]" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
@@ -171,8 +171,8 @@ export function ActivityTab() {
           )}
           {caseData.courtName && (
             <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600/15">
-                <Landmark size={20} className="text-blue-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--ds-info-bg)]">
+                <Landmark size={20} className="text-[color:var(--ds-info-text)]" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
@@ -186,8 +186,8 @@ export function ActivityTab() {
           )}
           {caseData.ownLawyerName && (
             <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-600/15">
-                <User size={20} className="text-amber-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--ds-warning-bg)]">
+                <User size={20} className="text-[color:var(--ds-warning-text)]" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
@@ -216,8 +216,8 @@ export function ActivityTab() {
           )}
           {ctx.evidenceList.length > 0 && (
             <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-600/15">
-                <ShieldAlert size={20} className="text-orange-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--ds-attention-bg)]">
+                <ShieldAlert size={20} className="text-[color:var(--ds-attention-text)]" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-xs text-[color:var(--ds-text-muted)]">

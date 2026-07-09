@@ -149,7 +149,7 @@ export default function ProductWorkflowShowcase({
           viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <p className="brand-text mb-4 font-mono text-xs tracking-wider uppercase">{c.eyebrow}</p>
+          <p className="brand-text mb-4 font-mono text-sm tracking-wider uppercase">{c.eyebrow}</p>
           <h2 className={`${H2_CTA_CLASS} mb-5`}>
             {brand}
             <br />
@@ -180,7 +180,7 @@ export default function ProductWorkflowShowcase({
                   />
                 )}
                 <span
-                  className={`flex h-7 w-7 items-center justify-center rounded-lg border font-mono text-xs transition-colors duration-300 ${
+                  className={`flex h-7 w-7 items-center justify-center rounded-lg border font-mono text-sm transition-colors duration-300 ${
                     currentStep === i
                       ? "brand-bg brand-border border-transparent text-white"
                       : "brand-soft brand-border brand-text"
@@ -212,11 +212,11 @@ export default function ProductWorkflowShowcase({
                 <div className="brand-bg flex h-6 w-6 shrink-0 items-center justify-center rounded-md">
                   <Brain size={13} className="text-white" />
                 </div>
-                <span className="text-xs font-semibold [color:var(--mk-text)]">{brand}</span>
+                <span className="text-sm font-semibold [color:var(--mk-text)]">{brand}</span>
               </div>
               <div className="flex flex-1 items-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-2.5 py-1.5 [background:var(--mk-bg)]">
                 <Search size={13} className="[color:var(--mk-text-subtle)]" />
-                <span className="text-xs [color:var(--mk-text-subtle)]">{c.query}</span>
+                <span className="text-sm [color:var(--mk-text-subtle)]">{c.query}</span>
               </div>
             </div>
 
@@ -235,7 +235,7 @@ export default function ProductWorkflowShowcase({
                 ].map((item, i) => (
                   <div
                     key={item}
-                    className={`mb-2 rounded-lg px-3 py-2 text-xs ${i === 1 ? "brand-soft brand-text" : "[color:var(--mk-text-muted)]"}`}
+                    className={`mb-2 rounded-lg px-3 py-2 text-sm ${i === 1 ? "brand-soft brand-text" : "[color:var(--mk-text-muted)]"}`}
                   >
                     {item}
                   </div>
@@ -249,7 +249,7 @@ export default function ProductWorkflowShowcase({
                   <CheckCircle2 size={16} className="ml-auto [color:var(--brand-secondary)]" />
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
+                <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
                   <div className="space-y-3">
                     {[
                       { icon: FileText, label: c.sourceA, tone: "brand-soft brand-border" },
@@ -333,7 +333,7 @@ export default function ProductWorkflowShowcase({
                             delay: reduced ? 0 : i * 0.08,
                             ease: "easeOut",
                           }}
-                          className={`absolute ${pos} brand-border rounded-full border px-3 py-2 text-xs [color:var(--mk-text)] shadow-lg [background:var(--mk-surface)]`}
+                          className={`absolute ${pos} brand-border rounded-full border px-3 py-2 text-sm [color:var(--mk-text)] shadow-lg [background:var(--mk-surface)]`}
                         >
                           {label}
                         </motion.div>
@@ -401,7 +401,7 @@ export default function ProductWorkflowShowcase({
                       <p className="mb-1 text-sm font-semibold [color:var(--mk-text)]">
                         {c.answer}
                       </p>
-                      <div className="flex flex-wrap gap-2 text-xs">
+                      <div className="flex flex-wrap gap-2 text-sm">
                         <span className="brand-soft brand-text rounded-full px-2 py-1">
                           {c.risk}
                         </span>

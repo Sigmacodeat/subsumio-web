@@ -63,10 +63,10 @@ export default function AudienceTabs({ lang }: { lang: Lang }) {
             transition={{ duration: 0.25, ease: EASE.out }}
             className="rounded-2xl border [border-color:var(--mk-border)] p-8 [background:var(--mk-surface)] md:p-10"
           >
-            <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold">
+            <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold">
               {content.badge}
             </span>
-            <h3 className="mb-3 [font-family:var(--font-display)] text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+            <h3 className="mb-3 [font-family:var(--font-display)] text-xl font-bold tracking-tight [color:var(--mk-text)] md:text-2xl">
               {content.h1a} <span className="brand-text">{content.h1b}</span>
             </h3>
             <p className="mb-6 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">

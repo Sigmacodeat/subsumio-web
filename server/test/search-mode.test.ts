@@ -80,6 +80,12 @@ describe("SEARCH_MODES + MODE_BUNDLES canonical shape", () => {
       // v0.43 — relational recall OFF for conservative.
       relationalRetrieval: false,
       relational_retrieval_depth: 2,
+      // v0.46 — cognitive tier OFF for conservative.
+      cognitive_tier: false,
+      cognitive_tier3_boost: 1.08,
+      cognitive_tier2_boost: 1.04,
+      cognitive_tier1_boost: 1.0,
+      cognitive_tier0_boost: 0.98,
     });
   });
 
@@ -112,6 +118,12 @@ describe("SEARCH_MODES + MODE_BUNDLES canonical shape", () => {
       // v0.43 — relational recall ON for balanced.
       relationalRetrieval: true,
       relational_retrieval_depth: 2,
+      // v0.46 — cognitive tier ON for balanced.
+      cognitive_tier: true,
+      cognitive_tier3_boost: 1.08,
+      cognitive_tier2_boost: 1.04,
+      cognitive_tier1_boost: 1.0,
+      cognitive_tier0_boost: 0.98,
     });
   });
 
@@ -142,6 +154,12 @@ describe("SEARCH_MODES + MODE_BUNDLES canonical shape", () => {
       // v0.43 — relational recall ON for tokenmax.
       relationalRetrieval: true,
       relational_retrieval_depth: 2,
+      // v0.46 — cognitive tier ON for tokenmax.
+      cognitive_tier: true,
+      cognitive_tier3_boost: 1.08,
+      cognitive_tier2_boost: 1.04,
+      cognitive_tier1_boost: 1.0,
+      cognitive_tier0_boost: 0.98,
     });
   });
 
@@ -403,7 +421,8 @@ describe("knobsHash determinism + cross-mode separation (CDX-4)", () => {
     // must not be served from a cache row written before the policy change.
     // v0.43: bumped 9→10 for the relational recall arm (rel=/reld=) — a
     // relational-on write must not be served to a relational-off lookup.
-    expect(KNOBS_HASH_VERSION).toBe(10);
+    // v0.46: bumped 10→11 for the cognitive tier cascade (ct=/ct3=/ct2=/ct1=/ct0=).
+    expect(KNOBS_HASH_VERSION).toBe(11);
   });
 
   test("T1 (codex): floor_ratio set vs unset produces DIFFERENT hashes (cache contamination prevention)", () => {
@@ -586,8 +605,8 @@ describe("v0.40.4 — graph_signals knob", () => {
 });
 
 describe("v0.42.3.0 — autocut knobs", () => {
-  test("KNOBS_HASH_VERSION is 10 (9→10 relational recall arm, v0.43)", () => {
-    expect(KNOBS_HASH_VERSION).toBe(10);
+  test("KNOBS_HASH_VERSION is 11 (10→11 cognitive tier cascade, v0.46)", () => {
+    expect(KNOBS_HASH_VERSION).toBe(11);
   });
 
   test("bundle defaults: conservative off, balanced/tokenmax on @0.20", () => {

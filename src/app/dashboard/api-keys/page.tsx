@@ -87,10 +87,10 @@ export default function ApiKeysPage() {
         </div>
 
         {newKeyPlaintext && (
-          <div className="space-y-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+          <div className="space-y-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
             <div className="flex items-center gap-2">
-              <AlertTriangle size={16} className="text-amber-600" />
-              <span className="text-sm font-medium text-amber-600">
+              <AlertTriangle size={16} className="text-[color:var(--ds-warning-text)]" />
+              <span className="text-sm font-medium text-[color:var(--ds-warning-text)]">
                 {t("apikeys.warning_secret")}
               </span>
             </div>
@@ -103,7 +103,7 @@ export default function ApiKeysPage() {
                 className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
               >
                 {copied ? (
-                  <CheckCircle2 size={14} className="text-emerald-600" />
+                  <CheckCircle2 size={14} className="text-[color:var(--ds-success-text)]" />
                 ) : (
                   <Copy size={14} />
                 )}
@@ -113,7 +113,7 @@ export default function ApiKeysPage() {
         )}
 
         {error && (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
             {error}
           </div>
         )}
@@ -171,9 +171,9 @@ export default function ApiKeysPage() {
                   </td>
                   <td className="px-4 py-3">
                     {k.active ? (
-                      <span className="text-xs text-emerald-600">Aktiv</span>
+                      <span className="text-xs text-[color:var(--ds-success-text)]">Aktiv</span>
                     ) : (
-                      <span className="text-xs text-red-600">Inaktiv</span>
+                      <span className="text-xs text-[color:var(--ds-danger-text)]">Inaktiv</span>
                     )}
                   </td>
                   <td className="hidden px-4 py-3 text-[color:var(--ds-text-muted)] md:table-cell">
@@ -182,7 +182,7 @@ export default function ApiKeysPage() {
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => deleteKey(k.id)}
-                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
+                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
                       title={t("apikeys.btn_delete")}
                     >
                       <Trash2 size={14} />

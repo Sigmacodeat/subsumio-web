@@ -259,13 +259,13 @@ export default function TaxReturnsPage() {
 
       {/* Error with retry */}
       {loadError && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <span>{loadError}</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => void loadReturns()}
-            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             <RotateCcw size={13} />
             {t("tax.returns.retry")}

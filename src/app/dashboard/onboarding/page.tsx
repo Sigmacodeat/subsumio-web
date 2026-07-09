@@ -327,8 +327,8 @@ export default function OnboardingPage() {
                         : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"
                     }`}
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
-                      <Scale size={18} className="text-blue-600" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-info-bg)]">
+                      <Scale size={18} className="text-[color:var(--ds-info-text)]" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -348,8 +348,8 @@ export default function OnboardingPage() {
                         : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"
                     }`}
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
-                      <FileText size={20} className="text-emerald-500" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-success-bg)]">
+                      <FileText size={20} className="text-[color:var(--ds-success-text)]" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -536,7 +536,7 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                {error && <p className="text-xs text-red-600">{error}</p>}
+                {error && <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>}
 
                 <div className="flex justify-between pt-2">
                   <Button variant="ghost" size="sm" onClick={back}>
@@ -568,10 +568,10 @@ export default function OnboardingPage() {
 
                 {whatsappConnected ? (
                   <div className="flex flex-col items-center gap-3 py-6">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
-                      <CheckCircle2 size={24} className="text-emerald-600" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--ds-success-bg)]">
+                      <CheckCircle2 size={24} className="text-[color:var(--ds-success-text)]" />
                     </div>
-                    <p className="text-sm font-medium text-emerald-700">
+                    <p className="text-sm font-medium text-[color:var(--ds-success-text)]">
                       {t("onboarding.whatsapp_connected")}
                     </p>
                   </div>
@@ -591,8 +591,8 @@ export default function OnboardingPage() {
                         placeholder={t("onboarding.whatsapp_phone_hint")}
                       />
                     </div>
-                    <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
-                      <p className="text-xs text-amber-600">
+                    <div className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2">
+                      <p className="text-xs text-[color:var(--ds-warning-text)]">
                         Für WhatsApp Business wird ein Meta-Webhook benötigt. Nach dem Onboarding
                         kannst du die Webhook-URL im Dashboard konfigurieren.
                       </p>
@@ -600,7 +600,7 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                {error && <p className="text-xs text-red-600">{error}</p>}
+                {error && <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>}
 
                 <div className="flex justify-between pt-2">
                   <Button variant="ghost" size="sm" onClick={back}>
@@ -714,7 +714,7 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                {error && <p className="text-xs text-red-600">{error}</p>}
+                {error && <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>}
 
                 <div className="flex justify-between pt-2">
                   <Button variant="ghost" size="sm" onClick={back}>
@@ -746,10 +746,10 @@ export default function OnboardingPage() {
 
                 {uploaded ? (
                   <div className="flex flex-col items-center gap-3 py-8">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10">
-                      <CheckCircle2 size={28} className="text-emerald-600" />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--ds-success-bg)]">
+                      <CheckCircle2 size={28} className="text-[color:var(--ds-success-text)]" />
                     </div>
-                    <p className="text-sm font-medium text-emerald-700">
+                    <p className="text-sm font-medium text-[color:var(--ds-success-text)]">
                       {t("onboarding.step_upload_success")}
                     </p>
                   </div>
@@ -799,7 +799,7 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                {error && <p className="text-xs text-red-600">{error}</p>}
+                {error && <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>}
 
                 <div className="flex justify-between pt-2">
                   <Button variant="ghost" size="sm" onClick={back}>
@@ -881,7 +881,7 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                {error && <p className="text-xs text-red-600">{error}</p>}
+                {error && <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>}
 
                 <div className="flex justify-between pt-2">
                   <Button variant="ghost" size="sm" onClick={back}>
@@ -897,8 +897,8 @@ export default function OnboardingPage() {
             {/* Done */}
             {step === "done" && (
               <div className="space-y-4 text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10">
-                  <CheckCircle2 size={28} className="text-emerald-600" />
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-success-bg)]">
+                  <CheckCircle2 size={28} className="text-[color:var(--ds-success-text)]" />
                 </div>
                 <h1 className="text-2xl font-bold text-[color:var(--ds-text)]">
                   {t("onboarding.step_done")}

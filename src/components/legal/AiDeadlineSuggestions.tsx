@@ -108,9 +108,9 @@ function riskVariant(
 }
 
 const RISK_STYLES: Record<string, string> = {
-  danger: "border-red-500/20 bg-red-500/10 text-red-600",
-  warning: "border-amber-500/20 bg-amber-500/10 text-amber-600",
-  info: "border-blue-500/20 bg-blue-500/10 text-blue-600",
+  danger: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  warning: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  info: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
 };
 
 export function AiDeadlineSuggestions() {
@@ -294,7 +294,7 @@ export function AiDeadlineSuggestions() {
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 gap-1.5 text-xs text-emerald-600"
+                className="h-7 gap-1.5 text-xs text-[color:var(--ds-success-text)]"
                 disabled={busy}
                 onClick={() =>
                   void batchMutation.mutateAsync({
@@ -309,7 +309,7 @@ export function AiDeadlineSuggestions() {
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 gap-1.5 text-xs text-red-600"
+                className="h-7 gap-1.5 text-xs text-[color:var(--ds-danger-text)]"
                 disabled={busy}
                 onClick={() =>
                   void batchMutation.mutateAsync({
@@ -337,7 +337,7 @@ export function AiDeadlineSuggestions() {
 
       {/* Error */}
       {error && !loading && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertTriangle size={15} />
           {tr("error", lang)}
         </div>
@@ -346,7 +346,7 @@ export function AiDeadlineSuggestions() {
       {/* Empty */}
       {!loading && !error && suggestions.length === 0 && (
         <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-          <CheckCircle2 size={28} className="text-emerald-500" />
+          <CheckCircle2 size={28} className="text-[color:var(--ds-success-text)]" />
           <p className="text-sm text-[color:var(--ds-text-muted)]">{tr("empty", lang)}</p>
         </div>
       )}
@@ -414,7 +414,7 @@ export function AiDeadlineSuggestions() {
                       </span>
                     )}
                     {s.reviewStatus === "needs_review" && (
-                      <span className="flex items-center gap-0.5 rounded-full border border-red-500/20 bg-red-500/10 px-2 py-0.5 text-xs text-red-600">
+                      <span className="flex items-center gap-0.5 rounded-full border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-0.5 text-xs text-[color:var(--ds-danger-text)]">
                         <AlertTriangle size={10} />
                         {tr("needs_review", lang)}
                       </span>
@@ -441,7 +441,7 @@ export function AiDeadlineSuggestions() {
                             <span
                               className={cn(
                                 "ml-1 font-medium",
-                                days < 0 ? "text-red-600" : days <= 3 ? "text-amber-600" : ""
+                                days < 0 ? "text-[color:var(--ds-danger-text)]" : days <= 3 ? "text-[color:var(--ds-warning-text)]" : ""
                               )}
                             >
                               {days < 0
@@ -480,7 +480,7 @@ export function AiDeadlineSuggestions() {
                       void singleMutation.mutateAsync({ slug: s.slug, action: "approve" })
                     }
                     disabled={busy}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-emerald-600 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
+                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] transition-colors hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50"
                     title={tr("approve", lang)}
                   >
                     {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
@@ -490,7 +490,7 @@ export function AiDeadlineSuggestions() {
                       void singleMutation.mutateAsync({ slug: s.slug, action: "reject" })
                     }
                     disabled={busy}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-500/20 bg-red-500/5 text-red-600 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] transition-colors hover:bg-[color:var(--ds-danger-bg)] disabled:opacity-50"
                     title={tr("reject", lang)}
                   >
                     {busy ? <Loader2 size={13} className="animate-spin" /> : <X size={13} />}

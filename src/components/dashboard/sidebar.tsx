@@ -104,6 +104,7 @@ import {
   Radar,
   LogOut,
   ChevronsDownUp,
+  BrainCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -853,6 +854,15 @@ const ADMIN_SECTION: NavSection = {
       tooltipKey: "nav.tooltip.ai_model",
     },
     {
+      href: "/dashboard/settings/memory",
+      icon: BrainCog,
+      labelKey: "nav.memory",
+      keywords: "gedaechtnis memory erinnerungen praferenzen",
+      tier: "free",
+      audienceTier: "quick-start",
+      tooltipKey: "nav.tooltip.memory",
+    },
+    {
       href: "/dashboard/import-kanzlei",
       icon: FileSliders,
       labelKey: "nav.import_kanzlei",
@@ -1430,6 +1440,15 @@ const TAX_ADMIN_SECTION: NavSection = {
       tier: "admin",
       audienceTier: "system",
       tooltipKey: "nav.tooltip.ai_model",
+    },
+    {
+      href: "/dashboard/settings/memory",
+      icon: BrainCog,
+      labelKey: "nav.memory",
+      keywords: "gedaechtnis memory erinnerungen praferenzen",
+      tier: "free",
+      audienceTier: "quick-start",
+      tooltipKey: "nav.tooltip.memory",
     },
     {
       href: "/dashboard/import-kanzlei",

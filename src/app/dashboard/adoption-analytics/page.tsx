@@ -69,8 +69,8 @@ const TREND_ICONS: Record<string, typeof TrendingUp> = {
 };
 
 const TREND_COLORS: Record<string, string> = {
-  up: "text-emerald-600 bg-emerald-500/10",
-  down: "text-red-600 bg-red-500/10",
+  up: "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-bg)]",
+  down: "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)]",
   stable: "text-gray-500 bg-gray-500/10",
 };
 
@@ -183,12 +183,12 @@ export default function AdoptionAnalyticsPage() {
       )}
 
       {error && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4">
-          <div className="flex items-center gap-2 text-red-600">
+        <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4">
+          <div className="flex items-center gap-2 text-[color:var(--ds-danger-text)]">
             <AlertTriangle className="h-5 w-5" />
             <span className="font-medium">Fehler beim Laden</span>
           </div>
-          <p className="mt-1 text-sm text-red-600/80">{error}</p>
+          <p className="mt-1 text-sm text-[color:var(--ds-danger-text)]/80">{error}</p>
         </div>
       )}
 
@@ -196,12 +196,12 @@ export default function AdoptionAnalyticsPage() {
         <>
           {/* Warnings */}
           {data.warnings.length > 0 && (
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-4">
-              <div className="flex items-center gap-2 text-amber-600">
+            <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
+              <div className="flex items-center gap-2 text-[color:var(--ds-warning-text)]">
                 <AlertTriangle className="h-5 w-5" />
                 <span className="font-medium">Hinweise</span>
               </div>
-              <ul className="mt-2 space-y-1 text-sm text-amber-600/80">
+              <ul className="mt-2 space-y-1 text-sm text-[color:var(--ds-warning-text)]/80">
                 {data.warnings.map((w, i) => (
                   <li key={i}>• {w}</li>
                 ))}
@@ -216,7 +216,7 @@ export default function AdoptionAnalyticsPage() {
               label="Aktive Nutzer (30d)"
               value={data.active_users_30d}
               sub={`${data.active_users_7d} in 7 Tagen`}
-              color={data.active_users_30d > 0 ? "text-emerald-600" : "text-red-600"}
+              color={data.active_users_30d > 0 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-danger-text)]"}
             />
             <KPICard
               icon={Activity}
@@ -231,10 +231,10 @@ export default function AdoptionAnalyticsPage() {
               sub={`${data.active_users_30d} von ${data.total_users}`}
               color={
                 data.adoption_rate >= 50
-                  ? "text-emerald-600"
+                  ? "text-[color:var(--ds-success-text)]"
                   : data.adoption_rate >= 25
-                    ? "text-amber-600"
-                    : "text-red-600"
+                    ? "text-[color:var(--ds-warning-text)]"
+                    : "text-[color:var(--ds-danger-text)]"
               }
             />
             <KPICard

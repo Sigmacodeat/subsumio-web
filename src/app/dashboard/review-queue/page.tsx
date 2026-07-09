@@ -24,13 +24,13 @@ import { useToast } from "@/components/ui/toast";
 import type { DashboardKey } from "@/content/dashboard";
 
 const STATUS_STYLES: Record<string, string> = {
-  pending: "bg-amber-500/10 border-amber-500/20 text-amber-600",
-  in_review: "bg-blue-500/10 border-blue-500/20 text-blue-600",
-  approved: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
-  rejected: "bg-red-500/10 border-red-500/20 text-red-600",
-  changes_requested: "bg-orange-500/10 border-orange-500/20 text-orange-600",
+  pending: "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
+  in_review: "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+  approved: "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
+  rejected: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+  changes_requested: "bg-[color:var(--ds-attention-bg)] border-[color:var(--ds-attention-border)] text-[color:var(--ds-attention-text)]",
   awaiting_review: "bg-purple-500/10 border-purple-500/20 text-purple-600",
-  needs_human_review: "bg-red-500/10 border-red-500/20 text-red-600",
+  needs_human_review: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
 };
 
 function useStatusLabels(t: ReturnType<typeof useLang>["t"]): Record<string, string> {
@@ -274,7 +274,7 @@ export default function ReviewQueuePage() {
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+            <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={16} /> {error}
             </div>
           )}
@@ -369,7 +369,7 @@ export default function ReviewQueuePage() {
                                     : "";
                                 if (caseRef) void resumePipeline(caseRef);
                               }}
-                              className="gap-1 text-xs text-emerald-600 hover:bg-emerald-500/10"
+                              className="gap-1 text-xs text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                             >
                               <Play size={12} /> Freigeben & Fortsetzen
                             </Button>
@@ -385,7 +385,7 @@ export default function ReviewQueuePage() {
                                     : "";
                                 if (caseRef) void resumePipeline(caseRef);
                               }}
-                              className="gap-1 text-xs text-orange-600 hover:bg-orange-500/10"
+                              className="gap-1 text-xs text-[color:var(--ds-attention-text)] hover:bg-[color:var(--ds-attention-bg)]"
                             >
                               <AlertCircle size={12} /> Review &amp; Fortsetzen
                             </Button>
@@ -397,7 +397,7 @@ export default function ReviewQueuePage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => updateStatus(page.slug, "approved")}
-                            className="gap-1 text-xs text-emerald-600 hover:bg-emerald-500/10"
+                            className="gap-1 text-xs text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                           >
                             <CheckSquare size={12} /> {t("review_queue.approve")}
                           </Button>
@@ -405,7 +405,7 @@ export default function ReviewQueuePage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => updateStatus(page.slug, "changes_requested")}
-                            className="text-xs text-orange-600 hover:bg-orange-500/10"
+                            className="text-xs text-[color:var(--ds-attention-text)] hover:bg-[color:var(--ds-attention-bg)]"
                           >
                             {t("review_queue.revise")}
                           </Button>
@@ -413,7 +413,7 @@ export default function ReviewQueuePage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => updateStatus(page.slug, "rejected")}
-                            className="text-xs text-red-600 hover:bg-red-500/10"
+                            className="text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
                           >
                             {t("review_queue.reject")}
                           </Button>

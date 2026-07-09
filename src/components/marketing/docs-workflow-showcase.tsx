@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Briefcase, CalendarClock, FileText } from "lucide-react";
+import { Briefcase } from "lucide-react";
 import { type Lang, UI_STRINGS } from "@/content/site";
 import { ICONS, H2_CTA_CLASS, Section } from "./chrome";
 import DashboardReel from "./dashboard-reel";
@@ -144,7 +144,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
             viewport={VIEWPORT.gentle}
             transition={{ duration: 0.5, ease: EASE.out }}
           >
-            <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
+            <p className="brand-text mb-3 text-sm font-semibold tracking-[0.16em] uppercase">
               {UI_STRINGS[lang].dashboardNotDatasheet}
             </p>
             <AnimatePresence mode="wait">
@@ -206,12 +206,12 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
                       <span className="block text-sm font-semibold [color:var(--mk-text)]">
                         {wf.label}
                       </span>
-                      <span className="block truncate text-xs [color:var(--mk-text-muted)]">
+                      <span className="block truncate text-sm [color:var(--mk-text-muted)]">
                         {wf.viewIndices.length} {lang === "en" ? "views" : "Ansichten"}
                       </span>
                     </div>
                     <span
-                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold transition-colors ${
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold transition-colors ${
                         active
                           ? "brand-text brand-soft"
                           : "[color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"

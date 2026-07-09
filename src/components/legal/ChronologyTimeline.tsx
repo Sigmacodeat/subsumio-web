@@ -38,9 +38,9 @@ const CATEGORY_ICONS: Record<string, typeof Calendar> = {
 };
 
 const IMPORTANCE_COLORS: Record<string, string> = {
-  high: "border-l-red-500 bg-red-50",
-  medium: "border-l-yellow-500 bg-yellow-50",
-  low: "border-l-green-500 bg-green-50",
+  high: "border-l-[color:var(--ds-danger-solid)] bg-[color:var(--ds-danger-solid)]",
+  medium: "border-l-[color:var(--ds-warning-solid)] bg-[color:var(--ds-warning-solid)]",
+  low: "border-l-[color:var(--ds-success-solid)] bg-[color:var(--ds-success-solid)]",
 };
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -151,7 +151,7 @@ export function ChronologyTimeline({ chronology }: ChronologyTimelineProps) {
           </button>
           <button
             onClick={handleExportWord}
-            className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-blue-700"
+            className="inline-flex items-center gap-1 rounded-md bg-[color:var(--ds-info-solid)] px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-[color:var(--ds-info-solid)]"
             title="Als Word-Dokument exportieren"
           >
             <Download size={12} /> Word
@@ -246,13 +246,13 @@ function ChronologyEntry({
           </div>
           <p className="mt-0.5 text-sm text-[color:var(--ds-text)]">{entry.event}</p>
           {expanded && entry.quote && (
-            <div className="mt-2 rounded border-l-2 border-blue-300 bg-blue-50 px-2 py-1.5 text-xs text-[color:var(--ds-text-muted)] italic">
+            <div className="mt-2 rounded border-l-2 border-blue-300 bg-[color:var(--ds-info-solid)] px-2 py-1.5 text-xs text-[color:var(--ds-text-muted)] italic">
               &ldquo;{entry.quote}&rdquo;
             </div>
           )}
         </div>
         {entry.importance === "high" && (
-          <AlertTriangle size={14} className="mt-1 shrink-0 text-red-500" />
+          <AlertTriangle size={14} className="mt-1 shrink-0 text-[color:var(--ds-danger-text)]" />
         )}
       </button>
     </div>

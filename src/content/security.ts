@@ -16,6 +16,7 @@ export interface SecurityContent {
   hostingOptions: { title: string; points: string[] }[];
   complianceTitle: string;
   complianceItems: { title: string; desc: string }[];
+  complianceBadges: { icon: string; label: string; sub: string }[];
   aiActTitle: string;
   aiActText: string;
   aiActItems: { title: string; desc: string }[];
@@ -102,6 +103,12 @@ const _securityDe = {
       desc: "Multi-Tenant-Scoping wird in der Engine erzwungen und über jeden Lesepfad mit Fuzz-Tests gepinnt — keine Dashboard-Checkbox.",
     },
   ],
+  complianceBadges: [
+    { icon: "ShieldCheck", label: "DSGVO / GDPR", sub: "EU-Datenstandort & AVV" },
+    { icon: "Lock", label: "§ 203 StGB", sub: "Berufsgeheimnisschutz" },
+    { icon: "FileCheck", label: "EU AI Act", sub: "Art. 50 Compliance" },
+    { icon: "Server", label: "ISO 27001", sub: "Audit-Roadmap" },
+  ],
   aiActTitle: "EU AI Act — wo wir stehen",
   aiActText:
     "Die Transparenzpflichten des AI Act (Art. 50) und die meisten Hochrisiko-Pflichten gelten ab dem 2. August 2026. Unsere ehrliche Position vor diesem Stichtag:",
@@ -169,7 +176,7 @@ const _securityDe = {
   ctaTitle: "Bring deinen Datenschutzbeauftragten mit.",
   ctaSub:
     "Wir sprechen seine Sprache. Gehostet mit AVV — oder self-hosted, sodass sich die Frage gar nicht stellt.",
-  ctaButton: "Demo anfragen",
+  ctaButton: "Demo vereinbaren",
 };
 
 const _enSecurity: SecurityContent = {
@@ -243,6 +250,12 @@ const _enSecurity: SecurityContent = {
       desc: "Multi-tenant scoping is enforced in the engine and pinned by fuzz tests across every read path — not a dashboard checkbox.",
     },
   ],
+  complianceBadges: [
+    { icon: "ShieldCheck", label: "GDPR / DPA", sub: "EU data location & DPA" },
+    { icon: "Lock", label: "Professional secrecy", sub: "§ 203 StGB / § 9 RAO / Art. 321 StGB" },
+    { icon: "FileCheck", label: "EU AI Act", sub: "Art. 50 compliance" },
+    { icon: "Server", label: "ISO 27001", sub: "Audit roadmap" },
+  ],
   aiActTitle: "EU AI Act — where we stand",
   aiActText:
     "The AI Act's transparency duties (Art. 50) and most high-risk obligations apply from 2 August 2026. Our honest position before that date:",
@@ -310,7 +323,7 @@ const _enSecurity: SecurityContent = {
   ctaTitle: "Bring your data protection officer.",
   ctaSub:
     "We speak their language. Hosted with a DPA, or self-hosted so the question never arises.",
-  ctaButton: "Request a demo",
+  ctaButton: "Book a demo",
 };
 
 export const SECURITY: Record<Lang, SecurityContent> = {
@@ -356,7 +369,7 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     "Bring your data protection officer.": "Porta il tuo responsabile della protezione dei dati.",
     "We speak their language. Hosted with a DPA, or self-hosted so the question never arises.":
       "Parliamo la loro lingua. Hosted con DPA, o self-hosted così la domanda non si pone.",
-    "Request a demo": "Richiedi una demo",
+    "Book a demo": "Prenota una demo",
     // Pillars
     "Self-hosting, fully": "Self-hosting, completo",
     "The complete engine runs on your hardware — the full product, nothing held back. Client data never reaches a third party at all, and your IT controls every system that touches your files.":
@@ -471,7 +484,7 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     "Bring your data protection officer.": "Trae a tu delegado de protección de datos.",
     "We speak their language. Hosted with a DPA, or self-hosted so the question never arises.":
       "Hablamos su idioma. Hosted con DPA, o self-hosted para que la pregunta nunca surja.",
-    "Request a demo": "Solicitar una demo",
+    "Book a demo": "Reservar una demo",
     // Pillars
     "Self-hosting, fully": "Self-hosting, completo",
     "The complete engine runs on your hardware — the full product, nothing held back. Client data never reaches a third party at all, and your IT controls every system that touches your files.":
@@ -584,7 +597,7 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     "Bring your data protection officer.": "Przyprowadź swojego inspektora ochrony danych.",
     "We speak their language. Hosted with a DPA, or self-hosted so the question never arises.":
       "Mówimy ich językiem. Hosted z DPA, lub self-hosted, by pytanie nigdy nie powstało.",
-    "Request a demo": "Zamów demo",
+    "Book a demo": "Zarezerwuj demo",
     // Pillars
     "Self-hosting, fully": "Self-hosting, w pełni",
     "The complete engine runs on your hardware — the full product, nothing held back. Client data never reaches a third party at all, and your IT controls every system that touches your files.":
@@ -697,7 +710,7 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     "Bring your data protection officer.": "Amenez votre délégué à la protection des données.",
     "We speak their language. Hosted with a DPA, or self-hosted so the question never arises.":
       "Nous parlons leur langue. Hébergé avec DPA, ou self-hosted pour que la question ne se pose jamais.",
-    "Request a demo": "Demander une démo",
+    "Book a demo": "Réserver une démo",
     // Pillars
     "Self-hosting, fully": "Self-hosting, complet",
     "The complete engine runs on your hardware — the full product, nothing held back. Client data never reaches a third party at all, and your IT controls every system that touches your files.":
@@ -810,7 +823,7 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     "Bring your data protection officer.": "Breng je functionaris voor gegevensbescherming mee.",
     "We speak their language. Hosted with a DPA, or self-hosted so the question never arises.":
       "We spreken hun taal. Hosted met DPA, of self-hosted zodat de vraag nooit opkomt.",
-    "Request a demo": "Vraag een demo aan",
+    "Book a demo": "Boek een demo",
     // Pillars
     "Self-hosting, fully": "Self-hosting, volledig",
     "The complete engine runs on your hardware — the full product, nothing held back. Client data never reaches a third party at all, and your IT controls every system that touches your files.":

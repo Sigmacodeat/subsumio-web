@@ -81,9 +81,9 @@ const STATUS_CONFIG: Record<
 
 const PRIORITY_COLORS: Record<string, string> = {
   low: "bg-gray-500/10 text-gray-600 border-gray-500/20",
-  medium: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  high: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  critical: "bg-red-500/10 text-red-600 border-red-500/20",
+  medium: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
+  high: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
+  critical: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
 };
 
 function daysUntil(dateStr: string): number {
@@ -630,7 +630,7 @@ export default function CasesPage() {
                 e.stopPropagation();
                 restoreCase(c.slug);
               }}
-              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-emerald-500/10 hover:text-emerald-600"
+              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)]"
               title={t("cases.btn_restore")}
               aria-label={`${t("cases.btn_restore")} ${c.title}`}
             >
@@ -642,7 +642,7 @@ export default function CasesPage() {
                 e.stopPropagation();
                 deleteCase(c.slug);
               }}
-              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
+              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
               title={t("cases.delete")}
               aria-label={`${t("cases.delete")} ${c.title}`}
             >
@@ -723,13 +723,13 @@ export default function CasesPage() {
 
       {/* Error with retry */}
       {loadError && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <span>{loadError}</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => void loadCases()}
-            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             <RotateCcw size={13} />
             {t("cases.retry")}

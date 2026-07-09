@@ -37,13 +37,12 @@ import { PricingGrid } from "./pricing-grid";
 import ScrollPinnedDashboard from "./scroll-pinned-dashboard";
 import { TestimonialsSection } from "./testimonials";
 import AudienceTabs from "./audience-tabs";
-import { Section, SectionHeading, ICONS, accentTile, H2_CTA_CLASS } from "./chrome";
+import { Section, SectionHeading, ICONS, accentTile, H2_CTA_CLASS, H3_CLASS, StatCard } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import {
   StaggerContainer,
   StaggerItem,
   EASE,
-  AnimatedCounter,
   MagneticButton,
   ScrollProgress,
   SplitTextReveal,
@@ -153,20 +152,14 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 </SplitTextReveal>
               </h1>
 
-              {/* Hero tagline — the outcome promise with gradient accent */}
+              {/* Hero tagline — solid brand-text for guaranteed contrast on slate */}
               <motion.p
                 initial={reduce ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={
                   reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.35 }
                 }
-                className="mb-3 text-lg font-semibold md:text-xl"
-                style={{
-                  background: "linear-gradient(90deg, var(--brand-text), var(--brand-tertiary))",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
+                className="mb-3 text-lg font-semibold md:text-xl [color:var(--brand-text)]"
               >
                 {t.heroTagline}
               </motion.p>
@@ -246,7 +239,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                           ? { duration: 0 }
                           : { delay: 0.8 + i * 0.08, duration: 0.3, ease: EASE.out }
                       }
-                      className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 text-xs [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
+                      className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 text-sm [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
                     >
                       <Icon size={12} className="text-[var(--brand-secondary)]" />
                       {item.label}
@@ -254,6 +247,18 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   );
                 })}
               </motion.div>
+
+              {/* Social proof — jurisdiction trust line */}
+              <motion.p
+                initial={reduce ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={
+                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.out, delay: 0.85 }
+                }
+                className="mt-6 text-sm [color:var(--mk-text-subtle)]"
+              >
+                {ui.trustedBy}
+              </motion.p>
             </div>
 
             {/* ─── Right column: animated Q→A card ─── */}
@@ -290,7 +295,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 return (
                   <span
                     key={item.label}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium [color:var(--mk-text-muted)] transition-colors hover:[color:var(--mk-text)]"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-muted)] transition-colors hover:[color:var(--mk-text)]"
                   >
                     <Icon size={14} className="text-[var(--brand-secondary)]" />
                     {item.label}
@@ -317,7 +322,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 sub={(t as { painSub: string }).painSub}
               />
               <StaggerContainer
-                className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2"
+                className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2"
                 stagger={0.08}
               >
                 {(t as { pains: { value: string; label: string }[] }).pains.map((p, i) => {
@@ -356,33 +361,15 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 className="mt-14 grid grid-cols-2 gap-8 text-center md:grid-cols-4"
                 stagger={0.09}
               >
-                {t.stats.map((stat, i) => {
-                  const num = parseFloat(stat.value.replace(/[^0-9.]/g, ""));
-                  const suffix = stat.value.replace(/[0-9.,]/g, "");
-                  const prefix = stat.value.match(/^[^0-9]*/)?.[0] ?? "";
-                  const isNumeric = !isNaN(num) && num > 0;
-                  return (
-                    <StaggerItem key={stat.label}>
-                      <div
-                        className={`relative ${i > 0 ? "md:before:absolute md:before:top-1/2 md:before:left-0 md:before:h-12 md:before:w-px md:before:-translate-y-1/2 md:before:[background:var(--mk-border)]" : ""}`}
-                      >
-                        <p className="mb-1 text-4xl font-bold [color:var(--brand-text)] md:text-5xl">
-                          {isNumeric ? (
-                            <AnimatedCounter
-                              to={num}
-                              prefix={prefix}
-                              suffix={suffix}
-                              decimals={stat.value.includes(".") ? 1 : 0}
-                            />
-                          ) : (
-                            stat.value
-                          )}
-                        </p>
-                        <p className="text-sm [color:var(--mk-text-muted)]">{stat.label}</p>
-                      </div>
-                    </StaggerItem>
-                  );
-                })}
+                {t.stats.map((stat, i) => (
+                  <StaggerItem key={stat.label}>
+                    <div
+                      className={`relative ${i > 0 ? "md:before:absolute md:before:top-1/2 md:before:left-0 md:before:h-12 md:before:w-px md:before:-translate-y-1/2 md:before:[background:var(--mk-border)]" : ""}`}
+                    >
+                      <StatCard value={stat.value} label={stat.label} />
+                    </div>
+                  </StaggerItem>
+                ))}
               </StaggerContainer>
 
               {(t as { statsNote?: string }).statsNote && (
@@ -409,7 +396,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               <SectionHeading badge="Features" title={t.featuresTitle} sub={t.featuresSub} />
             </motion.div>
             <StaggerContainer
-              className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+              className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
               stagger={0.07}
               y={16}
             >
@@ -417,19 +404,19 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 const Icon = ICONS[f.icon];
                 return (
                   <StaggerItem key={f.title}>
-                    <div className="group relative h-full overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl">
+                    <Link href={p(lang, "/features")} className="group relative flex h-full flex-col overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl">
                       <div
                         className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl border ${accentTile(f.color, "light")}`}
                       >
                         {Icon && <Icon size={22} />}
                       </div>
-                      <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
+                      <h3 className={`mb-2 ${H3_CLASS}`}>
                         {f.title}
                       </h3>
                       <p className="text-sm leading-relaxed [color:var(--mk-text-muted)] md:text-base">
                         {f.desc}
                       </p>
-                    </div>
+                    </Link>
                   </StaggerItem>
                 );
               })}
@@ -493,10 +480,10 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <p className="mb-1 text-xs font-semibold text-[color:var(--brand-text)]">
+                      <p className="mb-1 text-sm font-semibold text-[color:var(--brand-text)]">
                         Subsumio
                       </p>
-                      <span className="inline-flex items-start gap-1.5 text-xs text-[color:var(--mk-text-muted)]">
+                      <span className="inline-flex items-start gap-1.5 text-sm text-[color:var(--mk-text-muted)]">
                         <Check
                           size={14}
                           className="mt-0.5 shrink-0 text-[color:var(--signal-green)]"
@@ -506,10 +493,10 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                       </span>
                     </div>
                     <div>
-                      <p className="mb-1 text-xs font-semibold text-[color:var(--mk-text-subtle)]">
+                      <p className="mb-1 text-sm font-semibold text-[color:var(--mk-text-subtle)]">
                         {ui.comparisonOthers}
                       </p>
-                      <span className="inline-flex items-start gap-1.5 text-xs text-[color:var(--mk-text-subtle)]">
+                      <span className="inline-flex items-start gap-1.5 text-sm text-[color:var(--mk-text-subtle)]">
                         <X size={14} className="mt-0.5 shrink-0 opacity-50" aria-hidden />
                         {row.others}
                       </span>
@@ -529,7 +516,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                     <th className="py-3 pr-4 text-left font-semibold text-[color:var(--mk-text)]">
                       {ui.comparisonFeature}
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold text-[color:var(--brand-text)]">
+                    <th className="px-4 py-3 text-left font-semibold text-[color:var(--brand-text)] brand-soft rounded-t-lg">
                       Subsumio
                     </th>
                     <th className="py-3 pl-4 text-left font-semibold text-[color:var(--mk-text-subtle)]">
@@ -550,7 +537,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                       <td className="py-4 pr-4 font-medium text-[color:var(--mk-text)]">
                         {row.feature}
                       </td>
-                      <td className="px-4 py-4 text-[color:var(--mk-text)]">
+                      <td className="px-4 py-4 text-[color:var(--mk-text)] brand-soft">
                         <span className="inline-flex items-start gap-2">
                           <Check
                             size={16}
@@ -619,14 +606,21 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
               {t.ctaSub}
             </p>
-            <MagneticButton strength={0.2}>
-              <Link href={p(lang, "/signup")}>
-                <Button size="xl" variant="primary">
-                  {t.ctaButton} <ArrowRight size={18} />
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <MagneticButton strength={0.2}>
+                <Link href={p(lang, "/signup")}>
+                  <Button size="xl" variant="primary">
+                    {t.ctaButton} <ArrowRight size={18} />
+                  </Button>
+                </Link>
+              </MagneticButton>
+              <Link href={p(lang, "/superbrain")}>
+                <Button size="xl" variant="secondary">
+                  {UI_STRINGS[lang].watchDemo}
                 </Button>
               </Link>
-            </MagneticButton>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs [color:var(--mk-text-subtle)]">
+            </div>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm [color:var(--mk-text-subtle)]">
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-1 w-1 rounded-full bg-[color:var(--signal-green)]" />
                 {ui.noCreditCard}
@@ -674,7 +668,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             <div className="flex items-center gap-3">
               <SubsumioMark size={24} />
               <span className="text-sm font-semibold [color:var(--mk-text)]">{ui.trySubsumio}</span>
-              <span className="hidden text-xs [color:var(--mk-text-subtle)] sm:inline">
+              <span className="hidden text-sm [color:var(--mk-text-subtle)] sm:inline">
                 {ui.trialDaysFree}
               </span>
             </div>

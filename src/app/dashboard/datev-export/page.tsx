@@ -267,13 +267,13 @@ export default function DatevExportPage() {
       </div>
 
       {/* Info */}
-      <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
-        <p className="text-sm text-amber-600">{t("datev.info")}</p>
+      <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3">
+        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+        <p className="text-sm text-[color:var(--ds-warning-text)]">{t("datev.info")}</p>
       </div>
 
       {loadError && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertTriangle size={16} className="shrink-0" />
           {loadError}
         </div>
@@ -293,7 +293,7 @@ export default function DatevExportPage() {
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.net_amount")}</div>
-          <div className="text-xl font-bold text-emerald-600">
+          <div className="text-xl font-bold text-[color:var(--ds-success-text)]">
             {totalAmount.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €
           </div>
         </div>
@@ -340,7 +340,7 @@ export default function DatevExportPage() {
                       ? `${(entry.hours ?? 0).toFixed(1)}h`
                       : t("datev.expense")}
                   </div>
-                  <div className="font-mono text-xs text-emerald-600">
+                  <div className="font-mono text-xs text-[color:var(--ds-success-text)]">
                     {entry.amount.toFixed(0)} €
                   </div>
                 </div>
@@ -361,14 +361,14 @@ export default function DatevExportPage() {
               onClick={copyCsv}
               className="gap-1.5 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             >
-              {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+              {copied ? <Check size={14} className="text-[color:var(--ds-success-text)]" /> : <Copy size={14} />}
               {t("datev.copy")}
             </Button>
             <Button
               variant="primary"
               size="sm"
               onClick={downloadCsv}
-              className="gap-1.5 bg-green-600 text-xs text-white hover:bg-green-500"
+              className="gap-1.5 bg-[color:var(--ds-success-solid)] text-xs text-white hover:bg-[color:var(--ds-success-solid)]"
             >
               <Download size={14} />
               {t("datev.download")}

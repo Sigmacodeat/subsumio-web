@@ -75,12 +75,12 @@ export default function AnonymizePage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={t("anonymize.placeholder_input")}
-            className="h-80 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
+            className="h-80 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none"
           />
           <Button
             onClick={run}
             disabled={loading || !input.trim()}
-            className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
+            className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
           >
             {loading ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />}
             {t("anonymize.btn_run")}
@@ -96,7 +96,7 @@ export default function AnonymizePage() {
             {result && (
               <button
                 onClick={copyResult}
-                className="flex items-center gap-1.5 text-xs text-emerald-600 hover:underline"
+                className="flex items-center gap-1.5 text-xs text-[color:var(--ds-success-text)] hover:underline"
               >
                 {copied ? <Check size={13} /> : <Copy size={13} />}
                 {copied ? t("anonymize.btn_run") : t("anonymize.btn_run")}
@@ -113,7 +113,7 @@ export default function AnonymizePage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
@@ -128,7 +128,7 @@ export default function AnonymizePage() {
               <Badge
                 key={type}
                 variant="default"
-                className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-700"
+                className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
               >
                 {TYPE_LABELS[type] ? t(TYPE_LABELS[type]) : type}: {n}
               </Badge>
@@ -159,7 +159,7 @@ export default function AnonymizePage() {
                   <tbody className="font-mono">
                     {result.replacements.map((r, i) => (
                       <tr key={i} className="border-t border-[color:var(--ds-border)]/60">
-                        <td className="py-1 pr-4 whitespace-nowrap text-emerald-600">
+                        <td className="py-1 pr-4 whitespace-nowrap text-[color:var(--ds-success-text)]">
                           {r.placeholder}
                         </td>
                         <td className="py-1 break-all text-[color:var(--ds-text-muted)]">

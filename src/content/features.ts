@@ -33,8 +33,8 @@ const _deFeatures: FeaturesContent = {
   metaDesc:
     "Belegte KI-Antworten mit Fundstellen, selbstverdrahtender Wissensgraph, Hybrid-Retrieval, WhatsApp-Copilot — jede Funktion im Produkt, keine Halluzination.",
   badge: "Alle Funktionen im Überblick",
-  h1a: "Alles, was es kann.",
-  h1b: "Nichts versteckt.",
+  h1a: "Jede Funktion im Überblick.",
+  h1b: "Jede Aussage belegt.",
   sub: "Fünf Funktionsbereiche, eine Engine. Klick dich durch — jede Aussage steckt im Produkt, mit nachprüfbaren Zitaten an jeder Antwort.",
   categories: [
     {
@@ -96,7 +96,7 @@ const _deFeatures: FeaturesContent = {
         },
         {
           title: "Benchmark-belegt",
-          desc: "97,9 % Recall@5 und +31,4 P@5-Punkte gegenüber reinem Vector-RAG auf einem 240-Seiten-Benchmark-Korpus.",
+          desc: "99,8 % Recall@8 auf LongMemEval (500 Fragen) — gemessen gegenüber reinem Vector-RAG mit Hybrid-Suche + Graph.",
         },
       ],
       demo: {
@@ -224,7 +224,7 @@ const _deFeatures: FeaturesContent = {
   ],
   ctaTitle: "Bereit, es in deiner Kanzlei zu sehen?",
   ctaSub: "In Minuten startklar. Erste belegte Antwort am selben Tag.",
-  ctaButton: "Demo anfragen",
+  ctaButton: "14 Tage kostenlos testen",
   faqTitle: "Fragen, beantwortet",
   faq: [
     {
@@ -251,8 +251,8 @@ const _enFeatures: FeaturesContent = {
   metaDesc:
     "Cited AI answers, self-wiring knowledge graph, hybrid retrieval, WhatsApp copilot — every capability in the product, no hallucinations.",
   badge: "Full capability tour",
-  h1a: "Everything it does.",
-  h1b: "Nothing hidden.",
+  h1a: "Every capability at a glance.",
+  h1b: "Every claim cited.",
   sub: "Five capability areas, one engine. Click through — every claim here ships in the product, with deterministic citations you can verify.",
   categories: [
     {
@@ -314,7 +314,7 @@ const _enFeatures: FeaturesContent = {
         },
         {
           title: "Benchmarked recall",
-          desc: "97.9% Recall@5 and +31.4 P@5 points over vector-only RAG on a 240-page benchmark corpus.",
+          desc: "99.8% Recall@8 on LongMemEval (500 questions) — measured against vector-only RAG with hybrid search and graph.",
         },
       ],
       demo: {
@@ -442,7 +442,7 @@ const _enFeatures: FeaturesContent = {
   ],
   ctaTitle: "Ready to see it in your firm?",
   ctaSub: "Up and running in minutes. First cited answer the same day.",
-  ctaButton: "Request a demo",
+  ctaButton: "Start free trial",
   faqTitle: "Questions, answered",
   faq: [
     {
@@ -487,7 +487,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     "Ready to see it in your firm?": "Pronto a vederlo nel tuo studio?",
     "Up and running in minutes. First cited answer the same day.":
       "Operativo in minuti. Prima risposta citata lo stesso giorno.",
-    "Request a demo": "Richiedi una demo",
+    "Start free trial": "Inizia la prova gratuita",
     "Questions, answered": "Domande, risposte",
     // Category titles
     "One answer instead of ten documents": "Una risposta invece di dieci documenti",
@@ -546,8 +546,8 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     [`"Who invested in X?" "What connects A and B?" resolve by walking the graph — questions vector search can't answer.`]: `"Chi ha investito in X?" "Cosa collega A e B?" si risolvono camminando il grafo — domande che la ricerca vettoriale non può rispondere.`,
     "People and companies accumulate context across every mention; the brain consolidates overnight.":
       "Persone e aziende accumulano contesto da ogni menzione; il brain consolida durante la notte.",
-    "97.9% Recall@5 and +31.4 P@5 points over vector-only RAG on a 240-page benchmark corpus.":
-      "97,9% Recall@5 e +31,4 punti P@5 rispetto a RAG solo vettoriale su un corpus di benchmark di 240 pagine.",
+    "99.8% Recall@8 on LongMemEval (500 questions) — measured against vector-only RAG with hybrid search and graph.":
+      "99,8% Recall@8 su LongMemEval (500 domande) — misurato rispetto a RAG solo vettoriale con ricerca ibrida e grafo.",
     // Item descriptions — retrieval
     "Semantic similarity catches paraphrases, keywords catch exact terms, the graph catches relationships. Fusion beats each alone.":
       "La similarità semantica cattura parafrasi, le keyword catturano termini esatti, il grafo cattura relazioni. La fusione batte ciascuno da solo.",
@@ -607,7 +607,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     "Ready to see it in your firm?": "¿Listo para verlo en tu bufete?",
     "Up and running in minutes. First cited answer the same day.":
       "Operativo en minutos. Primera respuesta citada el mismo día.",
-    "Request a demo": "Solicitar una demo",
+    "Start free trial": "Empezar prueba gratuita",
     "Questions, answered": "Preguntas, respondidas",
     // Category titles
     "One answer instead of ten documents": "Una respuesta en vez de diez documentos",
@@ -667,8 +667,8 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     [`"Who invested in X?" "What connects A and B?" resolve by walking the graph — questions vector search can't answer.`]: `"¿Quién invirtió en X?" "¿Qué conecta A y B?" se resuelven caminando el grafo — preguntas que la búsqueda vectorial no puede responder.`,
     "People and companies accumulate context across every mention; the brain consolidates overnight.":
       "Personas y empresas acumulan contexto en cada mención; el brain consolida durante la noche.",
-    "97.9% Recall@5 and +31.4 P@5 points over vector-only RAG on a 240-page benchmark corpus.":
-      "97,9% Recall@5 y +31,4 puntos P@5 sobre RAG solo vectorial en un corpus de benchmark de 240 páginas.",
+    "99.8% Recall@8 on LongMemEval (500 questions) — measured against vector-only RAG with hybrid search and graph.":
+      "99,8% Recall@8 en LongMemEval (500 preguntas) — medido contra RAG solo vectorial con búsqueda híbrida y grafo.",
     // Item descriptions — retrieval
     "Semantic similarity catches paraphrases, keywords catch exact terms, the graph catches relationships. Fusion beats each alone.":
       "La similitud semántica captura paráfrasis, las keywords capturan términos exactos, el grafo captura relaciones. La fusión supera a cada uno por separado.",
@@ -729,7 +729,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     "Ready to see it in your firm?": "Gotowy, by zobaczyć to w swojej kancelarii?",
     "Up and running in minutes. First cited answer the same day.":
       "Działa w kilka minut. Pierwsza odpowiedź z cytatem tego samego dnia.",
-    "Request a demo": "Zamów demo",
+    "Start free trial": "Rozpocznij darmowy okres",
     "Questions, answered": "Pytania, odpowiedziane",
     // Category titles
     "One answer instead of ten documents": "Jedna odpowiedź zamiast dziesięciu dokumentów",
@@ -788,8 +788,8 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     [`"Who invested in X?" "What connects A and B?" resolve by walking the graph — questions vector search can't answer.`]: `"Kto zainwestował w X?" "Co łączy A i B?" rozwiązuje się przechodząc po grafie — pytania, na które wyszukiwanie wektorowe nie może odpowiedzieć.`,
     "People and companies accumulate context across every mention; the brain consolidates overnight.":
       "Osoby i firmy akumulują kontekst z każdej wzmianki; brain konsoliduje przez noc.",
-    "97.9% Recall@5 and +31.4 P@5 points over vector-only RAG on a 240-page benchmark corpus.":
-      "97,9% Recall@5 i +31,4 punktów P@5 nad RAG tylko wektorowym na korpusie benchmarkowym 240 stron.",
+    "99.8% Recall@8 on LongMemEval (500 questions) — measured against vector-only RAG with hybrid search and graph.":
+      "99,8% Recall@8 na LongMemEval (500 pytań) — mierzone względem RAG tylko wektorowego z wyszukiwaniem hybrydowym i grafem.",
     // Item descriptions — retrieval
     "Semantic similarity catches paraphrases, keywords catch exact terms, the graph catches relationships. Fusion beats each alone.":
       "Podobieństwo semantyczne łapie parafrazy, keywordy łapią dokładne terminy, graf łapie relacje. Fuzja bije każdą z osobna.",
@@ -850,7 +850,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     "Ready to see it in your firm?": "Prêt à le voir dans votre cabinet?",
     "Up and running in minutes. First cited answer the same day.":
       "Opérationnel en minutes. Première réponse citée le même jour.",
-    "Request a demo": "Demander une démo",
+    "Start free trial": "Commencer l'essai gratuit",
     "Questions, answered": "Questions, réponses",
     // Category titles
     "One answer instead of ten documents": "Une réponse au lieu de dix documents",
@@ -910,8 +910,8 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     [`"Who invested in X?" "What connects A and B?" resolve by walking the graph — questions vector search can't answer.`]: `"Qui a investi dans X?" "Qu'est-ce qui relie A et B?" se résolvent en parcourant le graphe — des questions que la recherche vectorielle ne peut pas répondre.`,
     "People and companies accumulate context across every mention; the brain consolidates overnight.":
       "Personnes et entreprises accumulent du contexte à chaque mention; le brain consolide pendant la nuit.",
-    "97.9% Recall@5 and +31.4 P@5 points over vector-only RAG on a 240-page benchmark corpus.":
-      "97,9% Recall@5 et +31,4 points P@5 sur RAG uniquement vectoriel sur un corpus de benchmark de 240 pages.",
+    "99.8% Recall@8 on LongMemEval (500 questions) — measured against vector-only RAG with hybrid search and graph.":
+      "99,8% Recall@8 sur LongMemEval (500 questions) — mesuré contre RAG uniquement vectoriel avec recherche hybride et graphe.",
     // Item descriptions — retrieval
     "Semantic similarity catches paraphrases, keywords catch exact terms, the graph catches relationships. Fusion beats each alone.":
       "La similarité sémantique capture les paraphrases, les keywords capturent les termes exacts, le graphe capture les relations. La fusion bat chacun seul.",
@@ -971,7 +971,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     "Ready to see it in your firm?": "Klaar om het in je kantoor te zien?",
     "Up and running in minutes. First cited answer the same day.":
       "Operationeel in minuten. Eerste geciteerde antwoord dezelfde dag.",
-    "Request a demo": "Vraag een demo aan",
+    "Start free trial": "Start gratis proefperiode",
     "Questions, answered": "Vragen, beantwoord",
     // Category titles
     "One answer instead of ten documents": "Eén antwoord in plaats van tien documenten",
@@ -1030,8 +1030,8 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     [`"Who invested in X?" "What connects A and B?" resolve by walking the graph — questions vector search can't answer.`]: `"Wie investeerde in X?" "Wat verbindt A en B?" worden opgelost door de graaf te doorlopen — vragen die vectorzoek niet kan beantwoorden.`,
     "People and companies accumulate context across every mention; the brain consolidates overnight.":
       "Personen en bedrijven accumuleren context bij elke vermelding; de brain consolideert 's nachts.",
-    "97.9% Recall@5 and +31.4 P@5 points over vector-only RAG on a 240-page benchmark corpus.":
-      "97,9% Recall@5 en +31,4 P@5-punten over alleen-vector RAG op een 240-pagina benchmark-corpus.",
+    "99.8% Recall@8 on LongMemEval (500 questions) — measured against vector-only RAG with hybrid search and graph.":
+      "99,8% Recall@8 op LongMemEval (500 vragen) — gemeten tegen alleen-vector RAG met hybride zoek en graaf.",
     // Item descriptions — retrieval
     "Semantic similarity catches paraphrases, keywords catch exact terms, the graph catches relationships. Fusion beats each alone.":
       "Semantische gelijkenis vangt parafrases, keywords vangen exacte termen, de graaf vangt relaties. Fusie verslaat elk afzonderlijk.",

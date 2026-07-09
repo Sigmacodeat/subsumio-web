@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getDocs } from "@/content/docs";
 import { type Lang } from "@/content/site";
 import { p, UI_STRINGS } from "@/content/site";
-import { ICONS, PageHero, CTASection, Section } from "./chrome";
+import { ICONS, PageHero, CTASection, Section, H2_CTA_CLASS, H3_CLASS } from "./chrome";
 import DocsWorkflowShowcase from "./docs-workflow-showcase";
 import { GlowCard, Reveal, StaggerContainer, StaggerItem, VIEWPORT } from "./motion-system";
 
@@ -33,7 +33,7 @@ function FeatureCard({
         dimmed ? "opacity-30 transition-opacity duration-300" : "transition-opacity duration-300"
       }
     >
-      <GlowCard className="h-full rounded-2xl p-5 transition-all duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg hover:[background:var(--mk-surface-2)]">
+      <GlowCard className="h-full rounded-2xl p-6 transition-all duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg hover:[background:var(--mk-surface-2)]">
         <div className="flex items-start gap-3.5">
           {Icon && (
             <div className="brand-soft mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-300 hover:scale-110">
@@ -41,8 +41,8 @@ function FeatureCard({
             </div>
           )}
           <div>
-            <h4 className="mb-1.5 text-sm font-semibold [color:var(--mk-text)]">{title}</h4>
-            <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">{desc}</p>
+            <h4 className={`mb-1.5 ${H3_CLASS}`}>{title}</h4>
+            <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{desc}</p>
           </div>
         </div>
       </GlowCard>
@@ -55,23 +55,23 @@ function QuickStartSection({ d }: { d: ReturnType<typeof getDocs> }) {
     <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <Reveal variant="up" className="mb-10 text-center">
-          <h2 className="mb-3 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+          <h2 className={`mb-3 ${H2_CTA_CLASS}`}>
             {d.quickstart.title}
           </h2>
           <p className="text-sm text-pretty [color:var(--mk-text-muted)]">{d.quickstart.sub}</p>
         </Reveal>
         <StaggerContainer
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5"
+          className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5"
           stagger={0.08}
         >
           {d.quickstart.steps.map((step) => (
             <StaggerItem key={step.num}>
-              <div className="relative h-full rounded-2xl border [border-color:var(--mk-border)] p-5 transition-all duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-md">
+              <div className="relative h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-md">
                 <div className="brand-text mb-3 text-2xl font-bold tabular-nums">{step.num}</div>
                 <h4 className="mb-1.5 text-sm font-semibold [color:var(--mk-text)]">
                   {step.title}
                 </h4>
-                <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">{step.desc}</p>
+                <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{step.desc}</p>
               </div>
             </StaggerItem>
           ))}
@@ -110,7 +110,7 @@ function StickyCategoryNav({
               <a
                 key={cat.id}
                 href={`#cat-${cat.id}`}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
+                className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
                   activeId === cat.id
                     ? "brand-soft brand-text"
                     : "text-[var(--mk-text-muted)] hover:bg-[var(--mk-surface-2)] hover:text-[var(--mk-text)]"
@@ -136,7 +136,7 @@ function StickyCategoryNav({
               }}
               aria-label={t.docsSearchPlaceholder ?? "Search features…"}
               placeholder={t.docsSearchPlaceholder ?? "Search features…"}
-              className="w-full rounded-lg border [border-color:var(--mk-border)] bg-[var(--mk-surface)] px-3 py-1.5 text-xs text-[var(--mk-text)] placeholder:text-[var(--mk-text-subtle)] focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] focus:outline-none sm:w-56"
+              className="w-full rounded-lg border [border-color:var(--mk-border)] bg-[var(--mk-surface)] px-3 py-1.5 text-sm text-[var(--mk-text)] placeholder:text-[var(--mk-text-subtle)] focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] focus:outline-none sm:w-56"
             />
             {search ? (
               <button
@@ -244,15 +244,15 @@ export default function DocsPage({ lang }: { lang: Lang }) {
           </p>
           {/* Stats badges */}
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 text-xs font-medium [color:var(--mk-text)] [background:var(--mk-surface)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 text-sm font-medium [color:var(--mk-text)] [background:var(--mk-surface)]">
               <span className="brand-text font-bold">{totalFeatures}</span>
               {t.docsFeatureCount ?? "features"}
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 text-xs font-medium [color:var(--mk-text)] [background:var(--mk-surface)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 text-sm font-medium [color:var(--mk-text)] [background:var(--mk-surface)]">
               <span className="brand-text font-bold">{d.categories.length}</span>
               {t.docsCategoryCount ?? "categories"}
             </span>
-            <span className="brand-soft brand-text inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium">
+            <span className="brand-soft brand-text inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium">
               {t.docsStatsBadge ?? "Fully documented"}
             </span>
           </div>
@@ -311,7 +311,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
               </p>
               <button
                 onClick={() => setSearch("")}
-                className="rounded-full border [border-color:var(--mk-border)] px-4 py-1.5 text-xs font-medium [color:var(--mk-text)] transition-colors hover:bg-[var(--mk-surface-2)]"
+                className="rounded-full border [border-color:var(--mk-border)] px-4 py-1.5 text-sm font-medium [color:var(--mk-text)] transition-colors hover:bg-[var(--mk-surface-2)]"
               >
                 {t.docsClearSearch ?? "Clear search"}
               </button>
@@ -325,9 +325,9 @@ export default function DocsPage({ lang }: { lang: Lang }) {
               className="scroll-mt-[120px]"
               onViewportEnter={() => setActiveId(cat.id)}
             >
-              <div className="mb-8 flex items-end justify-between gap-4">
+              <div className="mb-8 flex items-end justify-between gap-6">
                 <div>
-                  <h2 className="mb-2 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+                  <h2 className={`mb-2 ${H2_CTA_CLASS}`}>
                     {cat.title}
                   </h2>
                   <p className="text-sm [color:var(--mk-text-muted)]">{cat.sub}</p>
@@ -337,7 +337,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
                 </span>
               </div>
               <StaggerContainer
-                className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+                className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
                 stagger={0.06}
               >
                 {cat.features.map((f, i) => (
@@ -359,13 +359,13 @@ export default function DocsPage({ lang }: { lang: Lang }) {
       <Section tone="light" className="px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <Reveal variant="up" className="mb-12 text-center">
-            <h2 className="mb-3 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+            <h2 className={`mb-3 ${H2_CTA_CLASS}`}>
               {d.arch.title}
             </h2>
             <p className="text-sm text-pretty [color:var(--mk-text-muted)]">{d.arch.sub}</p>
           </Reveal>
           <StaggerContainer
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
             stagger={0.06}
           >
             {d.arch.items.map((item, i) => (
@@ -387,6 +387,8 @@ export default function DocsPage({ lang }: { lang: Lang }) {
         sub={d.cta.sub}
         href={p(lang, "/login")}
         label={d.cta.button}
+        secondaryHref={p(lang, "/contact")}
+        secondaryLabel={UI_STRINGS[lang].writeUs}
       />
 
       {/* Scroll to top */}

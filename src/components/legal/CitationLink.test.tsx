@@ -45,7 +45,7 @@ describe("CitationLink", () => {
     };
     render(<CitationLink citation="§ 433 BGB" grounding={grounding} />);
     const link = screen.getByRole("link");
-    expect(link.querySelector(".text-emerald-500")).toBeTruthy();
+    expect(link.querySelector('svg[class*="ds-success-text"]')).toBeTruthy();
   });
 
   it("shows unverified icon when grounding is not verified", () => {
@@ -57,14 +57,14 @@ describe("CitationLink", () => {
     };
     render(<CitationLink citation="§ 999 BGB" grounding={grounding} />);
     const link = screen.getByRole("link");
-    expect(link.querySelector(".text-amber-500")).toBeTruthy();
+    expect(link.querySelector('svg[class*="ds-warning-text"]')).toBeTruthy();
   });
 
   it("does not show icon when no grounding provided", () => {
     render(<CitationLink citation="§ 433 BGB" />);
     const link = screen.getByRole("link");
-    expect(link.querySelector(".text-emerald-500")).toBeNull();
-    expect(link.querySelector(".text-amber-500")).toBeNull();
+    expect(link.querySelector('svg[class*="ds-success-text"]')).toBeNull();
+    expect(link.querySelector('svg[class*="ds-warning-text"]')).toBeNull();
   });
 
   it("normalizes ECLI citations correctly", () => {
@@ -145,10 +145,10 @@ describe("AIBadge", () => {
     expect(screen.getByText(/KI-generiert/)).toBeTruthy();
   });
 
-  it("has amber styling for AI Act warning", () => {
+  it("has warning tone styling for AI Act warning", () => {
     const { container } = render(<AIBadge showTooltip={false} />);
     const badge = container.querySelector("span");
-    expect(badge?.className).toContain("amber-500");
+    expect(badge?.className).toContain("ds-warning-text");
   });
 
   it("has accessible aria-label with full AI notice", () => {

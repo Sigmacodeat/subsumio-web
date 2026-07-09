@@ -211,7 +211,7 @@ export default function OutboundRegisterPage() {
                     </Badge>
                     <Badge
                       variant="default"
-                      className={`text-xs ${entry.delivery_status === "failed" || entry.delivery_status === "bounced" ? "border-red-500/30 text-red-600" : entry.delivery_status === "delivered" ? "border-green-500/30 text-green-600" : ""}`}
+                      className={`text-xs ${entry.delivery_status === "failed" || entry.delivery_status === "bounced" ? "border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]" : entry.delivery_status === "delivered" ? "border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]" : ""}`}
                     >
                       {statusLabel.de}
                     </Badge>

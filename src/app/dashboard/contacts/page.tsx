@@ -89,18 +89,18 @@ interface ContactsCache {
 const ROLE_KEYS: ContactRole[] = ["client", "opponent", "court", "lawyer", "other"];
 
 const ROLE_COLORS: Record<ContactRole, string> = {
-  client: "bg-blue-500/10 border-blue-500/20 text-blue-600",
-  opponent: "bg-red-500/10 border-red-500/20 text-red-600",
+  client: "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+  opponent: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
   court: "bg-violet-500/10 border-violet-500/20 text-violet-600",
-  lawyer: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
+  lawyer: "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
   other: "bg-gray-500/10 border-gray-500/20 text-gray-500",
 };
 
 const ROLE_DOT: Record<ContactRole, string> = {
-  client: "bg-blue-500",
-  opponent: "bg-red-500",
+  client: "bg-[color:var(--ds-info-solid)]",
+  opponent: "bg-[color:var(--ds-danger-solid)]",
   court: "bg-violet-500",
-  lawyer: "bg-emerald-500",
+  lawyer: "bg-[color:var(--ds-success-solid)]",
   other: "bg-gray-400",
 };
 
@@ -542,13 +542,13 @@ export default function ContactsPage() {
 
       {/* Error with retry */}
       {loadError && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <span>{loadError}</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => void loadContacts()}
-            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             <RotateCcw size={13} />
             {t("contacts.btn_retry")}
@@ -656,7 +656,7 @@ export default function ContactsPage() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => void deleteContact(contact.slug)}
-                            className="gap-2 text-xs text-red-600 focus:text-red-700"
+                            className="gap-2 text-xs text-[color:var(--ds-danger-text)] focus:text-[color:var(--ds-danger-text)]"
                           >
                             <Trash2 size={13} />
                             {t("contacts.aria_delete_action")}
@@ -729,7 +729,7 @@ export default function ContactsPage() {
           </DialogHeader>
 
           {createForm.error && (
-            <div className="flex items-center gap-2 text-xs text-red-600">
+            <div className="flex items-center gap-2 text-xs text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={14} /> {createForm.error}
             </div>
           )}
@@ -814,7 +814,7 @@ export default function ContactsPage() {
           </DialogHeader>
 
           {editForm.error && (
-            <div className="flex items-center gap-2 text-xs text-red-600">
+            <div className="flex items-center gap-2 text-xs text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={14} /> {editForm.error}
             </div>
           )}
@@ -926,16 +926,16 @@ function ConflictAlert({
       role="alert"
       className={
         conflict.severity === "critical"
-          ? "space-y-2 rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2.5 text-xs"
-          : "space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 text-xs"
+          ? "space-y-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2.5 text-xs"
+          : "space-y-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2.5 text-xs"
       }
     >
       <div className="flex items-start justify-between gap-3">
         <div
           className={
             conflict.severity === "critical"
-              ? "flex items-center gap-2 font-medium text-red-700"
-              : "flex items-center gap-2 font-medium text-amber-700"
+              ? "flex items-center gap-2 font-medium text-[color:var(--ds-danger-text)]"
+              : "flex items-center gap-2 font-medium text-[color:var(--ds-warning-text)]"
           }
         >
           <AlertTriangle size={14} className="shrink-0" />
@@ -994,7 +994,7 @@ function ContactFormFields({
           autoFocus
         />
         {form.formState.errors.name && (
-          <p className="mt-1 text-xs text-red-600">{form.formState.errors.name.message}</p>
+          <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{form.formState.errors.name.message}</p>
         )}
       </div>
 
@@ -1048,7 +1048,7 @@ function ContactFormFields({
             className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
           />
           {form.formState.errors.email && (
-            <p className="mt-1 text-xs text-red-600">{form.formState.errors.email.message}</p>
+            <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{form.formState.errors.email.message}</p>
           )}
         </div>
       </div>

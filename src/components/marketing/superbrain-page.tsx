@@ -18,7 +18,7 @@ import {
   GradientMesh,
   VIEWPORT,
 } from "./motion-system";
-import { Section, accentTile, BadgePill } from "./chrome";
+import { Section, accentTile, BadgePill, H1_CLASS, H2_CTA_CLASS } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { copy, getCopy, type SuperbrainCopyDe } from "./superbrain-content";
 
@@ -53,7 +53,7 @@ function HeroSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
           delay={0.1}
           stagger={0.14}
           useAnimate
-          className={`mb-6 text-4xl font-bold tracking-tight [color:var(--mk-text)] md:text-5xl lg:text-6xl`}
+          className={`${H1_CLASS} mb-6`}
         >
           {t.hero.title}
         </SplitTextReveal>
@@ -71,7 +71,7 @@ function HeroSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
           initial={reduce ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={reduce ? { duration: 0 } : { duration: 0.5, delay: 0.65 }}
-          className="flex flex-col items-center justify-center gap-4 sm:flex-row"
+          className="flex flex-col items-center justify-center gap-6 sm:flex-row"
         >
           <MagneticButton strength={0.35}>
             <Link href={p(lang, "/signup")}>
@@ -211,12 +211,16 @@ function StatsBand({ t }: { t: SuperbrainCopyDe }) {
           >
             <AnimatedCounter
               to={stat.value}
-              decimals={Number.isInteger(stat.value) ? 0 : 1}
+              decimals={
+                Number.isInteger(stat.value)
+                  ? 0
+                  : stat.value.toString().split(".")[1]?.length ?? 1
+              }
               suffix={stat.suffix}
               className="brand-text [font-family:var(--font-display)] text-4xl font-bold md:text-5xl"
             />
             <p className="mt-2 text-sm font-semibold [color:var(--mk-text)]">{stat.label}</p>
-            <p className="mt-0.5 text-xs [color:var(--mk-text-muted)]">{stat.sub}</p>
+            <p className="mt-0.5 text-sm [color:var(--mk-text-muted)]">{stat.sub}</p>
           </motion.div>
         ))}
       </div>
@@ -252,13 +256,13 @@ function OthersSection({ t }: { t: SuperbrainCopyDe }) {
             transition={{ duration: 0.4 }}
             className="mb-4 inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 [background:var(--mk-surface-2)]"
           >
-            <span className="font-mono text-xs tracking-wider text-rose-400 uppercase">
+            <span className="font-mono text-sm tracking-wider text-rose-400 uppercase">
               {copy.de === t ? "Das Problem" : "The Problem"}
             </span>
           </motion.div>
           <ClipReveal>
             <h2
-              className={`mb-4 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl`}
+              className={`mb-4 ${H2_CTA_CLASS}`}
             >
               {t.othersTitle}
             </h2>
@@ -272,12 +276,12 @@ function OthersSection({ t }: { t: SuperbrainCopyDe }) {
         </div>
 
         {/* Visual flow: Prompt → Answer → Forget */}
-        <div className="mb-12 flex flex-col items-center justify-center gap-4 md:flex-row md:gap-8">
+        <div className="mb-12 flex flex-col items-center justify-center gap-6 md:flex-row md:gap-8">
           {t.othersSteps.map((step, i) => {
             const Icon = step.icon;
             const isActive = i === activeStep;
             return (
-              <div key={step.label} className="flex flex-col items-center gap-4 md:flex-row">
+              <div key={step.label} className="flex flex-col items-center gap-6 md:flex-row">
                 <motion.div
                   animate={{
                     opacity: isActive ? 1 : 0.5,
@@ -296,8 +300,8 @@ function OthersSection({ t }: { t: SuperbrainCopyDe }) {
                     <Icon size={22} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold [color:var(--mk-text)]">{step.label}</h3>
-                    <p className="mt-1 text-xs leading-relaxed [color:var(--mk-text-muted)]">
+                    <h3 className="text-lg font-bold [color:var(--mk-text)]">{step.label}</h3>
+                    <p className="mt-1 text-sm leading-relaxed [color:var(--mk-text-muted)]">
                       {step.desc}
                     </p>
                   </div>
@@ -368,13 +372,13 @@ function OursSection({ t }: { t: SuperbrainCopyDe }) {
             transition={{ duration: 0.4 }}
             className="brand-border brand-soft mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5"
           >
-            <span className="brand-text font-mono text-xs tracking-wider uppercase">
+            <span className="brand-text font-mono text-sm tracking-wider uppercase">
               {copy.de === t ? "Die Lösung" : "The Solution"}
             </span>
           </motion.div>
           <ClipReveal>
             <h2
-              className={`mb-4 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl`}
+              className={`mb-4 ${H2_CTA_CLASS}`}
             >
               {t.oursTitle}
             </h2>
@@ -388,7 +392,7 @@ function OursSection({ t }: { t: SuperbrainCopyDe }) {
         </div>
 
         {/* Visual flow: Ingest → Process → Store → Answer */}
-        <div className="mb-12 grid gap-4 md:grid-cols-4">
+        <div className="mb-12 grid gap-6 md:grid-cols-4">
           {t.oursSteps.map((step, i) => {
             const Icon = step.icon;
             const isActive = i === activeStep;
@@ -402,7 +406,7 @@ function OursSection({ t }: { t: SuperbrainCopyDe }) {
                 className="relative"
               >
                 <GlowCard
-                  className={`h-full rounded-2xl border p-5 transition-colors ${
+                  className={`h-full rounded-2xl border p-6 transition-colors ${
                     isActive
                       ? "brand-border brand-soft"
                       : "[border-color:var(--mk-border)] [background:var(--mk-surface)]"
@@ -421,8 +425,8 @@ function OursSection({ t }: { t: SuperbrainCopyDe }) {
                       {String(i + 1).padStart(2, "0")}
                     </span>
                   </div>
-                  <h3 className="mb-1 text-sm font-bold [color:var(--mk-text)]">{step.label}</h3>
-                  <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">
+                  <h3 className="mb-1 text-lg font-bold [color:var(--mk-text)]">{step.label}</h3>
+                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
                     {step.desc}
                   </p>
                   {isActive && (
@@ -456,7 +460,7 @@ function OursSection({ t }: { t: SuperbrainCopyDe }) {
             className="relative overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] shadow-xl [background:var(--mk-bg)]"
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,var(--brand-glow),transparent_60%)]" />
-            <div className="relative flex flex-col items-center gap-4 p-8 md:p-10">
+            <div className="relative flex flex-col items-center gap-6 p-8 md:p-10">
               <div className="relative flex h-40 w-40 items-center justify-center">
                 <motion.div
                   animate={reduce ? undefined : { rotate: 360 }}
@@ -496,7 +500,7 @@ function ArchitectureSection({ t }: { t: SuperbrainCopyDe }) {
         <div className="mb-16 text-center">
           <ClipReveal>
             <h2
-              className={`mb-4 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl`}
+              className={`mb-4 ${H2_CTA_CLASS}`}
             >
               {t.architectureTitle}
             </h2>
@@ -521,7 +525,7 @@ function ArchitectureSection({ t }: { t: SuperbrainCopyDe }) {
                 transition={{ duration: 0.5, delay: i * 0.12, ease: EASE.out }}
               >
                 <GlowCard className="rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)] md:p-8">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
+                  <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-6">
                     <div
                       className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border ${accentTile(layer.color, "light")}`}
                     >
@@ -529,7 +533,7 @@ function ArchitectureSection({ t }: { t: SuperbrainCopyDe }) {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <span className="brand-text font-mono text-xs tracking-wider uppercase">
+                        <span className="brand-text font-mono text-sm tracking-wider uppercase">
                           {String(i).padStart(2, "0")}
                         </span>
                         <h3 className="text-lg font-bold [color:var(--mk-text)] md:text-xl">
@@ -539,7 +543,7 @@ function ArchitectureSection({ t }: { t: SuperbrainCopyDe }) {
                       <p className="mt-2 text-sm leading-relaxed [color:var(--mk-text-muted)] md:text-base">
                         {layer.desc}
                       </p>
-                      <div className="mt-3 inline-flex items-center gap-1.5 rounded-md border [border-color:var(--mk-border)] px-2.5 py-1 font-mono text-[11px] [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]">
+                      <div className="mt-3 inline-flex items-center gap-1.5 rounded-md border [border-color:var(--mk-border)] px-2.5 py-1 font-mono text-sm [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]">
                         <Cpu size={11} className="brand-text" />
                         {layer.detail}
                       </div>
@@ -586,7 +590,7 @@ function DreamCycleSection({ t }: { t: SuperbrainCopyDe }) {
         <div className="mb-16 text-center">
           <ClipReveal>
             <h2
-              className={`mb-4 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl`}
+              className={`mb-4 ${H2_CTA_CLASS}`}
             >
               {t.cycleTitle}
             </h2>
@@ -615,7 +619,7 @@ function DreamCycleSection({ t }: { t: SuperbrainCopyDe }) {
                   className="relative"
                 >
                   <GlowCard
-                    className={`h-full rounded-xl border p-5 transition-colors ${
+                    className={`h-full rounded-xl border p-6 transition-colors ${
                       isActive
                         ? "brand-border brand-soft"
                         : "[border-color:var(--mk-border)] [background:var(--mk-surface)]"
@@ -632,8 +636,8 @@ function DreamCycleSection({ t }: { t: SuperbrainCopyDe }) {
                         {String(t.cycleSteps.length).padStart(2, "0")}
                       </span>
                     </div>
-                    <h3 className="mb-1 text-sm font-bold [color:var(--mk-text)]">{step.label}</h3>
-                    <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">
+                    <h3 className="mb-1 text-lg font-bold [color:var(--mk-text)]">{step.label}</h3>
+                    <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
                       {step.desc}
                     </p>
                     {isActive && (
@@ -673,7 +677,7 @@ function CompareSection({ t }: { t: SuperbrainCopyDe }) {
         <div className="mb-16 text-center">
           <ClipReveal>
             <h2
-              className={`mb-4 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl`}
+              className={`mb-4 ${H2_CTA_CLASS}`}
             >
               {t.compareTitle}
             </h2>
@@ -700,17 +704,17 @@ function CompareSection({ t }: { t: SuperbrainCopyDe }) {
               <p className="mb-3 text-sm font-semibold [color:var(--mk-text)]">{row.feature}</p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="mb-1 text-xs font-semibold [color:var(--mk-text-muted)]">
+                  <p className="mb-1 text-sm font-semibold [color:var(--mk-text-muted)]">
                     {copy.de === t ? "Andere Kanzlei-KI" : "Other legal AI"}
                   </p>
-                  <div className="flex items-start gap-1.5 text-xs [color:var(--mk-text-muted)]">
+                  <div className="flex items-start gap-1.5 text-sm [color:var(--mk-text-muted)]">
                     <span className="shrink-0 text-rose-400">✕</span>
                     {row.others}
                   </div>
                 </div>
                 <div>
-                  <p className="brand-text mb-1 text-xs font-semibold">Subsumio SuperBrain</p>
-                  <div className="flex items-start gap-1.5 text-xs font-medium [color:var(--mk-text)]">
+                  <p className="brand-text mb-1 text-sm font-semibold">Subsumio SuperBrain</p>
+                  <div className="flex items-start gap-1.5 text-sm font-medium [color:var(--mk-text)]">
                     <CheckCircle2 size={13} className="brand-text mt-0.5 shrink-0" />
                     {row.subsumio}
                   </div>
@@ -795,13 +799,13 @@ function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
             className="brand-border brand-soft mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5"
           >
             <Cpu size={14} className="brand-text" />
-            <span className="brand-text font-mono text-xs tracking-wider uppercase">
+            <span className="brand-text font-mono text-sm tracking-wider uppercase">
               {copy.de === t ? "Proprietärer Moat" : "Proprietary Moat"}
             </span>
           </motion.div>
           <ClipReveal>
             <h2
-              className={`mb-4 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl`}
+              className={`mb-4 ${H2_CTA_CLASS}`}
             >
               {t.finetuneTitle}
             </h2>
@@ -814,7 +818,7 @@ function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
           </motion.p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           {t.finetunePoints.map((point, i) => (
             <motion.div
               key={point.label}
@@ -824,8 +828,8 @@ function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
               transition={{ duration: 0.4, delay: i * 0.1 }}
             >
               <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]">
-                <div className="flex items-baseline justify-between gap-4">
-                  <span className="font-mono text-xs tracking-wider [color:var(--mk-text-muted)] uppercase">
+                <div className="flex items-baseline justify-between gap-6">
+                  <span className="font-mono text-sm tracking-wider [color:var(--mk-text-muted)] uppercase">
                     {point.label}
                   </span>
                   <span className="brand-text [font-family:var(--font-display)] text-xl font-bold">
@@ -850,7 +854,7 @@ function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
           <div className="brand-border brand-soft rounded-2xl border p-6 text-center">
             <div className="mb-2 flex items-center justify-center gap-2">
               <TrendingUp size={18} className="brand-text" />
-              <span className="brand-text font-mono text-xs tracking-wider uppercase">
+              <span className="brand-text font-mono text-sm tracking-wider uppercase">
                 {copy.de === t ? "Prognose" : "Forecast"}
               </span>
             </div>
@@ -871,7 +875,7 @@ function PrivacySection({ t }: { t: SuperbrainCopyDe }) {
         <div className="mb-16 text-center">
           <ClipReveal>
             <h2
-              className={`mb-4 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl`}
+              className={`mb-4 ${H2_CTA_CLASS}`}
             >
               {t.privacyTitle}
             </h2>
@@ -918,7 +922,7 @@ function UseCasesSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
         <div className="mb-16 text-center">
           <ClipReveal>
             <h2
-              className={`mb-4 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl`}
+              className={`mb-4 ${H2_CTA_CLASS}`}
             >
               {t.useCasesTitle}
             </h2>
@@ -931,7 +935,7 @@ function UseCasesSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
           </motion.p>
         </div>
 
-        <StaggerContainer className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" stagger={0.08}>
+        <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" stagger={0.08}>
           {t.useCases.map((uc) => {
             const Icon = uc.icon;
             return (
@@ -940,7 +944,7 @@ function UseCasesSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
                   <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border">
                     <Icon size={20} className="brand-text" />
                   </div>
-                  <h3 className="mb-2 text-base font-bold [color:var(--mk-text)]">{uc.title}</h3>
+                  <h3 className="mb-2 text-lg font-bold [color:var(--mk-text)]">{uc.title}</h3>
                   <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{uc.desc}</p>
                 </GlowCard>
               </StaggerItem>
@@ -978,7 +982,7 @@ function TrustSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
         <div className="mb-16 text-center">
           <ClipReveal>
             <h2
-              className={`mb-4 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl`}
+              className={`mb-4 ${H2_CTA_CLASS}`}
             >
               {t.trustTitle}
             </h2>
@@ -991,7 +995,7 @@ function TrustSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
           </motion.p>
         </div>
 
-        <div className="mb-16 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mb-16 grid grid-cols-2 gap-6 sm:grid-cols-4">
           {t.trustBadges.map((badge, i) => (
             <motion.div
               key={badge.label}
@@ -999,12 +1003,12 @@ function TrustSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.4, delay: i * 0.08 }}
-              className="rounded-2xl border [border-color:var(--mk-border)] p-5 text-center [background:var(--mk-surface)]"
+              className="rounded-2xl border [border-color:var(--mk-border)] p-6 text-center [background:var(--mk-surface)]"
             >
               <div className="brand-text mb-2 [font-family:var(--font-display)] text-lg font-bold">
                 {badge.label}
               </div>
-              <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">{badge.desc}</p>
+              <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{badge.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -1026,7 +1030,7 @@ function TrustSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
                 <span className="text-sm font-semibold [color:var(--mk-text)]">
                   {integration.name}
                 </span>
-                <span className="text-xs [color:var(--mk-text-subtle)]">{integration.desc}</span>
+                <span className="text-sm [color:var(--mk-text-subtle)]">{integration.desc}</span>
               </motion.div>
             ))}
           </div>
@@ -1063,7 +1067,7 @@ function FAQSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
         <div className="mb-16 text-center">
           <ClipReveal>
             <h2
-              className={`mb-4 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl`}
+              className={`mb-4 ${H2_CTA_CLASS}`}
             >
               {UI_STRINGS[lang].faqSuperbrainTitle}
             </h2>
@@ -1117,7 +1121,7 @@ function StickyCTA({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
       <Link href={p(lang, "/signup")}>
         <div className="brand-border-strong brand-soft-strong flex items-center gap-3 rounded-full border px-5 py-3 shadow-2xl backdrop-blur-md">
           <span className="text-sm font-bold [color:var(--mk-text)]">{t.stickyCtaText}</span>
-          <span className="hidden text-xs [color:var(--mk-text-muted)] sm:inline">
+          <span className="hidden text-sm [color:var(--mk-text-muted)] sm:inline">
             {t.stickyCtaHint}
           </span>
           <ArrowRight size={16} className="brand-text" />
@@ -1146,7 +1150,7 @@ function CTASection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
         </motion.div>
         <ClipReveal>
           <h2
-            className={`mb-5 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl`}
+            className={`mb-5 ${H2_CTA_CLASS}`}
           >
             {t.ctaTitle}
           </h2>
@@ -1162,6 +1166,7 @@ function CTASection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.45, delay: 0.2 }}
+          className="flex flex-col items-center justify-center gap-3 sm:flex-row"
         >
           <MagneticButton strength={0.3}>
             <Link href={p(lang, "/signup")}>
@@ -1170,6 +1175,11 @@ function CTASection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
               </Button>
             </Link>
           </MagneticButton>
+          <Link href={p(lang, "/contact")}>
+            <Button size="lg" variant="secondary">
+              {UI_STRINGS[lang].writeUs}
+            </Button>
+          </Link>
         </motion.div>
       </div>
     </Section>

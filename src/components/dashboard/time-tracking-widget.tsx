@@ -193,7 +193,7 @@ export function TimeTrackingWidget() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-blue-500" />
+              <Clock className="h-4 w-4 text-[color:var(--ds-info-text)]" />
               <div className="font-mono text-2xl font-bold">{formatElapsed(elapsed)}</div>
             </div>
             <Button onClick={handleStop} variant="danger" size="sm" className="w-full">

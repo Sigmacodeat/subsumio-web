@@ -273,6 +273,38 @@ export interface ModeBundle {
   relationalRetrieval: boolean;
   /** v0.43 — max hops for relational traversal. Default 2, hard-capped at 3. */
   relational_retrieval_depth: number;
+  /**
+   * v0.46 — cognitive tier priority cascade. When on, post-fusion stage
+   * boosts Mental Models (synthesis/concept/analysis/guide) over
+   * Observations (meeting/note/email/...) over Raw Facts (person/company/
+   * ...). Floor-ratio-gated so a weak synthesis can't leapfrog a strong
+   * raw fact. Default OFF for conservative (minimal surface), ON for
+   * balanced + tokenmax. Override: per-call SearchOpts.cognitive_tier →
+   * `search.cognitive_tier` config → mode bundle. See
+   * src/core/search/cognitive-tier.ts.
+   */
+  cognitive_tier: boolean;
+  /**
+   * v0.46 — boost multiplier for Tier 3 (Mental Models). Default 1.08.
+   * Only used when `cognitive_tier` is true.
+   */
+  cognitive_tier3_boost: number;
+  /**
+   * v0.46 — boost multiplier for Tier 2 (Observations). Default 1.04.
+   * Only used when `cognitive_tier` is true.
+   */
+  cognitive_tier2_boost: number;
+  /**
+   * v0.46 — boost multiplier for Tier 1 (Raw Facts). Default 1.0 (neutral).
+   * Only used when `cognitive_tier` is true.
+   */
+  cognitive_tier1_boost: number;
+  /**
+   * v0.46 — boost multiplier for Tier 0 (Unknown types). Default 0.98
+   * (mild demote so known tiers surface first). Only used when
+   * `cognitive_tier` is true.
+   */
+  cognitive_tier0_boost: number;
 }
 
 /**
@@ -326,6 +358,13 @@ export const MODE_BUNDLES: Readonly<Record<SearchMode, Readonly<ModeBundle>>> = 
     relationalRetrieval: false,
     relational_retrieval_depth: 2,
     autocut_jump: 0.2,
+    // v0.46 — cognitive tier OFF for conservative (minimal surface, matches
+    // graph_signals posture). Power users opt in per-call or via config.
+    cognitive_tier: false,
+    cognitive_tier3_boost: 1.08,
+    cognitive_tier2_boost: 1.04,
+    cognitive_tier1_boost: 1.0,
+    cognitive_tier0_boost: 0.98,
   }),
   balanced: Object.freeze({
     cache_enabled: true,
@@ -384,6 +423,16 @@ export const MODE_BUNDLES: Readonly<Record<SearchMode, Readonly<ModeBundle>>> = 
     relationalRetrieval: true,
     relational_retrieval_depth: 2,
     autocut_jump: 0.2,
+    // v0.46 — cognitive tier ON for balanced. Mental Models (synthesis/
+    // concept/analysis/guide) get a conservative 1.08x nudge over
+    // Observations (1.04x) over Raw Facts (1.0x). Floor-ratio-gated so
+    // a weak synthesis can't leapfrog a strong raw fact. Opt out with
+    // `gbrain config set search.cognitive_tier false`.
+    cognitive_tier: true,
+    cognitive_tier3_boost: 1.08,
+    cognitive_tier2_boost: 1.04,
+    cognitive_tier1_boost: 1.0,
+    cognitive_tier0_boost: 0.98,
   }),
   tokenmax: Object.freeze({
     cache_enabled: true,
@@ -435,6 +484,14 @@ export const MODE_BUNDLES: Readonly<Record<SearchMode, Readonly<ModeBundle>>> = 
     relationalRetrieval: true,
     relational_retrieval_depth: 2,
     autocut_jump: 0.2,
+    // v0.46 — cognitive tier ON for tokenmax (power-user tier, same as
+    // balanced). The cascade is a ranking nudge, not a recall change —
+    // tokenmax's larger result sets benefit more from tier-aware ordering.
+    cognitive_tier: true,
+    cognitive_tier3_boost: 1.08,
+    cognitive_tier2_boost: 1.04,
+    cognitive_tier1_boost: 1.0,
+    cognitive_tier0_boost: 0.98,
   }),
 });
 
@@ -489,6 +546,12 @@ export interface SearchKeyOverrides {
   relationalRetrieval?: boolean;
   relational_retrieval_depth?: number;
   autocut_jump?: number;
+  // v0.46 — cognitive tier priority cascade.
+  cognitive_tier?: boolean;
+  cognitive_tier3_boost?: number;
+  cognitive_tier2_boost?: number;
+  cognitive_tier1_boost?: number;
+  cognitive_tier0_boost?: number;
 }
 
 /**
@@ -538,6 +601,12 @@ export interface SearchPerCallOpts {
   // v0.43 — relational recall per-call overrides.
   relationalRetrieval?: boolean;
   relational_retrieval_depth?: number;
+  // v0.46 — cognitive tier priority cascade per-call overrides.
+  cognitive_tier?: boolean;
+  cognitive_tier3_boost?: number;
+  cognitive_tier2_boost?: number;
+  cognitive_tier1_boost?: number;
+  cognitive_tier0_boost?: number;
 }
 
 /**
@@ -633,6 +702,12 @@ export function resolveSearchMode(input: ResolveSearchModeInput): ResolvedSearch
     // v0.43 — relational recall resolved via the same pick chain.
     relationalRetrieval: pick("relationalRetrieval"),
     relational_retrieval_depth: pick("relational_retrieval_depth"),
+    // v0.46 — cognitive tier priority cascade.
+    cognitive_tier: pick("cognitive_tier"),
+    cognitive_tier3_boost: pick("cognitive_tier3_boost"),
+    cognitive_tier2_boost: pick("cognitive_tier2_boost"),
+    cognitive_tier1_boost: pick("cognitive_tier1_boost"),
+    cognitive_tier0_boost: pick("cognitive_tier0_boost"),
     resolved_mode,
     mode_valid: valid,
   };
@@ -753,7 +828,7 @@ export function attributeKnob<K extends keyof ModeBundle>(
 // to take effect immediately (one-time global cache cold-miss on upgrade; refills
 // within cache.ttl_seconds). Same cache-key-contamination convention as the
 // autocut / title_boost / graph_signals bumps above.
-export const KNOBS_HASH_VERSION = 10;
+export const KNOBS_HASH_VERSION = 11;
 
 /**
  * v0.36 (D8 / CDX-2) — second-arg context for the cache key. The
@@ -866,6 +941,15 @@ export function knobsHash(knobs: ResolvedSearchKnobs, ctx?: KnobsHashContext): s
     // test/model-pricing.test.ts-style drift guards and the mode tests.
     `rel=${knobs.relationalRetrieval ? 1 : 0}`,
     `reld=${knobs.relational_retrieval_depth ?? 2}`,
+    // v=11 additions (v0.46, append-only): cognitive tier priority cascade.
+    // A cognitive-tier-on write (boosted Mental Models) must NOT be served
+    // to a cognitive-tier-off lookup — different ranking order. The boost
+    // magnitudes fold in too so a calibration change invalidates stale rows.
+    `ct=${knobs.cognitive_tier ? 1 : 0}`,
+    `ct3=${knobs.cognitive_tier3_boost.toFixed(2)}`,
+    `ct2=${knobs.cognitive_tier2_boost.toFixed(2)}`,
+    `ct1=${knobs.cognitive_tier1_boost.toFixed(2)}`,
+    `ct0=${knobs.cognitive_tier0_boost.toFixed(2)}`,
   ];
   const h = createHash("sha256");
   h.update(parts.join("|"));
@@ -1044,6 +1128,32 @@ export function loadOverridesFromConfig(
     if (Number.isFinite(n) && n >= 1 && n <= 3) out.relational_retrieval_depth = n;
   }
 
+  // v0.46 — cognitive tier priority cascade.
+  const ct = get("search.cognitive_tier");
+  if (ct !== undefined) {
+    out.cognitive_tier = ct === "1" || ct.toLowerCase() === "true";
+  }
+  const ct3 = get("search.cognitive_tier3_boost");
+  if (ct3 !== undefined) {
+    const n = parseFloat(ct3);
+    if (Number.isFinite(n) && n >= 0.5 && n <= 5.0) out.cognitive_tier3_boost = n;
+  }
+  const ct2 = get("search.cognitive_tier2_boost");
+  if (ct2 !== undefined) {
+    const n = parseFloat(ct2);
+    if (Number.isFinite(n) && n >= 0.5 && n <= 5.0) out.cognitive_tier2_boost = n;
+  }
+  const ct1 = get("search.cognitive_tier1_boost");
+  if (ct1 !== undefined) {
+    const n = parseFloat(ct1);
+    if (Number.isFinite(n) && n >= 0.5 && n <= 5.0) out.cognitive_tier1_boost = n;
+  }
+  const ct0 = get("search.cognitive_tier0_boost");
+  if (ct0 !== undefined) {
+    const n = parseFloat(ct0);
+    if (Number.isFinite(n) && n >= 0.5 && n <= 5.0) out.cognitive_tier0_boost = n;
+  }
+
   return out;
 }
 
@@ -1086,6 +1196,12 @@ export const SEARCH_MODE_CONFIG_KEYS: ReadonlyArray<string> = Object.freeze([
   "search.relational_retrieval",
   "search.relational_retrieval_depth",
   "search.autocut_jump",
+  // v0.46 cognitive tier priority cascade
+  "search.cognitive_tier",
+  "search.cognitive_tier3_boost",
+  "search.cognitive_tier2_boost",
+  "search.cognitive_tier1_boost",
+  "search.cognitive_tier0_boost",
 ]);
 
 /**

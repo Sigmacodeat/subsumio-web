@@ -95,9 +95,9 @@ export function WhatsAppClientInvitePanel({
   }
 
   return (
-    <section className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+    <section className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-700">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">
           <MessageCircle size={18} aria-hidden="true" />
         </div>
         <div className="min-w-0 flex-1">
@@ -105,7 +105,7 @@ export function WhatsAppClientInvitePanel({
             <h4 className="text-sm font-semibold text-[color:var(--ds-text)]">
               Mandant per WhatsApp verbinden
             </h4>
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--ds-success-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-success-text)]">
               <ShieldCheck size={12} aria-hidden="true" />
               Code-Bestätigung
             </span>

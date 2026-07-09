@@ -1251,6 +1251,7 @@ export const D = {
   "cockpit.stat_inbox_desc": { de: "zu triagieren", en: "to triage" },
   "cockpit.stat_reviews": { de: "Reviews", en: "Reviews" },
   "cockpit.stat_reviews_desc": { de: "Freigaben offen", en: "pending approvals" },
+  "cockpit.stat_review_inbox": { de: "Eingang prüfen", en: "Review inbox" },
   "cockpit.stat_billing": { de: "Abrechnung", en: "Billing" },
   "cockpit.stat_billing_desc": { de: "offene Rechnungen", en: "open invoices" },
   "cockpit.action_case": { de: "Neue Akte", en: "New Case" },
@@ -2648,6 +2649,11 @@ export const D = {
   "nav.playbooks": { de: "Playbooks", en: "Playbooks" },
   "nav.process_strategy": { de: "Prozessstrategie", en: "Process Strategy" },
   "nav.ai_model": { de: "KI-Modell", en: "AI Model" },
+  "nav.memory": { de: "Gedächtnis", en: "Memory" },
+  "nav.tooltip.memory": {
+    de: "Copilot-Gedächtnis verwalten — Erinnerungen, Präferenzen, Anweisungen",
+    en: "Manage copilot memory — memories, preferences, instructions",
+  },
 
   // ── Topbar: additional strings ──
   "topbar.close_menu": { de: "Menü schließen", en: "Close menu" },

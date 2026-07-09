@@ -59,7 +59,7 @@ export function RundownWidget() {
           </Button>
         </div>
         {triggerMutation.isError && (
-          <p className="mt-2 text-xs text-red-500">
+          <p className="mt-2 text-xs text-[color:var(--ds-danger-text)]">
             {triggerMutation.error instanceof Error ? triggerMutation.error.message : "Error"}
           </p>
         )}

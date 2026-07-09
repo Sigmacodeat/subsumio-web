@@ -259,32 +259,32 @@ export default function FibuPage() {
             {summary.totalOpenAmount.toFixed(2)} €
           </p>
         </div>
-        <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-4">
-          <div className="flex items-center gap-2 text-xs text-orange-600">
+        <div className="rounded-xl border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] p-4">
+          <div className="flex items-center gap-2 text-xs text-[color:var(--ds-attention-text)]">
             <AlertTriangle size={12} />
             Überfällig
           </div>
-          <p className="mt-1 text-2xl font-bold text-orange-600">{summary.overdue}</p>
+          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-attention-text)]">{summary.overdue}</p>
         </div>
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-          <div className="flex items-center gap-2 text-xs text-emerald-600">
+        <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
+          <div className="flex items-center gap-2 text-xs text-[color:var(--ds-success-text)]">
             <CheckCircle2 size={12} />
             Bezahlt
           </div>
-          <p className="mt-1 text-2xl font-bold text-emerald-600">{summary.paid}</p>
+          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-success-text)]">{summary.paid}</p>
         </div>
       </div>
 
       {/* Bank Import Form */}
       {showImport && (
         <form
-          className="space-y-4 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4"
+          className="space-y-4 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4"
           onSubmit={(e) => {
             e.preventDefault();
             void handleImport();
           }}
         >
-          <h2 className="text-sm font-semibold text-blue-600">Bank-Transaktion importieren</h2>
+          <h2 className="text-sm font-semibold text-[color:var(--ds-info-text)]">Bank-Transaktion importieren</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="space-y-1">
               <Label className="text-xs text-[color:var(--ds-text-muted)]">Datum *</Label>
@@ -367,13 +367,13 @@ export default function FibuPage() {
       {/* Payment Link Form */}
       {showPaymentLink && (
         <form
-          className="space-y-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4"
+          className="space-y-4 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4"
           onSubmit={(e) => {
             e.preventDefault();
             void handlePaymentLink();
           }}
         >
-          <h2 className="text-sm font-semibold text-emerald-600">
+          <h2 className="text-sm font-semibold text-[color:var(--ds-success-text)]">
             Zahlungslink erstellen (EPC-QR)
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -480,18 +480,18 @@ export default function FibuPage() {
                       <div
                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
                           isOverdue
-                            ? "bg-orange-500/10"
+                            ? "bg-[color:var(--ds-attention-bg)]"
                             : item.status === "paid"
-                              ? "bg-emerald-500/10"
-                              : "bg-blue-500/10"
+                              ? "bg-[color:var(--ds-success-bg)]"
+                              : "bg-[color:var(--ds-info-bg)]"
                         }`}
                       >
                         {isOverdue ? (
-                          <AlertTriangle size={14} className="text-orange-600" />
+                          <AlertTriangle size={14} className="text-[color:var(--ds-attention-text)]" />
                         ) : item.status === "paid" ? (
-                          <CheckCircle2 size={14} className="text-emerald-600" />
+                          <CheckCircle2 size={14} className="text-[color:var(--ds-success-text)]" />
                         ) : (
-                          <FileText size={14} className="text-blue-600" />
+                          <FileText size={14} className="text-[color:var(--ds-info-text)]" />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -503,10 +503,10 @@ export default function FibuPage() {
                             variant="default"
                             className={`text-xs ${
                               item.status === "paid"
-                                ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                                ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                                 : isOverdue
-                                  ? "border-orange-500/20 bg-orange-500/10 text-orange-600"
-                                  : "border-blue-500/20 bg-blue-500/10 text-blue-600"
+                                  ? "border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]"
+                                  : "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
                             }`}
                           >
                             {item.status === "paid"
@@ -541,10 +541,10 @@ export default function FibuPage() {
                 {unmatchedTxns.map((txn) => (
                   <div
                     key={txn.id}
-                    className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3"
+                    className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3"
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
-                      <TrendingUp size={14} className="text-amber-600" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-warning-bg)]">
+                      <TrendingUp size={14} className="text-[color:var(--ds-warning-text)]" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <span className="text-sm font-medium text-[color:var(--ds-text)]">

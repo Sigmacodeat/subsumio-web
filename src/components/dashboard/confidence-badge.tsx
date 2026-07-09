@@ -34,19 +34,19 @@ const levelConfig: Record<
     icon: ShieldCheck,
     label: "Hoch",
     labelEn: "High",
-    classes: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600",
+    classes: "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
   },
   medium: {
     icon: ShieldAlert,
     label: "Mittel",
     labelEn: "Medium",
-    classes: "border-amber-500/30 bg-amber-500/10 text-amber-600",
+    classes: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   },
   low: {
     icon: ShieldX,
     label: "Niedrig",
     labelEn: "Low",
-    classes: "border-red-500/30 bg-red-500/10 text-red-600",
+    classes: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
   },
   none: {
     icon: ShieldCheck,
@@ -59,13 +59,13 @@ const levelConfig: Record<
     icon: Loader2,
     label: "Läuft…",
     labelEn: "Running…",
-    classes: "border-blue-500/30 bg-blue-500/10 text-blue-600",
+    classes: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
   },
   failed: {
     icon: ShieldX,
     label: "Fehlgeschlagen",
     labelEn: "Failed",
-    classes: "border-red-500/30 bg-red-500/10 text-red-600",
+    classes: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
   },
 };
 

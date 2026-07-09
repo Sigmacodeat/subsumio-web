@@ -460,20 +460,20 @@ export function DeadlineQuickCreateDialog({
                   </div>
                 )}
                 {atFristError && (
-                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-700">
+                  <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]">
                     {t("deadlines.at_engine_error")}
                   </div>
                 )}
                 {atFristResult && atFristResult.hinweise.length > 0 && (
-                  <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2">
-                    <p className="mb-1 text-xs font-medium text-blue-700">{t("deadlines.at_engine_hints")}</p>
-                    <ul className="space-y-0.5 text-xs text-blue-600">
+                  <div className="rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-3 py-2">
+                    <p className="mb-1 text-xs font-medium text-[color:var(--ds-info-text)]">{t("deadlines.at_engine_hints")}</p>
+                    <ul className="space-y-0.5 text-xs text-[color:var(--ds-info-text)]">
                       {atFristResult.hinweise.map((h, i) => (
                         <li key={i}>• {h}</li>
                       ))}
                     </ul>
                     {atFristResult.vorfrist && (
-                      <p className="mt-1.5 text-xs font-medium text-blue-700">
+                      <p className="mt-1.5 text-xs font-medium text-[color:var(--ds-info-text)]">
                         {t("deadlines.at_engine_vorfrist")}: {atFristResult.vorfrist}
                       </p>
                     )}
@@ -508,7 +508,7 @@ export function DeadlineQuickCreateDialog({
                     />
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <ShieldCheck size={13} className="text-amber-600" />
+                        <ShieldCheck size={13} className="text-[color:var(--ds-warning-text)]" />
                         <span className="text-xs font-medium text-[color:var(--ds-text)]">
                           {t("deadlines.notfrist_label")}
                         </span>
@@ -520,11 +520,11 @@ export function DeadlineQuickCreateDialog({
                   </label>
 
                   {vorfristPreview && (
-                    <div className="flex items-center gap-2 rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2">
-                      <Clock size={13} className="shrink-0 text-blue-600" />
+                    <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-3 py-2">
+                      <Clock size={13} className="shrink-0 text-[color:var(--ds-info-text)]" />
                       <div className="text-xs">
                         <span className="text-[color:var(--ds-text-muted)]">Vorfrist: </span>
-                        <strong className="text-blue-700">
+                        <strong className="text-[color:var(--ds-info-text)]">
                           {new Date(`${vorfristPreview}T12:00:00Z`).toLocaleDateString(
                             lang === "en" ? "en-GB" : "de-DE",
                             { weekday: "short", day: "numeric", month: "short", year: "numeric" }

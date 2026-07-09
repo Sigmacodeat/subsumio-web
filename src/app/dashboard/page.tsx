@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/dashboard/skeleton";
 import { useBrainStats, useRecentQueries } from "@/lib/queries/brain";
 import { useKanzleiCockpitData } from "@/components/dashboard/widget-dashboard";
+import { useSidebarBadges } from "@/lib/queries/sidebar-badges";
 import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
@@ -169,7 +170,10 @@ function CalmGreeting({ name }: { name: string | null }) {
 function ProactiveActionBanner() {
   const { t } = useLang();
   const cockpit = useKanzleiCockpitData();
+  const badges = useSidebarBadges();
   const [dismissedSignature, setDismissedSignature] = useState<string | null>(null);
+
+  const reviewInboxCount = badges.data?.["/dashboard/communications"]?.count ?? 0;
 
   const actions = useMemo(() => {
     const items: Array<{
@@ -199,6 +203,16 @@ function ProactiveActionBanner() {
         label: t("cockpit.stat_inbox"),
         count: inboxCount,
         variant: "info",
+      });
+    }
+
+    if (reviewInboxCount > 0) {
+      items.push({
+        href: "/dashboard/communications?view=review",
+        icon: FileCheck,
+        label: t("cockpit.stat_review_inbox"),
+        count: reviewInboxCount,
+        variant: "warning",
       });
     }
 
@@ -236,7 +250,7 @@ function ProactiveActionBanner() {
     }
 
     return items;
-  }, [cockpit, t]);
+  }, [cockpit, reviewInboxCount, t]);
 
   const actionSignature = actions.map((action) => `${action.href}:${action.count}`).join("|");
   useEffect(() => {

@@ -65,21 +65,21 @@ function roleLabel(role: AgentRole, t: TFunc): string {
 function statusIcon(status: AgentStatus) {
   switch (status) {
     case "completed":
-      return <CheckCircle2 size={14} className="text-emerald-600" />;
+      return <CheckCircle2 size={14} className="text-[color:var(--ds-success-text)]" />;
     case "active":
-      return <Loader2 size={14} className="animate-spin text-blue-600" />;
+      return <Loader2 size={14} className="animate-spin text-[color:var(--ds-info-text)]" />;
     case "waiting":
-      return <Clock size={14} className="text-amber-600" />;
+      return <Clock size={14} className="text-[color:var(--ds-warning-text)]" />;
     case "failed":
-      return <XCircle size={14} className="text-red-600" />;
+      return <XCircle size={14} className="text-[color:var(--ds-danger-text)]" />;
     case "paused":
       return <Clock size={14} className="text-gray-400" />;
     case "partial_success":
-      return <AlertCircle size={14} className="text-amber-500" />;
+      return <AlertCircle size={14} className="text-[color:var(--ds-warning-text)]" />;
     case "needs_review":
-      return <AlertCircle size={14} className="text-orange-500" />;
+      return <AlertCircle size={14} className="text-[color:var(--ds-attention-text)]" />;
     case "monitoring":
-      return <Activity size={14} className="text-blue-400" />;
+      return <Activity size={14} className="text-[color:var(--ds-info-text)]" />;
   }
 }
 
@@ -100,21 +100,21 @@ function statusLabel(status: AgentStatus, t: TFunc): string {
 function statusColor(status: AgentStatus): string {
   switch (status) {
     case "completed":
-      return "bg-emerald-500";
+      return "bg-[color:var(--ds-success-solid)]";
     case "active":
-      return "bg-blue-500 animate-pulse";
+      return "bg-[color:var(--ds-info-solid)] animate-pulse";
     case "waiting":
-      return "bg-amber-500";
+      return "bg-[color:var(--ds-warning-solid)]";
     case "failed":
-      return "bg-red-500";
+      return "bg-[color:var(--ds-danger-solid)]";
     case "paused":
       return "bg-gray-500";
     case "partial_success":
-      return "bg-amber-400";
+      return "bg-[color:var(--ds-warning-solid)]";
     case "needs_review":
-      return "bg-orange-500";
+      return "bg-[color:var(--ds-attention-solid)]";
     case "monitoring":
-      return "bg-blue-400";
+      return "bg-[color:var(--ds-info-solid)]";
   }
 }
 
@@ -164,13 +164,13 @@ function StatsBar({ jobs, t }: { jobs: AgentJob[]; t: TFunc }) {
       label: t("reports.success_rate"),
       value: `${successRate}%`,
       icon: TrendingUp,
-      color: "text-emerald-600",
+      color: "text-[color:var(--ds-success-text)]",
     },
     {
       label: t("reports.active_now"),
       value: String(active),
       icon: Activity,
-      color: "text-blue-600",
+      color: "text-[color:var(--ds-info-text)]",
     },
     {
       label: t("reports.total_cost"),
@@ -251,9 +251,9 @@ function RundownPanel({ t, onView }: { t: TFunc; onView: (job: AgentJob) => void
 
       {/* Error feedback */}
       {triggerMutation.isError && (
-        <div className="mt-3 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2">
-          <AlertCircle size={14} className="shrink-0 text-red-500" />
-          <span className="text-xs text-red-600">
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2">
+          <AlertCircle size={14} className="shrink-0 text-[color:var(--ds-danger-text)]" />
+          <span className="text-xs text-[color:var(--ds-danger-text)]">
             {triggerMutation.error instanceof Error ? triggerMutation.error.message : "Error"}
           </span>
         </div>
@@ -629,7 +629,7 @@ export default function ReportsPage() {
               <Icon size={15} />
               {tabItem.label}
               {tabItem.id === "failed" && jobs.some((j) => j.status === "failed") && (
-                <span className="rounded-full bg-red-500/10 px-1.5 py-0.5 text-xs font-semibold text-red-600">
+                <span className="rounded-full bg-[color:var(--ds-danger-bg)] px-1.5 py-0.5 text-xs font-semibold text-[color:var(--ds-danger-text)]">
                   {jobs.filter((j) => j.status === "failed").length}
                 </span>
               )}

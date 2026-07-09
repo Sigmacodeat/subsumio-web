@@ -337,7 +337,7 @@ export default function DocumentRequestsPage() {
                     </Badge>
                     <Badge
                       variant="default"
-                      className="border border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
+                      className="border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
                     >
                       {item.frontmatter.status}
                     </Badge>
@@ -386,7 +386,7 @@ export default function DocumentRequestsPage() {
                       onClick={() =>
                         void navigator.clipboard.writeText(item.frontmatter.portal_url || "")
                       }
-                      className="inline-flex items-center gap-1 font-mono break-all text-emerald-700 hover:underline"
+                      className="inline-flex items-center gap-1 font-mono break-all text-[color:var(--ds-success-text)] hover:underline"
                     >
                       <Copy size={12} />
                       Portal: {item.frontmatter.portal_url}
@@ -397,7 +397,7 @@ export default function DocumentRequestsPage() {
                       <Badge
                         key={doc.key}
                         variant="default"
-                        className="border border-blue-500/20 bg-blue-500/10 text-xs text-blue-700"
+                        className="border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
                       >
                         {doc.label}
                         {doc.required ? " *" : ""}
@@ -453,11 +453,11 @@ function Metric({
 }) {
   const toneClass =
     tone === "emerald"
-      ? "text-emerald-600"
+      ? "text-[color:var(--ds-success-text)]"
       : tone === "amber"
-        ? "text-amber-600"
+        ? "text-[color:var(--ds-warning-text)]"
         : tone === "blue"
-          ? "text-blue-600"
+          ? "text-[color:var(--ds-info-text)]"
           : "text-[color:var(--ds-text)]";
   return (
     <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">

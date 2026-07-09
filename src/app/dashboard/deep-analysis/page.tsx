@@ -46,17 +46,17 @@ interface DeepAnalysisReport {
 }
 
 const riskColors: Record<string, string> = {
-  low: "bg-green-100 text-green-700",
-  medium: "bg-yellow-100 text-yellow-700",
-  high: "bg-orange-100 text-orange-700",
-  critical: "bg-red-100 text-red-700",
+  low: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]",
+  medium: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
+  high: "bg-[color:var(--ds-attention-solid)] text-[color:var(--ds-attention-text)]",
+  critical: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]",
 };
 
 const riskBorder: Record<string, string> = {
-  low: "border-l-green-400",
-  medium: "border-l-yellow-400",
-  high: "border-l-orange-400",
-  critical: "border-l-red-400",
+  low: "border-l-[color:var(--ds-success-solid)]",
+  medium: "border-l-[color:var(--ds-warning-solid)]",
+  high: "border-l-[color:var(--ds-attention-solid)]",
+  critical: "border-l-[color:var(--ds-danger-solid)]",
 };
 
 export default function DeepAnalysisPage() {
@@ -167,8 +167,8 @@ export default function DeepAnalysisPage() {
       </Card>
 
       {error && (
-        <Card className="border-red-200 bg-red-50 p-4">
-          <div className="flex items-center gap-2 text-sm text-red-700">
+        <Card className="border-red-200 bg-[color:var(--ds-danger-solid)] p-4">
+          <div className="flex items-center gap-2 text-sm text-[color:var(--ds-danger-text)]">
             <AlertCircle className="h-4 w-4 shrink-0" />
             {error}
           </div>
@@ -179,12 +179,12 @@ export default function DeepAnalysisPage() {
         <>
           {/* Warnings */}
           {report.warnings.length > 0 && (
-            <Card className="border-yellow-200 bg-yellow-50 p-4">
+            <Card className="border-yellow-200 bg-[color:var(--ds-warning-solid)] p-4">
               <div className="flex items-start gap-2">
-                <AlertTriangle className="h-5 w-5 shrink-0 text-yellow-600" />
+                <AlertTriangle className="h-5 w-5 shrink-0 text-[color:var(--ds-warning-text)]" />
                 <div className="text-sm">
-                  <p className="font-medium text-yellow-800">Hinweise</p>
-                  <ul className="mt-1 space-y-1 text-yellow-700">
+                  <p className="font-medium text-[color:var(--ds-warning-text)]">Hinweise</p>
+                  <ul className="mt-1 space-y-1 text-[color:var(--ds-warning-text)]">
                     {report.warnings.map((w, i) => (
                       <li key={i}>{w}</li>
                     ))}

@@ -266,7 +266,7 @@ export default function TemplateLibraryPage() {
         actions={
           <Button
             onClick={startCreate}
-            className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
+            className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
           >
             <Plus size={15} /> {t("templates.btn_new")}
           </Button>
@@ -326,7 +326,7 @@ export default function TemplateLibraryPage() {
 
       {/* Error */}
       {loadError && !loading && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertTriangle size={16} />
           {loadError}
           <Button
@@ -432,7 +432,7 @@ export default function TemplateLibraryPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => void deleteTemplate(template.slug)}
-                    className="h-8 gap-1.5 text-xs text-red-600 hover:bg-red-500/10"
+                    className="h-8 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
                   >
                     <Trash2 size={14} />
                   </Button>
@@ -569,7 +569,7 @@ export default function TemplateLibraryPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeVariable(i)}
-                          className="h-8 px-2 text-xs text-red-600"
+                          className="h-8 px-2 text-xs text-[color:var(--ds-danger-text)]"
                         >
                           <X size={14} />
                         </Button>
@@ -581,7 +581,7 @@ export default function TemplateLibraryPage() {
 
               {/* Error */}
               {saveError && (
-                <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-600">
+                <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-[color:var(--ds-danger-text)]">
                   <AlertTriangle size={14} />
                   {saveError}
                 </div>

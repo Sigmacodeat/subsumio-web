@@ -239,8 +239,8 @@ export default function TaxAuditDetailPage() {
 
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-rose-500/10">
-            <Search size={24} className="text-rose-500" />
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[color:var(--ds-danger-bg)]">
+            <Search size={24} className="text-[color:var(--ds-danger-text)]" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-[color:var(--ds-text)]">{data.title}</h1>
@@ -261,7 +261,7 @@ export default function TaxAuditDetailPage() {
             variant="outline"
             size="sm"
             onClick={() => setDeleteOpen(true)}
-            className="gap-2 text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            className="gap-2 text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             <Trash2 size={14} /> {t("tax.detail.delete")}
           </Button>
@@ -413,7 +413,7 @@ export default function TaxAuditDetailPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => removeFinding(f.id)}
-                      className="text-red-600 hover:bg-red-500/10"
+                      className="text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
                     >
                       <Trash size={14} />
                     </Button>
@@ -517,7 +517,7 @@ export default function TaxAuditDetailPage() {
             </div>
 
             {fm.total_additional_tax != null && Number(fm.total_additional_tax) > 0 && (
-              <div className="flex items-center gap-2 rounded-lg border border-rose-500/25 bg-rose-500/10 p-3 text-sm text-rose-600">
+              <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-sm text-[color:var(--ds-danger-text)]">
                 <AlertTriangle size={16} />
                 {t("tax.detail.label_additional_tax")}:{" "}
                 {Number(fm.total_additional_tax).toLocaleString(locale, {
@@ -547,7 +547,7 @@ export default function TaxAuditDetailPage() {
                         {Boolean(f.accepted) && <Badge variant="success">akzeptiert</Badge>}
                       </div>
                       {f.amount != null && (
-                        <p className="mt-1 text-xs font-medium text-rose-500">
+                        <p className="mt-1 text-xs font-medium text-[color:var(--ds-danger-text)]">
                           +
                           {Number(f.amount).toLocaleString(locale, {
                             style: "currency",
@@ -576,7 +576,7 @@ export default function TaxAuditDetailPage() {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-[color:var(--ds-danger-text)]">
               <AlertCircle size={18} /> {t("tax.detail.delete_title")}
             </DialogTitle>
             <DialogDescription>{t("tax.detail.delete_desc")}</DialogDescription>

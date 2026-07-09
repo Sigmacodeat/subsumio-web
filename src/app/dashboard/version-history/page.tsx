@@ -32,11 +32,11 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 const ACTION_COLORS: Record<string, string> = {
-  "case.create": "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
-  "case.update": "bg-blue-500/10 border-blue-500/20 text-blue-600",
-  "case.delete": "bg-red-500/10 border-red-500/20 text-red-600",
-  "document.delete": "bg-red-500/10 border-red-500/20 text-red-600",
-  "document.upload": "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
+  "case.create": "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
+  "case.update": "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+  "case.delete": "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+  "document.delete": "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+  "document.upload": "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
 };
 
 export default function VersionHistoryPage() {
@@ -110,7 +110,7 @@ export default function VersionHistoryPage() {
         <Button
           onClick={search}
           disabled={loading || !slug.trim()}
-          className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
+          className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
         >
           {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
           Suchen
@@ -118,7 +118,7 @@ export default function VersionHistoryPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
@@ -141,7 +141,7 @@ export default function VersionHistoryPage() {
                     <span>·</span>
                     <Badge
                       variant="default"
-                      className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+                      className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
                     >
                       v{currentVersion}
                     </Badge>

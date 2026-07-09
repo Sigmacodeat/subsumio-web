@@ -256,9 +256,9 @@ function PkhCard() {
           <div className="mt-1 flex items-center justify-between border-t border-[color:var(--ds-border)] pt-1.5">
             <span className="font-semibold">Ergebnis</span>
             {result.eligible ? (
-              <Badge className="bg-green-100 text-green-700">Voraussichtlich berechtigt</Badge>
+              <Badge className="bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]">Voraussichtlich berechtigt</Badge>
             ) : (
-              <Badge className="bg-amber-100 text-amber-700">
+              <Badge className="bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]">
                 Nicht berechtigt — Raten: {fmtEUR(result.monthly_contribution)}/Mo
               </Badge>
             )}
@@ -321,9 +321,9 @@ function CreditCard() {
   const [score, setScore] = useState("75");
   const credit = interpretCreditScore(Number(score) || 0);
   const RISK_COLORS: Record<string, string> = {
-    low: "bg-green-100 text-green-700",
-    medium: "bg-amber-100 text-amber-700",
-    high: "bg-red-100 text-red-700",
+    low: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]",
+    medium: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
+    high: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]",
   };
 
   return (
@@ -360,10 +360,10 @@ function FaxCard() {
       <Input value={fax} onChange={(e) => setFax(e.target.value)} placeholder="+49 30 1234567" />
       <div className="rounded-lg bg-[color:var(--ds-surface-2)] p-3 text-sm">
         {!fax && <span className="text-[color:var(--ds-text-muted)]">Nummer eingeben…</span>}
-        {fax && !valid && <Badge className="bg-red-100 text-red-700">Ungültiges Format</Badge>}
+        {fax && !valid && <Badge className="bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]">Ungültiges Format</Badge>}
         {fax && valid && (
           <div className="space-y-1">
-            <Badge className="bg-green-100 text-green-700">Gültig</Badge>
+            <Badge className="bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]">Gültig</Badge>
             {formatted && <Row label="Formatiert:" value={formatted} mono />}
           </div>
         )}

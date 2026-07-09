@@ -142,7 +142,7 @@ export default function TabularReviewPage() {
                 <button
                   onClick={() => removeQuestion(i)}
                   aria-label={`Frage ${i + 1} entfernen`}
-                  className="p-2 text-[color:var(--ds-text-muted)] hover:text-red-600"
+                  className="p-2 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                 >
                   <X size={15} />
                 </button>
@@ -166,7 +166,7 @@ export default function TabularReviewPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-600">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3 text-sm text-[color:var(--ds-warning-text)]">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
@@ -180,7 +180,7 @@ export default function TabularReviewPage() {
                 .replace("{{docs}}", String(result.document_count))
                 .replace("{{questions}}", String(result.questions.length))}
               {result.truncated && (
-                <span className="text-amber-600">
+                <span className="text-[color:var(--ds-warning-text)]">
                   {" "}
                   · {t("tabular.truncated").replace("{{count}}", String(result.document_count))}
                 </span>

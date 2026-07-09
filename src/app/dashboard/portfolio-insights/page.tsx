@@ -71,10 +71,10 @@ interface PortfolioInsights {
 }
 
 const riskColors: Record<string, string> = {
-  low: "bg-green-100 text-green-700 border-green-200",
-  medium: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  high: "bg-orange-100 text-orange-700 border-orange-200",
-  critical: "bg-red-100 text-red-700 border-red-200",
+  low: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] border-green-200",
+  medium: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)] border-yellow-200",
+  high: "bg-[color:var(--ds-attention-solid)] text-[color:var(--ds-attention-text)] border-orange-200",
+  critical: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)] border-red-200",
 };
 
 const severityIcon: Record<string, typeof AlertTriangle> = {
@@ -109,7 +109,7 @@ export default function PortfolioInsightsPage() {
   if (error) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <AlertCircle className="h-12 w-12 text-red-600" />
+        <AlertCircle className="h-12 w-12 text-[color:var(--ds-danger-text)]" />
         <p className="text-[color:var(--ds-text-muted)]">
           Fehler beim Laden der Portfolio-Insights: {error}
         </p>
@@ -158,12 +158,12 @@ export default function PortfolioInsightsPage() {
       </div>
 
       {data.warnings.length > 0 && (
-        <Card className="border-yellow-200 bg-yellow-50 p-4">
+        <Card className="border-yellow-200 bg-[color:var(--ds-warning-solid)] p-4">
           <div className="flex items-start gap-2">
-            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-yellow-600" />
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[color:var(--ds-warning-text)]" />
             <div className="text-sm">
-              <p className="font-medium text-yellow-800">Hinweise</p>
-              <ul className="mt-1 space-y-1 text-yellow-700">
+              <p className="font-medium text-[color:var(--ds-warning-text)]">Hinweise</p>
+              <ul className="mt-1 space-y-1 text-[color:var(--ds-warning-text)]">
                 {data.warnings.map((w, i) => (
                   <li key={i}>{w}</li>
                 ))}
@@ -181,7 +181,7 @@ export default function PortfolioInsightsPage() {
               <p className="text-sm text-[color:var(--ds-text-muted)]">{t("pi.stat_total")}</p>
               <p className="text-2xl font-bold">{data.total_contracts}</p>
             </div>
-            <FileText className="h-8 w-8 text-blue-500" />
+            <FileText className="h-8 w-8 text-[color:var(--ds-info-text)]" />
           </div>
         </Card>
         <Card className="p-4">
@@ -190,7 +190,7 @@ export default function PortfolioInsightsPage() {
               <p className="text-sm text-[color:var(--ds-text-muted)]">Analysiert</p>
               <p className="text-2xl font-bold">{data.analyzed_contracts}</p>
             </div>
-            <Target className="h-8 w-8 text-green-500" />
+            <Target className="h-8 w-8 text-[color:var(--ds-success-text)]" />
           </div>
         </Card>
         <Card className="p-4">
@@ -201,12 +201,12 @@ export default function PortfolioInsightsPage() {
               </p>
               <p className="text-2xl font-bold">{data.obligation_summary.total}</p>
               {data.obligation_summary.overdue > 0 && (
-                <p className="text-xs text-red-600">
+                <p className="text-xs text-[color:var(--ds-danger-text)]">
                   {data.obligation_summary.overdue} {t("pi.stat_overdue")}
                 </p>
               )}
             </div>
-            <Clock className="h-8 w-8 text-orange-500" />
+            <Clock className="h-8 w-8 text-[color:var(--ds-attention-text)]" />
           </div>
         </Card>
         <Card className="p-4">
@@ -215,7 +215,7 @@ export default function PortfolioInsightsPage() {
               <p className="text-sm text-[color:var(--ds-text-muted)]">Outlier</p>
               <p className="text-2xl font-bold">{data.outlier_provisions.length}</p>
             </div>
-            <WarningIcon className="h-8 w-8 text-red-500" />
+            <WarningIcon className="h-8 w-8 text-[color:var(--ds-danger-text)]" />
           </div>
         </Card>
       </div>
@@ -302,10 +302,10 @@ export default function PortfolioInsightsPage() {
                       <Icon
                         className={`mt-0.5 h-4 w-4 shrink-0 ${
                           o.severity === "critical"
-                            ? "text-red-600"
+                            ? "text-[color:var(--ds-danger-text)]"
                             : o.severity === "warning"
-                              ? "text-orange-600"
-                              : "text-blue-600"
+                              ? "text-[color:var(--ds-attention-text)]"
+                              : "text-[color:var(--ds-info-text)]"
                         }`}
                       />
                       <div className="min-w-0 flex-1">

@@ -346,7 +346,7 @@ export default function TrustAccountingPage() {
       />
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertCircle size={16} />
           {error}
           <button className="ml-auto text-xs underline" onClick={() => setError(null)}>
@@ -432,13 +432,13 @@ export default function TrustAccountingPage() {
                     {t(`trust.status_${fm.status ?? "active"}` as DashboardKey)}
                   </Badge>
                   <span
-                    className={`text-sm font-bold ${isOverdrawn ? "text-red-500" : "text-emerald-500"}`}
+                    className={`text-sm font-bold ${isOverdrawn ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-success-text)]"}`}
                   >
                     {formatCurrency(balance, fm.currency)}
                   </span>
                 </div>
                 {isOverdrawn && (
-                  <div className="mt-2 text-xs text-red-400">
+                  <div className="mt-2 text-xs text-[color:var(--ds-danger-text)]">
                     {t("trust.warning_overdrawn" as DashboardKey)}
                   </div>
                 )}
@@ -482,7 +482,7 @@ export default function TrustAccountingPage() {
                   {t("trust.current_balance" as DashboardKey)}
                 </div>
                 <div
-                  className={`mt-1 text-lg font-bold ${(selectedAccount.frontmatter?.current_balance ?? 0) < 0 ? "text-red-500" : "text-emerald-500"}`}
+                  className={`mt-1 text-lg font-bold ${(selectedAccount.frontmatter?.current_balance ?? 0) < 0 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-success-text)]"}`}
                 >
                   {formatCurrency(
                     selectedAccount.frontmatter?.current_balance ?? 0,
@@ -529,7 +529,7 @@ export default function TrustAccountingPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="ml-auto gap-1.5 text-xs text-red-400 hover:text-red-500"
+                className="ml-auto gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:text-[color:var(--ds-danger-text)]"
                 onClick={handleDelete}
                 disabled={saving}
               >
@@ -593,7 +593,7 @@ export default function TrustAccountingPage() {
 
             {/* Overdue Reconciliation Warning */}
             {overdueReconciliation && (
-              <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-600">
+              <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3 text-sm text-[color:var(--ds-warning-text)]">
                 <AlertCircle size={16} />
                 <span>Quartalsabstimmung für dieses Konto ist überfällig (§ 51a BRAO).</span>
               </div>
@@ -615,9 +615,9 @@ export default function TrustAccountingPage() {
                     >
                       <div className="shrink-0">
                         {rec.status === "balanced" ? (
-                          <CheckCircle2 size={16} className="text-emerald-500" />
+                          <CheckCircle2 size={16} className="text-[color:var(--ds-success-text)]" />
                         ) : rec.status === "discrepancy" ? (
-                          <AlertCircle size={16} className="text-amber-500" />
+                          <AlertCircle size={16} className="text-[color:var(--ds-warning-text)]" />
                         ) : (
                           <Scale size={16} className="text-[color:var(--ds-text-muted)]" />
                         )}
@@ -631,9 +631,9 @@ export default function TrustAccountingPage() {
                             variant="default"
                             className={`text-[10px] ${
                               rec.status === "balanced"
-                                ? "border-emerald-500/30 text-emerald-600"
+                                ? "border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]"
                                 : rec.status === "discrepancy"
-                                  ? "border-amber-500/30 text-amber-600"
+                                  ? "border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]"
                                   : ""
                             }`}
                           >
@@ -706,7 +706,7 @@ export default function TrustAccountingPage() {
                       </div>
                       <div>
                         <span className="text-[color:var(--ds-text-muted)]">Einzahlungen</span>
-                        <p className="font-semibold text-emerald-600">
+                        <p className="font-semibold text-[color:var(--ds-success-text)]">
                           +
                           {formatCurrency(
                             report.totalDeposits,
@@ -716,7 +716,7 @@ export default function TrustAccountingPage() {
                       </div>
                       <div>
                         <span className="text-[color:var(--ds-text-muted)]">Auszahlungen</span>
-                        <p className="font-semibold text-red-600">
+                        <p className="font-semibold text-[color:var(--ds-danger-text)]">
                           -
                           {formatCurrency(
                             report.totalWithdrawals,
@@ -888,8 +888,8 @@ export default function TrustAccountingPage() {
                         Math.abs(
                           reconcileBankBalance - (selectedAccount.frontmatter?.current_balance ?? 0)
                         ) < 0.01
-                          ? "text-emerald-500"
-                          : "text-amber-500"
+                          ? "text-[color:var(--ds-success-text)]"
+                          : "text-[color:var(--ds-warning-text)]"
                       }`}
                     >
                       {formatCurrency(
@@ -908,9 +908,9 @@ export default function TrustAccountingPage() {
                     {Math.abs(
                       reconcileBankBalance - (selectedAccount.frontmatter?.current_balance ?? 0)
                     ) < 0.01 ? (
-                      <CheckCircle2 size={18} className="text-emerald-500" />
+                      <CheckCircle2 size={18} className="text-[color:var(--ds-success-text)]" />
                     ) : (
-                      <AlertCircle size={18} className="text-amber-500" />
+                      <AlertCircle size={18} className="text-[color:var(--ds-warning-text)]" />
                     )}
                     <span className="text-sm font-semibold text-[color:var(--ds-text)]">
                       {Math.abs(
@@ -949,8 +949,8 @@ export default function TrustAccountingPage() {
                             reconcileBankBalance -
                               (selectedAccount.frontmatter?.current_balance ?? 0)
                           ) < 0.01
-                            ? "text-emerald-500"
-                            : "text-amber-500"
+                            ? "text-[color:var(--ds-success-text)]"
+                            : "text-[color:var(--ds-warning-text)]"
                         }`}
                       >
                         {formatCurrency(
@@ -968,7 +968,7 @@ export default function TrustAccountingPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-700">
+                <div className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3 text-xs text-[color:var(--ds-warning-text)]">
                   <Lock size={14} className="mt-0.5 shrink-0" />
                   <span>
                     Nach Bestätigung wird die Abstimmung unwiderruflich gesperrt (§ 51a BRAO).
@@ -978,7 +978,7 @@ export default function TrustAccountingPage() {
             )}
             {reconcileStep === "done" && (
               <div className="flex flex-col items-center gap-3 py-4 text-center">
-                <CheckCircle2 size={32} className="text-emerald-500" />
+                <CheckCircle2 size={32} className="text-[color:var(--ds-success-text)]" />
                 <p className="text-sm text-[color:var(--ds-text)]">
                   Abstimmung gespeichert und gesperrt.
                 </p>

@@ -27,15 +27,15 @@ import type { SharedSpace, SpaceMember, SpaceResource } from "@/lib/shared-space
 
 const roleBadge: Record<string, string> = {
   owner: "bg-purple-100 text-purple-700 border-purple-200",
-  admin: "bg-blue-100 text-blue-700 border-blue-200",
-  editor: "bg-green-100 text-green-700 border-green-200",
+  admin: "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)] border-blue-200",
+  editor: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] border-green-200",
   viewer: "bg-gray-100 text-gray-600 border-gray-200",
 };
 
 const statusBadge: Record<string, string> = {
-  active: "bg-green-100 text-green-700 border-green-200",
-  pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  revoked: "bg-red-100 text-red-700 border-red-200",
+  active: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] border-green-200",
+  pending: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)] border-yellow-200",
+  revoked: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)] border-red-200",
 };
 
 const resourceIcon: Record<string, typeof FileText> = {
@@ -115,7 +115,7 @@ export default function SharedSpacesPage() {
   if (error && spaces.length === 0) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <AlertCircle className="h-12 w-12 text-red-600" />
+        <AlertCircle className="h-12 w-12 text-[color:var(--ds-danger-text)]" />
         <p className="text-[color:var(--ds-text-muted)]">
           {t("shared.err_load")}: {error}
         </p>
@@ -141,8 +141,8 @@ export default function SharedSpacesPage() {
       />
 
       {error && (
-        <Card className="border-red-200 bg-red-50 p-4">
-          <div className="flex items-center gap-2 text-sm text-red-700">
+        <Card className="border-red-200 bg-[color:var(--ds-danger-solid)] p-4">
+          <div className="flex items-center gap-2 text-sm text-[color:var(--ds-danger-text)]">
             <AlertCircle className="h-4 w-4 shrink-0" />
             {error}
           </div>
@@ -355,7 +355,7 @@ function SpaceDetailModal({ space, onClose }: { space: SharedSpace; onClose: () 
                 className="flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] px-3 py-2"
               >
                 <div className="flex items-center gap-2">
-                  {member.role === "owner" && <Crown className="h-4 w-4 text-yellow-500" />}
+                  {member.role === "owner" && <Crown className="h-4 w-4 text-[color:var(--ds-warning-text)]" />}
                   <div>
                     <p className="text-sm font-medium">{member.org_name}</p>
                     <p className="text-xs text-[color:var(--ds-text-muted)]">
@@ -429,11 +429,11 @@ function SpaceDetailModal({ space, onClose }: { space: SharedSpace; onClose: () 
               <p className="mt-0.5 flex items-center gap-1 text-sm font-medium">
                 {space.settings.allow_member_invite ? (
                   <>
-                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> Erlaubt
+                    <CheckCircle2 className="h-3.5 w-3.5 text-[color:var(--ds-success-text)]" /> Erlaubt
                   </>
                 ) : (
                   <>
-                    <X className="h-3.5 w-3.5 text-red-600" /> Gesperrt
+                    <X className="h-3.5 w-3.5 text-[color:var(--ds-danger-text)]" /> Gesperrt
                   </>
                 )}
               </p>
@@ -443,11 +443,11 @@ function SpaceDetailModal({ space, onClose }: { space: SharedSpace; onClose: () 
               <p className="mt-0.5 flex items-center gap-1 text-sm font-medium">
                 {space.settings.require_approval_for_resources ? (
                   <>
-                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> Genehmigung nötig
+                    <CheckCircle2 className="h-3.5 w-3.5 text-[color:var(--ds-success-text)]" /> Genehmigung nötig
                   </>
                 ) : (
                   <>
-                    <X className="h-3.5 w-3.5 text-red-600" /> Frei
+                    <X className="h-3.5 w-3.5 text-[color:var(--ds-danger-text)]" /> Frei
                   </>
                 )}
               </p>

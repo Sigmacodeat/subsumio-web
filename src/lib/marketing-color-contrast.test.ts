@@ -59,6 +59,6 @@ describe("marketing color roles", () => {
   });
 
   test("landing claim uses the tone-aware brand text token", () => {
-    expect(landing).toContain("linear-gradient(90deg, var(--brand-text), var(--brand-tertiary))");
+    expect(landing).toContain("var(--brand-text)");
   });
 });

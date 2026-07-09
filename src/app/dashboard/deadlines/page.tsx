@@ -467,10 +467,10 @@ export default function DeadlinesPage() {
                     className={cn(
                       "border text-xs",
                       d.reviewStatus === "approved"
-                        ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                        ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                         : d.reviewStatus === "needs_review"
-                          ? "border-red-500/20 bg-red-500/10 text-red-600"
-                          : "border-amber-500/20 bg-amber-500/10 text-amber-600"
+                          ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+                          : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
                     )}
                   >
                     {d.reviewStatus === "approved"
@@ -491,7 +491,7 @@ export default function DeadlinesPage() {
                 {d.isNotfrist && (
                   <Badge
                     variant="default"
-                    className="flex items-center gap-0.5 border border-amber-500/30 bg-amber-500/10 text-xs text-amber-700"
+                    className="flex items-center gap-0.5 border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
                   >
                     <ShieldCheck size={10} />
                     {t("deadlines.notfrist")}
@@ -502,7 +502,7 @@ export default function DeadlinesPage() {
                   d.status !== "done" && (
                     <Badge
                       variant="default"
-                      className="border border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
+                      className="border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
                     >
                       {t("deadlines.vorfrist_reached")}
                     </Badge>
@@ -530,7 +530,7 @@ export default function DeadlinesPage() {
                 {d.secondCheckRequired && !d.secondCheckAt && (
                   <Badge
                     variant="default"
-                    className="border border-orange-500/20 bg-orange-500/10 text-xs text-orange-600"
+                    className="border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-xs text-[color:var(--ds-attention-text)]"
                   >
                     {t("deadlines.second_check_pending")}
                   </Badge>
@@ -570,9 +570,9 @@ export default function DeadlinesPage() {
               className={cn(
                 "text-sm font-semibold tabular-nums",
                 days < 0
-                  ? "text-red-600"
+                  ? "text-[color:var(--ds-danger-text)]"
                   : days <= 3
-                    ? "text-amber-600"
+                    ? "text-[color:var(--ds-warning-text)]"
                     : "text-[color:var(--ds-text)]"
               )}
             >
@@ -626,7 +626,7 @@ export default function DeadlinesPage() {
                   e.stopPropagation();
                   setSecondCheckTarget(d);
                 }}
-                className="gap-1 border border-amber-500/30 bg-amber-500/10 text-xs text-amber-700 hover:bg-amber-500/20"
+                className="gap-1 border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)] hover:bg-[color:var(--ds-warning-bg)]"
               >
                 <ShieldCheck size={13} />
                 {t("deadlines.second_check")}
@@ -899,7 +899,7 @@ export default function DeadlinesPage() {
                   className="flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2"
                 >
                   <div
-                    className={`h-2 w-2 rounded-full ${r.confidence === "high" ? "bg-emerald-400" : r.confidence === "medium" ? "bg-amber-400" : "bg-red-400"}`}
+                    className={`h-2 w-2 rounded-full ${r.confidence === "high" ? "bg-[color:var(--ds-success-solid)]" : r.confidence === "medium" ? "bg-[color:var(--ds-warning-solid)]" : "bg-[color:var(--ds-danger-solid)]"}`}
                   />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm text-[color:var(--ds-text)]">{r.description}</div>
@@ -911,7 +911,7 @@ export default function DeadlinesPage() {
                   </div>
                   <Badge
                     variant="default"
-                    className={`text-xs ${r.confidence === "high" ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600" : "border-amber-500/20 bg-amber-500/10 text-amber-600"}`}
+                    className={`text-xs ${r.confidence === "high" ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]" : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"}`}
                   >
                     {r.confidence}
                   </Badge>
@@ -941,9 +941,9 @@ export default function DeadlinesPage() {
 
       {/* Alert banner */}
       {(counts.critical || 0) > 0 && (
-        <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3">
-          <AlertTriangle size={18} className="shrink-0 text-red-600" />
-          <p className="text-sm text-red-600">
+        <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3">
+          <AlertTriangle size={18} className="shrink-0 text-[color:var(--ds-danger-text)]" />
+          <p className="text-sm text-[color:var(--ds-danger-text)]">
             {counts.critical}{" "}
             {counts.critical === 1
               ? t("deadlines.alert_critical")
@@ -1028,13 +1028,13 @@ export default function DeadlinesPage() {
 
       {/* Error with retry */}
       {loadError && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <span>{loadError}</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => void loadDeadlines()}
-            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             <RotateCcw size={13} />
             {t("deadlines.retry")}
@@ -1068,12 +1068,12 @@ export default function DeadlinesPage() {
           onClick={() => !secondCheckBusy && setSecondCheckTarget(null)}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-[color:var(--ds-surface)] p-6 shadow-xl"
+            className="w-full max-w-md rounded-2xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-surface)] p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/15">
-                <ShieldCheck size={20} className="text-amber-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--ds-warning-bg)]">
+                <ShieldCheck size={20} className="text-[color:var(--ds-warning-text)]" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -1089,7 +1089,7 @@ export default function DeadlinesPage() {
                 ? "This is a statutory deadline (Notfrist). Marking it as done requires a second confirmation by a different person (four-eyes principle). By confirming, you attest that you have verified the deadline completion."
                 : "Dies ist eine Notfrist. Die Erledigung erfordert eine zweite Bestätigung durch eine weitere Person (Vier-Augen-Prinzip). Mit der Bestätigung belegen Sie, dass Sie die Fristwahrung geprüft haben."}
             </p>
-            <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-700">
+            <div className="mb-4 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]">
               <strong>{t("deadlines.second_check_by")}:</strong>{" "}
               {meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? "—"}
             </div>
@@ -1107,7 +1107,7 @@ export default function DeadlinesPage() {
                 size="sm"
                 disabled={secondCheckBusy}
                 onClick={() => void confirmSecondCheck(secondCheckTarget)}
-                className="gap-1.5 bg-amber-600 text-xs text-white hover:bg-amber-500"
+                className="gap-1.5 bg-[color:var(--ds-warning-solid)] text-xs text-white hover:bg-[color:var(--ds-warning-solid)]"
               >
                 {secondCheckBusy ? (
                   <Loader2 size={13} className="animate-spin" />

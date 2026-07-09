@@ -349,7 +349,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
                   isActive
                     ? "brand-bg text-white"
                     : isDone
-                      ? "bg-emerald-500/10 text-emerald-600"
+                      ? "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "text-[color:var(--ds-text-muted)]"
                 )}
               >
@@ -362,7 +362,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertTriangle size={16} />
           {error}
         </div>
@@ -383,7 +383,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
               {t("strategy.loading_cases")}
             </div>
           ) : casesError ? (
-            <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+            <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={16} />
               {casesError}
             </div>
@@ -533,10 +533,10 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
             className={cn(
               "rounded-xl border p-4",
               strategy.riskAssessment.overall === "high"
-                ? "border-red-500/20 bg-red-500/5"
+                ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
                 : strategy.riskAssessment.overall === "medium"
-                  ? "border-amber-500/20 bg-amber-500/5"
-                  : "border-emerald-500/20 bg-emerald-500/5"
+                  ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
+                  : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
             )}
           >
             <div className="mb-2 flex items-center gap-2">
@@ -544,10 +544,10 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
                 size={18}
                 className={cn(
                   strategy.riskAssessment.overall === "high"
-                    ? "text-red-600"
+                    ? "text-[color:var(--ds-danger-text)]"
                     : strategy.riskAssessment.overall === "medium"
-                      ? "text-amber-600"
-                      : "text-emerald-600"
+                      ? "text-[color:var(--ds-warning-text)]"
+                      : "text-[color:var(--ds-success-text)]"
                 )}
               />
               <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -638,10 +638,10 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
 
           {/* Evidence Gaps */}
           {strategy.evidenceGaps.length > 0 && (
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+            <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
               <div className="mb-2 flex items-center gap-2">
-                <AlertTriangle size={16} className="text-amber-600" />
-                <h3 className="text-sm font-semibold text-amber-600">
+                <AlertTriangle size={16} className="text-[color:var(--ds-warning-text)]" />
+                <h3 className="text-sm font-semibold text-[color:var(--ds-warning-text)]">
                   {t("strategy.evidence_gaps")}
                 </h3>
               </div>
@@ -699,7 +699,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
               <span
                 className={cn(
                   "text-xs",
-                  saveNotice === t("strategy.save_success") ? "text-emerald-600" : "text-red-600"
+                  saveNotice === t("strategy.save_success") ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-danger-text)]"
                 )}
               >
                 {saveNotice}
@@ -788,7 +788,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
                 </Button>
                 <Link
                   href={`/dashboard/drafting`}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-blue-600"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-info-text)]"
                 >
                   <Pencil size={12} />
                   {t("strategy.btn_open_drafting")}
@@ -835,10 +835,10 @@ function SwotCard({
   emptyText?: string;
 }) {
   const colorClasses: Record<string, string> = {
-    emerald: "border-emerald-500/20 bg-emerald-500/5 text-emerald-600",
-    red: "border-red-500/20 bg-red-500/5 text-red-600",
-    blue: "border-blue-500/20 bg-blue-500/5 text-blue-600",
-    amber: "border-amber-500/20 bg-amber-500/5 text-amber-600",
+    emerald: "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
+    red: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+    blue: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+    amber: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   };
 
   return (

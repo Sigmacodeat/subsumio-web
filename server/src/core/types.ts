@@ -814,6 +814,15 @@ export interface SearchResult {
    */
   title_match_boost?: number;
   /**
+   * v0.46 — multiplier applied by applyCognitiveTierBoost (1.0 = unchanged).
+   * Fires when the cognitive_tier mode-bundle knob is on. Boosts Mental
+   * Models (synthesis/concept/analysis/guide) over Observations (meeting/
+   * note/email/...) over Raw Facts (person/company/...). Floor-ratio-gated
+   * so a weak synthesis can't leapfrog a strong raw fact. Drives the
+   * answer-priority cascade in retrieval.
+   */
+  cognitive_tier_boost?: number;
+  /**
    * T3 (retrieval-maxpool incident) — set when this result was surfaced or
    * boosted by the free-text alias hop (the query exactly matched a page's
    * declared alias in page_aliases). An injected canonical that wasn't in the

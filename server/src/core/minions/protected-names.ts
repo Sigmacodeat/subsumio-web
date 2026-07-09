@@ -75,6 +75,12 @@ export const PROTECTED_JOB_NAMES: ReadonlySet<string> = new Set([
   // (with allowProtectedSubmit) after persisting the original bytes; an
   // MCP/OAuth caller must not be able to queue arbitrary extraction work.
   "extract-document",
+  // v0.46 — Incremental consolidation trigger (Hindsight). Runs
+  // extract_facts + consolidate for specific slugs after ingest. Current
+  // v0.31 consolidate is deterministic (no LLM), but v0.32 will add Sonnet
+  // synthesis — protected now for future-proofing. Only trusted local
+  // callers (ingest-capture handler, upload route) submit this.
+  "consolidate-incremental",
 ]);
 
 /** Check a job name against the protected set. Normalizes whitespace first. */

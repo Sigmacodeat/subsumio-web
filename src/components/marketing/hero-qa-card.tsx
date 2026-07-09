@@ -118,12 +118,12 @@ export default function HeroQACard({
             <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" />
             <span className="h-2.5 w-2.5 rounded-full bg-green-400/80" />
           </div>
-          <div className="ml-3 flex items-center gap-1.5 font-mono text-xs [color:var(--mk-text-muted)]">
+          <div className="ml-3 flex items-center gap-1.5 font-mono text-sm [color:var(--mk-text-muted)]">
             <SubsumioMark size={14} />
             <span>subsumio</span>
           </div>
           {/* live indicator — subtle pulse */}
-          <div className="ml-auto flex items-center gap-1 text-[10px] font-medium [color:var(--mk-text-subtle)]">
+          <div className="ml-auto flex items-center gap-1 text-sm font-medium [color:var(--mk-text-subtle)]">
             <motion.span
               animate={reduce ? undefined : { opacity: [0.4, 1, 0.4] }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -137,7 +137,7 @@ export default function HeroQACard({
         <div className="px-5 pt-5 pb-3">
           <div className="flex items-start gap-3">
             <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--brand-primary)]/25 bg-[var(--brand-primary)]/12">
-              <span className="brand-text text-xs font-semibold">{youLabel}</span>
+              <span className="brand-text text-sm font-semibold">{youLabel}</span>
             </div>
             <p className="flex-1 text-sm leading-relaxed [color:var(--mk-text)]">{question}</p>
           </div>
@@ -148,12 +148,12 @@ export default function HeroQACard({
           <div className="flex items-start gap-3">
             <SubsumioMark size={28} className="mt-0.5 shrink-0" />
             <div
-              className="flex-1 text-[0.925rem] leading-relaxed [color:var(--mk-text-muted)]"
+              className="flex-1 text-sm leading-relaxed [color:var(--mk-text-muted)]"
               style={{ minHeight: reduce ? undefined : "5.5rem" }}
             >
               {/* thinking dots — shown before typewriter starts */}
               {!reduce && !isTyping && displayed.length === 0 && (
-                <span className="inline-flex items-center gap-1 text-xs [color:var(--mk-text-subtle)]">
+                <span className="inline-flex items-center gap-1 text-sm [color:var(--mk-text-subtle)]">
                   {thinkingLabel.split("").map((char, ci) => (
                     <motion.span
                       key={ci}
@@ -186,7 +186,7 @@ export default function HeroQACard({
         {/* sources */}
         {showSources && (
           <div className="flex flex-wrap items-center gap-2 border-t [border-color:var(--mk-border)] px-5 py-3 [background:var(--mk-bg)]">
-            <span className="text-xs [color:var(--mk-text-muted)] opacity-70">{sourcesLabel}</span>
+            <span className="text-sm [color:var(--mk-text-muted)] opacity-70">{sourcesLabel}</span>
             {sources.map((src, i) => (
               <motion.span
                 key={src.label}
@@ -204,7 +204,7 @@ export default function HeroQACard({
                   href={src.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="brand-text brand-soft hover:brand-soft-strong inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-xs transition-all hover:-translate-y-0.5 hover:shadow-sm"
+                  className="brand-text brand-soft hover:brand-soft-strong inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-sm transition-all hover:-translate-y-0.5 hover:shadow-sm"
                 >
                   <FileText size={10} />
                   {src.label}
@@ -234,7 +234,7 @@ export default function HeroQACard({
             >
               <CheckCircle2 size={14} className="text-[var(--signal-green)]" />
             </motion.span>
-            <span className="text-xs font-medium [color:var(--mk-text-muted)]">
+            <span className="text-sm font-medium [color:var(--mk-text-muted)]">
               {confidenceLabel}
             </span>
           </motion.div>

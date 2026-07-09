@@ -47,10 +47,10 @@ const ROLE_LABELS_EN: Record<string, string> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  client: "bg-emerald-600/15 text-emerald-600",
-  opponent: "bg-red-600/15 text-red-600",
-  court: "bg-blue-600/15 text-blue-600",
-  lawyer: "bg-amber-600/15 text-amber-600",
+  client: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
+  opponent: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  court: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+  lawyer: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   witness: "bg-purple-600/15 text-purple-600",
   expert: "bg-indigo-600/15 text-indigo-600",
   authority: "bg-gray-600/15 text-gray-600",
@@ -183,8 +183,8 @@ export function ContactsTab() {
             className={cn(
               "flex items-start gap-2.5 rounded-xl border px-4 py-3",
               ctx.contactConflict.severity === "critical"
-                ? "border-red-500/30 bg-red-500/5 text-red-600"
-                : "border-amber-500/30 bg-amber-500/5 text-amber-600"
+                ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+                : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
             )}
           >
             {ctx.contactConflict.severity === "critical" ? (

@@ -150,7 +150,7 @@ export default function LitigationAnalyticsPage() {
       />
 
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           {error}
         </div>
       )}
@@ -165,12 +165,12 @@ export default function LitigationAnalyticsPage() {
         <KpiCard
           label={t("analytics.kpi_winrate")}
           value={fmtPct(kpis.winRate)}
-          color="text-emerald-600"
+          color="text-[color:var(--ds-success-text)]"
         />
         <KpiCard
           label={t("analytics.kpi_duration")}
           value={fmtDays(kpis.avgDurationDays)}
-          color="text-blue-600"
+          color="text-[color:var(--ds-info-text)]"
         />
         <KpiCard
           label={t("analytics.kpi_hours")}
@@ -180,12 +180,12 @@ export default function LitigationAnalyticsPage() {
         <KpiCard
           label={t("analytics.kpi_dispute")}
           value={kpis.totalAmountInDispute ? fmtCurrency(kpis.totalAmountInDispute) : "—"}
-          color="text-amber-600"
+          color="text-[color:var(--ds-warning-text)]"
         />
         <KpiCard
           label={t("analytics.kpi_awarded")}
           value={kpis.totalAmountAwarded ? fmtCurrency(kpis.totalAmountAwarded) : "—"}
-          color="text-emerald-600"
+          color="text-[color:var(--ds-success-text)]"
         />
       </div>
 
@@ -244,11 +244,11 @@ export default function LitigationAnalyticsPage() {
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-24 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
                       <div
-                        className="h-full rounded-full bg-emerald-500"
+                        className="h-full rounded-full bg-[color:var(--ds-success-solid)]"
                         style={{ width: `${c.winRate}%` }}
                       />
                     </div>
-                    <span className="text-xs font-medium text-emerald-600 tabular-nums">
+                    <span className="text-xs font-medium text-[color:var(--ds-success-text)] tabular-nums">
                       {fmtPct(c.winRate)}
                     </span>
                   </div>
@@ -283,11 +283,11 @@ export default function LitigationAnalyticsPage() {
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-24 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
                       <div
-                        className="h-full rounded-full bg-blue-500"
+                        className="h-full rounded-full bg-[color:var(--ds-info-solid)]"
                         style={{ width: `${j.winRate}%` }}
                       />
                     </div>
-                    <span className="text-xs font-medium text-blue-600 tabular-nums">
+                    <span className="text-xs font-medium text-[color:var(--ds-info-text)] tabular-nums">
                       {fmtPct(j.winRate)}
                     </span>
                   </div>
@@ -422,7 +422,7 @@ export default function LitigationAnalyticsPage() {
                     <button
                       onClick={() => handleDelete(o.slug)}
                       disabled={deleting === o.slug}
-                      className="text-[color:var(--ds-text-muted)] hover:text-red-500 disabled:opacity-50"
+                      className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)] disabled:opacity-50"
                     >
                       {deleting === o.slug ? (
                         <Loader2 size={14} className="animate-spin" />

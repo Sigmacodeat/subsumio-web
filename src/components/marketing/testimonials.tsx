@@ -67,7 +67,7 @@ export function TestimonialsSection({ lang }: { lang?: Lang } = {}) {
               </p>
               <div>
                 <p className="font-semibold text-[color:var(--mk-text)]">{t.author}</p>
-                <p className="text-xs text-[color:var(--mk-text-subtle)]">
+                <p className="text-sm text-[color:var(--mk-text-subtle)]">
                   {t.role}
                   {t.firm ? ` · ${t.firm}` : ""}
                 </p>

@@ -1,5 +1,0 @@
-import { PageSkeleton } from "@/components/dashboard/skeleton";
-
-export default function PrecedentSearchLoading() {
-  return <PageSkeleton />;
-}

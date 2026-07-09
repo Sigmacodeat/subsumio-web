@@ -112,24 +112,24 @@ export default function TeamPage() {
       {error && (
         <div
           role="alert"
-          className="flex items-start gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/5 p-3.5"
+          className="flex items-start gap-2.5 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3.5"
         >
-          <AlertCircle size={15} className="mt-0.5 shrink-0 text-rose-600" aria-hidden />
-          <p className="text-sm text-rose-700">{error}</p>
+          <AlertCircle size={15} className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]" aria-hidden />
+          <p className="text-sm text-[color:var(--ds-danger-text)]">{error}</p>
         </div>
       )}
       {notice && (
         <div
           role="status"
-          className="flex items-start gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5"
+          className="flex items-start gap-2.5 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-3.5"
         >
-          <CheckCircle size={15} className="mt-0.5 shrink-0 text-emerald-600" aria-hidden />
+          <CheckCircle size={15} className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]" aria-hidden />
           <p className="text-sm [color:var(--mk-text-subtle)]">{notice}</p>
         </div>
       )}
       {devJoinUrl && (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3.5">
-          <p className="mb-1.5 text-xs text-amber-700">
+        <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3.5">
+          <p className="mb-1.5 text-xs text-[color:var(--ds-warning-text)]">
             Mail-Provider nicht konfiguriert — gib der Person diesen Einladungs-Link direkt:
           </p>
           <code className="brand-text text-xs break-all">{devJoinUrl}</code>
@@ -209,7 +209,7 @@ export default function TeamPage() {
                         {m.isOwner && (
                           <Crown
                             size={12}
-                            className="shrink-0 text-amber-600"
+                            className="shrink-0 text-[color:var(--ds-warning-text)]"
                             aria-label={t("aria.owner")}
                           />
                         )}

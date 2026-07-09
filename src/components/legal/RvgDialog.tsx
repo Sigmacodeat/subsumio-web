@@ -52,7 +52,7 @@ export default function RvgDialog() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Scale size={18} className="text-emerald-400" />
+                  <Scale size={18} className="text-[color:var(--ds-success-text)]" />
                   <h2 className="text-lg font-bold [color:var(--mk-text)]">RVG-Rechner</h2>
                 </div>
                 <button
@@ -76,7 +76,7 @@ export default function RvgDialog() {
                   value={streitwert}
                   onChange={(e) => setStreitwert(e.target.value)}
                   placeholder="Streitwert in €"
-                  className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-bg)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-emerald-500/50 focus:outline-none"
+                  className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-bg)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--ds-success-border)] focus:outline-none"
                   onKeyDown={(e) => e.key === "Enter" && compute()}
                 />
                 <Button
@@ -90,7 +90,7 @@ export default function RvgDialog() {
               </div>
 
               {result && (
-                <div className="space-y-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm">
+                <div className="space-y-2 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4 text-sm">
                   <div className="flex justify-between">
                     <span className="[color:var(--mk-text-muted)]">Streitwert</span>
                     <span className="font-medium [color:var(--mk-text)]">
@@ -140,7 +140,7 @@ export default function RvgDialog() {
                       <span className="[color:var(--mk-text-muted)]">MwSt (19%)</span>
                       <span className="[color:var(--mk-text)]">{result.mwst.toFixed(2)} €</span>
                     </div>
-                    <div className="flex justify-between font-bold text-emerald-400">
+                    <div className="flex justify-between font-bold text-[color:var(--ds-success-text)]">
                       <span>Summe brutto</span>
                       <span>{result.summeBrutto.toFixed(2)} €</span>
                     </div>

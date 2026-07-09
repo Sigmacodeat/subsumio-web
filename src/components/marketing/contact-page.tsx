@@ -1,9 +1,10 @@
 "use client";
 
 import { Mail, MessageSquare, FileText, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { p, type Lang } from "@/content/site";
-import { Section, SectionHeading, PageHero, CTASection, IconTile } from "./chrome";
+import { p, UI_STRINGS, type Lang } from "@/content/site";
+import { Section, SectionHeading, PageHero, CTASection, IconTile, H3_CLASS } from "./chrome";
 import { GlowCard, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
 const _deContact = {
@@ -99,12 +100,31 @@ export default function ContactPage({ lang }: { lang: Lang }) {
   const c = (CONTENT as unknown as Record<string, typeof CONTENT.de>)[lang] ?? CONTENT.de;
   return (
     <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]" lang={lang}>
-      <PageHero badge={c.badge} h1a={c.h1a} h1b={c.h1b} sub={c.sub} />
+      <PageHero
+        badge={c.badge}
+        h1a={c.h1a}
+        h1b={c.h1b}
+        sub={c.sub}
+        actions={
+          <>
+            <Link href={p(lang, "/signup")}>
+              <Button size="lg" variant="primary">
+                {UI_STRINGS[lang].startFree} <ArrowRight size={16} />
+              </Button>
+            </Link>
+            <Link href={p(lang, "/superbrain")}>
+              <Button size="lg" variant="outline">
+                {UI_STRINGS[lang].watchDemo}
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={c.channelsTitle} tone="light" />
-          <StaggerContainer className="grid gap-4 md:grid-cols-3" stagger={0.08}>
+          <StaggerContainer className="grid gap-6 md:grid-cols-3" stagger={0.08}>
             {c.channels.map((ch) => {
               const Icon = ICON_MAP[ch.icon as keyof typeof ICON_MAP] ?? Mail;
               return (
@@ -112,11 +132,11 @@ export default function ContactPage({ lang }: { lang: Lang }) {
                   <a href={ch.href} className="group rounded-2xl transition-all">
                     <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--brand-primary)] hover:shadow-xl">
                       <IconTile icon={Icon} />
-                      <h3 className="mb-1 text-base font-semibold [color:var(--mk-text)]">
+                      <h3 className={`mb-1 ${H3_CLASS}`}>
                         {ch.title}
                       </h3>
                       <p className="brand-text mb-2 font-mono text-sm">{ch.value}</p>
-                      <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">
+                      <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
                         {ch.desc}
                       </p>
                     </GlowCard>
@@ -155,7 +175,7 @@ export default function ContactPage({ lang }: { lang: Lang }) {
                 window.location.href = `mailto:hello@subsum.eu?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
               }}
             >
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-6 sm:grid-cols-2">
                 <input
                   type="text"
                   name="name"
@@ -191,8 +211,8 @@ export default function ContactPage({ lang }: { lang: Lang }) {
                 rows={5}
                 className="w-full rounded-xl border [border-color:var(--mk-control-border)] px-4 py-3 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--mk-focus-ring)] focus:ring-2 focus:ring-[var(--mk-focus-ring)] focus:outline-none"
               />
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-xs [color:var(--mk-text-subtle)]">{c.formNote}</p>
+              <div className="flex items-center justify-between gap-6">
+                <p className="text-sm [color:var(--mk-text-subtle)]">{c.formNote}</p>
                 <Button
                   type="submit"
                   size="lg"
@@ -211,7 +231,14 @@ export default function ContactPage({ lang }: { lang: Lang }) {
         </div>
       </Section>
 
-      <CTASection title={c.ctaTitle} sub={c.ctaSub} href={p(lang, "/signup")} label={c.ctaButton} />
+      <CTASection
+        title={c.ctaTitle}
+        sub={c.ctaSub}
+        href={p(lang, "/signup")}
+        label={c.ctaButton}
+        secondaryHref={p(lang, "/superbrain")}
+        secondaryLabel={UI_STRINGS[lang].watchDemo}
+      />
     </div>
   );
 }

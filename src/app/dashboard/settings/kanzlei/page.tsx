@@ -57,7 +57,7 @@ export default function KanzleiSettingsPage() {
 
   if (!settings) {
     return (
-      <div className="mx-auto max-w-3xl p-6 text-red-700">
+      <div className="mx-auto max-w-3xl p-6 text-[color:var(--ds-danger-text)]">
         {error ?? "Einstellungen konnten nicht geladen werden."}
       </div>
     );
@@ -71,7 +71,7 @@ export default function KanzleiSettingsPage() {
       />
 
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           {error}
         </div>
       )}
@@ -136,7 +136,7 @@ export default function KanzleiSettingsPage() {
             {t("settings.kanzlei.btn_save")}
           </Button>
           {saved && (
-            <span className="flex items-center gap-1 text-sm text-emerald-600">
+            <span className="flex items-center gap-1 text-sm text-[color:var(--ds-success-text)]">
               <CheckCircle2 size={14} />
               {t("settings.kanzlei.toast_saved")}
             </span>
@@ -147,7 +147,7 @@ export default function KanzleiSettingsPage() {
       {/* Security: 2FA enforcement */}
       <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
         <div className="flex items-center gap-2">
-          <Shield size={16} className="text-amber-600" />
+          <Shield size={16} className="text-[color:var(--ds-warning-text)]" />
           <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
             {t("settings.security.title")}
           </h2>
@@ -181,7 +181,7 @@ export default function KanzleiSettingsPage() {
             {t("settings.kanzlei.btn_save")}
           </Button>
           {saved && (
-            <span className="flex items-center gap-1 text-sm text-emerald-600">
+            <span className="flex items-center gap-1 text-sm text-[color:var(--ds-success-text)]">
               <CheckCircle2 size={14} />
               {t("settings.kanzlei.toast_saved")}
             </span>
@@ -192,7 +192,7 @@ export default function KanzleiSettingsPage() {
       {/* Rechtsraum: Land + Bundesland/Kanton */}
       <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
         <div className="flex items-center gap-2">
-          <MapPin size={16} className="text-blue-600" />
+          <MapPin size={16} className="text-[color:var(--ds-info-text)]" />
           <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Rechtsraum</h2>
         </div>
         <p className="text-xs text-[color:var(--ds-text-muted)]">
@@ -297,7 +297,7 @@ export default function KanzleiSettingsPage() {
             {t("settings.kanzlei.btn_save")}
           </Button>
           {saved && (
-            <span className="flex items-center gap-1 text-sm text-emerald-600">
+            <span className="flex items-center gap-1 text-sm text-[color:var(--ds-success-text)]">
               <CheckCircle2 size={14} />
               {t("settings.kanzlei.toast_saved")}
             </span>

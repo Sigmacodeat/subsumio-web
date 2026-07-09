@@ -81,7 +81,7 @@ export default function EthicalWallPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ShieldAlert size={20} className="text-amber-500" />
+          <ShieldAlert size={20} className="text-[color:var(--ds-warning-text)]" />
           <h1 className="text-lg font-semibold text-[color:var(--ds-text)]">Ethical Wall</h1>
         </div>
         <Button onClick={() => void save()} disabled={saving} className="brand-bg text-white">
@@ -89,8 +89,8 @@ export default function EthicalWallPage() {
         </Button>
       </div>
 
-      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
-        <p className="text-sm text-amber-600">
+      <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
+        <p className="text-sm text-[color:var(--ds-warning-text)]">
           Die Ethical Wall blockiert den Zugriff auf diese Akte für bestimmte Benutzer. Diese
           Einschränkung hat Vorrang vor normalen Berechtigungen.
         </p>
@@ -122,17 +122,17 @@ export default function EthicalWallPage() {
             blockedUsers.map((user) => (
               <div
                 key={user}
-                className="flex items-center justify-between rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2"
+                className="flex items-center justify-between rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2"
               >
                 <div className="flex items-center gap-2">
-                  <Users size={14} className="text-amber-600" />
+                  <Users size={14} className="text-[color:var(--ds-warning-text)]" />
                   <span className="text-sm text-[color:var(--ds-text)]">{user}</span>
                 </div>
                 <Button
                   onClick={() => removeUser(user)}
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-amber-600 hover:bg-amber-500/10"
+                  className="h-7 w-7 text-[color:var(--ds-warning-text)] hover:bg-[color:var(--ds-warning-bg)]"
                 >
                   <X size={14} />
                 </Button>

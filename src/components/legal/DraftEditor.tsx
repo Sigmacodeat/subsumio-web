@@ -216,8 +216,8 @@ export function DraftEditor({
             variant="default"
             className={
               isDraft
-                ? "border border-amber-500/30 bg-amber-500/10 text-xs text-amber-600"
-                : "border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-600"
+                ? "border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
+                : "border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
             }
           >
             {isDraft ? "Entwurf" : draft.status === "reviewed" ? "Geprüft" : draft.status}
@@ -225,7 +225,7 @@ export function DraftEditor({
           {draft.attorneyReviewRequired && (
             <Badge
               variant="default"
-              className="border border-orange-500/30 bg-orange-500/10 text-xs text-orange-600"
+              className="border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-xs text-[color:var(--ds-attention-text)]"
             >
               Anwaltsprüfung erforderlich
             </Badge>
@@ -399,9 +399,9 @@ export function DraftEditor({
             </div>
 
             {draft.attorneyReviewRequired && (
-              <div className="flex items-start gap-2 rounded-lg border border-orange-500/30 bg-orange-500/5 px-3 py-2">
-                <AlertTriangle size={14} className="mt-0.5 shrink-0 text-orange-600" />
-                <p className="text-xs text-orange-700">
+              <div className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] px-3 py-2">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-attention-text)]" />
+                <p className="text-xs text-[color:var(--ds-attention-text)]">
                   Dieser Schriftsatz wurde noch nicht von einem Anwalt geprüft. Bitte prüfe den
                   Inhalt vor dem Versand.
                 </p>

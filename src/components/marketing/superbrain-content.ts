@@ -40,12 +40,12 @@ export const copy = {
         label: "Korrektur-Ebenen",
         sub: "Extraktion → Synthese → Verdict → Probe → Ensemble",
       },
-      { value: 57.4, suffix: "", label: "LEXam-Score", sub: "DeepSeek V3.2 — besser als GPT-4o" },
+      { value: 57.42, suffix: "", label: "LEXam-Score", sub: "DeepSeek V3.2 — besser als GPT-4o" },
       {
-        value: 99.9,
+        value: 99.8,
         suffix: "%",
-        label: "Quellen-belegte Antworten",
-        sub: "Keine Halluzinationen",
+        label: "Recall@8",
+        sub: "LongMemEval, 500 Fragen",
       },
     ],
     // ── NARRATIVE SECTION 1: "Wie andere arbeiten" ──
@@ -452,8 +452,8 @@ export const copy = {
         label: "Correction layers",
         sub: "Extraction → Synthesis → Verdict → Probe → Ensemble",
       },
-      { value: 57.4, suffix: "", label: "LEXam score", sub: "DeepSeek V3.2 — better than GPT-4o" },
-      { value: 99.9, suffix: "%", label: "Cited answers", sub: "Zero hallucinations" },
+      { value: 57.42, suffix: "", label: "LEXam score", sub: "DeepSeek V3.2 — better than GPT-4o" },
+      { value: 99.8, suffix: "%", label: "Recall@8", sub: "LongMemEval, 500 questions" },
     ],
     othersTitle: "Prompt AI: asks, answers, forgets",
     othersSub:

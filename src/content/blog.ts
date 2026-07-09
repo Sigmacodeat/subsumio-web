@@ -130,9 +130,9 @@ const posts: BlogPost[] = [
         ],
       },
       {
-        heading: "Recall@5: Warum 97,9 % wichtig sind",
+        heading: "Recall@8: Warum 99,8 % wichtig sind",
         paragraphs: [
-          "Recall@5 ist die Metrik, die misst, ob das relevante Dokument unter den Top-5-Retrievergebnissen ist. 97,9 % bedeutet: In 97,9 % der Fälle findet die KI das richtige Dokument. Das ist keine Marketing-Zahl — es ist eine reproduzierbare Benchmark.",
+          "Recall@8 ist die Metrik, die misst, ob das relevante Dokument unter den Top-8-Retrievergebnissen ist. 99,8 % bedeutet: In 99,8 % der Fälle findet die KI das richtige Dokument. Das ist keine Marketing-Zahl — es ist eine reproduzierbare Benchmark auf 500 LongMemEval-Fragen.",
           "Für Anwälte bedeutet das: Wenn du eine Frage stellst, findet die KI mit sehr hoher Wahrscheinlichkeit das relevante Dokument in deinen Akten. Und wenn sie es nicht findet — sagt sie es dir.",
         ],
       },

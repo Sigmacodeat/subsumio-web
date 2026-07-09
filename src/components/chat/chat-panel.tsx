@@ -23,7 +23,7 @@ import {
   processStreamingChunk,
   type UserContext,
 } from "@/components/chat/system-prompt";
-import { buildMemoryContext } from "@/lib/copilot-memory";
+import { buildFullMemoryContext, trackMessageInSession } from "@/lib/session-memory";
 import { type QueryMode } from "@/lib/matter-context-types";
 import type { BrainPage } from "@/lib/types";
 import { caseFrontmatter } from "@/lib/legal-types";
@@ -402,10 +402,13 @@ function detectToolCalls(
 }
 
 // Execute a single tool call (used for both immediate and confirmed execution)
-async function executeToolCall(toolCall: ToolCall): Promise<ToolCall> {
+async function executeToolCall(
+  toolCall: ToolCall,
+  context?: { caseSlug?: string }
+): Promise<ToolCall> {
   try {
     const result = await api.copilot.executeTool(toolCall.type, toolCall.params);
-    return {
+    const executed: ToolCall = {
       ...toolCall,
       status: result.success ? "completed" : "error",
       result: {
@@ -415,6 +418,18 @@ async function executeToolCall(toolCall: ToolCall): Promise<ToolCall> {
         display: result.display as ToolResultDisplay,
       },
     };
+
+    // P2.7: Record successful agent actions as memories (agent-generated facts)
+    if (result.success) {
+      api.memory.recordAgentAction({
+        key: `tool_${toolCall.type}_${Date.now()}`,
+        value: `Tool "${toolCall.type}" ausgeführt: ${JSON.stringify(toolCall.params).slice(0, 200)}`,
+        type: "fact",
+        caseSlug: context?.caseSlug,
+      }).catch(() => {});
+    }
+
+    return executed;
   } catch (err) {
     return {
       ...toolCall,
@@ -441,7 +456,9 @@ async function detectAndExecuteTools(
 
   // Execute non-destructive tools immediately, leave destructive ones pending
   const results = await Promise.all(
-    allCalls.map((tc) => (tc.requiresConfirmation ? Promise.resolve(tc) : executeToolCall(tc)))
+    allCalls.map((tc) =>
+      tc.requiresConfirmation ? Promise.resolve(tc) : executeToolCall(tc, { caseSlug: context.caseSlug })
+    )
   );
 
   return results;
@@ -1000,6 +1017,11 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         }).catch(() => {});
       }
 
+      // P1.5: Track message in session memory (ephemeral layer)
+      if (activeSessionId) {
+        trackMessageInSession(activeSessionId, text);
+      }
+
       if (persistHistory && activeSessionId) {
         await saveMessage(activeSessionId, userMsg);
         await saveMessage(activeSessionId, assistantMsg);
@@ -1028,7 +1050,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         userContext,
         conversationHistory: historyForPrompt,
         matterVitals,
-        memoryContext: await buildMemoryContext({ caseSlug: context.caseSlug }).catch(() => ""),
+        memoryContext: await buildFullMemoryContext({ sessionId: activeSessionId, caseSlug: context.caseSlug, query: text }).catch(() => ""),
       });
       const prompt = buildSafePrompt(systemPrompt, userInput);
 
@@ -1247,7 +1269,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       );
 
       // Execute the tool
-      const executed = await executeToolCall(foundToolCall);
+      const executed = await executeToolCall(foundToolCall, { caseSlug: selectedCaseSlug || context.caseSlug });
 
       // Update message with result
       setMessages((m) =>
@@ -1385,7 +1407,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       );
 
       // Re-execute
-      const executed = await executeToolCall(foundToolCall);
+      const executed = await executeToolCall(foundToolCall, { caseSlug: selectedCaseSlug || context.caseSlug });
 
       setMessages((m) =>
         m.map((msg) =>
@@ -1609,7 +1631,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           },
           userContext,
           conversationHistory: regenHistory,
-          memoryContext: await buildMemoryContext({ caseSlug: context.caseSlug }).catch(() => ""),
+          memoryContext: await buildFullMemoryContext({ sessionId: activeSessionId, caseSlug: context.caseSlug, query: userMsg.content }).catch(() => ""),
         });
       const prompt = buildSafePrompt(regenSystemPrompt, regenUserInput);
 

@@ -178,14 +178,14 @@ export default function TranslatePage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={t("translate.placeholder_text")}
-            className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
+            className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none"
           />
         )}
 
         <Button
           onClick={run}
           disabled={loading || !canRun}
-          className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
+          className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
         >
           {loading ? <Loader2 size={15} className="animate-spin" /> : <Languages size={15} />}
           {t("translate.btn_translate")}
@@ -193,7 +193,7 @@ export default function TranslatePage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
@@ -208,7 +208,7 @@ export default function TranslatePage() {
                 {result.target_language})
               </h3>
               <Button variant="ghost" size="sm" onClick={copyResult} className="gap-1.5 text-xs">
-                {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                {copied ? <Check size={12} className="text-[color:var(--ds-success-text)]" /> : <Copy size={12} />}
                 {copied ? t("translate.btn_copy") : t("translate.btn_copy")}
               </Button>
             </div>
@@ -230,7 +230,7 @@ export default function TranslatePage() {
                       {g.source_term}
                     </span>
                     <span className="text-[color:var(--ds-text-muted)]">→</span>
-                    <span className="min-w-[120px] font-mono text-emerald-600">
+                    <span className="min-w-[120px] font-mono text-[color:var(--ds-success-text)]">
                       {g.target_term}
                     </span>
                     {g.note && (
@@ -246,9 +246,9 @@ export default function TranslatePage() {
 
           {/* Warnings */}
           {result.warnings.length > 0 && (
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+            <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3">
               {result.warnings.map((w, i) => (
-                <p key={i} className="text-xs text-amber-600">
+                <p key={i} className="text-xs text-[color:var(--ds-warning-text)]">
                   {w}
                 </p>
               ))}
@@ -258,7 +258,7 @@ export default function TranslatePage() {
           {result.attorney_review_required && (
             <Badge
               variant="default"
-              className="border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
+              className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
             >
               Anwaltliche Prüfung der Übersetzung empfohlen
             </Badge>

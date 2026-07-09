@@ -55,10 +55,10 @@ interface ContractItem {
 }
 
 const _RISK_COLORS: Record<string, string> = {
-  low: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
-  medium: "bg-amber-500/10 border-amber-500/20 text-amber-600",
-  high: "bg-red-500/10 border-red-500/20 text-red-600",
-  critical: "bg-red-600/20 border-red-500/30 text-red-700",
+  low: "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
+  medium: "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
+  high: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+  critical: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
 };
 
 const RISK_LABELS: Record<string, string> = {
@@ -72,8 +72,8 @@ const STATUS_COLORS: Record<string, string> = {
   draft:
     "bg-[color:var(--ds-hover)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]",
   reviewed: "brand-soft brand-border brand-text",
-  approved: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
-  signed: "bg-blue-500/10 border-blue-500/20 text-blue-600",
+  approved: "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
+  signed: "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
 };
 
 const STATUS_LABELS: Record<string, (t: TFunc) => string> = {
@@ -414,7 +414,7 @@ export default function ContractsPage() {
                 />
                 <button
                   onClick={() => setReviewQuestions((qs) => qs.filter((_, idx) => idx !== i))}
-                  className="text-[color:var(--ds-text-muted)] hover:text-red-600"
+                  className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                 >
                   <X size={14} />
                 </button>
@@ -467,7 +467,7 @@ export default function ContractsPage() {
             )}
           </div>
           {reviewError && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+            <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
               {reviewError}
             </div>
           )}
@@ -524,13 +524,13 @@ export default function ContractsPage() {
       />
 
       {loadError && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <span>{loadError}</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => void loadContracts()}
-            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             <RotateCcw size={13} /> Erneut versuchen
           </Button>
@@ -552,8 +552,8 @@ export default function ContractsPage() {
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/10">
-              <ShieldCheck size={14} className="text-emerald-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]">
+              <ShieldCheck size={14} className="text-[color:var(--ds-success-text)]" />
             </div>
             <div>
               <p className="text-lg font-bold text-[color:var(--ds-text)]">
@@ -563,8 +563,8 @@ export default function ContractsPage() {
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10">
-              <AlertTriangle size={14} className="text-amber-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]">
+              <AlertTriangle size={14} className="text-[color:var(--ds-warning-text)]" />
             </div>
             <div>
               <p className="text-lg font-bold text-[color:var(--ds-text)]">
@@ -581,8 +581,8 @@ export default function ContractsPage() {
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10">
-              <AlertTriangle size={14} className="text-red-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]">
+              <AlertTriangle size={14} className="text-[color:var(--ds-danger-text)]" />
             </div>
             <div>
               <p className="text-lg font-bold text-[color:var(--ds-text)]">
@@ -678,7 +678,7 @@ export default function ContractsPage() {
                     placeholder="Vertragstext"
                     className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                   />
-                  {editError && <p className="text-xs text-red-600">{editError}</p>}
+                  {editError && <p className="text-xs text-[color:var(--ds-danger-text)]">{editError}</p>}
                   <div className="flex justify-end">
                     <Button
                       onClick={saveEdit}
@@ -729,12 +729,12 @@ export default function ContractsPage() {
                           <div
                             className={`h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                               contract.riskLevel === "low"
-                                ? "bg-emerald-400"
+                                ? "bg-[color:var(--ds-success-solid)]"
                                 : contract.riskLevel === "medium"
-                                  ? "bg-amber-400"
+                                  ? "bg-[color:var(--ds-warning-solid)]"
                                   : contract.riskLevel === "high"
-                                    ? "bg-red-400"
-                                    : "bg-red-500"
+                                    ? "bg-[color:var(--ds-danger-solid)]"
+                                    : "bg-[color:var(--ds-danger-solid)]"
                             }`}
                             style={{
                               width: `${contract.riskScore ?? (contract.riskLevel === "low" ? 25 : contract.riskLevel === "medium" ? 50 : contract.riskLevel === "high" ? 75 : 95)}%`,
@@ -744,12 +744,12 @@ export default function ContractsPage() {
                         <span
                           className={`text-xs font-medium whitespace-nowrap ${
                             contract.riskLevel === "low"
-                              ? "text-emerald-600"
+                              ? "text-[color:var(--ds-success-text)]"
                               : contract.riskLevel === "medium"
-                                ? "text-amber-600"
+                                ? "text-[color:var(--ds-warning-text)]"
                                 : contract.riskLevel === "high"
-                                  ? "text-red-600"
-                                  : "text-red-700"
+                                  ? "text-[color:var(--ds-danger-text)]"
+                                  : "text-[color:var(--ds-danger-text)]"
                           }`}
                         >
                           {contract.riskScore !== undefined
@@ -789,7 +789,7 @@ export default function ContractsPage() {
                     </button>
                     <button
                       onClick={() => deleteContract(contract.slug)}
-                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
+                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
                       title={t("contracts.btn_delete")}
                     >
                       <Trash2 size={14} />

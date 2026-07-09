@@ -114,18 +114,18 @@ export function CaseCloseChecklistDialog({
                   key={item.key}
                   className={`flex items-start gap-3 rounded-lg border p-3 ${
                     item.passed
-                      ? "border-emerald-500/20 bg-emerald-500/5"
+                      ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
                       : item.severity === "blocker"
-                        ? "border-red-500/20 bg-red-500/5"
-                        : "border-amber-500/20 bg-amber-500/5"
+                        ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
+                        : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
                   }`}
                 >
                   {item.passed ? (
-                    <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-emerald-600" />
+                    <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]" />
                   ) : item.severity === "blocker" ? (
-                    <XCircle size={18} className="mt-0.5 shrink-0 text-red-600" />
+                    <XCircle size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]" />
                   ) : (
-                    <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
+                    <AlertTriangle size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
@@ -135,7 +135,7 @@ export function CaseCloseChecklistDialog({
                       {!item.passed && (
                         <span
                           className={`shrink-0 text-xs font-semibold ${
-                            item.severity === "blocker" ? "text-red-600" : "text-amber-600"
+                            item.severity === "blocker" ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-warning-text)]"
                           }`}
                         >
                           {item.count}
@@ -150,19 +150,19 @@ export function CaseCloseChecklistDialog({
               ))}
 
               {checklist.hasBlockers && (
-                <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-700">
+                <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-[color:var(--ds-danger-text)]">
                   <XCircle size={14} />
                   {t("cases.close_checklist_has_blockers" as DashboardKey)}
                 </div>
               )}
               {!checklist.hasBlockers && checklist.warningCount > 0 && (
-                <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-700">
+                <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]">
                   <AlertTriangle size={14} />
                   {t("cases.close_checklist_warnings" as DashboardKey)}
                 </div>
               )}
               {!checklist.hasBlockers && checklist.warningCount === 0 && (
-                <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-700">
+                <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-3 py-2 text-xs text-[color:var(--ds-success-text)]">
                   <CheckCircle2 size={14} />
                   {t("cases.close_checklist_all_passed" as DashboardKey)}
                 </div>

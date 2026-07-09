@@ -30,8 +30,8 @@ export function DashboardError({ error, reset, moduleKey }: DashboardErrorProps)
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-6">
       <div className="max-w-sm text-center">
-        <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-xl border border-rose-500/30 bg-rose-600/20">
-          <AlertCircle size={20} className="text-rose-400" />
+        <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]">
+          <AlertCircle size={20} className="text-[color:var(--ds-danger-text)]" />
         </div>
         <h2 className="mb-2 text-lg font-semibold text-[color:var(--ds-text)]">{title}</h2>
         <p className="mb-6 text-sm text-[color:var(--ds-text-muted)]">

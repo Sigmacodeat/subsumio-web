@@ -124,10 +124,10 @@ export default function SecuritySettingsPage() {
       />
 
       {orgRequires2FA && !enabled && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
-          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
+        <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
+          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
           <div>
-            <p className="text-sm font-medium text-amber-600">
+            <p className="text-sm font-medium text-[color:var(--ds-warning-text)]">
               2FA von Ihrer Kanzlei vorgeschrieben
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
@@ -140,17 +140,17 @@ export default function SecuritySettingsPage() {
 
       {enabled ? (
         <div className="space-y-4">
-          <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-            <CheckCircle2 size={18} className="text-emerald-600" />
+          <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
+            <CheckCircle2 size={18} className="text-[color:var(--ds-success-text)]" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-emerald-600">2FA ist aktiviert</p>
+              <p className="text-sm font-medium text-[color:var(--ds-success-text)]">2FA ist aktiviert</p>
               <p className="text-xs text-[color:var(--ds-text-muted)]">
                 Dein Account ist durch TOTP geschützt.
               </p>
             </div>
             <Button
               variant="ghost"
-              className="gap-2 text-sm text-red-600 hover:bg-red-500/10 hover:text-red-700"
+              className="gap-2 text-sm text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
               onClick={() => {
                 setShowDisableDialog(true);
                 setError(null);
@@ -162,11 +162,11 @@ export default function SecuritySettingsPage() {
           </div>
 
           {backupCodes && (
-            <div className="space-y-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+            <div className="space-y-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
               <div className="flex items-start gap-2">
-                <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
+                <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
                 <div>
-                  <p className="text-sm font-medium text-amber-600">
+                  <p className="text-sm font-medium text-[color:var(--ds-warning-text)]">
                     Backup-Codes — sicher speichern!
                   </p>
                   <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
@@ -195,7 +195,7 @@ export default function SecuritySettingsPage() {
                 }}
               >
                 {copied ? (
-                  <CheckCircle2 size={14} className="text-emerald-600" />
+                  <CheckCircle2 size={14} className="text-[color:var(--ds-success-text)]" />
                 ) : (
                   <KeyRound size={14} />
                 )}
@@ -207,11 +207,11 @@ export default function SecuritySettingsPage() {
           )}
 
           {showDisableDialog && (
-            <div className="space-y-3 rounded-xl border border-red-500/30 bg-red-500/5 p-4">
+            <div className="space-y-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4">
               <div className="flex items-start gap-2">
-                <AlertTriangle size={16} className="mt-0.5 shrink-0 text-red-600" />
+                <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]" />
                 <div>
-                  <p className="text-sm font-medium text-red-600">2FA deaktivieren</p>
+                  <p className="text-sm font-medium text-[color:var(--ds-danger-text)]">2FA deaktivieren</p>
                   <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                     Bitte bestätige mit deinem Passwort, dass du 2FA deaktivieren möchtest.
                   </p>
@@ -242,7 +242,7 @@ export default function SecuritySettingsPage() {
                 </Button>
                 <Button
                   variant="ghost"
-                  className="gap-2 text-sm text-red-600 hover:bg-red-500/10 hover:text-red-700"
+                  className="gap-2 text-sm text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
                   onClick={disable2FA}
                   disabled={disableMutation.isPending || !disablePassword}
                 >
@@ -260,7 +260,7 @@ export default function SecuritySettingsPage() {
       ) : (
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-start gap-3">
-            <KeyRound size={16} className="mt-0.5 shrink-0 text-amber-600" />
+            <KeyRound size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
             <div>
               <p className="text-sm font-medium text-[color:var(--ds-text)]">
                 Zwei-Faktor-Authentifizierung (2FA)
@@ -275,7 +275,7 @@ export default function SecuritySettingsPage() {
           {step === "idle" && (
             <Button
               variant="primary"
-              className="gap-2 bg-amber-600 text-sm text-white hover:bg-amber-500"
+              className="gap-2 bg-[color:var(--ds-warning-solid)] text-sm text-white hover:bg-[color:var(--ds-warning-solid)]"
               onClick={startSetup}
             >
               <QrCode size={14} />
@@ -296,11 +296,11 @@ export default function SecuritySettingsPage() {
                   onChange={(e) => setToken(e.target.value)}
                   placeholder="6-stelliger Code"
                   maxLength={6}
-                  className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-center text-sm tracking-widest text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-amber-500/50 focus:outline-none"
+                  className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-center text-sm tracking-widest text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-warning-border)] focus:outline-none"
                 />
                 <Button
                   variant="primary"
-                  className="bg-amber-600 text-sm text-white hover:bg-amber-500"
+                  className="bg-[color:var(--ds-warning-solid)] text-sm text-white hover:bg-[color:var(--ds-warning-solid)]"
                   onClick={verify}
                   disabled={token.length !== 6}
                 >
@@ -311,7 +311,7 @@ export default function SecuritySettingsPage() {
           )}
 
           {error && (
-            <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-700">
+            <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={14} />
               {error}
             </div>
@@ -351,7 +351,7 @@ export default function SecuritySettingsPage() {
                     key={entry}
                     className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-2"
                   >
-                    <Shield size={12} className="text-emerald-600" />
+                    <Shield size={12} className="text-[color:var(--ds-success-text)]" />
                     <span className="font-mono text-xs text-[color:var(--ds-text)]">{entry}</span>
                   </div>
                 ))}
@@ -366,7 +366,7 @@ export default function SecuritySettingsPage() {
               </div>
             )}
 
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-700">
+            <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]">
               Configure via environment variable:
               <pre className="mt-1 font-mono text-xs whitespace-pre-wrap">
                 SUBSUMIO_IP_ALLOWLIST=10.0.0.0/8,192.168.1.100\nSUBSUMIO_TRUSTED_PROXY_HOPS=1

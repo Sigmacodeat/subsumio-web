@@ -135,14 +135,14 @@ export default function ClientPortalPage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4" role="note">
+          <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4" role="note">
             <div className="flex items-start gap-2">
               <AlertTriangle
                 size={14}
-                className="mt-0.5 shrink-0 text-amber-600"
+                className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
                 aria-hidden="true"
               />
-              <p className="text-xs leading-relaxed text-amber-600">
+              <p className="text-xs leading-relaxed text-[color:var(--ds-warning-text)]">
                 {t("client_portal.preview_warning")}
               </p>
             </div>
@@ -183,7 +183,7 @@ export default function ClientPortalPage() {
       />
 
       {loadError && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           {loadError}
         </div>
       )}
@@ -213,7 +213,7 @@ export default function ClientPortalPage() {
                   variant="default"
                   className={`text-xs ${
                     space.status === "active"
-                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                      ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "border-gray-500/20 bg-gray-500/10 text-gray-400"
                   }`}
                 >
@@ -289,8 +289,8 @@ export default function ClientPortalPage() {
                     c.status === "closed"
                       ? "border-gray-500/20 bg-gray-500/10 text-gray-400"
                       : c.status === "won"
-                        ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
-                        : "border-blue-500/20 bg-blue-500/10 text-blue-600"
+                        ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+                        : "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
                   }`}
                 >
                   {c.status === "closed"
@@ -312,11 +312,11 @@ export default function ClientPortalPage() {
                 </span>
               </div>
 
-              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+              <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3">
                 <div className="flex items-start gap-2">
-                  <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-amber-600" />
+                  <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
                   <div>
-                    <p className="text-xs font-medium text-amber-600">
+                    <p className="text-xs font-medium text-[color:var(--ds-warning-text)]">
                       {t("client_portal.next_step")}
                     </p>
                     <p className="text-xs text-[color:var(--ds-text-muted)]">{c.nextStep}</p>

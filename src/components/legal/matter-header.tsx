@@ -303,8 +303,8 @@ export function MatterHeader() {
   if (error || !matter) {
     return (
       <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 md:px-6">
-        <AlertCircle size={18} className="text-red-500" />
-        <span className="text-sm text-red-600">{error || t("matterheader.not_found")}</span>
+        <AlertCircle size={18} className="text-[color:var(--ds-danger-text)]" />
+        <span className="text-sm text-[color:var(--ds-danger-text)]">{error || t("matterheader.not_found")}</span>
         <Link href="/dashboard/cases" className="ml-auto">
           <Button variant="ghost" size="sm">
             <ArrowLeft size={14} className="mr-1.5" />
@@ -380,11 +380,11 @@ export function MatterHeader() {
                 className={cn(
                   "flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium",
                   matter.jurisdiction === "de"
-                    ? "bg-blue-500/10 text-blue-700"
+                    ? "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
                     : matter.jurisdiction === "at"
-                      ? "bg-red-500/10 text-red-700"
+                      ? "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                       : matter.jurisdiction === "ch"
-                        ? "bg-emerald-500/10 text-emerald-700"
+                        ? "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                         : "bg-purple-500/10 text-purple-700"
                 )}
               >

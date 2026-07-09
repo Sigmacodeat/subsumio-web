@@ -230,7 +230,7 @@ export default function ScrollPinnedDashboard({
         {/* Scroll hint — disappears smoothly after first scroll */}
         <motion.div
           style={{ opacity: hintOpacity }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 text-xs [color:var(--mk-text-subtle)]"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 text-sm [color:var(--mk-text-subtle)]"
           aria-hidden
         >
           <span className="flex items-center gap-1.5">

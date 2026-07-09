@@ -297,7 +297,7 @@ export default function BackupRestorePage() {
                       onClick={() => setDeleteTarget(backup)}
                       aria-label="Löschen"
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4 text-[color:var(--ds-danger-text)]" />
                     </Button>
                   </div>
                 </div>
@@ -333,12 +333,12 @@ export default function BackupRestorePage() {
           {restoreResult ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm">
-                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                <CheckCircle2 className="h-5 w-5 text-[color:var(--ds-success-text)]" />
                 <span className="font-medium">Restore abgeschlossen</span>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-lg border border-[color:var(--ds-border)] p-3 text-center">
-                  <div className="text-xl font-bold text-emerald-500">{restoreResult.restored}</div>
+                  <div className="text-xl font-bold text-[color:var(--ds-success-text)]">{restoreResult.restored}</div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">Wiederhergestellt</div>
                 </div>
                 <div className="rounded-lg border border-[color:var(--ds-border)] p-3 text-center">
@@ -348,12 +348,12 @@ export default function BackupRestorePage() {
                   <div className="text-xs text-[color:var(--ds-text-muted)]">Übersprungen</div>
                 </div>
                 <div className="rounded-lg border border-[color:var(--ds-border)] p-3 text-center">
-                  <div className="text-xl font-bold text-red-500">{restoreResult.failed}</div>
+                  <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">{restoreResult.failed}</div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">Fehlgeschlagen</div>
                 </div>
               </div>
               {restoreResult.errors.length > 0 && (
-                <div className="max-h-32 overflow-y-auto rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs text-red-600">
+                <div className="max-h-32 overflow-y-auto rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-xs text-[color:var(--ds-danger-text)]">
                   {restoreResult.errors.map((err, i) => (
                     <div key={i}>{err}</div>
                   ))}
@@ -368,8 +368,8 @@ export default function BackupRestorePage() {
           ) : (
             <>
               <div className="space-y-4">
-                <div className="flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+                <div className="flex items-start gap-3 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3">
+                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-[color:var(--ds-warning-text)]" />
                   <div className="text-sm text-[color:var(--ds-text-muted)]">
                     Vorhandene Pages mit gleichem Slug werden überschrieben. Dies kann nicht
                     rückgängig gemacht werden.

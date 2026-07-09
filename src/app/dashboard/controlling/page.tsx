@@ -114,7 +114,7 @@ export default function ControllingPage() {
       />
 
       {loadError && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           {loadError}
         </div>
       )}
@@ -169,7 +169,7 @@ export default function ControllingPage() {
                 <Euro size={14} />
                 <span className="text-xs">Gesamtumsatz</span>
               </div>
-              <div className="text-2xl font-semibold text-emerald-600">
+              <div className="text-2xl font-semibold text-[color:var(--ds-success-text)]">
                 {totalRevenue.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
                   style: "currency",
                   currency: "EUR",
@@ -231,10 +231,10 @@ export default function ControllingPage() {
                             <div
                               className={`h-full rounded-full ${
                                 utilization >= 80
-                                  ? "bg-emerald-400"
+                                  ? "bg-[color:var(--ds-success-solid)]"
                                   : utilization >= 50
-                                    ? "bg-amber-400"
-                                    : "bg-red-400"
+                                    ? "bg-[color:var(--ds-warning-solid)]"
+                                    : "bg-[color:var(--ds-danger-solid)]"
                               }`}
                               style={{ width: `${utilization}%` }}
                             />
@@ -244,7 +244,7 @@ export default function ControllingPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right font-medium text-emerald-600">
+                      <td className="px-4 py-3 text-right font-medium text-[color:var(--ds-success-text)]">
                         {s.totalRevenue.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
                           style: "currency",
                           currency: "EUR",

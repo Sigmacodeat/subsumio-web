@@ -134,28 +134,28 @@ export function ConfidenceScoreWidget() {
         <div className="mb-3 flex h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--ds-bg)]">
           {stats.high > 0 && (
             <div
-              className="bg-emerald-500"
+              className="bg-[color:var(--ds-success-solid)]"
               style={{ width: `${(stats.high / stats.total) * 100}%` }}
               title={`${stats.high} high`}
             />
           )}
           {stats.medium > 0 && (
             <div
-              className="bg-amber-500"
+              className="bg-[color:var(--ds-warning-solid)]"
               style={{ width: `${(stats.medium / stats.total) * 100}%` }}
               title={`${stats.medium} medium`}
             />
           )}
           {stats.low > 0 && (
             <div
-              className="bg-red-500"
+              className="bg-[color:var(--ds-danger-solid)]"
               style={{ width: `${(stats.low / stats.total) * 100}%` }}
               title={`${stats.low} low`}
             />
           )}
           {stats.running > 0 && (
             <div
-              className="bg-blue-500"
+              className="bg-[color:var(--ds-info-solid)]"
               style={{ width: `${(stats.running / stats.total) * 100}%` }}
               title={`${stats.running} running`}
             />

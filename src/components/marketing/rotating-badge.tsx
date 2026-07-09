@@ -30,7 +30,7 @@ export default function RotatingBadge({
 
   return (
     <div
-      className="mb-6 inline-flex items-center gap-2 rounded-full border [border-color:var(--brand-border)] px-3 py-1.5 text-xs font-medium [color:var(--brand-text)] [background:var(--brand-soft)]"
+      className="mb-6 inline-flex items-center gap-2 rounded-full border [border-color:var(--brand-border)] px-3 py-1.5 text-sm font-medium [color:var(--brand-text)] [background:var(--brand-soft)]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >

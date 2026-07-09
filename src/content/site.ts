@@ -883,7 +883,7 @@ export const NAV: Record<Lang, NavContent> = {
 };
 
 const _footerEn = {
-  tagline: "AI legal software that never forgets — the firm brain for lawyers in AT · DE · CH.",
+  tagline: "AI legal software that never forgets — the firm brain for lawyers in Europe.",
   columns: [
     {
       title: "Platform",
@@ -947,7 +947,7 @@ export const FOOTER: Record<
   en: _footerEn,
   de: {
     tagline:
-      "KI-Kanzleisoftware, die nie vergisst — das Kanzlei-Brain für Anwälte in AT · DE · CH.",
+      "KI-Kanzleisoftware, die nie vergisst — das Kanzlei-Brain für Anwälte in Europa.",
     columns: [
       {
         title: "Plattform",
@@ -1107,7 +1107,7 @@ export const FOOTER: Record<
   },
   it: applyReplacements(JSON.parse(JSON.stringify(_footerEn)), {
     ...IT_NAV_REPLACEMENTS,
-    "AI legal software that never forgets — the firm brain for lawyers in AT · DE · CH.":
+    "AI legal software that never forgets — the firm brain for lawyers in Europe.":
       "Il cervello dello studio che non dimentica mai.",
     "Terms of service": "Termini di servizio",
     Privacy: "Privacy",
@@ -1116,7 +1116,7 @@ export const FOOTER: Record<
   }),
   es: applyReplacements(JSON.parse(JSON.stringify(_footerEn)), {
     ...ES_NAV_REPLACEMENTS,
-    "AI legal software that never forgets — the firm brain for lawyers in AT · DE · CH.":
+    "AI legal software that never forgets — the firm brain for lawyers in Europe.":
       "El cerebro del despacho que nunca olvida.",
     "Terms of service": "Términos de servicio",
     Privacy: "Privacidad",
@@ -1125,7 +1125,7 @@ export const FOOTER: Record<
   }),
   pl: applyReplacements(JSON.parse(JSON.stringify(_footerEn)), {
     ...PL_NAV_REPLACEMENTS,
-    "AI legal software that never forgets — the firm brain for lawyers in AT · DE · CH.":
+    "AI legal software that never forgets — the firm brain for lawyers in Europe.":
       "Mózg kancelarii, który nigdy nie zapomina.",
     "Terms of service": "Regulamin",
     Privacy: "Prywatność",
@@ -1134,7 +1134,7 @@ export const FOOTER: Record<
   }),
   fr: applyReplacements(JSON.parse(JSON.stringify(_footerEn)), {
     ...FR_NAV_REPLACEMENTS,
-    "AI legal software that never forgets — the firm brain for lawyers in AT · DE · CH.":
+    "AI legal software that never forgets — the firm brain for lawyers in Europe.":
       "Le cerveau du cabinet qui n'oublie jamais.",
     "Terms of service": "Conditions d'utilisation",
     Privacy: "Confidentialité",
@@ -1143,7 +1143,7 @@ export const FOOTER: Record<
   }),
   nl: applyReplacements(JSON.parse(JSON.stringify(_footerEn)), {
     ...NL_NAV_REPLACEMENTS,
-    "AI legal software that never forgets — the firm brain for lawyers in AT · DE · CH.":
+    "AI legal software that never forgets — the firm brain for lawyers in Europe.":
       "Het brein van het kantoor dat nooit vergeet.",
     "Terms of service": "Servicevoorwaarden",
     Privacy: "Privacy",
@@ -1255,7 +1255,7 @@ const _pricingEn = {
         "Dedicated CSM & integration help",
         "Overage: €0.35/query · €0.15/WA msg",
       ],
-      cta: "Request a demo",
+      cta: "Book a demo",
       href: "mailto:hello@subsum.eu",
     },
   ],
@@ -1354,7 +1354,7 @@ export const PRICING: Record<
           "Dedizierter CSM & Integrationshilfe",
           "Mehrverbrauch: 0,35 €/Anfrage · 0,15 €/WA",
         ],
-        cta: "Demo anfragen",
+        cta: "Demo vereinbaren",
         href: "mailto:hello@subsum.eu",
       },
     ],
@@ -1447,7 +1447,7 @@ export const PRICING: Record<
           "Dedizierter CSM & Integrationshilfe",
           "Mehrverbrauch: 0,35 €/Anfrage · 0,15 €/WA",
         ],
-        cta: "Demo anfragen",
+        cta: "Demo vereinbaren",
         href: "mailto:hello@subsum.eu",
       },
     ],
@@ -1540,7 +1540,7 @@ export const PRICING: Record<
           "Dedizierter CSM & Integrationshilfe",
           "Mehrverbrauch: CHF 0.35/Anfrage · CHF 0.15/WA",
         ],
-        cta: "Demo anfragen",
+        cta: "Demo vereinbaren",
         href: "mailto:hello@subsum.eu",
       },
     ],
@@ -1825,7 +1825,8 @@ export const AT_REPLACEMENTS: Record<string, string> = {
   "DATEV-Export (DE) und ADATEV (AT)": "ADATEV-Export",
   "DATEV-Export (DE) oder ADATEV (AT)": "ADATEV-Export",
   "und DATEV": "und ADATEV",
-  "für AT · DE · CH": "für Österreich",
+  "für Deutschland": "für Österreich",
+  "in Deutschland": "in Österreich",
   // NOTE: No Du→Sie conversion — the whole DACH site addresses the reader
   // informally with "Du". AT keeps only jurisdiction + Austrian-spelling swaps.
   Schadensersatz: "Schadenersatz",
@@ -1848,7 +1849,8 @@ const CH_REPLACEMENTS: Record<string, string> = {
   "DATEV-Export (DE) und ADATEV (AT)": "Swissdec-Export",
   "DATEV-Export (DE) oder ADATEV (AT)": "Swissdec-Export",
   "und DATEV": "und Swissdec",
-  "für AT · DE · CH": "für die Schweiz",
+  "für Deutschland": "für die Schweiz",
+  "in Deutschland": "in der Schweiz",
   "Landesgericht Wien": "Bezirksgericht Zürich",
   "84.000 €": "CHF 84'000",
   // NOTE: No Du→Sie conversion — the whole DACH site uses informal "Du".
@@ -1856,17 +1858,16 @@ const CH_REPLACEMENTS: Record<string, string> = {
 };
 
 const _landingDe = {
-  badge: "KI-Kanzleisoftware & Anwaltssoftware für AT · DE · CH",
+  badge: "KI-Kanzleisoftware & Anwaltssoftware für Deutschland",
   heroBadges: [
-    "Neu: 5-Layer-Qualitätsarchitektur",
-    "§ 203 StGB-konform",
-    "EU-Cloud oder On-Premise",
+    "Neu: 99,8 % Recall mit 5-Layer-Verifikation",
+    "§ 203 StGB-konform durch Architektur",
+    "EU-Cloud oder On-Premise — deine Wahl",
   ],
-  h1a: "Deine Kanzlei vergisst.",
-  h1b: "Subsumio nicht.",
-  heroTagline: "KI-Kanzleisoftware für Anwälte in AT · DE · CH — mit belegten Antworten.",
-  h1Keyword: "KI-Kanzleisoftware & Anwaltssoftware mit belegten Antworten",
-  sub: "Nie wieder eine Frist übersehen. Du fragst in normaler Sprache — Subsumio antwortet mit Fundstellen.",
+  h1a: "Antworten aus deinen Akten.",
+  h1b: "Mit Quelle. In Sekunden.",
+  heroTagline: "KI-Kanzleisoftware für Anwälte in Deutschland — mit belegten Antworten.",
+  sub: "Du fragst in normaler Sprache — Subsumio antwortet mit seitengenauen Fundstellen aus deinen Akten. Für Anwälte in Deutschland, Österreich und der Schweiz.",
   heroTrustItems: [
     { icon: "CreditCard", label: "Keine Kreditkarte" },
     { icon: "Scale", label: "§ 203 StGB" },
@@ -1950,7 +1951,7 @@ const _landingDe = {
     ],
   },
   stats: [
-    { value: "97,9 %", label: "Retrieval-Trefferquote (Recall@5)" },
+    { value: "99,8 %", label: "Retrieval-Trefferquote (Recall@8, LongMemEval, 500 Fragen)" },
     { value: "3", label: "Jurisdiktionen: AT, DE, CH" },
     { value: "0", label: "Mandantendaten-Lecks — by design" },
     { value: "14", label: "Tage gratis testen" },
@@ -2107,7 +2108,7 @@ const _landingDe = {
   ],
   ctaTitle: "Hör auf zu suchen. Fang an zu fragen.",
   ctaSub:
-    "14 Tage volle Testversion. Keine Kreditkarte, kein IT-Aufwand. Deine Sekretärin wartet schon.",
+    "14 Tage volle Testversion. Keine Kreditkarte, kein IT-Aufwand. Dein Team ist morgen produktiver.",
   ctaButton: "14 Tage kostenlos testen",
   relatedLinks: [
     { label: "Preise & Pläne", href: "/pricing" },
@@ -2119,17 +2120,16 @@ const _landingDe = {
 };
 
 const _landingEn = {
-  badge: "AI legal software & law firm software for AT · DE · CH",
+  badge: "AI legal software & law firm software for Europe",
   heroBadges: [
-    "New: 5-layer quality architecture",
-    "§ 203 StGB compliant",
-    "EU-Cloud or On-Premise",
+    "New: 99.8% Recall with 5-layer verification",
+    "§ 203 StGB compliant by architecture",
+    "EU-Cloud or On-Premise — your choice",
   ],
-  h1a: "Your firm forgets.",
-  h1b: "Subsumio doesn't.",
-  heroTagline: "AI legal software for lawyers in AT · DE · CH — with cited answers.",
-  h1Keyword: "AI legal software with cited answers for law firms",
-  sub: "Never miss a deadline. Ask in plain language — Subsumio answers with citations.",
+  h1a: "Answers from your files.",
+  h1b: "Cited. In seconds.",
+  heroTagline: "AI legal software for lawyers in Europe — with cited answers.",
+  sub: "Ask in plain language — Subsumio answers with page-level citations from your files. For lawyers in Germany, Austria and Switzerland.",
   heroTrustItems: [
     { icon: "CreditCard", label: "No credit card" },
     { icon: "Scale", label: "§ 203 StGB" },
@@ -2210,7 +2210,7 @@ const _landingEn = {
     ],
   },
   stats: [
-    { value: "97.9%", label: "Retrieval accuracy (Recall@5)" },
+    { value: "99.8%", label: "Retrieval accuracy (Recall@8, LongMemEval, 500 questions)" },
     { value: "3", label: "Jurisdictions: AT, DE, CH" },
     { value: "0", label: "Client-data leaks — by design" },
     { value: "14", label: "Days free trial" },
@@ -2365,7 +2365,7 @@ const _landingEn = {
     },
   ],
   ctaTitle: "Stop searching. Start asking.",
-  ctaSub: "14 days full trial. No credit card, no IT setup. Your secretary is waiting.",
+  ctaSub: "14 days full trial. No credit card, no IT setup. Your team is more productive tomorrow.",
   ctaButton: "Start free trial",
   relatedLinks: [
     { label: "Pricing & plans", href: "/en/pricing" },
@@ -2382,7 +2382,7 @@ export const LANDING = {
   at: applyReplacements(JSON.parse(JSON.stringify(_landingDe)), AT_REPLACEMENTS),
   ch: applyReplacements(JSON.parse(JSON.stringify(_landingDe)), CH_REPLACEMENTS),
   it: applyReplacements(JSON.parse(JSON.stringify(_landingEn)), {
-    "AI legal software & law firm software for AT · DE · CH": "Software legale AI per IT · DE · CH",
+    "AI legal software & law firm software for Europe": "Software legale AI per l'Europa",
     "Your firm forgets.": "Il tuo studio dimentica.",
     "Subsumio doesn't — AI legal software that cites every answer.": "Subsumio no.",
     "Every matter, one cited answer — page-level sources, not hallucinations.":
@@ -2396,7 +2396,7 @@ export const LANDING = {
     "For law firms": "Per studi legali",
   }),
   es: applyReplacements(JSON.parse(JSON.stringify(_landingEn)), {
-    "AI legal software & law firm software for AT · DE · CH": "Software legal IA para ES · DE · CH",
+    "AI legal software & law firm software for Europe": "Software legal IA para Europa",
     "Your firm forgets.": "Tu bufete olvida.",
     "Subsumio doesn't — AI legal software that cites every answer.": "Subsumio no.",
     "Every matter, one cited answer — page-level sources, not hallucinations.":
@@ -2410,8 +2410,7 @@ export const LANDING = {
     "For law firms": "Para bufetes",
   }),
   pl: applyReplacements(JSON.parse(JSON.stringify(_landingEn)), {
-    "AI legal software & law firm software for AT · DE · CH":
-      "Oprogramowanie prawne AI dla PL · DE · CH",
+    "AI legal software & law firm software for Europe": "Oprogramowanie prawne AI dla Europy",
     "Your firm forgets.": "Twoja kancelaria zapomina.",
     "Subsumio doesn't — AI legal software that cites every answer.": "Subsumio nie.",
     "Every matter, one cited answer — page-level sources, not hallucinations.":
@@ -2425,8 +2424,7 @@ export const LANDING = {
     "For law firms": "Dla kancelarii",
   }),
   fr: applyReplacements(JSON.parse(JSON.stringify(_landingEn)), {
-    "AI legal software & law firm software for AT · DE · CH":
-      "Logiciel juridique IA pour FR · DE · CH",
+    "AI legal software & law firm software for Europe": "Logiciel juridique IA pour l'Europe",
     "Your firm forgets.": "Votre cabinet oublie.",
     "Subsumio doesn't — AI legal software that cites every answer.": "Subsumio non.",
     "Every matter, one cited answer — page-level sources, not hallucinations.":
@@ -2440,8 +2438,7 @@ export const LANDING = {
     "For law firms": "Pour cabinets d'avocats",
   }),
   nl: applyReplacements(JSON.parse(JSON.stringify(_landingEn)), {
-    "AI legal software & law firm software for AT · DE · CH":
-      "AI juridische software voor NL · DE · CH",
+    "AI legal software & law firm software for Europe": "AI juridische software voor Europa",
     "Your firm forgets.": "Jouw kantoor vergeet.",
     "Subsumio doesn't — AI legal software that cites every answer.": "Subsumio niet.",
     "Every matter, one cited answer — page-level sources, not hallucinations.":
@@ -2492,6 +2489,7 @@ const _uiStringsDe: Record<string, string> = {
   writeUs: "Schreib uns — wir antworten persönlich.",
   startFree: "Kostenlos starten",
   seePlans: "Pläne ansehen",
+  trustedBy: "Vertraut von Kanzleien in Deutschland · AT · CH",
   watchDemo: "Demo ansehen",
   trySubsumio: "Subsumio testen",
   ariaFeatures: "Features",
@@ -2655,7 +2653,7 @@ const _uiStringsDe: Record<string, string> = {
   gapWarning: "⚠ Lücke: Do 14 Uhr ohne Notiz",
   worksOffline: "Funktioniert offline",
   installNow: "Subsumio jetzt installieren",
-  getStarted: "Demo anfragen",
+  getStarted: "14 Tage kostenlos testen",
   seeFeatures: "Features ansehen",
   pushNotifications: "Push-Benachrichtigungen",
   biometricUnlock: "Biometrische Entsperrung",
@@ -2693,6 +2691,7 @@ const _uiStringsEn: Record<string, string> = {
   writeUs: "Write to us — we reply personally.",
   startFree: "Start free",
   seePlans: "See plans",
+  trustedBy: "Trusted by law firms across AT · DE · CH",
   watchDemo: "Watch demo",
   trySubsumio: "Try Subsumio",
   ariaFeatures: "Features",

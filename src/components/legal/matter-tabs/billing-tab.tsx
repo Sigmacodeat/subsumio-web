@@ -231,7 +231,7 @@ export function BillingTab() {
             </h3>
             <div className="flex items-center gap-2">
               {timerRunning && (
-                <span className="flex items-center gap-1.5 text-xs text-blue-600">
+                <span className="flex items-center gap-1.5 text-xs text-[color:var(--ds-info-text)]">
                   <Loader2 size={12} className="animate-spin" />
                   {Math.floor(timerElapsed / 60)}:{String(timerElapsed % 60).padStart(2, "0")}
                 </span>
@@ -407,7 +407,7 @@ export function BillingTab() {
                     <button
                       disabled={unbillingId === entry.id}
                       onClick={() => handleUnbillTimeEntry(entry.id)}
-                      className="shrink-0 text-[color:var(--ds-text-muted)] transition-colors hover:text-amber-600"
+                      className="shrink-0 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-warning-text)]"
                       title={t("billingtab.unbill")}
                     >
                       {unbillingId === entry.id ? (
@@ -420,7 +420,7 @@ export function BillingTab() {
                   <button
                     disabled={isArchived}
                     onClick={() => handleDeleteTimeEntry(entry.id)}
-                    className="shrink-0 text-[color:var(--ds-text-muted)] transition-colors hover:text-red-600"
+                    className="shrink-0 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-danger-text)]"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -535,7 +535,7 @@ export function BillingTab() {
                   <button
                     disabled={isArchived}
                     onClick={() => handleDeleteExpense(expense.id)}
-                    className="shrink-0 text-[color:var(--ds-text-muted)] transition-colors hover:text-red-600"
+                    className="shrink-0 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-danger-text)]"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -562,9 +562,9 @@ export function BillingTab() {
 
         {/* Unbilled Summary */}
         {(billableHours > 0 || ctx.unbilledExpenses > 0) && (
-          <div className="flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+          <div className="flex items-center justify-between rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
             <div>
-              <h3 className="text-sm font-semibold text-amber-600">
+              <h3 className="text-sm font-semibold text-[color:var(--ds-warning-text)]">
                 {t("billingtab.unbilled_summary")}
               </h3>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
@@ -578,7 +578,7 @@ export function BillingTab() {
               onClick={() => {
                 window.location.href = `/dashboard/invoicing?case=${encodeURIComponent(caseData.slug)}`;
               }}
-              className="gap-1.5 border border-amber-500/30 text-xs text-amber-600 hover:bg-amber-500/10"
+              className="gap-1.5 border border-[color:var(--ds-warning-border)] text-xs text-[color:var(--ds-warning-text)] hover:bg-[color:var(--ds-warning-bg)]"
             >
               <FileText size={14} />
               {t("billingtab.create_invoice")}

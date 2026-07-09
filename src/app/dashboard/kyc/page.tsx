@@ -128,9 +128,9 @@ export default function KYCPage() {
       />
 
       {highRiskCount > 0 && (
-        <div className="flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3">
-          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-red-600" />
-          <p className="text-sm text-red-600">
+        <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]" />
+          <p className="text-sm text-[color:var(--ds-danger-text)]">
             <strong>{highRiskCount}</strong> Mandant(en) mit hohem Risiko — erweiterte
             Sorgfaltspflichten erforderlich.
           </p>
@@ -242,13 +242,13 @@ export default function KYCPage() {
                   <span className="text-sm font-medium">{v.client_name}</span>
                   <Badge
                     variant="default"
-                    className={`text-xs ${v.risk_level === "high" ? "border-red-500/30 text-red-600" : v.risk_level === "medium" ? "border-orange-500/30 text-orange-600" : "border-green-500/30 text-green-600"}`}
+                    className={`text-xs ${v.risk_level === "high" ? "border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]" : v.risk_level === "medium" ? "border-[color:var(--ds-attention-border)] text-[color:var(--ds-attention-text)]" : "border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]"}`}
                   >
                     Risiko: {v.risk_level}
                   </Badge>
                   <Badge
                     variant="default"
-                    className={`text-xs ${v.status === "verified" ? "border-green-500/30 text-green-600" : v.status === "failed" ? "border-red-500/30 text-red-600" : ""}`}
+                    className={`text-xs ${v.status === "verified" ? "border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]" : v.status === "failed" ? "border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]" : ""}`}
                   >
                     {v.status === "pending"
                       ? "Ausstehend"
@@ -265,7 +265,7 @@ export default function KYCPage() {
                   Akte: {v.case_slug} · Provider: {v.provider}
                 </div>
                 {v.risk_factors.length > 0 && (
-                  <div className="text-xs text-orange-600">{v.risk_factors.join(", ")}</div>
+                  <div className="text-xs text-[color:var(--ds-attention-text)]">{v.risk_factors.join(", ")}</div>
                 )}
                 {v.transparenzregister_checked && (
                   <div className="text-xs text-[color:var(--ds-text-muted)]">

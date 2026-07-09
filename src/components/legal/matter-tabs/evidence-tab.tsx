@@ -110,17 +110,17 @@ export function EvidenceTab() {
         </div>
 
         {/* AI Evidence Cards */}
-        <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+        <div className="rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-blue-600" />
-              <h3 className="text-sm font-semibold text-blue-600">
+              <Sparkles size={16} className="text-[color:var(--ds-info-text)]" />
+              <h3 className="text-sm font-semibold text-[color:var(--ds-info-text)]">
                 {t("cases.detail_evidence_ai_title")}
               </h3>
             </div>
             <Badge
               variant="default"
-              className="border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
+              className="border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
             >
               {ctx.aiEvidenceCards.length}
             </Badge>
@@ -147,7 +147,7 @@ export function EvidenceTab() {
                   className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3"
                 >
                   <div className="mb-2 flex items-center gap-2">
-                    <FileText size={14} className="shrink-0 text-blue-600" />
+                    <FileText size={14} className="shrink-0 text-[color:var(--ds-info-text)]" />
                     <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
                       {card.docName}
                     </span>
@@ -159,7 +159,7 @@ export function EvidenceTab() {
                     {card.docSlug && (
                       <Link
                         href={`/dashboard/brain/${encodeURIComponent(card.docSlug)}`}
-                        className="ml-auto text-xs text-blue-600 hover:underline"
+                        className="ml-auto text-xs text-[color:var(--ds-info-text)] hover:underline"
                       >
                         {t("cases.detail_doc_open")}
                       </Link>
@@ -220,7 +220,7 @@ export function EvidenceTab() {
                         {card.citedStatutes.map((s, j) => (
                           <span
                             key={j}
-                            className="rounded border border-amber-500/20 bg-amber-500/5 px-1.5 py-0.5 text-xs text-amber-700"
+                            className="rounded border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-1.5 py-0.5 text-xs text-[color:var(--ds-warning-text)]"
                           >
                             {s}
                           </span>
@@ -331,7 +331,7 @@ export function EvidenceTab() {
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
                 {ctx.evidenceForm.formState.errors.title && (
-                  <p className="mt-1 text-xs text-red-600">
+                  <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
                     {ctx.evidenceForm.formState.errors.title.message}
                   </p>
                 )}
@@ -578,7 +578,7 @@ export function EvidenceTab() {
                             ctx.setEvidenceList(updated);
                             ctx.saveCaseUpdate({ evidence: updated });
                           }}
-                          className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-colors hover:text-red-600"
+                          className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-danger-text)]"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -601,10 +601,10 @@ export function EvidenceTab() {
                             className={cn(
                               "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                               (ev.weight || 0) >= 0.7
-                                ? "bg-emerald-500"
+                                ? "bg-[color:var(--ds-success-solid)]"
                                 : (ev.weight || 0) >= 0.4
-                                  ? "bg-amber-500"
-                                  : "bg-red-500"
+                                  ? "bg-[color:var(--ds-warning-solid)]"
+                                  : "bg-[color:var(--ds-danger-solid)]"
                             )}
                             style={{ width: `${Math.round((ev.weight || 0) * 100)}%` }}
                           />

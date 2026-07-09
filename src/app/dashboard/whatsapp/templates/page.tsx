@@ -43,9 +43,9 @@ interface WhatsAppTemplate {
 
 const STATUS_STYLES: Record<string, string> = {
   draft: "bg-gray-500/10 text-gray-600 border-gray-500/20",
-  pending: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  approved: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-  rejected: "bg-red-500/10 text-red-600 border-red-500/20",
+  pending: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
+  approved: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
+  rejected: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
 };
 
 const STATUS_ICONS: Record<string, typeof FileText> = {
@@ -154,7 +154,7 @@ export default function WhatsAppTemplatesPage() {
         actions={
           <Button
             variant="primary"
-            className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
+            className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
             onClick={() => setCreating(true)}
           >
             <Plus size={14} />
@@ -164,7 +164,7 @@ export default function WhatsAppTemplatesPage() {
       />
 
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           {error}
         </div>
       )}
@@ -174,8 +174,8 @@ export default function WhatsAppTemplatesPage() {
       ) : (
         <>
           {/* Info box */}
-          <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
-            <p className="text-sm text-blue-600">
+          <div className="rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-4 py-3">
+            <p className="text-sm text-[color:var(--ds-info-text)]">
               <strong>Wichtig:</strong> WhatsApp-Templates müssen von Meta genehmigt werden, bevor
               sie außerhalb des 24h-Fensters gesendet werden können. Genehmigte Templates können im
               Meta Business Manager eingereicht werden. Hier gespeicherte Templates dienen als
@@ -185,7 +185,7 @@ export default function WhatsAppTemplatesPage() {
 
           {/* Create form */}
           {creating && (
-            <div className="space-y-3 rounded-xl border border-blue-500/30 bg-blue-600/5 p-4">
+            <div className="space-y-3 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
                   Neues Template
@@ -256,12 +256,12 @@ export default function WhatsAppTemplatesPage() {
                   value={newTemplate.body}
                   onChange={(e) => setNewTemplate({ ...newTemplate, body: e.target.value })}
                   rows={4}
-                  className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-blue-500/50 focus:outline-none"
+                  className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-info-border)] focus:outline-none"
                 />
               </div>
               <Button
                 variant="primary"
-                className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
+                className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
                 onClick={createTemplate}
               >
                 <Save size={14} />
@@ -352,11 +352,11 @@ export default function WhatsAppTemplatesPage() {
                           value={editing.body}
                           onChange={(e) => setEditing({ ...editing, body: e.target.value })}
                           rows={4}
-                          className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-blue-500/50 focus:outline-none"
+                          className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-info-border)] focus:outline-none"
                         />
                         <Button
                           variant="primary"
-                          className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
+                          className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
                           onClick={updateTemplate}
                         >
                           <Save size={14} />
@@ -384,13 +384,13 @@ export default function WhatsAppTemplatesPage() {
                             </Badge>
                             <button
                               onClick={() => setEditing(template)}
-                              className="text-[color:var(--ds-text-muted)] hover:text-blue-600"
+                              className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-info-text)]"
                             >
                               <Edit3 size={14} />
                             </button>
                             <button
                               onClick={() => deleteTemplate(template.slug)}
-                              className="text-[color:var(--ds-text-muted)] hover:text-red-600"
+                              className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                             >
                               <Trash2 size={14} />
                             </button>

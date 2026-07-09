@@ -38,7 +38,7 @@ export default function BranchPricing({ lang, industry }: { lang: Lang; industry
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-12 text-center">
-        <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium">
+        <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium">
           {UI_STRINGS[lang].pricingBadge}
         </span>
         <h2 className={`${H2_CTA_CLASS} mb-4`}>{title}</h2>
@@ -46,7 +46,7 @@ export default function BranchPricing({ lang, industry }: { lang: Lang; industry
       </div>
 
       <div
-        className={`grid gap-5 md:grid-cols-2 ${tiers.length >= 4 ? "lg:grid-cols-4" : "mx-auto max-w-5xl lg:grid-cols-3"}`}
+        className={`grid gap-6 md:grid-cols-2 ${tiers.length >= 4 ? "lg:grid-cols-4" : "mx-auto max-w-5xl lg:grid-cols-3"}`}
       >
         {tiers.map((tier) => {
           const href = hrefFor(tier);
@@ -66,23 +66,23 @@ export default function BranchPricing({ lang, industry }: { lang: Lang; industry
               }`}
             >
               {tier.highlight && (
-                <span className="brand-bg absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full px-2.5 py-0.5 text-xs font-semibold text-white">
+                <span className="brand-bg absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full px-2.5 py-0.5 text-sm font-semibold text-white">
                   {UI_STRINGS[lang].mostPopular}
                 </span>
               )}
               <p className="mb-1 text-sm font-medium [color:var(--mk-text-muted)]">{tier.name}</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-bold [color:var(--mk-text)]">{tier.price}</span>
-                <span className="text-xs [color:var(--mk-text-muted)]">{tier.period}</span>
+                <span className="text-sm [color:var(--mk-text-muted)]">{tier.period}</span>
               </div>
-              <p className="mt-2 text-xs leading-relaxed [color:var(--mk-text-muted)]">
+              <p className="mt-2 text-sm leading-relaxed [color:var(--mk-text-muted)]">
                 {tier.blurb}
               </p>
               <ul className="my-5 flex-1 space-y-2">
                 {tier.features.map((f) => (
                   <li
                     key={f}
-                    className="flex items-start gap-2 text-xs leading-relaxed [color:var(--mk-text-muted)]"
+                    className="flex items-start gap-2 text-sm leading-relaxed [color:var(--mk-text-muted)]"
                   >
                     <Check size={13} className="brand-text mt-0.5 shrink-0" /> {f}
                   </li>
@@ -104,7 +104,7 @@ export default function BranchPricing({ lang, industry }: { lang: Lang; industry
         })}
       </div>
 
-      <p className="mt-6 text-center text-xs [color:var(--mk-text-subtle)]">
+      <p className="mt-6 text-center text-sm [color:var(--mk-text-subtle)]">
         {PRICING[lang].footnote}{" "}
         <Link href={p(lang, "/pricing")} className="brand-text hover:underline">
           {UI_STRINGS[lang].fullPricingFaq}

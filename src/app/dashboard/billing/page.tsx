@@ -83,7 +83,7 @@ function UsageCard() {
               <div className="mb-1.5 flex items-baseline justify-between">
                 <span className="text-xs text-[color:var(--ds-text-muted)]">{row.label}</span>
                 <span
-                  className={`font-mono text-xs ${warn ? "text-amber-600" : "text-[color:var(--ds-text-muted)]"}`}
+                  className={`font-mono text-xs ${warn ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-text-muted)]"}`}
                 >
                   {row.used.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} /{" "}
                   {row.max.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
@@ -98,7 +98,7 @@ function UsageCard() {
                 aria-label={row.label}
               >
                 <div
-                  className={`h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${warn ? "bg-amber-500" : "brand-soft"}`}
+                  className={`h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${warn ? "bg-[color:var(--ds-warning-solid)]" : "brand-soft"}`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -158,7 +158,7 @@ function ModelBreakdownCard() {
                       {provider}
                     </span>
                     {model?.dataResidency === "eu" && (
-                      <span className="text-xs font-medium text-emerald-600">EU</span>
+                      <span className="text-xs font-medium text-[color:var(--ds-success-text)]">EU</span>
                     )}
                   </div>
                   <div className="flex items-center gap-3 font-mono text-xs text-[color:var(--ds-text-muted)]">
@@ -298,21 +298,21 @@ function BillingInner() {
       />
 
       {status === "success" && (
-        <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-          <CheckCircle2 size={16} className="text-emerald-600" />
-          <p className="text-sm text-emerald-700">{t("billing.success")}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
+          <CheckCircle2 size={16} className="text-[color:var(--ds-success-text)]" />
+          <p className="text-sm text-[color:var(--ds-success-text)]">{t("billing.success")}</p>
         </div>
       )}
       {status === "cancelled" && (
-        <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
-          <AlertTriangle size={16} className="text-amber-600" />
-          <p className="text-sm text-amber-700">{t("billing.cancelled")}</p>
+        <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
+          <AlertTriangle size={16} className="text-[color:var(--ds-warning-text)]" />
+          <p className="text-sm text-[color:var(--ds-warning-text)]">{t("billing.cancelled")}</p>
         </div>
       )}
       {notice && (
-        <div className="flex items-start gap-3 rounded-xl border border-blue-500/30 bg-blue-500/10 p-4">
-          <CreditCard size={16} className="mt-0.5 shrink-0 text-blue-600" />
-          <p className="text-sm text-blue-700">{notice}</p>
+        <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4">
+          <CreditCard size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]" />
+          <p className="text-sm text-[color:var(--ds-info-text)]">{notice}</p>
         </div>
       )}
 
@@ -350,8 +350,8 @@ function BillingInner() {
             )}
           </div>
           {typeof me?.referrals === "number" && (
-            <div className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-              <Gift size={16} className="text-amber-600" />
+            <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3">
+              <Gift size={16} className="text-[color:var(--ds-warning-text)]" />
               <div>
                 <p className="text-sm font-semibold text-[color:var(--ds-text)]">
                   {me.referrals}{" "}

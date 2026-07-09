@@ -51,6 +51,7 @@ export interface IngestCaptureResult {
   source_kind: string;
   source_uri: string;
   pipeline_queued: boolean;
+  consolidate_queued: boolean;
 }
 
 /** Builds the default slug for an event when the caller didn't provide one. */
@@ -190,6 +191,7 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
         source_kind: event.source_kind,
         source_uri: event.source_uri,
         pipeline_queued: true,
+        consolidate_queued: false,
       };
     }
 
@@ -256,6 +258,36 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
       );
     }
 
+    // v0.46 — Post-ingest incremental consolidation (Hindsight trigger).
+    // Enqueue a consolidate-incremental job for the ingested slug so newly
+    // extracted facts are promoted to takes within seconds instead of
+    // waiting for the next dream cycle. Fail-open: if enqueue fails, the
+    // dream cycle will consolidate everything in the full scan.
+    let consolidate_queued = false;
+    try {
+      const consolidateQueue = new MinionQueue(engine);
+      await consolidateQueue.add(
+        "consolidate-incremental",
+        {
+          affectedSlugs: [slug],
+          ...(targetSource !== "default" ? { source_id: targetSource } : {}),
+          reason: "ingest_capture",
+        },
+        {
+          timeout_ms: 5 * 60 * 1000,
+          max_attempts: 2,
+          idempotency_key: `consolidate-inc:${targetSource}:${slug}`,
+        },
+        { allowProtectedSubmit: true }
+      );
+      consolidate_queued = true;
+    } catch (consolidateErr) {
+      console.error(
+        `[ingest_capture] consolidate-incremental trigger failed for ${slug}: ` +
+          (consolidateErr instanceof Error ? consolidateErr.message : String(consolidateErr))
+      );
+    }
+
     return {
       slug,
       status: result.status,
@@ -264,6 +296,7 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
       source_kind: event.source_kind,
       source_uri: event.source_uri,
       pipeline_queued,
+      consolidate_queued,
     };
   };
 }

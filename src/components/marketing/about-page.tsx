@@ -1,9 +1,11 @@
 "use client";
 
-import { Shield, Brain, Globe, Heart } from "lucide-react";
-import { p, type Lang } from "@/content/site";
-import { Section, SectionHeading, PageHero, CTASection, ContentCard } from "./chrome";
-import { AnimatedCounter, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
+import { Shield, Brain, Globe, Heart, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { p, UI_STRINGS, type Lang } from "@/content/site";
+import { Button } from "@/components/ui/button";
+import { Section, SectionHeading, PageHero, CTASection, ContentCard, StatCard } from "./chrome";
+import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
 const _deAbout = {
   badge: "Über Subsumio",
@@ -40,7 +42,7 @@ const _deAbout = {
   stats: [
     { value: "14.713", label: "Gesetzesparagraphen, zitierbar" },
     { value: "3", label: "Jurisdiktionen — AT · DE · CH" },
-    { value: "97,9 %", label: "Recall@5 Retrieval-Benchmark" },
+    { value: "99,8 %", label: "Recall@8 Retrieval-Benchmark (LongMemEval, 500 Fragen)" },
     { value: "0", label: "Mandantendaten-Leaks — garantiert" },
   ],
   ctaTitle: "Sprich mit uns",
@@ -84,7 +86,7 @@ const CONTENT = {
     stats: [
       { value: "14,713", label: "Statute paragraphs, citable" },
       { value: "3", label: "Jurisdictions — AT · DE · CH" },
-      { value: "97.9%", label: "Recall@5 retrieval benchmark" },
+      { value: "99.8%", label: "Recall@8 retrieval benchmark (LongMemEval, 500 questions)" },
       { value: "0", label: "Client-data leaks, by design" },
     ],
     ctaTitle: "Talk to us",
@@ -102,7 +104,26 @@ export default function AboutPage({ lang }: { lang: Lang }) {
   const c = (CONTENT as unknown as Record<string, typeof CONTENT.de>)[lang] ?? CONTENT.de;
   return (
     <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]" lang={lang}>
-      <PageHero badge={c.badge} h1a={c.h1a} h1b={c.h1b} sub={c.sub} />
+      <PageHero
+        badge={c.badge}
+        h1a={c.h1a}
+        h1b={c.h1b}
+        sub={c.sub}
+        actions={
+          <>
+            <Link href={p(lang, "/signup")}>
+              <Button size="lg" variant="primary">
+                {UI_STRINGS[lang].startFree} <ArrowRight size={16} />
+              </Button>
+            </Link>
+            <Link href={p(lang, "/superbrain")}>
+              <Button size="lg" variant="outline">
+                {UI_STRINGS[lang].watchDemo}
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
@@ -118,7 +139,7 @@ export default function AboutPage({ lang }: { lang: Lang }) {
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <SectionHeading title={c.valuesTitle} tone="light" />
-          <StaggerContainer className="grid gap-4 sm:grid-cols-2" stagger={0.08}>
+          <StaggerContainer className="grid gap-6 sm:grid-cols-2" stagger={0.08}>
             {c.values.map((v) => {
               const Icon = ICON_MAP[v.icon as keyof typeof ICON_MAP] ?? Brain;
               return (
@@ -135,29 +156,11 @@ export default function AboutPage({ lang }: { lang: Lang }) {
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={c.statsTitle} tone="dark" />
           <StaggerContainer className="grid grid-cols-2 gap-6 md:grid-cols-4" stagger={0.06}>
-            {c.stats.map((s) => {
-              const num = parseFloat(s.value.replace(/[^0-9.]/g, ""));
-              const suffix = s.value.replace(/[0-9.,]/g, "");
-              const prefix = s.value.match(/^[^0-9]*/)?.[0] ?? "";
-              const isNumeric = !isNaN(num) && num > 0;
-              return (
-                <StaggerItem key={s.label} className="text-center">
-                  <div className="brand-text text-3xl font-bold md:text-4xl">
-                    {isNumeric ? (
-                      <AnimatedCounter
-                        to={num}
-                        prefix={prefix}
-                        suffix={suffix}
-                        decimals={s.value.includes(".") ? 1 : 0}
-                      />
-                    ) : (
-                      s.value
-                    )}
-                  </div>
-                  <div className="mt-1 text-xs [color:var(--mk-text-muted)]">{s.label}</div>
-                </StaggerItem>
-              );
-            })}
+            {c.stats.map((s) => (
+              <StaggerItem key={s.label} className="text-center">
+                <StatCard value={s.value} label={s.label} />
+              </StaggerItem>
+            ))}
           </StaggerContainer>
         </div>
       </Section>
@@ -167,6 +170,8 @@ export default function AboutPage({ lang }: { lang: Lang }) {
         sub={c.ctaSub}
         href={p(lang, "/contact")}
         label={c.ctaButton}
+        secondaryHref={p(lang, "/signup")}
+        secondaryLabel={UI_STRINGS[lang].startFree}
       />
     </div>
   );

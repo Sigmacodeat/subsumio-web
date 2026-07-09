@@ -365,7 +365,7 @@ export default function WhatsAppDashboardPage() {
       />
 
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           {error}
         </div>
       )}
@@ -471,7 +471,7 @@ export default function WhatsAppDashboardPage() {
               </div>
               <Badge
                 variant="default"
-                className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+                className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
               >
                 {activeThreads} {t("whatsapp.active_threads")}
               </Badge>
@@ -512,7 +512,7 @@ export default function WhatsAppDashboardPage() {
 
           <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
             <div className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-emerald-600" />
+              <ShieldCheck size={16} className="text-[color:var(--ds-success-text)]" />
               <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
                 {t("whatsapp.phone_numbers")}
               </h2>
@@ -623,13 +623,13 @@ export default function WhatsAppDashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-amber-600">{t("whatsapp.no_identities")}</p>
+              <p className="text-xs text-[color:var(--ds-warning-text)]">{t("whatsapp.no_identities")}</p>
             )}
           </div>
 
           <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
             <div className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-emerald-600" />
+              <ShieldCheck size={16} className="text-[color:var(--ds-success-text)]" />
               <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
                 {t("whatsapp.setup")}
               </h2>
@@ -685,7 +685,7 @@ export default function WhatsAppDashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-amber-600">{t("whatsapp.no_senders")}</p>
+              <p className="text-xs text-[color:var(--ds-warning-text)]">{t("whatsapp.no_senders")}</p>
             )}
           </div>
 
@@ -724,7 +724,7 @@ function WhatsAppDocumentTriage({
     <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-600">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]">
             <FolderInput size={17} />
           </div>
           <div>
@@ -740,8 +740,8 @@ function WhatsAppDocumentTriage({
           variant="default"
           className={
             documents.length > 0
-              ? "border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
-              : "border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+              ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
+              : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
           }
         >
           {documents.length} {t("whatsapp.triage_open")}
@@ -776,7 +776,7 @@ function WhatsAppDocumentTriage({
                     {text(fm.uploaded_at) && (
                       <span>{new Date(text(fm.uploaded_at)).toLocaleString(lang)}</span>
                     )}
-                    <span className="text-amber-600">{t("whatsapp.triage_needs_case")}</span>
+                    <span className="text-[color:var(--ds-warning-text)]">{t("whatsapp.triage_needs_case")}</span>
                   </div>
                 </div>
                 <select
@@ -819,7 +819,7 @@ function Metric({
   ok?: boolean;
   warn?: boolean;
 }) {
-  const color = ok ? "text-emerald-600" : warn ? "text-amber-600" : "text-[color:var(--ds-text)]";
+  const color = ok ? "text-[color:var(--ds-success-text)]" : warn ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-text)]";
   return (
     <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
       <div className={`text-lg font-bold ${color}`}>{value}</div>
@@ -839,9 +839,9 @@ function SetupFlag({ label, ok }: { label: string; ok: boolean }) {
   return (
     <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">
       {ok ? (
-        <CheckCircle2 size={12} className="text-emerald-600" />
+        <CheckCircle2 size={12} className="text-[color:var(--ds-success-text)]" />
       ) : (
-        <XCircle size={12} className="text-red-600" />
+        <XCircle size={12} className="text-[color:var(--ds-danger-text)]" />
       )}
       <span className="text-[color:var(--ds-text-muted)]">{label}</span>
     </div>
@@ -1039,7 +1039,7 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
             onClick={() => setViewMode("flat")}
             className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
               viewMode === "flat"
-                ? "bg-blue-600/15 text-blue-600"
+                ? "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
                 : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             }`}
           >
@@ -1049,7 +1049,7 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
             onClick={() => setViewMode("threads")}
             className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
               viewMode === "threads"
-                ? "bg-blue-600/15 text-blue-600"
+                ? "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
                 : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             }`}
           >
@@ -1087,7 +1087,7 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
                   {text(fm.intent) && <span> · {text(fm.intent)}</span>}
                 </div>
                 {text(fm.error) && (
-                  <div className="flex items-center gap-1 text-xs text-red-700">
+                  <div className="flex items-center gap-1 text-xs text-[color:var(--ds-danger-text)]">
                     <AlertTriangle size={10} /> {text(fm.error)}
                   </div>
                 )}
@@ -1110,7 +1110,7 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
                 onClick={() => setSelectedThread(thread.senderHash)}
                 className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
                   selectedThread === thread.senderHash
-                    ? "border-blue-500/30 bg-blue-600/10"
+                    ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-surface-hover)]"
                 }`}
               >

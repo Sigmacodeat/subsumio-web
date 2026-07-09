@@ -62,6 +62,8 @@ import {
   GitCompare,
   FileSearch,
   Mic,
+  Server,
+  FileCheck,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -145,6 +147,8 @@ export const ICONS: Record<string, LucideIcon> = {
   GitCompare,
   FileSearch,
   Mic,
+  Server,
+  FileCheck,
 };
 
 // Tone-aware accent icon-tiles. On light surfaces the -700/-50/-200 shades
@@ -402,13 +406,13 @@ function FeaturedSidebar({
         {/* Title */}
         <div className="text-sm font-semibold [color:var(--mk-text)]">{content.title}</div>
         {/* Description */}
-        <div className="mt-1 text-xs leading-relaxed [color:var(--mk-text-subtle)]">
+        <div className="mt-1 text-sm leading-relaxed [color:var(--mk-text-subtle)]">
           {content.description}
         </div>
       </div>
 
       {/* CTA arrow */}
-      <div className="brand-text mt-4 flex items-center gap-1 text-xs font-medium">
+      <div className="brand-text mt-4 flex items-center gap-1 text-sm font-medium">
         <ChevronRight
           size={14}
           className="shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
@@ -459,7 +463,7 @@ function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-2 text-center sm:px-6 lg:px-8">
             <Link
               href={p(lang, nav.announcement.href)}
-              className="group hover:[color:var(--brand-text)] flex min-h-[28px] items-center gap-2 text-xs font-medium [color:var(--mk-text)] transition-colors"
+              className="group hover:[color:var(--brand-text)] flex min-h-[28px] items-center gap-2 text-sm font-medium [color:var(--mk-text)] transition-colors"
               aria-label={`${nav.announcement.badge ? nav.announcement.badge + ": " : ""}${nav.announcement.text}`}
             >
               {nav.announcement.badge && (
@@ -741,7 +745,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
             className="mx-auto max-w-7xl px-4 py-2.5 sm:px-6 lg:px-8"
             aria-label={UI_STRINGS[lang].ariaMainNav}
           >
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-6">
               <Link href={p(lang, "")} aria-label={UI_STRINGS[lang].ariaHome} className="shrink-0">
                 <BrandLogo />
               </Link>
@@ -869,7 +873,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                               {item.label}
                                               {item.badge && <NavBadge label={item.badge} />}
                                             </div>
-                                            <div className="mt-0.5 text-xs leading-snug [color:var(--mk-text-subtle)]">
+                                            <div className="mt-0.5 text-sm leading-snug [color:var(--mk-text-subtle)]">
                                               {item.description}
                                             </div>
                                           </div>
@@ -893,7 +897,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                 <Link
                                   href={p(lang, section.ctaBottom.href)}
                                   onClick={() => setOpenSection(null)}
-                                  className="group hover:[color:var(--brand-text)] flex items-center justify-between border-t [border-color:var(--mk-border)] px-4 py-2.5 text-xs font-medium [color:var(--mk-text-muted)] transition-colors hover:[background:var(--mk-hover)]"
+                                  className="group hover:[color:var(--brand-text)] flex items-center justify-between border-t [border-color:var(--mk-border)] px-4 py-2.5 text-sm font-medium [color:var(--mk-text-muted)] transition-colors hover:[background:var(--mk-hover)]"
                                 >
                                   {section.ctaBottom.label}
                                   <ChevronRight
@@ -925,7 +929,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                 {/* Language switcher — click-to-open with keyboard support */}
                 <div ref={langRef} className="relative hidden lg:block">
                   <button
-                    className="flex min-h-[36px] items-center gap-1.5 rounded-full px-3 py-1.5 text-xs [color:var(--mk-text-muted)] transition-colors duration-200 [background:var(--mk-surface)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none"
+                    className="flex min-h-[36px] items-center gap-1.5 rounded-full px-3 py-1.5 text-sm [color:var(--mk-text-muted)] transition-colors duration-200 [background:var(--mk-surface)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--mk-focus-ring)] focus-visible:outline-none"
                     aria-label={UI_STRINGS[lang].ariaLanguage}
                     aria-haspopup="true"
                     aria-expanded={langOpen}
@@ -962,7 +966,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                 setLangOpen(false);
                               }}
                               role="menuitem"
-                              className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors hover:[background:var(--mk-hover)] ${l === lang ? "brand-text font-medium" : "[color:var(--mk-text-muted)]"}`}
+                              className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors hover:[background:var(--mk-hover)] ${l === lang ? "brand-text font-medium" : "[color:var(--mk-text-muted)]"}`}
                             >
                               <span className="font-mono text-[10px] opacity-60">
                                 {HREFLANG[l]}
@@ -981,7 +985,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="hover:[color:var(--brand-text)] text-xs [color:var(--mk-text-muted)]"
+                      className="hover:[color:var(--brand-text)] text-sm [color:var(--mk-text-muted)]"
                     >
                       {nav.ctaSecondary}
                     </Button>
@@ -1198,7 +1202,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                         <NavBadge label={section.featuredContent.badge} />
                                       )}
                                     </div>
-                                    <div className="mt-0.5 text-xs leading-snug [color:var(--mk-text-subtle)]">
+                                    <div className="mt-0.5 text-sm leading-snug [color:var(--mk-text-subtle)]">
                                       {section.featuredContent.description}
                                     </div>
                                   </div>
@@ -1246,7 +1250,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                             <span>{item.label}</span>
                                             {item.badge && <NavBadge label={item.badge} />}
                                           </span>
-                                          <span className="text-xs leading-snug font-normal [color:var(--mk-text-subtle)]">
+                                          <span className="text-sm leading-snug font-normal [color:var(--mk-text-subtle)]">
                                             {item.description}
                                           </span>
                                         </span>
@@ -1289,7 +1293,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
 
               {/* Language switcher — bottom of drawer with safe-area padding */}
               <div className="border-t [border-color:var(--mk-border)] px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-                <div className="mb-2 flex items-center gap-1.5 text-xs font-medium [color:var(--mk-text-subtle)]">
+                <div className="mb-2 flex items-center gap-1.5 text-sm font-medium [color:var(--mk-text-subtle)]">
                   <Globe size={12} /> {UI_STRINGS[lang].languageLabel}
                 </div>
                 <div className="grid grid-cols-3 gap-1">
@@ -1297,7 +1301,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                     <Link
                       key={l}
                       href={p(l, pathname.replace(/^\/(en|at|ch|it|es|pl|fr|nl)/, ""))}
-                      className={`flex items-center justify-center rounded-lg px-2 py-2 text-xs transition-colors ${
+                      className={`flex items-center justify-center rounded-lg px-2 py-2 text-sm transition-colors ${
                         l === lang
                           ? "brand-soft brand-border brand-text border font-medium"
                           : "[color:var(--mk-text-muted)] hover:[background:var(--mk-hover)]"
@@ -1358,7 +1362,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
               <SubsumioLogo size={28} />
             </div>
             <p className="mb-4 text-sm [color:var(--mk-text-muted)]">{footer.tagline}</p>
-            <p className="max-w-xs text-xs leading-relaxed [color:var(--mk-text-subtle)]">
+            <p className="max-w-xs text-sm leading-relaxed [color:var(--mk-text-subtle)]">
               {footer.note}
             </p>
             <div className="mt-4 flex items-center gap-3">
@@ -1393,7 +1397,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
           </div>
           {footer.columns.map((col) => (
             <div key={col.title}>
-              <p className="mb-3 text-xs font-semibold tracking-wider [color:var(--mk-text-muted)] uppercase">
+              <p className="mb-3 text-sm font-semibold tracking-wider [color:var(--mk-text-muted)] uppercase">
                 {col.title}
               </p>
               <ul className="space-y-2">
@@ -1404,7 +1408,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                         href={link.href}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]"
+                        className="text-sm [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]"
                       >
                         {link.label}
                       </a>
@@ -1413,7 +1417,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                       // niemals den Sprachpräfix anhängen (/en/dashboard = 404).
                       <Link
                         href={link.href.startsWith("/dashboard") ? link.href : p(lang, link.href)}
-                        className="text-xs [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]"
+                        className="text-sm [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]"
                       >
                         {link.label}
                       </Link>
@@ -1425,10 +1429,10 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
           ))}
         </div>
         <div className="flex flex-col items-center justify-between gap-2 border-t [border-color:var(--mk-border)] pt-6 sm:flex-row">
-          <p className="text-xs [color:var(--mk-text-subtle)]">
+          <p className="text-sm [color:var(--mk-text-subtle)]">
             © {new Date().getFullYear()} Subsumio · {UI_STRINGS[lang].footerLegalTagline}
           </p>
-          <p className="text-xs [color:var(--mk-text-subtle)]">
+          <p className="text-sm [color:var(--mk-text-subtle)]">
             {UI_STRINGS[lang].footerHostingLine}
           </p>
         </div>
@@ -1488,7 +1492,7 @@ export function SectionHeading({
     >
       {badge && (
         <motion.span
-          className="brand-soft brand-text brand-border mb-5 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold"
+          className="brand-soft brand-text brand-border mb-5 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold"
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true, margin: "0px 0px 80px 0px" }}
@@ -1532,14 +1536,14 @@ export function DemoWindow({
           <span className="terminal-dot-amber" />
           <span className="terminal-dot-green" />
         </div>
-        <div className="ml-4 flex-1 font-mono text-xs [color:var(--mk-text)] opacity-60">
+        <div className="ml-4 flex-1 font-mono text-sm [color:var(--mk-text)] opacity-60">
           {windowTitle}
         </div>
       </div>
       <div className="px-6 pt-6 pb-4">
         <div className="flex items-start gap-3">
           <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/15">
-            <span className="brand-text text-xs font-semibold">{you}</span>
+            <span className="brand-text text-sm font-semibold">{you}</span>
           </div>
           <p className="text-sm [color:var(--mk-text)]">{q}</p>
         </div>
@@ -1553,9 +1557,9 @@ export function DemoWindow({
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2 border-t [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-bg)] sm:px-6 lg:px-8">
-        <span className="text-xs [color:var(--mk-text)] opacity-60">{sourcesLabel}</span>
+        <span className="text-sm [color:var(--mk-text)] opacity-60">{sourcesLabel}</span>
         {sources.map((slug) => (
-          <span key={slug} className="brand-text brand-soft rounded px-2 py-0.5 font-mono text-xs">
+          <span key={slug} className="brand-text brand-soft rounded px-2 py-0.5 font-mono text-sm">
             {slug}
           </span>
         ))}
@@ -1608,7 +1612,11 @@ export const H1_CLASS =
 
 /** Standard H2 class for CTA closers and inline section headings. */
 export const H2_CTA_CLASS =
-  "text-2xl font-bold tracking-tight text-balance [color:var(--mk-text)] md:text-3xl";
+  "text-3xl font-bold tracking-tight text-balance [color:var(--mk-text)] md:text-4xl";
+
+/** Standard H3 class for card titles and feature headings. */
+export const H3_CLASS =
+  "text-xl font-semibold tracking-tight text-balance [color:var(--mk-text)] md:text-2xl";
 
 /** Standard badge pill — brand-soft, brand-text, brand-border. */
 export function BadgePill({
@@ -1620,7 +1628,7 @@ export function BadgePill({
 }) {
   return (
     <span
-      className={`brand-soft brand-text brand-border mb-6 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold ${className}`}
+      className={`brand-soft brand-text brand-border mb-6 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold ${className}`}
     >
       <span className="brand-bg h-1.5 w-1.5 rounded-full" />
       {children}
@@ -1677,7 +1685,7 @@ export function ContentCard({
       className={`h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl ${className}`}
     >
       <IconTile icon={icon} size={iconSize} />
-      <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">{title}</h3>
+      <h3 className={`mb-2 ${H3_CLASS}`}>{title}</h3>
       <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{desc}</p>
     </GlowCard>
   );
@@ -1789,13 +1797,15 @@ export function PageHero({
   );
 }
 
-/** Standard CTA close section — dark tone, logo, H2, subtitle, button.
+/** Standard CTA close section — dark tone, logo, H2, subtitle, primary + optional secondary button.
  *  All sub-pages should close with this instead of custom CTA markup. */
 export function CTASection({
   title,
   sub,
   href,
   label,
+  secondaryHref,
+  secondaryLabel,
   showLogo = true,
   tone = "dark",
 }: {
@@ -1803,6 +1813,8 @@ export function CTASection({
   sub: string;
   href: string;
   label: string;
+  secondaryHref?: string;
+  secondaryLabel?: string;
   showLogo?: boolean;
   tone?: "dark" | "light" | "slate";
 }) {
@@ -1814,15 +1826,24 @@ export function CTASection({
         <p className="mx-auto mb-8 max-w-xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
           {sub}
         </p>
-        <Link href={href}>
-          <Button size="xl" variant="primary" className="group min-h-[48px]">
-            {label}
-            <ArrowRight
-              size={18}
-              className="transition-transform duration-200 group-hover:translate-x-0.5"
-            />
-          </Button>
-        </Link>
+        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link href={href}>
+            <Button size="xl" variant="primary" className="group min-h-[48px]">
+              {label}
+              <ArrowRight
+                size={18}
+                className="transition-transform duration-200 group-hover:translate-x-0.5"
+              />
+            </Button>
+          </Link>
+          {secondaryHref && secondaryLabel && (
+            <Link href={secondaryHref}>
+              <Button size="xl" variant="outline" className="min-h-[48px]">
+                {secondaryLabel}
+              </Button>
+            </Link>
+          )}
+        </div>
       </Reveal>
     </Section>
   );
@@ -1929,7 +1950,7 @@ export function SplitHero({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.35, ease: EASE.out }}
-              className="mt-8 flex flex-col items-center gap-4 sm:flex-row lg:justify-start"
+              className="mt-8 flex flex-col items-center gap-6 sm:flex-row lg:justify-start"
             >
               {children}
             </motion.div>
@@ -1986,7 +2007,7 @@ export function StatCard({
       </p>
       <p className="text-sm font-semibold [color:var(--mk-text)]">{label}</p>
       {context && (
-        <p className="mt-0.5 text-xs leading-relaxed [color:var(--mk-text-muted)]">{context}</p>
+        <p className="mt-0.5 text-sm leading-relaxed [color:var(--mk-text-muted)]">{context}</p>
       )}
     </div>
   );
@@ -2064,7 +2085,7 @@ export function ComparisonTable({
         {columns.map((col, colIdx) => (
           <div
             key={colIdx}
-            className={`rounded-2xl border [border-color:var(--mk-border)] p-5 [background:var(--mk-surface)] ${
+            className={`rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)] ${
               col.highlight || highlightCol === colIdx
                 ? "ring-2 ring-[color:var(--brand-text)]"
                 : ""
@@ -2074,7 +2095,7 @@ export function ComparisonTable({
             <dl className="space-y-2">
               {rows.map((row, rowIdx) => (
                 <div key={rowIdx} className="flex items-center justify-between gap-3">
-                  <dt className="text-xs [color:var(--mk-text-muted)]">{row.feature}</dt>
+                  <dt className="text-sm [color:var(--mk-text-muted)]">{row.feature}</dt>
                   <dd className="text-sm">
                     {typeof row.values[colIdx] === "boolean" ? (
                       row.values[colIdx] ? (
@@ -2127,7 +2148,7 @@ export function PricingCard({
       }`}
     >
       {badge && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--brand-primary)] px-4 py-1 text-xs font-semibold text-white">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--brand-primary)] px-4 py-1 text-sm font-semibold text-white">
           {badge}
         </span>
       )}
@@ -2169,7 +2190,7 @@ export function TrustStrip({
 }) {
   return (
     <div
-      className={`flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs [color:var(--mk-text-subtle)] ${className}`}
+      className={`flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm [color:var(--mk-text-subtle)] ${className}`}
     >
       {items.map((item, i) => (
         <motion.span

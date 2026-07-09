@@ -1107,6 +1107,33 @@ export async function runExtractionAndImport(
       );
     }
 
+  // v0.46 — Post-upload incremental consolidation (Hindsight trigger).
+  // Enqueue a consolidate-incremental job for all part slugs so newly
+  // extracted facts are promoted to takes within seconds. Fail-open.
+  try {
+    const consolidateSlugs = [slug, ...partSlugs];
+    const consolidateQueue = new MinionQueue(engine);
+    await consolidateQueue.add(
+      "consolidate-incremental",
+      {
+        affectedSlugs: consolidateSlugs,
+        ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
+        reason: "post_upload",
+      },
+      {
+        timeout_ms: 5 * 60 * 1000,
+        max_attempts: 2,
+        idempotency_key: `consolidate-inc:${tenantSource}:${slug}`,
+      },
+      { allowProtectedSubmit: true }
+    );
+  } catch (consolidateErr) {
+    console.error(
+      `[web-api] consolidate-incremental trigger failed for ${slug}: ` +
+        (consolidateErr instanceof Error ? consolidateErr.message : String(consolidateErr))
+    );
+  }
+
   return { partSlugs };
 }
 

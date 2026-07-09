@@ -48,9 +48,9 @@ export default function CaseScannerPage() {
       />
 
       {/* Info banner */}
-      <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+      <div className="rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4">
         <div className="flex items-start gap-3">
-          <Radar size={18} className="mt-0.5 shrink-0 text-blue-600" />
+          <Radar size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]" />
           <div className="space-y-1 text-sm text-[color:var(--ds-text-muted)]">
             <p className="font-medium text-[color:var(--ds-text)]">{t("scanner.how_it_works")}</p>
             <p>{t("scanner.description_detail")}</p>
@@ -76,7 +76,7 @@ export default function CaseScannerPage() {
             <label className="text-sm font-medium text-[color:var(--ds-text)]">
               {t("scanner.look_ahead")}
             </label>
-            <span className="font-mono text-sm text-emerald-600">
+            <span className="font-mono text-sm text-[color:var(--ds-success-text)]">
               {lookAhead} {t("scanner.days")}
             </span>
           </div>
@@ -99,7 +99,7 @@ export default function CaseScannerPage() {
             <label className="text-sm font-medium text-[color:var(--ds-text)]">
               {t("scanner.evidence_threshold")}
             </label>
-            <span className="font-mono text-sm text-emerald-600">{evidenceThreshold}</span>
+            <span className="font-mono text-sm text-[color:var(--ds-success-text)]">{evidenceThreshold}</span>
           </div>
           <input
             type="range"
@@ -135,7 +135,7 @@ export default function CaseScannerPage() {
         <Button
           onClick={run}
           disabled={loading}
-          className="w-full gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
+          className="w-full gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <Radar size={16} />}
           {t("scanner.start")}
@@ -144,16 +144,16 @@ export default function CaseScannerPage() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
 
       {/* Result */}
       {result && (
-        <div className="space-y-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+        <div className="space-y-3 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-5">
           <div className="flex items-center gap-3">
-            <CheckCircle2 size={24} className="text-emerald-600" />
+            <CheckCircle2 size={24} className="text-[color:var(--ds-success-text)]" />
             <div>
               <h3 className="text-sm font-medium text-[color:var(--ds-text)]">
                 {t("scanner.started")}
@@ -166,7 +166,7 @@ export default function CaseScannerPage() {
 
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-              <Clock size={16} className="mx-auto mb-1 text-emerald-600" />
+              <Clock size={16} className="mx-auto mb-1 text-[color:var(--ds-success-text)]" />
               <div className="text-lg font-bold text-[color:var(--ds-text)]">
                 {result.look_ahead_days}
               </div>
@@ -175,7 +175,7 @@ export default function CaseScannerPage() {
               </div>
             </div>
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-              <Radar size={16} className="mx-auto mb-1 text-emerald-600" />
+              <Radar size={16} className="mx-auto mb-1 text-[color:var(--ds-success-text)]" />
               <div className="text-lg font-bold text-[color:var(--ds-text)]">
                 {result.evidence_threshold}
               </div>
@@ -184,7 +184,7 @@ export default function CaseScannerPage() {
               </div>
             </div>
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-              <Settings2 size={16} className="mx-auto mb-1 text-emerald-600" />
+              <Settings2 size={16} className="mx-auto mb-1 text-[color:var(--ds-success-text)]" />
               <div className="text-lg font-bold text-[color:var(--ds-text)]">
                 {result.max_cases}
               </div>
@@ -197,9 +197,9 @@ export default function CaseScannerPage() {
           <div className="flex items-center gap-2 pt-2">
             <Badge
               variant="default"
-              className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+              className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
             >
-              <span className="mr-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+              <span className="mr-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--ds-success-solid)]" />
               {result.status}
             </Badge>
             <span className="text-xs text-[color:var(--ds-text-muted)]">

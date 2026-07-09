@@ -13,9 +13,9 @@ import { api } from "@/lib/api";
 import type { RedTeamResult, RedTeamAnnotation } from "@/lib/red-team-agent";
 
 const SEVERITY_COLORS: Record<string, string> = {
-  high: "bg-red-100 text-red-700",
-  medium: "bg-amber-100 text-amber-700",
-  low: "bg-green-100 text-green-700",
+  high: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]",
+  medium: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
+  low: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]",
 };
 
 const TYPE_LABELS: Record<string, string> = {

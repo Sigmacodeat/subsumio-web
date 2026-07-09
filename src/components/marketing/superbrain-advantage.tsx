@@ -90,14 +90,14 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="mb-12 text-center"
         >
-          <p className="brand-text mb-4 font-mono text-xs tracking-wider uppercase">{t.eyebrow}</p>
+          <p className="brand-text mb-4 font-mono text-sm tracking-wider uppercase">{t.eyebrow}</p>
           <h2 className={`${H2_CTA_CLASS} mb-5`}>{t.title}</h2>
           <p className="text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
             {t.sub}
           </p>
         </motion.div>
 
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-3">
           {t.pillars.map((pillar, i) => {
             const Icon = pillar.icon;
             return (
@@ -112,7 +112,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
                 <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border [border-color:var(--mk-border-strong)] [background:var(--mk-surface)]">
                   <Icon size={22} className="brand-text" />
                 </div>
-                <h3 className="mb-3 text-lg font-semibold [color:var(--mk-text)]">
+                <h3 className="mb-3 text-xl font-semibold [color:var(--mk-text)]">
                   {pillar.title}
                 </h3>
                 <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">

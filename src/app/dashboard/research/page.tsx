@@ -41,35 +41,35 @@ interface ResearchSession {
 
 import dynamic from "next/dynamic";
 
-const RechtsprechungTab = dynamic(() => import("@/app/dashboard/rechtsprechung/page"), {
+const RechtsprechungTab = dynamic(() => import("@/components/research/rechtsprechung-tab"), {
   loading: () => (
     <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
       Laden…
     </div>
   ),
 });
-const NormsTab = dynamic(() => import("@/app/dashboard/norms/page"), {
+const NormsTab = dynamic(() => import("@/components/research/norms-tab"), {
   loading: () => (
     <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
       Laden…
     </div>
   ),
 });
-const JudgementsDbTab = dynamic(() => import("@/app/dashboard/judgements-db/page"), {
+const JudgementsDbTab = dynamic(() => import("@/components/research/judgements-db-tab"), {
   loading: () => (
     <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
       Laden…
     </div>
   ),
 });
-const PrecedentSearchTab = dynamic(() => import("@/app/dashboard/precedent-search/page"), {
+const PrecedentSearchTab = dynamic(() => import("@/components/research/precedent-search-tab"), {
   loading: () => (
     <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
       Laden…
     </div>
   ),
 });
-const CommentariesTab = dynamic(() => import("@/app/dashboard/commentaries/page"), {
+const CommentariesTab = dynamic(() => import("@/components/research/commentaries-tab"), {
   loading: () => (
     <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
       Laden…
@@ -635,7 +635,7 @@ function ResearchPageInner() {
           </div>
         )}
         {error && (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
             {error}
           </div>
         )}
@@ -694,7 +694,7 @@ function ResearchPageInner() {
                 </div>
                 <Button
                   onClick={saveResearch}
-                  className="gap-2 bg-emerald-600 text-xs text-white hover:bg-emerald-500"
+                  className="gap-2 bg-[color:var(--ds-success-solid)] text-xs text-white hover:bg-[color:var(--ds-success-solid)]"
                 >
                   <Save size={14} /> {t("research.btn_save_brain")}
                 </Button>
@@ -862,12 +862,12 @@ function ResearchPageInner() {
                                 variant="default"
                                 className={`border text-xs ${
                                   j === "at"
-                                    ? "border-red-500/20 bg-red-500/10 text-red-600"
+                                    ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                                     : j === "ch"
-                                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                                      ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                                       : j === "eu"
-                                        ? "border-amber-500/20 bg-amber-500/10 text-amber-600"
-                                        : "border-blue-500/20 bg-blue-500/10 text-blue-600"
+                                        ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                                        : "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
                                 }`}
                               >
                                 {j.toUpperCase()}
@@ -891,7 +891,7 @@ function ResearchPageInner() {
                           </button>
                           <button
                             onClick={() => deleteResearch(page.slug)}
-                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] opacity-0 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-600"
+                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] opacity-0 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:opacity-100 hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
                             title={t("research.btn_delete")}
                             aria-label={t("research.btn_delete")}
                           >
@@ -924,7 +924,7 @@ function ResearchPageInner() {
                             <span>{fm.citations.length} Quellen</span>
                           )}
                           {Array.isArray(fm.gaps) && fm.gaps.length > 0 && (
-                            <span className="text-amber-600">{fm.gaps.length} Lücken</span>
+                            <span className="text-[color:var(--ds-warning-text)]">{fm.gaps.length} Lücken</span>
                           )}
                         </div>
                       </div>

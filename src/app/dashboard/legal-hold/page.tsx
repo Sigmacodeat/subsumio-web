@@ -143,19 +143,19 @@ export default function LegalHoldPage() {
             {cases?.length ?? 0}
           </p>
         </div>
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4">
           <div className="flex items-center gap-2">
-            <Lock size={16} className="text-red-600" />
-            <span className="text-xs text-red-600">{isEn ? "On hold" : "Unter Hold"}</span>
+            <Lock size={16} className="text-[color:var(--ds-danger-text)]" />
+            <span className="text-xs text-[color:var(--ds-danger-text)]">{isEn ? "On hold" : "Unter Hold"}</span>
           </div>
-          <p className="mt-1 text-2xl font-bold text-red-600 tabular-nums">{onHoldCount}</p>
+          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-danger-text)] tabular-nums">{onHoldCount}</p>
         </div>
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+        <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
           <div className="flex items-center gap-2">
-            <Unlock size={16} className="text-emerald-600" />
-            <span className="text-xs text-emerald-600">{isEn ? "Available" : "Verfügbar"}</span>
+            <Unlock size={16} className="text-[color:var(--ds-success-text)]" />
+            <span className="text-xs text-[color:var(--ds-success-text)]">{isEn ? "Available" : "Verfügbar"}</span>
           </div>
-          <p className="mt-1 text-2xl font-bold text-emerald-600 tabular-nums">
+          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-success-text)] tabular-nums">
             {(cases?.length ?? 0) - onHoldCount}
           </p>
         </div>
@@ -181,7 +181,7 @@ export default function LegalHoldPage() {
             className={cn(
               "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
               filter === "on_hold"
-                ? "border-red-500/30 bg-red-500/10 text-red-600"
+                ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             )}
           >
@@ -227,14 +227,14 @@ export default function LegalHoldPage() {
               className={cn(
                 "flex items-center justify-between rounded-xl border p-4",
                 c.legalHold
-                  ? "border-red-500/20 bg-red-500/5"
+                  ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
               )}
             >
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center gap-2">
                   {c.legalHold ? (
-                    <Lock size={14} className="shrink-0 text-red-600" />
+                    <Lock size={14} className="shrink-0 text-[color:var(--ds-danger-text)]" />
                   ) : (
                     <Unlock size={14} className="shrink-0 text-[color:var(--ds-text-muted)]" />
                   )}
@@ -245,7 +245,7 @@ export default function LegalHoldPage() {
                     {c.status}
                   </Badge>
                   {c.legalHold && (
-                    <Badge className="shrink-0 border border-red-500/30 bg-red-500/10 text-xs text-red-600">
+                    <Badge className="shrink-0 border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]">
                       {isEn ? "HOLD" : "HOLD"}
                     </Badge>
                   )}
@@ -312,7 +312,7 @@ export default function LegalHoldPage() {
                     className={cn(
                       "text-xs",
                       c.legalHold
-                        ? "border border-red-500/30 text-red-600 hover:bg-red-500/10"
+                        ? "border border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
                         : "border border-[color:var(--ds-border)]"
                     )}
                     onClick={() => {
@@ -337,9 +337,9 @@ export default function LegalHoldPage() {
       )}
 
       {/* Warning notice */}
-      <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
-        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
-        <div className="text-xs text-amber-700">
+      <div className="flex items-start gap-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
+        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+        <div className="text-xs text-[color:var(--ds-warning-text)]">
           <p className="font-medium">{isEn ? "Important" : "Wichtig"}</p>
           <p className="mt-0.5">
             {isEn

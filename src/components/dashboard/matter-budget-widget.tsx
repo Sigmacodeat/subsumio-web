@@ -181,17 +181,17 @@ export function MatterBudgetWidget() {
         </div>
         <div className="flex items-center gap-1.5">
           {stats.critical > 0 && (
-            <span className="rounded-full border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold text-red-600">
+            <span className="rounded-full border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-1.5 py-0.5 text-[10px] font-bold text-[color:var(--ds-danger-text)]">
               {stats.critical} {isEn ? "over" : "über"}
             </span>
           )}
           {stats.warning > 0 && (
-            <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-600">
+            <span className="rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-1.5 py-0.5 text-[10px] font-bold text-[color:var(--ds-warning-text)]">
               {stats.warning} {isEn ? "near" : "nah"}
             </span>
           )}
           {stats.ok > 0 && (
-            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600">
+            <span className="rounded-full border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-1.5 py-0.5 text-[10px] font-bold text-[color:var(--ds-success-text)]">
               {stats.ok} ✓
             </span>
           )}
@@ -227,13 +227,13 @@ export function MatterBudgetWidget() {
           const pct = Math.round(budget.status.utilization * 100);
           const isOver = budget.status.alert_level === "critical";
           const isWarning = budget.status.alert_level === "warning";
-          const barColor = isOver ? "bg-red-500" : isWarning ? "bg-amber-500" : "bg-emerald-500";
+          const barColor = isOver ? "bg-[color:var(--ds-danger-solid)]" : isWarning ? "bg-[color:var(--ds-warning-solid)]" : "bg-[color:var(--ds-success-solid)]";
           const Icon = isOver ? AlertTriangle : isWarning ? TrendingUp : CheckCircle2;
           const iconColor = isOver
-            ? "text-red-600"
+            ? "text-[color:var(--ds-danger-text)]"
             : isWarning
-              ? "text-amber-600"
-              : "text-emerald-600";
+              ? "text-[color:var(--ds-warning-text)]"
+              : "text-[color:var(--ds-success-text)]";
 
           return (
             <Link

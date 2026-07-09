@@ -57,7 +57,7 @@ export function CertificationStamp({
       <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
         {/* AI Act badge */}
         <span
-          className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-700"
+          className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--ds-warning-text)]"
           title={cert.aiNotice}
         >
           <Info size={9} />
@@ -83,10 +83,10 @@ export function CertificationStamp({
             className={cn(
               "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium tabular-nums",
               cert.confidenceScore >= 70
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+                ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                 : cert.confidenceScore >= 50
-                  ? "border-amber-500/30 bg-amber-500/10 text-amber-600"
-                  : "border-red-500/30 bg-red-500/10 text-red-600"
+                  ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                  : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
             )}
           >
             Score: {cert.confidenceScore}
@@ -108,7 +108,7 @@ export function CertificationStamp({
       <div className="flex flex-wrap items-center gap-2">
         {/* AI Act Art. 50 badge */}
         <span
-          className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700"
+          className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--ds-warning-text)]"
           title={cert.aiNotice}
         >
           <Info size={10} />
@@ -134,10 +134,10 @@ export function CertificationStamp({
             className={cn(
               "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium tabular-nums",
               cert.confidenceScore >= 70
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+                ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                 : cert.confidenceScore >= 50
-                  ? "border-amber-500/30 bg-amber-500/10 text-amber-600"
-                  : "border-red-500/30 bg-red-500/10 text-red-600"
+                  ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                  : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
             )}
           >
             <FileCheck size={10} />
@@ -153,7 +153,7 @@ export function CertificationStamp({
           >
             <Cpu size={10} />
             {cert.model.name}
-            {cert.model.dataResidency === "eu" && <Globe size={9} className="text-emerald-500" />}
+            {cert.model.dataResidency === "eu" && <Globe size={9} className="text-[color:var(--ds-success-text)]" />}
           </span>
         )}
 
@@ -191,7 +191,7 @@ export function CertificationStamp({
                   </span>
                 )}
                 {cert.pipeline.retryCount !== undefined && cert.pipeline.retryCount > 0 && (
-                  <span className="ml-1 text-amber-600">
+                  <span className="ml-1 text-[color:var(--ds-warning-text)]">
                     · {cert.pipeline.retryCount} {isEn ? "retries" : "Retries"}
                   </span>
                 )}
@@ -223,7 +223,7 @@ export function CertificationStamp({
 
           {cert.reviewedAt && (
             <div className="flex items-center gap-2 text-[11px]">
-              <CheckCircle2 size={10} className="shrink-0 text-emerald-600" />
+              <CheckCircle2 size={10} className="shrink-0 text-[color:var(--ds-success-text)]" />
               <span className="text-[color:var(--ds-text-muted)]">
                 {isEn ? "Reviewed:" : "Geprüft:"}
               </span>
@@ -241,11 +241,11 @@ export function CertificationStamp({
               <span className="shrink-0 text-[color:var(--ds-text-muted)]">
                 {isEn ? "Citations:" : "Zitate:"}
               </span>
-              <span className="text-emerald-600">
+              <span className="text-[color:var(--ds-success-text)]">
                 {cert.verifiedCitationCount ?? 0} {isEn ? "verified" : "verifiziert"}
               </span>
               {(cert.unverifiedCitationCount ?? 0) > 0 && (
-                <span className="text-amber-600">
+                <span className="text-[color:var(--ds-warning-text)]">
                   · {cert.unverifiedCitationCount} {isEn ? "unverified" : "unverifiziert"}
                 </span>
               )}
@@ -285,7 +285,7 @@ export function CertificationStamp({
           )}
 
           {/* AI Act full notice */}
-          <div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-2 text-[10px] leading-relaxed text-amber-700">
+          <div className="rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-2 text-[10px] leading-relaxed text-[color:var(--ds-warning-text)]">
             {cert.aiNotice}
           </div>
         </div>

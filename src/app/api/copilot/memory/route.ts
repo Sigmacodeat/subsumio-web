@@ -3,11 +3,14 @@ import { createHandler, apiError } from "@/lib/api-handler";
 import {
   listMemories,
   createMemory,
+  createMemoryWithSupersession,
   updateMemory,
   deleteMemory,
   inferMemoriesFromMessage,
+  searchMemories,
   type MemoryType,
 } from "@/lib/copilot-memory";
+import { extractMemoriesWithLLM, isLLMExtractionAvailable } from "@/lib/copilot-memory-llm";
 
 export const dynamic = "force-dynamic";
 
@@ -54,19 +57,65 @@ export const POST = createHandler(
     try {
       // Infer memories from a user message
       if (action === "infer" && message) {
-        const inferred = inferMemoriesFromMessage(message);
+        // P0.1: Use LLM-based extraction when available, fall back to regex
+        let extracted: Array<{ type: MemoryType; key: string; value: string; entities?: string[]; validFrom?: string; validTo?: string }> = [];
+
+        if (isLLMExtractionAvailable()) {
+          const llmResults = await extractMemoriesWithLLM(message, { caseSlug });
+          extracted = llmResults.map((r) => ({
+            type: r.type,
+            key: r.key,
+            value: r.value,
+            entities: r.entities,
+            validFrom: r.validFrom,
+            validTo: r.validTo,
+          }));
+        }
+
+        // Fallback: regex-based inference when LLM is not configured or returns nothing
+        if (extracted.length === 0) {
+          extracted = inferMemoriesFromMessage(message);
+        }
+
         const created = [];
-        for (const item of inferred) {
-          const mem = await createMemory({
+        const allSuperseded: string[] = [];
+        for (const item of extracted) {
+          const { memory: mem, superseded } = await createMemoryWithSupersession({
             type: item.type,
             key: item.key,
             value: item.value,
             source: "inferred",
             caseSlug,
+            entities: item.entities,
+            validFrom: item.validFrom,
+            validTo: item.validTo,
           });
           created.push(mem);
+          allSuperseded.push(...superseded);
         }
-        return NextResponse.json({ inferred: created });
+        return NextResponse.json({
+          inferred: created,
+          superseded: allSuperseded,
+          method: isLLMExtractionAvailable() ? "llm" : "regex",
+        });
+      }
+
+      // Semantic search across memories
+      if (action === "search" && message) {
+        const results = await searchMemories({ query: message, caseSlug, limit: 10 });
+        return NextResponse.json({ results });
+      }
+
+      // P2.7: Agent-Generated Facts — store confirmed agent actions as memories
+      if (action === "agent_action" && key && value) {
+        const { memory, superseded } = await createMemoryWithSupersession({
+          type: type ?? "fact",
+          key,
+          value,
+          source: "system",
+          caseSlug,
+        });
+        return NextResponse.json({ memory, superseded });
       }
 
       // Create a memory entry

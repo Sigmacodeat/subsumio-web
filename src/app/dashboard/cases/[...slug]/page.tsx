@@ -63,7 +63,7 @@ export default function CaseDetailPage() {
       <div aria-live="assertive">
         {ctx.saveError && (
           <div
-            className="flex items-center gap-2 border-b border-red-500/20 bg-red-500/10 px-6 py-2 text-sm text-red-600"
+            className="flex items-center gap-2 border-b border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-6 py-2 text-sm text-[color:var(--ds-danger-text)]"
             role="alert"
           >
             <AlertTriangle size={14} aria-hidden="true" />
@@ -72,7 +72,7 @@ export default function CaseDetailPage() {
         )}
         {ctx.conflictWarning && (
           <div
-            className="flex items-center gap-2 border-b border-amber-500/20 bg-amber-500/10 px-6 py-2 text-sm text-amber-600"
+            className="flex items-center gap-2 border-b border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-6 py-2 text-sm text-[color:var(--ds-warning-text)]"
             role="alert"
           >
             <AlertTriangle size={14} aria-hidden="true" />

@@ -405,6 +405,21 @@ export interface PostFusionOpts {
    * metadata stages so a title hit can't bury a strong semantic match.
    */
   titleBoost?: number;
+  /**
+   * v0.46 — cognitive tier priority cascade. When true, applyCognitiveTierBoost
+   * fires as the last post-fusion stage, nudging Mental Models above
+   * Observations above Raw Facts. Floor-ratio-gated like other metadata
+   * stages. See src/core/search/cognitive-tier.ts.
+   */
+  cognitiveTierEnabled?: boolean;
+  /** v0.46 — boost multiplier for Tier 3 (Mental Models). Default 1.08. */
+  cognitiveTier3Boost?: number;
+  /** v0.46 — boost multiplier for Tier 2 (Observations). Default 1.04. */
+  cognitiveTier2Boost?: number;
+  /** v0.46 — boost multiplier for Tier 1 (Raw Facts). Default 1.0 (neutral). */
+  cognitiveTier1Boost?: number;
+  /** v0.46 — boost multiplier for Tier 0 (Unknown). Default 0.98 (mild demote). */
+  cognitiveTier0Boost?: number;
 }
 
 export async function runPostFusionStages(
@@ -523,6 +538,25 @@ export async function runPostFusionStages(
     await applyAliasResolvedBoost(results, engine);
   } catch {
     // Non-fatal; preserves the per-stage contract.
+  }
+
+  // v0.46 — cognitive tier priority cascade (7th post-fusion stage).
+  // Runs LAST so Mental Models get a final nudge above Observations above
+  // Raw Facts, stacking on top of every other boost. Floor-ratio-gated so
+  // a weak synthesis can't leapfrog a strong raw fact. Fail-soft: pure
+  // in-memory, guarded so a bad type can't throw the whole pipeline.
+  if (opts.cognitiveTierEnabled) {
+    try {
+      const { applyCognitiveTierBoost } = await import("./cognitive-tier.ts");
+      applyCognitiveTierBoost(results, {
+        tier3Boost: opts.cognitiveTier3Boost,
+        tier2Boost: opts.cognitiveTier2Boost,
+        tier1Boost: opts.cognitiveTier1Boost,
+        tier0Boost: opts.cognitiveTier0Boost,
+      }, floorThreshold);
+    } catch {
+      // Non-fatal; preserves the per-stage contract.
+    }
   }
 }
 
@@ -1004,6 +1038,14 @@ export async function hybridSearch(
     // The raw query drives the matcher; default factor when the knob is unset.
     query,
     titleBoost: resolvedMode.title_boost,
+    // v0.46 — cognitive tier priority cascade threaded from resolved mode.
+    // Defaults per ModeBundle (conservative=false, balanced/tokenmax=true).
+    // Per-call SearchOpts.cognitive_tier overrides through resolveSearchMode.
+    cognitiveTierEnabled: resolvedMode.cognitive_tier,
+    cognitiveTier3Boost: resolvedMode.cognitive_tier3_boost,
+    cognitiveTier2Boost: resolvedMode.cognitive_tier2_boost,
+    cognitiveTier1Boost: resolvedMode.cognitive_tier1_boost,
+    cognitiveTier0Boost: resolvedMode.cognitive_tier0_boost,
   };
 
   // v0.43 — build the relational recall arm ONCE here, before any return

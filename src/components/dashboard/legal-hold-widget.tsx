@@ -113,14 +113,14 @@ export function LegalHoldWidget() {
         <div className="flex items-center gap-2">
           <Shield
             size={15}
-            className={holds.length > 0 ? "text-red-600" : "text-[color:var(--ds-text-muted)]"}
+            className={holds.length > 0 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-text-muted)]"}
           />
           <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
             {isEn ? "Legal Holds" : "Legal Holds"}
           </span>
         </div>
         {holds.length > 0 && (
-          <span className="rounded-full border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold text-red-600">
+          <span className="rounded-full border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-1.5 py-0.5 text-[10px] font-bold text-[color:var(--ds-danger-text)]">
             {holds.length} {isEn ? "active" : "aktiv"}
           </span>
         )}
@@ -139,14 +139,14 @@ export function LegalHoldWidget() {
             return (
               <div
                 key={hold.caseSlug}
-                className="rounded-md border border-red-500/20 bg-red-500/5 px-2 py-2"
+                className="rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-2"
               >
                 <div className="flex items-center justify-between gap-2">
                   <Link
                     href={`/dashboard/cases/${encoded}`}
                     className="flex min-w-0 items-center gap-1.5 hover:opacity-80"
                   >
-                    <Lock size={12} className="shrink-0 text-red-600" />
+                    <Lock size={12} className="shrink-0 text-[color:var(--ds-danger-text)]" />
                     <span className="truncate text-[12px] font-medium text-[color:var(--ds-text)]">
                       {hold.caseTitle}
                     </span>

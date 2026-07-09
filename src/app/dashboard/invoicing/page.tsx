@@ -898,7 +898,7 @@ export default function InvoicingPage() {
             </Button>
             <Button
               variant="primary"
-              className="gap-2 bg-emerald-600 text-sm text-white hover:bg-emerald-500"
+              className="gap-2 bg-[color:var(--ds-success-solid)] text-sm text-white hover:bg-[color:var(--ds-success-solid)]"
               onClick={() => setQuickCreateOpen(true)}
             >
               <Plus size={14} />
@@ -926,13 +926,13 @@ export default function InvoicingPage() {
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.outstanding")}</div>
-          <div className="text-xl font-bold text-amber-600">
+          <div className="text-xl font-bold text-[color:var(--ds-warning-text)]">
             {totalOutstanding.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €
           </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.paid")}</div>
-          <div className="text-xl font-bold text-emerald-600">
+          <div className="text-xl font-bold text-[color:var(--ds-success-text)]">
             {totalPaid.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €
           </div>
         </div>
@@ -951,8 +951,8 @@ export default function InvoicingPage() {
               statusMessage.includes("fail") ||
               statusMessage.includes("not") ||
               statusMessage.includes("error")
-              ? "border-red-500/20 bg-red-500/5 text-red-700"
-              : "border-emerald-500/20 bg-emerald-500/5 text-emerald-700"
+              ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+              : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
           )}
         >
           {statusMessage}
@@ -1035,7 +1035,7 @@ export default function InvoicingPage() {
                     {inv.reminderCount ? (
                       <Badge
                         variant="default"
-                        className="border border-amber-500/30 bg-amber-600/15 text-xs text-amber-600"
+                        className="border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
                       >
                         {inv.reminderCount}. {t("inv.reminder")}
                       </Badge>
@@ -1061,7 +1061,7 @@ export default function InvoicingPage() {
                 <div className="hidden shrink-0 items-center gap-1 sm:flex">
                   <button
                     onClick={() => void printInvoice(inv)}
-                    className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-emerald-500/10 hover:text-emerald-600"
+                    className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)]"
                     title={t("inv.print")}
                   >
                     <Printer size={14} />
@@ -1076,7 +1076,7 @@ export default function InvoicingPage() {
                   {(userRole === "admin" || userRole === "lawyer" || userRole === "assistant") && (
                     <button
                       onClick={() => void sendInvoiceEmail(inv)}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-blue-500/10 hover:text-blue-600"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-info-bg)] hover:text-[color:var(--ds-info-text)]"
                       title={t("inv.send_email")}
                     >
                       <Mail size={14} />
@@ -1085,7 +1085,7 @@ export default function InvoicingPage() {
                   {inv.status === "draft" && (
                     <button
                       onClick={() => updateStatus(inv, "sent")}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-blue-500/10 hover:text-blue-600"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-info-bg)] hover:text-[color:var(--ds-info-text)]"
                       title={t("inv.mark_sent")}
                     >
                       <Send size={14} />
@@ -1094,7 +1094,7 @@ export default function InvoicingPage() {
                   {inv.status === "sent" && (
                     <button
                       onClick={() => updateStatus(inv, "paid")}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-emerald-500/10 hover:text-emerald-600"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)]"
                       title={t("inv.mark_paid")}
                     >
                       <CheckCircle2 size={14} />
@@ -1105,7 +1105,7 @@ export default function InvoicingPage() {
                     (userRole === "admin" || userRole === "lawyer") && (
                       <button
                         onClick={() => updateStatus(inv, "cancelled")}
-                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
+                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
                         title={t("inv.cancel_invoice")}
                       >
                         <XCircle size={14} />
@@ -1115,7 +1115,7 @@ export default function InvoicingPage() {
                     (userRole === "admin" || userRole === "lawyer") && (
                       <button
                         onClick={() => void sendReminder(inv)}
-                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-amber-500/10 hover:text-amber-600"
+                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-warning-bg)] hover:text-[color:var(--ds-warning-text)]"
                         title={`${inv.reminderCount ? `${inv.reminderCount}. ` : ""}${t("inv.send_reminder")}`}
                       >
                         <AlertTriangle size={14} />
@@ -1124,7 +1124,7 @@ export default function InvoicingPage() {
                   {(userRole === "admin" || userRole === "lawyer") && (
                     <button
                       onClick={() => deleteInvoice(inv)}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
                       title={t("inv.delete")}
                     >
                       <Trash2 size={14} />
@@ -1206,7 +1206,7 @@ export default function InvoicingPage() {
                         (userRole === "admin" || userRole === "lawyer") && (
                           <DropdownMenuItem
                             onClick={() => updateStatus(inv, "cancelled")}
-                            className="gap-2 text-xs text-red-600 focus:text-red-700"
+                            className="gap-2 text-xs text-[color:var(--ds-danger-text)] focus:text-[color:var(--ds-danger-text)]"
                           >
                             <XCircle size={13} />
                             {t("inv.cancel_invoice")}
@@ -1225,7 +1225,7 @@ export default function InvoicingPage() {
                       {(userRole === "admin" || userRole === "lawyer") && (
                         <DropdownMenuItem
                           onClick={() => deleteInvoice(inv)}
-                          className="gap-2 text-xs text-red-600 focus:text-red-700"
+                          className="gap-2 text-xs text-[color:var(--ds-danger-text)] focus:text-[color:var(--ds-danger-text)]"
                         >
                           <Trash2 size={13} />
                           {t("inv.delete")}

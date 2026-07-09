@@ -7,13 +7,13 @@ import { keywordsFor } from "@/lib/seo-keywords";
 export const metadata: Metadata = {
   title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer",
   description:
-    "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Gehostete Pläne ab 890 €/Nutzer/Mon. jährlich — EU-Cloud oder On-Premise, 14 Tage volle Testversion, keine Überraschungsrechnung, kein Lock-in. DATEV-Export, Kollisionsprüfung, Fristenkontrolle inklusive.",
+    "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Ab 890 €/Nutzer/Mon. — EU-Cloud oder On-Premise, 14 Tage Testversion, keine versteckten Kosten.",
   keywords: keywordsFor("pricing"),
   alternates: { canonical: "/pricing", languages: { de: "/pricing", en: "/en/pricing" } },
   openGraph: {
     title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer",
     description:
-      "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Gehostete Pläne ab 890 €/Nutzer/Mon. — EU-Cloud oder On-Premise, 14 Tage Testversion, keine Überraschungen.",
+      "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Ab 890 €/Nutzer/Mon. — EU-Cloud oder On-Premise, 14 Tage Testversion.",
     url: "/pricing",
     type: "website",
   },

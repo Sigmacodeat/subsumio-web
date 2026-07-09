@@ -100,12 +100,12 @@ const STATUS_FILTERS: Array<{ key: "all" | IntakeStatus; labelKey: DashboardKey 
 ];
 
 const STATUS_BADGE: Record<IntakeStatus, string> = {
-  new: "border-amber-500/20 bg-amber-500/10 text-amber-600",
+  new: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   needs_info: "border-slate-500/20 bg-slate-500/10 text-slate-600",
   conflict_check: "border-violet-500/20 bg-violet-500/10 text-violet-600",
-  accepted: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600",
-  rejected: "border-red-500/20 bg-red-500/10 text-red-600",
-  converted: "border-blue-500/20 bg-blue-500/10 text-blue-600",
+  accepted: "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
+  rejected: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  converted: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
 };
 
 const SOURCE_ICON: Record<IntakeSource, React.ElementType> = {
@@ -486,13 +486,13 @@ export default function IntakePage() {
 
       {/* Error with retry */}
       {loadError && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <span>{loadError}</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => void listQuery.refetch()}
-            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             <RotateCcw size={13} />
             {t("intake.btn_retry")}
@@ -632,7 +632,7 @@ export default function IntakePage() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => void updateStatus(item, "rejected")}
-                            className="gap-2 text-xs text-red-600 focus:text-red-700"
+                            className="gap-2 text-xs text-[color:var(--ds-danger-text)] focus:text-[color:var(--ds-danger-text)]"
                           >
                             <XCircle size={13} />
                             {t("intake.action_reject")}
@@ -671,7 +671,7 @@ export default function IntakePage() {
                             <Badge
                               key={doc}
                               variant="default"
-                              className="border border-amber-500/20 bg-amber-500/10 text-xs text-amber-700"
+                              className="border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
                             >
                               {doc}
                             </Badge>
@@ -702,7 +702,7 @@ export default function IntakePage() {
                       {item.frontmatter.converted_case_slug && (
                         <a
                           href={`/dashboard/cases/${encodeSlugPath(item.frontmatter.converted_case_slug)}`}
-                          className="inline-flex items-center gap-1 font-mono text-emerald-600 hover:underline"
+                          className="inline-flex items-center gap-1 font-mono text-[color:var(--ds-success-text)] hover:underline"
                         >
                           <ChevronRight size={12} />
                           {t("intake.converted_case")}: {item.frontmatter.converted_case_slug}
@@ -777,7 +777,7 @@ export default function IntakePage() {
                                       })
                                     )
                                 }
-                                className="gap-1.5 text-xs text-emerald-600 hover:text-emerald-700"
+                                className="gap-1.5 text-xs text-[color:var(--ds-success-text)] hover:text-[color:var(--ds-success-text)]"
                               >
                                 <CheckCircle2 size={13} />
                                 {t("intake.action_accept")}
@@ -996,13 +996,13 @@ function StatCard({
 }) {
   const toneClass =
     tone === "emerald"
-      ? "text-emerald-600"
+      ? "text-[color:var(--ds-success-text)]"
       : tone === "amber"
-        ? "text-amber-600"
+        ? "text-[color:var(--ds-warning-text)]"
         : tone === "blue"
-          ? "text-blue-600"
+          ? "text-[color:var(--ds-info-text)]"
           : tone === "red"
-            ? "text-red-600"
+            ? "text-[color:var(--ds-danger-text)]"
             : tone === "violet"
               ? "text-violet-600"
               : "text-[color:var(--ds-text)]";
@@ -1040,9 +1040,9 @@ function EmptyState({
 }
 
 const URGENCY_STYLES: Record<string, string> = {
-  critical: "border-red-500/20 bg-red-500/10 text-red-600",
-  high: "border-orange-500/20 bg-orange-500/10 text-orange-600",
-  medium: "border-amber-500/20 bg-amber-500/10 text-amber-600",
+  critical: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  high: "border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]",
+  medium: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   low: "border-slate-500/20 bg-slate-500/10 text-slate-600",
 };
 
@@ -1095,7 +1095,7 @@ function TriagePanel({ items }: { items: IntakeRecord[] }) {
           {criticalCount > 0 && (
             <Badge
               variant="default"
-              className="border border-red-500/20 bg-red-500/10 text-xs text-red-600"
+              className="border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
             >
               {criticalCount} kritisch
             </Badge>
@@ -1103,7 +1103,7 @@ function TriagePanel({ items }: { items: IntakeRecord[] }) {
           {highCount > 0 && (
             <Badge
               variant="default"
-              className="border border-orange-500/20 bg-orange-500/10 text-xs text-orange-600"
+              className="border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-xs text-[color:var(--ds-attention-text)]"
             >
               {highCount} hoch
             </Badge>
@@ -1150,7 +1150,7 @@ function TriagePanel({ items }: { items: IntakeRecord[] }) {
                       </span>
                     )}
                     {card.deadline && (
-                      <span className="flex items-center gap-1 text-xs text-red-600">
+                      <span className="flex items-center gap-1 text-xs text-[color:var(--ds-danger-text)]">
                         <AlertTriangle size={10} />
                         Frist: {card.deadline}
                       </span>

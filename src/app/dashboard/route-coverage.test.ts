@@ -21,13 +21,13 @@ const COMMAND_PALETTE_PATH = join(process.cwd(), "src/components/dashboard/comma
 // Routes that are intentionally embedded in hub pages (not directly in nav registries).
 // These are reachable via a parent page that IS in the sidebar.
 const EMBEDDED_ROUTES = new Set([
-  "norms", // embedded in research hub
-  "judgements-db", // embedded in research hub
+  "norms", // redirect → research hub tab "normen" (component: components/research/norms-tab)
+  "judgements-db", // redirect → research hub tab (component: components/research/judgements-db-tab)
   "litigation-analytics", // linked from analytics hub page
-  "precedent-search", // embedded in research hub
-  "commentaries", // embedded in research hub as dynamic tab
-  "rechtsprechung", // embedded in research hub as dynamic tab
-  "adoption-analytics", // admin-only page, accessible via direct URL
+  "precedent-search", // redirect → research hub tab (component: components/research/precedent-search-tab)
+  "commentaries", // redirect → research hub tab (component: components/research/commentaries-tab)
+  "rechtsprechung", // redirect → research hub tab (component: components/research/rechtsprechung-tab)
+  "adoption-analytics", // linked from analytics hub page + settings hub
 ]);
 
 // Routes that are sub-pages of other routes (not standalone pages needing nav entry).

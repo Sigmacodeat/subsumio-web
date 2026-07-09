@@ -222,7 +222,7 @@ export default function WebhooksPage() {
                 disabled={deleting === wh.id}
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-red-600 hover:bg-red-500/10"
+                className="h-8 w-8 text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
               >
                 {deleting === wh.id ? (
                   <Loader2 size={14} className="animate-spin" />

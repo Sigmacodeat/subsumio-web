@@ -42,10 +42,10 @@ import type { DashboardKey } from "@/content/dashboard";
 const JURISDICTION_KEYS = ["at", "de", "ch", "all"] as const;
 
 const SEVERITY_COLORS: Record<string, string> = {
-  low: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
-  medium: "bg-amber-500/10 border-amber-500/20 text-amber-600",
-  high: "bg-red-500/10 border-red-500/20 text-red-600",
-  critical: "bg-red-600/20 border-red-500/30 text-red-700",
+  low: "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
+  medium: "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
+  high: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+  critical: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
 };
 
 const SEVERITY_KEYS = ["low", "medium", "high", "critical"] as const;
@@ -53,10 +53,10 @@ const SEVERITY_KEYS = ["low", "medium", "high", "critical"] as const;
 const POSITION_KEYS = ["favorable", "neutral", "exclude", "must_include"] as const;
 
 const POSITION_COLORS: Record<string, string> = {
-  favorable: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
+  favorable: "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
   neutral: "bg-slate-500/10 border-slate-500/20 text-slate-600",
-  exclude: "bg-red-500/10 border-red-500/20 text-red-600",
-  must_include: "bg-blue-500/10 border-blue-500/20 text-blue-600",
+  exclude: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+  must_include: "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
 };
 
 const CONTRACT_TYPES = [
@@ -339,13 +339,13 @@ export default function PlaybooksPage() {
 
       {/* Error */}
       {loadError && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <span>{loadError}</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => void loadPlaybooks()}
-            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             {t("playbooks.btn_retry")}
           </Button>
@@ -439,7 +439,7 @@ function StatCard({
       <div
         className={`flex h-8 w-8 items-center justify-center rounded-lg ${
           color === "red"
-            ? "border border-red-500/20 bg-red-500/10 text-red-600"
+            ? "border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
             : "brand-soft brand-border brand-text border"
         }`}
       >
@@ -519,7 +519,7 @@ function PlaybookCard({
           </button>
           <button
             onClick={onDelete}
-            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
+            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
             title={t("playbooks.title_delete")}
           >
             <Trash2 size={14} />
@@ -705,7 +705,7 @@ function PlaybookEditor(props: {
       </div>
 
       {props.error && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-700">
+        <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-[color:var(--ds-danger-text)]">
           {props.error}
         </div>
       )}
@@ -767,7 +767,7 @@ function RuleRow({
         </button>
         <button
           onClick={onRemove}
-          className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-red-600"
+          className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-danger-text)]"
           title={t("playbooks.title_remove")}
         >
           <X size={12} />

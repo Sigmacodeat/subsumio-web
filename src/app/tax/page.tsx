@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import TaxPage from "@/components/marketing/tax-page";
+import { DEFAULT_LANG } from "@/content/site";
 import { JsonLd, organizationLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
@@ -12,6 +13,8 @@ export const metadata: Metadata = {
       "de-DE": "/tax",
       "de-AT": "/tax",
       "de-CH": "/tax",
+      en: "/en/tax",
+      "x-default": "/tax",
     },
   },
   openGraph: {
@@ -33,7 +36,7 @@ export default function Page() {
           { name: "Subsumio Tax", url: "/tax" },
         ])}
       />
-      <TaxPage />
+      <TaxPage lang={DEFAULT_LANG} />
     </>
   );
 }

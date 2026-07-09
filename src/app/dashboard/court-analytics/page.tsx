@@ -40,7 +40,7 @@ export default function CourtAnalyticsPage() {
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Analytics" }]}
       />
 
-      <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+      <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-[color:var(--ds-warning-solid)] p-3 text-xs text-[color:var(--ds-warning-text)]">
         <Info className="mt-0.5 h-4 w-4 shrink-0" />
         <p>{ANALYTICS_DISCLAIMER_DE}</p>
       </div>

@@ -8,7 +8,16 @@ export const metadata: Metadata = {
   title: FEATURES_PAGE.de.metaTitle,
   description: FEATURES_PAGE.de.metaDesc,
   keywords: keywordsFor("features"),
-  alternates: { canonical: "/features", languages: { de: "/features", en: "/en/features" } },
+  alternates: {
+    canonical: "/features",
+    languages: {
+      "de-DE": "/features",
+      "de-AT": "/at/features",
+      "de-CH": "/ch/features",
+      en: "/en/features",
+      "x-default": "/features",
+    },
+  },
   openGraph: {
     title: FEATURES_PAGE.de.metaTitle,
     description: FEATURES_PAGE.de.metaDesc,

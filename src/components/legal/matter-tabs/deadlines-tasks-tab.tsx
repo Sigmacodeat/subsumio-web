@@ -98,7 +98,7 @@ export function DeadlinesTasksTab() {
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
                 {ctx.deadlineForm.formState.errors.title && (
-                  <p className="mt-1 text-xs text-red-600">
+                  <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
                     {ctx.deadlineForm.formState.errors.title.message}
                   </p>
                 )}
@@ -113,7 +113,7 @@ export function DeadlinesTasksTab() {
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
                 {ctx.deadlineForm.formState.errors.due_date && (
-                  <p className="mt-1 text-xs text-red-600">
+                  <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
                     {ctx.deadlineForm.formState.errors.due_date.message}
                   </p>
                 )}
@@ -183,7 +183,7 @@ export function DeadlinesTasksTab() {
                 />
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <ShieldCheck size={13} className="text-amber-600" />
+                    <ShieldCheck size={13} className="text-[color:var(--ds-warning-text)]" />
                     <span className="text-xs font-medium text-[color:var(--ds-text)]">
                       Notfrist (Vier-Augen-Kontrolle)
                     </span>
@@ -291,17 +291,17 @@ export function DeadlinesTasksTab() {
         )}
 
         {/* AI Deadline Detection */}
-        <div className="space-y-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+        <div className="space-y-3 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <PenTool size={16} className="text-blue-600" />
-              <span className="text-sm font-medium text-blue-600">
+              <PenTool size={16} className="text-[color:var(--ds-info-text)]" />
+              <span className="text-sm font-medium text-[color:var(--ds-info-text)]">
                 {t("cases.detail_dl_ai_title")}
               </span>
             </div>
             <Badge
               variant="default"
-              className="border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
+              className="border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
             >
               Beta
             </Badge>
@@ -314,12 +314,12 @@ export function DeadlinesTasksTab() {
             onChange={(e) => ctx.setAiDetectText(e.target.value)}
             rows={3}
             placeholder={t("cases.detail_dl_ai_ph")}
-            className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none"
+            className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-info-border)] focus:outline-none"
           />
           <div className="flex flex-wrap gap-2">
             <Button
               variant="primary"
-              className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
+              className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
               onClick={async () => {
                 if (!ctx.aiDetectText.trim()) return;
                 ctx.setAiDetecting(true);
@@ -377,7 +377,7 @@ export function DeadlinesTasksTab() {
                   <div className="flex shrink-0 items-center gap-2">
                     <Badge
                       variant="default"
-                      className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+                      className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
                     >
                       {Math.round(d.confidence * 100)}%
                     </Badge>
@@ -385,7 +385,7 @@ export function DeadlinesTasksTab() {
                       variant="outline"
                       size="sm"
                       disabled={caseData?.status === "archived"}
-                      className="border-emerald-500/30 text-xs text-emerald-600 hover:bg-emerald-500/10"
+                      className="border-[color:var(--ds-success-border)] text-xs text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                       onClick={() => {
                         const entry: DeadlineEntry = {
                           id: `dl-${Date.now()}`,
@@ -414,7 +414,7 @@ export function DeadlinesTasksTab() {
         {caseData.suggestedDeadlines && caseData.suggestedDeadlines.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-text)]">
-              <Sparkles size={14} className="text-amber-500" />
+              <Sparkles size={14} className="text-[color:var(--ds-warning-text)]" />
               {t("casesdetail.ai_deadlines")}
             </div>
             {caseData.suggestedDeadlines
@@ -422,7 +422,7 @@ export function DeadlinesTasksTab() {
               .map((sd, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2"
+                  className="flex items-center justify-between rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2"
                 >
                   <div className="min-w-0">
                     <div className="text-sm text-[color:var(--ds-text)]">{sd.title}</div>
@@ -439,7 +439,7 @@ export function DeadlinesTasksTab() {
                       variant="outline"
                       size="sm"
                       disabled={caseData?.status === "archived"}
-                      className="border-emerald-500/30 text-xs text-emerald-600 hover:bg-emerald-500/10"
+                      className="border-[color:var(--ds-success-border)] text-xs text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                       onClick={async () => {
                         const entry: DeadlineEntry = {
                           id: `dl-${Date.now()}`,
@@ -461,7 +461,7 @@ export function DeadlinesTasksTab() {
                       variant="ghost"
                       size="sm"
                       disabled={caseData?.status === "archived"}
-                      className="text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
+                      className="text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                       onClick={() => ctx.confirmSuggestedDeadline(i, false)}
                     >
                       <X size={12} /> {t("casesdetail.reject")}
@@ -509,28 +509,28 @@ export function DeadlinesTasksTab() {
                 {
                   pending: {
                     label: t("cases.detail_dl_status_pending"),
-                    color: "text-blue-600",
-                    border: "border-blue-500/20 bg-blue-500/5",
+                    color: "text-[color:var(--ds-info-text)]",
+                    border: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]",
                   },
                   warning: {
                     label: t("cases.detail_dl_status_warning"),
-                    color: "text-amber-600",
-                    border: "border-amber-500/20 bg-amber-500/5",
+                    color: "text-[color:var(--ds-warning-text)]",
+                    border: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]",
                   },
                   critical: {
                     label: t("cases.detail_dl_status_critical"),
-                    color: "text-red-600",
-                    border: "border-red-500/20 bg-red-500/5",
+                    color: "text-[color:var(--ds-danger-text)]",
+                    border: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]",
                   },
                   overdue: {
                     label: t("cases.detail_dl_status_overdue"),
-                    color: "text-rose-600",
-                    border: "border-rose-500/20 bg-rose-500/5",
+                    color: "text-[color:var(--ds-danger-text)]",
+                    border: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]",
                   },
                   done: {
                     label: t("cases.detail_dl_status_done"),
-                    color: "text-emerald-600",
-                    border: "border-emerald-500/20 bg-emerald-500/5",
+                    color: "text-[color:var(--ds-success-text)]",
+                    border: "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]",
                   },
                 };
               const cfg = statusConfig[status];
@@ -552,12 +552,12 @@ export function DeadlinesTasksTab() {
                         className={cn(
                           "border text-xs",
                           dl.review_status === "approved"
-                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                            ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                             : dl.review_status === "rejected"
-                              ? "border-red-500/20 bg-red-500/10 text-red-600"
+                              ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                               : dl.review_status === "reviewed"
-                                ? "border-blue-500/20 bg-blue-500/10 text-blue-600"
-                                : "border-amber-500/20 bg-amber-500/10 text-amber-600"
+                                ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
+                                : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
                         )}
                       >
                         {dl.review_status === "approved"
@@ -594,7 +594,7 @@ export function DeadlinesTasksTab() {
                           ctx.setDeadlinesList(updated);
                           ctx.saveCaseUpdate({ deadlines: updated });
                         }}
-                        className="px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-emerald-600"
+                        className="px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-success-text)]"
                       >
                         {dl.review_status === "approved"
                           ? t("cases.detail_dl_review_open")
@@ -617,7 +617,7 @@ export function DeadlinesTasksTab() {
                           ctx.setDeadlinesList(updated);
                           ctx.saveCaseUpdate({ deadlines: updated });
                         }}
-                        className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-colors hover:text-red-600"
+                        className="px-2 py-1 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-danger-text)]"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -638,7 +638,7 @@ export function DeadlinesTasksTab() {
                       </span>
                     )}
                     {isOverdue && (
-                      <span className="text-rose-600">
+                      <span className="text-[color:var(--ds-danger-text)]">
                         ({Math.abs(daysUntil)} {t("cases.detail_dl_days_overdue")})
                       </span>
                     )}
@@ -669,7 +669,7 @@ export function DeadlinesTasksTab() {
                     {dl.is_notfrist && (
                       <Badge
                         variant="default"
-                        className="flex items-center gap-0.5 border border-amber-500/30 bg-amber-500/10 text-xs text-amber-700"
+                        className="flex items-center gap-0.5 border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
                       >
                         <ShieldCheck size={10} />
                         Notfrist
@@ -680,7 +680,7 @@ export function DeadlinesTasksTab() {
                       dl.status !== "done" && (
                         <Badge
                           variant="default"
-                          className="border border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
+                          className="border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
                         >
                           Vorfrist erreicht
                         </Badge>
@@ -688,7 +688,7 @@ export function DeadlinesTasksTab() {
                     {dl.vorfrist_date && new Date(dl.vorfrist_date) > new Date() && (
                       <Badge
                         variant="default"
-                        className="flex items-center gap-0.5 border border-blue-500/10 bg-blue-500/5 text-xs text-blue-500/80"
+                        className="flex items-center gap-0.5 border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]/80"
                       >
                         <Clock size={10} />
                         Vorfrist:{" "}
@@ -811,7 +811,7 @@ export function DeadlinesTasksTab() {
                 className={cn(
                   "flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                   task.done
-                    ? "border-emerald-500/20 bg-emerald-500/5"
+                    ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
                 )}
               >
@@ -827,7 +827,7 @@ export function DeadlinesTasksTab() {
                   className={cn(
                     "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                     task.done
-                      ? "border-emerald-500/40 bg-emerald-500/20 text-emerald-600"
+                      ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : "hover:brand-border border-[color:var(--ds-border)]"
                   )}
                 >
@@ -850,7 +850,7 @@ export function DeadlinesTasksTab() {
                     ctx.setTasks(updated);
                     ctx.saveCaseUpdate({ tasks: updated });
                   }}
-                  className="text-[color:var(--ds-text-muted)] transition-colors hover:text-red-600"
+                  className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-danger-text)]"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -867,12 +867,12 @@ export function DeadlinesTasksTab() {
           onClick={() => !secondCheckBusy && setSecondCheckIndex(null)}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-[color:var(--ds-surface)] p-6 shadow-xl"
+            className="w-full max-w-md rounded-2xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-surface)] p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/15">
-                <ShieldCheck size={20} className="text-amber-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--ds-warning-bg)]">
+                <ShieldCheck size={20} className="text-[color:var(--ds-warning-text)]" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -888,12 +888,12 @@ export function DeadlinesTasksTab() {
                 ? "This is a statutory deadline (Notfrist). Marking it as done requires a second confirmation (four-eyes principle). By confirming, you attest that you have verified the deadline completion."
                 : "Dies ist eine Notfrist. Die Erledigung erfordert eine zweite Bestätigung (Vier-Augen-Prinzip). Mit der Bestätigung belegen Sie, dass Sie die Fristwahrung geprüft haben."}
             </p>
-            <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-700">
+            <div className="mb-4 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]">
               <strong>{t("deadlines.second_check_by")}:</strong> {ctx.currentUserName}
             </div>
             {secondCheckIndex !== null &&
               ctx.deadlinesList[secondCheckIndex]?.reviewed_by === ctx.currentUserName && (
-                <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-700">
+                <div className="mb-4 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-[color:var(--ds-danger-text)]">
                   {t("deadlines.second_check_self_blocked")}
                 </div>
               )}
@@ -947,7 +947,7 @@ export function DeadlinesTasksTab() {
                   setSecondCheckBusy(false);
                   setSecondCheckIndex(null);
                 }}
-                className="gap-1.5 bg-amber-600 text-xs text-white hover:bg-amber-500"
+                className="gap-1.5 bg-[color:var(--ds-warning-solid)] text-xs text-white hover:bg-[color:var(--ds-warning-solid)]"
               >
                 {secondCheckBusy ? (
                   <Loader2 size={13} className="animate-spin" />

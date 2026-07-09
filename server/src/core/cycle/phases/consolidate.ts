@@ -43,6 +43,14 @@ export interface ConsolidatePhaseOpts {
   minFactsPerBucket?: number;
   /** Minimum age (ms) of the OLDEST fact in a bucket before consolidation. Default 24h. */
   minOldestAgeMs?: number;
+  /**
+   * v0.46 — Incremental consolidation: restrict the bucket scan to facts
+   * whose entity_slug is in this set. When set, the age gate defaults to 0
+   * (immediate consolidation) unless `minOldestAgeMs` is explicitly provided.
+   * Used by the post-ingest Hindsight trigger to consolidate only the
+   * entities touched by a recent import without scanning the entire brain.
+   */
+  affectedSlugs?: string[];
 }
 
 export async function runPhaseConsolidate(
@@ -52,7 +60,10 @@ export async function runPhaseConsolidate(
   const dryRun = opts.dryRun === true;
   const threshold = opts.clusterThreshold ?? 0.85;
   const minPerBucket = opts.minFactsPerBucket ?? 3;
-  const minOldestAgeMs = opts.minOldestAgeMs ?? 24 * 60 * 60 * 1000;
+  // v0.46: incremental mode (affectedSlugs set) defaults to 0 age gate —
+  // Hindsight triggers immediately after ingest, not after 24h.
+  const isIncremental = Array.isArray(opts.affectedSlugs) && opts.affectedSlugs.length > 0;
+  const minOldestAgeMs = opts.minOldestAgeMs ?? (isIncremental ? 0 : 24 * 60 * 60 * 1000);
 
   let factsConsolidated = 0;
   let takesWritten = 0;
@@ -61,21 +72,42 @@ export async function runPhaseConsolidate(
 
   // Pull every (source_id, entity_slug) bucket of unconsolidated facts.
   // Uses the partial idx_facts_unconsolidated index.
+  // v0.46: in incremental mode, filter to affectedSlugs via ANY($1).
   let buckets: Array<{ source_id: string; entity_slug: string; count: number }>;
   try {
-    buckets = await engine.executeRaw<{
-      source_id: string;
-      entity_slug: string;
-      count: number;
-    }>(`
-      SELECT source_id, entity_slug, COUNT(*)::int AS count
-      FROM facts
-      WHERE consolidated_at IS NULL
-        AND expired_at IS NULL
-        AND entity_slug IS NOT NULL
-      GROUP BY source_id, entity_slug
-      HAVING COUNT(*) >= ${minPerBucket}
-    `);
+    if (isIncremental) {
+      buckets = await engine.executeRaw<{
+        source_id: string;
+        entity_slug: string;
+        count: number;
+      }>(
+        `
+        SELECT source_id, entity_slug, COUNT(*)::int AS count
+        FROM facts
+        WHERE consolidated_at IS NULL
+          AND expired_at IS NULL
+          AND entity_slug IS NOT NULL
+          AND entity_slug = ANY($1)
+        GROUP BY source_id, entity_slug
+        HAVING COUNT(*) >= ${minPerBucket}
+        `,
+        [opts.affectedSlugs!]
+      );
+    } else {
+      buckets = await engine.executeRaw<{
+        source_id: string;
+        entity_slug: string;
+        count: number;
+      }>(`
+        SELECT source_id, entity_slug, COUNT(*)::int AS count
+        FROM facts
+        WHERE consolidated_at IS NULL
+          AND expired_at IS NULL
+          AND entity_slug IS NOT NULL
+        GROUP BY source_id, entity_slug
+        HAVING COUNT(*) >= ${minPerBucket}
+      `);
+    }
   } catch (err) {
     return {
       phase: "consolidate",
@@ -274,6 +306,7 @@ export async function runPhaseConsolidate(
       takes_written: takesWritten,
       buckets_processed: bucketsProcessed,
       buckets_skipped: bucketsSkipped,
+      ...(isIncremental ? { incremental: true, affected_slugs: opts.affectedSlugs } : {}),
     },
   };
 }

@@ -669,7 +669,7 @@ export default function VaultPage() {
           </div>
 
           {deepAnalysisError && (
-            <div className="flex items-center gap-2 text-xs text-red-600">
+            <div className="flex items-center gap-2 text-xs text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={14} /> {deepAnalysisError}
             </div>
           )}
@@ -735,9 +735,9 @@ export default function VaultPage() {
             <div className="space-y-4">
               {/* Warnings */}
               {deepAnalysisResult.warnings.length > 0 && (
-                <div className="space-y-1 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                <div className="space-y-1 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3">
                   {deepAnalysisResult.warnings.map((w, i) => (
-                    <div key={i} className="flex items-center gap-1.5 text-xs text-amber-700">
+                    <div key={i} className="flex items-center gap-1.5 text-xs text-[color:var(--ds-warning-text)]">
                       <AlertTriangle size={10} /> {w}
                     </div>
                   ))}

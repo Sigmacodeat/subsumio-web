@@ -74,12 +74,12 @@ export function MatterAnalysisReview({
   return (
     <div
       id="matter-analysis-review"
-      className="mt-4 rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 md:p-4"
+      className="mt-4 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-3 md:p-4"
     >
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <ShieldCheck size={16} className="text-blue-700" aria-hidden="true" />
+            <ShieldCheck size={16} className="text-[color:var(--ds-info-text)]" aria-hidden="true" />
             <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
               Analyse prüfen und freigeben
             </h3>
@@ -176,7 +176,7 @@ export function MatterAnalysisReview({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-10 gap-1.5 text-xs text-red-700"
+                  className="h-10 gap-1.5 text-xs text-[color:var(--ds-danger-text)]"
                   disabled={savingId === fact.id}
                   onClick={() => void reviewFact(fact, "rejected")}
                 >

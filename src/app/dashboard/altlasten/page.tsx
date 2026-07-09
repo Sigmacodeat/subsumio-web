@@ -381,26 +381,26 @@ export default function AltlastenPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
-        <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4">
+        <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4">
           <div className="flex items-center gap-2">
-            <Flame className="h-5 w-5 text-red-500" />
-            <span className="text-sm font-medium text-red-600">Verjährung URGENT</span>
+            <Flame className="h-5 w-5 text-[color:var(--ds-danger-text)]" />
+            <span className="text-sm font-medium text-[color:var(--ds-danger-text)]">Verjährung URGENT</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-red-600">{urgentCount}</p>
+          <p className="mt-2 text-2xl font-bold text-[color:var(--ds-danger-text)]">{urgentCount}</p>
         </div>
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
+        <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
-            <span className="text-sm font-medium text-amber-600">Verjährung WARNUNG</span>
+            <AlertTriangle className="h-5 w-5 text-[color:var(--ds-warning-text)]" />
+            <span className="text-sm font-medium text-[color:var(--ds-warning-text)]">Verjährung WARNUNG</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-amber-600">{warningCount}</p>
+          <p className="mt-2 text-2xl font-bold text-[color:var(--ds-warning-text)]">{warningCount}</p>
         </div>
-        <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4">
+        <div className="rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4">
           <div className="flex items-center gap-2">
-            <Layers className="h-5 w-5 text-blue-500" />
-            <span className="text-sm font-medium text-blue-600">Pipeline durchgeführt</span>
+            <Layers className="h-5 w-5 text-[color:var(--ds-info-text)]" />
+            <span className="text-sm font-medium text-[color:var(--ds-info-text)]">Pipeline durchgeführt</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-blue-600">{pipelineRan}</p>
+          <p className="mt-2 text-2xl font-bold text-[color:var(--ds-info-text)]">{pipelineRan}</p>
         </div>
         <div className="rounded-lg border border-gray-500/20 bg-gray-500/5 p-4">
           <div className="flex items-center gap-2">
@@ -526,11 +526,11 @@ export default function AltlastenPage() {
                   {row.pipelineStatus ? (
                     <div className="flex items-center gap-2">
                       {row.pipelineStatus === "completed" || row.pipelineStatus === "done" ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        <CheckCircle2 className="h-4 w-4 text-[color:var(--ds-success-text)]" />
                       ) : row.pipelineStatus === "running" || row.pipelineStatus === "resuming" ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                        <Loader2 className="h-4 w-4 animate-spin text-[color:var(--ds-info-text)]" />
                       ) : row.pipelineStatus === "failed" ? (
-                        <XCircle className="h-4 w-4 text-red-500" />
+                        <XCircle className="h-4 w-4 text-[color:var(--ds-danger-text)]" />
                       ) : (
                         <Clock className="h-4 w-4 text-gray-400" />
                       )}
@@ -547,19 +547,19 @@ export default function AltlastenPage() {
                 </td>
                 <td className="p-3">
                   {row.verjaehrungStatus === "urgent" && (
-                    <Badge className="gap-1 border-red-500/20 bg-red-500/10 text-red-600">
+                    <Badge className="gap-1 border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">
                       <Flame className="h-3 w-3" />
                       URGENT ({row.verjaehrungScore})
                     </Badge>
                   )}
                   {row.verjaehrungStatus === "warning" && (
-                    <Badge className="gap-1 border-amber-500/20 bg-amber-500/10 text-amber-600">
+                    <Badge className="gap-1 border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]">
                       <AlertTriangle className="h-3 w-3" />
                       WARNUNG ({row.verjaehrungScore})
                     </Badge>
                   )}
                   {row.verjaehrungStatus === "ok" && (
-                    <Badge className="gap-1 border-emerald-500/20 bg-emerald-500/10 text-emerald-600">
+                    <Badge className="gap-1 border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">
                       <CheckCircle2 className="h-3 w-3" />
                       OK ({row.verjaehrungScore})
                     </Badge>

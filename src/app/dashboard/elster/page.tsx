@@ -120,9 +120,9 @@ export default function ElsterPage() {
       />
 
       {error && (
-        <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 px-4 py-3">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-rose-600">
+            <div className="flex items-center gap-2 text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={16} />
               <p className="text-sm font-medium">{error}</p>
             </div>
@@ -259,13 +259,13 @@ function ConnectionStatus({
   if (!status) return null;
   const connected = status.connected;
   return (
-    <Card className={`border-l-4 p-4 ${connected ? "border-l-emerald-500" : "border-l-rose-500"}`}>
+    <Card className={`border-l-4 p-4 ${connected ? "border-l-[color:var(--ds-success-solid)]" : "border-l-[color:var(--ds-danger-solid)]"}`}>
       <div className="flex items-start gap-3">
         <div className="mt-0.5">
           {connected ? (
-            <Wifi size={18} className="text-emerald-600" />
+            <Wifi size={18} className="text-[color:var(--ds-success-text)]" />
           ) : (
-            <WifiOff size={18} className="text-rose-600" />
+            <WifiOff size={18} className="text-[color:var(--ds-danger-text)]" />
           )}
         </div>
         <div className="flex-1">
@@ -275,7 +275,7 @@ function ConnectionStatus({
           <p className="text-xs text-[color:var(--ds-text-subtle)]">
             {t("elster.mode")}: {status.mode}
           </p>
-          {status.lastError && <p className="mt-1 text-xs text-rose-600">{status.lastError}</p>}
+          {status.lastError && <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{status.lastError}</p>}
         </div>
       </div>
     </Card>

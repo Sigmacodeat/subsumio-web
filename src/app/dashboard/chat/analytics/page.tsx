@@ -63,19 +63,19 @@ export default function ChatAnalyticsPage() {
       icon: MessageSquare,
       label: "Konversationen",
       value: stats.totalSessions,
-      color: "text-blue-500",
+      color: "text-[color:var(--ds-info-text)]",
     },
     {
       icon: Hash,
       label: "Nachrichten",
       value: stats.totalMessages,
-      color: "text-emerald-500",
+      color: "text-[color:var(--ds-success-text)]",
     },
     {
       icon: Zap,
       label: "Tokens gesamt",
       value: stats.totalTokens.toLocaleString(lang === "en" ? "en-GB" : "de-DE"),
-      color: "text-amber-500",
+      color: "text-[color:var(--ds-warning-text)]",
     },
     {
       icon: TrendingUp,
@@ -87,7 +87,7 @@ export default function ChatAnalyticsPage() {
       icon: Pin,
       label: "Angeheftet",
       value: stats.pinnedCount,
-      color: "text-rose-500",
+      color: "text-[color:var(--ds-danger-text)]",
     },
     {
       icon: Tag,
@@ -184,10 +184,10 @@ export default function ChatAnalyticsPage() {
                   className={cn(
                     "rounded px-1.5 py-0.5 text-xs font-medium",
                     model.speedRating >= 4
-                      ? "bg-emerald-500/10 text-emerald-600"
+                      ? "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                       : model.speedRating >= 3
-                        ? "bg-amber-500/10 text-amber-600"
-                        : "bg-red-500/10 text-red-600"
+                        ? "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                        : "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                   )}
                 >
                   Speed: {model.speedRating}/5

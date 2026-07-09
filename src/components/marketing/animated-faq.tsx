@@ -39,7 +39,7 @@ export function AnimatedFaqList({
             >
               <button
                 onClick={() => setOpen(isOpen ? null : i)}
-                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-medium"
+                className="flex w-full items-center justify-between gap-6 px-5 py-4 text-left text-sm font-medium"
                 aria-expanded={isOpen}
                 style={{ color: "var(--mk-text)" }}
               >

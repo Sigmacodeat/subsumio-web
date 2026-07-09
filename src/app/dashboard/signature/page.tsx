@@ -53,30 +53,30 @@ const STATUS_CONFIG: Record<
   sent: {
     label: "Versendet",
     icon: Send,
-    iconClass: "text-blue-600",
-    badgeClass: "bg-blue-500/5 border-blue-500/20 text-blue-600",
-    tileClass: "bg-blue-500/10",
+    iconClass: "text-[color:var(--ds-info-text)]",
+    badgeClass: "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+    tileClass: "bg-[color:var(--ds-info-bg)]",
   },
   signed: {
     label: "Unterschrieben",
     icon: CheckCircle2,
-    iconClass: "text-emerald-600",
-    badgeClass: "bg-emerald-500/5 border-emerald-500/20 text-emerald-600",
-    tileClass: "bg-emerald-500/10",
+    iconClass: "text-[color:var(--ds-success-text)]",
+    badgeClass: "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
+    tileClass: "bg-[color:var(--ds-success-bg)]",
   },
   declined: {
     label: "Abgelehnt",
     icon: XCircle,
-    iconClass: "text-red-600",
-    badgeClass: "bg-red-500/5 border-red-500/20 text-red-600",
-    tileClass: "bg-red-500/10",
+    iconClass: "text-[color:var(--ds-danger-text)]",
+    badgeClass: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+    tileClass: "bg-[color:var(--ds-danger-bg)]",
   },
   expired: {
     label: "Abgelaufen",
     icon: Clock,
-    iconClass: "text-amber-600",
-    badgeClass: "bg-amber-500/5 border-amber-500/20 text-amber-600",
-    tileClass: "bg-amber-500/10",
+    iconClass: "text-[color:var(--ds-warning-text)]",
+    badgeClass: "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
+    tileClass: "bg-[color:var(--ds-warning-bg)]",
   },
 };
 
@@ -165,7 +165,7 @@ export default function SignaturePage() {
           <div className="flex items-center gap-2">
             <a
               href="/dashboard/settings"
-              className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-600 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-amber-500/10"
+              className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-warning-bg)]"
             >
               <Settings size={14} />
               Anbieter konfigurieren
@@ -183,11 +183,11 @@ export default function SignaturePage() {
       />
 
       {/* Setup hint */}
-      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+      <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
         <div className="flex items-start gap-3">
-          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
+          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
           <div>
-            <p className="text-sm font-medium text-amber-600">
+            <p className="text-sm font-medium text-[color:var(--ds-warning-text)]">
               Externer Signatur-Provider erforderlich
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
@@ -209,7 +209,7 @@ export default function SignaturePage() {
 
       {notice && (
         <div
-          className="rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-sm text-blue-700"
+          className="rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-4 py-3 text-sm text-[color:var(--ds-info-text)]"
           role="status"
         >
           {notice}

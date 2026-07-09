@@ -31,7 +31,7 @@ const _crossLinksDe = {
   "law-firms": { label: "Für Kanzleien", icon: "Landmark" },
   solo: { label: "Für Einzelanwälte", icon: "User" },
   "in-house": { label: "Für Justiziariate", icon: "Building2" },
-  "mid-sized": { label: "Für Mittelständische", icon: "Users" },
+  "mid-sized": { label: "Für Mittelständische Kanzleien", icon: "Users" },
 };
 
 const _crossLinksEn = {
@@ -151,7 +151,7 @@ const _solutionsDe = {
     ],
     proofTitle: "Engine-Klasse Retrieval, kein Chat-Wrapper",
     proof:
-      "Der Retrieval-Kern erreicht 97,9 % Recall@5 mit Hybrid-Suche und Wissensgraph — auf Infrastruktur, die deine IT komplett steuert.",
+      "Der Retrieval-Kern erreicht 99,8 % Recall@8 auf LongMemEval (500 Fragen) mit Hybrid-Suche und Wissensgraph — auf Infrastruktur, die deine IT komplett steuert.",
     faq: [
       {
         q: "Wie lange dauert die Einführung?",
@@ -172,7 +172,7 @@ const _solutionsDe = {
     ],
     ctaTitle: "Starte mit einer abgeschlossenen Akte als Pilot.",
     ctaSub: "Keine Mandantendaten müssen das Haus verlassen. Drei Minuten bis zur ersten Antwort.",
-    ctaButton: "Kostenlos testen",
+    ctaButton: "Demo vereinbaren",
   },
   solo: {
     slug: "solo",
@@ -233,7 +233,7 @@ const _solutionsDe = {
     ],
     proofTitle: "Großkanzlei-Fähigkeit, Einzelanwalt-Preis",
     proof:
-      "Dieselbe Retrieval-Engine, die etablierte Kanzleien bedient — 97,9 % Recall@5, Hybrid-Suche, Wissensgraph — zu einem Preis, den ein Einzelanwalt mit der ersten gesparten Stunde rechtfertigen kann.",
+      "Dieselbe Retrieval-Engine, die etablierte Kanzleien bedient — 99,8 % Recall@8 auf LongMemEval (500 Fragen), Hybrid-Suche, Wissensgraph — zu einem Preis, den ein Einzelanwalt mit der ersten gesparten Stunde rechtfertigen kann.",
     faq: [
       {
         q: "Muss ich technisch versiert sein?",
@@ -251,7 +251,7 @@ const _solutionsDe = {
     ctaTitle: "Deine Praxis. Dein Brain.",
     ctaSub:
       "Drei Minuten bis zur ersten belegten Antwort. Keine Kreditkarte, kein Server, keine IT.",
-    ctaButton: "Demo anfragen",
+    ctaButton: "14 Tage kostenlos testen",
   },
   "in-house": {
     slug: "in-house",
@@ -312,7 +312,7 @@ const _solutionsDe = {
     ],
     proofTitle: "Von reaktiv zu proaktiv",
     proof:
-      "Der Retrieval-Kern erreicht 97,9 % Recall@5 — wenn du fragst 'welche Verträge haben automatische Verlängerung im Q3?', bekommst du die komplette Antwort, keine Teilmenge.",
+      "Der Retrieval-Kern erreicht 99,8 % Recall@8 auf LongMemEval (500 Fragen) — wenn du fragst 'welche Verträge haben automatische Verlängerung im Q3?', bekommst du die komplette Antwort, keine Teilmenge.",
     faq: [
       {
         q: "Wie integriert das in unser DMS?",
@@ -330,7 +330,7 @@ const _solutionsDe = {
     ctaTitle: "Gib deinem Rechtsteam eine Antwortmaschine.",
     ctaSub:
       "Starte mit einem Vertragsportfolio als Pilot. Keine Daten müssen deine Infrastruktur verlassen.",
-    ctaButton: "Demo anfragen",
+    ctaButton: "Demo vereinbaren",
   },
   "mid-sized": {
     slug: "mid-sized",
@@ -392,7 +392,7 @@ const _solutionsDe = {
     ],
     proofTitle: "Der Kraft-Multiplikator für dein Team",
     proof:
-      "97,9 % Recall@5 bedeutet: Dein Team findet, was zählt — jedes Mal. Wenn eine 15-Anwalt-Kanzlei das entscheidende Präjudiz in Sekunden findet, performt sie wie eine 50-Anwalt-Kanzlei.",
+      "99,8 % Recall@8 auf LongMemEval (500 Fragen) bedeutet: Dein Team findet, was zählt — jedes Mal. Wenn eine 15-Anwalt-Kanzlei das entscheidende Präjudiz in Sekunden findet, performt sie wie eine 50-Anwalt-Kanzlei.",
     faq: [
       {
         q: "Wie schnell können wir das einführen?",
@@ -409,7 +409,7 @@ const _solutionsDe = {
     ],
     ctaTitle: "Konkurriere mit den Großkanzleien.",
     ctaSub: "Starte mit einem Team als Pilot. Sieh die Wirkung in einer Woche.",
-    ctaButton: "Demo anfragen",
+    ctaButton: "Demo vereinbaren",
   },
 };
 
@@ -483,7 +483,7 @@ const _enSolutions: Record<SolutionSlug, SolutionContent> = {
     ],
     proofTitle: "Engine-grade retrieval, not a chat wrapper",
     proof:
-      "The retrieval core benchmarks at 97.9% Recall@5 with hybrid search and a knowledge graph — running on infrastructure your IT governs end to end.",
+      "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) with hybrid search and a knowledge graph — running on infrastructure your IT governs end to end.",
     faq: [
       {
         q: "How long does rollout take?",
@@ -504,7 +504,7 @@ const _enSolutions: Record<SolutionSlug, SolutionContent> = {
     ],
     ctaTitle: "Start with one closed matter as a pilot.",
     ctaSub: "No client data needs to leave your building. Three minutes to first answer.",
-    ctaButton: "Try free",
+    ctaButton: "Book a demo",
   },
   solo: {
     slug: "solo",
@@ -565,7 +565,7 @@ const _enSolutions: Record<SolutionSlug, SolutionContent> = {
     ],
     proofTitle: "Big-firm capability, solo-practitioner price",
     proof:
-      "The same retrieval engine that serves established firms — 97.9% Recall@5, hybrid search, knowledge graph — at a price a solo lawyer can justify on the first saved hour.",
+      "The same retrieval engine that serves established firms — 99.8% Recall@8 on LongMemEval (500 questions), hybrid search, knowledge graph — at a price a solo lawyer can justify on the first saved hour.",
     faq: [
       {
         q: "Do I need to be tech-savvy?",
@@ -582,7 +582,7 @@ const _enSolutions: Record<SolutionSlug, SolutionContent> = {
     ],
     ctaTitle: "Your practice. Your brain.",
     ctaSub: "Three minutes to first cited answer. No credit card, no server, no IT.",
-    ctaButton: "Request a demo",
+    ctaButton: "Start free trial",
   },
   "in-house": {
     slug: "in-house",
@@ -643,7 +643,7 @@ const _enSolutions: Record<SolutionSlug, SolutionContent> = {
     ],
     proofTitle: "From reactive to proactive legal ops",
     proof:
-      "The retrieval core benchmarks at 97.9% Recall@5 — meaning when you ask 'which contracts have auto-renewal in Q3?', you get the complete answer, not a partial guess.",
+      "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) — meaning when you ask 'which contracts have auto-renewal in Q3?', you get the complete answer, not a partial guess.",
     faq: [
       {
         q: "How does this integrate with our existing DMS?",
@@ -661,7 +661,7 @@ const _enSolutions: Record<SolutionSlug, SolutionContent> = {
     ctaTitle: "Give your legal team an answer machine.",
     ctaSub:
       "Start with one contract portfolio as a pilot. No data needs to leave your infrastructure.",
-    ctaButton: "Request a demo",
+    ctaButton: "Book a demo",
   },
   "mid-sized": {
     slug: "mid-sized",
@@ -722,7 +722,7 @@ const _enSolutions: Record<SolutionSlug, SolutionContent> = {
     ],
     proofTitle: "The force multiplier your team needs",
     proof:
-      "97.9% Recall@5 means your team finds what matters — every time. When a 15-lawyer firm finds the decisive precedent in seconds, it performs like a 50-lawyer firm.",
+      "99.8% Recall@8 on LongMemEval (500 questions) means your team finds what matters — every time. When a 15-lawyer firm finds the decisive precedent in seconds, it performs like a 50-lawyer firm.",
     faq: [
       {
         q: "How quickly can we roll this out?",
@@ -739,7 +739,7 @@ const _enSolutions: Record<SolutionSlug, SolutionContent> = {
     ],
     ctaTitle: "Compete with the big firms.",
     ctaSub: "Start with one team as a pilot. See the impact in a week.",
-    ctaButton: "Request a demo",
+    ctaButton: "Book a demo",
   },
 };
 
@@ -768,7 +768,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "Compete with the big firms.": "Competi con i grandi studi.",
     "Start with one team as a pilot. See the impact in a week.":
       "Inizia con un team come pilota. Vedi l'impatto in una settimana.",
-    "Request a demo": "Richiedi una demo",
+    "Book a demo": "Prenota una demo",
+    "Start free trial": "Inizia la prova gratuita",
     // Law firms — pains descs
     "Each lawyer's case knowledge lives in their head and their inbox. When someone leaves, years of context walk out the door.":
       "La conoscenza delle pratiche di ogni avvocato vive nella sua testa e nella sua casella. Quando qualcuno se ne va, anni di contesto se ne vanno con lui.",
@@ -805,8 +806,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       "Le risposte citano le pagine esatte da cui provengono. Verifica con un clic prima che qualcosa finisca in una memoria.",
     // Law firms — proof + faq
     "Engine-grade retrieval, not a chat wrapper": "Retrieval di grado engine, non un chat wrapper",
-    "The retrieval core benchmarks at 97.9% Recall@5 with hybrid search and a knowledge graph — running on infrastructure your IT governs end to end.":
-      "Il core di retrieval raggiunge 97,9% Recall@5 con ricerca ibrida e knowledge graph — su infrastruttura che la tua IT governa end-to-end.",
+    "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) with hybrid search and a knowledge graph — running on infrastructure your IT governs end to end.":
+      "Il core di retrieval raggiunge 99,8% Recall@8 su LongMemEval (500 domande) con ricerca ibrida e knowledge graph — su infrastruttura che la tua IT governa end-to-end.",
     "How long does rollout take?": "Quanto tempo richiede il rollout?",
     "A pilot with one closed matter takes under an hour. Full firm rollout typically takes a week — your team indexes existing matters at their own pace.":
       "Un pilota con una pratica chiusa richiede meno di un'ora. Il rollout completo dello studio richiede tipicamente una settimana — il tuo team indicizza le pratiche esistenti al proprio ritmo.",
@@ -864,8 +865,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       "EU-hosted con cifratura per cliente. I tuoi dati clienti non sono mai usati per trainare modelli condivisi. Self-hosting disponibile se preferisci.",
     "Big-firm capability, solo-practitioner price":
       "Capacità da grande studio, prezzo da avvocato singolo",
-    "The same retrieval engine that serves established firms — 97.9% Recall@5, hybrid search, knowledge graph — at a price a solo lawyer can justify on the first saved hour.":
-      "Lo stesso engine di retrieval che serve studi affermati — 97,9% Recall@5, ricerca ibrida, knowledge graph — a un prezzo che un avvocato singolo può giustificare con la prima ora risparmiata.",
+    "The same retrieval engine that serves established firms — 99.8% Recall@8 on LongMemEval (500 questions), hybrid search, knowledge graph — at a price a solo lawyer can justify on the first saved hour.":
+      "Lo stesso engine di retrieval che serve studi affermati — 99,8% Recall@8 su LongMemEval (500 domande), ricerca ibrida, knowledge graph — a un prezzo che un avvocato singolo può giustificare con la prima ora risparmiata.",
     "Do I need to be tech-savvy?": "Devo essere esperto di tecnologia?",
     "No. Sign up, upload documents, ask questions. If you can use WhatsApp and a browser, you can use Subsumio.":
       "No. Iscriviti, carica documenti, fai domande. Se sai usare WhatsApp e un browser, sai usare Subsumio.",
@@ -915,8 +916,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "Every query and answer is logged with sources. When the auditor asks 'how did you reach this conclusion?', the trail is there.":
       "Ogni query e risposta è loggata con fonti. Quando l'auditor chiede 'come sei arrivato a questa conclusione?', il trail è lì.",
     "From reactive to proactive legal ops": "Da legal ops reattiva a proattiva",
-    "The retrieval core benchmarks at 97.9% Recall@5 — meaning when you ask 'which contracts have auto-renewal in Q3?', you get the complete answer, not a partial guess.":
-      "Il core di retrieval raggiunge 97,9% Recall@5 — il che significa che quando chiedi 'quali contratti hanno auto-renewal in Q3?', ottieni la risposta completa, non una supposizione parziale.",
+    "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) — meaning when you ask 'which contracts have auto-renewal in Q3?', you get the complete answer, not a partial guess.":
+      "Il core di retrieval raggiunge 99,8% Recall@8 su LongMemEval (500 domande) — il che significa che quando chiedi 'quali contratti hanno auto-renewal in Q3?', ottieni la risposta completa, non una supposizione parziale.",
     "How does this integrate with our existing DMS?":
       "Come si integra con il nostro DMS esistente?",
     "Subsumio imports from shared drives, SharePoint, and via API. Document metadata (author, date, matter) is preserved during indexing.":
@@ -972,8 +973,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "No US cloud, no US model provider. EU hosting with DPA, or self-host on your own hardware with your own keys.":
       "Nessuna cloud US, nessun provider di modelli US. Hosting UE con DPA, o self-host sul tuo hardware con le tue chiavi.",
     "The force multiplier your team needs": "Il moltiplicatore di forza che il tuo team necesita",
-    "97.9% Recall@5 means your team finds what matters — every time. When a 15-lawyer firm finds the decisive precedent in seconds, it performs like a 50-lawyer firm.":
-      "97,9% Recall@5 significa che il tuo team trova ciò che conta — ogni volta. Quando uno studio di 15 avvocati trova il precedente decisivo in secondi, si comporta come uno studio di 50.",
+    "99.8% Recall@8 on LongMemEval (500 questions) means your team finds what matters — every time. When a 15-lawyer firm finds the decisive precedent in seconds, it performs like a 50-lawyer firm.":
+      "99,8% Recall@8 su LongMemEval (500 domande) significa che il tuo team trova ciò che conta — ogni volta. Quando uno studio di 15 avvocati trova il precedente decisivo in secondi, si comporta come uno studio di 50.",
     "How quickly can we roll this out?": "Quanto velocemente possiamo fare il rollout?",
     "A pilot with 2-3 lawyers takes a day. Full firm rollout typically takes a week — your team indexes existing matters at their own pace.":
       "Un pilota con 2-3 avvocati richiede un giorno. Il rollout completo dello studio richiede tipicamente una settimana — il tuo team indicizza le pratiche esistenti al proprio ritmo.",
@@ -1002,7 +1003,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "Compete with the big firms.": "Compite con los grandes bufetes.",
     "Start with one team as a pilot. See the impact in a week.":
       "Empieza con un equipo como piloto. Ve el impacto en una semana.",
-    "Request a demo": "Solicitar una demo",
+    "Book a demo": "Reservar una demo",
+    "Start free trial": "Empezar prueba gratuita",
     // Law firms — pains descs
     "Each lawyer's case knowledge lives in their head and their inbox. When someone leaves, years of context walk out the door.":
       "El conocimiento de los asuntos de cada abogado vive en su cabeza y su bandeja. Cuando alguien se va, años de contexto se van con él.",
@@ -1039,8 +1041,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       "Las respuestas citan las páginas exactas de donde provienen. Verifica con un clic antes de que algo vaya a un escrito.",
     // Law firms — proof + faq
     "Engine-grade retrieval, not a chat wrapper": "Retrieval de grado engine, no un chat wrapper",
-    "The retrieval core benchmarks at 97.9% Recall@5 with hybrid search and a knowledge graph — running on infrastructure your IT governs end to end.":
-      "El core de retrieval alcanza 97,9% Recall@5 con búsqueda híbrida y knowledge graph — en infraestructura que tu IT gobierna end-to-end.",
+    "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) with hybrid search and a knowledge graph — running on infrastructure your IT governs end to end.":
+      "El core de retrieval alcanza 99,8% Recall@8 en LongMemEval (500 preguntas) con búsqueda híbrida y knowledge graph — en infraestructura que tu IT gobierna end-to-end.",
     "How long does rollout take?": "¿Cuánto tiempo requiere el rollout?",
     "A pilot with one closed matter takes under an hour. Full firm rollout typically takes a week — your team indexes existing matters at their own pace.":
       "Un piloto con un asunto cerrado requiere menos de una hora. El rollout completo del bufete suele tomar una semana — tu equipo indexa los asuntos existentes a su ritmo.",
@@ -1098,8 +1100,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       "EU-hosted con cifrado por cliente. Tus datos de clientes nunca se usan para entrenar modelos compartidos. Self-hosting disponible si lo prefieres.",
     "Big-firm capability, solo-practitioner price":
       "Capacidad de gran bufete, precio de abogado individual",
-    "The same retrieval engine that serves established firms — 97.9% Recall@5, hybrid search, knowledge graph — at a price a solo lawyer can justify on the first saved hour.":
-      "El mismo engine de retrieval que sirve a bufetes consolidados — 97,9% Recall@5, búsqueda híbrida, knowledge graph — a un precio que un abogado individual puede justificar con la primera hora ahorrada.",
+    "The same retrieval engine that serves established firms — 99.8% Recall@8 on LongMemEval (500 questions), hybrid search, knowledge graph — at a price a solo lawyer can justify on the first saved hour.":
+      "El mismo engine de retrieval que sirve a bufetes consolidados — 99,8% Recall@8 en LongMemEval (500 preguntas), búsqueda híbrida, knowledge graph — a un precio que un abogado individual puede justificar con la primera hora ahorrada.",
     "Do I need to be tech-savvy?": "¿Necesito saber de tecnología?",
     "No. Sign up, upload documents, ask questions. If you can use WhatsApp and a browser, you can use Subsumio.":
       "No. Regístrate, sube documentos, haz preguntas. Si sabes usar WhatsApp y un navegador, sabes usar Subsumio.",
@@ -1149,8 +1151,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "Every query and answer is logged with sources. When the auditor asks 'how did you reach this conclusion?', the trail is there.":
       "Cada query y respuesta está logueada con fuentes. Cuando el auditor pregunta '¿cómo llegaste a esta conclusión?', el trail está ahí.",
     "From reactive to proactive legal ops": "De legal ops reactiva a proactiva",
-    "The retrieval core benchmarks at 97.9% Recall@5 — meaning when you ask 'which contracts have auto-renewal in Q3?', you get the complete answer, not a partial guess.":
-      "El core de retrieval alcanza 97,9% Recall@5 — lo que significa que cuando preguntas '¿qué contratos tienen auto-renovación en Q3?', obtienes la respuesta completa, no una suposición parcial.",
+    "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) — meaning when you ask 'which contracts have auto-renewal in Q3?', you get the complete answer, not a partial guess.":
+      "El core de retrieval alcanza 99,8% Recall@8 en LongMemEval (500 preguntas) — lo que significa que cuando preguntas '¿qué contratos tienen auto-renovación en Q3?', obtienes la respuesta completa, no una suposición parcial.",
     "How does this integrate with our existing DMS?": "¿Cómo se integra con nuestro DMS existente?",
     "Subsumio imports from shared drives, SharePoint, and via API. Document metadata (author, date, matter) is preserved during indexing.":
       "Subsumio importa desde shared drives, SharePoint, y vía API. Los metadatos de los documentos (autor, fecha, asunto) se preservan durante la indexación.",
@@ -1204,8 +1206,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "No US cloud, no US model provider. EU hosting with DPA, or self-host on your own hardware with your own keys.":
       "Sin cloud US, sin provider de modelos US. Hosting UE con DPA, o self-host en tu propio hardware con tus propias keys.",
     "The force multiplier your team needs": "El multiplicador de fuerza que tu equipo necesita",
-    "97.9% Recall@5 means your team finds what matters — every time. When a 15-lawyer firm finds the decisive precedent in seconds, it performs like a 50-lawyer firm.":
-      "97,9% Recall@5 significa que tu equipo encuentra lo que importa — cada vez. Cuando un bufete de 15 abogados encuentra el precedente decisivo en segundos, rinde como uno de 50.",
+    "99.8% Recall@8 on LongMemEval (500 questions) means your team finds what matters — every time. When a 15-lawyer firm finds the decisive precedent in seconds, it performs like a 50-lawyer firm.":
+      "99,8% Recall@8 en LongMemEval (500 preguntas) significa que tu equipo encuentra lo que importa — cada vez. Cuando un bufete de 15 abogados encuentra el precedente decisivo en segundos, rinde como uno de 50.",
     "How quickly can we roll this out?": "¿Cuán rápido podemos hacer el rollout?",
     "A pilot with 2-3 lawyers takes a day. Full firm rollout typically takes a week — your team indexes existing matters at their own pace.":
       "Un piloto con 2-3 abogados toma un día. El rollout completo del bufete suele tomar una semana — tu equipo indexa los asuntos existentes a su ritmo.",
@@ -1233,7 +1235,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "Compete with the big firms.": "Konkuruj z dużymi kancelariami.",
     "Start with one team as a pilot. See the impact in a week.":
       "Zacznij z jednym zespołem jako pilot. Zobacz efekt w tydzień.",
-    "Request a demo": "Zamów demo",
+    "Book a demo": "Zarezerwuj demo",
+    "Start free trial": "Rozpocznij darmowy okres",
     // Law firms — pains descs
     "Each lawyer's case knowledge lives in their head and their inbox. When someone leaves, years of context walk out the door.":
       "Wiedza o sprawach każdego prawnika żyje w jego głowie i skrzynce. Kiedy ktoś odchodzi, lata kontekstu wychodzą z nim.",
@@ -1270,8 +1273,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       "Odpowiedzi cytują dokładne strony, z których pochodzą. Zweryfikuj jednym kliknięciem, zanim coś trafi do pisma.",
     // Law firms — proof + faq
     "Engine-grade retrieval, not a chat wrapper": "Retrieval klasy engine, nie chat wrapper",
-    "The retrieval core benchmarks at 97.9% Recall@5 with hybrid search and a knowledge graph — running on infrastructure your IT governs end to end.":
-      "Rdzeń retrieval osiąga 97,9% Recall@5 z wyszukiwaniem hybrydowym i knowledge graph — na infrastrukturze, którą twoja IT kontroluje end-to-end.",
+    "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) with hybrid search and a knowledge graph — running on infrastructure your IT governs end to end.":
+      "Rdzeń retrieval osiąga 99,8% Recall@8 na LongMemEval (500 pytań) z wyszukiwaniem hybrydowym i knowledge graph — na infrastrukturze, którą twoja IT kontroluje end-to-end.",
     "How long does rollout take?": "Ile trwa rollout?",
     "A pilot with one closed matter takes under an hour. Full firm rollout typically takes a week — your team indexes existing matters at their own pace.":
       "Pilot z jedną zamkniętą sprawą trwa poniżej godziny. Pełny rollout kancelarii trwa zazwyczaj tydzień — twój zespół indeksuje istniejące sprawy we własnym tempie.",
@@ -1329,8 +1332,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       "EU-hosted z szyfrowaniem per klient. Dane klientów nigdy nie służą do trenowania współdzielonych modeli. Self-hosting dostępny, jeśli wolisz.",
     "Big-firm capability, solo-practitioner price":
       "Możliwości dużej kancelarii, cena samodzielnego adwokata",
-    "The same retrieval engine that serves established firms — 97.9% Recall@5, hybrid search, knowledge graph — at a price a solo lawyer can justify on the first saved hour.":
-      "Ten sam engine retrieval, który obsługuje ugruntowane kancelarie — 97,9% Recall@5, wyszukiwanie hybrydowe, knowledge graph — w cenie, którą samodzielny adwokat może uzasadnić pierwszą zaoszczędzoną godziną.",
+    "The same retrieval engine that serves established firms — 99.8% Recall@8 on LongMemEval (500 questions), hybrid search, knowledge graph — at a price a solo lawyer can justify on the first saved hour.":
+      "Ten sam engine retrieval, który obsługuje ugruntowane kancelarie — 99,8% Recall@8 na LongMemEval (500 pytań), wyszukiwanie hybrydowe, knowledge graph — w cenie, którą samodzielny adwokat może uzasadnić pierwszą zaoszczędzoną godziną.",
     "Do I need to be tech-savvy?": "Czy muszę być biegły w technologii?",
     "No. Sign up, upload documents, ask questions. If you can use WhatsApp and a browser, you can use Subsumio.":
       "Nie. Zarejestruj się, wgraj dokumenty, zadawaj pytania. Jeśli potrafisz używać WhatsApp i przeglądarki, potrafisz używać Subsumio.",
@@ -1380,8 +1383,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "Every query and answer is logged with sources. When the auditor asks 'how did you reach this conclusion?', the trail is there.":
       "Każde zapytanie i odpowiedź są logowane ze źródłami. Gdy auditor pyta 'jak doszedłeś do tej konkluzji?', trail jest tam.",
     "From reactive to proactive legal ops": "Od reaktywnego do proaktywnego legal ops",
-    "The retrieval core benchmarks at 97.9% Recall@5 — meaning when you ask 'which contracts have auto-renewal in Q3?', you get the complete answer, not a partial guess.":
-      "Rdzeń retrieval osiąga 97,9% Recall@5 — co oznacza, że gdy pytasz 'które kontrakty mają auto-renewal w Q3?', otrzymujesz pełną odpowiedź, nie częściowe zgadywanie.",
+    "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) — meaning when you ask 'which contracts have auto-renewal in Q3?', you get the complete answer, not a partial guess.":
+      "Rdzeń retrieval osiąga 99,8% Recall@8 na LongMemEval (500 pytań) — co oznacza, że gdy pytasz 'które kontrakty mają auto-renewal w Q3?', otrzymujesz pełną odpowiedź, nie częściowe zgadywanie.",
     "How does this integrate with our existing DMS?": "Jak integruje się z naszym DMS?",
     "Subsumio imports from shared drives, SharePoint, and via API. Document metadata (author, date, matter) is preserved during indexing.":
       "Subsumio importuje z shared drives, SharePoint i przez API. Metadane dokumentów (autor, data, sprawa) są zachowane podczas indeksowania.",
@@ -1435,8 +1438,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "No US cloud, no US model provider. EU hosting with DPA, or self-host on your own hardware with your own keys.":
       "Bez chmury US, bez provider modeli US. Hosting UE z DPA, lub self-host na własnym hardware z własnymi kluczami.",
     "The force multiplier your team needs": "Mnożnik siły, którego twój zespół potrzebuje",
-    "97.9% Recall@5 means your team finds what matters — every time. When a 15-lawyer firm finds the decisive precedent in seconds, it performs like a 50-lawyer firm.":
-      "97,9% Recall@5 oznacza, że twój zespół znajduje to, co ważne — za każdym razem. Gdy 15-osobowa kancelaria znajduje decydujący precedens w sekundy, funkcjonuje jak 50-osobowa.",
+    "99.8% Recall@8 on LongMemEval (500 questions) means your team finds what matters — every time. When a 15-lawyer firm finds the decisive precedent in seconds, it performs like a 50-lawyer firm.":
+      "99,8% Recall@8 na LongMemEval (500 pytań) oznacza, że twój zespół znajduje to, co ważne — za każdym razem. Gdy 15-osobowa kancelaria znajduje decydujący precedens w sekundy, funkcjonuje jak 50-osobowa.",
     "How quickly can we roll this out?": "Jak szybko możemy wdrożyć?",
     "A pilot with 2-3 lawyers takes a day. Full firm rollout typically takes a week — your team indexes existing matters at their own pace.":
       "Pilot z 2-3 prawnikami trwa dzień. Pełny rollout kancelarii trwa zazwyczaj tydzień — twój zespół indeksuje istniejące sprawy we własnym tempie.",
@@ -1464,7 +1467,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "Compete with the big firms.": "Faites concurrence aux grands cabinets.",
     "Start with one team as a pilot. See the impact in a week.":
       "Commencez avec une équipe pilote. Voyez l'impact en une semaine.",
-    "Request a demo": "Demander une démo",
+    "Book a demo": "Réserver une démo",
+    "Start free trial": "Commencer l'essai gratuit",
     // Law firms — pains descs
     "Each lawyer's case knowledge lives in their head and their inbox. When someone leaves, years of context walk out the door.":
       "La connaissance des dossiers de chaque avocat vit dans sa tête et sa boîte mail. Quand quelqu'un part, des années de contexte partent avec lui.",
@@ -1501,8 +1505,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       "Les réponses citent les pages exactes d'où elles proviennent. Vérifiez en un clic avant que quoi que ce soit n'aille dans une conclusion.",
     // Law firms — proof + faq
     "Engine-grade retrieval, not a chat wrapper": "Retrieval de grade engine, pas un chat wrapper",
-    "The retrieval core benchmarks at 97.9% Recall@5 with hybrid search and a knowledge graph — running on infrastructure your IT governs end to end.":
-      "Le core de retrieval atteint 97,9% Recall@5 avec recherche hybride et knowledge graph — sur une infrastructure que votre IT maîtrise end-to-end.",
+    "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) with hybrid search and a knowledge graph — running on infrastructure your IT governs end to end.":
+      "Le core de retrieval atteint 99,8% Recall@8 sur LongMemEval (500 questions) avec recherche hybride et knowledge graph — sur une infrastructure que votre IT maîtrise end-to-end.",
     "How long does rollout take?": "Combien de temps prend le rollout?",
     "A pilot with one closed matter takes under an hour. Full firm rollout typically takes a week — your team indexes existing matters at their own pace.":
       "Un pilote avec un dossier clôturé prend moins d'une heure. Le rollout complet du cabinet prend typiquement une semaine — votre équipe indexe les dossiers existants à son rythme.",
@@ -1560,8 +1564,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       "EU-hosted avec chiffrement par client. Vos données clients ne sont jamais utilisées pour entraîner des modèles partagés. Self-hosting disponible si vous préférez.",
     "Big-firm capability, solo-practitioner price":
       "Capacité de grand cabinet, prix d'avocat indépendant",
-    "The same retrieval engine that serves established firms — 97.9% Recall@5, hybrid search, knowledge graph — at a price a solo lawyer can justify on the first saved hour.":
-      "Le même engine de retrieval qui sert les cabinets établis — 97,9% Recall@5, recherche hybride, knowledge graph — à un prix qu'un avocat indépendant peut justifier dès la première heure économisée.",
+    "The same retrieval engine that serves established firms — 99.8% Recall@8 on LongMemEval (500 questions), hybrid search, knowledge graph — at a price a solo lawyer can justify on the first saved hour.":
+      "Le même engine de retrieval qui sert les cabinets établis — 99,8% Recall@8 sur LongMemEval (500 questions), recherche hybride, knowledge graph — à un prix qu'un avocat indépendant peut justifier dès la première heure économisée.",
     "Do I need to be tech-savvy?": "Dois-je être à l'aise avec la tech?",
     "No. Sign up, upload documents, ask questions. If you can use WhatsApp and a browser, you can use Subsumio.":
       "Non. Inscrivez-vous, téléchargez des documents, posez des questions. Si vous savez utiliser WhatsApp et un navigateur, vous savez utiliser Subsumio.",
@@ -1611,8 +1615,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "Every query and answer is logged with sources. When the auditor asks 'how did you reach this conclusion?', the trail is there.":
       "Chaque query et réponse est loguée avec ses sources. Quand l'auditor demande 'comment êtes-vous arrivé à cette conclusion?', le trail est là.",
     "From reactive to proactive legal ops": "De legal ops réactif à proactif",
-    "The retrieval core benchmarks at 97.9% Recall@5 — meaning when you ask 'which contracts have auto-renewal in Q3?', you get the complete answer, not a partial guess.":
-      "Le core de retrieval atteint 97,9% Recall@5 — ce qui signifie que quand vous demandez 'quels contrats ont une auto-renouvellement en Q3?', vous obtenez la réponse complète, pas une supposition partielle.",
+    "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) — meaning when you ask 'which contracts have auto-renewal in Q3?', you get the complete answer, not a partial guess.":
+      "Le core de retrieval atteint 99,8% Recall@8 sur LongMemEval (500 questions) — ce qui signifie que quand vous demandez 'quels contrats ont une auto-renouvellement en Q3?', vous obtenez la réponse complète, pas une supposition partielle.",
     "How does this integrate with our existing DMS?":
       "Comment cela s'intègre-t-il avec notre DMS existant?",
     "Subsumio imports from shared drives, SharePoint, and via API. Document metadata (author, date, matter) is preserved during indexing.":
@@ -1668,8 +1672,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "No US cloud, no US model provider. EU hosting with DPA, or self-host on your own hardware with your own keys.":
       "Pas de cloud US, pas de provider de modèles US. Hosting UE avec DPA, ou self-host sur votre propre matériel avec vos propres clés.",
     "The force multiplier your team needs": "Le multiplicateur de force dont votre équipe a besoin",
-    "97.9% Recall@5 means your team finds what matters — every time. When a 15-lawyer firm finds the decisive precedent in seconds, it performs like a 50-lawyer firm.":
-      "97,9% Recall@5 signifie que votre équipe trouve ce qui compte — à chaque fois. Quand un cabinet de 15 avocats trouve le précédent décisif en secondes, il performe comme un cabinet de 50.",
+    "99.8% Recall@8 on LongMemEval (500 questions) means your team finds what matters — every time. When a 15-lawyer firm finds the decisive precedent in seconds, it performs like a 50-lawyer firm.":
+      "99,8% Recall@8 sur LongMemEval (500 questions) signifie que votre équipe trouve ce qui compte — à chaque fois. Quand un cabinet de 15 avocats trouve le précédent décisif en secondes, il performe comme un cabinet de 50.",
     "How quickly can we roll this out?": "Combien rapidement pouvons-nous déployer?",
     "A pilot with 2-3 lawyers takes a day. Full firm rollout typically takes a week — your team indexes existing matters at their own pace.":
       "Un pilote avec 2-3 avocats prend un jour. Le rollout complet du cabinet prend typiquement une semaine — votre équipe indexe les dossiers existants à son rythme.",
@@ -1697,7 +1701,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "Compete with the big firms.": "Concureer met de grote kantoren.",
     "Start with one team as a pilot. See the impact in a week.":
       "Begin met één team als pilot. Zie de impact in een week.",
-    "Request a demo": "Vraag een demo aan",
+    "Book a demo": "Boek een demo",
+    "Start free trial": "Start gratis proefperiode",
     // Law firms — pains descs
     "Each lawyer's case knowledge lives in their head and their inbox. When someone leaves, years of context walk out the door.":
       "De zaakkennis van elke advocaat leeft in zijn hoofd en zijn inbox. Als iemand vertrekt, gaan jaren van context met hem mee.",
@@ -1735,8 +1740,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     // Law firms — proof + faq
     "Engine-grade retrieval, not a chat wrapper":
       "Retrieval van engine-kwaliteit, geen chat wrapper",
-    "The retrieval core benchmarks at 97.9% Recall@5 with hybrid search and a knowledge graph — running on infrastructure your IT governs end to end.":
-      "De retrieval-kern bereikt 97,9% Recall@5 met hybride zoek en een knowledge graph — op infrastructuur die jouw IT end-to-end beheert.",
+    "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) with hybrid search and a knowledge graph — running on infrastructure your IT governs end to end.":
+      "De retrieval-kern bereikt 99,8% Recall@8 op LongMemEval (500 vragen) met hybride zoek en een knowledge graph — op infrastructuur die jouw IT end-to-end beheert.",
     "How long does rollout take?": "Hoe lang duurt de rollout?",
     "A pilot with one closed matter takes under an hour. Full firm rollout typically takes a week — your team indexes existing matters at their own pace.":
       "Een pilot met één gesloten zaak duurt minder dan een uur. Volledige kantoor-rollout duurt doorgaans een week — jouw team indexeert bestaande zaken in eigen tempo.",
@@ -1793,8 +1798,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "EU-hosted with encryption per customer. Your client data is never used to train shared models. Self-hosting available if you prefer.":
       "EU-hosted met encryptie per klant. Je klantdata wordt nooit gebruikt om gedeelde modellen te trainen. Self-hosting beschikbaar als je dat prefereert.",
     "Big-firm capability, solo-practitioner price": "Groot-kantoor capaciteit, solo-advocaat prijs",
-    "The same retrieval engine that serves established firms — 97.9% Recall@5, hybrid search, knowledge graph — at a price a solo lawyer can justify on the first saved hour.":
-      "Dezelfde retrieval-engine die gevestigde kantoren bedient — 97,9% Recall@5, hybride zoek, knowledge graph — voor een prijs die een solo-advocaat kan rechtvaardigen met het eerste bespaarde uur.",
+    "The same retrieval engine that serves established firms — 99.8% Recall@8 on LongMemEval (500 questions), hybrid search, knowledge graph — at a price a solo lawyer can justify on the first saved hour.":
+      "Dezelfde retrieval-engine die gevestigde kantoren bedient — 99,8% Recall@8 op LongMemEval (500 vragen), hybride zoek, knowledge graph — voor een prijs die een solo-advocaat kan rechtvaardigen met het eerste bespaarde uur.",
     "Do I need to be tech-savvy?": "Moet ik tech-savvy zijn?",
     "No. Sign up, upload documents, ask questions. If you can use WhatsApp and a browser, you can use Subsumio.":
       "Nee. Meld je aan, upload documenten, stel vragen. Als je WhatsApp en een browser kunt gebruiken, kun je Subsumio gebruiken.",
@@ -1844,8 +1849,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "Every query and answer is logged with sources. When the auditor asks 'how did you reach this conclusion?', the trail is there.":
       "Elke query en antwoord wordt gelogd met bronnen. Als de auditor vraagt 'hoe kwam je tot deze conclusie?', de trail is er.",
     "From reactive to proactive legal ops": "Van reactief naar proactief legal ops",
-    "The retrieval core benchmarks at 97.9% Recall@5 — meaning when you ask 'which contracts have auto-renewal in Q3?', you get the complete answer, not a partial guess.":
-      "De retrieval-kern bereikt 97,9% Recall@5 — wat betekent dat als je vraagt 'welke contracten hebben auto-renewal in Q3?', je het volledige antwoord krijgt, niet een gedeeltelijke gok.",
+    "The retrieval core benchmarks at 99.8% Recall@8 on LongMemEval (500 questions) — meaning when you ask 'which contracts have auto-renewal in Q3?', you get the complete answer, not a partial guess.":
+      "De retrieval-kern bereikt 99,8% Recall@8 op LongMemEval (500 vragen) — wat betekent dat als je vraagt 'welke contracten hebben auto-renewal in Q3?', je het volledige antwoord krijgt, niet een gedeeltelijke gok.",
     "How does this integrate with our existing DMS?": "Hoe integreert dit met onze bestaande DMS?",
     "Subsumio imports from shared drives, SharePoint, and via API. Document metadata (author, date, matter) is preserved during indexing.":
       "Subsumio importeert vanuit shared drives, SharePoint, en via API. Document-metadata (auteur, datum, zaak) blijft behouden tijdens indexering.",
@@ -1899,8 +1904,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     "No US cloud, no US model provider. EU hosting with DPA, or self-host on your own hardware with your own keys.":
       "Geen US-cloud, geen US-model-provider. EU-hosting met DPA, of self-host op je eigen hardware met je eigen keys.",
     "The force multiplier your team needs": "De krachtvermenigvuldiger die je team nodig heeft",
-    "97.9% Recall@5 means your team finds what matters — every time. When a 15-lawyer firm finds the decisive precedent in seconds, it performs like a 50-lawyer firm.":
-      "97,9% Recall@5 betekent dat je team vindt wat ertoe doet — elke keer. Als een 15-advocaten kantoor het beslissende precedent in seconden vindt, presteert het als een 50-advocaten kantoor.",
+    "99.8% Recall@8 on LongMemEval (500 questions) means your team finds what matters — every time. When a 15-lawyer firm finds the decisive precedent in seconds, it performs like a 50-lawyer firm.":
+      "99,8% Recall@8 op LongMemEval (500 vragen) betekent dat je team vindt wat ertoe doet — elke keer. Als een 15-advocaten kantoor het beslissende precedent in seconden vindt, presteert het als een 50-advocaten kantoor.",
     "How quickly can we roll this out?": "Hoe snel kunnen we dit uitrollen?",
     "A pilot with 2-3 lawyers takes a day. Full firm rollout typically takes a week — your team indexes existing matters at their own pace.":
       "Een pilot met 2-3 advocaten duurt een dag. Volledige kantoor-rollout duurt doorgaans een week — jouw team indexeert bestaande zaken in eigen tempo.",

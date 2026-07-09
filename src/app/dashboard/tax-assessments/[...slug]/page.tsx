@@ -205,8 +205,8 @@ export default function TaxAssessmentDetailPage() {
 
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
-            <FileText size={24} className="text-amber-500" />
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[color:var(--ds-warning-bg)]">
+            <FileText size={24} className="text-[color:var(--ds-warning-text)]" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-[color:var(--ds-text)]">{data.title}</h1>
@@ -227,7 +227,7 @@ export default function TaxAssessmentDetailPage() {
             variant="outline"
             size="sm"
             onClick={() => setDeleteOpen(true)}
-            className="gap-2 text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            className="gap-2 text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             <Trash2 size={14} /> {t("tax.detail.delete")}
           </Button>
@@ -477,14 +477,14 @@ export default function TaxAssessmentDetailPage() {
                   <p className="text-xs text-[color:var(--ds-text-subtle)]">
                     {t("tax.detail.label_paid_date")}
                   </p>
-                  <p className="flex items-center gap-2 text-sm font-medium text-emerald-600">
+                  <p className="flex items-center gap-2 text-sm font-medium text-[color:var(--ds-success-text)]">
                     <CheckCircle2 size={14} /> {String(fm.paid_date).slice(0, 10)}
                   </p>
                 </div>
               )}
             </div>
             {Boolean(fm.contested) && (
-              <div className="flex items-center justify-between rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-sm text-amber-600">
+              <div className="flex items-center justify-between rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3 text-sm text-[color:var(--ds-warning-text)]">
                 <span>{t("tax.detail.contested")}</span>
                 {Boolean(fm.contest_deadline) && (
                   <span className="text-xs">
@@ -509,7 +509,7 @@ export default function TaxAssessmentDetailPage() {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-[color:var(--ds-danger-text)]">
               <AlertCircle size={18} /> {t("tax.detail.delete_title")}
             </DialogTitle>
             <DialogDescription>{t("tax.detail.delete_desc")}</DialogDescription>

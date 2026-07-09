@@ -215,8 +215,8 @@ export default function TaxReturnDetailPage() {
 
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
-            <FileText size={24} className="text-emerald-500" />
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[color:var(--ds-success-bg)]">
+            <FileText size={24} className="text-[color:var(--ds-success-text)]" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-[color:var(--ds-text)]">{data.title}</h1>
@@ -237,7 +237,7 @@ export default function TaxReturnDetailPage() {
             variant="outline"
             size="sm"
             onClick={() => setDeleteOpen(true)}
-            className="gap-2 text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            className="gap-2 text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             <Trash2 size={14} /> {t("tax.detail.delete")}
           </Button>
@@ -497,7 +497,7 @@ export default function TaxReturnDetailPage() {
                   <p className="text-xs text-[color:var(--ds-text-subtle)]">
                     {t("tax.detail.label_refund_amount")}
                   </p>
-                  <p className="flex items-center gap-2 text-sm font-medium text-emerald-600">
+                  <p className="flex items-center gap-2 text-sm font-medium text-[color:var(--ds-success-text)]">
                     <Euro size={14} />{" "}
                     {Number(fm.refund_amount).toLocaleString(locale, {
                       style: "currency",
@@ -532,7 +532,7 @@ export default function TaxReturnDetailPage() {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-[color:var(--ds-danger-text)]">
               <AlertCircle size={18} /> {t("tax.detail.delete_title")}
             </DialogTitle>
             <DialogDescription>{t("tax.detail.delete_desc")}</DialogDescription>

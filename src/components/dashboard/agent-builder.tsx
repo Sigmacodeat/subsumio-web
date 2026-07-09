@@ -192,7 +192,7 @@ function StepEditor({
             <button
               onClick={() => removeStep(idx)}
               aria-label="Schritt entfernen"
-              className="rounded p-1 text-red-500 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-400"
+              className="rounded p-1 text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
             >
               <Trash2 size={14} />
             </button>
@@ -298,7 +298,7 @@ function TemplateCard({
                 setConfirmDelete(false);
                 onDelete();
               }}
-              className="rounded-md border border-red-500/20 bg-red-600/15 p-1.5 text-red-500 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
+              className="rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-1.5 text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
               title="Wirklich löschen"
             >
               <Trash2 size={13} />
@@ -309,7 +309,7 @@ function TemplateCard({
                 e.stopPropagation();
                 setConfirmDelete(true);
               }}
-              className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-500"
+              className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
               title="Löschen"
             >
               <Trash2 size={13} />
@@ -339,7 +339,7 @@ function TemplateCard({
           </span>
         )}
         {template.force_specialists && template.force_specialists.length > 0 && (
-          <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-xs text-amber-600">
+          <span className="rounded-full bg-[color:var(--ds-warning-bg)] px-1.5 py-0.5 text-xs text-[color:var(--ds-warning-text)]">
             {template.force_specialists.length} Specialists
           </span>
         )}
@@ -625,7 +625,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
           )}
 
           {templatesQuery.error && (
-            <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-500">
+            <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-xs text-[color:var(--ds-danger-text)]">
               <AlertCircle size={14} />
               Templates nicht ladbar
             </div>
@@ -698,13 +698,13 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
           </div>
           <div className="flex items-center gap-2">
             {error && (
-              <div className="flex items-center gap-1.5 text-xs text-red-500">
+              <div className="flex items-center gap-1.5 text-xs text-[color:var(--ds-danger-text)]">
                 <AlertCircle size={13} />
                 <span>{error}</span>
               </div>
             )}
             {successMsg && !error && (
-              <div className="flex items-center gap-1.5 text-xs text-emerald-500">
+              <div className="flex items-center gap-1.5 text-xs text-[color:var(--ds-success-text)]">
                 <CheckCircle size={13} />
                 <span>{successMsg}</span>
               </div>
@@ -789,7 +789,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
               {/* Name */}
               <div>
                 <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                  Name <span className="text-red-500">*</span>
+                  Name <span className="text-[color:var(--ds-danger-text)]">*</span>
                 </label>
                 <input
                   value={form.name}
@@ -855,7 +855,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
               {/* Prompt Template */}
               <div>
                 <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                  Prompt-Template <span className="text-red-500">*</span>
+                  Prompt-Template <span className="text-[color:var(--ds-danger-text)]">*</span>
                 </label>
                 <textarea
                   value={form.prompt_template}

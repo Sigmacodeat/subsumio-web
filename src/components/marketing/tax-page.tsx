@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { styleForIndustry } from "@/lib/industry-theme";
+import { p, UI_STRINGS, DEFAULT_LANG, type Lang } from "@/content/site";
 import {
   Section,
   SectionHeading,
@@ -61,13 +62,14 @@ const SIGNATURE_ITEMS = [
   "Zitierter Bescheidkontext",
 ];
 
-export default function TaxPage() {
+export default function TaxPage({ lang = DEFAULT_LANG }: { lang?: Lang }) {
   return (
     <div
       data-tone="light"
       data-industry="tax"
       className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
       style={styleForIndustry("tax")}
+      lang={lang}
     >
       {/* Hero */}
       <PageHero
@@ -78,18 +80,18 @@ export default function TaxPage() {
         icon={Calculator}
         actions={
           <>
-            <Link href="/signup">
+            <Link href={p(lang, "/signup")}>
               <Button size="xl" variant="primary" className="group min-w-[220px]">
-                Kostenlos starten
+                {UI_STRINGS[lang].startFree}
                 <ArrowRight
                   size={18}
                   className="transition-transform duration-200 group-hover:translate-x-0.5"
                 />
               </Button>
             </Link>
-            <Link href="/pricing">
+            <Link href={p(lang, "/pricing")}>
               <Button size="xl" variant="secondary" className="min-w-[180px]">
-                Preise ansehen
+                {UI_STRINGS[lang].seePlans}
               </Button>
             </Link>
           </>
@@ -134,8 +136,10 @@ export default function TaxPage() {
       <CTASection
         title="Bereit für steuerliche Präzision?"
         sub="Starte heute mit Subsumio Tax — kein Seat-Minimum, DSGVO-konform, EU-Cloud."
-        href="/signup"
-        label="Jetzt registrieren"
+        href={p(lang, "/signup")}
+        label={UI_STRINGS[lang].startFree}
+        secondaryHref={p(lang, "/contact")}
+        secondaryLabel={UI_STRINGS[lang].writeUs}
       />
     </div>
   );

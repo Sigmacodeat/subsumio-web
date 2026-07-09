@@ -28,11 +28,11 @@ const SEVERITY_CONFIG: Record<
     icon: React.ElementType;
   }
 > = {
-  none: { labelKey: "conflict.severity_none", iconClass: "text-emerald-600", icon: CheckCircle2 },
-  low: { labelKey: "conflict.severity_low", iconClass: "text-amber-600", icon: AlertTriangle },
+  none: { labelKey: "conflict.severity_none", iconClass: "text-[color:var(--ds-success-text)]", icon: CheckCircle2 },
+  low: { labelKey: "conflict.severity_low", iconClass: "text-[color:var(--ds-warning-text)]", icon: AlertTriangle },
   critical: {
     labelKey: "conflict.severity_critical",
-    iconClass: "text-red-600",
+    iconClass: "text-[color:var(--ds-danger-text)]",
     icon: ShieldAlert,
   },
 };
@@ -123,7 +123,7 @@ export default function KollisionspruefungPage() {
       <div aria-live="polite">
         {error && (
           <div
-            className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600"
+            className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
             role="alert"
           >
             <AlertTriangle size={16} aria-hidden="true" />
@@ -136,10 +136,10 @@ export default function KollisionspruefungPage() {
             className={cn(
               "rounded-xl border p-4",
               result.severity === "critical"
-                ? "border-red-500/20 bg-red-500/5"
+                ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
                 : result.severity === "low"
-                  ? "border-amber-500/20 bg-amber-500/5"
-                  : "border-emerald-500/20 bg-emerald-500/5"
+                  ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
+                  : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
             )}
           >
             <div className="mb-3 flex items-center gap-3">
@@ -152,10 +152,10 @@ export default function KollisionspruefungPage() {
                     className={cn(
                       "border text-xs",
                       result.severity === "critical"
-                        ? "border-red-500/20 bg-red-500/10 text-red-600"
+                        ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                         : result.severity === "low"
-                          ? "border-amber-500/20 bg-amber-500/10 text-amber-600"
-                          : "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                          ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                          : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                     )}
                   >
                     {t(cfg.labelKey)}
@@ -178,15 +178,15 @@ export default function KollisionspruefungPage() {
                     className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2"
                   >
                     {m.role === "client" ? (
-                      <Users size={14} className="shrink-0 text-emerald-600" aria-hidden="true" />
+                      <Users size={14} className="shrink-0 text-[color:var(--ds-success-text)]" aria-hidden="true" />
                     ) : (
-                      <Building2 size={14} className="shrink-0 text-red-600" aria-hidden="true" />
+                      <Building2 size={14} className="shrink-0 text-[color:var(--ds-danger-text)]" aria-hidden="true" />
                     )}
                     <span className="flex-1 text-sm text-[color:var(--ds-text)]">{m.title}</span>
                     {!m.exact && (
                       <Badge
                         variant="default"
-                        className="border border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
+                        className="border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
                       >
                         {t("conflict.similar_name").replace("{{name}}", m.matched_name)}
                       </Badge>

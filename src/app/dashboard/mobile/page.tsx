@@ -99,7 +99,7 @@ export default function MobilePage() {
             className={cn(
               "rounded-xl border p-3 text-center",
               f.available
-                ? "border-emerald-500/20 bg-emerald-500/5"
+                ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
             )}
           >
@@ -107,14 +107,14 @@ export default function MobilePage() {
               size={18}
               className={cn(
                 "mx-auto mb-2",
-                f.available ? "text-emerald-600" : "text-[color:var(--ds-text-subtle)]"
+                f.available ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-text-subtle)]"
               )}
             />
             <div className="text-xs text-[color:var(--ds-text-muted)]">{f.label}</div>
             <div
               className={cn(
                 "text-xs font-medium",
-                f.available ? "text-emerald-600" : "text-[color:var(--ds-text-subtle)]"
+                f.available ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-text-subtle)]"
               )}
             >
               {f.available ? "Verfügbar" : "Nicht verfügbar"}
@@ -211,8 +211,8 @@ export default function MobilePage() {
         {/* Biometric */}
         <div className="flex items-center justify-between rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
-              <Fingerprint size={18} className="text-amber-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--ds-warning-bg)]">
+              <Fingerprint size={18} className="text-[color:var(--ds-warning-text)]" />
             </div>
             <div>
               <p className="text-sm font-medium text-[color:var(--ds-text)]">
@@ -226,7 +226,7 @@ export default function MobilePage() {
           </div>
           <Button
             variant="primary"
-            className="gap-2 bg-amber-600 text-sm text-white hover:bg-amber-500"
+            className="gap-2 bg-[color:var(--ds-warning-solid)] text-sm text-white hover:bg-[color:var(--ds-warning-solid)]"
             disabled={!caps?.biometric}
             onClick={handleBiometric}
           >
@@ -238,8 +238,8 @@ export default function MobilePage() {
         {/* Share */}
         <div className="flex items-center justify-between rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-              <Share2 size={18} className="text-blue-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--ds-info-bg)]">
+              <Share2 size={18} className="text-[color:var(--ds-info-text)]" />
             </div>
             <div>
               <p className="text-sm font-medium text-[color:var(--ds-text)]">Teilen</p>
@@ -250,7 +250,7 @@ export default function MobilePage() {
           </div>
           <Button
             variant="primary"
-            className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
+            className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
             disabled={!caps?.share}
             onClick={handleShare}
           >

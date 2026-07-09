@@ -111,9 +111,9 @@ export default function AbsencePage() {
 
       {/* Active banner */}
       {activeCount > 0 && (
-        <div className="flex items-start gap-3 rounded-xl border border-orange-500/20 bg-orange-500/5 px-4 py-3">
-          <AlertCircle size={16} className="mt-0.5 shrink-0 text-orange-600" />
-          <p className="text-sm text-orange-600">
+        <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] px-4 py-3">
+          <AlertCircle size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-attention-text)]" />
+          <p className="text-sm text-[color:var(--ds-attention-text)]">
             <strong>{activeCount}</strong>{" "}
             {activeCount > 1 ? t("absence.active_banner_plural") : t("absence.active_banner")}
           </p>
@@ -253,10 +253,10 @@ export default function AbsencePage() {
                 className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3"
               >
                 <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${active ? "bg-orange-500/10" : "bg-[color:var(--ds-surface-2)]"}`}
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${active ? "bg-[color:var(--ds-attention-bg)]" : "bg-[color:var(--ds-surface-2)]"}`}
                 >
                   {active ? (
-                    <Plane size={14} className="text-orange-600" />
+                    <Plane size={14} className="text-[color:var(--ds-attention-text)]" />
                   ) : (
                     <CalendarDays size={14} className="text-[color:var(--ds-text-muted)]" />
                   )}
@@ -277,12 +277,12 @@ export default function AbsencePage() {
                     {absence.start_date.split("T")[0]} → {absence.end_date.split("T")[0]}
                   </div>
                   {absence.forwarded_deadlines.length > 0 && (
-                    <div className="mt-1 text-xs text-blue-600">
+                    <div className="mt-1 text-xs text-[color:var(--ds-info-text)]">
                       {absence.forwarded_deadlines.length} {t("absence.deadlines_forwarded")}
                     </div>
                   )}
                   {absence.reassigned_rundown_items.length > 0 && (
-                    <div className="text-xs text-blue-600">
+                    <div className="text-xs text-[color:var(--ds-info-text)]">
                       {absence.reassigned_rundown_items.length} {t("absence.rundown_reassigned")}
                     </div>
                   )}

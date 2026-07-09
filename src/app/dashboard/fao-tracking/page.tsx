@@ -202,9 +202,9 @@ export default function FAOTrackingPage() {
             variant="default"
             className={
               remaining === 0
-                ? "border-green-500/30 text-green-600"
+                ? "border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]"
                 : remaining > 5
-                  ? "border-orange-500/30 text-orange-600"
+                  ? "border-[color:var(--ds-attention-border)] text-[color:var(--ds-attention-text)]"
                   : ""
             }
           >
@@ -213,7 +213,7 @@ export default function FAOTrackingPage() {
         </div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
           <div
-            className={`h-full transition-all ${progress === 100 ? "bg-green-500" : "bg-blue-500"}`}
+            className={`h-full transition-all ${progress === 100 ? "bg-[color:var(--ds-success-solid)]" : "bg-[color:var(--ds-info-solid)]"}`}
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -334,7 +334,7 @@ export default function FAOTrackingPage() {
                   <span className="text-sm font-medium">{entry.topic}</span>
                   <Badge
                     variant="default"
-                    className={`text-xs ${entry.status === "verified" ? "border-green-500/30 text-green-600" : entry.status === "rejected" ? "border-red-500/30 text-red-600" : ""}`}
+                    className={`text-xs ${entry.status === "verified" ? "border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]" : entry.status === "rejected" ? "border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]" : ""}`}
                   >
                     {entry.status === "verified"
                       ? t("fao.verified")

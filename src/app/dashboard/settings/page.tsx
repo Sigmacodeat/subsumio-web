@@ -149,7 +149,7 @@ function MaskedInput({
             onClick={copy}
             className="p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"
           >
-            {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+            {copied ? <Check size={13} className="text-[color:var(--ds-success-text)]" /> : <Copy size={13} />}
           </button>
         )}
       </div>
@@ -533,13 +533,13 @@ function SettingsPageInner() {
                       <AlertTriangle
                         size={14}
                         className={
-                          engineStatus === "online" ? "text-emerald-600" : "text-amber-600"
+                          engineStatus === "online" ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-warning-text)]"
                         }
                       />
                       <span
                         className={cn(
                           "text-sm",
-                          engineStatus === "online" ? "text-emerald-600" : "text-amber-600"
+                          engineStatus === "online" ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-warning-text)]"
                         )}
                       >
                         {engineStatus === "checking"
@@ -678,7 +678,7 @@ function SettingsPageInner() {
             <Card role="tabpanel" id="panel-dream" aria-labelledby="tab-dream">
               <div className="border-b border-[color:var(--ds-border)] p-6">
                 <div className="flex items-center gap-3">
-                  <Zap size={18} className="text-amber-600" />
+                  <Zap size={18} className="text-[color:var(--ds-warning-text)]" />
                   <div>
                     <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
                       {t("settings.dream_title")}
@@ -699,7 +699,7 @@ function SettingsPageInner() {
                       onClick={() => setDreamEnabled(!dreamEnabled)}
                       className={cn(
                         "relative h-6 w-10 rounded-full transition-colors",
-                        dreamEnabled ? "bg-amber-500" : "bg-[color:var(--ds-border)]"
+                        dreamEnabled ? "bg-[color:var(--ds-warning-solid)]" : "bg-[color:var(--ds-border)]"
                       )}
                     >
                       <span
@@ -727,7 +727,7 @@ function SettingsPageInner() {
                         key={item}
                         className="flex items-start gap-2 text-sm text-[color:var(--ds-text-muted)]"
                       >
-                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500/50" />
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--ds-warning-bg)]" />
                         {item}
                       </li>
                     ))}
@@ -778,7 +778,7 @@ function SettingsPageInner() {
                     placeholder="Muster Rechtsanwälte Partnerschaft mbB"
                   />
                   {kanzleiForm.formState.errors.kanzleiName && (
-                    <p className="mt-1 text-xs text-red-600">
+                    <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
                       {kanzleiForm.formState.errors.kanzleiName.message}
                     </p>
                   )}
@@ -790,7 +790,7 @@ function SettingsPageInner() {
                     placeholder="Dr. Max Mustermann, Rechtsanwalt"
                   />
                   {kanzleiForm.formState.errors.anwaltName && (
-                    <p className="mt-1 text-xs text-red-600">
+                    <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
                       {kanzleiForm.formState.errors.anwaltName.message}
                     </p>
                   )}
@@ -944,9 +944,9 @@ function SettingsPageInner() {
 
                 {(tarifModellWatch === "rvg" || tarifModellWatch === "ratg") && (
                   <div className="py-4">
-                    <div className="flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
-                      <AlertTriangle size={14} className="mt-0.5 shrink-0 text-amber-600" />
-                      <p className="text-xs text-amber-600">
+                    <div className="flex items-start gap-3 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2">
+                      <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+                      <p className="text-xs text-[color:var(--ds-warning-text)]">
                         {tarifModellWatch === "rvg"
                           ? t("settings.rvg_info")
                           : t("settings.ratg_info")}
@@ -1003,7 +1003,7 @@ function SettingsPageInner() {
                         className={cn(
                           "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                           kanzleiForm.watch("datevKontenrahmen") === opt.key
-                            ? "border-emerald-500/30 bg-emerald-600/15 text-emerald-600"
+                            ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                             : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
                         )}
                       >
@@ -1065,7 +1065,7 @@ function SettingsPageInner() {
               </div>
               <div className="border-t border-[color:var(--ds-border)] p-6">
                 {kanzleiSaveError && (
-                  <p className="mb-3 text-sm text-red-600">
+                  <p className="mb-3 text-sm text-[color:var(--ds-danger-text)]">
                     {t("settings.save_fail")} {kanzleiSaveError}
                   </p>
                 )}
@@ -1191,7 +1191,7 @@ function SettingsPageInner() {
                         key={item}
                         className="flex items-start gap-2 text-sm text-[color:var(--ds-text-muted)]"
                       >
-                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/50" />
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--ds-success-bg)]" />
                         {item}
                       </li>
                     ))}
@@ -1285,12 +1285,12 @@ function SettingsPageInner() {
                 </Field>
                 <Field label={t("settings.referral")} desc={t("settings.referral_desc")}>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-gradient-to-r from-amber-500/10 to-transparent px-4 py-3">
-                      <Gift size={15} className="shrink-0 text-amber-600" />
+                    <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-gradient-to-r from-amber-500/10 to-transparent px-4 py-3">
+                      <Gift size={15} className="shrink-0 text-[color:var(--ds-warning-text)]" />
                       <p className="text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
                         {t("settings.referral_info")}
                         {referrals !== null && (
-                          <span className="font-medium text-amber-600">
+                          <span className="font-medium text-[color:var(--ds-warning-text)]">
                             {" "}
                             {t("settings.referral_so_far")} {referrals}.
                           </span>

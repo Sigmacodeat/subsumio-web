@@ -64,8 +64,8 @@ export default function AIModelSettingsPage() {
             { label: t("settings.aimodel.breadcrumb") },
           ]}
         />
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-6 text-center">
-          <p className="text-sm text-red-600">{t("settings.aimodel.error_save")}</p>
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-6 text-center">
+          <p className="text-sm text-[color:var(--ds-danger-text)]">{t("settings.aimodel.error_save")}</p>
           <button
             onClick={() => query.refetch()}
             className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
@@ -93,7 +93,7 @@ export default function AIModelSettingsPage() {
               {t("settings.kanzlei.btn_saving")}
             </div>
           ) : mutation.isSuccess ? (
-            <div className="flex items-center gap-2 text-xs text-emerald-600">
+            <div className="flex items-center gap-2 text-xs text-[color:var(--ds-success-text)]">
               <Check size={12} />
               {t("settings.aimodel.toast_saved")}
             </div>
@@ -196,7 +196,7 @@ export default function AIModelSettingsPage() {
                         {getProviderLabel(model.provider as never)}
                       </span>
                       {"dataResidency" in model && model.dataResidency === "eu" && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-xs font-medium text-emerald-600">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-1.5 py-0.5 text-xs font-medium text-[color:var(--ds-success-text)]">
                           <Globe size={9} />
                           EU
                         </span>
@@ -263,7 +263,7 @@ export default function AIModelSettingsPage() {
                         className={cn(
                           "h-1.5 w-1.5 rounded-full",
                           i < model.speedRating
-                            ? "bg-emerald-500"
+                            ? "bg-[color:var(--ds-success-solid)]"
                             : "bg-[color:var(--ds-border-strong)]"
                         )}
                       />

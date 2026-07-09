@@ -179,20 +179,20 @@ export default function JudgementsSyncPage() {
             <div
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
                 src.status === "done"
-                  ? "bg-emerald-500/10"
+                  ? "bg-[color:var(--ds-success-bg)]"
                   : src.status === "running"
                     ? "brand-soft"
                     : src.status === "error"
-                      ? "bg-red-500/10"
+                      ? "bg-[color:var(--ds-danger-bg)]"
                       : "bg-[color:var(--ds-hover)]"
               }`}
             >
               {src.status === "done" ? (
-                <CheckCircle2 size={18} className="text-emerald-600" />
+                <CheckCircle2 size={18} className="text-[color:var(--ds-success-text)]" />
               ) : src.status === "running" ? (
                 <RefreshCw size={18} className="brand-text animate-spin" />
               ) : src.status === "error" ? (
-                <AlertTriangle size={18} className="text-red-600" />
+                <AlertTriangle size={18} className="text-[color:var(--ds-danger-text)]" />
               ) : (
                 <Database size={18} className="text-[color:var(--ds-text-muted)]" />
               )}
@@ -203,7 +203,7 @@ export default function JudgementsSyncPage() {
                 {src.status === "done" && (
                   <Badge
                     variant="default"
-                    className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+                    className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
                   >
                     {src.count > 0
                       ? `+${src.count} ${t("judgements.imported")}`
@@ -218,7 +218,7 @@ export default function JudgementsSyncPage() {
                 {src.status === "error" && (
                   <Badge
                     variant="default"
-                    className="border-red-500/20 bg-red-500/10 text-xs text-red-600"
+                    className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
                   >
                     Fehler: {src.error}
                   </Badge>
@@ -250,15 +250,15 @@ export default function JudgementsSyncPage() {
       </div>
 
       {/* Info */}
-      <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-        <Info size={16} className="mt-0.5 shrink-0 text-amber-600" />
-        <div className="text-sm text-amber-600">
+      <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3">
+        <Info size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+        <div className="text-sm text-[color:var(--ds-warning-text)]">
           <p className="mb-1 font-medium">Hinweis zur Datenaktualität</p>
           <p className="text-xs leading-relaxed">
             Öffentliche Rechtsprechungsdatenbanken aktualisieren sich täglich. Der Konnektor führt
             ein Delta-Sync durch — bereits vorhandene Urteile werden nicht dupliziert. Für
             produktive Nutzung empfehlen wir einen täglichen Cron-Job:{" "}
-            <code className="font-mono text-amber-700">
+            <code className="font-mono text-[color:var(--ds-warning-text)]">
               subsumio connector sync legal-judgements
             </code>
           </p>

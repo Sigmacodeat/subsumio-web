@@ -296,11 +296,11 @@ export default function CompliancePage() {
 
       {/* Honest framing: this is a maintained checklist, not an automated audit */}
       <div
-        className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3"
+        className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3"
         role="note"
       >
-        <Info size={16} className="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
-        <p className="text-xs leading-relaxed text-amber-600">{t("compliance.disclaimer")}</p>
+        <Info size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" aria-hidden="true" />
+        <p className="text-xs leading-relaxed text-[color:var(--ds-warning-text)]">{t("compliance.disclaimer")}</p>
       </div>
 
       {/* Tabs */}
@@ -314,7 +314,7 @@ export default function CompliancePage() {
           className={cn(
             "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
             activeTab === "dsgvo"
-              ? "border-emerald-500/30 bg-emerald-600/10 text-emerald-600"
+              ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
           )}
         >
@@ -330,7 +330,7 @@ export default function CompliancePage() {
           className={cn(
             "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
             activeTab === "gwg"
-              ? "border-blue-500/30 bg-blue-600/10 text-blue-600"
+              ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
           )}
         >
@@ -365,20 +365,20 @@ export default function CompliancePage() {
       >
         {/* Stats */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
-            <div className="text-xl font-bold text-emerald-600">{okCount}</div>
+          <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-3 text-center">
+            <div className="text-xl font-bold text-[color:var(--ds-success-text)]">{okCount}</div>
             <div className="text-xs text-[color:var(--ds-text-muted)]">
               {t("compliance.status_ok")}
             </div>
           </div>
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-center">
-            <div className="text-xl font-bold text-amber-600">{warnCount}</div>
+          <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3 text-center">
+            <div className="text-xl font-bold text-[color:var(--ds-warning-text)]">{warnCount}</div>
             <div className="text-xs text-[color:var(--ds-text-muted)]">
               {t("compliance.status_warn")}
             </div>
           </div>
-          <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-center">
-            <div className="text-xl font-bold text-red-600">{failCount}</div>
+          <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-center">
+            <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">{failCount}</div>
             <div className="text-xs text-[color:var(--ds-text-muted)]">
               {t("compliance.status_fail")}
             </div>
@@ -393,7 +393,7 @@ export default function CompliancePage() {
               {t("compliance.saving")}
             </span>
           )}
-          {saveError && <span className="text-red-600">{saveError}</span>}
+          {saveError && <span className="text-[color:var(--ds-danger-text)]">{saveError}</span>}
         </div>
 
         {/* Checks list */}
@@ -418,19 +418,19 @@ export default function CompliancePage() {
                     "flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--brand-primary)]",
                     status === "ok"
-                      ? "border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/40"
+                      ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] hover:border-[color:var(--ds-success-border)]"
                       : status === "warn"
-                        ? "border-amber-500/20 bg-amber-500/5 hover:border-amber-500/40"
-                        : "border-red-500/20 bg-red-500/5 hover:border-red-500/40"
+                        ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] hover:border-[color:var(--ds-warning-border)]"
+                        : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] hover:border-[color:var(--ds-danger-border)]"
                   )}
                 >
                   <div className="mt-0.5 shrink-0" aria-hidden="true">
                     {status === "ok" ? (
-                      <CheckCircle2 size={16} className="text-emerald-600" />
+                      <CheckCircle2 size={16} className="text-[color:var(--ds-success-text)]" />
                     ) : status === "warn" ? (
-                      <AlertTriangle size={16} className="text-amber-600" />
+                      <AlertTriangle size={16} className="text-[color:var(--ds-warning-text)]" />
                     ) : (
-                      <XCircle size={16} className="text-red-600" />
+                      <XCircle size={16} className="text-[color:var(--ds-danger-text)]" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -443,10 +443,10 @@ export default function CompliancePage() {
                         className={cn(
                           "border text-xs",
                           status === "ok"
-                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                            ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                             : status === "warn"
-                              ? "border-amber-500/20 bg-amber-500/10 text-amber-600"
-                              : "border-red-500/20 bg-red-500/10 text-red-600"
+                              ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                              : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                         )}
                       >
                         {STATUS_LABEL[status](t)}

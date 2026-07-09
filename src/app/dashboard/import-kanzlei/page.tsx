@@ -368,11 +368,11 @@ export default function ImportKanzleiPage() {
 
       {/* Honest framing */}
       <div
-        className="flex items-start gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3"
+        className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-4 py-3"
         role="note"
       >
-        <Info size={16} className="mt-0.5 shrink-0 text-blue-600" aria-hidden="true" />
-        <p className="text-xs leading-relaxed text-blue-700/90">{t("importkanz.info")}</p>
+        <Info size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]" aria-hidden="true" />
+        <p className="text-xs leading-relaxed text-[color:var(--ds-info-text)]/90">{t("importkanz.info")}</p>
       </div>
 
       {/* Upload */}
@@ -381,10 +381,10 @@ export default function ImportKanzleiPage() {
           "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-10 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
           headers.length
             ? "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-            : "border-blue-500/30 bg-blue-500/5 hover:border-blue-500/50 hover:bg-blue-500/10"
+            : "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] hover:border-[color:var(--ds-info-border)] hover:bg-[color:var(--ds-info-bg)]"
         )}
       >
-        <UploadCloud size={28} className="text-blue-600" aria-hidden="true" />
+        <UploadCloud size={28} className="text-[color:var(--ds-info-text)]" aria-hidden="true" />
         <span className="text-sm text-[color:var(--ds-text)]">
           {fileName || t("importkanz.choose_file")}
         </span>
@@ -405,7 +405,7 @@ export default function ImportKanzleiPage() {
       </label>
 
       {error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-[color:var(--ds-danger-text)]" role="alert">
           {error}
         </p>
       )}
@@ -423,13 +423,13 @@ export default function ImportKanzleiPage() {
                     className="w-36 shrink-0 text-xs text-[color:var(--ds-text-muted)]"
                   >
                     {f.label}
-                    {f.required && <span className="text-red-600"> *</span>}
+                    {f.required && <span className="text-[color:var(--ds-danger-text)]"> *</span>}
                   </label>
                   <select
                     id={`map-${f.key}`}
                     value={mapping[f.key] ?? -1}
                     onChange={(e) => setMapping((m) => ({ ...m, [f.key]: Number(e.target.value) }))}
-                    className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-blue-500/50 focus:outline-none"
+                    className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--ds-info-border)] focus:outline-none"
                   >
                     <option value={-1}>— nicht importieren —</option>
                     {headers.map((h, i) => (
@@ -442,7 +442,7 @@ export default function ImportKanzleiPage() {
               ))}
             </div>
             {titleCol < 0 && (
-              <p className="flex items-center gap-1.5 text-xs text-amber-600">
+              <p className="flex items-center gap-1.5 text-xs text-[color:var(--ds-warning-text)]">
                 <AlertTriangle size={12} /> „Bezeichnung / Rubrum&quot; muss zugeordnet sein.
               </p>
             )}
@@ -483,7 +483,7 @@ export default function ImportKanzleiPage() {
           {/* Dry Run — validates mappings + estimates error rate, writes nothing */}
           <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-text)]">
-              <FlaskConical size={14} className="text-blue-600" aria-hidden="true" />
+              <FlaskConical size={14} className="text-[color:var(--ds-info-text)]" aria-hidden="true" />
               Dry Run
             </h2>
             <p className="text-xs text-[color:var(--ds-text-muted)]">
@@ -509,16 +509,16 @@ export default function ImportKanzleiPage() {
                   Fehlerquote: <strong>{project.dry_run_result.stats.error_rate}%</strong>
                 </p>
                 {project.dry_run_result.warnings.map((w, i) => (
-                  <p key={i} className="flex items-center gap-1.5 text-amber-600">
+                  <p key={i} className="flex items-center gap-1.5 text-[color:var(--ds-warning-text)]">
                     <AlertTriangle size={11} aria-hidden="true" /> {w}
                   </p>
                 ))}
                 {dryRunOk ? (
-                  <p className="flex items-center gap-1.5 text-emerald-600">
+                  <p className="flex items-center gap-1.5 text-[color:var(--ds-success-text)]">
                     <CheckCircle2 size={11} aria-hidden="true" /> {t("importkanz.dry_run_ready")}
                   </p>
                 ) : (
-                  <p className="text-red-600">{t("importkanz.dry_run_error")}</p>
+                  <p className="text-[color:var(--ds-danger-text)]">{t("importkanz.dry_run_error")}</p>
                 )}
               </div>
             )}
@@ -528,7 +528,7 @@ export default function ImportKanzleiPage() {
           <div className="flex items-center gap-3">
             <Button
               variant="primary"
-              className="gap-2 bg-blue-600 text-white hover:bg-blue-500"
+              className="gap-2 bg-[color:var(--ds-info-solid)] text-white hover:bg-[color:var(--ds-info-solid)]"
               disabled={!canImport}
               onClick={runImport}
             >
@@ -546,10 +546,10 @@ export default function ImportKanzleiPage() {
             )}
             {result && (
               <span className="flex items-center gap-1.5 text-sm">
-                <CheckCircle2 size={15} className="text-emerald-600" />
-                <span className="text-emerald-600">{result.ok} importiert</span>
+                <CheckCircle2 size={15} className="text-[color:var(--ds-success-text)]" />
+                <span className="text-[color:var(--ds-success-text)]">{result.ok} importiert</span>
                 {result.failed > 0 && (
-                  <span className="text-red-600">· {result.failed} fehlgeschlagen</span>
+                  <span className="text-[color:var(--ds-danger-text)]">· {result.failed} fehlgeschlagen</span>
                 )}
               </span>
             )}

@@ -21,19 +21,19 @@ import type { Insight, InsightType, InsightSeverity } from "@/lib/insights-engin
 
 const SEVERITY_STYLES: Record<InsightSeverity, { border: string; bg: string; text: string }> = {
   critical: {
-    border: "border-red-500/30",
-    bg: "bg-red-500/5",
-    text: "text-red-600",
+    border: "border-[color:var(--ds-danger-border)]",
+    bg: "bg-[color:var(--ds-danger-bg)]",
+    text: "text-[color:var(--ds-danger-text)]",
   },
   warning: {
-    border: "border-amber-500/30",
-    bg: "bg-amber-500/5",
-    text: "text-amber-600",
+    border: "border-[color:var(--ds-warning-border)]",
+    bg: "bg-[color:var(--ds-warning-bg)]",
+    text: "text-[color:var(--ds-warning-text)]",
   },
   info: {
-    border: "border-blue-500/30",
-    bg: "bg-blue-500/5",
-    text: "text-blue-600",
+    border: "border-[color:var(--ds-info-border)]",
+    bg: "bg-[color:var(--ds-info-bg)]",
+    text: "text-[color:var(--ds-info-text)]",
   },
 };
 
@@ -114,7 +114,7 @@ export function InsightsWidget() {
       {/* Error */}
       {error && !loading && (
         <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-          <AlertTriangle size={20} className="text-amber-500" />
+          <AlertTriangle size={20} className="text-[color:var(--ds-warning-text)]" />
           <p className="text-xs text-[color:var(--ds-text-muted)]">{error}</p>
         </div>
       )}

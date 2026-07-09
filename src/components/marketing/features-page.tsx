@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { FEATURES_PAGE } from "@/content/features";
 import SubsumioShowcase from "./subsumio-showcase";
-import { ICONS, useSiteBrand, PageHero, SectionHeading, CTASection, Section } from "./chrome";
+import { ICONS, useSiteBrand, PageHero, SectionHeading, CTASection, Section, H2_CTA_CLASS } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import {
   GuidedCursor,
@@ -233,7 +233,7 @@ function HowItWorks({ lang }: { lang: Lang }) {
       </Reveal>
 
       <StaggerContainer
-        className="relative grid gap-5 md:grid-cols-2 lg:grid-cols-4"
+        className="relative grid gap-6 md:grid-cols-2 lg:grid-cols-4"
         stagger={0.18}
       >
         {/* animated connector line (lg+) */}
@@ -254,16 +254,16 @@ function HowItWorks({ lang }: { lang: Lang }) {
             <StaggerItem key={s.title} className="relative">
               <div className="brand-soft brand-border relative z-10 mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border shadow-lg shadow-black/40">
                 {Icon && <Icon size={22} className="brand-text" />}
-                <span className="brand-bg absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white shadow-md">
+                <span className="brand-bg absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold text-white shadow-md">
                   {i + 1}
                 </span>
               </div>
               <div className="text-center">
-                <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">{s.title}</h3>
+                <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">{s.title}</h3>
                 <p className="mb-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
                   {s.desc}
                 </p>
-                <span className="brand-text brand-soft inline-block rounded-full px-2 py-1 font-mono text-xs">
+                <span className="brand-text brand-soft inline-block rounded-full px-2 py-1 font-mono text-sm">
                   {s.tag}
                 </span>
               </div>
@@ -368,7 +368,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
           viewport={VIEWPORT.tight}
           transition={{ duration: 0.4 }}
         >
-          <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
+          <p className="brand-text mb-3 text-sm font-semibold tracking-[0.16em] uppercase">
             {UI_STRINGS[lang].inDashboard}
           </p>
           <SectionHeading
@@ -388,18 +388,18 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
           <GuidedCursor {...cursorTargets[step]} className="hidden md:flex" />
           <div className="flex items-center justify-between border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]">
             <div>
-              <p className="text-xs font-semibold [color:var(--mk-text)]">
+              <p className="text-sm font-semibold [color:var(--mk-text)]">
                 {UI_STRINGS[lang].commandCenter}
               </p>
-              <p className="text-xs [color:var(--mk-text-subtle)]">
+              <p className="text-sm [color:var(--mk-text-subtle)]">
                 {UI_STRINGS[lang].liveMatterContext}
               </p>
             </div>
-            <span className="brand-text brand-soft rounded-full px-2 py-1 text-xs font-medium">
+            <span className="brand-text brand-soft rounded-full px-2 py-1 text-sm font-medium">
               {UI_STRINGS[lang].verifiableLabel}
             </span>
           </div>
-          <div className="grid gap-4 p-4 md:grid-cols-[1fr_1.15fr]">
+          <div className="grid gap-6 p-4 md:grid-cols-[1fr_1.15fr]">
             <div className="space-y-2">
               {panels.map((panel, i) => {
                 const Icon = ICONS[panel.icon];
@@ -435,10 +435,10 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
                         {Icon && <Icon size={16} />}
                       </span>
                       <span className="min-w-0">
-                        <span className="block text-xs font-semibold [color:var(--mk-text)]">
+                        <span className="block text-sm font-semibold [color:var(--mk-text)]">
                           {panel.label}
                         </span>
-                        <span className="block truncate text-xs [color:var(--mk-text-muted)]">
+                        <span className="block truncate text-sm [color:var(--mk-text-muted)]">
                           {panel.title}
                         </span>
                       </span>
@@ -466,7 +466,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.25 }}
                 >
-                  <p className="brand-text mb-2 text-xs font-semibold">{panels[step].label}</p>
+                  <p className="brand-text mb-2 text-sm font-semibold">{panels[step].label}</p>
                   <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
                     {panels[step].title}
                   </h3>
@@ -487,7 +487,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
                         className="flex items-center gap-2 rounded-lg px-3 py-2 [background:var(--mk-surface-2)]"
                       >
                         <CheckCircle2 size={14} className="brand-text" />
-                        <span className="text-xs [color:var(--mk-text-muted)]">{line}</span>
+                        <span className="text-sm [color:var(--mk-text-muted)]">{line}</span>
                       </motion.div>
                     ))}
                   </div>
@@ -512,16 +512,16 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
   const stats =
     lang === "en"
       ? [
-          { to: 97.9, dec: 1, suffix: "%", label: "Recall@5 on the benchmark corpus" },
-          { to: 31.4, dec: 1, prefix: "+", label: "P@5 points over vector-only RAG" },
-          { to: 9, dec: 0, label: "native data connectors" },
-          { to: 66, dec: 0, label: "autonomous jobs in production" },
+          { to: 99.8, dec: 1, prefix: "", suffix: "%", label: "Recall@8 on LongMemEval (500 questions)" },
+          { to: 100, dec: 0, prefix: "", suffix: "%", label: "Recall@5 — optimal K on LongMemEval" },
+          { to: 9, dec: 0, prefix: "", label: "native data connectors" },
+          { to: 66, dec: 0, prefix: "", label: "autonomous jobs in production" },
         ]
       : [
-          { to: 97.9, dec: 1, suffix: " %", label: "Recall@5 auf dem Benchmark-Korpus" },
-          { to: 31.4, dec: 1, prefix: "+", label: "P@5-Punkte über reines Vektor-RAG" },
-          { to: 9, dec: 0, label: "native Daten-Konnektoren" },
-          { to: 66, dec: 0, label: "autonome Jobs im Produktivbetrieb" },
+          { to: 99.8, dec: 1, prefix: "", suffix: " %", label: "Recall@8 auf LongMemEval (500 Fragen)" },
+          { to: 100, dec: 0, prefix: "", suffix: " %", label: "Recall@5 — optimales K bei LongMemEval" },
+          { to: 9, dec: 0, prefix: "", label: "native Daten-Konnektoren" },
+          { to: 66, dec: 0, prefix: "", label: "autonome Jobs im Produktivbetrieb" },
         ];
 
   return (
@@ -538,18 +538,25 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
         sub={t.sub}
         accentVariant="gradient-premium"
         actions={
-          <Link href={p(lang, "/signup")}>
-            <Button size="lg" variant="primary">
-              {t.ctaButton} <ArrowRight size={16} />
-            </Button>
-          </Link>
+          <>
+            <Link href={p(lang, "/signup")}>
+              <Button size="lg" variant="primary">
+                {t.ctaButton} <ArrowRight size={16} />
+              </Button>
+            </Link>
+            <Link href={p(lang, "/superbrain")}>
+              <Button size="lg" variant="outline">
+                {UI_STRINGS[lang].watchDemo} <ArrowRight size={16} />
+              </Button>
+            </Link>
+          </>
         }
         visual={
           <div className="relative">
             <div className="brand-soft absolute inset-0 rounded-full blur-3xl" />
             <div className="glass relative rounded-3xl p-6 shadow-2xl shadow-black/40">
               <GraphHero lang={lang} />
-              <p className="mt-2 text-center font-mono text-xs [color:var(--mk-text-subtle)]">
+              <p className="mt-2 text-center font-mono text-sm [color:var(--mk-text-subtle)]">
                 {UI_STRINGS[lang].featuresGraphCaption}
               </p>
             </div>
@@ -559,17 +566,17 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
 
       {/* Stats band */}
       <Section tone="light" className="px-4 pb-20 sm:px-6 lg:px-8">
-        <StaggerContainer className="grid grid-cols-2 gap-4 lg:grid-cols-4" stagger={0.08}>
+        <StaggerContainer className="grid grid-cols-2 gap-6 lg:grid-cols-4" stagger={0.08}>
           {stats.map((s) => (
             <StaggerItem
               key={s.label}
-              className="rounded-2xl border [border-color:var(--mk-border)] p-5 text-center transition-colors [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
+              className="rounded-2xl border [border-color:var(--mk-border)] p-6 text-center transition-colors [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
             >
               <div className="gradient-text mb-1 text-3xl font-bold md:text-4xl">
                 {s.prefix ?? ""}
                 <AnimatedCounter to={s.to} decimals={s.dec} suffix={s.suffix ?? ""} />
               </div>
-              <p className="text-xs leading-snug [color:var(--mk-text-muted)]">{s.label}</p>
+              <p className="text-sm leading-snug [color:var(--mk-text-muted)]">{s.label}</p>
             </StaggerItem>
           ))}
         </StaggerContainer>
@@ -638,7 +645,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                 <div className="brand-soft brand-border flex h-12 w-12 items-center justify-center rounded-xl border">
                   {CatIcon && <CatIcon size={22} className="brand-text" />}
                 </div>
-                <h2 className="text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+                <h2 className={H2_CTA_CLASS}>
                   {cat.title}
                 </h2>
               </div>
@@ -676,11 +683,11 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                     <div className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
                     <div className="h-2.5 w-2.5 rounded-full bg-amber-500/60" />
                     <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/60" />
-                    <div className="ml-4 flex-1 font-mono text-xs [color:var(--mk-text-subtle)]">
+                    <div className="ml-4 flex-1 font-mono text-sm [color:var(--mk-text-subtle)]">
                       {cat.demo.windowTitle}
                     </div>
                   </div>
-                  <div className="space-y-1.5 p-5 font-mono text-xs leading-relaxed">
+                  <div className="space-y-1.5 p-6 font-mono text-sm leading-relaxed">
                     {cat.demo.lines.map((line, i) => (
                       <motion.p
                         key={`${cat.id}-${i}`}
@@ -742,10 +749,10 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
 
       {/* Everything at a glance */}
       <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
-        <h2 className="mb-12 text-center text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+        <h2 className={`mb-12 text-center ${H2_CTA_CLASS}`}>
           {UI_STRINGS[lang].featuresGlanceTitle}
         </h2>
-        <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" stagger={0.08}>
+        <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" stagger={0.08}>
           {t.categories.map((c) => {
             const Icon = ICONS[c.icon];
             return (
@@ -762,13 +769,13 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                     <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition-transform group-hover:scale-110">
                       {Icon && <Icon size={20} className="brand-text" />}
                     </div>
-                    <h3 className="mb-1.5 text-base font-semibold [color:var(--mk-text)]">
+                    <h3 className="mb-1.5 text-lg font-semibold [color:var(--mk-text)]">
                       {c.title}
                     </h3>
                     <p className="line-clamp-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
                       {c.intro}
                     </p>
-                    <span className="brand-text mt-4 inline-flex items-center gap-1 text-xs opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="brand-text mt-4 inline-flex items-center gap-1 text-sm opacity-0 transition-opacity group-hover:opacity-100">
                       {UI_STRINGS[lang].exploreLabel} <ArrowRight size={12} />
                     </span>
                   </GlowCard>
@@ -790,7 +797,14 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
       </Section>
 
       {/* CTA */}
-      <CTASection title={t.ctaTitle} sub={t.ctaSub} href={p(lang, "/signup")} label={t.ctaButton} />
+      <CTASection
+        title={t.ctaTitle}
+        sub={t.ctaSub}
+        href={p(lang, "/signup")}
+        label={t.ctaButton}
+        secondaryHref={p(lang, "/contact")}
+        secondaryLabel={UI_STRINGS[lang].writeUs}
+      />
     </div>
   );
 }

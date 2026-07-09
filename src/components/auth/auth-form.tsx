@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioLogo } from "@/components/brand/subsumio-logo";
-import { MarketingBackground } from "@/components/marketing/chrome";
+import { MarketingBackground, H2_CTA_CLASS } from "@/components/marketing/chrome";
 import { p, type Lang } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
 import {
@@ -262,7 +262,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
 
         <div className="glass rounded-2xl p-8 shadow-2xl shadow-black/50">
           <ClipReveal delay={0.1} duration={0.6} direction="up">
-            <h1 className="mb-1 text-2xl font-black tracking-tight text-balance [color:var(--mk-text)]">
+            <h1 className={`mb-1 ${H2_CTA_CLASS}`}>
               {m.title}
             </h1>
           </ClipReveal>

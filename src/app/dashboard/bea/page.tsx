@@ -474,7 +474,7 @@ export default function BeaPage() {
         actions={
           <Button
             variant="primary"
-            className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
+            className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
             onClick={() => setShowCompose(!showCompose)}
             aria-expanded={showCompose}
           >
@@ -486,18 +486,18 @@ export default function BeaPage() {
 
       {/* Honest framing: Subsumio does NOT send via beA */}
       <div
-        className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3"
+        className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3"
         role="note"
       >
-        <Info size={16} className="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
-        <div className="text-sm text-amber-600">
+        <Info size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" aria-hidden="true" />
+        <div className="text-sm text-[color:var(--ds-warning-text)]">
           <p className="mb-1 font-medium">{t("bea.no_send_title")}</p>
           <p className="text-xs leading-relaxed">{t("bea.no_send_desc")}</p>
         </div>
       </div>
 
       {loadError && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           {loadError}
         </div>
       )}
@@ -510,13 +510,13 @@ export default function BeaPage() {
       {/* Compose */}
       {showCompose && (
         <form
-          className="space-y-4 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4"
+          className="space-y-4 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4"
           onSubmit={(e) => {
             e.preventDefault();
             void saveDraft();
           }}
         >
-          <h2 className="text-sm font-semibold text-blue-600">{t("bea.compose_title")}</h2>
+          <h2 className="text-sm font-semibold text-[color:var(--ds-info-text)]">{t("bea.compose_title")}</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="bea-recipient" className="text-xs text-[color:var(--ds-text-muted)]">
@@ -564,7 +564,7 @@ export default function BeaPage() {
               onChange={(e) => setBody(e.target.value)}
               rows={6}
               placeholder={t("bea.body_placeholder")}
-              className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none"
+              className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-info-border)] focus:outline-none"
             />
           </div>
           {/* EU AI Act Art. 50: Nutzer markiert KI-generierten Inhalt, damit der
@@ -585,7 +585,7 @@ export default function BeaPage() {
             type="submit"
             variant="primary"
             disabled={saving}
-            className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
+            className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
           >
             {saving ? (
               <Loader2 size={14} className="animate-spin" aria-hidden="true" />
@@ -603,7 +603,7 @@ export default function BeaPage() {
           role="status"
           aria-label={t("bea.loading_aria")}
         >
-          <Loader2 size={24} className="animate-spin text-blue-600" aria-hidden="true" />
+          <Loader2 size={24} className="animate-spin text-[color:var(--ds-info-text)]" aria-hidden="true" />
         </div>
       ) : (
         <>
@@ -627,10 +627,10 @@ export default function BeaPage() {
                     className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3"
                   >
                     <div
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-warning-bg)]"
                       aria-hidden="true"
                     >
-                      <FileText size={14} className="text-amber-600" />
+                      <FileText size={14} className="text-[color:var(--ds-warning-text)]" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -639,14 +639,14 @@ export default function BeaPage() {
                         </span>
                         <Badge
                           variant="default"
-                          className="border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
+                          className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
                         >
                           {t("bea.draft_badge")}
                         </Badge>
                         {msg.aiGenerated && (
                           <Badge
                             variant="default"
-                            className="border-amber-500/30 bg-amber-500/10 text-xs text-amber-700"
+                            className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
                           >
                             {AI_BADGE_LABEL}
                           </Badge>
@@ -664,7 +664,7 @@ export default function BeaPage() {
                           <>
                             <Badge
                               variant="default"
-                              className="border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
+                              className="border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
                             >
                               {t("bea.filing")} {getFilingStatusLabel(filings[msg.slug].status)}
                             </Badge>
@@ -705,7 +705,7 @@ export default function BeaPage() {
                                 </span>
                                 <Button
                                   variant="primary"
-                                  className="h-7 gap-1 bg-blue-600 px-2 text-xs text-white hover:bg-blue-500"
+                                  className="h-7 gap-1 bg-[color:var(--ds-info-solid)] px-2 text-xs text-white hover:bg-[color:var(--ds-info-solid)]"
                                   disabled={sendingSlug === msg.slug || exportingSlug === msg.slug}
                                   onClick={() => void sendViaMiddleware(msg)}
                                 >
@@ -740,7 +740,7 @@ export default function BeaPage() {
                                 {receipts[filings[msg.slug].id] ? (
                                   <Badge
                                     variant="default"
-                                    className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+                                    className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
                                   >
                                     <CheckCircle2 size={10} className="mr-1" aria-hidden="true" />
                                     {receipts[filings[msg.slug].id].confirmationCode}
@@ -770,7 +770,7 @@ export default function BeaPage() {
                               filings[msg.slug].status === "retrying") && (
                               <Badge
                                 variant="default"
-                                className="border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
+                                className="border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
                               >
                                 <Loader2
                                   size={10}
@@ -783,7 +783,7 @@ export default function BeaPage() {
                             {filings[msg.slug].status === "sent" && (
                               <Badge
                                 variant="default"
-                                className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+                                className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
                               >
                                 <CheckCircle2 size={10} className="mr-1" aria-hidden="true" />
                                 {getFilingStatusLabel(filings[msg.slug].status)}
@@ -793,14 +793,14 @@ export default function BeaPage() {
                               <>
                                 <Badge
                                   variant="default"
-                                  className="border-red-500/20 bg-red-500/10 text-xs text-red-600"
+                                  className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
                                 >
                                   <AlertTriangle size={10} className="mr-1" aria-hidden="true" />
                                   {getFilingStatusLabel(filings[msg.slug].status)}
                                 </Badge>
                                 {filings[msg.slug].last_error && (
                                   <span
-                                    className="text-xs text-red-600"
+                                    className="text-xs text-[color:var(--ds-danger-text)]"
                                     title={filings[msg.slug].last_error}
                                   >
                                     {filings[msg.slug].last_error!.slice(0, 80)}
@@ -861,7 +861,7 @@ export default function BeaPage() {
                   <p>{t("bea.no_imported")}</p>
                   <p className="text-xs">
                     {t("bea.import_hint")}{" "}
-                    <code className="font-mono text-blue-600">
+                    <code className="font-mono text-[color:var(--ds-info-text)]">
                       subsumio connector add bea-import --watch-dir ~/Downloads/bea
                     </code>
                   </p>
@@ -873,10 +873,10 @@ export default function BeaPage() {
                     className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3"
                   >
                     <div
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-info-bg)]"
                       aria-hidden="true"
                     >
-                      <Inbox size={14} className="text-blue-600" />
+                      <Inbox size={14} className="text-[color:var(--ds-info-text)]" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <span className="text-sm font-medium text-[color:var(--ds-text)]">

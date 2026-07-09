@@ -93,7 +93,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
             <Tooltip>
               <TooltipTrigger asChild>
                 <span
-                  className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"
+                  className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]"
                   aria-label={AI_NOTICE}
                 >
                   <Info size={10} aria-hidden="true" />
@@ -137,7 +137,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
         {/* Attorney review warning */}
         {requiresReview && !data.isStreaming && (
           <span
-            className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-400"
+            className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]"
             title="Diese AI-Ausgabe erfordert anwaltliche Prüfung, bevor sie verwendet wird."
           >
             <ShieldAlert size={10} aria-hidden="true" />
@@ -168,7 +168,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
 
       {/* Unverified citation warning */}
       {data.grounding?.has_unverified && data.grounding.warning && (
-        <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+        <div className="mt-2 flex items-start gap-2 rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]">
           <ShieldAlert size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
           <span>{data.grounding.warning}</span>
         </div>
@@ -193,9 +193,9 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                     className="flex items-start gap-2 text-xs"
                   >
                     {gc.verified ? (
-                      <CheckCircle2 size={12} className="mt-0.5 shrink-0 text-emerald-500" />
+                      <CheckCircle2 size={12} className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]" />
                     ) : (
-                      <AlertCircle size={12} className="mt-0.5 shrink-0 text-amber-500" />
+                      <AlertCircle size={12} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
                     )}
                     <div className="min-w-0 flex-1">
                       <CitationLink
@@ -209,7 +209,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                         </p>
                       )}
                       {!gc.verified && (
-                        <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-500">
+                        <p className="mt-0.5 text-xs text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]">
                           Nicht im Corpus gefunden — möglicherweise erfunden oder außerhalb des
                           abgedeckten Rechtskreises.
                         </p>
@@ -252,8 +252,8 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
           {hasGaps && (
             <div>
               <div className="mb-2 flex items-center gap-1.5">
-                <AlertTriangle size={12} className="text-amber-600" />
-                <span className="text-xs font-medium text-amber-600">
+                <AlertTriangle size={12} className="text-[color:var(--ds-warning-text)]" />
+                <span className="text-xs font-medium text-[color:var(--ds-warning-text)]">
                   Lücken im Brain ({data.gaps!.length})
                 </span>
               </div>
@@ -261,9 +261,9 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                 {data.gaps!.map((gap, i) => (
                   <li
                     key={i}
-                    className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-500"
+                    className="flex items-start gap-2 text-xs text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]"
                   >
-                    <span className="shrink-0 text-amber-500">⚠</span>
+                    <span className="shrink-0 text-[color:var(--ds-warning-text)]">⚠</span>
                     {gap}
                   </li>
                 ))}
@@ -302,7 +302,7 @@ export function CitationBadgesInline({
     <div className={cn("inline-flex flex-wrap items-center gap-1.5", className)}>
       {!data.isStreaming && (
         <span
-          className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"
+          className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]"
           title={AI_NOTICE}
         >
           <Info size={9} />

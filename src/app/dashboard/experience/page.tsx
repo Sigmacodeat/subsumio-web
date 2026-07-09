@@ -62,9 +62,9 @@ interface LayerSummary {
 
 const LEVEL_COLORS: Record<string, string> = {
   beginner: "bg-gray-100 text-gray-700",
-  intermediate: "bg-blue-100 text-blue-700",
+  intermediate: "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)]",
   advanced: "bg-purple-100 text-purple-700",
-  expert: "bg-amber-100 text-amber-700",
+  expert: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
 };
 
 const PRACTICE_AREAS = [
@@ -207,7 +207,7 @@ export default function ExperiencePage() {
         </TabButton>
       </div>
 
-      {error && <div className="rounded-md bg-red-500/10 p-3 text-sm text-red-600">{error}</div>}
+      {error && <div className="rounded-md bg-[color:var(--ds-danger-bg)] p-3 text-sm text-[color:var(--ds-danger-text)]">{error}</div>}
 
       {/* Who Knows Tab */}
       {tab === "who_knows" && (

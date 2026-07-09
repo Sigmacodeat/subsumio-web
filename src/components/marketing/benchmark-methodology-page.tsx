@@ -1,12 +1,16 @@
 "use client";
 
-import { Section, SectionHeading, CTASection } from "./chrome";
-import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { p, UI_STRINGS } from "@/content/site";
+import { Section, SectionHeading, CTASection, PageHero } from "./chrome";
+import { Reveal, StaggerContainer, StaggerItem, GlowCard } from "./motion-system";
 
 const METRICS = [
   {
-    title: "Recall@5 — 97,9 %",
-    desc: "Von 500 rechtlichen Fragen (AT/DE/CH) enthalten die Top-5-Retrievergebnisse in 97,9 % der Fälle das korrekte Dokument. Gemessen gegen ein Gold-Standard-Set, das von Juristen annotiert wurde. Ein Treffer bedeutet: das relevante Dokument ist unter den ersten 5 Ergebnissen.",
+    title: "Recall@8 — 99,8 %",
+    desc: "Von 500 LongMemEval-Fragen enthalten die Top-8-Retrievergebnisse in 99,8 % der Fälle das korrekte Dokument. Gemessen gegen einen Gold-Standard mit Hybrid-Suche und Wissensgraph. Ein Treffer bedeutet: das relevante Dokument ist unter den ersten 8 Ergebnissen.",
   },
   {
     title: "Hallucination-Rate — < 2 %",
@@ -35,7 +39,7 @@ const REPRO_ITEMS = [
 
 const LIMITATION_ITEMS = [
   "Der Korpus deckt DACH-Recht ab — Ergebnisse sind nicht auf andere Rechtsgebiete übertragbar.",
-  "Recall@5 misst das Retrieval, nicht die Qualität der generierten Antwort.",
+  "Recall@8 misst das Retrieval, nicht die Qualität der generierten Antwort.",
   "Die Hallucination-Rate ist ein Sample-basierter Schätzer (200 von ~10.000 Antworten).",
   "Latenz hängt von Netzwerk, Hardware und Auslastung ab.",
 ];
@@ -47,28 +51,42 @@ export default function BenchmarkMethodologyPage() {
       className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
       lang="de"
     >
-      <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl">
-          <Reveal variant="up">
-            <SectionHeading
-              badge="Methodik"
-              title="Benchmark-Methodik: Wie wir Subsumio messen"
-              sub="Transparente, reproduzierbare Benchmarks für KI-Kanzleisoftware. Keine Marketing-Zahlen — jede Metrik ist nachvollziehbar definiert."
-            />
-          </Reveal>
-        </div>
-      </Section>
+      <PageHero
+        badge="Methodik"
+        h1a="Benchmark-Methodik:"
+        h1b="Wie wir Subsumio messen"
+        sub="Transparente, reproduzierbare Benchmarks für KI-Kanzleisoftware. Keine Marketing-Zahlen — jede Metrik ist nachvollziehbar definiert."
+        actions={
+          <>
+            <Link href={p("de", "/signup")}>
+              <Button size="lg" variant="primary">
+                {UI_STRINGS.de.startFree} <ArrowRight size={16} />
+              </Button>
+            </Link>
+            <Link href={p("de", "/contact")}>
+              <Button size="lg" variant="outline">
+                {UI_STRINGS.de.writeUs}
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       <Section tone="light" className="px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading title="Getestete Metriken" />
           </Reveal>
-          <StaggerContainer className="mt-8 space-y-6" stagger={0.1}>
+          <StaggerContainer className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" stagger={0.1}>
             {METRICS.map((m) => (
               <StaggerItem key={m.title}>
-                <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">{m.title}</h3>
-                <p className="leading-relaxed [color:var(--mk-text-muted)]">{m.desc}</p>
+                <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]">
+                  <div className="brand-text mb-3 text-3xl font-bold tracking-tight">
+                    {m.title.split(" — ")[1]}
+                  </div>
+                  <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">{m.title.split(" — ")[0]}</h3>
+                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{m.desc}</p>
+                </GlowCard>
               </StaggerItem>
             ))}
           </StaggerContainer>
@@ -136,6 +154,8 @@ export default function BenchmarkMethodologyPage() {
         sub="Starte deine 14-tägige Testphase — keine Kreditkarte nötig."
         href="/signup"
         label="14 Tage testen"
+        secondaryHref="/contact"
+        secondaryLabel={UI_STRINGS.de.writeUs}
       />
     </div>
   );

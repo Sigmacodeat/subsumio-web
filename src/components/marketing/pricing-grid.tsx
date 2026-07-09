@@ -27,7 +27,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
           aria-pressed={billing === "annual"}
         >
           {ui.billingAnnual}
-          <span className="brand-text brand-soft ml-1.5 rounded-full px-1.5 py-0.5 text-xs">
+          <span className="brand-text brand-soft ml-1.5 rounded-full px-1.5 py-0.5 text-sm">
             −20%
           </span>
         </button>
@@ -50,7 +50,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
       </div>
 
       <StaggerContainer
-        className={`grid gap-5 md:grid-cols-2 ${pricing.tiers.length >= 4 ? "lg:grid-cols-4" : "mx-auto max-w-5xl lg:grid-cols-3"}`}
+        className={`grid gap-6 md:grid-cols-2 ${pricing.tiers.length >= 4 ? "lg:grid-cols-4" : "mx-auto max-w-5xl lg:grid-cols-3"}`}
         stagger={0.1}
       >
         {pricing.tiers.map((tier) => {
@@ -85,7 +85,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
               >
                 {tier.highlight && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="brand-bg rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white">
+                    <span className="brand-bg rounded-full px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white">
                       {ui.mostPopular}
                     </span>
                   </div>
@@ -98,9 +98,9 @@ export function PricingGrid({ lang }: { lang: Lang }) {
                     <span className="text-3xl font-bold [color:var(--mk-text)]">
                       {displayPrice}
                     </span>
-                    <span className="text-xs [color:var(--mk-text-muted)]">{displayPeriod}</span>
+                    <span className="text-sm [color:var(--mk-text-muted)]">{displayPeriod}</span>
                   </div>
-                  <p className="mt-2 text-xs leading-relaxed [color:var(--mk-text-muted)]">
+                  <p className="mt-2 text-sm leading-relaxed [color:var(--mk-text-muted)]">
                     {tier.blurb}
                   </p>
                 </div>
@@ -108,7 +108,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
                   {tier.features.map((f) => (
                     <li
                       key={f}
-                      className="flex items-start gap-2 text-xs [color:var(--mk-text-muted)]"
+                      className="flex items-start gap-2 text-sm [color:var(--mk-text-muted)]"
                     >
                       <Check
                         size={13}
@@ -148,7 +148,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
           );
         })}
       </StaggerContainer>
-      <p className="mx-auto mt-8 max-w-2xl text-center text-xs [color:var(--mk-text-subtle)]">
+      <p className="mx-auto mt-8 max-w-2xl text-center text-sm [color:var(--mk-text-subtle)]">
         {pricing.footnote}
       </p>
     </>

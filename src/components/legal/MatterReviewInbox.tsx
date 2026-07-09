@@ -61,8 +61,8 @@ const KIND_ICON: Record<ReviewItemKind, ElementType> = {
 };
 
 const PRIORITY_CLASS: Record<ReviewItem["priority"], string> = {
-  high: "border-amber-500/30 bg-amber-500/5",
-  medium: "border-blue-500/20 bg-blue-500/5",
+  high: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]",
+  medium: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]",
   low: "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]",
 };
 
@@ -482,7 +482,10 @@ export function MatterReviewInbox({
         void updateDocumentRequest(item, "sent");
       }
     } else {
-      window.location.href = "/dashboard/whatsapp";
+      // Conversations can arrive over any channel — the communications hub
+      // shows them all; WhatsApp-only items still resolve there.
+      window.location.href =
+        item.source === "whatsapp" ? "/dashboard/whatsapp" : "/dashboard/communications";
     }
   }
 
@@ -531,8 +534,8 @@ export function MatterReviewInbox({
             className={cn(
               "px-2.5 py-1 text-xs",
               visibleItems.length
-                ? "bg-amber-500/10 text-amber-700"
-                : "bg-emerald-500/10 text-emerald-700"
+                ? "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                : "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
             )}
           >
             {visibleItems.length} offen
@@ -542,7 +545,7 @@ export function MatterReviewInbox({
 
       <div className="mt-3 space-y-2">
         {!loading && visibleItems.length === 0 ? (
-          <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700">
+          <div className="flex items-center gap-2 rounded-lg bg-[color:var(--ds-success-bg)] p-3 text-sm text-[color:var(--ds-success-text)]">
             <CheckCircle2 size={15} aria-hidden="true" />
             Kein neuer prüfpflichtiger Eingang in dieser Akte.
           </div>
@@ -612,7 +615,7 @@ export function MatterReviewInbox({
                         type="button"
                         size="sm"
                         variant="ghost"
-                        className="h-10 gap-1.5 text-xs text-red-600 hover:bg-red-500/10"
+                        className="h-10 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
                         disabled={updating?.startsWith(item.id) || matter.status === "archived"}
                         onClick={() => void reviewFact(item, "reject")}
                       >

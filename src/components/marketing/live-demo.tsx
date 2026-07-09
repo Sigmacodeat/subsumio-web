@@ -104,7 +104,7 @@ export default function LiveDemo({
           <div className="brand-bg flex h-6 w-6 shrink-0 items-center justify-center rounded-md">
             <SubsumioMark size={14} />
           </div>
-          <span className="text-xs font-semibold [color:var(--mk-text)]">{windowTitle}</span>
+          <span className="text-sm font-semibold [color:var(--mk-text)]">{windowTitle}</span>
         </div>
       </div>
 
@@ -112,7 +112,7 @@ export default function LiveDemo({
       <div className="px-5 pt-5">
         <div className="flex items-start gap-3">
           <div className="brand-soft brand-border mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border">
-            <span className="brand-text text-xs font-semibold">{you}</span>
+            <span className="brand-text text-sm font-semibold">{you}</span>
           </div>
           <div className="focus-within:brand-border-strong flex flex-1 items-end gap-2 rounded-xl border [border-color:var(--mk-border)] px-3 py-2 transition-colors [background:var(--mk-bg)]">
             <textarea
@@ -149,7 +149,7 @@ export default function LiveDemo({
           <div className="min-w-0 flex-1">
             {live ? (
               <div>
-                <p className="brand-text mb-2 flex items-center gap-1.5 text-xs">
+                <p className="brand-text mb-2 flex items-center gap-1.5 text-sm">
                   <CheckCircle2 size={12} /> {t.liveLabel}
                 </p>
                 <ul className="space-y-2">
@@ -162,7 +162,7 @@ export default function LiveDemo({
                         {r.snippet || r.chunk_text || r.text || r.evidence || r.title}
                       </span>
                       {r.slug && (
-                        <span className="brand-text brand-soft ml-2 rounded px-1.5 py-0.5 font-mono text-xs">
+                        <span className="brand-text brand-soft ml-2 rounded px-1.5 py-0.5 font-mono text-sm">
                           {r.slug}
                         </span>
                       )}
@@ -182,21 +182,21 @@ export default function LiveDemo({
       {/* sources / note */}
       <div className="flex min-h-[40px] flex-wrap items-center gap-2 border-t [border-color:var(--mk-border)] px-5 py-3 [background:var(--mk-bg)]">
         {note ? (
-          <span className="text-xs [color:var(--signal-amber)]">{note}</span>
+          <span className="text-sm [color:var(--signal-amber)]">{note}</span>
         ) : !live ? (
           <>
-            <span className="text-xs [color:var(--mk-text)] opacity-60">{sourcesLabel}</span>
+            <span className="text-sm [color:var(--mk-text)] opacity-60">{sourcesLabel}</span>
             {sources.map((slug) => (
               <span
                 key={slug}
-                className="brand-text brand-soft rounded px-2 py-0.5 font-mono text-xs"
+                className="brand-text brand-soft rounded px-2 py-0.5 font-mono text-sm"
               >
                 {slug}
               </span>
             ))}
           </>
         ) : (
-          <span className="text-xs [color:var(--mk-text-subtle)]">
+          <span className="text-sm [color:var(--mk-text-subtle)]">
             {UI_STRINGS[lang].demoReadOnlyNote}
           </span>
         )}

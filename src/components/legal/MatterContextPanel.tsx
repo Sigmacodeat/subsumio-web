@@ -105,17 +105,17 @@ export function MatterContextPanel({
           {bundle && (
             <div className="flex items-center gap-1.5">
               {criticalGaps.length > 0 && (
-                <Badge className="border border-red-500/20 bg-red-500/10 text-xs text-red-600">
+                <Badge className="border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]">
                   {criticalGaps.length} kritisch
                 </Badge>
               )}
               {overdueDeadlines.length > 0 && (
-                <Badge className="border border-red-500/20 bg-red-500/10 text-xs text-red-600">
+                <Badge className="border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]">
                   {overdueDeadlines.length} überfällig
                 </Badge>
               )}
               {criticalGaps.length === 0 && overdueDeadlines.length === 0 && (
-                <Badge className="border border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600">
+                <Badge className="border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]">
                   OK
                 </Badge>
               )}
@@ -153,7 +153,7 @@ export function MatterContextPanel({
 
             {error && !loading && (
               <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-                <AlertTriangle size={24} className="text-amber-500" />
+                <AlertTriangle size={24} className="text-[color:var(--ds-warning-text)]" />
                 <p className="text-sm text-[color:var(--ds-text-muted)]">
                   Matter Context konnte nicht geladen werden: {error}
                 </p>
@@ -172,13 +172,13 @@ export function MatterContextPanel({
                     icon={Users}
                     label="Parteien"
                     value={bundle.parties.length}
-                    color="text-blue-600"
+                    color="text-[color:var(--ds-info-text)]"
                   />
                   <SummaryItem
                     icon={CalendarClock}
                     label="Fristen"
                     value={bundle.deadlines.length}
-                    color="text-amber-600"
+                    color="text-[color:var(--ds-warning-text)]"
                   />
                   <SummaryItem
                     icon={FileText}
@@ -196,7 +196,7 @@ export function MatterContextPanel({
                     icon={AlertTriangle}
                     label="Lücken"
                     value={bundle.gaps.length}
-                    color={bundle.gaps.length > 0 ? "text-red-600" : "text-emerald-600"}
+                    color={bundle.gaps.length > 0 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-success-text)]"}
                   />
                   <div className="ml-auto flex items-center gap-1.5">
                     <Button
@@ -289,9 +289,9 @@ export function MatterContextPanel({
 
                 {/* Engine Status */}
                 {!bundle.engine_reachable && (
-                  <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
-                    <AlertTriangle size={14} className="text-amber-600" />
-                    <span className="text-xs text-amber-600">
+                  <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2">
+                    <AlertTriangle size={14} className="text-[color:var(--ds-warning-text)]" />
+                    <span className="text-xs text-[color:var(--ds-warning-text)]">
                       Engine nicht erreichbar — Context kann unvollständig sein
                     </span>
                   </div>
@@ -363,11 +363,11 @@ function PartyRow({ party }: { party: MatterParty }) {
     other: "Sonstige",
   };
   const roleColors: Record<MatterParty["role"], string> = {
-    client: "text-blue-600",
-    opponent: "text-red-600",
-    lawyer: "text-emerald-600",
+    client: "text-[color:var(--ds-info-text)]",
+    opponent: "text-[color:var(--ds-danger-text)]",
+    lawyer: "text-[color:var(--ds-success-text)]",
     court: "text-purple-600",
-    witness: "text-amber-600",
+    witness: "text-[color:var(--ds-warning-text)]",
     third_party: "text-gray-600",
     other: "text-gray-500",
   };
@@ -410,21 +410,21 @@ function DeadlineRow({ deadline }: { deadline: MatterDeadlineSummary }) {
     { color: string; bg: string; border: string; label: string }
   > = {
     overdue: {
-      color: "text-red-600",
-      bg: "bg-red-500/5",
-      border: "border-red-500/20",
+      color: "text-[color:var(--ds-danger-text)]",
+      bg: "bg-[color:var(--ds-danger-bg)]",
+      border: "border-[color:var(--ds-danger-border)]",
       label: "ÜBERFÄLLIG",
     },
     critical: {
-      color: "text-orange-600",
-      bg: "bg-orange-500/5",
-      border: "border-orange-500/20",
+      color: "text-[color:var(--ds-attention-text)]",
+      bg: "bg-[color:var(--ds-attention-bg)]",
+      border: "border-[color:var(--ds-attention-border)]",
       label: "≤3 Tage",
     },
     upcoming: {
-      color: "text-amber-600",
-      bg: "bg-amber-500/5",
-      border: "border-amber-500/20",
+      color: "text-[color:var(--ds-warning-text)]",
+      bg: "bg-[color:var(--ds-warning-bg)]",
+      border: "border-[color:var(--ds-warning-border)]",
       label: "≤14 Tage",
     },
     normal: {
@@ -434,9 +434,9 @@ function DeadlineRow({ deadline }: { deadline: MatterDeadlineSummary }) {
       label: "",
     },
     done: {
-      color: "text-emerald-600",
-      bg: "bg-emerald-500/5",
-      border: "border-emerald-500/20",
+      color: "text-[color:var(--ds-success-text)]",
+      bg: "bg-[color:var(--ds-success-bg)]",
+      border: "border-[color:var(--ds-success-border)]",
       label: "Erledigt",
     },
   };
@@ -469,23 +469,23 @@ function DeadlineRow({ deadline }: { deadline: MatterDeadlineSummary }) {
 
 function DocumentRow({ doc }: { doc: MatterDocumentSummary }) {
   const extractionIcons: Record<ExtractionStatus, React.ReactNode> = {
-    uploaded: <Clock size={11} className="text-blue-500" />,
-    processing: <Loader2 size={11} className="animate-spin text-blue-500" />,
-    text_layer: <CheckCircle2 size={11} className="text-emerald-500" />,
-    ocr_needed: <AlertTriangle size={11} className="text-amber-500" />,
-    ocr_processing: <Loader2 size={11} className="animate-spin text-amber-500" />,
-    ocr_complete: <CheckCircle2 size={11} className="text-emerald-500" />,
-    ocr_failed: <XCircle size={11} className="text-red-500" />,
-    ready: <CheckCircle2 size={11} className="text-emerald-500" />,
-    partial: <AlertTriangle size={11} className="text-amber-500" />,
-    failed: <XCircle size={11} className="text-red-500" />,
-    error: <XCircle size={11} className="text-red-500" />,
+    uploaded: <Clock size={11} className="text-[color:var(--ds-info-text)]" />,
+    processing: <Loader2 size={11} className="animate-spin text-[color:var(--ds-info-text)]" />,
+    text_layer: <CheckCircle2 size={11} className="text-[color:var(--ds-success-text)]" />,
+    ocr_needed: <AlertTriangle size={11} className="text-[color:var(--ds-warning-text)]" />,
+    ocr_processing: <Loader2 size={11} className="animate-spin text-[color:var(--ds-warning-text)]" />,
+    ocr_complete: <CheckCircle2 size={11} className="text-[color:var(--ds-success-text)]" />,
+    ocr_failed: <XCircle size={11} className="text-[color:var(--ds-danger-text)]" />,
+    ready: <CheckCircle2 size={11} className="text-[color:var(--ds-success-text)]" />,
+    partial: <AlertTriangle size={11} className="text-[color:var(--ds-warning-text)]" />,
+    failed: <XCircle size={11} className="text-[color:var(--ds-danger-text)]" />,
+    error: <XCircle size={11} className="text-[color:var(--ds-danger-text)]" />,
   };
   const ocrIcons: Record<string, React.ReactNode> = {
-    text_layer: <CheckCircle2 size={11} className="text-emerald-500" />,
-    ocr_complete: <CheckCircle2 size={11} className="text-emerald-500" />,
-    ocr_needed: <AlertTriangle size={11} className="text-amber-500" />,
-    unknown: <Clock size={11} className="text-amber-500" />,
+    text_layer: <CheckCircle2 size={11} className="text-[color:var(--ds-success-text)]" />,
+    ocr_complete: <CheckCircle2 size={11} className="text-[color:var(--ds-success-text)]" />,
+    ocr_needed: <AlertTriangle size={11} className="text-[color:var(--ds-warning-text)]" />,
+    unknown: <Clock size={11} className="text-[color:var(--ds-warning-text)]" />,
     not_applicable: null,
   };
   const statusIcon = doc.extraction_status
@@ -500,7 +500,7 @@ function DocumentRow({ doc }: { doc: MatterDocumentSummary }) {
         <FileText size={13} className="shrink-0 text-[color:var(--ds-text-muted)]" />
         <span className="truncate text-sm text-[color:var(--ds-text)]">{doc.name}</span>
         {doc.extraction_unverified && (
-          <Badge className="border border-amber-500/20 bg-amber-500/5 text-xs text-amber-700">
+          <Badge className="border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]">
             unverified
           </Badge>
         )}
@@ -522,7 +522,7 @@ function DocumentRow({ doc }: { doc: MatterDocumentSummary }) {
 function CoverageDisplay({ coverage }: { coverage: MatterCoverageStatus }) {
   const score = Math.round(coverage.completeness_score * 100);
   const scoreColor =
-    score >= 80 ? "text-emerald-600" : score >= 50 ? "text-amber-600" : "text-red-600";
+    score >= 80 ? "text-[color:var(--ds-success-text)]" : score >= 50 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-danger-text)]";
   return (
     <div className="space-y-3">
       {/* Score Bar */}
@@ -536,21 +536,21 @@ function CoverageDisplay({ coverage }: { coverage: MatterCoverageStatus }) {
             <div
               className={cn(
                 "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                score >= 80 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-red-500"
+                score >= 80 ? "bg-[color:var(--ds-success-solid)]" : score >= 50 ? "bg-[color:var(--ds-warning-solid)]" : "bg-[color:var(--ds-danger-solid)]"
               )}
               style={{ width: `${score}%` }}
             />
           </div>
         </div>
         <div className="flex items-center gap-2 text-xs">
-          <span className="flex items-center gap-0.5 text-emerald-600">
+          <span className="flex items-center gap-0.5 text-[color:var(--ds-success-text)]">
             <CheckCircle2 size={11} /> {coverage.fresh_sources}
           </span>
-          <span className="flex items-center gap-0.5 text-amber-600">
+          <span className="flex items-center gap-0.5 text-[color:var(--ds-warning-text)]">
             <Clock size={11} /> {coverage.stale_sources}
           </span>
           {coverage.error_sources > 0 && (
-            <span className="flex items-center gap-0.5 text-red-600">
+            <span className="flex items-center gap-0.5 text-[color:var(--ds-danger-text)]">
               <XCircle size={11} /> {coverage.error_sources}
             </span>
           )}
@@ -570,10 +570,10 @@ function CoverageDisplay({ coverage }: { coverage: MatterCoverageStatus }) {
           {coverage.warnings.map((warning, i) => (
             <div
               key={i}
-              className="flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-2.5 py-1.5"
+              className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2.5 py-1.5"
             >
-              <AlertTriangle size={11} className="shrink-0 text-amber-600" />
-              <span className="text-xs text-amber-600">{warning}</span>
+              <AlertTriangle size={11} className="shrink-0 text-[color:var(--ds-warning-text)]" />
+              <span className="text-xs text-[color:var(--ds-warning-text)]">{warning}</span>
             </div>
           ))}
         </div>
@@ -603,15 +603,15 @@ function SourceRow({ source }: { source: SourceCoverageEntry }) {
       </div>
       <div className="flex items-center gap-1.5">
         {source.connected ? (
-          <CheckCircle2 size={11} className="text-emerald-500" />
+          <CheckCircle2 size={11} className="text-[color:var(--ds-success-text)]" />
         ) : (
           <XCircle size={11} className="text-[color:var(--ds-text-subtle)]" />
         )}
         {source.index_fresh && source.connected && (
-          <span className="text-xs text-emerald-600">frisch</span>
+          <span className="text-xs text-[color:var(--ds-success-text)]">frisch</span>
         )}
         {!source.index_fresh && source.connected && (
-          <span className="text-xs text-amber-600">stale</span>
+          <span className="text-xs text-[color:var(--ds-warning-text)]">stale</span>
         )}
         {source.document_count > 0 && (
           <span className="text-xs text-[color:var(--ds-text-subtle)]">
@@ -629,24 +629,24 @@ function GapRow({ gap }: { gap: MatterGap }) {
     { color: string; bg: string; border: string; icon: React.ElementType }
   > = {
     critical: {
-      color: "text-red-600",
-      bg: "bg-red-500/5",
-      border: "border-red-500/20",
+      color: "text-[color:var(--ds-danger-text)]",
+      bg: "bg-[color:var(--ds-danger-bg)]",
+      border: "border-[color:var(--ds-danger-border)]",
       icon: ShieldAlert,
     },
     high: {
-      color: "text-orange-600",
-      bg: "bg-orange-500/5",
-      border: "border-orange-500/20",
+      color: "text-[color:var(--ds-attention-text)]",
+      bg: "bg-[color:var(--ds-attention-bg)]",
+      border: "border-[color:var(--ds-attention-border)]",
       icon: AlertTriangle,
     },
     medium: {
-      color: "text-amber-600",
-      bg: "bg-amber-500/5",
-      border: "border-amber-500/20",
+      color: "text-[color:var(--ds-warning-text)]",
+      bg: "bg-[color:var(--ds-warning-bg)]",
+      border: "border-[color:var(--ds-warning-border)]",
       icon: AlertTriangle,
     },
-    low: { color: "text-blue-600", bg: "bg-blue-500/5", border: "border-blue-500/20", icon: Eye },
+    low: { color: "text-[color:var(--ds-info-text)]", bg: "bg-[color:var(--ds-info-bg)]", border: "border-[color:var(--ds-info-border)]", icon: Eye },
     info: {
       color: "text-[color:var(--ds-text-muted)]",
       bg: "",
@@ -690,9 +690,9 @@ function ActivityRow({ activity }: { activity: MatterActivityEntry }) {
 
 function FactRow({ fact }: { fact: MatterFactEntry }) {
   const confidenceColors: Record<MatterFactEntry["confidence"], string> = {
-    high: "text-emerald-600",
-    medium: "text-amber-600",
-    low: "text-red-600",
+    high: "text-[color:var(--ds-success-text)]",
+    medium: "text-[color:var(--ds-warning-text)]",
+    low: "text-[color:var(--ds-danger-text)]",
   };
   return (
     <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2">

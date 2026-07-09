@@ -1,0 +1,50 @@
+{"question_id":"pq-001","question":"Wie verjährt ein Anspruch auf Schadensersatz?","expected_slugs":["bgb"],"legal_area":"bgb","difficulty":"medium"}
+{"question_id":"pq-002","question":"Wann beginnt die Verjährung einer Forderung?","expected_slugs":["bgb"],"legal_area":"bgb","difficulty":"medium"}
+{"question_id":"pq-003","question":"Was ist die regelmäßige Verjährungsfrist?","expected_slugs":["bgb"],"legal_area":"bgb","difficulty":"easy"}
+{"question_id":"pq-004","question":"Wann ist ein Vertrag nichtig wegen fehlender Geschäftsfähigkeit?","expected_slugs":["bgb"],"legal_area":"bgb","difficulty":"medium"}
+{"question_id":"pq-005","question":"Was ist eine Willenserklärung und wann wird sie wirksam?","expected_slugs":["bgb"],"legal_area":"bgb","difficulty":"medium"}
+{"question_id":"pq-006","question":"Wann kann man einen Vertrag wegen Irrtum anfechten?","expected_slugs":["bgb"],"legal_area":"bgb","difficulty":"medium"}
+{"question_id":"pq-007","question":"Was ist Vertretung und Vollmacht?","expected_slugs":["bgb"],"legal_area":"bgb","difficulty":"medium"}
+{"question_id":"pq-008","question":"Wann ist eine Bedingung wirksam?","expected_slugs":["bgb"],"legal_area":"bgb","difficulty":"hard"}
+{"question_id":"pq-009","question":"Was gilt bei Kaufvertrag Gewährleistung?","expected_slugs":["bgb"],"legal_area":"bgb","difficulty":"medium"}
+{"question_id":"pq-010","question":"Was ist der Schadensersatz bei Pflichtverletzung?","expected_slugs":["bgb"],"legal_area":"bgb","difficulty":"medium"}
+{"question_id":"pq-011","question":"Wie funktioniert das Mahnverfahren?","expected_slugs":["zpo"],"legal_area":"zpo","difficulty":"medium"}
+{"question_id":"pq-012","question":"Was ist die Zwangsvollstreckung und wann ist sie zulässig?","expected_slugs":["zpo"],"legal_area":"zpo","difficulty":"medium"}
+{"question_id":"pq-013","question":"Wann ist ein Urteil vorläufig vollstreckbar?","expected_slugs":["zpo"],"legal_area":"zpo","difficulty":"hard"}
+{"question_id":"pq-014","question":"Was ist der Gerichtsstand am Wohnsitz des Beklagten?","expected_slugs":["zpo"],"legal_area":"zpo","difficulty":"easy"}
+{"question_id":"pq-015","question":"Wie wird der Streitwert berechnet?","expected_slugs":["zpo"],"legal_area":"zpo","difficulty":"medium"}
+{"question_id":"pq-016","question":"Was ist der Gerichtsstand bei unerlaubter Handlung?","expected_slugs":["zpo"],"legal_area":"zpo","difficulty":"medium"}
+{"question_id":"pq-017","question":"Wann ist eine Klage unzulässig wegen fehlender Sachliche Zuständigkeit?","expected_slugs":["zpo"],"legal_area":"zpo","difficulty":"hard"}
+{"question_id":"pq-018","question":"Was ist der dinglicher Gerichtsstand?","expected_slugs":["zpo"],"legal_area":"zpo","difficulty":"hard"}
+{"question_id":"pq-019","question":"Was ist der Gerichtsstand der Mitgliedschaft?","expected_slugs":["zpo"],"legal_area":"zpo","difficulty":"hard"}
+{"question_id":"pq-020","question":"Was ist der besondere Gerichtsstand der Niederlassung?","expected_slugs":["zpo"],"legal_area":"zpo","difficulty":"medium"}
+{"question_id":"pq-021","question":"Wer gilt als Kaufmann und was bedeutet das?","expected_slugs":["hgb"],"legal_area":"hgb","difficulty":"easy"}
+{"question_id":"pq-022","question":"Was ist ein Handelsgewerbe?","expected_slugs":["hgb"],"legal_area":"hgb","difficulty":"easy"}
+{"question_id":"pq-023","question":"Wie funktioniert die Einsichtnahme in das Handelsregister?","expected_slugs":["hgb"],"legal_area":"hgb","difficulty":"medium"}
+{"question_id":"pq-024","question":"Was ist das Unternehmensregister?","expected_slugs":["hgb"],"legal_area":"hgb","difficulty":"medium"}
+{"question_id":"pq-025","question":"Was gilt bei der Vertretung einer Handelsgesellschaft?","expected_slugs":["hgb"],"legal_area":"hgb","difficulty":"medium"}
+{"question_id":"pq-026","question":"Wann ist eine Tat ein Verbrechen?","expected_slugs":["stgb"],"legal_area":"stgb","difficulty":"easy"}
+{"question_id":"pq-027","question":"Wann ist eine Tat ein Vergehen?","expected_slugs":["stgb"],"legal_area":"stgb","difficulty":"easy"}
+{"question_id":"pq-028","question":"Kann man durch Unterlassen strafbar werden?","expected_slugs":["stgb"],"legal_area":"stgb","difficulty":"medium"}
+{"question_id":"pq-029","question":"Was ist Notwehr und wann darf man sich verteidigen?","expected_slugs":["stgb"],"legal_area":"stgb","difficulty":"easy"}
+{"question_id":"pq-030","question":"Was ist Notstand und wann ist er gerechtfertigt?","expected_slugs":["stgb"],"legal_area":"stgb","difficulty":"medium"}
+{"question_id":"pq-031","question":"Was ist Versuch einer Straftat und wann ist er strafbar?","expected_slugs":["stgb"],"legal_area":"stgb","difficulty":"medium"}
+{"question_id":"pq-032","question":"Was ist Anstiftung?","expected_slugs":["stgb"],"legal_area":"stgb","difficulty":"medium"}
+{"question_id":"pq-033","question":"Was ist Beihilfe zu einer Straftat?","expected_slugs":["stgb"],"legal_area":"stgb","difficulty":"medium"}
+{"question_id":"pq-034","question":"Was ist der Rücktritt vom Versuch?","expected_slugs":["stgb"],"legal_area":"stgb","difficulty":"medium"}
+{"question_id":"pq-035","question":"Wie wird eine Geldstrafe berechnet?","expected_slugs":["stgb"],"legal_area":"stgb","difficulty":"medium"}
+{"question_id":"pq-036","question":"Was ist das Steuergeheimnis und wer ist daran gebunden?","expected_slugs":["ao"],"legal_area":"ao","difficulty":"medium"}
+{"question_id":"pq-037","question":"Was ist eine Betriebstätte im Steuerrecht?","expected_slugs":["ao"],"legal_area":"ao","difficulty":"medium"}
+{"question_id":"pq-038","question":"Was gilt als Wohnsitz im Steuerrecht?","expected_slugs":["ao"],"legal_area":"ao","difficulty":"easy"}
+{"question_id":"pq-039","question":"Was ist der gewöhnliche Aufenthalt einer Person?","expected_slugs":["ao"],"legal_area":"ao","difficulty":"easy"}
+{"question_id":"pq-040","question":"Wer ist ein Amtsträger im Sinne der Abgabenordnung?","expected_slugs":["ao"],"legal_area":"ao","difficulty":"medium"}
+{"question_id":"pq-041","question":"Was ist die sachliche Zuständigkeit der Finanzbehörden?","expected_slugs":["ao"],"legal_area":"ao","difficulty":"hard"}
+{"question_id":"pq-042","question":"Was ist die örtliche Zuständigkeit des Finanzamts?","expected_slugs":["ao"],"legal_area":"ao","difficulty":"hard"}
+{"question_id":"pq-043","question":"Was sind Steuern und steuerliche Nebenleistungen?","expected_slugs":["ao"],"legal_area":"ao","difficulty":"medium"}
+{"question_id":"pq-044","question":"Was ist Ermessen im Abgabenrecht?","expected_slugs":["ao"],"legal_area":"ao","difficulty":"medium"}
+{"question_id":"pq-045","question":"Was sind Angehörige im Steuerrecht?","expected_slugs":["ao"],"legal_area":"ao","difficulty":"medium"}
+{"question_id":"pq-046","question":"Was ist eine Finanzbehörde und welche Aufgaben hat sie?","expected_slugs":["ao"],"legal_area":"ao","difficulty":"medium"}
+{"question_id":"pq-047","question":"Was ist die Geschäftsleitung im abgabenrechtlichen Sinne?","expected_slugs":["ao"],"legal_area":"ao","difficulty":"medium"}
+{"question_id":"pq-048","question":"Was ist ein ständiger Vertreter im Steuerrecht?","expected_slugs":["ao"],"legal_area":"ao","difficulty":"hard"}
+{"question_id":"pq-049","question":"Was ist ein wirtschaftlicher Geschäftsbetrieb?","expected_slugs":["ao"],"legal_area":"ao","difficulty":"hard"}
+{"question_id":"pq-050","question":"Was ist der Sitz einer juristischen Person im Steuerrecht?","expected_slugs":["ao"],"legal_area":"ao","difficulty":"medium"}

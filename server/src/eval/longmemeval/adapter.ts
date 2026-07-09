@@ -144,3 +144,22 @@ export function haystackToPages(question: LongMemEvalQuestion): PageInputForImpo
   }
   return pages;
 }
+
+/**
+ * Build a mapping from sanitized slug (as used in page slugs) back to the
+ * original session_id (as used in answer_session_ids ground truth).
+ *
+ * The slug sanitizer replaces underscores and dots with hyphens, so
+ * `answer_4be1b6b4_2` becomes `answer-4be1b6b4-2` in the slug but stays
+ * as `answer_4be1b6b4_2` in answer_session_ids. Without this map, recall
+ * matching always fails on the full HuggingFace dataset.
+ */
+export function buildSlugToSessionIdMap(question: LongMemEvalQuestion): Map<string, string> {
+  const map = new Map<string, string>();
+  const sessions = normalizeSessions(question);
+  for (const session of sessions) {
+    const slug = `chat/${sanitizeSessionIdForSlug(session.session_id)}`;
+    map.set(slug, session.session_id);
+  }
+  return map;
+}

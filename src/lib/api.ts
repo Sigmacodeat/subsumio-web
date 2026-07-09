@@ -330,6 +330,99 @@ export const api = {
     },
   },
 
+  memory: {
+    list(opts?: { caseSlug?: string; type?: string; pinnedOnly?: boolean }): Promise<{
+      memories: Array<{
+        id: string;
+        type: string;
+        key: string;
+        value: string;
+        source: string;
+        pinned: boolean;
+        caseSlug?: string;
+        entities?: string[];
+        supersededBy?: string;
+        createdAt: string;
+        updatedAt: string;
+      }>;
+    }> {
+      const params = new URLSearchParams();
+      if (opts?.caseSlug) params.set("caseSlug", opts.caseSlug);
+      if (opts?.type) params.set("type", opts.type);
+      if (opts?.pinnedOnly) params.set("pinnedOnly", "true");
+      return request(`/api/copilot/memory?${params.toString()}`);
+    },
+
+    search(query: string, caseSlug?: string): Promise<{
+      results: Array<{
+        id: string;
+        type: string;
+        key: string;
+        value: string;
+        pinned: boolean;
+        entities?: string[];
+      }>;
+    }> {
+      return request("/api/copilot/memory", {
+        method: "POST",
+        body: JSON.stringify({ action: "search", message: query, caseSlug }),
+      });
+    },
+
+    infer(message: string, caseSlug?: string): Promise<{
+      inferred: Array<{ id: string; type: string; key: string; value: string }>;
+      superseded?: string[];
+      method: string;
+    }> {
+      return request("/api/copilot/memory", {
+        method: "POST",
+        body: JSON.stringify({ action: "infer", message, caseSlug }),
+      });
+    },
+
+    create(opts: {
+      type: string;
+      key: string;
+      value: string;
+      source?: string;
+      caseSlug?: string;
+      pinned?: boolean;
+    }): Promise<{ memory: { id: string; type: string; key: string; value: string } }> {
+      return request("/api/copilot/memory", {
+        method: "POST",
+        body: JSON.stringify({ action: "create", ...opts }),
+      });
+    },
+
+    recordAgentAction(opts: {
+      key: string;
+      value: string;
+      type?: string;
+      caseSlug?: string;
+    }): Promise<{ memory: { id: string }; superseded?: string[] }> {
+      return request("/api/copilot/memory", {
+        method: "POST",
+        body: JSON.stringify({ action: "agent_action", ...opts }),
+      });
+    },
+
+    update(id: string, updates: { value?: string; pinned?: boolean; type?: string }): Promise<{
+      ok: boolean;
+    }> {
+      return request("/api/copilot/memory", {
+        method: "PATCH",
+        body: JSON.stringify({ id, ...updates }),
+      });
+    },
+
+    delete(id: string): Promise<{ ok: boolean }> {
+      return request("/api/copilot/memory", {
+        method: "DELETE",
+        body: JSON.stringify({ id }),
+      });
+    },
+  },
+
   query: {
     /**
      * /api/think always answers as an SSE stream (`data: {chunk}` events,

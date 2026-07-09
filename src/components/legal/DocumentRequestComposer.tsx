@@ -159,8 +159,8 @@ export function DocumentRequestComposer({
 
   if (sent) {
     return (
-      <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
-        <div className="flex items-center gap-2 text-sm text-emerald-700">
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-3">
+        <div className="flex items-center gap-2 text-sm text-[color:var(--ds-success-text)]">
           <CheckCircle2 size={15} />
           Dokumentenanfrage versendet
         </div>
@@ -168,7 +168,7 @@ export function DocumentRequestComposer({
           <Button
             size="sm"
             variant="ghost"
-            className="h-8 gap-1.5 text-xs text-emerald-700"
+            className="h-8 gap-1.5 text-xs text-[color:var(--ds-success-text)]"
             disabled={sending}
             onClick={() => void handleFulfilled()}
           >
@@ -263,7 +263,7 @@ export function DocumentRequestComposer({
         <Button
           size="sm"
           variant="ghost"
-          className="h-8 gap-1.5 text-xs text-emerald-600"
+          className="h-8 gap-1.5 text-xs text-[color:var(--ds-success-text)]"
           disabled={sending}
           onClick={() => void handleFulfilled()}
         >

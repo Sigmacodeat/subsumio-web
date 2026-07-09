@@ -272,7 +272,7 @@ export default function GraphPage() {
               <p className="mb-2 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
                 {t("graph.empty_hint")}
               </p>
-              {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+              {error && <p className="mt-2 text-xs text-[color:var(--ds-danger-text)]">{error}</p>}
             </div>
           ) : (
             <>

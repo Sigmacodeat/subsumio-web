@@ -4,10 +4,12 @@
 // MotionConfig wraps the page; ScrollProgress shows reading position;
 // every section scroll-reveals with reduced-motion safety.
 
-import { Check, Shield, Layers, Lock, Eye, type LucideIcon } from "lucide-react";
-import { p, type Lang } from "@/content/site";
+import { Check, Shield, Layers, Lock, Eye, ArrowRight, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { p, UI_STRINGS, type Lang } from "@/content/site";
+import { Button } from "@/components/ui/button";
 import { SECURITY } from "@/content/security";
-import { SectionHeading, CTASection, PageHero, Section } from "./chrome";
+import { SectionHeading, CTASection, PageHero, Section, ICONS } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { Reveal, StaggerContainer, StaggerItem, GlowCard } from "./motion-system";
 
@@ -23,11 +25,31 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       lang={lang}
     >
       {/* Hero */}
-      <PageHero badge={t.badge} h1a={t.h1a} h1b={t.h1b} sub={t.sub} icon={Shield} />
+      <PageHero
+        badge={t.badge}
+        h1a={t.h1a}
+        h1b={t.h1b}
+        sub={t.sub}
+        icon={Shield}
+        actions={
+          <>
+            <Link href={p(lang, "/signup")}>
+              <Button size="lg" variant="primary">
+                {UI_STRINGS[lang].startFree} <ArrowRight size={16} />
+              </Button>
+            </Link>
+            <Link href={p(lang, "/contact")}>
+              <Button size="lg" variant="outline">
+                {UI_STRINGS[lang].writeUs}
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       {/* Pillars */}
       <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
-        <StaggerContainer className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2" stagger={0.1}>
+        <StaggerContainer className="mx-auto grid max-w-6xl gap-6 md:grid-cols-2" stagger={0.1}>
           {t.pillars.map((pillar) => {
             const Icon = PILLAR_ICONS[pillar.icon] ?? Shield;
             return (
@@ -37,9 +59,9 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
               >
                 <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]">
                   <Icon size={22} className="brand-text mb-4" />
-                  <h2 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
+                  <h3 className="mb-2 text-xl font-semibold [color:var(--mk-text)]">
                     {pillar.title}
-                  </h2>
+                  </h3>
                   <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
                     {pillar.desc}
                   </p>
@@ -62,7 +84,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
                 key={opt.title}
                 className="rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]"
               >
-                <h3 className="mb-4 text-base font-semibold [color:var(--mk-text)]">{opt.title}</h3>
+                <h3 className="mb-4 text-lg font-semibold [color:var(--mk-text)]">{opt.title}</h3>
                 <ul className="space-y-2.5">
                   {opt.points.map((point, i) => (
                     <li
@@ -92,6 +114,22 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
               tone="light"
             />
           </Reveal>
+          <StaggerContainer className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-4" stagger={0.08}>
+            {t.complianceBadges.map((b) => {
+              const Icon = ICONS[b.icon] ?? Shield;
+              return (
+                <StaggerItem key={b.label}>
+                  <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-5 text-center transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)]">
+                    <div className="brand-soft brand-border mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border">
+                      <Icon size={22} className="brand-text" />
+                    </div>
+                    <h3 className="mb-1 text-sm font-semibold [color:var(--mk-text)]">{b.label}</h3>
+                    <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">{b.sub}</p>
+                  </GlowCard>
+                </StaggerItem>
+              );
+            })}
+          </StaggerContainer>
         </div>
       </Section>
 
@@ -174,6 +212,8 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
         sub={t.ctaSub}
         href={p(lang, "/signup")}
         label={t.ctaButton}
+        secondaryHref={p(lang, "/contact")}
+        secondaryLabel={UI_STRINGS[lang].writeUs}
         showLogo={false}
       />
     </div>

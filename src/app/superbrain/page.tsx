@@ -13,7 +13,7 @@ import { keywordsFor } from "@/lib/seo-keywords";
 export const metadata: Metadata = {
   title: "SuperBrain — Die KI-Engine hinter Subsumio | Legal AI mit 5-Ebenen-Architektur",
   description:
-    "Das Subsumio SuperBrain: 29 Dream-Cycle-Phasen, 5 Korrektur-Ebenen, LEXam-validiert, 119 Sprachen. Eine lernende Wissensbasis für deine Kanzlei — mit belegten Antworten, nächtlicher Widerspruchsprüfung und DACH-Recht Fine-Tuning.",
+    "Das Subsumio SuperBrain: 5-Ebenen-Architektur für belegte KI-Antworten — DACH-Recht, Wissensgraph, nächtliche Verifikation.",
   keywords: keywordsFor("superbrain"),
   alternates: {
     canonical: "/superbrain",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "SuperBrain — Die KI-Engine hinter Subsumio",
     description:
-      "29 Dream-Cycle-Phasen, 5 Korrektur-Ebenen, LEXam-validiert, 119 Sprachen. Eine lernende Wissensbasis für deine Kanzlei.",
+      "5-Ebenen-Architektur für belegte KI-Antworten — DACH-Recht, Wissensgraph, nächtliche Verifikation.",
     url: "/superbrain",
     type: "website",
     siteName: "Subsumio",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SuperBrain — Die KI-Engine hinter Subsumio",
     description:
-      "29 Dream-Cycle-Phasen, 5 Korrektur-Ebenen, LEXam-validiert, 119 Sprachen. Legal AI mit Wissensgraph.",
+      "5-Ebenen-Architektur für belegte KI-Antworten — DACH-Recht, Wissensgraph, nächtliche Verifikation.",
   },
 };
 

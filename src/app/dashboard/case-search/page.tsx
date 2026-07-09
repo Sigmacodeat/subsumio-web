@@ -91,9 +91,9 @@ const STATUS_LABELS_DE: Record<string, string> = {
 
 const PRIORITY_COLORS: Record<string, string> = {
   low: "bg-gray-500/10 text-gray-600 border-gray-500/20",
-  medium: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  high: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  critical: "bg-red-500/10 text-red-600 border-red-500/20",
+  medium: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
+  high: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
+  critical: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
 };
 
 const FACETS: FacetConfig[] = [

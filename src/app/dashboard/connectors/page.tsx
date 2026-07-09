@@ -188,11 +188,11 @@ export default function ConnectorsPage() {
       />
 
       {/* Info */}
-      <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
-        <p className="text-sm text-amber-600">
+      <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3">
+        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+        <p className="text-sm text-[color:var(--ds-warning-text)]">
           Zugangsdaten werden weiterhin über die CLI eingerichtet:{" "}
-          <code className="rounded bg-amber-500/10 px-1.5 py-0.5 font-mono text-xs">
+          <code className="rounded bg-[color:var(--ds-warning-bg)] px-1.5 py-0.5 font-mono text-xs">
             subsumio connector add &lt;service&gt;
           </code>
           . Status, Aktivierung und manuelle Syncs laufen hier direkt über die Engine.
@@ -207,7 +207,7 @@ export default function ConnectorsPage() {
         </div>
       )}
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <XCircle size={16} className="shrink-0" />
           {error}
         </div>
@@ -283,7 +283,7 @@ export default function ConnectorsPage() {
                     <span
                       className={cn(
                         "flex items-center gap-1",
-                        c.enabled ? "text-emerald-600" : "text-[color:var(--ds-text-muted)]"
+                        c.enabled ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-text-muted)]"
                       )}
                     >
                       {c.enabled ? <CheckCircle2 size={10} /> : <XCircle size={10} />}
@@ -292,7 +292,7 @@ export default function ConnectorsPage() {
                     <span
                       className={cn(
                         "flex items-center gap-1",
-                        c.connected ? "text-emerald-600" : "text-[color:var(--ds-text-muted)]"
+                        c.connected ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-text-muted)]"
                       )}
                     >
                       {c.connected ? <CheckCircle2 size={10} /> : <XCircle size={10} />}
@@ -453,8 +453,8 @@ function CoverageMatrix() {
   const matrix = getCoverageMatrix();
 
   const statusColors: Record<string, string> = {
-    available: "text-emerald-600",
-    beta: "text-amber-600",
+    available: "text-[color:var(--ds-success-text)]",
+    beta: "text-[color:var(--ds-warning-text)]",
     planned: "text-[color:var(--ds-text-muted)]",
     not_applicable: "text-[color:var(--ds-text-subtle)]",
   };
@@ -477,13 +477,13 @@ function CoverageMatrix() {
           </div>
         </div>
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <div className="text-lg font-bold text-emerald-600">{matrix.available_count}</div>
+          <div className="text-lg font-bold text-[color:var(--ds-success-text)]">{matrix.available_count}</div>
           <div className="text-xs text-[color:var(--ds-text-muted)]">
             {t("connectors.status_available" as DashboardKey)}
           </div>
         </div>
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <div className="text-lg font-bold text-amber-600">{matrix.beta_count}</div>
+          <div className="text-lg font-bold text-[color:var(--ds-warning-text)]">{matrix.beta_count}</div>
           <div className="text-xs text-[color:var(--ds-text-muted)]">Beta</div>
         </div>
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
@@ -498,15 +498,15 @@ function CoverageMatrix() {
 
       {/* Coverage gaps */}
       {matrix.coverage_gaps.length > 0 && (
-        <div className="space-y-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+        <div className="space-y-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
           <div className="flex items-center gap-2">
-            <AlertTriangle size={14} className="text-amber-600" />
-            <h3 className="text-xs font-semibold text-amber-600">
+            <AlertTriangle size={14} className="text-[color:var(--ds-warning-text)]" />
+            <h3 className="text-xs font-semibold text-[color:var(--ds-warning-text)]">
               {t("connectors.coverage_gaps" as DashboardKey)}
             </h3>
           </div>
           {matrix.coverage_gaps.map((gap, i) => (
-            <div key={i} className="flex items-start gap-2 text-xs text-amber-700">
+            <div key={i} className="flex items-start gap-2 text-xs text-[color:var(--ds-warning-text)]">
               <Badge
                 variant={
                   gap.severity === "high"
@@ -560,28 +560,28 @@ function CoverageMatrix() {
                 <td className="px-3 py-2 text-[color:var(--ds-text-muted)]">{c.auth_method}</td>
                 <td className="px-3 py-2">
                   {c.gobd_relevant ? (
-                    <CheckCircle2 size={12} className="text-emerald-600" />
+                    <CheckCircle2 size={12} className="text-[color:var(--ds-success-text)]" />
                   ) : (
                     <span className="text-[color:var(--ds-text-subtle)]">—</span>
                   )}
                 </td>
                 <td className="px-3 py-2">
                   {c.gdpr_relevant ? (
-                    <CheckCircle2 size={12} className="text-emerald-600" />
+                    <CheckCircle2 size={12} className="text-[color:var(--ds-success-text)]" />
                   ) : (
                     <span className="text-[color:var(--ds-text-subtle)]">—</span>
                   )}
                 </td>
                 <td className="px-3 py-2">
                   {c.matter_scope ? (
-                    <CheckCircle2 size={12} className="text-emerald-600" />
+                    <CheckCircle2 size={12} className="text-[color:var(--ds-success-text)]" />
                   ) : (
                     <span className="text-[color:var(--ds-text-subtle)]">—</span>
                   )}
                 </td>
                 <td className="px-3 py-2">
                   {c.push_notifications ? (
-                    <CheckCircle2 size={12} className="text-emerald-600" />
+                    <CheckCircle2 size={12} className="text-[color:var(--ds-success-text)]" />
                   ) : (
                     <span className="text-[color:var(--ds-text-subtle)]">—</span>
                   )}

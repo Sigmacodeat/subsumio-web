@@ -162,7 +162,7 @@ export function OverviewTab() {
                   className={cn(
                     "flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium transition-colors md:text-sm",
                     caseData.portalEnabled
-                      ? "text-emerald-600 hover:bg-emerald-500/10"
+                      ? "text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                       : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                   )}
                 >
@@ -285,7 +285,7 @@ export function OverviewTab() {
             })}
           </div>
           {ctx.statusError && (
-            <p className="flex items-center gap-1.5 text-xs text-red-600">
+            <p className="flex items-center gap-1.5 text-xs text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={12} />
               {ctx.statusError}
             </p>
@@ -324,8 +324,8 @@ export function OverviewTab() {
 
       {/* Portal link display */}
       {ctx.portalUrl && (ctx.userRole === "admin" || ctx.userRole === "lawyer") && (
-        <div className="space-y-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
-          <p className="mb-1 text-xs font-medium text-emerald-600">
+        <div className="space-y-2 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-3">
+          <p className="mb-1 text-xs font-medium text-[color:var(--ds-success-text)]">
             {t("cases.detail_portal_valid")}
           </p>
           <div className="flex items-center gap-2">
@@ -362,7 +362,7 @@ export function OverviewTab() {
                   ctx.setSaveError(t("cases.detail_portal_revoke_error"));
                 }
               }}
-              className="shrink-0 text-xs text-red-600 hover:underline"
+              className="shrink-0 text-xs text-[color:var(--ds-danger-text)] hover:underline"
             >
               {t("cases.detail_portal_revoke")}
             </button>
@@ -381,8 +381,8 @@ export function OverviewTab() {
             className={cn(
               "flex items-start gap-2.5 rounded-lg border px-3 py-2.5 text-xs",
               ctx.contactConflict.severity === "critical"
-                ? "border-red-500/30 bg-red-500/5 text-red-600"
-                : "border-amber-500/30 bg-amber-500/5 text-amber-600"
+                ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+                : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
             )}
           >
             {ctx.contactConflict.severity === "critical" ? (
@@ -405,7 +405,7 @@ export function OverviewTab() {
         {caseData.suggestedParties && caseData.suggestedParties.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs font-semibold text-[color:var(--ds-text)]">
-              <Sparkles size={12} className="text-amber-500" />
+              <Sparkles size={12} className="text-[color:var(--ds-warning-text)]" />
               {t("casesdetail.ai_parties")}
             </div>
             {caseData.suggestedParties
@@ -414,7 +414,7 @@ export function OverviewTab() {
               .map(({ sp, originalIndex }) => (
                 <div
                   key={originalIndex}
-                  className="flex items-center justify-between rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2"
+                  className="flex items-center justify-between rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2"
                 >
                   <div className="min-w-0">
                     <span className="text-sm text-[color:var(--ds-text)]">{sp.name}</span>
@@ -427,7 +427,7 @@ export function OverviewTab() {
                       variant="outline"
                       size="sm"
                       disabled={caseData?.status === "archived"}
-                      className="border-emerald-500/30 text-xs text-emerald-600 hover:bg-emerald-500/10"
+                      className="border-[color:var(--ds-success-border)] text-xs text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                       onClick={() => {
                         ctx.setContactDialogRole(
                           sp.role === "Kläger" ||
@@ -457,7 +457,7 @@ export function OverviewTab() {
                       variant="ghost"
                       size="sm"
                       disabled={caseData?.status === "archived"}
-                      className="text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
+                      className="text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                       onClick={() => ctx.confirmSuggestedParty(originalIndex, false)}
                     >
                       <X size={12} />
@@ -615,7 +615,7 @@ export function OverviewTab() {
           </p>
         )}
         {ctx.contacts.length === 0 && !ctx.contactsLoading && (
-          <p className="text-xs text-amber-600">
+          <p className="text-xs text-[color:var(--ds-warning-text)]">
             {t("cases.detail_no_contacts")}{" "}
             <Link href="/dashboard/contacts" className="brand-text hover:underline">
               {t("cases.detail_create_contact")}
@@ -733,7 +733,7 @@ export function OverviewTab() {
                 key={i}
                 className="flex items-start gap-2 text-sm text-[color:var(--ds-text-muted)]"
               >
-                <span className="mt-0.5 text-emerald-600">•</span>
+                <span className="mt-0.5 text-[color:var(--ds-success-text)]">•</span>
                 {def}
               </li>
             ))}
@@ -798,7 +798,7 @@ export function OverviewTab() {
             )}
             {caseData.strategy.risks && caseData.strategy.risks.length > 0 && (
               <div className="mt-3">
-                <h4 className="mb-1 text-xs font-semibold text-red-600">
+                <h4 className="mb-1 text-xs font-semibold text-[color:var(--ds-danger-text)]">
                   {t("cases.detail_risks")}
                 </h4>
                 <ul className="space-y-1">
@@ -901,7 +901,7 @@ export function OverviewTab() {
                         ctx.setExpensesList(updated);
                         ctx.saveCaseUpdate({ expenses: updated });
                       }}
-                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
+                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
                       title={t("cases.detail_exp_delete")}
                     >
                       <Trash2 size={13} />
@@ -919,10 +919,10 @@ export function OverviewTab() {
 
       {/* Contradictions */}
       {caseData.contradictions && caseData.contradictions.length > 0 && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+        <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
           <div className="mb-2 flex items-center gap-2">
-            <AlertTriangle size={14} className="text-amber-600" />
-            <h3 className="text-sm font-semibold text-amber-700">
+            <AlertTriangle size={14} className="text-[color:var(--ds-warning-text)]" />
+            <h3 className="text-sm font-semibold text-[color:var(--ds-warning-text)]">
               Widersprüche erkannt ({caseData.contradictions.length})
             </h3>
           </div>
@@ -941,7 +941,7 @@ export function OverviewTab() {
                 <p className="text-xs text-[color:var(--ds-text-muted)]">{c.description}</p>
                 <div className="mt-2 flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
                   <span className="truncate">{c.value_a}</span>
-                  <span className="shrink-0 text-amber-600">vs</span>
+                  <span className="shrink-0 text-[color:var(--ds-warning-text)]">vs</span>
                   <span className="truncate">{c.value_b}</span>
                 </div>
               </div>
@@ -1226,12 +1226,12 @@ function VerjaehrungsScanCard({ caseSlug, lang }: { caseSlug: string; lang: "de"
   const isWarning = !isCritical && data.score >= 40;
 
   const cardClass = isCritical
-    ? "border-red-500/30 bg-red-500/5"
+    ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
     : isWarning
-      ? "border-amber-500/30 bg-amber-500/5"
-      : "border-emerald-500/30 bg-emerald-500/5";
+      ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
+      : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]";
 
-  const iconClass = isCritical ? "text-red-600" : isWarning ? "text-amber-600" : "text-emerald-600";
+  const iconClass = isCritical ? "text-[color:var(--ds-danger-text)]" : isWarning ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-success-text)]";
 
   const titleText = isCritical
     ? lang === "en"
@@ -1272,10 +1272,10 @@ function VerjaehrungsScanCard({ caseSlug, lang }: { caseSlug: string; lang: "de"
             className={cn(
               "border text-xs",
               data.score >= 75
-                ? "border-red-500/30 bg-red-500/10 text-red-600"
+                ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                 : data.score >= 40
-                  ? "border-amber-500/30 bg-amber-500/10 text-amber-600"
-                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+                  ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                  : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
             )}
           >
             {lang === "en" ? "Risk" : "Risiko"}: {data.score}/100
@@ -1289,13 +1289,13 @@ function VerjaehrungsScanCard({ caseSlug, lang }: { caseSlug: string; lang: "de"
 
       {hasVerjaehrt && (
         <div className="mb-3">
-          <p className="mb-1.5 text-xs font-semibold text-red-600">
+          <p className="mb-1.5 text-xs font-semibold text-[color:var(--ds-danger-text)]">
             ⛔{" "}
             {lang === "en"
               ? "Expired claims — no longer enforceable"
               : "Verjährte Ansprüche — nicht mehr durchsetzbar"}
           </p>
-          <div className="overflow-x-auto rounded-lg border border-red-500/20 bg-[color:var(--ds-surface)]">
+          <div className="overflow-x-auto rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-surface)]">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]">
@@ -1334,13 +1334,13 @@ function VerjaehrungsScanCard({ caseSlug, lang }: { caseSlug: string; lang: "de"
 
       {hasUrgent && (
         <div className="mb-3">
-          <p className="mb-1.5 text-xs font-semibold text-red-600">
+          <p className="mb-1.5 text-xs font-semibold text-[color:var(--ds-danger-text)]">
             🚨{" "}
             {lang === "en"
               ? "Urgent — claims expiring soon"
               : "Dringend — Ansprüche verjähren bald"}
           </p>
-          <div className="overflow-x-auto rounded-lg border border-red-500/20 bg-[color:var(--ds-surface)]">
+          <div className="overflow-x-auto rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-surface)]">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]">
@@ -1369,7 +1369,7 @@ function VerjaehrungsScanCard({ caseSlug, lang }: { caseSlug: string; lang: "de"
                     <td
                       className={cn(
                         "px-2 py-1.5 font-mono font-medium",
-                        (u.restzeit_tage ?? 0) <= 30 ? "text-red-600" : "text-amber-600"
+                        (u.restzeit_tage ?? 0) <= 30 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-warning-text)]"
                       )}
                     >
                       {u.restzeit_tage ?? "—"} {lang === "en" ? "d" : "T"}
@@ -1522,9 +1522,9 @@ function InstitutionChecklistCard({ caseSlug, lang }: { caseSlug: string; lang: 
               className={cn(
                 "flex items-start gap-3 rounded-lg border px-3 py-2",
                 inst.priority?.includes("URGENT")
-                  ? "border-red-500/20 bg-red-500/5"
+                  ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
                   : inst.priority?.includes("WARNUNG")
-                    ? "border-amber-500/20 bg-amber-500/5"
+                    ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]"
               )}
             >

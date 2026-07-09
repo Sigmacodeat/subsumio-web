@@ -256,11 +256,11 @@ export default function TaxClientsPage() {
               <Card key={client.slug} className="space-y-3 p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-info-bg)]">
                       {fm.client_type === "company" ? (
-                        <Building2 size={18} className="text-blue-500" />
+                        <Building2 size={18} className="text-[color:var(--ds-info-text)]" />
                       ) : (
-                        <User size={18} className="text-blue-500" />
+                        <User size={18} className="text-[color:var(--ds-info-text)]" />
                       )}
                     </div>
                     <div>
@@ -300,7 +300,7 @@ export default function TaxClientsPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setDeleteOpen(client.slug)}
-                      className="h-8 w-8 p-0 text-red-600 hover:bg-red-500/10"
+                      className="h-8 w-8 p-0 text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
                     >
                       <Trash2 size={14} />
                     </Button>
@@ -487,7 +487,7 @@ export default function TaxClientsPage() {
       <Dialog open={deleteOpen !== null} onOpenChange={(v) => !v && setDeleteOpen(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-[color:var(--ds-danger-text)]">
               <AlertCircle size={18} /> {t("tax.detail.delete_title")}
             </DialogTitle>
             <DialogDescription>{t("tax.detail.delete_desc")}</DialogDescription>

@@ -110,7 +110,7 @@ export default function ApprovalsPage() {
       </div>
 
       {error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-[color:var(--ds-danger-text)]" role="alert">
           {error}
         </p>
       )}
@@ -128,7 +128,7 @@ export default function ApprovalsPage() {
           {/* Offen */}
           <section className="space-y-2">
             <div className="flex items-center gap-2">
-              <Clock size={14} className="text-amber-600" aria-hidden="true" />
+              <Clock size={14} className="text-[color:var(--ds-warning-text)]" aria-hidden="true" />
               <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
                 {t("approvals.pending_title")} ({pending.length})
               </h2>
@@ -141,7 +141,7 @@ export default function ApprovalsPage() {
               pending.map((item) => (
                 <div
                   key={item.slug}
-                  className="space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-4"
+                  className="space-y-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-amber-500/[0.04] p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -181,7 +181,7 @@ export default function ApprovalsPage() {
                         rows={2}
                         placeholder={t("approvals.reject_placeholder")}
                         aria-label={t("approvals.reject_reason")}
-                        className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-red-500/50 focus:outline-none"
+                        className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-danger-border)] focus:outline-none"
                       />
                       <div className="flex items-center gap-2">
                         <Button
@@ -265,14 +265,14 @@ export default function ApprovalsPage() {
                     {item.status === "approved" ? (
                       <Badge
                         variant="default"
-                        className="border border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+                        className="border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
                       >
                         {t("approvals.status_approved")}
                       </Badge>
                     ) : (
                       <Badge
                         variant="default"
-                        className="border border-red-500/20 bg-red-500/10 text-xs text-red-600"
+                        className="border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
                       >
                         {t("approvals.status_rejected")}
                       </Badge>
@@ -291,12 +291,12 @@ export default function ApprovalsPage() {
                       : ""}
                   </p>
                   {item.execution_error && (
-                    <p className="mt-1 text-xs text-red-600/80">
+                    <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]/80">
                       {t("approvals.execution_error")}: {item.execution_error}
                     </p>
                   )}
                   {item.reject_reason && (
-                    <p className="mt-1 text-xs text-red-600/80">
+                    <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]/80">
                       {t("approvals.reason_label")}: {item.reject_reason}
                     </p>
                   )}

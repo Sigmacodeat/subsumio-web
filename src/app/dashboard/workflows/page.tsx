@@ -79,9 +79,9 @@ const stepStatusIcons: Record<StepStatus, typeof CheckCircle2> = {
 
 const stepStatusColors: Record<StepStatus, string> = {
   pending: "text-[color:var(--ds-text-muted)]",
-  running: "text-blue-500",
-  approved: "text-emerald-600",
-  rejected: "text-red-600",
+  running: "text-[color:var(--ds-info-text)]",
+  approved: "text-[color:var(--ds-success-text)]",
+  rejected: "text-[color:var(--ds-danger-text)]",
   skipped: "text-[color:var(--ds-text-muted)]",
 };
 
@@ -218,15 +218,15 @@ export default function WorkflowsPage() {
 
       {error && (
         <div
-          className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3"
+          className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3"
           role="alert"
         >
-          <AlertCircle size={16} className="shrink-0 text-red-600" />
-          <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+          <AlertCircle size={16} className="shrink-0 text-[color:var(--ds-danger-text)]" />
+          <p className="text-sm text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">{error}</p>
           <Button
             size="icon"
             variant="ghost"
-            className="ml-auto text-red-600 hover:text-red-700"
+            className="ml-auto text-[color:var(--ds-danger-text)] hover:text-[color:var(--ds-danger-text)]"
             onClick={() => setError(null)}
           >
             <XCircle size={16} />
@@ -414,7 +414,7 @@ export default function WorkflowsPage() {
               ))}
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
+              <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--ds-info-solid)]" />
               <span className="text-xs text-[color:var(--ds-text-muted)]">{activeCount} aktiv</span>
             </div>
           </div>
@@ -475,9 +475,9 @@ function WorkflowCard({
       className={cn(
         "overflow-hidden rounded-xl border bg-[color:var(--ds-surface)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
         fm.status === "failed"
-          ? "border-red-500/20"
+          ? "border-[color:var(--ds-danger-border)]"
           : fm.status === "completed"
-            ? "border-emerald-500/20"
+            ? "border-[color:var(--ds-success-border)]"
             : "border-[color:var(--ds-border)]"
       )}
     >
@@ -523,9 +523,9 @@ function WorkflowCard({
               className={cn(
                 "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                 fm.status === "failed"
-                  ? "bg-red-500"
+                  ? "bg-[color:var(--ds-danger-solid)]"
                   : fm.status === "completed"
-                    ? "bg-emerald-500"
+                    ? "bg-[color:var(--ds-success-solid)]"
                     : "brand-bg"
               )}
               style={{ width: `${progress.percentage}%` }}
@@ -571,7 +571,7 @@ function WorkflowCard({
           {pendingApprovals.length > 0 && (
             <a
               href="/dashboard/approvals"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/[0.04] px-3 py-1.5 text-xs text-amber-700 transition-colors hover:bg-amber-500/[0.08] dark:text-amber-400"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-warning-border)] bg-amber-500/[0.04] px-3 py-1.5 text-xs text-[color:var(--ds-warning-text)] transition-colors hover:bg-amber-500/[0.08] dark:text-[color:var(--ds-warning-text)]"
             >
               <Clock size={13} />
               {pendingApprovals.length} Freigabe{pendingApprovals.length > 1 ? "n" : ""} offen — zu
@@ -585,12 +585,12 @@ function WorkflowCard({
             .map((s) => (
               <div
                 key={`err-${s.id}`}
-                className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2"
+                className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2"
               >
-                <AlertCircle size={14} className="mt-0.5 shrink-0 text-red-600" />
+                <AlertCircle size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]" />
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-red-700 dark:text-red-400">{s.label}</p>
-                  <p className="mt-0.5 text-xs text-red-600/80">{s.error}</p>
+                  <p className="text-xs font-medium text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">{s.label}</p>
+                  <p className="mt-0.5 text-xs text-[color:var(--ds-danger-text)]/80">{s.error}</p>
                 </div>
               </div>
             ))}

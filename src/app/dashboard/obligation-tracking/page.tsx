@@ -21,10 +21,10 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 
 const URGENCY_STYLES: Record<string, string> = {
-  low: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  medium: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  high: "bg-orange-500/10 text-orange-600 border-orange-500/20",
-  critical: "bg-red-500/10 text-red-600 border-red-500/20",
+  low: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
+  medium: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
+  high: "bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)] border-[color:var(--ds-attention-border)]",
+  critical: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
 };
 
 const TYPE_ICONS: Record<string, typeof ClipboardList> = {
@@ -117,7 +117,7 @@ export default function ObligationTrackingPage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={t("obligations.placeholder_contract_text")}
-            className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
+            className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none"
           />
         )}
 
@@ -146,7 +146,7 @@ export default function ObligationTrackingPage() {
         <Button
           onClick={run}
           disabled={loading || !canRun}
-          className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
+          className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
         >
           {loading ? <Loader2 size={15} className="animate-spin" /> : <ClipboardList size={15} />}
           {t("obligations.btn_extract")}
@@ -154,7 +154,7 @@ export default function ObligationTrackingPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
@@ -201,7 +201,7 @@ export default function ObligationTrackingPage() {
                         {o.recurring && o.recurring !== "one-time" && (
                           <Badge
                             variant="default"
-                            className="border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
+                            className="border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
                           >
                             {o.recurring}
                           </Badge>
@@ -245,7 +245,7 @@ export default function ObligationTrackingPage() {
                     {r.auto_renew && (
                       <Badge
                         variant="default"
-                        className="border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
+                        className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
                       >
                         Auto-Renewal
                       </Badge>
@@ -271,7 +271,7 @@ export default function ObligationTrackingPage() {
                     {p.amount && (
                       <Badge
                         variant="default"
-                        className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+                        className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
                       >
                         {p.amount}
                       </Badge>
@@ -296,7 +296,7 @@ export default function ObligationTrackingPage() {
                     <span className="text-[color:var(--ds-text-muted)]">{n.notice_period}</span>
                     <Badge
                       variant="default"
-                      className="border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
+                      className="border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
                     >
                       {n.days} Tage
                     </Badge>
@@ -308,9 +308,9 @@ export default function ObligationTrackingPage() {
 
           {/* Warnings */}
           {result.warnings.length > 0 && (
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+            <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3">
               {result.warnings.map((w, i) => (
-                <p key={i} className="text-xs text-amber-600">
+                <p key={i} className="text-xs text-[color:var(--ds-warning-text)]">
                   {w}
                 </p>
               ))}

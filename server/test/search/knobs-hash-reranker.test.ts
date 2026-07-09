@@ -58,7 +58,8 @@ describe("KNOBS_HASH_VERSION + version invariants", () => {
     // autocut. issue #1777: 8→9 archive/ demote (search-exclude policy change
     // isn't in the hash, so the bump invalidates archive-excluded cache rows).
     // v0.43: 9→10 relational recall arm (rel=/reld=).
-    expect(KNOBS_HASH_VERSION).toBe(10);
+    // v0.46: 10→11 cognitive tier cascade (ct=/ct3=/ct2=/ct1=/ct0=).
+    expect(KNOBS_HASH_VERSION).toBe(11);
   });
 
   test("hash is 16 hex chars regardless of reranker config", () => {

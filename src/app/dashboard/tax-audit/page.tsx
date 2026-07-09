@@ -54,11 +54,11 @@ const PHASE_LABELS_EN: Record<TaxAuditPhase, string> = {
 };
 
 const PHASE_COLORS: Record<TaxAuditPhase, string> = {
-  vorbereitung: "border-blue-500/20 bg-blue-500/10 text-blue-600",
-  pruefung: "border-amber-500/20 bg-amber-500/10 text-amber-600",
+  vorbereitung: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+  pruefung: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   abschluss: "border-violet-500/20 bg-violet-500/10 text-violet-600",
-  rechtsbehelf: "border-orange-500/20 bg-orange-500/10 text-orange-600",
-  abgeschlossen: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600",
+  rechtsbehelf: "border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]",
+  abgeschlossen: "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
 };
 
 const AUDIT_TYPES_DE: Record<AuditType, string> = {
@@ -311,13 +311,13 @@ export default function TaxAuditPage() {
 
       {/* Error with retry */}
       {loadError && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <span>{loadError}</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => void loadAudits()}
-            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             <RotateCcw size={13} />
             {t("tax.audit.retry")}
@@ -409,7 +409,7 @@ export default function TaxAuditPage() {
                       {a.findings && a.findings.length > 0 ? (
                         <span className="inline-flex items-center gap-1">
                           {a.findings.filter((f) => f.accepted).length}/{a.findings.length}
-                          <CheckCircle size={12} className="text-emerald-500" />
+                          <CheckCircle size={12} className="text-[color:var(--ds-success-text)]" />
                         </span>
                       ) : (
                         <span className="text-[color:var(--ds-text-subtle)]">—</span>

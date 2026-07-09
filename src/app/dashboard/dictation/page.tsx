@@ -91,9 +91,9 @@ export default function DictationPage() {
       />
 
       {pendingCount > 0 && (
-        <div className="flex items-start gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
-          <FileText size={16} className="mt-0.5 shrink-0 text-blue-600" />
-          <p className="text-sm text-blue-600">
+        <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-4 py-3">
+          <FileText size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]" />
+          <p className="text-sm text-[color:var(--ds-info-text)]">
             <strong>{pendingCount}</strong> {t("dictation.pending")}
           </p>
         </div>
@@ -183,7 +183,7 @@ export default function DictationPage() {
                   <span className="text-sm font-medium">{entry.lawyer_name}</span>
                   <Badge
                     variant="default"
-                    className={`text-xs ${entry.status === "filed" ? "border-green-500/30 text-green-600" : entry.status === "failed" ? "border-red-500/30 text-red-600" : ""}`}
+                    className={`text-xs ${entry.status === "filed" ? "border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]" : entry.status === "failed" ? "border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]" : ""}`}
                   >
                     {entry.status === "recording"
                       ? "Aufnahme"

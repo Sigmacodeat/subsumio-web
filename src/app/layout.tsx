@@ -16,16 +16,18 @@ import "./globals.css";
 // next/font self-hosts at build time — zero runtime requests to Google
 // (GDPR: no visitor IP ever reaches fonts.googleapis.com) and no
 // render-blocking CSS @import.
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "optional" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap", preload: true });
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-grotesk",
-  display: "optional",
+  display: "swap",
+  preload: true,
 });
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains",
-  display: "optional",
+  display: "swap",
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -34,7 +36,7 @@ export const metadata: Metadata = {
     template: "%s — Subsumio",
   },
   description:
-    "KI-Kanzleisoftware & Anwaltssoftware für Rechtsanwälte in AT, DE & CH: Aktenverwaltung, Fristenmanagement nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. DSGVO-konform, AVV, On-Premise oder EU-Cloud.",
+    "KI-Kanzleisoftware für Anwälte in AT, DE & CH: Akten, Fristen, belegte KI-Antworten mit Fundstellen. DSGVO-konform. On-Premise oder EU-Cloud.",
   keywords: [
     // Cluster A: Kanzleisoftware (high-volume transactional)
     "Kanzleisoftware",

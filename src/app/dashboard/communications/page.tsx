@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -63,16 +63,16 @@ const CHANNEL_LABEL: Record<UnifiedMessage["channel"], { de: string; en: string 
 };
 
 const CHANNEL_BADGE: Record<UnifiedMessage["channel"], string> = {
-  bea: "border-blue-500/20 bg-blue-500/10 text-blue-600",
-  whatsapp: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600",
+  bea: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+  whatsapp: "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
   email: "border-violet-500/20 bg-violet-500/10 text-violet-600",
-  portal: "border-amber-500/20 bg-amber-500/10 text-amber-600",
+  portal: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
 };
 
 const URGENCY_STYLES: Record<string, string> = {
-  critical: "border-red-500/20 bg-red-500/10 text-red-600",
-  high: "border-orange-500/20 bg-orange-500/10 text-orange-600",
-  medium: "border-amber-500/20 bg-amber-500/10 text-amber-600",
+  critical: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  high: "border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]",
+  medium: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   low: "border-slate-500/20 bg-slate-500/10 text-slate-600",
 };
 
@@ -210,6 +210,13 @@ export default function CommunicationsPage() {
   const [view, setView] = useState<View>("messages");
   const [channel, setChannel] = useState<Channel>("all");
   const [search, setSearch] = useState("");
+
+  // Deep link: /dashboard/communications?view=review opens the review inbox
+  // directly (used by sidebar badge + dashboard action banner).
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("view");
+    if (requested === "review" || requested === "messages") setView(requested);
+  }, []);
 
   const batchQuery = useQuery({
     queryKey: ["communications", "batch"],
@@ -471,7 +478,7 @@ export default function CommunicationsPage() {
                 {triageSummary.critical > 0 && (
                   <Badge
                     variant="default"
-                    className="border border-red-500/20 bg-red-500/10 text-xs text-red-600"
+                    className="border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
                   >
                     {triageSummary.critical} {lang === "en" ? "critical" : "kritisch"}
                   </Badge>
@@ -479,7 +486,7 @@ export default function CommunicationsPage() {
                 {triageSummary.high > 0 && (
                   <Badge
                     variant="default"
-                    className="border border-orange-500/20 bg-orange-500/10 text-xs text-orange-600"
+                    className="border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-xs text-[color:var(--ds-attention-text)]"
                   >
                     {triageSummary.high} {lang === "en" ? "high" : "hoch"}
                   </Badge>
@@ -487,7 +494,7 @@ export default function CommunicationsPage() {
                 {triageSummary.medium > 0 && (
                   <Badge
                     variant="default"
-                    className="border border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
+                    className="border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
                   >
                     {triageSummary.medium} {lang === "en" ? "medium" : "mittel"}
                   </Badge>
@@ -508,8 +515,8 @@ export default function CommunicationsPage() {
                     className={cn(
                       "group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,background-color,box-shadow] duration-200 hover:border-[color:var(--brand-primary)]/30 hover:bg-[color:var(--ds-hover)]",
                       !msg.read && "border-l-2 border-l-[color:var(--brand-primary)]",
-                      card?.urgency === "critical" && "border-l-2 border-l-red-500",
-                      card?.urgency === "high" && "border-l-2 border-l-orange-500"
+                      card?.urgency === "critical" && "border-l-2 border-l-[color:var(--ds-danger-solid)]",
+                      card?.urgency === "high" && "border-l-2 border-l-[color:var(--ds-attention-solid)]"
                     )}
                   >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
@@ -544,7 +551,7 @@ export default function CommunicationsPage() {
                           </span>
                         )}
                         {card?.deadline && (
-                          <span className="flex shrink-0 items-center gap-1 text-xs text-red-600">
+                          <span className="flex shrink-0 items-center gap-1 text-xs text-[color:var(--ds-danger-text)]">
                             <AlertTriangle size={10} />
                             {card.deadline}
                           </span>
@@ -582,7 +589,7 @@ export default function CommunicationsPage() {
                               })
                             }
                             disabled={triageActionMutation.isPending}
-                            className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-2 py-1 text-xs text-emerald-600 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
+                            className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-colors hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50"
                           >
                             <CheckCircle2 size={12} />
                             {tr("triage_accept", lang)}
@@ -595,7 +602,7 @@ export default function CommunicationsPage() {
                               })
                             }
                             disabled={triageActionMutation.isPending}
-                            className="inline-flex items-center gap-1 rounded-lg border border-red-500/20 bg-red-500/5 px-2 py-1 text-xs text-red-600 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+                            className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-1 text-xs text-[color:var(--ds-danger-text)] transition-colors hover:bg-[color:var(--ds-danger-bg)] disabled:opacity-50"
                           >
                             <Ban size={12} />
                             {tr("triage_reject", lang)}
@@ -611,7 +618,7 @@ export default function CommunicationsPage() {
                                 })
                               }
                               disabled={triageActionMutation.isPending}
-                              className="inline-flex items-center gap-1 rounded-lg border border-orange-500/20 bg-orange-500/5 px-2 py-1 text-xs text-orange-600 transition-colors hover:bg-orange-500/10 disabled:opacity-50"
+                              className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] px-2 py-1 text-xs text-[color:var(--ds-attention-text)] transition-colors hover:bg-[color:var(--ds-attention-bg)] disabled:opacity-50"
                             >
                               <Clock size={12} />
                               {tr("triage_deadline", lang)}

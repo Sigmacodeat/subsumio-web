@@ -4,5 +4,5 @@ export const size = ogImageSize;
 export const contentType = ogImageContentType;
 
 export default function Image() {
-  return renderOgImage("Benchmark-Methodik — Recall@5, Hallucination Rate, Latency", "Methodik");
+  return renderOgImage("Benchmark-Methodik — Recall@8, Hallucination Rate, Latency", "Methodik");
 }

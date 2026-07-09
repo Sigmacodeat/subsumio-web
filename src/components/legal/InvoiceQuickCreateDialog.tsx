@@ -532,8 +532,8 @@ export function InvoiceQuickCreateDialog({
         <form onSubmit={handleSubmit} className="flex max-h-[85vh] flex-col">
           <DialogHeader className="px-6 pt-6 pb-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/10">
-                <FileText size={16} className="text-emerald-600" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]">
+                <FileText size={16} className="text-[color:var(--ds-success-text)]" />
               </div>
               <DialogTitle>{t("inv.quick_title" as DashboardKey)}</DialogTitle>
             </div>
@@ -591,13 +591,13 @@ export function InvoiceQuickCreateDialog({
                       <span className="text-[color:var(--ds-text-muted)]">
                         {t("inv.fee_estimated" as DashboardKey)}
                       </span>
-                      <span className="font-bold text-emerald-600">
+                      <span className="font-bold text-[color:var(--ds-success-text)]">
                         {estimatedFee.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €
                       </span>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 text-sm text-amber-600">
+                  <div className="flex items-center gap-2 text-sm text-[color:var(--ds-warning-text)]">
                     <AlertTriangle size={14} />
                     {t("inv.no_billable" as DashboardKey)}
                   </div>
@@ -731,7 +731,7 @@ export function InvoiceQuickCreateDialog({
                         {rvgResult.terminsgebuehr.toFixed(2)} €
                       </span>
                     </div>
-                    <div className="flex justify-between border-t border-[color:var(--ds-border)] pt-1.5 font-semibold text-emerald-600">
+                    <div className="flex justify-between border-t border-[color:var(--ds-border)] pt-1.5 font-semibold text-[color:var(--ds-success-text)]">
                       <span>{t("inv.rvg_brutto" as DashboardKey)}</span>
                       <span>{rvgResult.summeBrutto.toFixed(2)} €</span>
                     </div>
@@ -746,14 +746,14 @@ export function InvoiceQuickCreateDialog({
                   <p className="text-xs font-medium uppercase tracking-wide text-[color:var(--ds-text-subtle)]">{t("inv.preview_title")}</p>
                   <p className="mt-1 text-base font-semibold text-[color:var(--ds-text)]">{nextInvoiceNumber(invoices)}</p>
                 </div>
-                <FileText size={22} className="text-emerald-600" aria-hidden="true" />
+                <FileText size={22} className="text-[color:var(--ds-success-text)]" aria-hidden="true" />
               </div>
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between gap-4"><dt className="text-[color:var(--ds-text-muted)]">{t("inv.preview_client")}</dt><dd className="text-right font-medium text-[color:var(--ds-text)]">{selectedCase?.client || "—"}</dd></div>
                 <div className="flex justify-between gap-4"><dt className="text-[color:var(--ds-text-muted)]">{t("inv.preview_positions")}</dt><dd className="font-medium text-[color:var(--ds-text)]">{openTime.length + openExpenses.length}</dd></div>
                 <div className="flex justify-between gap-4"><dt className="text-[color:var(--ds-text-muted)]">{t("inv.preview_subtotal")}</dt><dd className="font-medium text-[color:var(--ds-text)]">{(rvgResult?.summeNetto ?? estimatedFee).toFixed(2)} €</dd></div>
                 <div className="flex justify-between gap-4"><dt className="text-[color:var(--ds-text-muted)]">{t("inv.preview_vat")}</dt><dd className="font-medium text-[color:var(--ds-text)]">{(((rvgResult?.summeNetto ?? estimatedFee) + expenseTotal) * 0.19).toFixed(2)} €</dd></div>
-                <div className="flex justify-between gap-4 border-t border-[color:var(--ds-border)] pt-3 text-base"><dt className="font-semibold text-[color:var(--ds-text)]">{t("inv.preview_total")}</dt><dd className="font-bold text-emerald-600">{(((rvgResult?.summeNetto ?? estimatedFee) + expenseTotal) * 1.19 - (parseFloat(advancePayment) || 0)).toFixed(2)} €</dd></div>
+                <div className="flex justify-between gap-4 border-t border-[color:var(--ds-border)] pt-3 text-base"><dt className="font-semibold text-[color:var(--ds-text)]">{t("inv.preview_total")}</dt><dd className="font-bold text-[color:var(--ds-success-text)]">{(((rvgResult?.summeNetto ?? estimatedFee) + expenseTotal) * 1.19 - (parseFloat(advancePayment) || 0)).toFixed(2)} €</dd></div>
               </dl>
             </aside>
           </div>
@@ -772,7 +772,7 @@ export function InvoiceQuickCreateDialog({
                 type="submit"
                 variant="primary"
                 disabled={submitting || !canSubmit}
-                className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
+                className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
               >
                 {submitting ? (
                   <Loader2 size={16} className="animate-spin" />

@@ -530,7 +530,7 @@ export default function NewCasePage() {
       {form.error && (
         <div
           role="alert"
-          className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600"
+          className="mb-4 flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
         >
           <AlertTriangle size={16} />
           {form.error}
@@ -540,7 +540,7 @@ export default function NewCasePage() {
       {serverConflict && (
         <div
           role="alert"
-          className="mb-4 space-y-3 rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600"
+          className="mb-4 space-y-3 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
         >
           <div className="flex items-start gap-2.5">
             <ShieldAlert size={16} className="mt-0.5 shrink-0" />
@@ -557,7 +557,7 @@ export default function NewCasePage() {
               </li>
             ))}
           </ul>
-          <div className="space-y-1.5 border-t border-red-500/20 pt-2.5">
+          <div className="space-y-1.5 border-t border-[color:var(--ds-danger-border)] pt-2.5">
             <Label htmlFor="waiver-reason" className="text-xs font-semibold">
               {t("casesnew.waiver_label")}
             </Label>
@@ -586,8 +586,8 @@ export default function NewCasePage() {
           className={cn(
             "mb-4 flex items-start gap-2.5 rounded-lg border px-4 py-3 text-sm",
             conflictResult.severity === "critical"
-              ? "border-red-500/30 bg-red-500/5 text-red-600"
-              : "border-amber-500/30 bg-amber-500/5 text-amber-600"
+              ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+              : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
           )}
         >
           {conflictResult.severity === "critical" ? (
@@ -625,7 +625,7 @@ export default function NewCasePage() {
                 autoFocus
               />
               {f.formState.errors.title && (
-                <p className="mt-1 text-xs text-red-600">{f.formState.errors.title.message}</p>
+                <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{f.formState.errors.title.message}</p>
               )}
             </div>
 
@@ -714,7 +714,7 @@ export default function NewCasePage() {
                   </SelectContent>
                 </Select>
                 {f.formState.errors.jurisdiction && (
-                  <p className="mt-1 text-xs text-red-600">
+                  <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
                     {f.formState.errors.jurisdiction.message}
                   </p>
                 )}
@@ -889,7 +889,7 @@ export default function NewCasePage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => removeAdditionalOpponent(idx)}
-                        className="shrink-0 text-[color:var(--ds-text-muted)] hover:text-red-600"
+                        className="shrink-0 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                       >
                         <Trash2 size={14} />
                       </Button>
@@ -1006,7 +1006,7 @@ export default function NewCasePage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => removeRelatedCase(idx)}
-                        className="shrink-0 text-[color:var(--ds-text-muted)] hover:text-red-600"
+                        className="shrink-0 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                       >
                         <Trash2 size={14} />
                       </Button>

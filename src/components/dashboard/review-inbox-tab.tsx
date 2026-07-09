@@ -91,16 +91,16 @@ const TYPE_LABEL: Record<ReviewItem["type"], { de: string; en: string }> = {
 };
 
 const TYPE_BADGE: Record<ReviewItem["type"], string> = {
-  suggested_deadline: "border-amber-500/20 bg-amber-500/10 text-amber-600",
-  document_request: "border-blue-500/20 bg-blue-500/10 text-blue-600",
-  client_submission: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600",
+  suggested_deadline: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  document_request: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+  client_submission: "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
   suggested_party: "border-purple-500/20 bg-purple-500/10 text-purple-600",
   pending_fact: "border-cyan-500/20 bg-cyan-500/10 text-cyan-600",
 };
 
 const PRIORITY_STYLES: Record<string, string> = {
-  high: "border-l-2 border-l-red-500",
-  medium: "border-l-2 border-l-amber-500",
+  high: "border-l-2 border-l-[color:var(--ds-danger-solid)]",
+  medium: "border-l-2 border-l-[color:var(--ds-warning-solid)]",
   low: "border-l-2 border-l-[color:var(--ds-border)]",
 };
 
@@ -479,7 +479,7 @@ export function ReviewInboxTab() {
       {/* Empty */}
       {!loading && !error && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <ClipboardCheck size={32} className="text-emerald-500" />
+          <ClipboardCheck size={32} className="text-[color:var(--ds-success-text)]" />
           <p className="max-w-md text-sm text-[color:var(--ds-text-muted)]">{tr("empty", lang)}</p>
         </div>
       )}
@@ -517,8 +517,8 @@ export function ReviewInboxTab() {
                         className={cn(
                           "shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium",
                           item.urgency === "high" || item.urgency === "critical"
-                            ? "border-red-500/20 bg-red-500/10 text-red-600"
-                            : "border-amber-500/20 bg-amber-500/10 text-amber-600"
+                            ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+                            : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
                         )}
                       >
                         {item.urgency}
@@ -570,7 +570,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-2 py-1 text-xs text-emerald-600 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-colors hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50"
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -600,7 +600,7 @@ export function ReviewInboxTab() {
                           })
                         }
                         disabled={busy}
-                        className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-2 py-1 text-xs text-emerald-600 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-colors hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50"
                       >
                         {busy ? (
                           <Loader2 size={12} className="animate-spin" />
@@ -621,7 +621,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-2 py-1 text-xs text-emerald-600 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-colors hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50"
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -639,7 +639,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-red-500/20 bg-red-500/5 px-2 py-1 text-xs text-red-600 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-1 text-xs text-[color:var(--ds-danger-text)] transition-colors hover:bg-[color:var(--ds-danger-bg)] disabled:opacity-50"
                         >
                           {busy ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />}
                           {tr("reject", lang)}
@@ -657,7 +657,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-2 py-1 text-xs text-emerald-600 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-colors hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50"
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -675,7 +675,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-blue-500/20 bg-blue-500/5 px-2 py-1 text-xs text-blue-600 transition-colors hover:bg-blue-500/10 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-2 py-1 text-xs text-[color:var(--ds-info-text)] transition-colors hover:bg-[color:var(--ds-info-bg)] disabled:opacity-50"
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -697,7 +697,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-2 py-1 text-xs text-emerald-600 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-colors hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50"
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -715,7 +715,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-red-500/20 bg-red-500/5 px-2 py-1 text-xs text-red-600 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-1 text-xs text-[color:var(--ds-danger-text)] transition-colors hover:bg-[color:var(--ds-danger-bg)] disabled:opacity-50"
                         >
                           {busy ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />}
                           {tr("reject", lang)}
@@ -733,7 +733,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-2 py-1 text-xs text-emerald-600 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-1 text-xs text-[color:var(--ds-success-text)] transition-colors hover:bg-[color:var(--ds-success-bg)] disabled:opacity-50"
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -751,7 +751,7 @@ export function ReviewInboxTab() {
                             })
                           }
                           disabled={busy}
-                          className="inline-flex items-center gap-1 rounded-lg border border-amber-500/20 bg-amber-500/5 px-2 py-1 text-xs text-amber-600 transition-colors hover:bg-amber-500/10 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-1 text-xs text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-warning-bg)] disabled:opacity-50"
                         >
                           {busy ? (
                             <Loader2 size={12} className="animate-spin" />

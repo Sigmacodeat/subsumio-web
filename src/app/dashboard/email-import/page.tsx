@@ -78,7 +78,7 @@ export default function EmailImportPage() {
           );
           void onDrop(files);
         }}
-        className="cursor-pointer rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-blue-500/30 hover:bg-blue-500/[0.02]"
+        className="cursor-pointer rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-info-border)] hover:bg-blue-500/[0.02]"
         onClick={() => document.getElementById("email-file-input")?.click()}
       >
         <Upload size={32} className="mx-auto mb-3 text-[color:var(--ds-border)]" />
@@ -97,7 +97,7 @@ export default function EmailImportPage() {
       </div>
 
       {importError && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           {importError}
         </div>
       )}
@@ -110,7 +110,7 @@ export default function EmailImportPage() {
             </h2>
             <Button
               variant="primary"
-              className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
+              className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
               onClick={importEmails}
               disabled={importing}
             >
@@ -121,10 +121,10 @@ export default function EmailImportPage() {
 
           {Object.keys(results).length > 0 && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm">
-              <CheckCircle2 size={14} className="mr-1 inline text-emerald-600" />
+              <CheckCircle2 size={14} className="mr-1 inline text-[color:var(--ds-success-text)]" />
               {matchedCount} {t("email_import.matched")}
               {unmatchedCount > 0 && (
-                <span className="ml-2 text-amber-700">
+                <span className="ml-2 text-[color:var(--ds-warning-text)]">
                   <AlertTriangle size={14} className="mr-1 inline" />
                   {unmatchedCount} {t("email_import.unmatched")}
                 </span>
@@ -145,11 +145,11 @@ export default function EmailImportPage() {
                       {email.subject}
                     </span>
                     {email.confidence === "high" ? (
-                      <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-xs text-emerald-600">
+                      <span className="rounded-full border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-1.5 py-0.5 text-xs text-[color:var(--ds-success-text)]">
                         {t("email_import.confidence_high")}
                       </span>
                     ) : (
-                      <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-xs text-amber-600">
+                      <span className="rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-1.5 py-0.5 text-xs text-[color:var(--ds-warning-text)]">
                         {t("email_import.confidence_low")}
                       </span>
                     )}
@@ -164,14 +164,14 @@ export default function EmailImportPage() {
                   )}
 
                   {!result && email.suggestedCaseSlug && (
-                    <div className="flex items-center gap-1 text-xs text-blue-600">
+                    <div className="flex items-center gap-1 text-xs text-[color:var(--ds-info-text)]">
                       <Link size={12} />
                       {t("email_import.suggested")} {email.suggestedCaseSlug}
                     </div>
                   )}
 
                   {result?.success && result.matchedCase && (
-                    <div className="flex items-center gap-1 text-xs text-emerald-600">
+                    <div className="flex items-center gap-1 text-xs text-[color:var(--ds-success-text)]">
                       <Link size={12} />
                       {result.duplicate
                         ? t("email_import.assigned_dup") + " "
@@ -182,7 +182,7 @@ export default function EmailImportPage() {
                   )}
 
                   {result && !result.success && (
-                    <div className="space-y-1 text-xs text-amber-700">
+                    <div className="space-y-1 text-xs text-[color:var(--ds-warning-text)]">
                       <div className="flex items-center gap-1">
                         <AlertTriangle size={12} />
                         {result.message ?? t("email_import.no_match")}

@@ -122,7 +122,7 @@ export function TaxWidgetBoard() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 px-4 py-3 text-sm text-rose-600">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertCircle size={16} />
           {error}
         </div>
@@ -170,9 +170,9 @@ export function TaxWidgetBoard() {
                 key={d.id}
                 className={`flex items-center justify-between rounded-lg border px-3 py-2 ${
                   d.isOverdue
-                    ? "border-rose-500/20 bg-rose-500/5"
+                    ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
                     : d.isUrgent
-                      ? "border-amber-500/20 bg-amber-500/5"
+                      ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
                       : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
                 }`}
               >
@@ -180,9 +180,9 @@ export function TaxWidgetBoard() {
                 <span
                   className={`text-xs ${
                     d.isOverdue
-                      ? "text-rose-600"
+                      ? "text-[color:var(--ds-danger-text)]"
                       : d.isUrgent
-                        ? "text-amber-600"
+                        ? "text-[color:var(--ds-warning-text)]"
                         : "text-[color:var(--ds-text-subtle)]"
                   }`}
                 >
@@ -225,11 +225,11 @@ export function TaxWidgetBoard() {
                   className="flex items-center gap-2 rounded-lg px-2 py-2 hover:bg-[color:var(--ds-hover)]"
                 >
                   {type === "return" ? (
-                    <FileText size={14} className="text-emerald-500" />
+                    <FileText size={14} className="text-[color:var(--ds-success-text)]" />
                   ) : type === "assessment" ? (
-                    <FileCheck size={14} className="text-amber-500" />
+                    <FileCheck size={14} className="text-[color:var(--ds-warning-text)]" />
                   ) : (
-                    <ClipboardCheck size={14} className="text-rose-500" />
+                    <ClipboardCheck size={14} className="text-[color:var(--ds-danger-text)]" />
                   )}
                   <span className="min-w-0 flex-1 truncate text-sm text-[color:var(--ds-text)]">
                     {page.title}

@@ -301,7 +301,7 @@ export function SettingsHub({ userRole }: { userRole: string }) {
                         {kanzleiWarning && tile.href === "/dashboard/settings?tab=kanzlei" && (
                           <span
                             title={t("settings.notification_warning_tooltip")}
-                            className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400"
+                            className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--ds-warning-text)]"
                           >
                             <AlertCircle size={10} />
                             {t("settings.notification_warning_label")}

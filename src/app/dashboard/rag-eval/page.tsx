@@ -114,11 +114,11 @@ export default function RagEvalPage() {
 
   const gateIcon =
     gateResult?.status === "pass" ? (
-      <ShieldCheck size={16} className="text-emerald-600" />
+      <ShieldCheck size={16} className="text-[color:var(--ds-success-text)]" />
     ) : gateResult?.status === "warn" ? (
-      <AlertTriangle size={16} className="text-amber-600" />
+      <AlertTriangle size={16} className="text-[color:var(--ds-warning-text)]" />
     ) : gateResult?.status === "fail" ? (
-      <ShieldAlert size={16} className="text-red-600" />
+      <ShieldAlert size={16} className="text-[color:var(--ds-danger-text)]" />
     ) : null;
 
   const gateColor =
@@ -159,7 +159,7 @@ export default function RagEvalPage() {
       />
 
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           {error}
         </div>
       )}
@@ -169,9 +169,9 @@ export default function RagEvalPage() {
         <div
           className={cn(
             "flex items-start gap-3 rounded-xl border p-4",
-            gateColor === "emerald" && "border-emerald-500/20 bg-emerald-500/5",
-            gateColor === "amber" && "border-amber-500/20 bg-amber-500/5",
-            gateColor === "red" && "border-red-500/20 bg-red-500/5"
+            gateColor === "emerald" && "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]",
+            gateColor === "amber" && "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]",
+            gateColor === "red" && "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
           )}
         >
           <div className="mt-0.5 shrink-0">{gateIcon}</div>
@@ -185,11 +185,11 @@ export default function RagEvalPage() {
                 className={cn(
                   "border text-xs",
                   gateColor === "emerald" &&
-                    "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+                    "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] dark:text-[color:var(--ds-success-text)]",
                   gateColor === "amber" &&
-                    "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+                    "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]",
                   gateColor === "red" &&
-                    "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                    "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]"
                 )}
               >
                 {gateResult.status === "pass"
@@ -205,13 +205,13 @@ export default function RagEvalPage() {
                 {gateResult.checks.map((check: GateCheck) => (
                   <div key={check.name} className="flex items-center gap-2 text-xs">
                     {check.status === "pass" && (
-                      <CheckCircle2 size={12} className="shrink-0 text-emerald-600" />
+                      <CheckCircle2 size={12} className="shrink-0 text-[color:var(--ds-success-text)]" />
                     )}
                     {check.status === "warn" && (
-                      <AlertTriangle size={12} className="shrink-0 text-amber-600" />
+                      <AlertTriangle size={12} className="shrink-0 text-[color:var(--ds-warning-text)]" />
                     )}
                     {check.status === "fail" && (
-                      <XCircle size={12} className="shrink-0 text-red-600" />
+                      <XCircle size={12} className="shrink-0 text-[color:var(--ds-danger-text)]" />
                     )}
                     <span className="text-[color:var(--ds-text-muted)]">{check.message}</span>
                   </div>
@@ -262,19 +262,19 @@ export default function RagEvalPage() {
               </div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-bold text-emerald-600">{reviewSummary.correct}</div>
+              <div className="text-xl font-bold text-[color:var(--ds-success-text)]">{reviewSummary.correct}</div>
               <div className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("rag_eval.correct")}
               </div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-bold text-red-600">{reviewSummary.incorrect}</div>
+              <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">{reviewSummary.incorrect}</div>
               <div className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("rag_eval.incorrect")}
               </div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-bold text-amber-600">{reviewSummary.incomplete}</div>
+              <div className="text-xl font-bold text-[color:var(--ds-warning-text)]">{reviewSummary.incomplete}</div>
               <div className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("rag_eval.incomplete")}
               </div>
@@ -292,7 +292,7 @@ export default function RagEvalPage() {
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
                 <div
-                  className="h-full rounded-full bg-emerald-500 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                  className="h-full rounded-full bg-[color:var(--ds-success-solid)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
                   style={{ width: `${reviewSummary.accuracy_rate * 100}%` }}
                 />
               </div>
@@ -328,7 +328,7 @@ export default function RagEvalPage() {
                       {isBaseline && (
                         <Badge
                           variant="default"
-                          className="shrink-0 border border-blue-500/30 bg-blue-500/10 text-xs text-blue-700 dark:text-blue-400"
+                          className="shrink-0 border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)] dark:text-[color:var(--ds-info-text)]"
                         >
                           Baseline
                         </Badge>
@@ -352,7 +352,7 @@ export default function RagEvalPage() {
                         <span
                           className={cn(
                             "flex items-center gap-0.5",
-                            pDelta > 0 ? "text-emerald-600" : "text-red-600"
+                            pDelta > 0 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-danger-text)]"
                           )}
                         >
                           {pDelta > 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
@@ -389,19 +389,19 @@ export default function RagEvalPage() {
               </div>
             </div>
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-[color:var(--ds-info-text)]">
                 {(result.overallPrecision * 100).toFixed(1)}%
               </div>
               <div className="mt-1 text-xs text-[color:var(--ds-text-muted)]">Precision@10</div>
             </div>
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-center">
-              <div className="text-2xl font-bold text-emerald-600">
+              <div className="text-2xl font-bold text-[color:var(--ds-success-text)]">
                 {(result.overallRecall * 100).toFixed(1)}%
               </div>
               <div className="mt-1 text-xs text-[color:var(--ds-text-muted)]">Recall@10</div>
             </div>
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-center">
-              <div className="text-2xl font-bold text-amber-600">
+              <div className="text-2xl font-bold text-[color:var(--ds-warning-text)]">
                 {result.overallMrr.toFixed(3)}
               </div>
               <div className="mt-1 text-xs text-[color:var(--ds-text-muted)]">MRR</div>
@@ -461,13 +461,13 @@ export default function RagEvalPage() {
                     <div
                       className={cn(
                         "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-                        pass ? "bg-emerald-500/10" : "bg-red-500/10"
+                        pass ? "bg-[color:var(--ds-success-bg)]" : "bg-[color:var(--ds-danger-bg)]"
                       )}
                     >
                       {pass ? (
-                        <CheckCircle2 size={16} className="text-emerald-600" />
+                        <CheckCircle2 size={16} className="text-[color:var(--ds-success-text)]" />
                       ) : (
-                        <XCircle size={16} className="text-red-600" />
+                        <XCircle size={16} className="text-[color:var(--ds-danger-text)]" />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">

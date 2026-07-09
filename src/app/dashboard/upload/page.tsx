@@ -87,10 +87,10 @@ const FOLDER_MAX_BYTES = DIRECT_UPLOAD_MAX_SIZE;
 function FileIcon({ name }: { name: string }) {
   const ext = name.split(".").pop()?.toLowerCase();
   const colors: Record<string, string> = {
-    md: "text-blue-600",
+    md: "text-[color:var(--ds-info-text)]",
     txt: "text-[color:var(--ds-text-muted)]",
-    pdf: "text-red-600",
-    json: "text-amber-600",
+    pdf: "text-[color:var(--ds-danger-text)]",
+    json: "text-[color:var(--ds-warning-text)]",
   };
   return <File size={20} className={colors[ext || ""] || "text-[color:var(--ds-text-muted)]"} />;
 }
@@ -692,13 +692,13 @@ function UploadPageInner() {
             </SelectContent>
           </Select>
           {!selectedCaseSlug && !casesLoading && cases.length > 0 && (
-            <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-[color:var(--ds-warning-text)]">
               <AlertCircle size={12} />
               Bitte wähle eine Akte aus. Dokumente ohne Aktenbezug werden nicht akzeptiert.
             </p>
           )}
           {!casesLoading && cases.length === 0 && (
-            <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-[color:var(--ds-warning-text)]">
               <AlertCircle size={12} />
               Keine Akten vorhanden. Bitte erstelle zuerst eine Akte.
             </p>
@@ -871,7 +871,7 @@ function UploadPageInner() {
 
       {/* Offline warning */}
       {!isOnline() && (
-        <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-600">
+        <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3 text-sm text-[color:var(--ds-warning-text)]">
           <CloudUpload size={16} />
           <span>{t("upload.offline_msg")}</span>
         </div>
@@ -940,13 +940,13 @@ function UploadPageInner() {
       )}
 
       {/* Info box */}
-      <div className="flex items-start gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
-        <Info size={15} className="mt-0.5 shrink-0 text-blue-600" />
+      <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4">
+        <Info size={15} className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]" />
         <div className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
           <strong className="text-[color:var(--ds-text)]">{t("upload.how_title")}</strong>{" "}
           {t("upload.how_desc")}
           <br />
-          <strong className="mt-1 block text-blue-600">{t("upload.hint_label")}</strong>{" "}
+          <strong className="mt-1 block text-[color:var(--ds-info-text)]">{t("upload.hint_label")}</strong>{" "}
           {t("upload.hint_desc")}
         </div>
       </div>
@@ -959,7 +959,7 @@ function UploadPageInner() {
               {files.length}{" "}
               {files.length !== 1 ? t("upload.files_count_plural") : t("upload.files_count")}
               {doneCount > 0 && (
-                <span className="ml-2 text-emerald-600">
+                <span className="ml-2 text-[color:var(--ds-success-text)]">
                   · {doneCount} {t("upload.done_count")}
                 </span>
               )}
@@ -1078,11 +1078,11 @@ function UploadPageInner() {
                   {f.status === "done" && f.slug && (
                     <span className="flex flex-wrap items-center gap-2">
                       {f.slug === "offline-queued" ? (
-                        <span className="text-xs text-amber-600">
+                        <span className="text-xs text-[color:var(--ds-warning-text)]">
                           Offline-Warteschlange — wird automatisch synchronisiert
                         </span>
                       ) : (
-                        <span className="font-mono text-xs text-emerald-600">→ {f.slug}</span>
+                        <span className="font-mono text-xs text-[color:var(--ds-success-text)]">→ {f.slug}</span>
                       )}
                       {f.gobdStamped && (
                         <Badge
@@ -1123,21 +1123,21 @@ function UploadPageInner() {
                         </Badge>
                       )}
                       {f.persistWarning && (
-                        <span className="flex items-center gap-1 text-xs text-amber-600">
+                        <span className="flex items-center gap-1 text-xs text-[color:var(--ds-warning-text)]">
                           <AlertCircle size={11} />
                           GoBD-Warnung: Original nicht gespeichert ({f.persistWarning})
                         </span>
                       )}
                       {f.extractionWarning && (
-                        <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                        <p className="mt-1 text-xs text-[color:var(--ds-warning-text)] dark:text-[color:var(--ds-warning-text)]">
                           Extraktionshinweis: {f.extractionWarning}
                         </p>
                       )}
                     </span>
                   )}
-                  {f.status === "error" && <span className="text-xs text-red-600">{f.error}</span>}
+                  {f.status === "error" && <span className="text-xs text-[color:var(--ds-danger-text)]">{f.error}</span>}
                   {f.status === "skipped" && (
-                    <span className="text-xs text-amber-600">
+                    <span className="text-xs text-[color:var(--ds-warning-text)]">
                       Übersprungen — bereits vorhanden (Duplikat)
                     </span>
                   )}
@@ -1195,7 +1195,7 @@ function UploadPageInner() {
                   {f.status === "pending" && (
                     <button
                       onClick={() => removeFile(f.id)}
-                      className="text-[color:var(--ds-text-muted)] transition-colors hover:text-red-600"
+                      className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-danger-text)]"
                     >
                       <X size={14} />
                     </button>
@@ -1209,12 +1209,12 @@ function UploadPageInner() {
                     <CheckCircle
                       size={14}
                       className={
-                        f.slug === "offline-queued" ? "text-amber-500" : "text-emerald-600"
+                        f.slug === "offline-queued" ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-success-text)]"
                       }
                     />
                   )}
-                  {f.status === "error" && <XCircle size={14} className="text-red-600" />}
-                  {f.status === "skipped" && <Info size={14} className="text-amber-500" />}
+                  {f.status === "error" && <XCircle size={14} className="text-[color:var(--ds-danger-text)]" />}
+                  {f.status === "skipped" && <Info size={14} className="text-[color:var(--ds-warning-text)]" />}
                 </div>
               </div>
             ))}
@@ -1224,10 +1224,10 @@ function UploadPageInner() {
 
       {/* Next steps after upload */}
       {doneCount > 0 && (
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+        <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-5">
           <div className="mb-3 flex items-center gap-2">
-            <CheckCircle size={16} className="text-emerald-600" />
-            <span className="text-sm font-semibold text-emerald-600">
+            <CheckCircle size={16} className="text-[color:var(--ds-success-text)]" />
+            <span className="text-sm font-semibold text-[color:var(--ds-success-text)]">
               {doneCount}{" "}
               {doneCount !== 1 ? t("upload.files_count_plural") : t("upload.files_count")}{" "}
               {t("upload.uploaded")}

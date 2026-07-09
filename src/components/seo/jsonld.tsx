@@ -227,6 +227,25 @@ export function apiReferenceLd(opts: {
   };
 }
 
+export function techArticleLd(opts: {
+  name: string;
+  description: string;
+  url: string;
+  author?: string;
+  datePublished?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    name: opts.name,
+    description: opts.description,
+    url: opts.url.startsWith("http") ? opts.url : `${BASE}${opts.url}`,
+    author: { "@type": "Organization", name: opts.author ?? "Subsumio" },
+    publisher: { "@type": "Organization", name: "Subsumio", url: BASE },
+    ...(opts.datePublished ? { datePublished: opts.datePublished } : {}),
+  };
+}
+
 export function reviewLd(opts: { author: string; rating: number; body: string; date?: string }) {
   return {
     "@type": "Review",

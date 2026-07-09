@@ -19,6 +19,7 @@ import {
   Share2,
   WifiOff,
   Search,
+  Mail,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,48 @@ import { AnimatedFaqList } from "./animated-faq";
 import { GlowCard, StaggerContainer, StaggerItem } from "./motion-system";
 
 const PLATFORM_ICONS: Record<string, LucideIcon> = { Apple, Smartphone, Monitor };
+
+function NotifyMe({ lang }: { lang: Lang }) {
+  const [email, setEmail] = useState("");
+  const isDe = lang === "de" || lang === "at" || lang === "ch";
+  const label = isDe ? "App-Launch Benachrichtigung" : "App launch notification";
+  const placeholder = isDe ? "Deine E-Mail-Adresse" : "Your email address";
+  const button = isDe ? "Benachrichtige mich" : "Notify me";
+  const privacy = isDe
+    ? "Kein Spam. Wir schreiben dich an, sobald die Store-Apps live sind."
+    : "No spam. We will email you once store apps are available.";
+  return (
+    <form
+      className="mx-auto max-w-md"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!email) return;
+        const subject = isDe ? "App-Launch Benachrichtigung" : "App launch notification";
+        window.location.href = `mailto:hello@subsum.eu?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(email)}`;
+      }}
+    >
+      <label htmlFor="notify-email" className="mb-2 block text-sm font-medium [color:var(--mk-text)]">
+        {label}
+      </label>
+      <div className="flex gap-2">
+        <input
+          id="notify-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder={placeholder}
+          required
+          className="flex-1 rounded-xl border [border-color:var(--mk-control-border)] px-4 py-3 text-sm [color:var(--mk-text)] [background:var(--mk-surface)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--mk-focus-ring)] focus:ring-2 focus:ring-[var(--mk-focus-ring)] focus:outline-none"
+        />
+        <Button type="submit" className="gap-2">
+          <Mail size={16} />
+          {button}
+        </Button>
+      </div>
+      <p className="mt-2 text-xs [color:var(--mk-text-subtle)]">{privacy}</p>
+    </form>
+  );
+}
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -59,7 +102,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
 
         <div className="relative aspect-[9/19] overflow-hidden rounded-[2.1rem] bg-gradient-to-b from-[var(--mk-surface)] to-[var(--mk-bg)]">
           {/* status bar */}
-          <div className="flex items-center justify-between px-5 pt-3 font-mono text-xs [color:var(--mk-text-muted)]">
+          <div className="flex items-center justify-between px-5 pt-3 font-mono text-sm [color:var(--mk-text-muted)]">
             <span>9:41</span>
             <span className="flex items-center gap-1">
               <span className="h-1 w-1 rounded-full bg-[var(--brand-primary)]" /> Σ
@@ -80,7 +123,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
             className="mx-4 flex items-center gap-2 rounded-xl border [border-color:var(--mk-border)] px-3 py-2 [background:var(--mk-bg)]"
           >
             <Search size={12} className="brand-text" />
-            <span className="text-xs [color:var(--mk-text-muted)]">
+            <span className="text-sm [color:var(--mk-text-muted)]">
               {UI_STRINGS[lang].askYourBrain}
             </span>
           </motion.div>
@@ -92,7 +135,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
             transition={{ delay: 0.95, duration: 0.45 }}
             className="mx-4 mt-3 rounded-xl border border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/[0.05] p-3"
           >
-            <p className="mb-2 text-xs leading-relaxed [color:var(--mk-text-muted)]">
+            <p className="mb-2 text-sm leading-relaxed [color:var(--mk-text-muted)]">
               {UI_STRINGS[lang].downloadHint}
             </p>
             {[0, 1, 2].map((i) => (
@@ -114,7 +157,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.9, duration: 0.4 }}
-              className="mt-2 text-xs [color:var(--signal-amber)]"
+              className="mt-2 text-sm [color:var(--signal-amber)]"
             >
               {UI_STRINGS[lang].gapWarning}
             </motion.p>
@@ -128,7 +171,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
             className="absolute bottom-4 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 [background:var(--mk-surface)]"
           >
             <WifiOff size={10} className="text-[var(--brand-secondary)]" />
-            <span className="text-xs [color:var(--mk-text-muted)]">
+            <span className="text-sm [color:var(--mk-text-muted)]">
               {UI_STRINGS[lang].worksOffline}
             </span>
           </motion.div>
@@ -196,7 +239,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
 
       {/* Platform cards */}
       <Section tone="light" className="px-4 pb-20 sm:px-6 lg:px-8">
-        <StaggerContainer className="grid gap-5 md:grid-cols-3" stagger={0.08}>
+        <StaggerContainer className="grid gap-6 md:grid-cols-3" stagger={0.08}>
           {t.platforms.map((platform) => {
             const Icon = PLATFORM_ICONS[platform.icon] ?? Monitor;
             return (
@@ -207,7 +250,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                   className="flex h-full flex-col rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)]"
                 >
                   <IconTile icon={Icon} size={22} className="mb-5" />
-                  <h2 className="mb-1 text-lg font-bold [color:var(--mk-text)]">{platform.name}</h2>
+                  <h3 className="mb-1 text-lg font-bold [color:var(--mk-text)]">{platform.name}</h3>
                   <p className="brand-text mb-5 text-sm font-medium">{platform.tagline}</p>
                   <ol className="flex-1 space-y-3">
                     {platform.steps.map((step, i) => (
@@ -215,7 +258,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                         key={step}
                         className="flex gap-3 text-sm leading-relaxed [color:var(--mk-text-muted)]"
                       >
-                        <span className="brand-text mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_30%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] text-xs font-bold">
+                        <span className="brand-text mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_30%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] text-sm font-bold">
                           {i + 1}
                         </span>
                         {step}
@@ -223,7 +266,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                     ))}
                   </ol>
                   {platform.note && (
-                    <p className="mt-5 border-t [border-color:var(--mk-border)] pt-4 text-xs leading-relaxed [color:var(--mk-text-subtle)]">
+                    <p className="mt-5 border-t [border-color:var(--mk-border)] pt-4 text-sm leading-relaxed [color:var(--mk-text-subtle)]">
                       {platform.note}
                     </p>
                   )}
@@ -239,7 +282,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
         <div className="mx-auto max-w-3xl text-center">
           <SectionHeading title={t.storesTitle} sub={t.storesSub} />
 
-          <div className="mb-8 flex flex-wrap items-center justify-center gap-4">
+          <div className="mb-8 flex flex-wrap items-center justify-center gap-6">
             {[
               {
                 icon: Bell,
@@ -258,7 +301,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
               return (
                 <span
                   key={f.label}
-                  className="inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 text-xs [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
+                  className="inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 text-sm [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
                 >
                   <Icon size={13} className="brand-text" /> {f.label}
                 </span>
@@ -266,25 +309,11 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
             })}
           </div>
 
-          {/* Store badge placeholders — replace with official badges at store launch */}
-          <div className="mb-6 flex items-center justify-center gap-4">
-            {["App Store", "Google Play"].map((store) => (
-              <div
-                key={store}
-                aria-disabled="true"
-                className="flex items-center gap-3 rounded-xl border border-dashed [border-color:var(--mk-border-strong)] px-6 py-3 opacity-70 select-none [background:var(--mk-bg)]"
-              >
-                <DownloadIcon size={16} className="[color:var(--mk-text-subtle)]" />
-                <div className="text-left">
-                  <p className="text-xs tracking-wide [color:var(--mk-text-subtle)] uppercase">
-                    {UI_STRINGS[lang].comingSoonTo}
-                  </p>
-                  <p className="text-sm font-semibold [color:var(--mk-text-muted)]">{store}</p>
-                </div>
-              </div>
-            ))}
+          {/* Notify me when store apps launch */}
+          <div className="mb-6">
+            <NotifyMe lang={lang} />
           </div>
-          <p className="mx-auto max-w-xl text-xs leading-relaxed [color:var(--mk-text-subtle)]">
+          <p className="mx-auto max-w-xl text-sm leading-relaxed [color:var(--mk-text-subtle)]">
             {t.storesNote}
           </p>
         </div>
@@ -299,7 +328,14 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
       </Section>
 
       {/* CTA */}
-      <CTASection title={t.ctaTitle} sub={t.ctaSub} href={p(lang, "/signup")} label={t.ctaButton} />
+      <CTASection
+        title={t.ctaTitle}
+        sub={t.ctaSub}
+        href={p(lang, "/signup")}
+        label={t.ctaButton}
+        secondaryHref={p(lang, "/contact")}
+        secondaryLabel={UI_STRINGS[lang].writeUs}
+      />
     </div>
   );
 }

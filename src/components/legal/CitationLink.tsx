@@ -29,8 +29,8 @@ export function CitationLink({ citation, className, grounding }: CitationLinkPro
     >
       <BookOpen size={10} />
       {citation}
-      {isVerified === true && <CheckCircle2 size={10} className="text-emerald-500" />}
-      {isVerified === false && <AlertCircle size={10} className="text-amber-500" />}
+      {isVerified === true && <CheckCircle2 size={10} className="text-[color:var(--ds-success-text)]" />}
+      {isVerified === false && <AlertCircle size={10} className="text-[color:var(--ds-warning-text)]" />}
     </Link>
   );
 
@@ -172,7 +172,7 @@ export function AIBadge({ size = "sm", className, showTooltip = true }: AIBadgeP
   const badge = (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 font-medium text-amber-700",
+        "inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] font-medium text-[color:var(--ds-warning-text)]",
         sizeClasses,
         className
       )}
@@ -243,7 +243,7 @@ export function AttorneyReviewWarning({
   return (
     <div
       className={cn(
-        "flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-700",
+        "flex items-start gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3 text-xs text-[color:var(--ds-warning-text)]",
         className
       )}
       role="alert"
@@ -261,7 +261,7 @@ export function AttorneyReviewWarning({
             Keine Corpus-Prüfung durchgeführt — anwaltliche Prüfung erforderlich.
           </p>
         )}
-        <p className="mt-0.5 text-amber-600/80">
+        <p className="mt-0.5 text-[color:var(--ds-warning-text)]/80">
           KI-generierte Antworten können halluzinieren, auch mit Quellenangaben. Misst Belegung,
           nicht inhaltliche Richtigkeit.
         </p>

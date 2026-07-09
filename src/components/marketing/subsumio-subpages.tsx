@@ -12,7 +12,7 @@ import { ArrowRight, MessageSquare, Clock, Paperclip, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
-import { Section, SectionHeading, PageHero, CTASection } from "./chrome";
+import { Section, SectionHeading, PageHero, CTASection, H3_CLASS } from "./chrome";
 import { PhoneCopilot } from "./subsumio-showcase";
 import { StaggerContainer, StaggerItem } from "./motion-system";
 
@@ -108,7 +108,7 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={c.flowsTitle} />
-          <StaggerContainer className="grid gap-5 md:grid-cols-3" stagger={0.08}>
+          <StaggerContainer className="grid gap-6 md:grid-cols-3" stagger={0.08}>
             {flows.map((f) => (
               <StaggerItem key={f.t}>
                 <div
@@ -118,7 +118,7 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
                   <div className="brand-soft brand-border mb-4 flex h-10 w-10 items-center justify-center rounded-lg border">
                     <f.icon size={18} className="brand-text" />
                   </div>
-                  <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">{f.t}</h3>
+                  <h3 className={`mb-2 ${H3_CLASS}`}>{f.t}</h3>
                   <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{f.d}</p>
                 </div>
               </StaggerItem>
@@ -130,7 +130,14 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
           </p>
         </div>
       </Section>
-      <CTASection title={c.ctaTitle} sub={c.ctaSub} href={signup} label={c.ctaLabel} />
+      <CTASection
+        title={c.ctaTitle}
+        sub={c.ctaSub}
+        href={signup}
+        label={c.ctaLabel}
+        secondaryHref={p(lang, "/contact")}
+        secondaryLabel={UI_STRINGS[lang].writeUs}
+      />
     </div>
   );
 }

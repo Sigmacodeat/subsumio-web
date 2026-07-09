@@ -14,9 +14,9 @@ import type { FeeAgreement, BudgetStatus } from "@/lib/fee-agreements";
 import { FEE_MODEL_LABELS, computeBudgetStatus } from "@/lib/fee-agreements";
 
 const ALERT_COLORS: Record<string, string> = {
-  none: "bg-green-100 text-green-700",
-  warning: "bg-amber-100 text-amber-700",
-  critical: "bg-red-100 text-red-700",
+  none: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]",
+  warning: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
+  critical: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]",
 };
 
 export default function FeeAgreementsPage() {

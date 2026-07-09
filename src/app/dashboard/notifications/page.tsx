@@ -35,14 +35,14 @@ type NotificationItem = {
 };
 
 const TYPE_META: Record<string, { icon: typeof Bell; label: string; color: string }> = {
-  deadline: { icon: Clock, label: "Frist", color: "text-amber-500" },
-  mention: { icon: MessageSquare, label: "Erwähnung", color: "text-blue-500" },
-  reply: { icon: MessageSquare, label: "Antwort", color: "text-blue-500" },
+  deadline: { icon: Clock, label: "Frist", color: "text-[color:var(--ds-warning-text)]" },
+  mention: { icon: MessageSquare, label: "Erwähnung", color: "text-[color:var(--ds-info-text)]" },
+  reply: { icon: MessageSquare, label: "Antwort", color: "text-[color:var(--ds-info-text)]" },
   system: { icon: Bell, label: "System", color: "text-slate-500" },
-  notification_failure: { icon: AlertCircle, label: "Fehler", color: "text-red-500" },
+  notification_failure: { icon: AlertCircle, label: "Fehler", color: "text-[color:var(--ds-danger-text)]" },
   document_request: { icon: FileText, label: "Dokumentenanforderung", color: "text-purple-500" },
   retention: { icon: FileText, label: "Aufbewahrung", color: "text-purple-500" },
-  autonomous_task: { icon: Bot, label: "Autonom", color: "text-green-500" },
+  autonomous_task: { icon: Bot, label: "Autonom", color: "text-[color:var(--ds-success-text)]" },
   inbox_triage: { icon: Inbox, label: "Inbox", color: "text-cyan-500" },
 };
 

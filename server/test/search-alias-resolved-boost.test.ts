@@ -123,7 +123,7 @@ describe("alias_resolved boost stage", () => {
 });
 
 describe("KNOBS_HASH_VERSION", () => {
-  it("is 10 (9→10 relational recall arm invalidates rel-off cache rows, v0.43)", () => {
-    expect(KNOBS_HASH_VERSION).toBe(10);
+  it("is 11 (10→11 cognitive tier cascade, v0.46)", () => {
+    expect(KNOBS_HASH_VERSION).toBe(11);
   });
 });

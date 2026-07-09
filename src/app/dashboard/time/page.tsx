@@ -347,7 +347,7 @@ export default function TimeEntriesPage() {
                       <div className="flex items-center gap-2">
                         {entry.is_auto_generated && <Badge className="text-xs">Auto</Badge>}
                         {entry.billable && !entry.billed && (
-                          <Badge className="border-green-500/20 bg-green-500/10 text-green-500">
+                          <Badge className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">
                             Abrechenbar
                           </Badge>
                         )}

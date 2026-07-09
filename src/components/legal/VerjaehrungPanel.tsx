@@ -38,9 +38,9 @@ interface VerjaehrungPanelProps {
 }
 
 const STATUS_STYLES: Record<StatuteOfLimitations["status"], string> = {
-  active: "border-blue-500/20 bg-blue-500/5 text-blue-700",
-  barred: "border-red-500/30 bg-red-500/10 text-red-700",
-  interrupted: "border-amber-500/20 bg-amber-500/5 text-amber-700",
+  active: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+  barred: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  interrupted: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   suspended: "border-purple-500/20 bg-purple-500/5 text-purple-700",
 };
 
@@ -192,8 +192,8 @@ export function VerjaehrungPanel({ caseSlug }: VerjaehrungPanelProps) {
 
   if (error) {
     return (
-      <section className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
-        <div className="flex items-center gap-2 text-sm text-red-700">
+      <section className="rounded-2xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4">
+        <div className="flex items-center gap-2 text-sm text-[color:var(--ds-danger-text)]">
           <AlertTriangle size={16} />
           <span>
             {lang === "en"
@@ -224,13 +224,13 @@ export function VerjaehrungPanel({ caseSlug }: VerjaehrungPanelProps) {
         {items.length > 0 && (
           <span className="ml-auto flex items-center gap-1.5">
             {barredCount > 0 && (
-              <span className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600 tabular-nums">
+              <span className="flex items-center gap-1 rounded-full bg-[color:var(--ds-danger-bg)] px-2 py-0.5 text-xs font-semibold text-[color:var(--ds-danger-text)] tabular-nums">
                 <AlertTriangle size={10} />
                 {barredCount} {lang === "en" ? "barred" : "verjährt"}
               </span>
             )}
             {criticalCount > 0 && (
-              <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-600 tabular-nums">
+              <span className="flex items-center gap-1 rounded-full bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs font-semibold text-[color:var(--ds-warning-text)] tabular-nums">
                 <Clock size={10} />
                 {criticalCount} {lang === "en" ? "≤30d" : "≤30T"}
               </span>
@@ -333,9 +333,9 @@ export function VerjaehrungPanel({ caseSlug }: VerjaehrungPanelProps) {
                 className={cn(
                   "rounded-xl border p-3",
                   barred
-                    ? "border-red-500/30 bg-red-500/5"
+                    ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
                     : days <= 30
-                      ? "border-amber-500/20 bg-amber-500/5"
+                      ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
                       : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
                 )}
               >
@@ -366,9 +366,9 @@ export function VerjaehrungPanel({ caseSlug }: VerjaehrungPanelProps) {
                         <strong
                           className={
                             barred
-                              ? "text-red-600"
+                              ? "text-[color:var(--ds-danger-text)]"
                               : days <= 30
-                                ? "text-amber-600"
+                                ? "text-[color:var(--ds-warning-text)]"
                                 : "text-[color:var(--ds-text)]"
                           }
                         >
@@ -376,7 +376,7 @@ export function VerjaehrungPanel({ caseSlug }: VerjaehrungPanelProps) {
                         </strong>
                       </span>
                       {!barred && (
-                        <span className={days <= 30 ? "font-semibold text-amber-600" : ""}>
+                        <span className={days <= 30 ? "font-semibold text-[color:var(--ds-warning-text)]" : ""}>
                           {days > 0
                             ? `${days} ${lang === "en" ? "days left" : "Tage verbleibend"}`
                             : `${Math.abs(days)} ${lang === "en" ? "days overdue" : "Tage überfällig"}`}

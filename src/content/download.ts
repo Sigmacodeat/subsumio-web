@@ -102,7 +102,7 @@ const _deDownload: DownloadContent = {
   ctaTitle: "Jetzt installieren. In der nächsten Verhandlung nutzen.",
   ctaSub:
     "In unter fünf Minuten eingerichtet. Erste belegte Antwort am selben Tag — auf dem Gerät, das gerade in deiner Hand liegt.",
-  ctaButton: "Demo anfragen",
+  ctaButton: "14 Tage kostenlos testen",
 };
 
 const _enDownload: DownloadContent = {
@@ -180,7 +180,7 @@ const _enDownload: DownloadContent = {
   ctaTitle: "Install now. Use it in your next hearing.",
   ctaSub:
     "Set up in under five minutes. First cited answer the same day \u2014 on whatever device is in your hand.",
-  ctaButton: "Request a demo",
+  ctaButton: "Start free trial",
 };
 
 export const DOWNLOAD: Record<Lang, DownloadContent> = {
@@ -304,7 +304,7 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
     "App Store & Google Play (Beta)": "App Store & Google Play (Beta)",
     "Install questions": "Domande sull'installazione",
     "Install now. Use it in your next hearing.": "Installa ora. Usalo nella prossima udienza.",
-    "Request a demo": "Richiedi una demo",
+    "Start free trial": "Inizia la prova gratuita",
     // Platform
     "Desktop (Mac, Windows, Linux)": "Desktop (Mac, Windows, Linux)",
     "Open subsum.eu in Safari": "Apri subsum.eu in Safari",
@@ -365,7 +365,7 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
     "One click in Chrome or Edge": "Un clic en Chrome o Edge",
     "Install questions": "Preguntas de instalación",
     "Install now. Use it in your next hearing.": "Instala ahora. Úsalo en tu próxima audiencia.",
-    "Request a demo": "Solicitar una demo",
+    "Start free trial": "Empezar prueba gratuita",
     // Platform
     "Desktop (Mac, Windows, Linux)": "Escritorio (Mac, Windows, Linux)",
     "Open subsum.eu in Safari": "Abre subsum.eu en Safari",
@@ -426,7 +426,7 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
     "One click in Chrome or Edge": "Jedno kliknięcie w Chrome lub Edge",
     "Install questions": "Pytania o instalację",
     "Install now. Use it in your next hearing.": "Zainstaluj teraz. Użyj na najbliższej rozprawie.",
-    "Request a demo": "Zamów demo",
+    "Start free trial": "Rozpocznij darmowy okres",
     // Platform
     "Desktop (Mac, Windows, Linux)": "Desktop (Mac, Windows, Linux)",
     "Open subsum.eu in Safari": "Otwórz subsum.eu w Safari",
@@ -488,7 +488,7 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
     "Install questions": "Questions d'installation",
     "Install now. Use it in your next hearing.":
       "Installez maintenant. Utilisez-le à votre prochaine audience.",
-    "Request a demo": "Demander une démo",
+    "Start free trial": "Commencer l'essai gratuit",
     // Platform
     "Desktop (Mac, Windows, Linux)": "Desktop (Mac, Windows, Linux)",
     "Open subsum.eu in Safari": "Ouvrez subsum.eu dans Safari",
@@ -549,7 +549,7 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
     "Install questions": "Installatievragen",
     "Install now. Use it in your next hearing.":
       "Installeer nu. Gebruik het bij je volgende zitting.",
-    "Request a demo": "Vraag een demo aan",
+    "Start free trial": "Start gratis proefperiode",
     // Platform
     "Desktop (Mac, Windows, Linux)": "Desktop (Mac, Windows, Linux)",
     "Open subsum.eu in Safari": "Open subsum.eu in Safari",

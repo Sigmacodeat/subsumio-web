@@ -123,14 +123,14 @@ export function CaseOverviewWidgets({ caseData, onTabChange }: CaseOverviewWidge
             className={cn(
               "flex h-10 w-10 items-center justify-center rounded-lg border",
               hasConflict
-                ? "border-amber-500/20 bg-amber-500/10"
-                : "border-emerald-500/20 bg-emerald-500/10"
+                ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
+                : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
             )}
           >
             {hasConflict ? (
-              <ShieldAlert size={18} className="text-amber-600" />
+              <ShieldAlert size={18} className="text-[color:var(--ds-warning-text)]" />
             ) : (
-              <CheckCircle2 size={18} className="text-emerald-600" />
+              <CheckCircle2 size={18} className="text-[color:var(--ds-success-text)]" />
             )}
           </div>
           <div>
@@ -153,7 +153,7 @@ export function CaseOverviewWidgets({ caseData, onTabChange }: CaseOverviewWidge
               <span
                 className={cn(
                   "font-medium",
-                  criticalDeadlines.length > 0 ? "text-red-600" : "text-[color:var(--ds-text)]"
+                  criticalDeadlines.length > 0 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-text)]"
                 )}
               >
                 {daysUntil(activeDeadlines[0].due_date || activeDeadlines[0].date || "") <= 0

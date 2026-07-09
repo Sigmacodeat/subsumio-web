@@ -6,7 +6,7 @@ import BenchmarkMethodologyPage from "@/components/marketing/benchmark-methodolo
 export const metadata: Metadata = {
   title: "Benchmark-Methodik — Subsumio KI-Kanzleisoftware",
   description:
-    "Transparente Benchmark-Methodik für KI-Kanzleisoftware: Recall@5 Retrieval-Benchmark, Hallucination-Rate, End-to-End-Latenz. Reproduzierbare Tests, DACH-Rechtsgebiete, offene Methodik.",
+    "Transparente Benchmark-Methodik für KI-Kanzleisoftware: Recall@8 Retrieval-Benchmark, Hallucination-Rate, End-to-End-Latenz. Reproduzierbare Tests, DACH-Rechtsgebiete, offene Methodik.",
   keywords: keywordsFor("benchmark"),
   alternates: {
     canonical: "/benchmark-methodology",
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Benchmark-Methodik — Subsumio KI-Kanzleisoftware",
     description:
-      "Transparente Benchmark-Methodik für KI-Kanzleisoftware: Recall@5, Hallucination-Rate, End-to-End-Latenz. Reproduzierbar, DACH-Rechtsgebiete.",
+      "Transparente Benchmark-Methodik für KI-Kanzleisoftware: Recall@8, Hallucination-Rate, End-to-End-Latenz. Reproduzierbar, DACH-Rechtsgebiete.",
     url: "/benchmark-methodology",
     type: "website",
   },
@@ -43,7 +43,7 @@ export default function BenchmarkMethodologyRoute() {
           "@type": "Dataset",
           name: "Subsumio Retrieval Benchmark — DACH Legal Corpus",
           description:
-            "Retrieval benchmark for AI legal software covering Austrian, German and Swiss law. Measures Recall@5, hallucination rate and end-to-end latency across 500+ legal queries.",
+            "Retrieval benchmark for AI legal software covering Austrian, German and Swiss law. Measures Recall@8, hallucination rate and end-to-end latency across 500 LongMemEval questions.",
           url: `${BASE}/benchmark-methodology`,
           creator: { "@type": "Organization", name: "Subsumio" },
           license: "https://creativecommons.org/licenses/by/4.0/",
@@ -51,7 +51,7 @@ export default function BenchmarkMethodologyRoute() {
           keywords: [
             "retrieval benchmark",
             "legal AI",
-            "Recall@5",
+            "Recall@8",
             "hallucination rate",
             "DACH law",
           ],
@@ -63,7 +63,7 @@ export default function BenchmarkMethodologyRoute() {
             },
           ],
           variableMeasured: [
-            { "@type": "PropertyValue", name: "Recall@5", value: "97.9%" },
+            { "@type": "PropertyValue", name: "Recall@8", value: "99.8%" },
             { "@type": "PropertyValue", name: "Hallucination rate", value: "< 2%" },
             { "@type": "PropertyValue", name: "End-to-end latency (p95)", value: "< 3s" },
           ],

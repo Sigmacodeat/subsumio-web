@@ -353,7 +353,7 @@ export default function LitigationFlowPage() {
       />
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertCircle size={16} />
           {error}
           <button className="ml-auto text-xs underline" onClick={() => setError(null)}>
@@ -546,7 +546,7 @@ export default function LitigationFlowPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="ml-auto gap-1.5 text-xs text-red-400 hover:text-red-500"
+                className="ml-auto gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:text-[color:var(--ds-danger-text)]"
                 onClick={handleDelete}
                 disabled={saving}
               >

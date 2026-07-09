@@ -416,7 +416,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                 {isTyping ? typingLabel : c.phoneStatus}
               </p>
             </div>
-            <div className="flex items-center gap-4" style={{ color: WA.text }}>
+            <div className="flex items-center gap-6" style={{ color: WA.text }}>
               <Video size={18} />
               <Phone size={17} />
               <MoreVertical size={18} />
@@ -688,7 +688,7 @@ export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: R
       <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
         <div>
           <motion.div {...reveal(0, reduce)}>
-            <span className="brand-text brand-soft brand-border mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold">
+            <span className="brand-text brand-soft brand-border mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold">
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
               {c.waEyebrow}
             </span>
@@ -705,14 +705,14 @@ export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: R
             {c.waPoints.map((pt, i) => {
               const Icon = pt.icon;
               return (
-                <motion.li key={pt.t} {...reveal(i + 3, reduce)} className="flex items-start gap-4">
+                <motion.li key={pt.t} {...reveal(i + 3, reduce)} className="flex items-start gap-6">
                   <div
                     className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${accentTile(pt.color, "dark")}`}
                   >
                     <Icon size={18} />
                   </div>
                   <div>
-                    <p className="text-base font-semibold [color:var(--mk-text)]">{pt.t}</p>
+                    <p className="text-lg font-semibold [color:var(--mk-text)]">{pt.t}</p>
                     <p className="mt-1 text-sm leading-relaxed [color:var(--mk-text-muted)]">
                       {pt.d}
                     </p>
@@ -740,7 +740,7 @@ export function FeatureBento({ lang }: { lang: Lang }) {
   return (
     <div className="relative z-10 mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:px-8">
       <motion.div {...reveal(0, reduce)} className="mb-14 text-center">
-        <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium">
+        <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium">
           {c.bentoEyebrow}
         </span>
         <h2 className={`${H2_CTA_CLASS} mb-4`}>{c.bentoTitle}</h2>
@@ -748,7 +748,7 @@ export function FeatureBento({ lang }: { lang: Lang }) {
           {c.bentoSub}
         </p>
       </motion.div>
-      <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid auto-rows-fr gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {features.map((f, i) => {
           const Icon = ICONS[f.icon];
           const featured = i === 0 || i === 4; // two emphasis tiles
@@ -771,7 +771,7 @@ export function FeatureBento({ lang }: { lang: Lang }) {
                 <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border">
                   {Icon && <Icon size={19} className="brand-text" />}
                 </div>
-                <h3 className="mb-2 flex items-center gap-2 text-base font-semibold [color:var(--mk-text)]">
+                <h3 className="mb-2 flex items-center gap-2 text-lg font-semibold [color:var(--mk-text)]">
                   {f.title}
                   {featured && <Check size={14} className="brand-text" />}
                 </h3>

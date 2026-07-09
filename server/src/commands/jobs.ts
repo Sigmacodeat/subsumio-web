@@ -2019,6 +2019,16 @@ export async function registerBuiltinHandlers(
   worker.register("patterns", makePhaseHandler("patterns"));
   worker.register("consolidate", makePhaseHandler("consolidate"));
 
+  // v0.46 — Incremental consolidation (Hindsight trigger). Runs
+  // extract_facts + consolidate for specific slugs after ingest, without
+  // the full dream cycle. Fail-open: errors don't break ingest. PROTECTED
+  // for future-proofing (v0.32 will add Sonnet synthesis to consolidate).
+  worker.register("consolidate-incremental", async (job) => {
+    const { makeConsolidateIncrementalHandler } =
+      await import("../core/minions/handlers/consolidate-incremental.ts");
+    return await makeConsolidateIncrementalHandler(engine)(job);
+  });
+
   // Open — DB writes only, no LLM spend
   worker.register("extract_facts", makePhaseHandler("extract_facts"));
   worker.register("resolve_symbol_edges", makePhaseHandler("resolve_symbol_edges"));

@@ -38,8 +38,8 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
 
   const score = summary ? Math.round(summary.coverage_score * 100) : 0;
   const scoreColor =
-    score >= 80 ? "text-emerald-600" : score >= 50 ? "text-amber-600" : "text-red-600";
-  const scoreBg = score >= 80 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-red-500";
+    score >= 80 ? "text-[color:var(--ds-success-text)]" : score >= 50 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-danger-text)]";
+  const scoreBg = score >= 80 ? "bg-[color:var(--ds-success-solid)]" : score >= 50 ? "bg-[color:var(--ds-warning-solid)]" : "bg-[color:var(--ds-danger-solid)]";
 
   return (
     <div
@@ -75,7 +75,7 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
 
       {error && !loading && (
         <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-          <AlertTriangle size={20} className="text-amber-500" />
+          <AlertTriangle size={20} className="text-[color:var(--ds-warning-text)]" />
           <p className="text-xs text-[color:var(--ds-text-muted)]">{error}</p>
         </div>
       )}
@@ -105,7 +105,7 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
               icon={FileText}
               label="Seiten"
               value={summary.total_pages}
-              color="text-blue-600"
+              color="text-[color:var(--ds-info-text)]"
             />
             <StatCard
               icon={Users}
@@ -117,7 +117,7 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
               icon={GitBranch}
               label="Kanten"
               value={summary.total_edges}
-              color="text-emerald-600"
+              color="text-[color:var(--ds-success-text)]"
             />
           </div>
 
@@ -142,9 +142,9 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
                         {source.count}
                       </span>
                       {source.fresh ? (
-                        <CheckCircle2 size={11} className="text-emerald-500" />
+                        <CheckCircle2 size={11} className="text-[color:var(--ds-success-text)]" />
                       ) : (
-                        <Clock size={11} className="text-amber-500" />
+                        <Clock size={11} className="text-[color:var(--ds-warning-text)]" />
                       )}
                     </div>
                   </div>
@@ -163,19 +163,19 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
               {summary.quality_issues.map((issue, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-2.5 py-1.5"
+                  className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2.5 py-1.5"
                 >
-                  <AlertTriangle size={11} className="shrink-0 text-amber-600" />
-                  <span className="text-xs text-amber-600">{issue}</span>
+                  <AlertTriangle size={11} className="shrink-0 text-[color:var(--ds-warning-text)]" />
+                  <span className="text-xs text-[color:var(--ds-warning-text)]">{issue}</span>
                 </div>
               ))}
             </div>
           )}
 
           {summary.quality_issues.length === 0 && summary.total_pages > 0 && (
-            <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-2.5 py-1.5">
-              <CheckCircle2 size={12} className="text-emerald-600" />
-              <span className="text-xs text-emerald-600">Alle Quellen aktuell</span>
+            <div className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2.5 py-1.5">
+              <CheckCircle2 size={12} className="text-[color:var(--ds-success-text)]" />
+              <span className="text-xs text-[color:var(--ds-success-text)]">Alle Quellen aktuell</span>
             </div>
           )}
 

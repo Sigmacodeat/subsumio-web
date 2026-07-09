@@ -124,9 +124,9 @@ export default function PowerOfAttorneyPage() {
       />
 
       {expiringCount > 0 && (
-        <div className="flex items-start gap-3 rounded-xl border border-orange-500/20 bg-orange-500/5 px-4 py-3">
-          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-orange-600" />
-          <p className="text-sm text-orange-600">
+        <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] px-4 py-3">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-attention-text)]" />
+          <p className="text-sm text-[color:var(--ds-attention-text)]">
             <strong>{expiringCount}</strong> Vollmacht(en) laufen innerhalb von 30 Tagen ab.
           </p>
         </div>
@@ -238,7 +238,7 @@ export default function PowerOfAttorneyPage() {
                     </Badge>
                     <Badge
                       variant="default"
-                      className={`text-xs ${valid ? "border-green-500/30 text-green-600" : poa.status === "expired" || poa.status === "revoked" ? "border-red-500/30 text-red-600" : ""}`}
+                      className={`text-xs ${valid ? "border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]" : poa.status === "expired" || poa.status === "revoked" ? "border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]" : ""}`}
                     >
                       {statusLabel.de}
                     </Badge>

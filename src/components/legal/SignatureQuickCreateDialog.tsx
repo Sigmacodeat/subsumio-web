@@ -180,7 +180,7 @@ export function SignatureQuickCreateDialog({
                 autoFocus
               />
               {sigForm.formState.errors.documentName && (
-                <p className="text-xs text-red-600">
+                <p className="text-xs text-[color:var(--ds-danger-text)]">
                   {sigForm.formState.errors.documentName.message}
                 </p>
               )}
@@ -209,7 +209,7 @@ export function SignatureQuickCreateDialog({
                   placeholder="max@example.com"
                 />
                 {sigForm.formState.errors.recipientEmail && (
-                  <p className="text-xs text-red-600">
+                  <p className="text-xs text-[color:var(--ds-danger-text)]">
                     {sigForm.formState.errors.recipientEmail.message}
                   </p>
                 )}
@@ -223,7 +223,7 @@ export function SignatureQuickCreateDialog({
               </Label>
               <Input id="quick-sig-expires" type="number" {...sigForm.register("expiresDays")} />
               {sigForm.formState.errors.expiresDays && (
-                <p className="text-xs text-red-600">
+                <p className="text-xs text-[color:var(--ds-danger-text)]">
                   {sigForm.formState.errors.expiresDays.message}
                 </p>
               )}

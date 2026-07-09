@@ -44,30 +44,30 @@ const STATUS_CONFIG: Record<
 > = {
   fresh: {
     labelKey: "sources.status_fresh",
-    color: "text-emerald-600",
-    bg: "bg-emerald-500/5",
-    border: "border-emerald-500/20",
+    color: "text-[color:var(--ds-success-text)]",
+    bg: "bg-[color:var(--ds-success-bg)]",
+    border: "border-[color:var(--ds-success-border)]",
     icon: CheckCircle2,
   },
   stale: {
     labelKey: "sources.status_stale",
-    color: "text-amber-600",
-    bg: "bg-amber-500/5",
-    border: "border-amber-500/20",
+    color: "text-[color:var(--ds-warning-text)]",
+    bg: "bg-[color:var(--ds-warning-bg)]",
+    border: "border-[color:var(--ds-warning-border)]",
     icon: Clock,
   },
   syncing: {
     labelKey: "sources.status_syncing",
-    color: "text-blue-600",
-    bg: "bg-blue-500/5",
-    border: "border-blue-500/20",
+    color: "text-[color:var(--ds-info-text)]",
+    bg: "bg-[color:var(--ds-info-bg)]",
+    border: "border-[color:var(--ds-info-border)]",
     icon: RefreshCw,
   },
   error: {
     labelKey: "sources.status_error",
-    color: "text-red-600",
-    bg: "bg-red-500/5",
-    border: "border-red-500/20",
+    color: "text-[color:var(--ds-danger-text)]",
+    bg: "bg-[color:var(--ds-danger-bg)]",
+    border: "border-[color:var(--ds-danger-border)]",
     icon: XCircle,
   },
   unknown: {
@@ -89,15 +89,15 @@ const TYPE_CONFIG: Record<SourceType, { labelKey: DashboardKey; icon: React.Elem
 const AUTHORITY_CONFIG: Record<AuthorityTier, { labelKey: DashboardKey; badge: string }> = {
   official: {
     labelKey: "sources.auth_official",
-    badge: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+    badge: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
   },
   "semi-official": {
     labelKey: "sources.auth_semi",
-    badge: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+    badge: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
   },
   community: {
     labelKey: "sources.auth_community",
-    badge: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+    badge: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
   },
   commercial: {
     labelKey: "sources.auth_commercial",
@@ -198,7 +198,7 @@ function SourceCard({
           </div>
 
           {source.last_error && (
-            <p className="mt-1.5 flex items-center gap-1 text-xs text-red-600">
+            <p className="mt-1.5 flex items-center gap-1 text-xs text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={11} />
               {source.last_error}
             </p>
@@ -230,10 +230,10 @@ function SourceCard({
                         className={cn(
                           "rounded px-1.5 py-0.5 font-medium",
                           diff.change_type === "added"
-                            ? "bg-emerald-500/10 text-emerald-600"
+                            ? "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                             : diff.change_type === "modified"
-                              ? "bg-amber-500/10 text-amber-600"
-                              : "bg-red-500/10 text-red-600"
+                              ? "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                              : "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
                         )}
                       >
                         {diff.change_type === "added"
@@ -283,9 +283,9 @@ function SourceCard({
 function StatsBar({ registry, t }: { registry: SourceRegistryResponse; t: TFunc }) {
   const stats = [
     { label: t("sources.stat_total"), value: registry.total, color: "text-[color:var(--ds-text)]" },
-    { label: t("sources.stat_fresh"), value: registry.fresh, color: "text-emerald-600" },
-    { label: t("sources.stat_stale"), value: registry.stale, color: "text-amber-600" },
-    { label: t("sources.stat_error"), value: registry.error, color: "text-red-600" },
+    { label: t("sources.stat_fresh"), value: registry.fresh, color: "text-[color:var(--ds-success-text)]" },
+    { label: t("sources.stat_stale"), value: registry.stale, color: "text-[color:var(--ds-warning-text)]" },
+    { label: t("sources.stat_error"), value: registry.error, color: "text-[color:var(--ds-danger-text)]" },
     {
       label: t("sources.stat_unknown"),
       value: registry.unknown,
@@ -405,13 +405,13 @@ export default function SourcesPage() {
 
       {/* Messages */}
       {message && (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-600">
+        <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-3 text-sm text-[color:var(--ds-success-text)]">
           <CheckCircle2 size={16} className="shrink-0" />
           {message}
         </div>
       )}
       {(error || refreshError) && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <XCircle size={16} className="shrink-0" />
           {error || refreshError}
         </div>
@@ -532,15 +532,15 @@ export default function SourcesPage() {
         </p>
         <div className="flex items-center gap-4 pt-1 text-xs text-[color:var(--ds-text-muted)]">
           <span className="flex items-center gap-1">
-            <CheckCircle2 size={11} className="text-emerald-600" />
+            <CheckCircle2 size={11} className="text-[color:var(--ds-success-text)]" />
             {t("sources.fresh_hint")}
           </span>
           <span className="flex items-center gap-1">
-            <Clock size={11} className="text-amber-600" />
+            <Clock size={11} className="text-[color:var(--ds-warning-text)]" />
             {t("sources.stale_hint")}
           </span>
           <span className="flex items-center gap-1">
-            <XCircle size={11} className="text-red-600" />
+            <XCircle size={11} className="text-[color:var(--ds-danger-text)]" />
             {t("sources.error_hint")}
           </span>
         </div>

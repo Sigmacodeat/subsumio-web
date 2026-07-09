@@ -312,7 +312,7 @@ function MonitorFormDialog({
                     <button
                       type="button"
                       onClick={() => removeKeyword(kw)}
-                      className="text-[color:var(--ds-text-muted)] hover:text-red-600"
+                      className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                     >
                       <X size={11} />
                     </button>
@@ -364,7 +364,7 @@ function MonitorFormDialog({
           )}
 
           {error && (
-            <p className="flex items-center gap-1 text-xs text-red-600">
+            <p className="flex items-center gap-1 text-xs text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={12} /> {error}
             </p>
           )}
@@ -454,7 +454,7 @@ function MonitorCard({
           <button
             onClick={onDelete}
             title={t("monitoring.card_delete")}
-            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-red-600"
+            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-danger-text)]"
           >
             <Trash2 size={14} />
           </button>
@@ -807,7 +807,7 @@ export default function MonitoringPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs text-red-600">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-xs text-[color:var(--ds-danger-text)]">
           <AlertTriangle size={14} /> {error}
         </div>
       )}
@@ -854,7 +854,7 @@ export default function MonitoringPage() {
             ) : (
               <>
                 {monitors.length === 0 && legacyKeywords.length > 0 && (
-                  <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-700">
+                  <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3 text-xs text-[color:var(--ds-warning-text)]">
                     <AlertTriangle size={14} />
                     {t("monitoring.legacy_warning").replace(
                       "{count}",
@@ -1063,14 +1063,14 @@ export default function MonitoringPage() {
             <EvalGateWidget />
 
             {legacyKeywords.length > 0 && (
-              <div className="space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-5">
+              <div className="space-y-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-5">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle size={16} className="text-amber-600" />
-                  <h3 className="text-sm font-semibold text-amber-700">
+                  <AlertTriangle size={16} className="text-[color:var(--ds-warning-text)]" />
+                  <h3 className="text-sm font-semibold text-[color:var(--ds-warning-text)]">
                     {t("monitoring.settings_legacy_title")}
                   </h3>
                 </div>
-                <p className="text-xs text-amber-700">
+                <p className="text-xs text-[color:var(--ds-warning-text)]">
                   {t("monitoring.settings_legacy_desc").replace(
                     "{count}",
                     String(legacyKeywords.length)
@@ -1080,7 +1080,7 @@ export default function MonitoringPage() {
                   {legacyKeywords.map((kw) => (
                     <span
                       key={kw}
-                      className="rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-700"
+                      className="rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs text-[color:var(--ds-warning-text)]"
                     >
                       {kw}
                     </span>

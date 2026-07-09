@@ -312,7 +312,7 @@ export function StrategyTab() {
         (caseData.suggestedParties && caseData.suggestedParties.some((sp) => !sp.confirmed))) && (
         <div className="max-w-3xl rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="mb-3 flex items-center gap-2">
-            <Sparkles size={16} className="text-amber-500" />
+            <Sparkles size={16} className="text-[color:var(--ds-warning-text)]" />
             <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
               {lang === "en" ? "AI Suggestions" : "KI-Vorschläge"}
             </h3>
@@ -326,9 +326,9 @@ export function StrategyTab() {
               .map(({ sd, originalIndex }) => (
                 <div
                   key={`sd-${originalIndex}`}
-                  className="flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5"
+                  className="flex items-start gap-3 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2.5"
                 >
-                  <CalendarPlus size={14} className="mt-0.5 shrink-0 text-amber-600" />
+                  <CalendarPlus size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium text-[color:var(--ds-text)]">
@@ -384,7 +384,7 @@ export function StrategyTab() {
                       size="sm"
                       disabled={isArchived}
                       onClick={() => ctx.confirmSuggestedDeadline(originalIndex, false)}
-                      className="h-7 px-2 text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
+                      className="h-7 px-2 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                     >
                       <X size={12} />
                     </Button>
@@ -399,9 +399,9 @@ export function StrategyTab() {
               .map(({ sp, originalIndex }) => (
                 <div
                   key={`sp-${originalIndex}`}
-                  className="flex items-start gap-3 rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2.5"
+                  className="flex items-start gap-3 rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-3 py-2.5"
                 >
-                  <UserPlus size={14} className="mt-0.5 shrink-0 text-blue-600" />
+                  <UserPlus size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium text-[color:var(--ds-text)]">
@@ -444,7 +444,7 @@ export function StrategyTab() {
                       size="sm"
                       disabled={isArchived}
                       onClick={() => ctx.confirmSuggestedParty(originalIndex, false)}
-                      className="h-7 px-2 text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
+                      className="h-7 px-2 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                     >
                       <X size={12} />
                     </Button>
@@ -664,7 +664,7 @@ export function StrategyTab() {
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-[color:var(--ds-text-muted)]">
-              <Sparkles size={12} className="text-blue-600" />
+              <Sparkles size={12} className="text-[color:var(--ds-info-text)]" />
               {t("aitab.quick_actions")}
             </div>
             {QUICK_ACTIONS.map((action) => {
@@ -685,7 +685,7 @@ export function StrategyTab() {
             })}
           </div>
           {isArchived && (
-            <p className="mt-2 text-xs text-amber-600">
+            <p className="mt-2 text-xs text-[color:var(--ds-warning-text)]">
               {lang === "en"
                 ? "AI features are disabled for archived cases."
                 : "KI-Funktionen sind für archivierte Akten deaktiviert."}
@@ -773,7 +773,7 @@ export function StrategyTab() {
                 aria-label="Antwort kopieren"
                 className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"
               >
-                {ctx.copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                {ctx.copied ? <Check size={14} className="text-[color:var(--ds-success-text)]" /> : <Copy size={14} />}
               </button>
             </div>
             <div className="text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">

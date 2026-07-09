@@ -105,9 +105,9 @@ export default function TaxDeadlinesPage() {
       />
 
       {error && (
-        <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 px-4 py-3">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-rose-600">
+            <div className="flex items-center gap-2 text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={16} />
               <p className="text-sm font-medium">{error}</p>
             </div>
@@ -263,8 +263,8 @@ function DeadlineRow({
   const { t } = useLang();
   const locale = lang === "en" ? "en-GB" : "de-DE";
   const colors = {
-    overdue: "border-rose-500/20 bg-rose-500/5",
-    urgent: "border-amber-500/20 bg-amber-500/5",
+    overdue: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]",
+    urgent: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]",
     upcoming: "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]",
   };
 
@@ -297,7 +297,7 @@ function DeadlineRow({
           })}
         </p>
         <p
-          className={`text-xs ${variant === "overdue" ? "text-rose-600" : variant === "urgent" ? "text-amber-600" : "text-[color:var(--ds-text-subtle)]"}`}
+          className={`text-xs ${variant === "overdue" ? "text-[color:var(--ds-danger-text)]" : variant === "urgent" ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-text-subtle)]"}`}
         >
           {entry.isOverdue
             ? `${Math.abs(entry.daysRemaining)} ${t("tax.deadlines.days_overdue")}`

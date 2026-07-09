@@ -169,9 +169,9 @@ export default function FristenbuchPage() {
               className={cn(
                 "text-sm font-semibold tabular-nums",
                 days < 0
-                  ? "text-red-600"
+                  ? "text-[color:var(--ds-danger-text)]"
                   : days <= 3
-                    ? "text-amber-600"
+                    ? "text-[color:var(--ds-warning-text)]"
                     : "text-[color:var(--ds-text)]"
               )}
             >
@@ -224,7 +224,7 @@ export default function FristenbuchPage() {
                 {e.is_notfrist && (
                   <Badge
                     variant="default"
-                    className="flex items-center gap-0.5 border border-amber-500/30 bg-amber-500/10 text-xs text-amber-700"
+                    className="flex items-center gap-0.5 border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
                   >
                     <ShieldCheck size={10} />
                     {t("deadlines.second_check")}
@@ -348,10 +348,10 @@ export default function FristenbuchPage() {
             value: stats.gesamt,
             color: "text-[color:var(--ds-text)]",
           },
-          { label: t("deadlines.status_overdue"), value: stats.overdue, color: "text-rose-600" },
-          { label: t("deadlines.status_critical"), value: stats.critical, color: "text-red-600" },
-          { label: t("deadlines.vorfrist_reached"), value: stats.vorfrist, color: "text-blue-600" },
-          { label: t("deadlines.fristenbuch_ok"), value: stats.pending, color: "text-emerald-600" },
+          { label: t("deadlines.status_overdue"), value: stats.overdue, color: "text-[color:var(--ds-danger-text)]" },
+          { label: t("deadlines.status_critical"), value: stats.critical, color: "text-[color:var(--ds-danger-text)]" },
+          { label: t("deadlines.vorfrist_reached"), value: stats.vorfrist, color: "text-[color:var(--ds-info-text)]" },
+          { label: t("deadlines.fristenbuch_ok"), value: stats.pending, color: "text-[color:var(--ds-success-text)]" },
         ].map((item) => (
           <div
             key={item.label}
@@ -368,9 +368,9 @@ export default function FristenbuchPage() {
       </div>
 
       {(stats.overdue > 0 || stats.critical > 0) && (
-        <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 print:hidden">
-          <AlertTriangle size={18} className="shrink-0 text-red-600" />
-          <p className="text-sm text-red-600">
+        <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 print:hidden">
+          <AlertTriangle size={18} className="shrink-0 text-[color:var(--ds-danger-text)]" />
+          <p className="text-sm text-[color:var(--ds-danger-text)]">
             {stats.overdue > 0 && `${stats.overdue} ${t("deadlines.alert_critical_plural")} `}
             {stats.critical > 0 && `${stats.critical} ${t("deadlines.fristenbuch_kritisch_hint")}`}
           </p>
@@ -438,13 +438,13 @@ export default function FristenbuchPage() {
       </div>
 
       {loadError && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700 print:hidden">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)] print:hidden">
           <span>{loadError}</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => void loadFristenbuch()}
-            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             <RotateCcw size={13} />
             {t("deadlines.retry")}

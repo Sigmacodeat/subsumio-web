@@ -40,10 +40,10 @@ function SignatureBand({ industry, lang }: { industry: string; lang: Lang }) {
         <div className="brand-glow-bg absolute inset-y-0 left-0 w-1/2 blur-3xl" />
         <div className="relative grid gap-6 md:grid-cols-[1.1fr_1fr] md:items-center">
           <div>
-            <p className="brand-text mb-3 font-mono text-xs tracking-wider uppercase">
+            <p className="brand-text mb-3 font-mono text-sm tracking-wider uppercase">
               {profile.brand} {UI_STRINGS[lang].signatureLabel}
             </p>
-            <h2 className="text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+            <h2 className="text-3xl font-bold tracking-tight [color:var(--mk-text)] md:text-4xl">
               {signature.title[locale]}
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-base">
@@ -119,7 +119,7 @@ export default function VerticalPage({
             <p className="mx-auto mb-12 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
               {t.sub}
             </p>
-            <div className="mb-4 flex flex-col justify-center gap-4 sm:flex-row">
+            <div className="mb-4 flex flex-col justify-center gap-6 sm:flex-row">
               <Link href={signupHref}>
                 <Button size="xl" variant="primary" className="min-w-[220px]">
                   {t.ctaButton}
@@ -134,7 +134,7 @@ export default function VerticalPage({
                 </Button>
               </a>
             </div>
-            <p className="mb-4 text-xs [color:var(--mk-text-subtle)]">
+            <p className="mb-4 text-sm [color:var(--mk-text-subtle)]">
               {isSubsumio ? UI_STRINGS[lang].verticalTrialNote : UI_STRINGS[lang].verticalTrustNote}
             </p>
             {/* The live demo is a dark spotlight floating on the slate hero */}
@@ -175,7 +175,7 @@ export default function VerticalPage({
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={t.painsTitle} />
-          <StaggerContainer className="grid gap-5 md:grid-cols-3" stagger={0.08}>
+          <StaggerContainer className="grid gap-6 md:grid-cols-3" stagger={0.08}>
             {t.pains.map((pain) => (
               <StaggerItem key={pain.title}>
                 <div
@@ -183,7 +183,7 @@ export default function VerticalPage({
                   style={{ boxShadow: "var(--mk-card-shadow)" }}
                 >
                   <AlertCircle size={18} className="brand-text mb-4" />
-                  <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
+                  <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
                     {pain.title}
                   </h3>
                   <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
@@ -207,7 +207,7 @@ export default function VerticalPage({
               title={t.featuresTitle}
               sub={UI_STRINGS[lang].verticalFeaturesSub}
             />
-            <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" stagger={0.08}>
+            <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" stagger={0.08}>
               {t.features.slice(0, 6).map((f) => {
                 const Icon = ICONS[f.icon];
                 return (
@@ -219,7 +219,7 @@ export default function VerticalPage({
                       <div className="brand-soft brand-border mb-4 flex h-10 w-10 items-center justify-center rounded-lg border">
                         {Icon && <Icon size={18} className="brand-text" />}
                       </div>
-                      <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
+                      <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
                         {f.title}
                       </h3>
                       <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
@@ -243,20 +243,20 @@ export default function VerticalPage({
         <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">
             <SectionHeading title={t.featuresTitle} />
-            <StaggerContainer className="grid gap-5 md:grid-cols-2" stagger={0.1}>
+            <StaggerContainer className="grid gap-6 md:grid-cols-2" stagger={0.1}>
               {t.features.map((f) => {
                 const Icon = ICONS[f.icon];
                 return (
                   <StaggerItem key={f.title}>
                     <div
-                      className="flex h-full gap-5 rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)]"
+                      className="flex h-full gap-6 rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)]"
                       style={{ boxShadow: "var(--mk-card-shadow)" }}
                     >
                       <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border">
                         {Icon && <Icon size={18} className="brand-text" />}
                       </div>
                       <div>
-                        <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
+                        <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
                           {f.title}
                         </h3>
                         <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
@@ -282,7 +282,7 @@ export default function VerticalPage({
             >
               &ldquo;
             </span>
-            <h2 className="-mt-6 mb-5 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+            <h2 className="-mt-6 mb-5 text-3xl font-bold tracking-tight [color:var(--mk-text)] md:text-4xl">
               {t.proofTitle}
             </h2>
             <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
@@ -324,7 +324,7 @@ export default function VerticalPage({
       >
         <div className="mx-auto max-w-3xl">
           <SubsumioMark size={56} className="mx-auto mb-6" />
-          <h2 className="mb-4 text-2xl font-bold tracking-tight [color:var(--mk-text)] md:text-3xl">
+          <h2 className="mb-4 text-3xl font-bold tracking-tight [color:var(--mk-text)] md:text-4xl">
             {t.ctaTitle}
           </h2>
           <p className="mb-10 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">

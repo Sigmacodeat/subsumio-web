@@ -90,7 +90,7 @@ function SourcePill({
         damping: 16,
       }}
       whileHover={reduce ? undefined : { y: -2 }}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--brand-border)] bg-[var(--brand-soft)] px-2.5 py-1 font-mono text-xs [color:var(--brand-text)] shadow-sm transition-shadow hover:shadow-md"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--brand-border)] bg-[var(--brand-soft)] px-2.5 py-1 font-mono text-sm [color:var(--brand-text)] shadow-sm transition-shadow hover:shadow-md"
     >
       <FileText size={11} className="shrink-0 opacity-70" />
       {src}
@@ -128,7 +128,7 @@ function VerificationBadge({
       >
         <CheckCircle2 size={13} className="text-[var(--signal-green)]" />
       </motion.span>
-      <span className="text-[11px] font-medium [color:var(--mk-text-subtle)]">{label}</span>
+      <span className="text-sm font-medium [color:var(--mk-text-subtle)]">{label}</span>
     </motion.div>
   );
 }
@@ -222,7 +222,7 @@ function ShowreelTurn({
           </p>
         </div>
         <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--brand-primary)]/25 bg-[var(--brand-primary)]/12 shadow-sm">
-          <span className="brand-text text-xs font-semibold">{youLabel}</span>
+          <span className="brand-text text-sm font-semibold">{youLabel}</span>
         </div>
       </motion.div>
 
@@ -262,14 +262,14 @@ function ShowreelTurn({
             {!reduce && phase === "thinking" && (
               <div className="flex items-center gap-2.5 py-0.5">
                 <BouncingDots reduce={reduce} />
-                <span className="text-xs [color:var(--mk-text-subtle)]">{thinkingLabel}</span>
+                <span className="text-sm [color:var(--mk-text-subtle)]">{thinkingLabel}</span>
               </div>
             )}
 
             {/* Typewriter answer */}
             {(reduce || phase !== "thinking") && (
               <div
-                className="text-[0.925rem] leading-relaxed [color:var(--mk-text-muted)]"
+                className="text-sm leading-relaxed [color:var(--mk-text-muted)]"
                 style={{ minHeight: reduce ? undefined : "3rem" }}
               >
                 {displayed}
@@ -287,7 +287,7 @@ function ShowreelTurn({
             {/* Source pills — inside the card, at the bottom */}
             {showSources && (
               <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-[var(--mk-border)]/60 pt-2.5">
-                <span className="text-[11px] font-medium [color:var(--mk-text-subtle)]">
+                <span className="text-sm font-medium [color:var(--mk-text-subtle)]">
                   {sourcesLabel}
                 </span>
                 {turn.sources.map((src, i) => (
@@ -459,7 +459,7 @@ export default function ConversationShowreel({
           <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" />
           <span className="h-2.5 w-2.5 rounded-full bg-green-400/80" />
         </div>
-        <div className="ml-3 flex items-center gap-1.5 font-mono text-xs [color:var(--mk-text-muted)]">
+        <div className="ml-3 flex items-center gap-1.5 font-mono text-sm [color:var(--mk-text-muted)]">
           <SubsumioMark size={14} />
           <span>{windowTitle}</span>
         </div>
@@ -530,7 +530,7 @@ export default function ConversationShowreel({
                 />
                 <div className="flex items-center gap-1.5 rounded-full border border-[var(--brand-border)] bg-[var(--brand-soft)] px-3 py-1">
                   <Sparkles size={11} className="text-[var(--brand-primary)]" />
-                  <span className="text-xs font-semibold [color:var(--brand-text)]">
+                  <span className="text-sm font-semibold [color:var(--brand-text)]">
                     {tryYourselfLabel}
                   </span>
                 </div>
@@ -607,11 +607,11 @@ export default function ConversationShowreel({
                             "linear-gradient(90deg, transparent, color-mix(in srgb, var(--brand-primary) 35%, transparent), transparent)",
                         }}
                       />
-                      <div className="text-[0.925rem] leading-relaxed whitespace-pre-line [color:var(--mk-text-muted)]">
+                      <div className="text-sm leading-relaxed whitespace-pre-line [color:var(--mk-text-muted)]">
                         {renderStrongText(answer)}
                       </div>
                       <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-[var(--mk-border)]/60 pt-2.5">
-                        <span className="text-[11px] font-medium [color:var(--mk-text-subtle)]">
+                        <span className="text-sm font-medium [color:var(--mk-text-subtle)]">
                           {demoSourcesLabel}
                         </span>
                         {demoSources.map((slug, i) => (
@@ -626,7 +626,7 @@ export default function ConversationShowreel({
                         delay={0.2}
                       />
                     </div>
-                    {note && <p className="mt-1.5 text-xs [color:var(--signal-amber)]">{note}</p>}
+                    {note && <p className="mt-1.5 text-sm [color:var(--signal-amber)]">{note}</p>}
                   </div>
                 </motion.div>
               )}
@@ -645,7 +645,7 @@ export default function ConversationShowreel({
         >
           <button
             onClick={handleReplay}
-            className="group inline-flex items-center gap-2 text-xs font-medium [color:var(--mk-text-muted)] transition-colors hover:[color:var(--brand-text)]"
+            className="group inline-flex items-center gap-2 text-sm font-medium [color:var(--mk-text-muted)] transition-colors hover:[color:var(--brand-text)]"
           >
             <RotateCcw size={13} className="transition-transform group-hover:rotate-[-60deg]" />
             {replayLabel}

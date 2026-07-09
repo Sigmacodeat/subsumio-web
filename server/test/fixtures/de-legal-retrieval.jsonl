@@ -1,0 +1,50 @@
+{"question_id":"de-001","question":"Was ist ein Kaufmann im Sinne des Handelsgesetzbuchs?","answer_slug":"hgb","expected_section":"§ 1","legal_area":"hgb","question_type":"definition"}
+{"question_id":"de-002","question":"Wer gilt als Handelsgewerbe?","answer_slug":"hgb","expected_section":"§ 1 Abs 2","legal_area":"hgb","question_type":"definition"}
+{"question_id":"de-003","question":"Wie wird das Handelsregister geführt?","answer_slug":"hgb","expected_section":"§ 8","legal_area":"hgb","question_type":"institutional"}
+{"question_id":"de-004","question":"Was ist der allgemeine Gerichtsstand einer Person?","answer_slug":"zpo","expected_section":"§ 13","legal_area":"zpo","question_type":"definition"}
+{"question_id":"de-005","question":"Wo hat eine Person ihren allgemeinen Gerichtsstand?","answer_slug":"zpo","expected_section":"§ 13","legal_area":"zpo","question_type":"definition"}
+{"question_id":"de-006","question":"Wann ist eine Klage zulässig?","answer_slug":"zpo","expected_section":"§ 253","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-007","question":"Was bedeutet keine Strafe ohne Gesetz?","answer_slug":"stgb","expected_section":"§ 1","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-008","question":"Was ist der Unterschied zwischen Verbrechen und Vergehen?","answer_slug":"stgb","expected_section":"§ 12","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-009","question":"Wann ist eine Tat strafbar durch Unterlassen?","answer_slug":"stgb","expected_section":"§ 13","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-010","question":"Was ist Notwehr und wann ist sie gerechtfertigt?","answer_slug":"stgb","expected_section":"§ 32","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-011","question":"Was gilt als Wohnsitz einer Person?","answer_slug":"ao","expected_section":"§ 8","legal_area":"ao","question_type":"definition"}
+{"question_id":"de-012","question":"Was ist der gewöhnliche Aufenthalt einer Person?","answer_slug":"ao","expected_section":"§ 9","legal_area":"ao","question_type":"definition"}
+{"question_id":"de-013","question":"Was ist die Geschäftsleitung im abgabenrechtlichen Sinne?","answer_slug":"ao","expected_section":"§ 10","legal_area":"ao","question_type":"definition"}
+{"question_id":"de-014","question":"Was ist eine Betriebstätte?","answer_slug":"ao","expected_section":"§ 12","legal_area":"ao","question_type":"definition"}
+{"question_id":"de-015","question":"Was sind Steuern im Sinne der Abgabenordnung?","answer_slug":"ao","expected_section":"§ 3","legal_area":"ao","question_type":"definition"}
+{"question_id":"de-016","question":"Was ist ein Gesetz im abgabenrechtlichen Sinne?","answer_slug":"ao","expected_section":"§ 4","legal_area":"ao","question_type":"definition"}
+{"question_id":"de-017","question":"Wer ist ein Amtsträger?","answer_slug":"ao","expected_section":"§ 7","legal_area":"ao","question_type":"definition"}
+{"question_id":"de-018","question":"Was ist die sachliche Zuständigkeit der Gerichte?","answer_slug":"zpo","expected_section":"§ 1","legal_area":"zpo","question_type":"definition"}
+{"question_id":"de-019","question":"Wie wird der Wert des Streitgegenstandes berechnet?","answer_slug":"zpo","expected_section":"§ 4","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-020","question":"Was passiert bei mehreren Ansprüchen in einer Klage?","answer_slug":"zpo","expected_section":"§ 5","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-021","question":"Was ist der Gerichtsstand der unerlaubten Handlung?","answer_slug":"zpo","expected_section":"§ 32","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-022","question":"Was ist der besondere Gerichtsstand des Vermögens?","answer_slug":"zpo","expected_section":"§ 23","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-023","question":"Was ist der Gerichtsstand des Erfüllungsorts?","answer_slug":"zpo","expected_section":"§ 29","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-024","question":"Was ist der allgemeine Gerichtsstand juristischer Personen?","answer_slug":"zpo","expected_section":"§ 17","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-025","question":"Was ist der allgemeine Gerichtsstand des Fiskus?","answer_slug":"zpo","expected_section":"§ 18","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-026","question":"Was bedeutet Vorsatz im Strafrecht?","answer_slug":"stgb","expected_section":"§ 15","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-027","question":"Was passiert bei Irrtum über Tatumstände?","answer_slug":"stgb","expected_section":"§ 16","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-028","question":"Was ist der Verbotsirrtum?","answer_slug":"stgb","expected_section":"§ 17","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-029","question":"Wann ist jemand schuldunfähig?","answer_slug":"stgb","expected_section":"§ 20","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-030","question":"Was ist verminderte Schuldfähigkeit?","answer_slug":"stgb","expected_section":"§ 21","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-031","question":"Was ist Anstiftung zur Straftat?","answer_slug":"stgb","expected_section":"§ 26","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-032","question":"Was ist Beihilfe zur Straftat?","answer_slug":"stgb","expected_section":"§ 27","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-033","question":"Was ist der Rücktritt vom Versuch?","answer_slug":"stgb","expected_section":"§ 24","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-034","question":"Was ist der rechtfertigende Notstand?","answer_slug":"stgb","expected_section":"§ 34","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-035","question":"Was ist der entschuldigende Notstand?","answer_slug":"stgb","expected_section":"§ 35","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-036","question":"Was ist die Dauer der Freiheitsstrafe?","answer_slug":"stgb","expected_section":"§ 38","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-037","question":"Wie wird die Geldstrafe verhängt?","answer_slug":"stgb","expected_section":"§ 40","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-038","question":"Was ist das Fahrverbot?","answer_slug":"stgb","expected_section":"§ 44","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-039","question":"Was ist die Ersatzfreiheitsstrafe?","answer_slug":"stgb","expected_section":"§ 43","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-040","question":"Was ist die Zeitliche Geltung des Strafrechts?","answer_slug":"stgb","expected_section":"§ 2","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-041","question":"Wann gilt das deutsche Strafrecht für Inlandstaten?","answer_slug":"stgb","expected_section":"§ 3","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-042","question":"Wann gilt das deutsche Strafrecht für Auslandstaten?","answer_slug":"stgb","expected_section":"§ 7","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-043","question":"Was ist die Einziehung im Strafrecht?","answer_slug":"stgb","expected_section":"§ 74","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-044","question":"Was ist das Steuergeheimnis?","answer_slug":"ao","expected_section":"§ 30","legal_area":"ao","question_type":"definition"}
+{"question_id":"de-045","question":"Was sind Angehörige im Sinne der Abgabenordnung?","answer_slug":"ao","expected_section":"§ 15","legal_area":"ao","question_type":"definition"}
+{"question_id":"de-046","question":"Was ist die örtliche Zuständigkeit der Finanzbehörden?","answer_slug":"ao","expected_section":"§ 17","legal_area":"ao","question_type":"procedural"}
+{"question_id":"de-047","question":"Was ist die sachliche Zuständigkeit der Finanzbehörden?","answer_slug":"ao","expected_section":"§ 16","legal_area":"ao","question_type":"procedural"}
+{"question_id":"de-048","question":"Was ist eine Finanzbehörde?","answer_slug":"ao","expected_section":"§ 6","legal_area":"ao","question_type":"definition"}
+{"question_id":"de-049","question":"Was gilt als wirtschaftlicher Geschäftsbetrieb?","answer_slug":"ao","expected_section":"§ 14","legal_area":"ao","question_type":"definition"}
+{"question_id":"de-050","question":"Was ist ein ständiger Vertreter im Steuerrecht?","answer_slug":"ao","expected_section":"§ 13","legal_area":"ao","question_type":"definition"}

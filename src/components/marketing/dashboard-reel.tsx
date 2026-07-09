@@ -431,15 +431,15 @@ export default function DashboardReel({
           <div className="brand-bg flex h-6 w-6 shrink-0 items-center justify-center rounded-md">
             <Brain size={13} className="text-white" />
           </div>
-          <span className="text-xs font-semibold [color:var(--mk-text)]">{brand}</span>
+          <span className="text-sm font-semibold [color:var(--mk-text)]">{brand}</span>
         </div>
         <div className="flex flex-1 items-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-2.5 py-1.5 [background:var(--mk-bg)]">
           <Search size={13} className="[color:var(--mk-text-subtle)]" />
-          <span className="text-xs [color:var(--mk-text-subtle)]">
+          <span className="text-sm [color:var(--mk-text-subtle)]">
             {UI_STRINGS[lang].searchPlaceholder}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs [color:var(--mk-text-subtle)]">
+        <div className="flex items-center gap-1.5 text-sm [color:var(--mk-text-subtle)]">
           <Clock size={11} />
           {UI_STRINGS[lang].timeLabel}
         </div>
@@ -455,10 +455,10 @@ export default function DashboardReel({
                 <Brain size={13} className="text-white" />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-xs font-semibold [color:var(--mk-text)]">
+                <p className="truncate text-sm font-semibold [color:var(--mk-text)]">
                   {UI_STRINGS[lang].lawFirmLabel}
                 </p>
-                <p className="text-xs [color:var(--mk-text-subtle)]">
+                <p className="text-sm [color:var(--mk-text-subtle)]">
                   {UI_STRINGS[lang].lawFirmName}
                 </p>
               </div>
@@ -478,7 +478,7 @@ export default function DashboardReel({
             return (
               <div
                 key={i}
-                className={`flex items-center gap-2 rounded-md px-2 py-2 text-xs transition-colors ${
+                className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors ${
                   isActive ? "brand-soft brand-text font-medium" : "[color:var(--mk-text-muted)]"
                 }`}
               >
@@ -493,15 +493,15 @@ export default function DashboardReel({
           {/* brain status — matches real dashboard sidebar brain card */}
           <div className="mt-auto rounded-lg border [border-color:var(--mk-border)] bg-[var(--mk-surface)] px-2.5 py-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium [color:var(--mk-text-subtle)]">Brain</span>
+              <span className="text-sm font-medium [color:var(--mk-text-subtle)]">Brain</span>
               <div className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full [background:var(--signal-green)]" />
-                <span className="text-xs font-medium [color:var(--mk-text-muted)]">
+                <span className="text-sm font-medium [color:var(--mk-text-muted)]">
                   {UI_STRINGS[lang].activeLabel}
                 </span>
               </div>
             </div>
-            <div className="mt-1 flex items-center gap-1 font-mono text-xs [color:var(--mk-text-subtle)] tabular-nums">
+            <div className="mt-1 flex items-center gap-1 font-mono text-sm [color:var(--mk-text-subtle)] tabular-nums">
               <Zap size={10} className="shrink-0" />
               <span>1,247 pages · 89 entities</span>
             </div>
@@ -527,7 +527,7 @@ export default function DashboardReel({
                     <h3 className="text-sm font-semibold [color:var(--mk-text)]">
                       {UI_STRINGS[lang].mattersLabel}
                     </h3>
-                    <span className="text-xs [color:var(--mk-text-subtle)]">
+                    <span className="text-sm [color:var(--mk-text-subtle)]">
                       {v.matters.length} {UI_STRINGS[lang].mattersCount}
                     </span>
                   </div>
@@ -548,15 +548,15 @@ export default function DashboardReel({
                           <FileText size={14} style={{ color: sc.text }} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs font-medium [color:var(--mk-text)]">
+                          <p className="truncate text-sm font-medium [color:var(--mk-text)]">
                             {m.title}
                           </p>
-                          <p className="font-mono text-xs [color:var(--mk-text-subtle)]">
+                          <p className="font-mono text-sm [color:var(--mk-text-subtle)]">
                             {m.id} · {m.client}
                           </p>
                         </div>
                         <span
-                          className="rounded-full px-2 py-0.5 text-xs font-medium"
+                          className="rounded-full px-2 py-0.5 text-sm font-medium"
                           style={{ color: sc.text, background: sc.bg }}
                         >
                           {m.status}
@@ -590,15 +590,15 @@ export default function DashboardReel({
                         className="flex justify-end"
                       >
                         <div className="max-w-[85%] rounded-xl rounded-tr-sm border [border-color:var(--mk-border)] px-3 py-2 [background:var(--mk-surface)]">
-                          <p className="text-xs [color:var(--mk-text)]">{v.brain.question}</p>
-                          <span className="brand-text mt-1 inline-flex items-center gap-1 text-xs">
+                          <p className="text-sm [color:var(--mk-text)]">{v.brain.question}</p>
+                          <span className="brand-text mt-1 inline-flex items-center gap-1 text-sm">
                             <FileText size={10} /> {v.brain.file}
                           </span>
                         </div>
                       </motion.div>
                     )}
                     {brainPhase === 1 && (
-                      <div className="flex items-center gap-1.5 text-xs [color:var(--mk-text-muted)]">
+                      <div className="flex items-center gap-1.5 text-sm [color:var(--mk-text-muted)]">
                         <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--brand-secondary)]" />
                         <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--brand-secondary)] [animation-delay:0.15s]" />
                         <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--brand-secondary)] [animation-delay:0.3s]" />
@@ -614,14 +614,14 @@ export default function DashboardReel({
                           <MessageSquare size={12} className="brand-text" />
                         </div>
                         <div className="max-w-[85%]">
-                          <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">
+                          <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
                             {v.brain.answer}
                           </p>
                           <div className="mt-2 flex flex-wrap gap-1">
                             {v.brain.sources.map((s) => (
                               <span
                                 key={s}
-                                className="brand-text brand-soft rounded px-1.5 py-0.5 font-mono text-xs"
+                                className="brand-text brand-soft rounded px-1.5 py-0.5 font-mono text-sm"
                               >
                                 {s}
                               </span>
@@ -632,7 +632,7 @@ export default function DashboardReel({
                     )}
                   </div>
                   <div className="mt-3 flex items-center gap-2 rounded-xl border [border-color:var(--mk-border)] px-2.5 py-2 [background:var(--mk-surface-2)]">
-                    <div className="min-h-[16px] flex-1 text-xs [color:var(--mk-text)]">
+                    <div className="min-h-[16px] flex-1 text-sm [color:var(--mk-text)]">
                       <span>{brainPhase === 0 ? typed : ""}</span>
                       {brainPhase === 0 && (
                         <span className="ml-0.5 inline-block h-3 w-0.5 animate-pulse bg-[var(--brand-secondary)] align-middle" />
@@ -659,7 +659,7 @@ export default function DashboardReel({
                     <h3 className="text-sm font-semibold [color:var(--mk-text)]">
                       {UI_STRINGS[lang].deadlinesLabel}
                     </h3>
-                    <span className="text-xs font-medium [color:var(--signal-rose)]">
+                    <span className="text-sm font-medium [color:var(--signal-rose)]">
                       {v.deadlines.filter((d) => d.urgent).length} {UI_STRINGS[lang].urgentLabel}
                     </span>
                   </div>
@@ -689,15 +689,15 @@ export default function DashboardReel({
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-medium [color:var(--mk-text)]">
+                        <p className="truncate text-sm font-medium [color:var(--mk-text)]">
                           {d.title}
                         </p>
-                        <p className="font-mono text-xs [color:var(--mk-text-subtle)]">
+                        <p className="font-mono text-sm [color:var(--mk-text-subtle)]">
                           {d.matter}
                         </p>
                       </div>
                       <span
-                        className={`font-mono text-xs font-medium ${d.urgent ? "[color:var(--signal-rose)]" : "[color:var(--mk-text-muted)]"}`}
+                        className={`font-mono text-sm font-medium ${d.urgent ? "[color:var(--signal-rose)]" : "[color:var(--mk-text-muted)]"}`}
                       >
                         {d.date}
                       </span>
@@ -724,8 +724,8 @@ export default function DashboardReel({
                       </h3>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-bold [color:var(--mk-text)]">{v.calendar.day}</p>
-                      <p className="text-xs [color:var(--mk-text-subtle)]">{v.calendar.weekday}</p>
+                      <p className="text-sm font-bold [color:var(--mk-text)]">{v.calendar.day}</p>
+                      <p className="text-sm [color:var(--mk-text-subtle)]">{v.calendar.weekday}</p>
                     </div>
                   </div>
                   {/* Mini calendar grid */}
@@ -737,7 +737,7 @@ export default function DashboardReel({
                       return (
                         <div
                           key={day}
-                          className={`flex h-7 items-center justify-center rounded text-xs transition-colors ${
+                          className={`flex h-7 items-center justify-center rounded text-sm transition-colors ${
                             isToday
                               ? "brand-bg font-bold text-white"
                               : hasEntry
@@ -766,15 +766,15 @@ export default function DashboardReel({
                             className="flex h-8 w-12 shrink-0 flex-col items-center justify-center rounded-lg"
                             style={{ background: sc.bg }}
                           >
-                            <span className="text-xs font-bold" style={{ color: sc.text }}>
+                            <span className="text-sm font-bold" style={{ color: sc.text }}>
                               {e.time}
                             </span>
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs font-medium [color:var(--mk-text)]">
+                            <p className="truncate text-sm font-medium [color:var(--mk-text)]">
                               {e.title}
                             </p>
-                            <p className="font-mono text-xs [color:var(--mk-text-subtle)]">
+                            <p className="font-mono text-sm [color:var(--mk-text-subtle)]">
                               {e.matter}
                             </p>
                           </div>
@@ -803,7 +803,7 @@ export default function DashboardReel({
                         {lang === "en" ? "Document Review" : "Dokumenten-Analyse"}
                       </h3>
                     </div>
-                    <span className="brand-text brand-soft rounded-full px-2 py-0.5 text-xs font-medium">
+                    <span className="brand-text brand-soft rounded-full px-2 py-0.5 text-sm font-medium">
                       {v.review.fileName}
                     </span>
                   </div>
@@ -816,11 +816,11 @@ export default function DashboardReel({
                   >
                     <div className="mb-1.5 flex items-center gap-2">
                       <Brain size={13} className="brand-text" />
-                      <span className="text-xs font-semibold [color:var(--mk-text)]">
+                      <span className="text-sm font-semibold [color:var(--mk-text)]">
                         {lang === "en" ? "AI Summary" : "KI-Zusammenfassung"}
                       </span>
                     </div>
-                    <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">
+                    <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
                       {v.review.summary}
                     </p>
                   </motion.div>
@@ -856,17 +856,17 @@ export default function DashboardReel({
                           style={{ borderColor: c.border, background: c.bg }}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-mono text-xs font-bold" style={{ color: c.text }}>
+                            <span className="font-mono text-sm font-bold" style={{ color: c.text }}>
                               {r.line}
                             </span>
                             <span
-                              className="rounded-full px-2 py-0.5 text-xs font-medium uppercase"
+                              className="rounded-full px-2 py-0.5 text-sm font-medium uppercase"
                               style={{ color: c.text, background: c.bg }}
                             >
                               {r.severity}
                             </span>
                           </div>
-                          <p className="mt-1 text-xs leading-relaxed [color:var(--mk-text-muted)]">
+                          <p className="mt-1 text-sm leading-relaxed [color:var(--mk-text-muted)]">
                             {r.text}
                           </p>
                         </motion.div>
@@ -876,7 +876,7 @@ export default function DashboardReel({
 
                   {/* Clause checklist */}
                   <div className="mt-auto">
-                    <p className="mb-2 text-xs font-semibold [color:var(--mk-text)]">
+                    <p className="mb-2 text-sm font-semibold [color:var(--mk-text)]">
                       {lang === "en" ? "Clauses" : "Klauseln"}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
@@ -897,7 +897,7 @@ export default function DashboardReel({
                         return (
                           <span
                             key={c.name}
-                            className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-2.5 py-1 text-xs [background:var(--mk-surface)]"
+                            className="inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-2.5 py-1 text-sm [background:var(--mk-surface)]"
                           >
                             <Icon size={11} style={{ color }} />
                             <span className="[color:var(--mk-text-muted)]">{c.name}</span>
@@ -926,7 +926,7 @@ export default function DashboardReel({
                         {lang === "en" ? "Approvals" : "Freigaben"}
                       </h3>
                     </div>
-                    <span className="text-xs font-medium [color:var(--signal-amber)]">
+                    <span className="text-sm font-medium [color:var(--signal-amber)]">
                       {v.approval.items.length} {lang === "en" ? "pending" : "offen"}
                     </span>
                   </div>
@@ -945,26 +945,26 @@ export default function DashboardReel({
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs font-medium [color:var(--mk-text)]">
+                              <p className="truncate text-sm font-medium [color:var(--mk-text)]">
                                 {item.title}
                               </p>
-                              <p className="mt-0.5 text-xs [color:var(--mk-text-subtle)]">
+                              <p className="mt-0.5 text-sm [color:var(--mk-text-subtle)]">
                                 {item.submittedBy} · {item.submittedAt}
                               </p>
                             </div>
                             <span
-                              className="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
+                              className="shrink-0 rounded-full px-2 py-0.5 text-sm font-medium"
                               style={{ color: sc.text, background: sc.bg }}
                             >
                               {item.status}
                             </span>
                           </div>
                           <div className="mt-2 flex items-center gap-2">
-                            <button className="brand-bg flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-white">
+                            <button className="brand-bg flex items-center gap-1 rounded-md px-2.5 py-1 text-sm font-medium text-white">
                               <CheckCircle2 size={11} />
                               {lang === "en" ? "Approve" : "Freigeben"}
                             </button>
-                            <button className="rounded-md border [border-color:var(--mk-border)] px-2.5 py-1 text-xs font-medium [color:var(--mk-text-muted)]">
+                            <button className="rounded-md border [border-color:var(--mk-border)] px-2.5 py-1 text-sm font-medium [color:var(--mk-text-muted)]">
                               {lang === "en" ? "Review" : "Prüfen"}
                             </button>
                           </div>
@@ -975,7 +975,7 @@ export default function DashboardReel({
 
                   {/* Audit trail */}
                   <div className="mt-auto rounded-xl border [border-color:var(--mk-border)] p-3 [background:var(--mk-surface-2)]">
-                    <p className="mb-2 text-xs font-semibold [color:var(--mk-text)]">
+                    <p className="mb-2 text-sm font-semibold [color:var(--mk-text)]">
                       {lang === "en" ? "Audit Trail" : "Audit-Trail"}
                     </p>
                     <div className="space-y-1.5">
@@ -985,7 +985,7 @@ export default function DashboardReel({
                           initial={{ opacity: 0, x: -6 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.3 + i * 0.08 }}
-                          className="flex items-center gap-2 text-xs"
+                          className="flex items-center gap-2 text-sm"
                         >
                           <span className="font-mono [color:var(--mk-text-subtle)]">{a.time}</span>
                           <span className="[color:var(--mk-text-muted)]">{a.action}</span>

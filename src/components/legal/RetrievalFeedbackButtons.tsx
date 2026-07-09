@@ -21,10 +21,10 @@ const FEEDBACK_OPTIONS: Array<{
   label: string;
   hoverClass: string;
 }> = [
-  { type: "relevant", icon: ThumbsUp, label: "Relevant", hoverClass: "hover:text-emerald-600" },
-  { type: "irrelevant", icon: ThumbsDown, label: "Irrelevant", hoverClass: "hover:text-amber-600" },
-  { type: "outdated", icon: AlertCircle, label: "Veraltet", hoverClass: "hover:text-orange-600" },
-  { type: "wrong", icon: XCircle, label: "Falsch", hoverClass: "hover:text-red-600" },
+  { type: "relevant", icon: ThumbsUp, label: "Relevant", hoverClass: "hover:text-[color:var(--ds-success-text)]" },
+  { type: "irrelevant", icon: ThumbsDown, label: "Irrelevant", hoverClass: "hover:text-[color:var(--ds-warning-text)]" },
+  { type: "outdated", icon: AlertCircle, label: "Veraltet", hoverClass: "hover:text-[color:var(--ds-attention-text)]" },
+  { type: "wrong", icon: XCircle, label: "Falsch", hoverClass: "hover:text-[color:var(--ds-danger-text)]" },
 ];
 
 export function RetrievalFeedbackButtons({
@@ -64,7 +64,7 @@ export function RetrievalFeedbackButtons({
           className
         )}
       >
-        <ThumbsUp size={10} className="text-emerald-600" />
+        <ThumbsUp size={10} className="text-[color:var(--ds-success-text)]" />
         Danke für dein Feedback
       </span>
     );

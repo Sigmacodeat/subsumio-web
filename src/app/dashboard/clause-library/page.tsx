@@ -114,7 +114,7 @@ export default function ClauseLibraryPage() {
         actions={
           <Button
             onClick={() => setQuickCreateOpen(true)}
-            className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
+            className="gap-2 bg-[color:var(--ds-success-solid)] text-white hover:bg-[color:var(--ds-success-solid)]"
           >
             <Plus size={15} /> {t("clauses.btn_create")}
           </Button>
@@ -160,7 +160,7 @@ export default function ClauseLibraryPage() {
       )}
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
@@ -197,10 +197,10 @@ export default function ClauseLibraryPage() {
                     e.stopPropagation();
                     copyClause(clause);
                   }}
-                  className="text-[color:var(--ds-text-muted)] opacity-0 transition-opacity group-hover:opacity-100 hover:text-emerald-600"
+                  className="text-[color:var(--ds-text-muted)] opacity-0 transition-opacity group-hover:opacity-100 hover:text-[color:var(--ds-success-text)]"
                 >
                   {copied && selectedClause?.slug === clause.slug ? (
-                    <Check size={14} className="text-emerald-600" />
+                    <Check size={14} className="text-[color:var(--ds-success-text)]" />
                   ) : (
                     <Copy size={14} />
                   )}
@@ -251,7 +251,7 @@ export default function ClauseLibraryPage() {
               onClick={() => copyClause(selectedClause)}
               className="gap-1.5 text-xs"
             >
-              {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+              {copied ? <Check size={12} className="text-[color:var(--ds-success-text)]" /> : <Copy size={12} />}
               {copied ? t("clauses.btn_copy") : t("clauses.btn_copy")}
             </Button>
           </div>

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     template: "%s — Subsumio",
   },
   description:
-    "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz: Aktenverwaltung, Fristenkontrolle nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. DSGVO-konform, EU-Cloud oder On-Premise.",
+    "KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz. Akten, Fristen, belegte KI-Antworten. DSGVO-konform, EU-Cloud oder On-Premise.",
   alternates: {
     canonical: "/",
     languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en", "x-default": "/" },

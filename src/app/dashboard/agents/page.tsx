@@ -71,21 +71,21 @@ function formatInboxPayload(payload: unknown, t: TFunc): string {
 function statusColor(status: AgentJob["status"]): string {
   switch (status) {
     case "completed":
-      return "bg-emerald-500";
+      return "bg-[color:var(--ds-success-solid)]";
     case "active":
-      return "bg-blue-500 animate-pulse";
+      return "bg-[color:var(--ds-info-solid)] animate-pulse";
     case "waiting":
-      return "bg-amber-500";
+      return "bg-[color:var(--ds-warning-solid)]";
     case "failed":
-      return "bg-red-500";
+      return "bg-[color:var(--ds-danger-solid)]";
     case "paused":
       return "bg-gray-500";
     case "partial_success":
-      return "bg-amber-400";
+      return "bg-[color:var(--ds-warning-solid)]";
     case "needs_review":
-      return "bg-orange-500";
+      return "bg-[color:var(--ds-attention-solid)]";
     case "monitoring":
-      return "bg-blue-400";
+      return "bg-[color:var(--ds-info-solid)]";
     default:
       return "bg-gray-400";
   }
@@ -145,13 +145,13 @@ function statusLabel(status: AgentJob["status"], t: TFunc): string {
 function statusIcon(status: AgentJob["status"]) {
   switch (status) {
     case "completed":
-      return <CheckCircle2 size={14} className="text-emerald-600" />;
+      return <CheckCircle2 size={14} className="text-[color:var(--ds-success-text)]" />;
     case "active":
-      return <Loader2 size={14} className="animate-spin text-blue-600" />;
+      return <Loader2 size={14} className="animate-spin text-[color:var(--ds-info-text)]" />;
     case "waiting":
-      return <Clock size={14} className="text-amber-600" />;
+      return <Clock size={14} className="text-[color:var(--ds-warning-text)]" />;
     case "failed":
-      return <XCircle size={14} className="text-red-600" />;
+      return <XCircle size={14} className="text-[color:var(--ds-danger-text)]" />;
     case "paused":
       return <Pause size={14} className="text-gray-400" />;
   }
@@ -478,7 +478,7 @@ function JobDetail({
             </div>
           </div>
           <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="font-mono text-lg font-semibold text-emerald-600">
+            <div className="font-mono text-lg font-semibold text-[color:var(--ds-success-text)]">
               ${job.cost?.toFixed(2) ?? "0.00"}
             </div>
             <div className="text-xs text-[color:var(--ds-text-muted)]">
@@ -587,15 +587,15 @@ function JobDetail({
                 <div
                   className={cn(
                     "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
-                    isUser ? "brand-soft" : isSystem ? "bg-amber-500/10" : "bg-emerald-500/10"
+                    isUser ? "brand-soft" : isSystem ? "bg-[color:var(--ds-warning-bg)]" : "bg-[color:var(--ds-success-bg)]"
                   )}
                 >
                   {isUser ? (
                     <User size={12} className="brand-text" />
                   ) : isSystem ? (
-                    <Bot size={12} className="text-amber-600" />
+                    <Bot size={12} className="text-[color:var(--ds-warning-text)]" />
                   ) : (
-                    <Bot size={12} className="text-emerald-600" />
+                    <Bot size={12} className="text-[color:var(--ds-success-text)]" />
                   )}
                 </div>
                 <div
@@ -852,7 +852,7 @@ export default function AgentsPage() {
                   {t("agents.agent_jobs")}
                 </h2>
                 <div className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--ds-info-solid)]" />
                   <span className="text-xs text-[color:var(--ds-text-muted)]">
                     {activeCount} {t("agents.active_count")}
                   </span>
@@ -944,19 +944,19 @@ export default function AgentsPage() {
                 </Button>
                 <div className="flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
                   <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" />{" "}
+                    <span className="h-2 w-2 rounded-full bg-[color:var(--ds-success-solid)]" />{" "}
                     {t("agents.legend_completed")}
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-blue-500" />{" "}
+                    <span className="h-2 w-2 rounded-full bg-[color:var(--ds-info-solid)]" />{" "}
                     {t("agents.legend_active")}
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-amber-500" />{" "}
+                    <span className="h-2 w-2 rounded-full bg-[color:var(--ds-warning-solid)]" />{" "}
                     {t("agents.legend_waiting")}
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-red-500" /> {t("agents.legend_failed")}
+                    <span className="h-2 w-2 rounded-full bg-[color:var(--ds-danger-solid)]" /> {t("agents.legend_failed")}
                   </span>
                 </div>
               </div>

@@ -26,8 +26,8 @@ import { MatterReviewInbox } from "@/components/legal/MatterReviewInbox";
 import { QuickTimeEntry } from "@/components/legal/QuickTimeEntry";
 
 const PRIORITY_STYLES: Record<MatterWorkflowAction["priority"], string> = {
-  critical: "border-red-500/30 bg-red-500/5 text-red-700",
-  high: "border-amber-500/30 bg-amber-500/5 text-amber-700",
+  critical: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  high: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   medium:
     "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)]",
   low: "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)]",
@@ -244,7 +244,7 @@ export function MatterWorkflowCockpit() {
             aria-label="Aktenverständnis wird geladen"
           />
         ) : understandingError ? (
-          <Badge variant="default" className="gap-1.5 border-red-500/30 bg-red-500/10 text-red-700">
+          <Badge variant="default" className="gap-1.5 border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">
             <AlertTriangle size={13} aria-hidden="true" />
             Superbrain nicht erreichbar
           </Badge>
@@ -254,10 +254,10 @@ export function MatterWorkflowCockpit() {
             className={cn(
               "gap-1.5",
               score >= 80
-                ? "bg-emerald-500/10 text-emerald-700"
+                ? "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
                 : score >= 50
-                  ? "bg-amber-500/10 text-amber-700"
-                  : "bg-red-500/10 text-red-700"
+                  ? "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                  : "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
             )}
           >
             <FileSearch size={13} aria-hidden="true" />
@@ -291,7 +291,7 @@ export function MatterWorkflowCockpit() {
 
       <div className="mt-4 space-y-2" aria-live="polite">
         {topActions.length === 0 && !loading ? (
-          <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 p-3 text-sm text-emerald-700">
+          <div className="flex items-center gap-2 rounded-xl bg-[color:var(--ds-success-bg)] p-3 text-sm text-[color:var(--ds-success-text)]">
             <CheckCircle2 size={16} aria-hidden="true" />
             Keine kritischen nächsten Schritte erkannt. Akte fachlich weiterbearbeiten oder
             aktualisieren.

@@ -105,7 +105,7 @@ function CopyableField({
           disabled={!value}
           className="shrink-0 p-2 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)] disabled:opacity-30"
         >
-          {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+          {copied ? <Check size={14} className="text-[color:var(--ds-success-text)]" /> : <Copy size={14} />}
         </button>
       </div>
     </div>
@@ -143,19 +143,19 @@ function SyncLogView({ status }: { status: SyncStatus }) {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-cols-4">
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
               <p className="text-xs text-[color:var(--ds-text-muted)]">Erstellt</p>
-              <p className="text-lg font-semibold text-emerald-600 tabular-nums">
+              <p className="text-lg font-semibold text-[color:var(--ds-success-text)] tabular-nums">
                 {result.usersCreated}
               </p>
             </div>
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
               <p className="text-xs text-[color:var(--ds-text-muted)]">Aktualisiert</p>
-              <p className="text-lg font-semibold text-blue-600 tabular-nums">
+              <p className="text-lg font-semibold text-[color:var(--ds-info-text)] tabular-nums">
                 {result.usersUpdated}
               </p>
             </div>
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
               <p className="text-xs text-[color:var(--ds-text-muted)]">Deaktiviert</p>
-              <p className="text-lg font-semibold text-amber-600 tabular-nums">
+              <p className="text-lg font-semibold text-[color:var(--ds-warning-text)] tabular-nums">
                 {result.usersDeactivated}
               </p>
             </div>
@@ -168,16 +168,16 @@ function SyncLogView({ status }: { status: SyncStatus }) {
           </div>
 
           {result.errors.length > 0 && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4">
+            <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4">
               <div className="mb-2 flex items-center gap-2">
-                <AlertTriangle size={14} className="shrink-0 text-red-600" />
-                <p className="text-sm font-medium text-red-600">
+                <AlertTriangle size={14} className="shrink-0 text-[color:var(--ds-danger-text)]" />
+                <p className="text-sm font-medium text-[color:var(--ds-danger-text)]">
                   {result.errors.length} {t("scim.errors_count")}
                 </p>
               </div>
               <ul className="max-h-40 space-y-1 overflow-y-auto">
                 {result.errors.map((err, i) => (
-                  <li key={i} className="font-mono text-xs text-red-600/80">
+                  <li key={i} className="font-mono text-xs text-[color:var(--ds-danger-text)]/80">
                     {err}
                   </li>
                 ))}
@@ -186,9 +186,9 @@ function SyncLogView({ status }: { status: SyncStatus }) {
           )}
 
           {result.errors.length === 0 && (
-            <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
-              <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
-              <p className="text-sm text-emerald-600">{t("scim.sync_success")}</p>
+            <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-3">
+              <CheckCircle2 size={14} className="shrink-0 text-[color:var(--ds-success-text)]" />
+              <p className="text-sm text-[color:var(--ds-success-text)]">{t("scim.sync_success")}</p>
             </div>
           )}
 
@@ -225,8 +225,8 @@ export default function ScimSettingsPage() {
         <PageHeader title={t("scim.title")} description={t("scim.description")} />
         <Card>
           <div className="p-10 text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10">
-              <XCircle size={22} className="text-red-600" />
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[color:var(--ds-danger-bg)]">
+              <XCircle size={22} className="text-[color:var(--ds-danger-text)]" />
             </div>
             <p className="text-sm font-medium text-[color:var(--ds-text)]">
               {t("scim.access_denied")}
@@ -291,19 +291,19 @@ export default function ScimSettingsPage() {
               label="SCIM-Benutzer gesamt"
               value={status?.totalScimUsers ?? 0}
               icon={Users}
-              color="bg-blue-500/10 text-blue-600"
+              color="bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
             />
             <StatCard
               label={t("scim.label_active_users")}
               value={status?.activeScimUsers ?? 0}
               icon={UserCheck}
-              color="bg-emerald-500/10 text-emerald-600"
+              color="bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
             />
             <StatCard
               label={t("scim.label_disabled_users")}
               value={status?.deactivatedScimUsers ?? 0}
               icon={UserMinus}
-              color="bg-amber-500/10 text-amber-600"
+              color="bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
             />
             <StatCard
               label="Gruppen (letzter Sync)"
@@ -422,17 +422,17 @@ export default function ScimSettingsPage() {
                 {
                   icon: UserPlus,
                   text: t("scim.feature_auto_provision"),
-                  color: "text-emerald-600",
+                  color: "text-[color:var(--ds-success-text)]",
                 },
                 {
                   icon: UserCheck,
                   text: t("scim.feature_auto_update"),
-                  color: "text-blue-600",
+                  color: "text-[color:var(--ds-info-text)]",
                 },
                 {
                   icon: UserMinus,
                   text: t("scim.feature_auto_deprovision"),
-                  color: "text-amber-600",
+                  color: "text-[color:var(--ds-warning-text)]",
                 },
                 {
                   icon: FolderTree,
@@ -457,10 +457,10 @@ export default function ScimSettingsPage() {
 
           {/* Sync error toast */}
           {syncMutation.isError && (
-            <div className="fixed right-4 bottom-4 z-50 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 shadow-lg backdrop-blur-sm">
+            <div className="fixed right-4 bottom-4 z-50 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 shadow-lg backdrop-blur-sm">
               <div className="flex items-center gap-2">
-                <AlertTriangle size={16} className="text-red-600" />
-                <p className="text-sm text-red-600">
+                <AlertTriangle size={16} className="text-[color:var(--ds-danger-text)]" />
+                <p className="text-sm text-[color:var(--ds-danger-text)]">
                   Sync fehlgeschlagen:{" "}
                   {syncMutation.error instanceof Error
                     ? syncMutation.error.message
@@ -472,10 +472,10 @@ export default function ScimSettingsPage() {
 
           {/* Sync success toast */}
           {syncMutation.isSuccess && (
-            <div className="fixed right-4 bottom-4 z-50 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 shadow-lg backdrop-blur-sm">
+            <div className="fixed right-4 bottom-4 z-50 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-3 shadow-lg backdrop-blur-sm">
               <div className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-600" />
-                <p className="text-sm text-emerald-600">
+                <CheckCircle2 size={16} className="text-[color:var(--ds-success-text)]" />
+                <p className="text-sm text-[color:var(--ds-success-text)]">
                   Synchronisation abgeschlossen: {syncMutation.data?.data?.usersCreated ?? 0}{" "}
                   erstellt, {syncMutation.data?.data?.usersUpdated ?? 0} aktualisiert,{" "}
                   {syncMutation.data?.data?.usersDeactivated ?? 0} deaktiviert

@@ -145,7 +145,7 @@ export default function OpponentsPage() {
           </div>
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
             <div className="text-xs text-[color:var(--ds-text-muted)]">Gewonnen</div>
-            <div className="text-xl font-bold text-emerald-600">
+            <div className="text-xl font-bold text-[color:var(--ds-success-text)]">
               {opponents.reduce((s, o) => s + o.wins, 0)}
             </div>
           </div>
@@ -153,7 +153,7 @@ export default function OpponentsPage() {
       )}
 
       {loadError && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <span>{loadError}</span>
           <Button
             variant="ghost"
@@ -172,7 +172,7 @@ export default function OpponentsPage() {
                 }
               })();
             }}
-            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             <RotateCcw size={13} /> Erneut versuchen
           </Button>
@@ -244,7 +244,7 @@ export default function OpponentsPage() {
                   <span>{selectedOpponent.caseCount} Akten</span>
                   <span
                     className={
-                      selectedOpponent.winRate >= 0.5 ? "text-emerald-600" : "text-red-600"
+                      selectedOpponent.winRate >= 0.5 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-danger-text)]"
                     }
                   >
                     {Math.round(selectedOpponent.winRate * 100)}% Siegquote
@@ -253,16 +253,16 @@ export default function OpponentsPage() {
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
-                  <div className="text-xl font-bold text-emerald-600">{selectedOpponent.wins}</div>
+                <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-3 text-center">
+                  <div className="text-xl font-bold text-[color:var(--ds-success-text)]">{selectedOpponent.wins}</div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">Gewonnen</div>
                 </div>
-                <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-center">
-                  <div className="text-xl font-bold text-red-600">{selectedOpponent.losses}</div>
+                <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-center">
+                  <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">{selectedOpponent.losses}</div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">Verloren</div>
                 </div>
-                <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 text-center">
-                  <div className="text-xl font-bold text-blue-600">
+                <div className="rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-3 text-center">
+                  <div className="text-xl font-bold text-[color:var(--ds-info-text)]">
                     {selectedOpponent.settlements}
                   </div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">Erledigt</div>
@@ -294,12 +294,12 @@ export default function OpponentsPage() {
                   {selectedOpponent.recentCases.map((c) => {
                     const statusColor =
                       c.status === "won"
-                        ? "text-emerald-600"
+                        ? "text-[color:var(--ds-success-text)]"
                         : c.status === "lost"
-                          ? "text-red-600"
+                          ? "text-[color:var(--ds-danger-text)]"
                           : c.status === "settled"
-                            ? "text-blue-600"
-                            : "text-amber-600";
+                            ? "text-[color:var(--ds-info-text)]"
+                            : "text-[color:var(--ds-warning-text)]";
                     return (
                       <Link
                         key={c.slug}
@@ -337,7 +337,7 @@ export default function OpponentsPage() {
                   className="hover:brand-border hover:brand-soft group flex w-full items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
-                    <ShieldAlert size={18} className="text-red-600" />
+                    <ShieldAlert size={18} className="text-[color:var(--ds-danger-text)]" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="font-medium text-[color:var(--ds-text)]">{o.name}</div>
@@ -349,7 +349,7 @@ export default function OpponentsPage() {
                     <div
                       className={cn(
                         "text-sm font-medium",
-                        o.winRate >= 0.5 ? "text-emerald-600" : "text-red-600"
+                        o.winRate >= 0.5 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-danger-text)]"
                       )}
                     >
                       {Math.round(o.winRate * 100)}%

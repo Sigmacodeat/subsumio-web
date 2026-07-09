@@ -265,7 +265,7 @@ export default function TeamMeetingPage() {
                         {item.title}
                       </span>
                       {item.priority === "high" && (
-                        <Badge variant="default" className="border-red-500/30 text-xs text-red-600">
+                        <Badge variant="default" className="border-[color:var(--ds-danger-border)] text-xs text-[color:var(--ds-danger-text)]">
                           {t("mattertab.urgency_high")}
                         </Badge>
                       )}

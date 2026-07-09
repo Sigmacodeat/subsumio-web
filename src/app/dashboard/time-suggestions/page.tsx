@@ -218,7 +218,7 @@ export default function TimeSuggestionsPage() {
                     {s.confidence === "high" && (
                       <Badge
                         variant="default"
-                        className="border-green-500/20 bg-green-500/10 text-xs text-green-600"
+                        className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
                       >
                         Hohe Konfidenz
                       </Badge>
@@ -226,7 +226,7 @@ export default function TimeSuggestionsPage() {
                     {s.status === "accepted" && (
                       <Badge
                         variant="default"
-                        className="border-green-500/20 bg-green-500/10 text-xs text-green-600"
+                        className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
                       >
                         <Check size={10} className="mr-1 inline" /> Übernommen
                       </Badge>
@@ -234,14 +234,14 @@ export default function TimeSuggestionsPage() {
                     {s.status === "rejected" && (
                       <Badge
                         variant="default"
-                        className="border-red-500/20 bg-red-500/10 text-xs text-red-600"
+                        className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
                       >
                         <X size={10} className="mr-1 inline" /> Abgelehnt
                       </Badge>
                     )}
                   </div>
                   <p className="text-xs text-[color:var(--ds-text-muted)]">{s.description}</p>
-                  {s.case_slug && <p className="text-xs text-blue-600">Akte: {s.case_slug}</p>}
+                  {s.case_slug && <p className="text-xs text-[color:var(--ds-info-text)]">Akte: {s.case_slug}</p>}
                 </div>
                 {isPending && (
                   <div className="flex shrink-0 gap-1.5">

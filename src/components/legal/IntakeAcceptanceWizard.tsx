@@ -282,7 +282,7 @@ export function IntakeAcceptanceWizard({
                         active
                           ? "brand-text bg-[color:var(--brand-glow)]"
                           : done
-                            ? "text-emerald-600 hover:bg-[color:var(--ds-hover)]"
+                            ? "text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-hover)]"
                             : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
                       )}
                       aria-current={active ? "step" : undefined}
@@ -333,19 +333,19 @@ export function IntakeAcceptanceWizard({
                     className={cn(
                       "rounded-xl border p-4",
                       checkResult.severity === "critical"
-                        ? "border-red-500/20 bg-red-500/5"
+                        ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
                         : checkResult.severity === "low"
-                          ? "border-amber-500/20 bg-amber-500/5"
-                          : "border-emerald-500/20 bg-emerald-500/5"
+                          ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
+                          : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
                     )}
                   >
                     <div className="flex items-center gap-2">
                       {checkResult.severity === "critical" ? (
-                        <AlertTriangle size={16} className="text-red-600" />
+                        <AlertTriangle size={16} className="text-[color:var(--ds-danger-text)]" />
                       ) : checkResult.severity === "low" ? (
-                        <AlertTriangle size={16} className="text-amber-600" />
+                        <AlertTriangle size={16} className="text-[color:var(--ds-warning-text)]" />
                       ) : (
-                        <CheckCircle2 size={16} className="text-emerald-600" />
+                        <CheckCircle2 size={16} className="text-[color:var(--ds-success-text)]" />
                       )}
                       <span className="text-sm font-medium text-[color:var(--ds-text)]">
                         {checkResult.severity === "critical"
@@ -363,7 +363,7 @@ export function IntakeAcceptanceWizard({
                         {checkResult.matches.map((m) => (
                           <li key={m.slug} className="text-xs text-[color:var(--ds-text)]">
                             {m.title} ({m.role})
-                            {!m.exact && <span className="text-amber-600"> — ähnlich</span>}
+                            {!m.exact && <span className="text-[color:var(--ds-warning-text)]"> — ähnlich</span>}
                           </li>
                         ))}
                       </ul>
@@ -372,10 +372,10 @@ export function IntakeAcceptanceWizard({
                 )}
 
                 {workflow.conflict_check.status === "conflict" && (
-                  <div className="space-y-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                  <div className="space-y-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
                     <div className="flex items-start gap-2">
-                      <ShieldAlert size={16} className="mt-0.5 text-amber-600" />
-                      <p className="text-sm text-amber-700">
+                      <ShieldAlert size={16} className="mt-0.5 text-[color:var(--ds-warning-text)]" />
+                      <p className="text-sm text-[color:var(--ds-warning-text)]">
                         Konflikt erkannt. Nur Partner/Admin kann mit Begründung freigeben.
                       </p>
                     </div>
@@ -607,7 +607,7 @@ export function IntakeAcceptanceWizard({
                   />
                 </div>
                 {!canAcceptMandate(workflow).ok && (
-                  <p className="text-xs text-red-600">
+                  <p className="text-xs text-[color:var(--ds-danger-text)]">
                     Es fehlen noch Pflichtschritte. Bitte alle Schritte abschließen.
                   </p>
                 )}
@@ -673,7 +673,7 @@ function StatusRow({ label, ok }: { label: string; ok: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-[color:var(--ds-text)]">{label}</span>
-      <span className={ok ? "text-emerald-600" : "text-amber-600"}>{ok ? "OK" : "offen"}</span>
+      <span className={ok ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-warning-text)]"}>{ok ? "OK" : "offen"}</span>
     </div>
   );
 }

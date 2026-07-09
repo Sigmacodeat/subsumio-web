@@ -167,25 +167,25 @@ const severityConfig = {
     icon: XCircle,
     label: "Critical",
     labelDe: "Kritisch",
-    classes: "border-red-500/30 bg-red-500/10 text-red-600",
-    borderClasses: "border-red-500/30 bg-red-500/5",
-    iconColor: "text-red-600",
+    classes: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+    borderClasses: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]",
+    iconColor: "text-[color:var(--ds-danger-text)]",
   },
   warning: {
     icon: AlertTriangle,
     label: "Warning",
     labelDe: "Warnung",
-    classes: "border-amber-500/30 bg-amber-500/10 text-amber-600",
-    borderClasses: "border-amber-500/30 bg-amber-500/5",
-    iconColor: "text-amber-600",
+    classes: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+    borderClasses: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]",
+    iconColor: "text-[color:var(--ds-warning-text)]",
   },
   stuck: {
     icon: Clock,
     label: "Stuck",
     labelDe: "Stecken geblieben",
-    classes: "border-blue-500/30 bg-blue-500/10 text-blue-600",
-    borderClasses: "border-blue-500/30 bg-blue-500/5",
-    iconColor: "text-blue-600",
+    classes: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+    borderClasses: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]",
+    iconColor: "text-[color:var(--ds-info-text)]",
   },
 };
 
@@ -254,17 +254,17 @@ export function SilentFailureWidget() {
         </div>
         <div className="flex items-center gap-1.5">
           {counts.critical > 0 && (
-            <span className="rounded-full border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold text-red-600">
+            <span className="rounded-full border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-1.5 py-0.5 text-[10px] font-bold text-[color:var(--ds-danger-text)]">
               {counts.critical} {isEn ? "critical" : "kritisch"}
             </span>
           )}
           {counts.stuck > 0 && (
-            <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-bold text-blue-600">
+            <span className="rounded-full border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-1.5 py-0.5 text-[10px] font-bold text-[color:var(--ds-info-text)]">
               {counts.stuck} {isEn ? "stuck" : "stuck"}
             </span>
           )}
           {counts.warning > 0 && (
-            <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-600">
+            <span className="rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-1.5 py-0.5 text-[10px] font-bold text-[color:var(--ds-warning-text)]">
               {counts.warning} {isEn ? "warnings" : "Warnungen"}
             </span>
           )}

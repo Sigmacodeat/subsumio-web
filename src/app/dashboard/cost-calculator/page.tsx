@@ -320,7 +320,7 @@ export default function CostCalculatorPage() {
       {result && !isTax && (
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={18} className="text-emerald-600" />
+            <CheckCircle2 size={18} className="text-[color:var(--ds-success-text)]" />
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
               {t("cost_calc.result_title")}
             </h2>
@@ -440,8 +440,8 @@ export default function CostCalculatorPage() {
                   className={cn(
                     "text-xs",
                     saveNotice.startsWith(t("cost_calc.error_prefix"))
-                      ? "text-red-600"
-                      : "text-emerald-600"
+                      ? "text-[color:var(--ds-danger-text)]"
+                      : "text-[color:var(--ds-success-text)]"
                   )}
                 >
                   {saveNotice}
@@ -456,7 +456,7 @@ export default function CostCalculatorPage() {
       {stbvvResult && isTax && (
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={18} className="text-emerald-600" />
+            <CheckCircle2 size={18} className="text-[color:var(--ds-success-text)]" />
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
               StBVV-Berechnung —{" "}
               {STBVV_ACTIVITIES.find((a) => a.value === stbvvResult.activity)?.label ??
@@ -553,7 +553,7 @@ export default function CostCalculatorPage() {
       {/* AT approximation warning — legal only */}
       {jurisdiction === "at" && !isTax && (
         <div
-          className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-600"
+          className="flex items-start gap-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3 text-xs text-[color:var(--ds-warning-text)]"
           role="note"
         >
           <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />

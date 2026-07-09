@@ -283,7 +283,7 @@ export default function CryptoForensicsPage() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <AlertCircle size={16} className="shrink-0" />
           {error}
         </div>
@@ -300,13 +300,13 @@ export default function CryptoForensicsPage() {
           label={t("crypto_forensics.stat_active" as DashboardKey)}
           value={stats.active}
           icon={<Clock size={18} />}
-          color="text-amber-600"
+          color="text-[color:var(--ds-warning-text)]"
         />
         <StatCard
           label={t("crypto_forensics.stat_completed" as DashboardKey)}
           value={stats.completed}
           icon={<CheckCircle2 size={18} />}
-          color="text-emerald-600"
+          color="text-[color:var(--ds-success-text)]"
         />
         <StatCard
           label={t("crypto_forensics.stat_total_cost" as DashboardKey)}
@@ -668,7 +668,7 @@ export default function CryptoForensicsPage() {
                     {w.isKnownFraud && (
                       <Badge
                         variant="default"
-                        className="border-red-500/30 bg-red-500/10 text-xs text-red-600"
+                        className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
                       >
                         <AlertCircle size={10} className="mr-1" />
                         Known Fraud

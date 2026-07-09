@@ -232,7 +232,7 @@ export default function CalendarExportPage() {
         actions={
           <Button
             variant="primary"
-            className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
+            className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
             onClick={downloadIcal}
           >
             <Download size={14} />
@@ -242,25 +242,25 @@ export default function CalendarExportPage() {
       />
 
       {/* Subscription URL */}
-      <div className="space-y-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+      <div className="space-y-3 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-3">
         <div className="flex items-start gap-3">
-          <Link2 size={16} className="mt-0.5 shrink-0 text-emerald-600" />
+          <Link2 size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]" />
           <div className="flex-1">
-            <p className="mb-1 text-sm font-medium text-emerald-700">
+            <p className="mb-1 text-sm font-medium text-[color:var(--ds-success-text)]">
               Kalender-Abonnement (mit Vorfrist-Alarm)
             </p>
-            <p className="mb-2 text-xs text-emerald-600">
+            <p className="mb-2 text-xs text-[color:var(--ds-success-text)]">
               Abonnieren Sie den Live-Feed mit automatischen Vorfrist-Warnungen (VALARM 2 Tage vor
               der Frist). Outlook, Google Calendar und Apple Calendar unterstützen
               Kalender-Abonnements.
             </p>
             <div className="flex items-center gap-2">
-              <code className="flex-1 truncate rounded-lg border border-emerald-500/20 bg-white/50 px-3 py-1.5 text-xs text-emerald-800">
+              <code className="flex-1 truncate rounded-lg border border-[color:var(--ds-success-border)] bg-white/50 px-3 py-1.5 text-xs text-[color:var(--ds-success-text)]">
                 {icsSubscriptionUrl}
               </code>
               <button
                 onClick={copySubscriptionUrl}
-                className="flex shrink-0 items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-600/10 px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-600/20"
+                className="flex shrink-0 items-center gap-1 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-3 py-1.5 text-xs font-medium text-[color:var(--ds-success-text)] transition-colors hover:bg-[color:var(--ds-success-bg)]"
               >
                 {copied ? <Check size={12} /> : <Copy size={12} />}
                 {copied ? "Kopiert!" : "Kopieren"}
@@ -271,9 +271,9 @@ export default function CalendarExportPage() {
       </div>
 
       {/* Info */}
-      <div className="flex items-start gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
-        <CalendarClock size={16} className="mt-0.5 shrink-0 text-blue-600" />
-        <div className="text-sm text-blue-600">
+      <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-4 py-3">
+        <CalendarClock size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]" />
+        <div className="text-sm text-[color:var(--ds-info-text)]">
           <p className="mb-1 font-medium">Importieren Sie die .ics-Datei in:</p>
           <ul className="space-y-0.5 text-xs">
             <li>• Outlook: Datei → Öffnen und Exportieren → Importieren/Exportieren → iCalendar</li>
@@ -291,7 +291,7 @@ export default function CalendarExportPage() {
             onClick={() => setFilter(f)}
             className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
               filter === f
-                ? "border-blue-500/30 bg-blue-600/15 text-blue-600"
+                ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             }`}
           >
@@ -312,16 +312,16 @@ export default function CalendarExportPage() {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">Anstehend</div>
-          <div className="text-xl font-bold text-blue-600">{upcoming.length}</div>
+          <div className="text-xl font-bold text-[color:var(--ds-info-text)]">{upcoming.length}</div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">Überfällig</div>
-          <div className="text-xl font-bold text-red-600">{overdue.length}</div>
+          <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">{overdue.length}</div>
         </div>
       </div>
 
       {loadError && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           {loadError}
         </div>
       )}
@@ -347,7 +347,7 @@ export default function CalendarExportPage() {
                 key={ev.id}
                 className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                   isOverdue
-                    ? "border-red-500/20 bg-red-500/5"
+                    ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
                 }`}
               >
@@ -375,7 +375,7 @@ export default function CalendarExportPage() {
                     {isOverdue && (
                       <Badge
                         variant="default"
-                        className="border-red-500/20 bg-red-500/10 text-xs text-red-600"
+                        className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
                       >
                         Überfällig
                       </Badge>
@@ -399,9 +399,9 @@ export default function CalendarExportPage() {
                 </div>
                 <div className="shrink-0 text-xs text-[color:var(--ds-text-muted)]">
                   {isOverdue ? (
-                    <AlertTriangle size={14} className="text-red-600" />
+                    <AlertTriangle size={14} className="text-[color:var(--ds-danger-text)]" />
                   ) : (
-                    <Clock size={14} className="text-blue-600" />
+                    <Clock size={14} className="text-[color:var(--ds-info-text)]" />
                   )}
                 </div>
               </div>

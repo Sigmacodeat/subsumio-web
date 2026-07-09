@@ -69,7 +69,7 @@ export default function DataExportPage() {
 
       <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div className="flex items-start gap-3">
-          <Shield size={18} className="mt-0.5 shrink-0 text-emerald-600" />
+          <Shield size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]" />
           <div>
             <p className="text-sm font-medium text-[color:var(--ds-text)]">
               Deine Daten gehören dir
@@ -85,7 +85,7 @@ export default function DataExportPage() {
 
         <Button
           variant="primary"
-          className="gap-2 bg-emerald-600 text-sm text-white hover:bg-emerald-500"
+          className="gap-2 bg-[color:var(--ds-success-solid)] text-sm text-white hover:bg-[color:var(--ds-success-solid)]"
           onClick={exportData}
           disabled={loading}
         >
@@ -95,16 +95,16 @@ export default function DataExportPage() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           {error}
         </div>
       )}
 
       {stats && (
-        <div className="space-y-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+        <div className="space-y-3 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
           <div className="flex items-center gap-2">
-            <FileJson size={16} className="text-emerald-600" />
-            <span className="text-sm font-medium text-emerald-600">Export erfolgreich</span>
+            <FileJson size={16} className="text-[color:var(--ds-success-text)]" />
+            <span className="text-sm font-medium text-[color:var(--ds-success-text)]">Export erfolgreich</span>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
@@ -176,7 +176,7 @@ export default function DataExportPage() {
             {backupLoading ? t("dataexport.btn_backing_up") : t("dataexport.btn_backup")}
           </Button>
           {backupError && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+            <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
               {backupError}
             </div>
           )}
@@ -253,7 +253,7 @@ export default function DataExportPage() {
               {restoreLoading ? t("dataexport.btn_restoring") : t("dataexport.btn_restore")}
             </Button>
             {restoreNotice && (
-              <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-700">
+              <div className="mt-3 flex items-center gap-2 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-3 text-sm text-[color:var(--ds-success-text)]">
                 <CheckCircle2 size={14} />
                 {restoreNotice}
               </div>

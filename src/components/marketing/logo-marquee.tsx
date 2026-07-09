@@ -163,7 +163,7 @@ export default function LogoMarquee({ lang }: { lang: Lang }) {
       {/* Section heading */}
       <div className="mb-12 text-center">
         <span
-          className="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
+          className="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold"
           style={{
             color: "var(--brand-text)",
             background: "color-mix(in srgb, var(--brand-text) 8%, transparent)",

@@ -57,10 +57,10 @@ const STATUS_ICONS: Record<string, typeof Clock> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  running: "text-blue-500",
-  completed: "text-green-500",
-  failed: "text-red-500",
-  awaiting_review: "text-yellow-500",
+  running: "text-[color:var(--ds-info-text)]",
+  completed: "text-[color:var(--ds-success-text)]",
+  failed: "text-[color:var(--ds-danger-text)]",
+  awaiting_review: "text-[color:var(--ds-warning-text)]",
   paused: "text-gray-500",
 };
 
@@ -148,7 +148,7 @@ export default function MobilePipelinePage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[color:var(--ds-bg)]">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-info-text)]" />
       </div>
     );
   }
@@ -158,12 +158,12 @@ export default function MobilePipelinePage() {
     return (
       <div className="min-h-screen bg-[color:var(--ds-bg)] p-4">
         <div className="mb-4 flex items-center justify-between">
-          <button onClick={() => setOutputView(null)} className="text-sm text-blue-500">
+          <button onClick={() => setOutputView(null)} className="text-sm text-[color:var(--ds-info-text)]">
             ← Zurück
           </button>
           <a
             href={`/api/word-export?slug=${encodeURIComponent(outputView.slug)}`}
-            className="inline-flex items-center gap-1 text-sm text-blue-500"
+            className="inline-flex items-center gap-1 text-sm text-[color:var(--ds-info-text)]"
           >
             <Download size={14} /> Word
           </a>
@@ -180,7 +180,7 @@ export default function MobilePipelinePage() {
   if (outputLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[color:var(--ds-bg)]">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-info-text)]" />
       </div>
     );
   }
@@ -282,7 +282,7 @@ export default function MobilePipelinePage() {
                                     <button
                                       key={slug}
                                       onClick={() => viewOutput(slug)}
-                                      className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-xs text-blue-500 hover:bg-[color:var(--ds-surface-hover)]"
+                                      className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-xs text-[color:var(--ds-info-text)] hover:bg-[color:var(--ds-surface-hover)]"
                                     >
                                       <FileText size={12} className="shrink-0" />
                                       <span className="truncate">{slug}</span>
@@ -293,7 +293,7 @@ export default function MobilePipelinePage() {
 
                             {/* Layer Error */}
                             {isLayerExpanded && layerState.error && (
-                              <div className="mt-1 ml-6 rounded bg-red-50 px-2 py-1 text-xs text-red-600">
+                              <div className="mt-1 ml-6 rounded bg-[color:var(--ds-danger-solid)] px-2 py-1 text-xs text-[color:var(--ds-danger-text)]">
                                 {layerState.error}
                               </div>
                             )}
@@ -306,7 +306,7 @@ export default function MobilePipelinePage() {
                   {pipeline.status === "awaiting_review" && (
                     <button
                       onClick={() => resumePipeline(pipeline.case_slug)}
-                      className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white"
+                      className="flex w-full items-center justify-center gap-2 rounded-md bg-[color:var(--ds-info-solid)] px-3 py-2 text-sm font-medium text-white"
                     >
                       <Play size={14} /> Pipeline fortsetzen
                     </button>

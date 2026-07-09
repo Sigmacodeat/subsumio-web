@@ -419,7 +419,7 @@ export default function DraftingPage() {
           {template.label} — Angaben
         </h2>
         {form.error && (
-          <div className="flex items-center gap-2 text-xs text-red-600">
+          <div className="flex items-center gap-2 text-xs text-[color:var(--ds-danger-text)]">
             <AlertTriangle size={14} /> {form.error}
           </div>
         )}
@@ -435,7 +435,7 @@ export default function DraftingPage() {
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
             {f.formState.errors.title && (
-              <p className="mt-1 text-xs text-red-600">{f.formState.errors.title.message}</p>
+              <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{f.formState.errors.title.message}</p>
             )}
           </div>
           <div>
@@ -486,7 +486,7 @@ export default function DraftingPage() {
             className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           />
           {f.formState.errors.facts && (
-            <p className="mt-1 text-xs text-red-600">{f.formState.errors.facts.message}</p>
+            <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{f.formState.errors.facts.message}</p>
           )}
         </div>
         <div>
@@ -531,7 +531,7 @@ export default function DraftingPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="brand-text text-xs font-medium">{t("drafting.saved_default")}</span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700">
+              <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-warning-text)]">
                 {AI_BADGE_LABEL}
               </span>
             </div>
@@ -539,7 +539,7 @@ export default function DraftingPage() {
               <button
                 onClick={() => saveDraftToBrain(result)}
                 disabled={savingDraft || submitting}
-                className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-emerald-600 disabled:opacity-60"
+                className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-success-text)] disabled:opacity-60"
                 title={t("drafting.btn_save")}
               >
                 {savingDraft ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
@@ -560,11 +560,11 @@ export default function DraftingPage() {
               </button>
               <button
                 onClick={() => downloadDocx(result)}
-                className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-blue-600"
+                className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-info-text)]"
                 title={t("drafting.btn_docx")}
               >
                 {docxReady ? (
-                  <Check size={14} className="text-emerald-600" />
+                  <Check size={14} className="text-[color:var(--ds-success-text)]" />
                 ) : (
                   <FileText size={14} />
                 )}
@@ -576,7 +576,7 @@ export default function DraftingPage() {
                 title={t("drafting.btn_copy")}
                 aria-label={t("drafting.btn_copy")}
               >
-                {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                {copied ? <Check size={14} className="text-[color:var(--ds-success-text)]" /> : <Copy size={14} />}
               </button>
             </div>
           </div>
@@ -591,7 +591,7 @@ export default function DraftingPage() {
             }}
             compact
           />
-          <p className="border-t border-[color:var(--ds-border)] pt-2 text-xs leading-relaxed text-amber-700/70">
+          <p className="border-t border-[color:var(--ds-border)] pt-2 text-xs leading-relaxed text-[color:var(--ds-warning-text)]/70">
             {AI_NOTICE}
           </p>
           {draftSaved && (
@@ -599,10 +599,10 @@ export default function DraftingPage() {
               className={cn(
                 "text-xs",
                 draftSaved.startsWith(t("drafting.error_prefix"))
-                  ? "text-red-600"
+                  ? "text-[color:var(--ds-danger-text)]"
                   : draftSaved.startsWith("approval:")
                     ? "brand-text"
-                    : "text-emerald-600"
+                    : "text-[color:var(--ds-success-text)]"
               )}
             >
               {draftSaved.startsWith(t("drafting.error_prefix"))

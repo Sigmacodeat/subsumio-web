@@ -15,7 +15,7 @@ import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import type { BrainPage } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { cn, encodeSlugPath } from "@/lib/utils";
 
 const TYPES = ["legal_deadline", "legal_follow_up", "legal_intake", "legal_calendar_event"];
 
@@ -24,6 +24,15 @@ function dateOf(page: BrainPage): string {
   return String(
     fm.date ?? fm.due_date ?? fm.dueDate ?? fm.start_date ?? fm.received_at ?? ""
   ).slice(0, 10);
+}
+
+/** Every Today item must lead somewhere: to its Akte when known, otherwise to its Fachseite. */
+function itemHref(page: BrainPage, fallback: string): string {
+  const caseSlug = page.frontmatter?.case_slug;
+  if (typeof caseSlug === "string" && caseSlug) {
+    return `/dashboard/cases/${encodeSlugPath(caseSlug)}`;
+  }
+  return fallback;
 }
 
 const COLUMN_META: Record<
@@ -120,7 +129,7 @@ export function TodayView() {
               {items.length > 0 && (
                 <span className="ml-auto flex items-center gap-1.5">
                   {overdueCount > 0 && (
-                    <span className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600 tabular-nums">
+                    <span className="flex items-center gap-1 rounded-full bg-[color:var(--ds-danger-bg)] px-2 py-0.5 text-xs font-semibold text-[color:var(--ds-danger-text)] tabular-nums">
                       <AlertTriangle size={10} aria-hidden="true" />
                       {overdueCount}
                     </span>
@@ -136,25 +145,32 @@ export function TodayView() {
                 {items.map((item) => {
                   const isOverdue = showOverdue && dateOf(item) < today;
                   return (
-                    <li
-                      key={item.slug}
-                      className={cn(
-                        "rounded-lg p-2.5 text-sm",
-                        isOverdue
-                          ? "border border-red-500/20 bg-red-500/5 text-red-700"
-                          : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)]"
-                      )}
-                    >
-                      <div className="flex items-start gap-2">
-                        {isOverdue && (
-                          <AlertTriangle
+                    <li key={item.slug}>
+                      <Link
+                        href={itemHref(item, meta.ctaHref)}
+                        className={cn(
+                          "group/item block rounded-lg p-2.5 text-sm transition-colors",
+                          isOverdue
+                            ? "border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]"
+                            : "bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                        )}
+                      >
+                        <div className="flex items-start gap-2">
+                          {isOverdue && (
+                            <AlertTriangle
+                              size={12}
+                              className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]"
+                              aria-hidden="true"
+                            />
+                          )}
+                          <span className="min-w-0 flex-1">{item.title}</span>
+                          <ArrowRight
                             size={12}
-                            className="mt-0.5 shrink-0 text-red-500"
+                            className="mt-0.5 shrink-0 opacity-0 transition-opacity group-hover/item:opacity-60"
                             aria-hidden="true"
                           />
-                        )}
-                        <span className="min-w-0 flex-1">{item.title}</span>
-                      </div>
+                        </div>
+                      </Link>
                     </li>
                   );
                 })}

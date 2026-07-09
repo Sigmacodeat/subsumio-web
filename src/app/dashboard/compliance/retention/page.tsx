@@ -87,22 +87,22 @@ export default function RetentionPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
-          <div className="text-xl font-bold text-emerald-600">
+        <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-3 text-center">
+          <div className="text-xl font-bold text-[color:var(--ds-success-text)]">
             {cases.filter((c) => c.action === "keep").length}
           </div>
           <div className="text-xs text-[color:var(--ds-text-muted)]">
             {t("retention.stat_keep")}
           </div>
         </div>
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-center">
-          <div className="text-xl font-bold text-amber-600">{toReview.length}</div>
+        <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3 text-center">
+          <div className="text-xl font-bold text-[color:var(--ds-warning-text)]">{toReview.length}</div>
           <div className="text-xs text-[color:var(--ds-text-muted)]">
             {t("retention.stat_review").replace("{{years}}", String(RETENTION_YEARS))}
           </div>
         </div>
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-center">
-          <div className="text-xl font-bold text-red-600">{toDelete.length}</div>
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-center">
+          <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">{toDelete.length}</div>
           <div className="text-xs text-[color:var(--ds-text-muted)]">
             {t("retention.stat_delete").replace("{{years}}", String(RETENTION_YEARS + 4))}
           </div>
@@ -110,7 +110,7 @@ export default function RetentionPage() {
       </div>
 
       {loadError && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           {loadError}
         </div>
       )}
@@ -126,19 +126,19 @@ export default function RetentionPage() {
               key={c.slug}
               className={`flex items-center gap-4 rounded-xl border px-4 py-3 ${
                 c.action === "delete"
-                  ? "border-red-500/20 bg-red-500/5"
+                  ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
                   : c.action === "review"
-                    ? "border-amber-500/20 bg-amber-500/5"
+                    ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
               }`}
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
                 {c.action === "delete" ? (
-                  <Trash2 size={18} className="text-red-600" />
+                  <Trash2 size={18} className="text-[color:var(--ds-danger-text)]" />
                 ) : c.action === "review" ? (
-                  <AlertTriangle size={18} className="text-amber-600" />
+                  <AlertTriangle size={18} className="text-[color:var(--ds-warning-text)]" />
                 ) : (
-                  <CheckCircle2 size={18} className="text-emerald-600" />
+                  <CheckCircle2 size={18} className="text-[color:var(--ds-success-text)]" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
@@ -158,7 +158,7 @@ export default function RetentionPage() {
               {c.action !== "keep" && (
                 <div className="flex items-center gap-2">
                   <span
-                    className={`text-xs font-medium ${c.action === "delete" ? "text-red-600" : "text-amber-600"}`}
+                    className={`text-xs font-medium ${c.action === "delete" ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-warning-text)]"}`}
                   >
                     {c.action === "delete"
                       ? t("retention.action_delete")
@@ -190,7 +190,7 @@ export default function RetentionPage() {
                         }
                       }}
                       disabled={deleting === c.slug}
-                      className="rounded-lg border border-red-500/20 bg-red-500/5 px-2.5 py-1 text-xs text-red-600 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+                      className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2.5 py-1 text-xs text-[color:var(--ds-danger-text)] transition-colors hover:bg-[color:var(--ds-danger-bg)] disabled:opacity-50"
                     >
                       {deleting === c.slug ? (
                         <Loader2 size={12} className="animate-spin" />
@@ -208,7 +208,7 @@ export default function RetentionPage() {
 
       <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div className="flex items-start gap-3">
-          <Shield size={16} className="mt-0.5 shrink-0 text-amber-600" />
+          <Shield size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
           <div>
             <p className="text-xs text-[color:var(--ds-text-muted)]">{t("retention.disclaimer")}</p>
           </div>

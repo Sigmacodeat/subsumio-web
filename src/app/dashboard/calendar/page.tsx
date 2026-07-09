@@ -354,10 +354,10 @@ function OutlookEventDialog({
 
   return (
     <form
-      className="space-y-4 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4"
+      className="space-y-4 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4"
       onSubmit={handleSubmit}
     >
-      <h2 className="text-sm font-semibold text-blue-600">Outlook-Termin erstellen</h2>
+      <h2 className="text-sm font-semibold text-[color:var(--ds-info-text)]">Outlook-Termin erstellen</h2>
       <div className="space-y-1">
         <Label htmlFor="outlook-subject" className="text-xs text-[color:var(--ds-text-muted)]">
           Betreff
@@ -428,7 +428,7 @@ function OutlookEventDialog({
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={3}
-          className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none"
+          className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-info-border)] focus:outline-none"
           placeholder="Agenda, Notizen…"
         />
       </div>
@@ -437,7 +437,7 @@ function OutlookEventDialog({
           type="submit"
           variant="primary"
           disabled={isPending || !subject.trim() || !startDate}
-          className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
+          className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
         >
           {isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
           Erstellen
@@ -453,8 +453,8 @@ function OutlookEventDialog({
 function EventIcon({ type, urgency }: { type: string; urgency?: string }) {
   if (type === "outlook") {
     return (
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-blue-500/10">
-        <CalendarIcon size={14} className="text-blue-600" />
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[color:var(--ds-info-bg)]">
+        <CalendarIcon size={14} className="text-[color:var(--ds-info-text)]" />
       </div>
     );
   }

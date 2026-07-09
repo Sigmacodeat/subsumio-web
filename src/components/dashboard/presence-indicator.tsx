@@ -11,14 +11,14 @@ interface PresenceIndicatorProps {
 }
 
 const AVATAR_COLORS = [
-  "bg-indigo-500",
-  "bg-emerald-500",
-  "bg-amber-500",
-  "bg-rose-500",
+  "bg-[color:var(--ds-info-solid)]",
+  "bg-[color:var(--ds-success-solid)]",
+  "bg-[color:var(--ds-warning-solid)]",
+  "bg-[color:var(--ds-danger-solid)]",
   "bg-sky-500",
   "bg-violet-500",
   "bg-teal-500",
-  "bg-orange-500",
+  "bg-[color:var(--ds-attention-solid)]",
 ];
 
 function getInitials(email: string): string {
@@ -71,7 +71,7 @@ export function PresenceIndicator({ pageSlug, className, maxAvatars = 5 }: Prese
         <span className="text-xs text-[color:var(--ds-text-muted)]">+{remaining}</span>
       )}
       <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--ds-success-solid)]" />
         {activeUsers.length === 1 ? "1 Person" : `${activeUsers.length} Personen`}
       </span>
     </div>

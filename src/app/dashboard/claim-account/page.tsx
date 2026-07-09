@@ -22,11 +22,11 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  open: "bg-blue-100 text-blue-700",
-  mahnbescheid: "bg-amber-100 text-amber-700",
-  vollstreckungsbescheid: "bg-orange-100 text-orange-700",
-  zwangsvollstreckung: "bg-red-100 text-red-700",
-  paid: "bg-green-100 text-green-700",
+  open: "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)]",
+  mahnbescheid: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
+  vollstreckungsbescheid: "bg-[color:var(--ds-attention-solid)] text-[color:var(--ds-attention-text)]",
+  zwangsvollstreckung: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]",
+  paid: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]",
   written_off: "bg-slate-100 text-slate-600",
 };
 

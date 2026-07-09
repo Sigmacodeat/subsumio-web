@@ -197,19 +197,19 @@ export default function CaseAssignmentPage() {
             {assignments.length}
           </p>
         </div>
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+        <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
           <div className="flex items-center gap-2">
-            <UserCheck size={16} className="text-emerald-600" />
-            <span className="text-xs text-emerald-600">{isEn ? "Assigned" : "Zugewiesen"}</span>
+            <UserCheck size={16} className="text-[color:var(--ds-success-text)]" />
+            <span className="text-xs text-[color:var(--ds-success-text)]">{isEn ? "Assigned" : "Zugewiesen"}</span>
           </div>
-          <p className="mt-1 text-2xl font-bold text-emerald-600 tabular-nums">{totalAssigned}</p>
+          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-success-text)] tabular-nums">{totalAssigned}</p>
         </div>
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+        <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
           <div className="flex items-center gap-2">
-            <UserPlus size={16} className="text-amber-600" />
-            <span className="text-xs text-amber-600">{isEn ? "Unassigned" : "Unzugewiesen"}</span>
+            <UserPlus size={16} className="text-[color:var(--ds-warning-text)]" />
+            <span className="text-xs text-[color:var(--ds-warning-text)]">{isEn ? "Unassigned" : "Unzugewiesen"}</span>
           </div>
-          <p className="mt-1 text-2xl font-bold text-amber-600 tabular-nums">{unassignedCount}</p>
+          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-warning-text)] tabular-nums">{unassignedCount}</p>
         </div>
       </div>
 
@@ -248,7 +248,7 @@ export default function CaseAssignmentPage() {
               className={cn(
                 "rounded-xl border p-4",
                 isUnassigned
-                  ? "border-amber-500/20 bg-amber-500/5"
+                  ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
               )}
             >
@@ -256,7 +256,7 @@ export default function CaseAssignmentPage() {
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   {isUnassigned ? (
-                    <UserPlus size={16} className="text-amber-600" />
+                    <UserPlus size={16} className="text-[color:var(--ds-warning-text)]" />
                   ) : (
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
                       <span className="text-xs font-semibold text-[color:var(--ds-text-muted)]">
@@ -276,7 +276,7 @@ export default function CaseAssignmentPage() {
                       <Badge variant="default" className="text-xs">
                         {cases.length} {isEn ? "cases" : "Akten"}
                       </Badge>
-                      {member?.role === "owner" && <Crown size={12} className="text-amber-500" />}
+                      {member?.role === "owner" && <Crown size={12} className="text-[color:var(--ds-warning-text)]" />}
                     </div>
                     {member?.email && (
                       <div className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
@@ -315,7 +315,7 @@ export default function CaseAssignmentPage() {
                             </Badge>
                           )}
                           {c.priority === "high" && (
-                            <Badge className="shrink-0 border border-red-500/30 bg-red-500/10 text-[10px] text-red-600">
+                            <Badge className="shrink-0 border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[10px] text-[color:var(--ds-danger-text)]">
                               {isEn ? "HIGH" : "HOCH"}
                             </Badge>
                           )}
@@ -367,8 +367,8 @@ export default function CaseAssignmentPage() {
 
       {/* Unassigned cases quick-assign (if search is active and matches unassigned) */}
       {search && filteredAssignments.some((a) => !a.lawyerName) && (
-        <section className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-600">
+        <section className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-warning-text)]">
             <UserPlus size={14} />
             {isEn ? "Unassigned cases" : "Unzugeordnete Akten"}
           </h3>

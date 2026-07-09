@@ -260,7 +260,7 @@ export function CryptoForensicsPanel({
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-600">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-[color:var(--ds-danger-text)]">
           <AlertCircle size={12} className="shrink-0" />
           {error}
         </div>
@@ -268,7 +268,7 @@ export function CryptoForensicsPanel({
 
       {/* Toast */}
       {toast && (
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-600">
+        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-3 py-2 text-xs text-[color:var(--ds-success-text)]">
           <CheckCircle2 size={12} className="shrink-0" />
           {toast}
         </div>
@@ -341,8 +341,8 @@ export function CryptoForensicsPanel({
                 variant="default"
                 className="text-xs"
                 style={{
-                  backgroundColor: `${BLOCKCHAIN_COLORS[w.blockchain as BlockchainType] ?? "#6a6a8a"}20`,
-                  color: BLOCKCHAIN_COLORS[w.blockchain as BlockchainType] ?? "#6a6a8a",
+                  backgroundColor: `${BLOCKCHAIN_COLORS[w.blockchain as BlockchainType] ?? "var(--graph-fallback)"}20`,
+                  color: BLOCKCHAIN_COLORS[w.blockchain as BlockchainType] ?? "var(--graph-fallback)",
                 }}
               >
                 {BLOCKCHAIN_LABELS[w.blockchain as BlockchainType] ?? w.blockchain}
@@ -543,8 +543,8 @@ export function CryptoForensicsPanel({
                       variant="default"
                       className="text-xs"
                       style={{
-                        backgroundColor: `${BLOCKCHAIN_COLORS[w.blockchain as BlockchainType] ?? "#6a6a8a"}20`,
-                        color: BLOCKCHAIN_COLORS[w.blockchain as BlockchainType] ?? "#6a6a8a",
+                        backgroundColor: `${BLOCKCHAIN_COLORS[w.blockchain as BlockchainType] ?? "var(--graph-fallback)"}20`,
+                        color: BLOCKCHAIN_COLORS[w.blockchain as BlockchainType] ?? "var(--graph-fallback)",
                       }}
                     >
                       {BLOCKCHAIN_LABELS[w.blockchain as BlockchainType] ?? w.blockchain}
@@ -553,7 +553,7 @@ export function CryptoForensicsPanel({
                     {w.isKnownFraud && (
                       <Badge
                         variant="default"
-                        className="border-red-500/30 bg-red-500/10 text-xs text-red-600"
+                        className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
                       >
                         <AlertCircle size={10} className="mr-1" />
                         Fraud

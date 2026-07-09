@@ -93,14 +93,14 @@ export default function RciidSettingsPage() {
       />
 
       {toast && (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-600">
+        <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-3 text-sm text-[color:var(--ds-success-text)]">
           <CheckCircle2 size={16} className="shrink-0" />
           {toast}
         </div>
       )}
 
       {!configured && (
-        <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-600">
+        <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3 text-sm text-[color:var(--ds-warning-text)]">
           <AlertCircle size={16} className="shrink-0" />
           {t("crypto_forensics.settings_not_configured" as DashboardKey)}
         </div>
@@ -114,7 +114,7 @@ export default function RciidSettingsPage() {
           {configured && (
             <Badge
               variant="default"
-              className="border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-600"
+              className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
             >
               <CheckCircle2 size={10} className="mr-1" />
               Connected
@@ -184,13 +184,13 @@ export default function RciidSettingsPage() {
           </div>
 
           {testResult === "success" && (
-            <div className="flex items-center gap-2 text-sm text-emerald-600">
+            <div className="flex items-center gap-2 text-sm text-[color:var(--ds-success-text)]">
               <CheckCircle2 size={14} />
               Verbindung erfolgreich!
             </div>
           )}
           {testResult === "fail" && (
-            <div className="flex items-center gap-2 text-sm text-red-600">
+            <div className="flex items-center gap-2 text-sm text-[color:var(--ds-danger-text)]">
               <XCircle size={14} />
               Verbindung fehlgeschlagen. API-Key und URL überprüfen.
             </div>

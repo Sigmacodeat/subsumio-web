@@ -92,7 +92,7 @@ const _deVp: Partial<Record<string, VerticalPricing>> = {
           "Dedizierter CSM · individuelle Aufbewahrung & Speicher",
           "Mehrverbrauch: 0,35 €/Anfrage · 0,15 €/WA",
         ],
-        cta: "Demo anfragen",
+        cta: "Demo vereinbaren",
         href: "mailto:hello@subsum.eu",
       },
     ],
@@ -180,7 +180,7 @@ const _enVp: Partial<Record<string, VerticalPricing>> = {
           "Dedicated CSM · custom retention & storage",
           "Overage: €0.35/query · €0.15/WA msg",
         ],
-        cta: "Request a demo",
+        cta: "Book a demo",
         href: "mailto:hello@subsum.eu",
       },
     ],
@@ -309,7 +309,7 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
     "Try Starter": "Prova Starter",
     "Start Professional": "Avvia Professional",
     "Start Firm plan": "Avvia piano Studio",
-    "Request a demo": "Richiedi una demo",
+    "Book a demo": "Prenota una demo",
     "Solo practitioners exploring AI-assisted case work. Monthly billing, cancel any time. Up to 2 seats.":
       "Professionisti singoli che esplorano il lavoro assistito da AI. Fatturazione mensile, cancellazione in qualsiasi momento. Fino a 2 seat.",
     "Solo and small firms up to 4 seats. The full case brain, fully managed.":
@@ -362,7 +362,7 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
     "Try Starter": "Probar Starter",
     "Start Professional": "Iniciar Professional",
     "Start Firm plan": "Iniciar plan Bufete",
-    "Request a demo": "Solicitar una demo",
+    "Book a demo": "Reservar una demo",
     "Solo practitioners exploring AI-assisted case work. Monthly billing, cancel any time. Up to 2 seats.":
       "Profesionales individuales que exploran el trabajo asistido por IA. Facturación mensual, cancela cuando quieras. Hasta 2 seat.",
     "Solo and small firms up to 4 seats. The full case brain, fully managed.":
@@ -415,7 +415,7 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
     "Try Starter": "Wypróbuj Starter",
     "Start Professional": "Uruchom Professional",
     "Start Firm plan": "Uruchom plan Kancelaria",
-    "Request a demo": "Zamów demo",
+    "Book a demo": "Zarezerwuj demo",
     "Solo practitioners exploring AI-assisted case work. Monthly billing, cancel any time. Up to 2 seats.":
       "Samodzielni prawnicy eksplorujący pracę wspieraną AI. Rozliczenie miesięczne, anulacja w dowolnym momencie. Do 2 seat.",
     "Solo and small firms up to 4 seats. The full case brain, fully managed.":
@@ -468,7 +468,7 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
     "Try Starter": "Essayer Starter",
     "Start Professional": "Démarrer Professional",
     "Start Firm plan": "Démarrer plan Cabinet",
-    "Request a demo": "Demander une démo",
+    "Book a demo": "Réserver une démo",
     "Solo practitioners exploring AI-assisted case work. Monthly billing, cancel any time. Up to 2 seats.":
       "Avocats indépendants explorant le travail assisté par IA. Facturation mensuelle, annulation à tout moment. Jusqu'à 2 seat.",
     "Solo and small firms up to 4 seats. The full case brain, fully managed.":
@@ -520,7 +520,7 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
     "Try Starter": "Probeer Starter",
     "Start Professional": "Start Professional",
     "Start Firm plan": "Start Kantoor-plan",
-    "Request a demo": "Vraag een demo aan",
+    "Book a demo": "Boek een demo",
     "Solo practitioners exploring AI-assisted case work. Monthly billing, cancel any time. Up to 2 seats.":
       "Zelfstandige advocaten die AI-ondersteund zaakwerk verkennen. Maandelijkse facturatie, opzeggen wanneer dan ook. Tot 2 seat.",
     "Solo and small firms up to 4 seats. The full case brain, fully managed.":
