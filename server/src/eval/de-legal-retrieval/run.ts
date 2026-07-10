@@ -261,6 +261,12 @@ async function main() {
       const searchResults = await hybridSearch(engine, question, {
         limit: 8,
         autocut: false,
+        embeddingColumn: {
+          name: "embedding",
+          type: "vector" as const,
+          dimensions: 1536,
+          embeddingModel: "openrouter:openai/text-embedding-3-small",
+        },
       });
 
       const rankedSlugs = searchResults.map((r) => r.slug);
