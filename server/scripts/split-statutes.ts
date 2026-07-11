@@ -111,6 +111,8 @@ function splitDeLaw(filePath: string, outDir: string): { count: number; skipped:
   const text = readFileSync(filePath, "utf8");
   const { fm, body } = parseFrontmatter(text);
   const abbr = fm.abbreviation;
+  // Slug prefix from the FILE basename (matches grounding + brain importer).
+  const slugBase = basename(filePath, ".md");
 
   // Match DE heading format: `## § 433 — Vertragstypische Pflichten...`
   const headingRe = /^##\s+§\s*(\d+[a-zA-Z]?)\s*(?:[—\-–]\s*(.+))?$/gm;
@@ -141,7 +143,7 @@ function splitDeLaw(filePath: string, outDir: string): { count: number; skipped:
       continue;
     }
 
-    const slug = `${abbr.toLowerCase()}-par-${slugifyPara(paraNum)}`;
+    const slug = `${slugBase}-par-${slugifyPara(paraNum)}`;
 
     if (slugsSeen.has(slug)) {
       // Duplicate heading (e.g. appears twice in ToC + body): keep first (longer) occurrence
@@ -177,6 +179,12 @@ function splitAtLaw(filePath: string, outDir: string): { count: number; skipped:
   const text = readFileSync(filePath, "utf8");
   const { fm, body } = parseFrontmatter(text);
   const abbr = fm.abbreviation;
+  // Slug prefix from the FILE basename, not the abbreviation. The grounding
+  // lookup (src/lib/legal-grounding.ts) and the brain importer both key on the
+  // basename (at/au-strg.md → au-strg-par-N), whereas abbreviations diverge
+  // (AußStrG → außstrg, StGB (AT) collisions). Keeping all three aligned is what
+  // lets a citation resolve to its pre-split norm text.
+  const slugBase = basename(filePath, ".md");
 
   // Find all inline § markers with their positions. The optional dot after `§`
   // absorbs the RIS `§.` stray-dot extraction artifact (ZPO-AT `§. 226.`,
@@ -212,7 +220,7 @@ function splitAtLaw(filePath: string, outDir: string): { count: number; skipped:
       continue;
     }
 
-    const baseSlug = `${abbr.toLowerCase()}-par-${slugifyPara(num)}`;
+    const baseSlug = `${slugBase}-par-${slugifyPara(num)}`;
     const occurrences = slugCount.get(baseSlug) ?? 0;
     slugCount.set(baseSlug, occurrences + 1);
 
