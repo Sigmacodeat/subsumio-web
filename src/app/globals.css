@@ -687,7 +687,10 @@
   --mk-border-strong: var(--neutral-300);
   --mk-text: var(--neutral-900);
   --mk-text-muted: var(--neutral-600);
-  --mk-text-subtle: var(--neutral-500);
+  /* neutral-500 measured 4.01:1 on this tone's surfaces — just under WCAG AA
+     4.5:1. neutral-600 (same as --mk-text-muted) is the smallest bump that
+     clears it; the muted/subtle hierarchy still differs via weight/size. */
+  --mk-text-subtle: var(--neutral-600);
   --mk-focus-ring: var(--brand-700);
   --mk-control-border: var(--neutral-400);
   --mk-card-shadow:
@@ -695,6 +698,18 @@
     0 1px 0 hsla(0, 0%, 100%, 0.7) inset;
   --brand-text: var(--brand-700);
   color-scheme: light;
+
+  /* Shared --ds-* components (e.g. src/components/ui/button.tsx's ghost
+     variant) get embedded inside marketing-toned sections and are NOT scoped
+     by [data-app="dashboard"], so they'd otherwise fall through to the root
+     dark-theme --ds-text-muted (neutral-300, 1.47:1 on this light surface —
+     a real WCAG AA failure caught by tests/e2e-playwright/a11y.spec.ts).
+     Mirror this tone's own values so any --ds-* consumer renders correctly
+     here too, regardless of which token system the component was written for. */
+  --ds-text: var(--neutral-900);
+  --ds-text-muted: var(--neutral-600);
+  --ds-text-subtle: var(--neutral-600);
+  --ds-surface-2: var(--neutral-100);
 }
 [data-tone="slate"] {
   --mk-bg: hsl(230, 30%, 12%);
