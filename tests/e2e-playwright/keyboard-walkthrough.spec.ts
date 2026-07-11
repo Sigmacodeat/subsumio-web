@@ -23,6 +23,10 @@ function getTestEmail() {
 
 test.describe("Keyboard-Only Walkthrough", () => {
   test.beforeAll(async ({ browser }) => {
+    // Default hook timeout (60s) is too tight for a real signup round-trip
+    // (form submit + backend account creation + redirect wait) in CI, where
+    // the dev server can be under load from the rest of the a11y suite.
+    test.setTimeout(120_000);
     const page = await browser.newPage();
     await page.goto("/signup", { waitUntil: "networkidle" });
     const email = getTestEmail();
