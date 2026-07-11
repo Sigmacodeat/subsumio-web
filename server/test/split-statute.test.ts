@@ -392,4 +392,17 @@ describe("splitStatuteRis — RIS raw recovery (Austrian codes)", () => {
   test("returns [] for prose that merely cites a few §§ (below the trust floor)", () => {
     expect(splitStatuteRis("Der Kläger stützt sich auf § 1295 und § 1325 ABGB.")).toEqual([]);
   });
+
+  test("tolerates the RIS `§.` stray-dot artifact (ZPO-AT `§. 226.`)", () => {
+    // RIS PDF extraction sometimes prints the section sign as `§.`; ZPO-AT uses
+    // this form for ~75% of its §§. The marker regex must still recognize them.
+    const body =
+      "Text\n" +
+      Array.from({ length: 14 }, (_, i) => `§. ${i + 1}. Bestimmung Nummer ${i + 1}.`).join(" ");
+    const secs = splitStatuteRis(body);
+    const refs = secs.map((s) => s.ref);
+    expect(secs.length).toBeGreaterThanOrEqual(12);
+    expect(refs).toContain("1");
+    expect(refs).toContain("14");
+  });
 });

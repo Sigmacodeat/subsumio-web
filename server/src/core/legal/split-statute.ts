@@ -198,7 +198,7 @@ export function splitStatute(markdown: string): SplitStatuteResult {
   // splitter (handles repealed-range gaps + single-line "wall" dumps) and the
   // legacy inline splitter (span-dedup ToC handling), and only override the
   // structured result when recovery finds materially more sections.
-  const inlineMarkerCount = (body.match(/§\s*\d+[a-z]*\s*\./g) || []).length;
+  const inlineMarkerCount = (body.match(/§\.?\s*\d+[a-z]*\s*\./g) || []).length;
   const structuredLooksPartial = sections.length < inlineMarkerCount / 4;
   if (
     inlineMarkerCount >= INLINE_MIN_MARKERS &&
@@ -213,8 +213,11 @@ export function splitStatute(markdown: string): SplitStatuteResult {
   return { meta, sections };
 }
 
-/** An inline paragraph marker `§ 17a.` in a flowing-text dump. */
-const INLINE_PARAGRAPH = /§\s*(\d+)([a-z]*)\s*\./g;
+/** An inline paragraph marker `§ 17a.` in a flowing-text dump. The optional dot
+ *  right after `§` absorbs a common RIS PDF-extraction artifact where the section
+ *  sign is printed as `§.` (e.g. ZPO-AT `§. 226.`, AußStrG); without it those
+ *  codes lost ~75% of their §§ to the marker regex. */
+const INLINE_PARAGRAPH = /§\.?\s*(\d+)([a-z]*)\s*\./g;
 
 /** Minimum inline markers before we trust the dump enough to split on them.
  *  Below this it's more likely a prose doc that merely cites a few §§. */
@@ -425,7 +428,7 @@ export function splitStatuteRis(rawBody: string): StatuteSection[] {
   //    touching well-lined files.
   const newlineCount = (text.match(/\n/g) || []).length;
   const isWall = text.length > 20000 && newlineCount < text.length / 2000;
-  if (isWall) text = text.replace(/(§\s*\d+[a-z]*\s*\.)/g, "\n$1");
+  if (isWall) text = text.replace(/(§\.?\s*\d+[a-z]*\s*\.)/g, "\n$1");
 
   // 4. Collect every inline `§ N[suffix].` marker with its position.
   const matches: Array<{ index: number; num: number; suffix: string }> = [];

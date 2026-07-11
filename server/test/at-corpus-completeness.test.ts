@@ -40,7 +40,8 @@ const FLAGSHIP_FLOORS: Array<{ file: string; abbr: string; min: number }> = [
   { file: "aktg-at.md", abbr: "AktG", min: 200 }, // was 0
   { file: "eheg.md", abbr: "EheG", min: 30 }, // was 0
   { file: "estg-at.md", abbr: "EStG", min: 150 }, // Steuer — was 49
-  { file: "zpo-at.md", abbr: "ZPO", min: 150 }, // Zivilprozess
+  { file: "zpo-at.md", abbr: "ZPO", min: 500 }, // Zivilprozess — was 186 before §. stray-dot fix
+  { file: "au-strg.md", abbr: "AußStrG", min: 200 }, // Außerstreit — was 12 before §. fix
   { file: "stpo-at.md", abbr: "StPO", min: 400 }, // Strafprozess
   { file: "bao.md", abbr: "BAO", min: 300 }, // Abgaben
 ];

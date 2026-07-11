@@ -192,14 +192,16 @@ export async function lookupCorpusParagraph(
     const textDelim = text.search(/\nText\n/);
     const normText = textDelim !== -1 ? text.slice(textDelim + "\nText\n".length) : text;
 
-    const atIdx = normText.search(new RegExp(`\u00a7\\s*${escapedPara}\\.`));
+    // The optional dot after `\u00a7` absorbs the RIS `\u00a7.` stray-dot artifact
+    // (ZPO-AT `\u00a7. 226.`), so those paragraphs are found here too.
+    const atIdx = normText.search(new RegExp(`\u00a7\\.?\\s*${escapedPara}\\.`));
     if (atIdx !== -1) {
       // Bound at the NEXT paragraph marker of ANY number, scanning forward from
       // this one. Using paraNum+1 broke on repealed \u00a7\u00a7 (the literal next number
       // often does not exist) and could match an EARLIER ToC stub, yielding a
       // negative/empty slice that was still reported as verified.
       const after = normText.slice(atIdx + 1);
-      const nextRel = after.search(/\u00a7\s*\d+[a-z]*\s*\./);
+      const nextRel = after.search(/\u00a7\.?\s*\d+[a-z]*\s*\./);
       const end = nextRel !== -1 ? atIdx + 1 + nextRel : atIdx + 1200;
       const body = normText.slice(atIdx, end).trim();
       // Guard: a bare marker with no substantive text is not a real answer.

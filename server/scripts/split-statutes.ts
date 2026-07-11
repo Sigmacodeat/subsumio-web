@@ -178,8 +178,10 @@ function splitAtLaw(filePath: string, outDir: string): { count: number; skipped:
   const { fm, body } = parseFrontmatter(text);
   const abbr = fm.abbreviation;
 
-  // Find all inline § markers with their positions
-  const paraRe = /§\s*(\d+[a-zA-Z]?)\./g;
+  // Find all inline § markers with their positions. The optional dot after `§`
+  // absorbs the RIS `§.` stray-dot extraction artifact (ZPO-AT `§. 226.`,
+  // AußStrG), which otherwise drops ~75% of those codes' §§.
+  const paraRe = /§\.?\s*(\d+[a-zA-Z]?)\./g;
   const positions: { num: string; idx: number }[] = [];
   let matchResult: RegExpExecArray | null;
   while ((matchResult = paraRe.exec(body)) !== null) {
