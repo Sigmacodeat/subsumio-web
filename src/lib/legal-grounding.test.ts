@@ -172,3 +172,75 @@ describe("groundCitations", () => {
     expect(result[0].source_text).toHaveLength(600);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Regression guards for the AT grounding-hardening pass (anti-hallucination).
+// ---------------------------------------------------------------------------
+
+describe("lookupSplitParagraph — file-basename slug (AT codes)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("resolves an '(AT)' code to its <basename>-par-N split file, not the label abbr", async () => {
+    vi.mocked(fs.readFile).mockResolvedValueOnce("§ 1. Die Aktiengesellschaft ...");
+    await lookupSplitParagraph("AktG (AT)", "1");
+    const calledPath = String(vi.mocked(fs.readFile).mock.calls[0][0]);
+    // Must target aktg-at-par-1.md (file basename), NOT aktg-par-1.md (label).
+    expect(calledPath).toContain("aktg-at-par-1.md");
+    expect(calledPath).toContain(`${"at"}/`);
+  });
+
+  it("resolves ABGB to abgb-par-N and strips frontmatter", async () => {
+    vi.mocked(fs.readFile).mockResolvedValueOnce("---\ntitle: x\n---\n§ 1295. (1) Jedermann ...");
+    const r = await lookupSplitParagraph("ABGB", "1295");
+    const calledPath = String(vi.mocked(fs.readFile).mock.calls[0][0]);
+    expect(calledPath).toContain("abgb-par-1295.md");
+    expect(r).toContain("Jedermann");
+    expect(r).not.toContain("title:");
+  });
+});
+
+describe("lookupCorpusParagraph — RIS raw hardening", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("skips the ToC stub and returns the norm text after the `Text` delimiter", async () => {
+    // ToC lists "§ 1295. Schadenersatz." BEFORE `Text`; the norm is after it.
+    const raw =
+      "Inhaltsübersicht\n§ 1295. Schadenersatz.\n§ 1296. Zufall.\n" +
+      "Text\n" +
+      "§ 1295. (1) Jedermann ist berechtigt, von dem Beschädiger den Ersatz zu fordern.\n" +
+      "§ 1296. Im Zweifel gilt die Vermutung, dass ein Schaden ohne Verschulden entstand.\n";
+    vi.mocked(fs.readFile).mockResolvedValueOnce(raw);
+    const r = await lookupCorpusParagraph("abgb", "1295");
+    expect(r).toContain("Jedermann ist berechtigt");
+    expect(r).not.toBe("§ 1295. Schadenersatz."); // not the ToC stub
+  });
+
+  it("bounds at the next real marker when paragraph+1 is repealed/absent", async () => {
+    // § 1490 exists, § 1491 is repealed; the next marker is § 1495.
+    const raw =
+      "Text\n§ 1490. Klagerecht besteht fort.\n§ 1495. Zwischen Ehegatten ruht die Frist.\n";
+    vi.mocked(fs.readFile).mockResolvedValueOnce(raw);
+    const r = await lookupCorpusParagraph("abgb", "1490");
+    expect(r).toContain("Klagerecht besteht fort");
+    expect(r).not.toContain("Zwischen Ehegatten"); // stopped at the next marker
+  });
+
+  it("does NOT falsely verify: a bare marker with no body returns null", async () => {
+    vi.mocked(fs.readFile).mockResolvedValueOnce("Text\n§ 999.\n§ 1000. Echter Inhalt hier.\n");
+    const r = await lookupCorpusParagraph("abgb", "999");
+    expect(r).toBeNull();
+  });
+});
+
+describe("CORPUS_META — full AT coverage", () => {
+  it("includes the flagship codes that were previously unverifiable", () => {
+    for (const key of ["ugb", "io", "aktg_at", "gmbhg_at", "eheg", "bewg_at", "wrg", "bvergg"]) {
+      expect(CORPUS_META[key], `missing CORPUS_META entry: ${key}`).toBeTruthy();
+      expect(CORPUS_META[key].jurisdiction).toBe("at");
+    }
+  });
+
+  it("has more than 90 statutes across all jurisdictions", () => {
+    expect(Object.keys(CORPUS_META).length).toBeGreaterThan(90);
+  });
+});
