@@ -405,4 +405,51 @@ describe("splitStatuteRis — RIS raw recovery (Austrian codes)", () => {
     expect(refs).toContain("1");
     expect(refs).toContain("14");
   });
+
+  test("wall dump with NO line-isolated `Text`: promotes real § 1 body over a bundled companion act's ToC-style stub", () => {
+    // Mirrors AktG-AT/UGB/IO/GmbHG: everything on one line, `Text` survives as a
+    // plain WORD (not an isolated line) right before the real norm run. Before
+    // a bundled EU-transposition side-act (which restarts at § 1) appears late,
+    // § 1's PRIMARY id must hold the substantive body, not the short ToC stub.
+    const toc = "Inhaltsübersicht § 1. Kurzer Titel § 2. Zweiter Titel ";
+    const realBody =
+      "Text Erster Teil " +
+      Array.from(
+        { length: 14 },
+        (_, i) =>
+          `§ ${i + 1}. Ausführlicher Normtext zu Paragraph ${i + 1} mit hinreichend viel Inhalt.`
+      ).join(" ");
+    const wall = toc + realBody + " ".repeat(20000); // pad past the 20 KB wall threshold
+    const secs = splitStatuteRis(wall);
+    const p1 = secs.find((s) => s.id === "p-1");
+    expect(p1).toBeDefined();
+    expect(p1!.body).toContain("Ausführlicher Normtext");
+    expect(p1!.body).not.toBe("§ 1. Kurzer Titel");
+  });
+
+  test("wall dump with heavy internal cross-references: word-cut is rejected when it would drop real §§", () => {
+    // Mirrors EStG-AT/KStG-AT: a wall with no isolated `Text` line where the
+    // word-based cut point sits AFTER a cluster of far-forward cross-references
+    // in § 1's body (e.g. "§ 1 verweist auf § 90"). Cutting there would strand
+    // the walk past §§ 2-89, losing them. The coverage guard must reject the
+    // cut and keep the full (uncut) walk, which still finds §§ 1 through N.
+    const crossRefHeavyBody =
+      "Text " +
+      "§ 1. Einleitung mit Verweis auf § 90 und § 91 und § 95 für Ausnahmefälle. " +
+      Array.from(
+        { length: 88 },
+        (_, i) => `§ ${i + 2}. Ausführlicher Normtext Paragraph ${i + 2}.`
+      ).join(" ") +
+      " " +
+      Array.from({ length: 6 }, (_, i) => `§ ${90 + i}. Ausnahmeregelung Nummer ${90 + i}.`).join(
+        " "
+      );
+    const wall = "Vorspann Änderungshistorie ".repeat(50) + crossRefHeavyBody + " ".repeat(20000);
+    const secs = splitStatuteRis(wall);
+    const refs = new Set(secs.map((s) => s.ref));
+    // The guard must have kept the full walk: §§ 2-89 are NOT lost.
+    expect(refs.has("2")).toBe(true);
+    expect(refs.has("50")).toBe(true);
+    expect(refs.has("89")).toBe(true);
+  });
 });

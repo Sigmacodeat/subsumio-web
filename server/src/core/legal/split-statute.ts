@@ -408,58 +408,43 @@ const RIS_NOISE = [
  * doesn't look like an inline-§ statute (too few markers) so callers can fall
  * back. Deterministic, pure (no I/O).
  */
-export function splitStatuteRis(rawBody: string): StatuteSection[] {
-  // 1. Strip RIS page/boilerplate noise.
-  let text = rawBody;
-  for (const re of RIS_NOISE) text = text.replace(re, "");
+/** A marker continues the run when the NEXT marker is a suffix-bump or a small
+ *  forward step from it — accepts genuine repealed-range jumps and renumbering
+ *  restarts while rejecting one-off forward cross-references. */
+function continuesRun(
+  a: { num: number; suffix: string },
+  next: { num: number; suffix: string } | undefined
+): boolean {
+  return (
+    !!next &&
+    ((next.num === a.num && next.suffix > a.suffix) ||
+      (next.num > a.num && next.num <= a.num + INLINE_MAX_STEP))
+  );
+}
 
-  // 2. Cut the header + table-of-contents. RIS "GeltendeFassung" documents put a
-  //    lone `Text` line between the Langtitel/Änderung/Inhaltsübersicht block and
-  //    the actual norm run. Dropping everything up to it removes the ToC stubs
-  //    that would otherwise be mistaken for the paragraph run, so the ordered
-  //    walk below needs no span-based ToC heuristic.
-  const preLines = text.split("\n");
-  const textIdx = preLines.findIndex((l) => l.trim() === "Text");
-  if (textIdx >= 0) text = preLines.slice(textIdx + 1).join("\n");
-
-  // 3. Re-lineify "wall" dumps (newlines stripped by PDF extraction). Detected
-  //    by an implausibly low newline density for the size. Injecting a break
-  //    before each inline `§ N.` marker restores line-start markers without
-  //    touching well-lined files.
+/** Run the marker-walk over an already ToC-cut body: re-lineify walls, collect
+ *  inline `§ N[suffix].` markers, anchor at the natural start, and walk forward
+ *  accepting suffix bumps / small steps / resuming jumps / resuming restarts. */
+function walkRisBoundaries(input: string): {
+  text: string;
+  boundaries: Array<{ index: number; ref: string; num: number }>;
+} {
+  let text = input;
   const newlineCount = (text.match(/\n/g) || []).length;
-  const isWall = text.length > 20000 && newlineCount < text.length / 2000;
-  if (isWall) text = text.replace(/(§\.?\s*\d+[a-z]*\s*\.)/g, "\n$1");
+  if (text.length > 20000 && newlineCount < text.length / 2000) {
+    text = text.replace(/(§\.?\s*\d+[a-z]*\s*\.)/g, "\n$1");
+  }
 
-  // 4. Collect every inline `§ N[suffix].` marker with its position.
   const matches: Array<{ index: number; num: number; suffix: string }> = [];
   for (const m of text.matchAll(INLINE_PARAGRAPH)) {
     matches.push({ index: m.index ?? 0, num: parseInt(m[1], 10), suffix: m[2] });
   }
-  if (matches.length < INLINE_MIN_MARKERS) return [];
+  if (matches.length < INLINE_MIN_MARKERS) return { text, boundaries: [] };
 
-  // 5. Anchor at the natural statute start (first § ≤ 2), skipping any stray
-  //    marker printed in a header before it.
   let startIdx = matches.findIndex((m) => m.num <= 2);
   if (startIdx === -1) startIdx = 0;
 
-  // A marker continues the run when the NEXT marker is a suffix-bump or a small
-  // forward step from it — used to accept genuine repealed-range jumps and
-  // renumbering restarts while rejecting one-off forward cross-references.
-  const continues = (
-    a: { num: number; suffix: string },
-    next: { num: number; suffix: string } | undefined
-  ): boolean =>
-    !!next &&
-    ((next.num === a.num && next.suffix > a.suffix) ||
-      (next.num > a.num && next.num <= a.num + INLINE_MAX_STEP));
-
-  // 6. Ordered walk over the (ToC-free) marker stream. Accept a suffix bump, a
-  //    small forward step, a large forward jump that resumes a run (repealed
-  //    range), or a small restart that resumes a run (appended Übergangs-/
-  //    Schlussbestimmungen renumber from § 1). Everything else — backward jumps,
-  //    isolated forward jumps — is a cross-reference and folds into the current
-  //    §'s body.
-  const boundaries: Array<{ index: number; ref: string }> = [];
+  const boundaries: Array<{ index: number; ref: string; num: number }> = [];
   let lastNum = -1;
   let lastSuffix = "";
   for (let i = startIdx; i < matches.length; i++) {
@@ -469,20 +454,69 @@ export function splitStatuteRis(rawBody: string): StatuteSection[] {
     if (mt.num === lastNum && mt.suffix > lastSuffix) {
       advances = true; // suffix bump: 17 → 17a
     } else if (mt.num > lastNum) {
-      advances = mt.num <= lastNum + INLINE_MAX_STEP || continues(mt, next);
+      advances = mt.num <= lastNum + INLINE_MAX_STEP || continuesRun(mt, next);
     } else if (mt.num <= 2 && lastNum > 10) {
-      advances = continues(mt, next); // renumbering restart that resumes
+      advances = continuesRun(mt, next); // renumbering restart that resumes
     }
     if (!advances) continue;
     lastNum = mt.num;
     lastSuffix = mt.suffix;
-    boundaries.push({ index: mt.index, ref: `${mt.num}${mt.suffix}` });
+    boundaries.push({ index: mt.index, ref: `${mt.num}${mt.suffix}`, num: mt.num });
   }
+  return { text, boundaries };
+}
+
+export function splitStatuteRis(rawBody: string): StatuteSection[] {
+  // 1. Strip RIS page/boilerplate noise.
+  let text = rawBody;
+  for (const re of RIS_NOISE) text = text.replace(re, "");
+
+  // 2. Cut the header + table-of-contents. RIS "GeltendeFassung" documents put a
+  //    lone `Text` marker between the Langtitel/Änderung/Inhaltsübersicht block
+  //    and the actual norm run. Dropping everything up to it removes the ToC
+  //    stubs that would otherwise be mistaken for the paragraph run.
+  //
+  //    Normal dumps have `Text` alone on its own line — always safe to cut
+  //    there. "Wall" dumps (newlines stripped by PDF extraction — UGB/IO/
+  //    GmbHG/AktG) have the delimiter surviving as a plain WORD inside the
+  //    flattened prose, never isolated on a line, so cutting requires a word
+  //    match instead. That word-cut is a double-edged sword: for small walls
+  //    (a handful of `§ 1.` collisions) it correctly promotes the real norm
+  //    body over a ToC stub, but for large walls with heavy internal
+  //    cross-referencing (EStG-AT, KStG-AT) it can strand the walk on an early
+  //    stray forward reference and silently drop dozens of real §§ later in
+  //    the body. Resolve this by computing BOTH variants and keeping the
+  //    word-cut only when it doesn't meaningfully shrink the set of distinct
+  //    §-numbers recovered — i.e. only when it's a pure quality improvement,
+  //    never a coverage regression.
+  const preLines = text.split("\n");
+  const textLineIdx = preLines.findIndex((l) => l.trim() === "Text");
+  const newlineCountPreCut = (text.match(/\n/g) || []).length;
+  const looksLikeWall = text.length > 20000 && newlineCountPreCut < text.length / 2000;
+
+  let baseText = text;
+  if (textLineIdx >= 0) baseText = preLines.slice(textLineIdx + 1).join("\n");
+
+  const withoutWordCut = walkRisBoundaries(baseText);
+  let chosen = withoutWordCut;
+
+  if (textLineIdx === -1 && looksLikeWall) {
+    const wordMatch = baseText.match(/\bText\b/);
+    if (wordMatch && wordMatch.index !== undefined) {
+      const cutText = baseText.slice(wordMatch.index + wordMatch[0].length);
+      const withWordCut = walkRisBoundaries(cutText);
+      const numsWithout = new Set(withoutWordCut.boundaries.map((b) => b.num)).size;
+      const numsWith = new Set(withWordCut.boundaries.map((b) => b.num)).size;
+      if (numsWithout === 0 || numsWith / numsWithout >= 0.8) chosen = withWordCut;
+    }
+  }
+
+  const { text: finalText, boundaries } = chosen;
   if (boundaries.length < INLINE_MIN_MARKERS) return [];
 
-  // 7. Materialize sections; the `§ N.` marker stays in the body so keyword
-  //    search finds it. The last marker absorbs trailing Anlagen/Novellen —
-  //    spill the overflow into a `<ref>-anhang` page so the § stays embeddable.
+  // Materialize sections; the `§ N.` marker stays in the body so keyword
+  // search finds it. The last marker absorbs trailing Anlagen/Novellen —
+  // spill the overflow into a `<ref>-anhang` page so the § stays embeddable.
   const sections: StatuteSection[] = [];
   const seenIds = new Map<string, number>();
   const pushSection = (ref: string, sectionText: string) => {
@@ -495,9 +529,9 @@ export function splitStatuteRis(rawBody: string): StatuteSection[] {
   for (let i = 0; i < boundaries.length; i++) {
     const start = boundaries[i].index;
     const isLast = i + 1 >= boundaries.length;
-    const end = isLast ? text.length : boundaries[i + 1].index;
+    const end = isLast ? finalText.length : boundaries[i + 1].index;
     const ref = boundaries[i].ref;
-    const sectionText = text.slice(start, end);
+    const sectionText = finalText.slice(start, end);
     if (isLast && sectionText.length > INLINE_LAST_SECTION_MAX) {
       const cut = sentenceBoundaryBefore(sectionText, INLINE_LAST_SECTION_MAX);
       pushSection(ref, sectionText.slice(0, cut));
