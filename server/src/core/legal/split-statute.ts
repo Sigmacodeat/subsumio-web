@@ -86,7 +86,7 @@ function parseFrontmatter(raw: string): { meta: StatuteMeta; bodyStart: number }
  *  (CH OR/ZGB/StGB, German Grundgesetz), or `Artikel X` (EU regulations).
  *  Captures the marker and the rest. Handles single (§ 1a / Art. 8),
  *  and ranges/lists (§§ 29 und 30). */
-const SECTION_HEADING = /^##\s+(§+|Art\.?)\s+(.+?)\s*$/;
+const SECTION_HEADING = /^#{2,3}\s+(§+|Art\.?)\s+(.+?)\s*$/;
 /** EU regulation heading: `Artikel 12` (no ## prefix, full word).
  *  EUR-Lex exports use this format instead of `## Art. 12`. */
 const EU_ARTICLE_HEADING = /^Artikel\s+(\d+[a-z]*(?:\s*(?:und|bis|,)\s*\d+[a-z]*)*)\s*$/i;
@@ -190,10 +190,24 @@ export function splitStatute(markdown: string): SplitStatuteResult {
   }
   flush();
 
-  // No structured headings → try the inline-§ recovery path (AT PDF dumps).
-  if (sections.length === 0) {
+  // Recover from a raw RIS dump (AT codes) when the structured pass produced no
+  // sections OR implausibly few relative to the density of inline `§ N.` markers.
+  // The latter guard matters: an AT dump can trip a handful of spurious `Art.`
+  // heading matches (12 for the ABGB, 20 for the StGB) which used to suppress the
+  // fallback and strand 99% of the code. We take the best of the RIS-aware
+  // splitter (handles repealed-range gaps + single-line "wall" dumps) and the
+  // legacy inline splitter (span-dedup ToC handling), and only override the
+  // structured result when recovery finds materially more sections.
+  const inlineMarkerCount = (body.match(/§\s*\d+[a-z]*\s*\./g) || []).length;
+  const structuredLooksPartial = sections.length < inlineMarkerCount / 4;
+  if (
+    inlineMarkerCount >= INLINE_MIN_MARKERS &&
+    (sections.length === 0 || structuredLooksPartial)
+  ) {
+    const ris = splitStatuteRis(body);
     const inline = splitStatuteInline(body);
-    if (inline.length > 0) return { meta, sections: inline };
+    const best = ris.length >= inline.length ? ris : inline;
+    if (best.length > sections.length) return { meta, sections: best };
   }
 
   return { meta, sections };
@@ -266,7 +280,11 @@ export function splitStatuteInline(body: string): StatuteSection[] {
     const existing = byKey.get(key);
     if (!existing) {
       byKey.set(key, { ...mt, _span: span });
-    } else if (existing._span < NORM_MIN_SPAN && span > existing._span) {
+    } else if (span > existing._span) {
+      // Always prefer the candidate with the larger span — it's the norm
+      // text, not a ToC stub.  The previous guard (existing._span <
+      // NORM_MIN_SPAN) failed when a ToC entry happened to have a span just
+      // above the threshold (e.g. bbg.md § 2 ToC span=102 vs norm span=597).
       byKey.set(key, { ...mt, _span: span });
     }
   }
@@ -351,4 +369,140 @@ function sentenceBoundaryBefore(text: string, max: number): number {
   if (sentence > max * 0.5) return sentence + 1;
   const space = window.lastIndexOf(" ");
   return space > max * 0.5 ? space : max;
+}
+
+// ── RIS-raw recovery (Austrian codes) ────────────────────────────────────────
+//
+// The AT corpus is RIS "GeltendeFassung" PDF-extracted text (law-corpus/at/*.md):
+// no `## §` headings, a huge `Änderung` (BGBl-Novellen) header, a `Text` marker,
+// then the norm run with inline `§ N.` markers. Two failure modes broke the
+// legacy `splitStatuteInline` on the load-bearing codes:
+//
+//   1. LARGE codes with repealed ranges (ABGB §§ 1‥1503, StGB §§ 1‥321): the old
+//      `INLINE_MAX_STEP=50` gap cap treated a jump across an aufgehobener Block as
+//      a cross-reference and stalled the advancing run → ABGB recovered 12 of
+//      ~1503 §§, StGB 20 of ~321.
+//   2. WALL files (UGB, IO, GmbHG, AktG): the PDF text arrived as ONE ~700 KB line
+//      with the newlines stripped → line-oriented logic saw nothing → 0 sections.
+//
+// `splitStatuteRis` fixes both: it strips RIS boilerplate, re-lineifies walls, and
+// accepts ANY forward gap (repealed ranges are normal), rejecting only backward
+// jumps (genuine cross-references), which the span-dedup has already demoted. The
+// output feeds the same per-§ page shape as the structured DE path.
+
+/** RIS page/boilerplate lines that carry no norm text and must not pollute a
+ *  section body or masquerade as a marker context. */
+const RIS_NOISE = [
+  /^--- Page \d+ ---$/gm,
+  /^#{2,3}\*{3}#{2,3}$/gm, // `###***###` page-break artifact
+  /^Bundesrecht konsolidiert$/gm,
+  /^www\.ris\.bka\.gv\.at.*$/gm,
+];
+
+/**
+ * Recover per-§ sections from a raw RIS statute dump. Robust to both large
+ * repealed-range codes and single-line "wall" dumps. Returns [] when the input
+ * doesn't look like an inline-§ statute (too few markers) so callers can fall
+ * back. Deterministic, pure (no I/O).
+ */
+export function splitStatuteRis(rawBody: string): StatuteSection[] {
+  // 1. Strip RIS page/boilerplate noise.
+  let text = rawBody;
+  for (const re of RIS_NOISE) text = text.replace(re, "");
+
+  // 2. Cut the header + table-of-contents. RIS "GeltendeFassung" documents put a
+  //    lone `Text` line between the Langtitel/Änderung/Inhaltsübersicht block and
+  //    the actual norm run. Dropping everything up to it removes the ToC stubs
+  //    that would otherwise be mistaken for the paragraph run, so the ordered
+  //    walk below needs no span-based ToC heuristic.
+  const preLines = text.split("\n");
+  const textIdx = preLines.findIndex((l) => l.trim() === "Text");
+  if (textIdx >= 0) text = preLines.slice(textIdx + 1).join("\n");
+
+  // 3. Re-lineify "wall" dumps (newlines stripped by PDF extraction). Detected
+  //    by an implausibly low newline density for the size. Injecting a break
+  //    before each inline `§ N.` marker restores line-start markers without
+  //    touching well-lined files.
+  const newlineCount = (text.match(/\n/g) || []).length;
+  const isWall = text.length > 20000 && newlineCount < text.length / 2000;
+  if (isWall) text = text.replace(/(§\s*\d+[a-z]*\s*\.)/g, "\n$1");
+
+  // 4. Collect every inline `§ N[suffix].` marker with its position.
+  const matches: Array<{ index: number; num: number; suffix: string }> = [];
+  for (const m of text.matchAll(INLINE_PARAGRAPH)) {
+    matches.push({ index: m.index ?? 0, num: parseInt(m[1], 10), suffix: m[2] });
+  }
+  if (matches.length < INLINE_MIN_MARKERS) return [];
+
+  // 5. Anchor at the natural statute start (first § ≤ 2), skipping any stray
+  //    marker printed in a header before it.
+  let startIdx = matches.findIndex((m) => m.num <= 2);
+  if (startIdx === -1) startIdx = 0;
+
+  // A marker continues the run when the NEXT marker is a suffix-bump or a small
+  // forward step from it — used to accept genuine repealed-range jumps and
+  // renumbering restarts while rejecting one-off forward cross-references.
+  const continues = (
+    a: { num: number; suffix: string },
+    next: { num: number; suffix: string } | undefined
+  ): boolean =>
+    !!next &&
+    ((next.num === a.num && next.suffix > a.suffix) ||
+      (next.num > a.num && next.num <= a.num + INLINE_MAX_STEP));
+
+  // 6. Ordered walk over the (ToC-free) marker stream. Accept a suffix bump, a
+  //    small forward step, a large forward jump that resumes a run (repealed
+  //    range), or a small restart that resumes a run (appended Übergangs-/
+  //    Schlussbestimmungen renumber from § 1). Everything else — backward jumps,
+  //    isolated forward jumps — is a cross-reference and folds into the current
+  //    §'s body.
+  const boundaries: Array<{ index: number; ref: string }> = [];
+  let lastNum = -1;
+  let lastSuffix = "";
+  for (let i = startIdx; i < matches.length; i++) {
+    const mt = matches[i];
+    const next = matches[i + 1];
+    let advances = false;
+    if (mt.num === lastNum && mt.suffix > lastSuffix) {
+      advances = true; // suffix bump: 17 → 17a
+    } else if (mt.num > lastNum) {
+      advances = mt.num <= lastNum + INLINE_MAX_STEP || continues(mt, next);
+    } else if (mt.num <= 2 && lastNum > 10) {
+      advances = continues(mt, next); // renumbering restart that resumes
+    }
+    if (!advances) continue;
+    lastNum = mt.num;
+    lastSuffix = mt.suffix;
+    boundaries.push({ index: mt.index, ref: `${mt.num}${mt.suffix}` });
+  }
+  if (boundaries.length < INLINE_MIN_MARKERS) return [];
+
+  // 7. Materialize sections; the `§ N.` marker stays in the body so keyword
+  //    search finds it. The last marker absorbs trailing Anlagen/Novellen —
+  //    spill the overflow into a `<ref>-anhang` page so the § stays embeddable.
+  const sections: StatuteSection[] = [];
+  const seenIds = new Map<string, number>();
+  const pushSection = (ref: string, sectionText: string) => {
+    let id = refToId(ref, "§");
+    const n = seenIds.get(id) ?? 0;
+    seenIds.set(id, n + 1);
+    if (n > 0) id = `${id}-${n + 1}`;
+    sections.push({ marker: "§", ref, id, title: "", body: sectionText.trim() });
+  };
+  for (let i = 0; i < boundaries.length; i++) {
+    const start = boundaries[i].index;
+    const isLast = i + 1 >= boundaries.length;
+    const end = isLast ? text.length : boundaries[i + 1].index;
+    const ref = boundaries[i].ref;
+    const sectionText = text.slice(start, end);
+    if (isLast && sectionText.length > INLINE_LAST_SECTION_MAX) {
+      const cut = sentenceBoundaryBefore(sectionText, INLINE_LAST_SECTION_MAX);
+      pushSection(ref, sectionText.slice(0, cut));
+      const rest = sectionText.slice(cut).trim();
+      if (rest.length > 0) pushSection(`${ref}-anhang`, rest);
+    } else {
+      pushSection(ref, sectionText);
+    }
+  }
+  return sections;
 }

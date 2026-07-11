@@ -1,5 +1,9 @@
 import { describe, test, expect } from "bun:test";
-import { splitStatute, splitStatuteInline } from "../src/core/legal/split-statute.ts";
+import {
+  splitStatute,
+  splitStatuteInline,
+  splitStatuteRis,
+} from "../src/core/legal/split-statute.ts";
 
 const FIXTURE = `---
 title: "EStG — Einkommensteuergesetz"
@@ -289,5 +293,103 @@ describe("splitStatute — inline-§ recovery (AT PDF dumps, no headings)", () =
     expect(lawSection.body.length).toBeLessThanOrEqual(24000);
     expect(last.ref).toBe("13-anhang");
     expect(last.body.length).toBeGreaterThan(20000);
+  });
+});
+
+describe("splitStatuteRis — RIS raw recovery (Austrian codes)", () => {
+  test("cuts the ToC at the `Text` delimiter and parses the norm run once", () => {
+    // A RIS dump: Langtitel + Änderung + Inhaltsübersicht (ToC stubs) BEFORE a
+    // lone `Text` line, then the real norm run. The ToC §§ must not double the
+    // parsed sections.
+    const body = [
+      "Langtitel: Allgemeines bürgerliches Gesetzbuch",
+      "Änderung BGBl. Nr. 1/2020 BGBl. Nr. 2/2021",
+      "Inhaltsübersicht",
+      "§ 1. Begriff. § 2. Kundmachung. § 3. Wirksamkeit. § 4. Geltung. § 5. Rückwirkung.",
+      "Text",
+      "§ 1. Der Inbegriff der Gesetze, wodurch die Rechte bestimmt werden, ist das bürgerliche Recht.",
+      "§ 2. Sobald ein Gesetz gehörig kundgemacht worden ist, kann sich niemand entschuldigen.",
+      "§ 3. Die Wirksamkeit eines Gesetzes beginnt mit dem Ablaufe des Tages der Kundmachung.",
+      "§ 4. Die bürgerlichen Gesetze verbinden alle Staatsbürger.",
+      "§ 5. Gesetze wirken nicht zurück; sie haben keinen Einfluss auf frühere Handlungen.",
+      "§ 6. Einem Gesetze darf kein anderer Verstand beigelegt werden.",
+      "§ 7. Läßt sich ein Rechtsfall weder aus den Worten noch dem Sinne entscheiden.",
+      "§ 8. Nur dem Gesetzgeber steht die Macht zu, ein Gesetz auf verbindliche Art auszulegen.",
+      "§ 9. Gesetze behalten so lange ihre Kraft, bis sie abgeändert werden.",
+      "§ 10. Auf Gewohnheiten kann nur in den Fällen Rücksicht genommen werden.",
+      "§ 11. Nur solche Statuten einzelner Provinzen haben Gesetzeskraft.",
+    ].join("\n");
+    const secs = splitStatuteRis(body);
+    const refs = secs.map((s) => s.ref);
+    // Each § appears once (norm run), not twice (ToC + norm).
+    expect(refs.filter((r) => r === "1").length).toBe(1);
+    expect(refs).toContain("11");
+    // Body carries the real norm text, not the short ToC stub.
+    expect(secs.find((s) => s.ref === "1")!.body).toContain("Inbegriff der Gesetze");
+  });
+
+  test("spans a large repealed-range gap that resumes (§ 5 → § 200 → § 201)", () => {
+    const head = "Text\n" + "§ 1. eins. § 2. zwei. § 3. drei. § 4. vier. § 5. fünf.";
+    const afterGap =
+      " " + Array.from({ length: 6 }, (_, i) => `§ ${200 + i}. p${200 + i}.`).join(" ");
+    const refs = splitStatuteRis(head + afterGap).map((s) => s.ref);
+    expect(refs).toContain("5");
+    expect(refs).toContain("200");
+    expect(refs).toContain("201");
+  });
+
+  test("re-lineifies a single-line 'wall' dump and recovers per-§ sections", () => {
+    // Simulate the UGB/IO failure mode: newlines stripped, everything on one
+    // line, > 20 KB so the wall heuristic fires.
+    const pad = "Der Unternehmer ist verpflichtet, die Bücher ordnungsgemäß zu führen. ".repeat(30);
+    const wall =
+      "Langtitel Unternehmensgesetzbuch Änderung BGBl. " +
+      Array.from({ length: 40 }, (_, i) => `§ ${i + 1}. ${pad}`).join(" ");
+    expect((wall.match(/\n/g) || []).length).toBe(0); // truly a wall
+    expect(wall.length).toBeGreaterThan(20000);
+    const secs = splitStatuteRis(wall);
+    const refs = secs.map((s) => s.ref);
+    expect(secs.length).toBeGreaterThanOrEqual(35);
+    expect(refs).toContain("1");
+    expect(refs).toContain("40");
+  });
+
+  test("an appended sub-enactment that renumbers from § 1 is kept (disambiguated id)", () => {
+    const main =
+      "Text\n" + Array.from({ length: 14 }, (_, i) => `§ ${i + 1}. Hauptteil ${i + 1}.`).join(" ");
+    // Übergangsbestimmungen restart at § 1 and continue.
+    const appended = " § 1. Übergang eins. § 2. Übergang zwei. § 3. Übergang drei.";
+    const secs = splitStatuteRis(main + appended);
+    const p1 = secs.filter((s) => s.ref === "1");
+    expect(p1.length).toBe(2); // main § 1 + appended § 1
+    expect(new Set(secs.map((s) => s.id)).size).toBe(secs.length); // ids unique
+  });
+
+  test("a lone forward cross-reference is NOT treated as a boundary", () => {
+    // "§ 900" is cited once between § 5 and § 6 and never resumes → cross-ref.
+    const body =
+      "Text\n" +
+      Array.from({ length: 12 }, (_, i) => `§ ${i + 1}. Inhalt ${i + 1}.`).join(" ") +
+      " Näheres regelt § 900. sinngemäß.";
+    const refs = splitStatuteRis(body).map((s) => s.ref);
+    expect(refs).toContain("12");
+    expect(refs).not.toContain("900");
+  });
+
+  test("splitStatute recovers when the structured pass finds only spurious headings", () => {
+    // An AT dump with a couple of stray `## Art.` lines (as the real ABGB/StGB
+    // dumps produce) plus a dense inline § run. The structured pass would return
+    // the 2 spurious Art. sections and used to suppress recovery entirely.
+    const dump =
+      `---\ntitle: "StGB — Strafgesetzbuch"\ntype: "law"\njurisdiction: "at"\nabbreviation: "StGB-AT"\n---\n\n` +
+      "## Art. I\nSpurious.\n## Art. II\nSpurious.\nText\n" +
+      Array.from({ length: 40 }, (_, i) => `§ ${i + 1}. Straftatbestand ${i + 1}.`).join(" ");
+    const { sections } = splitStatute(dump);
+    expect(sections.length).toBeGreaterThanOrEqual(35);
+    expect(sections.every((s) => s.marker === "§")).toBe(true);
+  });
+
+  test("returns [] for prose that merely cites a few §§ (below the trust floor)", () => {
+    expect(splitStatuteRis("Der Kläger stützt sich auf § 1295 und § 1325 ABGB.")).toEqual([]);
   });
 });
