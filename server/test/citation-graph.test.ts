@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { extractCitations } from "../src/core/legal/citation-graph.ts";
+import { extractCitations, extractCrossCodeCitations } from "../src/core/legal/citation-graph.ts";
 import type { StatuteSection } from "../src/core/legal/split-statute.ts";
 
 function section(ref: string, body: string): StatuteSection {
@@ -81,5 +81,51 @@ describe("extractCitations", () => {
   test("returns [] for a statute with a single section (nothing to cite)", () => {
     const sections = [section("1", "§ 1. Einzige Bestimmung ohne Verweise.")];
     expect(extractCitations(sections)).toEqual([]);
+  });
+});
+
+describe("extractCrossCodeCitations", () => {
+  const KNOWN = { ABGB: "abgb", ZPO: "zpo", IO: "io", AußStrG: "au-strg" };
+
+  test("extracts a cross-code citation with a direct code suffix", () => {
+    const sections = [section("364", "§ 364. Bäume oder Pflanzen (§ 364 Abs. 3 ABGB) betreffend.")];
+    const edges = extractCrossCodeCitations(sections, "zpo", KNOWN);
+    expect(edges).toContainEqual(
+      expect.objectContaining({ fromRef: "364", toRef: "364", toAbbr: "abgb" })
+    );
+  });
+
+  test("extracts a cross-code citation without an Abs. qualifier", () => {
+    const sections = [section("29", "§ 29. Anfechtung durch § 29 IO und weitere Bestimmungen.")];
+    const edges = extractCrossCodeCitations(sections, "abgb", KNOWN);
+    expect(edges).toContainEqual(
+      expect.objectContaining({ fromRef: "29", toRef: "29", toAbbr: "io" })
+    );
+  });
+
+  test("ignores an unrecognized abbreviation (fail-closed, no guessing)", () => {
+    const sections = [section("1", "§ 1 ErwSchVG betreffend Erwachsenenschutz.")];
+    expect(extractCrossCodeCitations(sections, "abgb", KNOWN)).toEqual([]);
+  });
+
+  test("does not mistake 'Abs' itself or an ordinary capitalized word for a code", () => {
+    const sections = [
+      section("17", "Voraussetzungen des § 17a Abs. 3 können auch bestehen."),
+      section("145", "§ 145 Anerkenntnis des Vaters und des anderen Elternteils."),
+    ];
+    expect(extractCrossCodeCitations(sections, "abgb", KNOWN)).toEqual([]);
+  });
+
+  test("skips a same-code match (extractCitations' job, not this function's)", () => {
+    const sections = [section("1", "§ 1 ABGB regelt den Anwendungsbereich.")];
+    expect(extractCrossCodeCitations(sections, "abgb", KNOWN)).toEqual([]);
+  });
+
+  test("dedupes repeated citations to the same (code, ref) pair within one section", () => {
+    const sections = [section("1", "§ 1. Siehe § 5 ZPO und nochmals § 5 ZPO weiter unten.")];
+    const edges = extractCrossCodeCitations(sections, "abgb", KNOWN).filter(
+      (e) => e.toAbbr === "zpo" && e.toRef === "5"
+    );
+    expect(edges.length).toBe(1);
   });
 });

@@ -21,13 +21,88 @@
 
 import { join } from "path";
 import { splitStatute } from "../src/core/legal/split-statute.ts";
-import { extractCitations } from "../src/core/legal/citation-graph.ts";
+import { extractCitations, extractCrossCodeCitations } from "../src/core/legal/citation-graph.ts";
 
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
 const onlyIdx = args.indexOf("--only");
 const ONLY: Set<string> | null =
   onlyIdx >= 0 && args[onlyIdx + 1] ? new Set(args[onlyIdx + 1].split(",")) : null;
+
+/** RIS-printed abbreviation → our slug abbr, for CROSS-code citations
+ *  ("§ 29 IO" cited from inside ABGB). Deliberately conservative: only codes
+ *  whose RIS abbreviation is unambiguous are listed. Several real AT codes
+ *  are omitted on purpose because their common abbreviation collides between
+ *  two different statutes we hold (e.g. "MSchG" is used for BOTH the
+ *  Markenschutzgesetz and — informally — Mutterschutzgesetz citations in the
+ *  wild) or because the abbreviation is uncertain (NAG vs "AufenthG", KAG,
+ *  VVG). Fail-closed: a missed cross-reference costs nothing; a wrong one
+ *  would be a hallucinated citation, which is the one thing this whole
+ *  citation-graph effort exists to prevent. */
+const KNOWN_ABBRS: Record<string, string> = {
+  ABGB: "abgb",
+  "B-VG": "b-vg",
+  BVergG: "bvergg",
+  StGB: "stgb",
+  StPO: "stpo",
+  JGG: "jgg",
+  EO: "eo",
+  ZPO: "zpo",
+  AußStrG: "au-strg",
+  EStG: "estg",
+  KStG: "kstg",
+  UStG: "ustg",
+  BAO: "bao",
+  UGB: "ugb",
+  GmbHG: "gmbhg",
+  AktG: "aktg",
+  IO: "io",
+  GewO: "gewo",
+  KartG: "kartg",
+  ASVG: "asvg",
+  ArbVG: "arbvg",
+  AngG: "angg",
+  AZG: "azg",
+  AVRAG: "avrag",
+  BUAG: "buag",
+  AlVG: "alvg",
+  KSchG: "kschg",
+  MRG: "mrg",
+  WEG: "weg",
+  GebG: "gebg",
+  GuKG: "gukg",
+  AVG: "avg",
+  StVO: "stvo",
+  SPG: "spg",
+  AsylG: "asylg",
+  AuslBG: "auslbg",
+  WaffG: "waffg",
+  AWG: "awg",
+  DSG: "dsg",
+  TKG: "tkg",
+  UrhG: "urhg",
+  PatG: "patg",
+  MedienG: "medieng",
+  AMG: "amg",
+  SMG: "smg",
+  ChemG: "chemg",
+  ForstG: "forstg",
+  EpiG: "epig",
+  RAO: "rao",
+  GOG: "gog",
+  BDG: "bdg",
+  AHG: "ahg",
+  ECG: "ecg",
+  EheG: "eheg",
+  FPG: "fpg",
+  GlBG: "glbg",
+  PStG: "pstg",
+  StRegG: "stregg",
+  TSchG: "tschg",
+  VStG: "vstg",
+  WRG: "wrg",
+  ZustG: "zustg",
+};
 
 const CORPUS = join(import.meta.dir, "..", "..", "law-corpus");
 
@@ -152,52 +227,89 @@ async function main() {
       engine.addLinksBatch(links, { auditSite: "citation-graph-import" });
   }
 
-  let totalEdges = 0;
-  let totalWritten = 0;
-  let totalErrors = 0;
-
-  for (const sf of selected) {
+  // Pass 1: parse every statute once. Cross-code validation needs the TARGET
+  // statute's real § inventory (not just its abbreviation being recognized),
+  // so all statutes must be loaded before any cross-code edge is emitted —
+  // otherwise "§ 999 ZPO" (a non-existent §, OCR noise or a citation to a
+  // repealed/renumbered provision) would silently become a phantom edge.
+  const parsed = new Map<
+    string,
+    { sf: StatuteFile; sections: ReturnType<typeof splitStatute>["sections"] }
+  >();
+  for (const sf of FILES) {
+    // Parse the FULL corpus (not just `selected`) so cross-code targets
+    // outside a --only filter still resolve; writes below stay scoped to
+    // `selected`.
     const path = join(CORPUS, sf.file);
     let raw: string;
     try {
       raw = await Bun.file(path).text();
     } catch {
-      console.error(`  ❌ ${sf.file}: not found`);
-      totalErrors++;
       continue;
     }
     const { sections } = splitStatute(raw);
-    if (sections.length === 0) {
-      console.error(`  ⚠️  ${sf.file}: 0 sections parsed, skipping`);
+    if (sections.length > 0) parsed.set(sf.abbr, { sf, sections });
+  }
+  const refsByAbbr = new Map<string, Set<string>>();
+  for (const [abbr, { sections }] of parsed) {
+    refsByAbbr.set(abbr, new Set(sections.map((s) => s.ref)));
+  }
+
+  let totalWithinEdges = 0;
+  let totalCrossEdges = 0;
+  let totalWritten = 0;
+  let totalErrors = 0;
+
+  for (const sf of selected) {
+    const entry = parsed.get(sf.abbr);
+    if (!entry) {
+      console.error(`  ❌ ${sf.file}: not found or 0 sections parsed`);
+      totalErrors++;
       continue;
     }
-    const edges = extractCitations(sections);
-    totalEdges += edges.length;
+    const { sections } = entry;
+    const withinEdges = extractCitations(sections);
+    const crossEdgesRaw = extractCrossCodeCitations(sections, sf.abbr, KNOWN_ABBRS);
+    // Validate cross-code targets against the OTHER statute's real § inventory.
+    const crossEdges = crossEdgesRaw.filter((e) => refsByAbbr.get(e.toAbbr)?.has(e.toRef));
+    totalWithinEdges += withinEdges.length;
+    totalCrossEdges += crossEdges.length;
 
     if (DRY) {
       console.log(
-        `  ${sf.jurisdiction}/${sf.abbr}: ${sections.length} §§, ${edges.length} Zitier-Kanten`
+        `  ${sf.jurisdiction}/${sf.abbr}: ${sections.length} §§, ${withinEdges.length} interne + ${crossEdges.length} Cross-Code-Kanten`
       );
       continue;
     }
 
     const sourceId = `law-${sf.jurisdiction}`;
-    const prefix = `legal/statutes/${sf.jurisdiction}/${sf.abbr}/p-`;
-    const links = edges.map((e) => ({
-      from_slug: `${prefix}${e.fromRef}`,
-      to_slug: `${prefix}${e.toRef}`,
-      link_type: "cites",
-      context: e.context,
-      link_source: "citation-graph",
-      from_source_id: sourceId,
-      to_source_id: sourceId,
-    }));
+    const ownPrefix = `legal/statutes/${sf.jurisdiction}/${sf.abbr}/p-`;
+    const links = [
+      ...withinEdges.map((e) => ({
+        from_slug: `${ownPrefix}${e.fromRef}`,
+        to_slug: `${ownPrefix}${e.toRef}`,
+        link_type: "cites",
+        context: e.context,
+        link_source: "citation-graph",
+        from_source_id: sourceId,
+        to_source_id: sourceId,
+      })),
+      ...crossEdges.map((e) => ({
+        from_slug: `${ownPrefix}${e.fromRef}`,
+        to_slug: `legal/statutes/${sf.jurisdiction}/${e.toAbbr}/p-${e.toRef}`,
+        link_type: "cites",
+        context: e.context,
+        link_source: "citation-graph",
+        from_source_id: sourceId,
+        to_source_id: sourceId,
+      })),
+    ];
 
     try {
-      const written = await addLinksBatch!(links);
+      const written = links.length > 0 ? await addLinksBatch!(links) : 0;
       totalWritten += written;
       console.log(
-        `  ✅ ${sf.jurisdiction}/${sf.abbr}: ${written}/${edges.length} Kanten geschrieben (Rest bereits vorhanden)`
+        `  ✅ ${sf.jurisdiction}/${sf.abbr}: ${written}/${links.length} Kanten geschrieben (${withinEdges.length} intern + ${crossEdges.length} cross-code; Rest bereits vorhanden)`
       );
     } catch (e) {
       totalErrors++;
@@ -210,7 +322,9 @@ async function main() {
   console.log("");
   console.log("═══════════════════════════════════════════════════════════");
   if (DRY) {
-    console.log(`  GESAMT: ${totalEdges} Zitier-Kanten gefunden (dry-run)`);
+    console.log(
+      `  GESAMT: ${totalWithinEdges} interne + ${totalCrossEdges} Cross-Code-Kanten gefunden (dry-run)`
+    );
   } else {
     console.log(`  GESAMT: ${totalWritten} Kanten geschrieben, ${totalErrors} Fehler`);
   }
