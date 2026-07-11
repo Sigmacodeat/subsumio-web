@@ -18,39 +18,39 @@ const DRY_RUN = process.argv.includes("--dry-run");
 
 // text-{color}-{step} → text-[color:var(--ds-*-text)]
 const TEXT_MIGRATIONS: Record<string, string> = {
-  "red": "danger",
-  "rose": "danger",
-  "emerald": "success",
-  "green": "success",
-  "amber": "warning",
-  "yellow": "warning",
-  "blue": "info",
-  "orange": "attention",
+  red: "danger",
+  rose: "danger",
+  emerald: "success",
+  green: "success",
+  amber: "warning",
+  yellow: "warning",
+  blue: "info",
+  orange: "attention",
 };
 
 // bg-{color}-{step} (solid, no /opacity) → bg-[color:var(--ds-*-solid)]
 const BG_SOLID_MIGRATIONS: Record<string, string> = {
-  "red": "danger",
-  "rose": "danger",
-  "emerald": "success",
-  "green": "success",
-  "amber": "warning",
-  "yellow": "warning",
-  "blue": "info",
-  "orange": "attention",
+  red: "danger",
+  rose: "danger",
+  emerald: "success",
+  green: "success",
+  amber: "warning",
+  yellow: "warning",
+  blue: "info",
+  orange: "attention",
 };
 
 // border-{color}-{step}/opacity → border-[color:var(--ds-*-border)]
 // border-{color}-{step}/opacity bg-{color}-{step}/opacity → use --ds-*-border and --ds-*-bg
 const BORDER_BG_MIGRATIONS: Record<string, string> = {
-  "red": "danger",
-  "rose": "danger",
-  "emerald": "success",
-  "green": "success",
-  "amber": "warning",
-  "yellow": "warning",
-  "blue": "info",
-  "orange": "attention",
+  red: "danger",
+  rose: "danger",
+  emerald: "success",
+  green: "success",
+  amber: "warning",
+  yellow: "warning",
+  blue: "info",
+  orange: "attention",
 };
 
 const STEPS = ["50", "100", "200", "300", "400", "500", "600", "700", "800", "900"];

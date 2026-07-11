@@ -43,9 +43,12 @@ interface WhatsAppTemplate {
 
 const STATUS_STYLES: Record<string, string> = {
   draft: "bg-gray-500/10 text-gray-600 border-gray-500/20",
-  pending: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
-  approved: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
-  rejected: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
+  pending:
+    "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
+  approved:
+    "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
+  rejected:
+    "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
 };
 
 const STATUS_ICONS: Record<string, typeof FileText> = {

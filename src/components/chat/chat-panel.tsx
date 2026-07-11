@@ -59,6 +59,7 @@ import {
 } from "@/components/chat/chat-session-store";
 import { ChatHeader } from "@/components/chat/chat-header";
 import { ChatInput } from "@/components/chat/chat-input";
+import { SubsumptionPanel } from "@/components/chat/subsumption-panel";
 import { ChatMessageBubble } from "@/components/chat/chat-message";
 import { ChatEmptyState } from "@/components/chat/chat-empty-state";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
@@ -421,12 +422,14 @@ async function executeToolCall(
 
     // P2.7: Record successful agent actions as memories (agent-generated facts)
     if (result.success) {
-      api.memory.recordAgentAction({
-        key: `tool_${toolCall.type}_${Date.now()}`,
-        value: `Tool "${toolCall.type}" ausgeführt: ${JSON.stringify(toolCall.params).slice(0, 200)}`,
-        type: "fact",
-        caseSlug: context?.caseSlug,
-      }).catch(() => {});
+      api.memory
+        .recordAgentAction({
+          key: `tool_${toolCall.type}_${Date.now()}`,
+          value: `Tool "${toolCall.type}" ausgeführt: ${JSON.stringify(toolCall.params).slice(0, 200)}`,
+          type: "fact",
+          caseSlug: context?.caseSlug,
+        })
+        .catch(() => {});
     }
 
     return executed;
@@ -457,7 +460,9 @@ async function detectAndExecuteTools(
   // Execute non-destructive tools immediately, leave destructive ones pending
   const results = await Promise.all(
     allCalls.map((tc) =>
-      tc.requiresConfirmation ? Promise.resolve(tc) : executeToolCall(tc, { caseSlug: context.caseSlug })
+      tc.requiresConfirmation
+        ? Promise.resolve(tc)
+        : executeToolCall(tc, { caseSlug: context.caseSlug })
     )
   );
 
@@ -784,6 +789,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   const [modelOverride, setModelOverride] = useState<string | undefined>(undefined);
   const [sessionTokens, setSessionTokens] = useState(0);
   const [isCompact, setIsCompact] = useState(false);
+  const [subsumptionMode, setSubsumptionMode] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Detect narrow panel for compact header mode. 420px so the docked
@@ -1050,7 +1056,11 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         userContext,
         conversationHistory: historyForPrompt,
         matterVitals,
-        memoryContext: await buildFullMemoryContext({ sessionId: activeSessionId, caseSlug: context.caseSlug, query: text }).catch(() => ""),
+        memoryContext: await buildFullMemoryContext({
+          sessionId: activeSessionId,
+          caseSlug: context.caseSlug,
+          query: text,
+        }).catch(() => ""),
       });
       const prompt = buildSafePrompt(systemPrompt, userInput);
 
@@ -1269,7 +1279,9 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       );
 
       // Execute the tool
-      const executed = await executeToolCall(foundToolCall, { caseSlug: selectedCaseSlug || context.caseSlug });
+      const executed = await executeToolCall(foundToolCall, {
+        caseSlug: selectedCaseSlug || context.caseSlug,
+      });
 
       // Update message with result
       setMessages((m) =>
@@ -1407,7 +1419,9 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       );
 
       // Re-execute
-      const executed = await executeToolCall(foundToolCall, { caseSlug: selectedCaseSlug || context.caseSlug });
+      const executed = await executeToolCall(foundToolCall, {
+        caseSlug: selectedCaseSlug || context.caseSlug,
+      });
 
       setMessages((m) =>
         m.map((msg) =>
@@ -1631,7 +1645,11 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           },
           userContext,
           conversationHistory: regenHistory,
-          memoryContext: await buildFullMemoryContext({ sessionId: activeSessionId, caseSlug: context.caseSlug, query: userMsg.content }).catch(() => ""),
+          memoryContext: await buildFullMemoryContext({
+            sessionId: activeSessionId,
+            caseSlug: context.caseSlug,
+            query: userMsg.content,
+          }).catch(() => ""),
         });
       const prompt = buildSafePrompt(regenSystemPrompt, regenUserInput);
 
@@ -2061,161 +2079,196 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         trailingActions={headerActions}
       />
 
-      {/* Messages area */}
-      <div
-        ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto"
-        role="log"
-        aria-live="polite"
-        aria-busy={isStreaming}
-      >
-        {messages.length === 0 ? (
-          <ChatEmptyState
-            onExampleClick={(q) => handleSend(q)}
-            exampleQueries={exampleQueries}
-            contextLabel={contextLabel}
-            userName={userContext?.name}
-          />
-        ) : (
-          <div className="py-2">
-            {messages.map((msg, idx) => {
-              const prevMsg = idx > 0 ? messages[idx - 1] : null;
-              const showDateSeparator =
-                !prevMsg ||
-                new Date(prevMsg.createdAt).toDateString() !==
-                  new Date(msg.createdAt).toDateString();
-              return (
-                <div
-                  key={msg.id}
-                  style={
-                    messages.length > 30 && idx < messages.length - 10
-                      ? { contentVisibility: "auto", containIntrinsicSize: "auto 120px" }
-                      : undefined
-                  }
-                >
-                  {showDateSeparator && (
-                    <div className="my-2 flex items-center gap-2 px-4">
-                      <div className="h-px flex-1 bg-[color:var(--ds-border)]" />
-                      <span className="text-xs font-medium text-[color:var(--ds-text-subtle)]">
-                        {getDateLabel(msg.createdAt)}
-                      </span>
-                      <div className="h-px flex-1 bg-[color:var(--ds-border)]" />
-                    </div>
-                  )}
-                  <ChatMessageBubble
-                    message={msg}
-                    features={messageFeatures}
-                    onRegenerate={msg.role === "assistant" ? handleRegenerateById : undefined}
-                    onEdit={msg.role === "user" ? handleEditById : undefined}
-                    onReply={handleReplyById}
-                    onExport={handleExport}
-                    onToolConfirm={handleToolConfirm}
-                    onToolCancel={handleToolCancel}
-                    onToolRetry={handleToolRetry}
-                    onFollowUp={handleFollowUp}
-                  />
-                </div>
-              );
-            })}
-            {isStreaming &&
-              messages.length > 0 &&
-              messages[messages.length - 1].role === "assistant" &&
-              !messages[messages.length - 1].content && (
-                <div className="px-4 py-1.5 text-xs text-[color:var(--ds-text-muted)]">
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="inline-flex items-center gap-0.5">
-                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-60" />
-                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-40 [animation-delay:150ms]" />
-                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-20 [animation-delay:300ms]" />
-                    </span>
-                    {t("chat.typing")}
-                  </span>
-                </div>
-              )}
-            {/* Suggested follow-ups after last AI message */}
-            {!isStreaming &&
-              messages.length > 0 &&
-              messages[messages.length - 1].role === "assistant" &&
-              !messages[messages.length - 1].error &&
-              messages[messages.length - 1].content.trim().length > 0 && (
-                <SuggestedFollowUps
-                  lastMessage={messages[messages.length - 1]}
-                  onSelect={(q) => handleSend(q)}
-                  t={t}
-                  lang={lang}
-                />
-              )}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
+      {/* Subsumtion Toggle */}
+      <div className="flex items-center gap-1 border-b border-[var(--ds-border)] bg-[var(--ds-surface-1)] px-3 py-1.5">
+        <button
+          onClick={() => setSubsumptionMode(false)}
+          className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
+            !subsumptionMode
+              ? "bg-[var(--brand-primary)] text-white"
+              : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-2)]"
+          }`}
+        >
+          Copilot
+        </button>
+        <button
+          onClick={() => setSubsumptionMode(true)}
+          className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
+            subsumptionMode
+              ? "bg-[var(--brand-primary)] text-white"
+              : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-surface-2)]"
+          }`}
+        >
+          ⚖️ Subsumtion
+        </button>
       </div>
 
-      {/* Scroll-to-bottom button */}
-      {showScrollBtn && (
-        <button
-          onClick={scrollToBottom}
-          className="absolute bottom-24 left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg transition-[opacity,transform] duration-200 hover:bg-[color:var(--ds-hover)] active:scale-95"
-          aria-label={t("chat.scroll_bottom")}
-        >
-          <ArrowDown size={16} className="text-[color:var(--ds-text-muted)]" />
-        </button>
-      )}
-
-      {/* Error banner */}
-      {error && !dismissedError && (
-        <div
-          role="alert"
-          aria-live="assertive"
-          className="flex items-center gap-2 border-t border-red-500/20 bg-red-500/5 px-4 py-2 text-xs text-red-600 dark:text-red-400"
-        >
-          <span className="min-w-0 flex-1 truncate">{error}</span>
-          <button
-            onClick={() => setDismissedError(true)}
-            className="shrink-0 text-red-400 transition-colors hover:text-red-600 dark:text-red-500 dark:hover:text-red-300"
-            aria-label={t("chat.dismiss_error")}
+      {/* Subsumption Mode */}
+      {subsumptionMode ? (
+        <SubsumptionPanel
+          jurisdiction={jurisdiction}
+          caseSlug={selectedCaseSlug || context.caseSlug || undefined}
+          onClose={() => setSubsumptionMode(false)}
+        />
+      ) : (
+        <>
+          {/* Messages area */}
+          <div
+            ref={scrollContainerRef}
+            className="flex-1 overflow-y-auto"
+            role="log"
+            aria-live="polite"
+            aria-busy={isStreaming}
           >
-            <X size={14} />
-          </button>
-        </div>
-      )}
+            {messages.length === 0 ? (
+              <ChatEmptyState
+                onExampleClick={(q) => handleSend(q)}
+                exampleQueries={exampleQueries}
+                contextLabel={contextLabel}
+                userName={userContext?.name}
+              />
+            ) : (
+              <div className="py-2">
+                {messages.map((msg, idx) => {
+                  const prevMsg = idx > 0 ? messages[idx - 1] : null;
+                  const showDateSeparator =
+                    !prevMsg ||
+                    new Date(prevMsg.createdAt).toDateString() !==
+                      new Date(msg.createdAt).toDateString();
+                  return (
+                    <div
+                      key={msg.id}
+                      style={
+                        messages.length > 30 && idx < messages.length - 10
+                          ? { contentVisibility: "auto", containIntrinsicSize: "auto 120px" }
+                          : undefined
+                      }
+                    >
+                      {showDateSeparator && (
+                        <div className="my-2 flex items-center gap-2 px-4">
+                          <div className="h-px flex-1 bg-[color:var(--ds-border)]" />
+                          <span className="text-xs font-medium text-[color:var(--ds-text-subtle)]">
+                            {getDateLabel(msg.createdAt)}
+                          </span>
+                          <div className="h-px flex-1 bg-[color:var(--ds-border)]" />
+                        </div>
+                      )}
+                      <ChatMessageBubble
+                        message={msg}
+                        features={messageFeatures}
+                        onRegenerate={msg.role === "assistant" ? handleRegenerateById : undefined}
+                        onEdit={msg.role === "user" ? handleEditById : undefined}
+                        onReply={handleReplyById}
+                        onExport={handleExport}
+                        onToolConfirm={handleToolConfirm}
+                        onToolCancel={handleToolCancel}
+                        onToolRetry={handleToolRetry}
+                        onFollowUp={handleFollowUp}
+                      />
+                    </div>
+                  );
+                })}
+                {isStreaming &&
+                  messages.length > 0 &&
+                  messages[messages.length - 1].role === "assistant" &&
+                  !messages[messages.length - 1].content && (
+                    <div className="px-4 py-1.5 text-xs text-[color:var(--ds-text-muted)]">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-0.5">
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-60" />
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-40 [animation-delay:150ms]" />
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-20 [animation-delay:300ms]" />
+                        </span>
+                        {t("chat.typing")}
+                      </span>
+                    </div>
+                  )}
+                {/* Suggested follow-ups after last AI message */}
+                {!isStreaming &&
+                  messages.length > 0 &&
+                  messages[messages.length - 1].role === "assistant" &&
+                  !messages[messages.length - 1].error &&
+                  messages[messages.length - 1].content.trim().length > 0 && (
+                    <SuggestedFollowUps
+                      lastMessage={messages[messages.length - 1]}
+                      onSelect={(q) => handleSend(q)}
+                      t={t}
+                      lang={lang}
+                    />
+                  )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
 
-      {/* Reply preview */}
-      {replyTo && (
-        <div className="flex items-center gap-2 border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-2 text-xs">
-          <Reply size={12} className="shrink-0 text-[color:var(--ds-text-muted)]" />
-          <span className="text-[color:var(--ds-text-subtle)]">
-            {t("chat.reply_to")}{" "}
-            {replyTo.role === "user" ? t("chat.reply_user") : t("chat.reply_ai")}:
-          </span>
-          <span className="min-w-0 flex-1 truncate text-[color:var(--ds-text-muted)]">
-            {replyTo.preview}
-          </span>
-          <button
-            onClick={() => setReplyTo(null)}
-            className="shrink-0 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
-            aria-label={t("chat.close_reply_preview")}
-          >
-            <X size={12} />
-          </button>
-        </div>
-      )}
+          {/* Scroll-to-bottom button */}
+          {showScrollBtn && (
+            <button
+              onClick={scrollToBottom}
+              className="absolute bottom-24 left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg transition-[opacity,transform] duration-200 hover:bg-[color:var(--ds-hover)] active:scale-95"
+              aria-label={t("chat.scroll_bottom")}
+            >
+              <ArrowDown size={16} className="text-[color:var(--ds-text-muted)]" />
+            </button>
+          )}
 
-      {/* Input area */}
-      <ChatInput
-        onSend={(text, atts) => {
-          handleSend(text, atts, replyTo);
-          setReplyTo(null);
-        }}
-        onStop={handleStop}
-        isStreaming={isStreaming}
-        placeholder={placeholder}
-        features={{
-          fileUpload: resolvedFeatures.fileUpload,
-          modelSelector: false,
-        }}
-        modelOverride={modelOverride}
-        onModelChange={setModelOverride}
-      />
+          {/* Error banner */}
+          {error && !dismissedError && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="flex items-center gap-2 border-t border-red-500/20 bg-red-500/5 px-4 py-2 text-xs text-red-600 dark:text-red-400"
+            >
+              <span className="min-w-0 flex-1 truncate">{error}</span>
+              <button
+                onClick={() => setDismissedError(true)}
+                className="shrink-0 text-red-400 transition-colors hover:text-red-600 dark:text-red-500 dark:hover:text-red-300"
+                aria-label={t("chat.dismiss_error")}
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
+          {/* Reply preview */}
+          {replyTo && (
+            <div className="flex items-center gap-2 border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-2 text-xs">
+              <Reply size={12} className="shrink-0 text-[color:var(--ds-text-muted)]" />
+              <span className="text-[color:var(--ds-text-subtle)]">
+                {t("chat.reply_to")}{" "}
+                {replyTo.role === "user" ? t("chat.reply_user") : t("chat.reply_ai")}:
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[color:var(--ds-text-muted)]">
+                {replyTo.preview}
+              </span>
+              <button
+                onClick={() => setReplyTo(null)}
+                className="shrink-0 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
+                aria-label={t("chat.close_reply_preview")}
+              >
+                <X size={12} />
+              </button>
+            </div>
+          )}
+
+          {/* Input area - only in copilot mode */}
+          <ChatInput
+            onSend={(text, atts) => {
+              handleSend(text, atts, replyTo);
+              setReplyTo(null);
+            }}
+            onStop={handleStop}
+            isStreaming={isStreaming}
+            placeholder={placeholder}
+            features={{
+              fileUpload: resolvedFeatures.fileUpload,
+              modelSelector: false,
+            }}
+            modelOverride={modelOverride}
+            onModelChange={setModelOverride}
+          />
+        </>
+      )}
     </div>
   );
 });

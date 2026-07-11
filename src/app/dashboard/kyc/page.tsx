@@ -265,7 +265,9 @@ export default function KYCPage() {
                   Akte: {v.case_slug} · Provider: {v.provider}
                 </div>
                 {v.risk_factors.length > 0 && (
-                  <div className="text-xs text-[color:var(--ds-attention-text)]">{v.risk_factors.join(", ")}</div>
+                  <div className="text-xs text-[color:var(--ds-attention-text)]">
+                    {v.risk_factors.join(", ")}
+                  </div>
                 )}
                 {v.transparenzregister_checked && (
                   <div className="text-xs text-[color:var(--ds-text-muted)]">

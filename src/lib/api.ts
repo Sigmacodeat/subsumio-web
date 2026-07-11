@@ -353,7 +353,10 @@ export const api = {
       return request(`/api/copilot/memory?${params.toString()}`);
     },
 
-    search(query: string, caseSlug?: string): Promise<{
+    search(
+      query: string,
+      caseSlug?: string
+    ): Promise<{
       results: Array<{
         id: string;
         type: string;
@@ -369,7 +372,10 @@ export const api = {
       });
     },
 
-    infer(message: string, caseSlug?: string): Promise<{
+    infer(
+      message: string,
+      caseSlug?: string
+    ): Promise<{
       inferred: Array<{ id: string; type: string; key: string; value: string }>;
       superseded?: string[];
       method: string;
@@ -406,7 +412,10 @@ export const api = {
       });
     },
 
-    update(id: string, updates: { value?: string; pinned?: boolean; type?: string }): Promise<{
+    update(
+      id: string,
+      updates: { value?: string; pinned?: boolean; type?: string }
+    ): Promise<{
       ok: boolean;
     }> {
       return request("/api/copilot/memory", {

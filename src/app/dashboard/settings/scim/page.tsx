@@ -105,7 +105,11 @@ function CopyableField({
           disabled={!value}
           className="shrink-0 p-2 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)] disabled:opacity-30"
         >
-          {copied ? <Check size={14} className="text-[color:var(--ds-success-text)]" /> : <Copy size={14} />}
+          {copied ? (
+            <Check size={14} className="text-[color:var(--ds-success-text)]" />
+          ) : (
+            <Copy size={14} />
+          )}
         </button>
       </div>
     </div>
@@ -188,7 +192,9 @@ function SyncLogView({ status }: { status: SyncStatus }) {
           {result.errors.length === 0 && (
             <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-3">
               <CheckCircle2 size={14} className="shrink-0 text-[color:var(--ds-success-text)]" />
-              <p className="text-sm text-[color:var(--ds-success-text)]">{t("scim.sync_success")}</p>
+              <p className="text-sm text-[color:var(--ds-success-text)]">
+                {t("scim.sync_success")}
+              </p>
             </div>
           )}
 

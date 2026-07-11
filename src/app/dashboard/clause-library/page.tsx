@@ -251,7 +251,11 @@ export default function ClauseLibraryPage() {
               onClick={() => copyClause(selectedClause)}
               className="gap-1.5 text-xs"
             >
-              {copied ? <Check size={12} className="text-[color:var(--ds-success-text)]" /> : <Copy size={12} />}
+              {copied ? (
+                <Check size={12} className="text-[color:var(--ds-success-text)]" />
+              ) : (
+                <Copy size={12} />
+              )}
               {copied ? t("clauses.btn_copy") : t("clauses.btn_copy")}
             </Button>
           </div>

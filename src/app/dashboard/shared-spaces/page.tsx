@@ -34,7 +34,8 @@ const roleBadge: Record<string, string> = {
 
 const statusBadge: Record<string, string> = {
   active: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] border-green-200",
-  pending: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)] border-yellow-200",
+  pending:
+    "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)] border-yellow-200",
   revoked: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)] border-red-200",
 };
 
@@ -355,7 +356,9 @@ function SpaceDetailModal({ space, onClose }: { space: SharedSpace; onClose: () 
                 className="flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] px-3 py-2"
               >
                 <div className="flex items-center gap-2">
-                  {member.role === "owner" && <Crown className="h-4 w-4 text-[color:var(--ds-warning-text)]" />}
+                  {member.role === "owner" && (
+                    <Crown className="h-4 w-4 text-[color:var(--ds-warning-text)]" />
+                  )}
                   <div>
                     <p className="text-sm font-medium">{member.org_name}</p>
                     <p className="text-xs text-[color:var(--ds-text-muted)]">
@@ -429,7 +432,8 @@ function SpaceDetailModal({ space, onClose }: { space: SharedSpace; onClose: () 
               <p className="mt-0.5 flex items-center gap-1 text-sm font-medium">
                 {space.settings.allow_member_invite ? (
                   <>
-                    <CheckCircle2 className="h-3.5 w-3.5 text-[color:var(--ds-success-text)]" /> Erlaubt
+                    <CheckCircle2 className="h-3.5 w-3.5 text-[color:var(--ds-success-text)]" />{" "}
+                    Erlaubt
                   </>
                 ) : (
                   <>
@@ -443,7 +447,8 @@ function SpaceDetailModal({ space, onClose }: { space: SharedSpace; onClose: () 
               <p className="mt-0.5 flex items-center gap-1 text-sm font-medium">
                 {space.settings.require_approval_for_resources ? (
                   <>
-                    <CheckCircle2 className="h-3.5 w-3.5 text-[color:var(--ds-success-text)]" /> Genehmigung nötig
+                    <CheckCircle2 className="h-3.5 w-3.5 text-[color:var(--ds-success-text)]" />{" "}
+                    Genehmigung nötig
                   </>
                 ) : (
                   <>

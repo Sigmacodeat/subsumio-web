@@ -144,7 +144,17 @@ function SortableWidget({
   );
 }
 
-function EditModeToolbar({ onDone, onReset, search, onSearch }: { onDone: () => void; onReset: () => void; search: string; onSearch: (value: string) => void }) {
+function EditModeToolbar({
+  onDone,
+  onReset,
+  search,
+  onSearch,
+}: {
+  onDone: () => void;
+  onReset: () => void;
+  search: string;
+  onSearch: (value: string) => void;
+}) {
   const { t } = useLang();
 
   return (
@@ -159,8 +169,17 @@ function EditModeToolbar({ onDone, onReset, search, onSearch }: { onDone: () => 
         </span>
       </div>
       <label className="relative min-w-48 flex-1 sm:max-w-xs">
-        <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-subtle)]" />
-        <input value={search} onChange={(event) => onSearch(event.target.value)} placeholder={t("widget.search_placeholder")} aria-label={t("widget.search_placeholder")} className="w-full rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pl-8 pr-3 text-xs text-[color:var(--ds-text)]" />
+        <Search
+          size={13}
+          className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+        />
+        <input
+          value={search}
+          onChange={(event) => onSearch(event.target.value)}
+          placeholder={t("widget.search_placeholder")}
+          aria-label={t("widget.search_placeholder")}
+          className="w-full rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pr-3 pl-8 text-xs text-[color:var(--ds-text)]"
+        />
       </label>
       <div className="flex items-center gap-2">
         <button
@@ -308,7 +327,12 @@ export function WidgetBoard() {
   const { t } = useLang();
   const data = useKanzleiCockpitData();
   const meQuery = useMe();
-  const preset: WidgetPreset = meQuery.data?.user?.industry === "tax" ? "tax" : (["partner", "admin", "associate"].includes(meQuery.data?.user?.role ?? "") ? meQuery.data?.user?.role as WidgetPreset : "associate");
+  const preset: WidgetPreset =
+    meQuery.data?.user?.industry === "tax"
+      ? "tax"
+      : ["partner", "admin", "associate"].includes(meQuery.data?.user?.role ?? "")
+        ? (meQuery.data?.user?.role as WidgetPreset)
+        : "associate";
   const { prefs, loaded, toggleVisible, reorder, reset } = useWidgetPrefs(preset);
   const [editMode, setEditMode] = useState(false);
   const [activeId, setActiveId] = useState<WidgetId | null>(null);
@@ -322,12 +346,23 @@ export function WidgetBoard() {
     if (period === "all") return data;
     const now = new Date();
     const windowMs = period === "today" ? 86400000 : 7 * 86400000;
-    const relevant = (item: { due?: Date; created_at?: string; frontmatter?: Record<string, unknown> }) => {
-      const raw = item.frontmatter?.due_date ?? item.frontmatter?.date ?? item.created_at ?? item.due;
+    const relevant = (item: {
+      due?: Date;
+      created_at?: string;
+      frontmatter?: Record<string, unknown>;
+    }) => {
+      const raw =
+        item.frontmatter?.due_date ?? item.frontmatter?.date ?? item.created_at ?? item.due;
       const time = raw ? new Date(String(raw)).getTime() : NaN;
       return Number.isFinite(time) && Math.abs(time - now.getTime()) <= windowMs;
     };
-    return { ...data, deadlines: data.deadlines.filter(relevant), criticalDeadlines: data.criticalDeadlines.filter(relevant), inboxItems: data.inboxItems.filter(relevant), pendingReviews: data.pendingReviews.filter(relevant) };
+    return {
+      ...data,
+      deadlines: data.deadlines.filter(relevant),
+      criticalDeadlines: data.criticalDeadlines.filter(relevant),
+      inboxItems: data.inboxItems.filter(relevant),
+      pendingReviews: data.pendingReviews.filter(relevant),
+    };
   }, [data, period]);
 
   const showDegraded = data.degraded && !editMode;
@@ -341,7 +376,20 @@ export function WidgetBoard() {
   const orderedPrefs = useMemo(() => [...prefs].sort((a, b) => a.order - b.order), [prefs]);
 
   const visiblePrefs = useMemo(
-    () => orderedPrefs.filter((p) => (p.visible || editMode) && (!editMode || !search.trim() || [getWidgetMeta(p.id)?.labelKey, getWidgetMeta(p.id)?.descKey].some((key) => key && t(key as DashboardKey).toLowerCase().includes(search.trim().toLowerCase())))),
+    () =>
+      orderedPrefs.filter(
+        (p) =>
+          (p.visible || editMode) &&
+          (!editMode ||
+            !search.trim() ||
+            [getWidgetMeta(p.id)?.labelKey, getWidgetMeta(p.id)?.descKey].some(
+              (key) =>
+                key &&
+                t(key as DashboardKey)
+                  .toLowerCase()
+                  .includes(search.trim().toLowerCase())
+            ))
+      ),
     [orderedPrefs, editMode, search, t]
   );
 
@@ -477,11 +525,33 @@ export function WidgetBoard() {
         </div>
       )}
       {editMode ? (
-        <EditModeToolbar onDone={() => setEditMode(false)} onReset={() => reset()} search={search} onSearch={setSearch} />
+        <EditModeToolbar
+          onDone={() => setEditMode(false)}
+          onReset={() => reset()}
+          search={search}
+          onSearch={setSearch}
+        />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="inline-flex rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-0.5" role="group" aria-label={t("widget.period_label")}>
-            {(["today", "week", "all"] as const).map((value) => <button key={value} type="button" aria-pressed={period === value} onClick={() => { setPeriod(value); localStorage.setItem("subsumio:widget-period", value); }} className={`rounded px-2.5 py-1 text-xs ${period === value ? "brand-solid text-white" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}>{t(`widget.period_${value}` as DashboardKey)}</button>)}
+          <div
+            className="inline-flex rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-0.5"
+            role="group"
+            aria-label={t("widget.period_label")}
+          >
+            {(["today", "week", "all"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={period === value}
+                onClick={() => {
+                  setPeriod(value);
+                  localStorage.setItem("subsumio:widget-period", value);
+                }}
+                className={`rounded px-2.5 py-1 text-xs ${period === value ? "brand-solid text-white" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
+              >
+                {t(`widget.period_${value}` as DashboardKey)}
+              </button>
+            ))}
           </div>
           <button
             type="button"
@@ -585,7 +655,10 @@ export function WidgetBoard() {
               <div className="rounded-lg border border-[color:var(--brand-primary)]/40 bg-[color:var(--ds-surface)] p-3 shadow-lg">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--ds-text)]">
                   <GripVertical size={14} className="text-[color:var(--ds-text-subtle)]" />
-                  {(() => { const ActiveIcon = activeMeta.icon; return <ActiveIcon size={14} aria-hidden="true" />; })()}
+                  {(() => {
+                    const ActiveIcon = activeMeta.icon;
+                    return <ActiveIcon size={14} aria-hidden="true" />;
+                  })()}
                   {t(activeMeta.labelKey as DashboardKey)}
                 </div>
               </div>

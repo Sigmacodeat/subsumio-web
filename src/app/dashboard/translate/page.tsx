@@ -208,7 +208,11 @@ export default function TranslatePage() {
                 {result.target_language})
               </h3>
               <Button variant="ghost" size="sm" onClick={copyResult} className="gap-1.5 text-xs">
-                {copied ? <Check size={12} className="text-[color:var(--ds-success-text)]" /> : <Copy size={12} />}
+                {copied ? (
+                  <Check size={12} className="text-[color:var(--ds-success-text)]" />
+                ) : (
+                  <Copy size={12} />
+                )}
                 {copied ? t("translate.btn_copy") : t("translate.btn_copy")}
               </Button>
             </div>

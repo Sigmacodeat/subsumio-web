@@ -139,7 +139,10 @@ function parseArgs(argv: string[]): ParsedArgs {
 
 function loadFixture(path: string): any[] {
   const raw = readFileSync(path, "utf-8");
-  const lines = raw.trim().split("\n").filter((l) => l.trim() && !l.startsWith("#"));
+  const lines = raw
+    .trim()
+    .split("\n")
+    .filter((l) => l.trim() && !l.startsWith("#"));
   return lines.map((l) => JSON.parse(l));
 }
 
@@ -176,7 +179,10 @@ function loadLawCorpus(): CorpusFile[] {
 // ─── JSONL emitter ───────────────────────────────────────────────────────
 
 class JsonlEmitter {
-  constructor(private path: string, private append: boolean) {
+  constructor(
+    private path: string,
+    private append: boolean
+  ) {
     if (!append && existsSync(path)) {
       writeFileSync(path, "");
     }
@@ -224,7 +230,9 @@ async function main() {
     chat_model: cfg?.chat_model ?? "openrouter:deepseek/deepseek-chat",
     env: { ...process.env },
   } as any);
-  process.stderr.write(`[de-legal-retrieval] embedding model: ${embeddingModel} (${embeddingDims}d)\n`);
+  process.stderr.write(
+    `[de-legal-retrieval] embedding model: ${embeddingModel} (${embeddingDims}d)\n`
+  );
 
   process.stderr.write(`[de-legal-retrieval] creating in-memory engine...\n`);
   const engine = new PGLiteEngine();
@@ -361,10 +369,14 @@ async function main() {
 
   // Print summary to stderr
   process.stderr.write(`\n[de-legal-retrieval] RESULTS (${n} questions, top-k=${opts.topK})\n`);
-  process.stderr.write(`  Aggregate: Hit@1=${(report.aggregate.hit_at_1 * 100).toFixed(1)}% Hit@3=${(report.aggregate.hit_at_3 * 100).toFixed(1)}% Hit@5=${(report.aggregate.hit_at_5 * 100).toFixed(1)}% Hit@8=${(report.aggregate.hit_at_8 * 100).toFixed(1)}% MRR=${report.aggregate.mrr.toFixed(3)}\n`);
+  process.stderr.write(
+    `  Aggregate: Hit@1=${(report.aggregate.hit_at_1 * 100).toFixed(1)}% Hit@3=${(report.aggregate.hit_at_3 * 100).toFixed(1)}% Hit@5=${(report.aggregate.hit_at_5 * 100).toFixed(1)}% Hit@8=${(report.aggregate.hit_at_8 * 100).toFixed(1)}% MRR=${report.aggregate.mrr.toFixed(3)}\n`
+  );
   if (opts.byType) {
     for (const a of areas) {
-      process.stderr.write(`  ${a.legal_area} (n=${a.n}): Hit@1=${(a.hit_at_1 * 100).toFixed(1)}% Hit@3=${(a.hit_at_3 * 100).toFixed(1)}% Hit@5=${(a.hit_at_5 * 100).toFixed(1)}% Hit@8=${(a.hit_at_8 * 100).toFixed(1)}% MRR=${a.mrr.toFixed(3)}\n`);
+      process.stderr.write(
+        `  ${a.legal_area} (n=${a.n}): Hit@1=${(a.hit_at_1 * 100).toFixed(1)}% Hit@3=${(a.hit_at_3 * 100).toFixed(1)}% Hit@5=${(a.hit_at_5 * 100).toFixed(1)}% Hit@8=${(a.hit_at_8 * 100).toFixed(1)}% MRR=${a.mrr.toFixed(3)}\n`
+      );
     }
   }
 

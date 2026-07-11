@@ -39,7 +39,11 @@ const TYPE_META: Record<string, { icon: typeof Bell; label: string; color: strin
   mention: { icon: MessageSquare, label: "Erwähnung", color: "text-[color:var(--ds-info-text)]" },
   reply: { icon: MessageSquare, label: "Antwort", color: "text-[color:var(--ds-info-text)]" },
   system: { icon: Bell, label: "System", color: "text-slate-500" },
-  notification_failure: { icon: AlertCircle, label: "Fehler", color: "text-[color:var(--ds-danger-text)]" },
+  notification_failure: {
+    icon: AlertCircle,
+    label: "Fehler",
+    color: "text-[color:var(--ds-danger-text)]",
+  },
   document_request: { icon: FileText, label: "Dokumentenanforderung", color: "text-purple-500" },
   retention: { icon: FileText, label: "Aufbewahrung", color: "text-purple-500" },
   autonomous_task: { icon: Bot, label: "Autonom", color: "text-[color:var(--ds-success-text)]" },

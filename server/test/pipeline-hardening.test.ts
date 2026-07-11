@@ -243,7 +243,7 @@ describe("tryParseJSON edge cases", () => {
   });
 
   it("returns null for malformed JSON", () => {
-    expect(tryParseJSON('{a:1}')).toBeNull();
+    expect(tryParseJSON("{a:1}")).toBeNull();
   });
 
   it("handles whitespace-only input", () => {
@@ -285,7 +285,7 @@ describe("EV calculation edge cases", () => {
   });
 
   it("handles fractional values", () => {
-    expect(calculateNettoEV(15000.50, 3000.25, 1000.75)).toBe(10999.5);
+    expect(calculateNettoEV(15000.5, 3000.25, 1000.75)).toBe(10999.5);
   });
 });
 

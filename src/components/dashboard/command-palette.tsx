@@ -917,9 +917,15 @@ export function CommandPalette({
             <div className="flex h-11 items-center justify-between border-t border-[color:var(--ds-border)] px-4 text-xs text-[color:var(--ds-text-subtle)]">
               <div className="flex items-center gap-4">
                 <span className="hidden items-center gap-1.5 sm:flex">
-                  <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">N</kbd>
-                  <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">D</kbd>
-                  <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">I</kbd>
+                  <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
+                    N
+                  </kbd>
+                  <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
+                    D
+                  </kbd>
+                  <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
+                    I
+                  </kbd>
                   {t("cmd.section.create")}
                 </span>
                 <span className="flex items-center gap-1.5">

@@ -73,9 +73,12 @@ function ChatMessageBubbleInner({
     }
   }
 
-  useEffect(() => () => {
-    if (isSpeaking) window.speechSynthesis?.cancel();
-  }, [isSpeaking]);
+  useEffect(
+    () => () => {
+      if (isSpeaking) window.speechSynthesis?.cancel();
+    },
+    [isSpeaking]
+  );
 
   function handleSpeak() {
     if (!("speechSynthesis" in window)) return;

@@ -241,7 +241,9 @@ export default function TimeSuggestionsPage() {
                     )}
                   </div>
                   <p className="text-xs text-[color:var(--ds-text-muted)]">{s.description}</p>
-                  {s.case_slug && <p className="text-xs text-[color:var(--ds-info-text)]">Akte: {s.case_slug}</p>}
+                  {s.case_slug && (
+                    <p className="text-xs text-[color:var(--ds-info-text)]">Akte: {s.case_slug}</p>
+                  )}
                 </div>
                 {isPending && (
                   <div className="flex shrink-0 gap-1.5">

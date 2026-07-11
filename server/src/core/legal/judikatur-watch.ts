@@ -22,7 +22,12 @@ export interface WatchEngine {
   executeRaw<T>(sql: string, params?: unknown[]): Promise<T[]>;
   putPage(
     slug: string,
-    page: { type: string; title: string; compiled_truth: string; frontmatter: Record<string, unknown> },
+    page: {
+      type: string;
+      title: string;
+      compiled_truth: string;
+      frontmatter: Record<string, unknown>;
+    },
     opts?: { sourceId?: string }
   ): Promise<unknown>;
 }
@@ -250,7 +255,9 @@ export async function runJudikaturWatch(
         lines.push("| Gericht | GZ | Datum | Link |");
         lines.push("|---|---|---|---|");
         for (const t of a.treffer) {
-          lines.push(`| ${t.gericht} | ${t.geschaeftszahl || t.dokumentnummer} | ${t.datum} | ${t.url} |`);
+          lines.push(
+            `| ${t.gericht} | ${t.geschaeftszahl || t.dokumentnummer} | ${t.datum} | ${t.url} |`
+          );
         }
         lines.push("");
       }

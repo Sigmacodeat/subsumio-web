@@ -145,10 +145,14 @@ const TREATMENT_ICONS: Record<string, typeof CheckCircle2> = {
 };
 
 const TREATMENT_COLORS: Record<string, string> = {
-  good_law: "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-solid)] dark:bg-emerald-950/30",
-  bad_law: "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-solid)] dark:bg-red-950/30",
-  at_risk: "text-[color:var(--ds-attention-text)] bg-[color:var(--ds-attention-solid)] dark:bg-orange-950/30",
-  mixed: "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-solid)] dark:bg-yellow-950/30",
+  good_law:
+    "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-solid)] dark:bg-emerald-950/30",
+  bad_law:
+    "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-solid)] dark:bg-red-950/30",
+  at_risk:
+    "text-[color:var(--ds-attention-text)] bg-[color:var(--ds-attention-solid)] dark:bg-orange-950/30",
+  mixed:
+    "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-solid)] dark:bg-yellow-950/30",
   unknown: "text-gray-500 bg-gray-50 dark:bg-gray-950/30",
 };
 
@@ -855,15 +859,21 @@ function PipelinePanel({ result }: { result: PipelineResultData }) {
                   <Icon className="h-3 w-3" />
                   <span className="font-medium text-[color:var(--ds-text)]">{label}</span>
                   {step.status === "running" && <Loader2 className="h-3 w-3 animate-spin" />}
-                  {step.status === "done" && <CheckCircle className="h-3 w-3 text-[color:var(--ds-success-text)]" />}
-                  {step.status === "error" && <XCircle className="h-3 w-3 text-[color:var(--ds-danger-text)]" />}
+                  {step.status === "done" && (
+                    <CheckCircle className="h-3 w-3 text-[color:var(--ds-success-text)]" />
+                  )}
+                  {step.status === "error" && (
+                    <XCircle className="h-3 w-3 text-[color:var(--ds-danger-text)]" />
+                  )}
                 </div>
                 {step.duration_ms !== undefined && (
                   <p className="mt-0.5 text-[color:var(--ds-text-muted)]">
                     {(step.duration_ms / 1000).toFixed(1)}s
                   </p>
                 )}
-                {step.error && <p className="mt-0.5 truncate text-[color:var(--ds-danger-text)]">{step.error}</p>}
+                {step.error && (
+                  <p className="mt-0.5 truncate text-[color:var(--ds-danger-text)]">{step.error}</p>
+                )}
               </div>
             );
           })}

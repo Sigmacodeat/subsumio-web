@@ -1,0 +1,6 @@
+# Raw legal source text (RIS/gesetze-im-internet.de/Fedlex exports). Must stay
+# byte-faithful to the official source — prettier escapes literal `*`/`_` in
+# markdown prose (e.g. RIS page-break markers `###***###`), which breaks the
+# noise-stripping regexes in server/src/core/legal/split-statute.ts.
+law-corpus/
+law-corpus-split/

@@ -259,7 +259,9 @@ function ConnectionStatus({
   if (!status) return null;
   const connected = status.connected;
   return (
-    <Card className={`border-l-4 p-4 ${connected ? "border-l-[color:var(--ds-success-solid)]" : "border-l-[color:var(--ds-danger-solid)]"}`}>
+    <Card
+      className={`border-l-4 p-4 ${connected ? "border-l-[color:var(--ds-success-solid)]" : "border-l-[color:var(--ds-danger-solid)]"}`}
+    >
       <div className="flex items-start gap-3">
         <div className="mt-0.5">
           {connected ? (
@@ -275,7 +277,9 @@ function ConnectionStatus({
           <p className="text-xs text-[color:var(--ds-text-subtle)]">
             {t("elster.mode")}: {status.mode}
           </p>
-          {status.lastError && <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{status.lastError}</p>}
+          {status.lastError && (
+            <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{status.lastError}</p>
+          )}
         </div>
       </div>
     </Card>

@@ -166,7 +166,11 @@ export function ClauseQuickCreateDialog({
 
           <DialogFooter className="border-t border-[color:var(--ds-border)] px-6 py-4">
             <label className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
-              <input type="checkbox" checked={createAnother} onChange={(event) => setCreateAnother(event.target.checked)} />
+              <input
+                type="checkbox"
+                checked={createAnother}
+                onChange={(event) => setCreateAnother(event.target.checked)}
+              />
               {t("common.create_another")}
             </label>
             <div className="flex gap-2">

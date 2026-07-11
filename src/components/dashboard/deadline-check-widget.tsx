@@ -152,7 +152,10 @@ export function DeadlineCheckWidget() {
           {discrepancies.slice(0, 8).map((r, i) => {
             const encoded = r.caseSlug.split("/").map(encodeURIComponent).join("/");
             const Icon = r.severity === "critical" ? AlertCircle : AlertTriangle;
-            const iconColor = r.severity === "critical" ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-warning-text)]";
+            const iconColor =
+              r.severity === "critical"
+                ? "text-[color:var(--ds-danger-text)]"
+                : "text-[color:var(--ds-warning-text)]";
             const borderClasses =
               r.severity === "critical"
                 ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"

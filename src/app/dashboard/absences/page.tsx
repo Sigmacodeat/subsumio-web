@@ -112,7 +112,10 @@ export default function AbsencePage() {
       {/* Active banner */}
       {activeCount > 0 && (
         <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] px-4 py-3">
-          <AlertCircle size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-attention-text)]" />
+          <AlertCircle
+            size={16}
+            className="mt-0.5 shrink-0 text-[color:var(--ds-attention-text)]"
+          />
           <p className="text-sm text-[color:var(--ds-attention-text)]">
             <strong>{activeCount}</strong>{" "}
             {activeCount > 1 ? t("absence.active_banner_plural") : t("absence.active_banner")}

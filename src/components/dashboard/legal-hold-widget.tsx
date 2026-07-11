@@ -113,7 +113,11 @@ export function LegalHoldWidget() {
         <div className="flex items-center gap-2">
           <Shield
             size={15}
-            className={holds.length > 0 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-text-muted)]"}
+            className={
+              holds.length > 0
+                ? "text-[color:var(--ds-danger-text)]"
+                : "text-[color:var(--ds-text-muted)]"
+            }
           />
           <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
             {isEn ? "Legal Holds" : "Legal Holds"}

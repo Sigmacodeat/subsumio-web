@@ -24,7 +24,8 @@ const STATUS_LABELS: Record<string, string> = {
 const STATUS_COLORS: Record<string, string> = {
   open: "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)]",
   mahnbescheid: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)]",
-  vollstreckungsbescheid: "bg-[color:var(--ds-attention-solid)] text-[color:var(--ds-attention-text)]",
+  vollstreckungsbescheid:
+    "bg-[color:var(--ds-attention-solid)] text-[color:var(--ds-attention-text)]",
   zwangsvollstreckung: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)]",
   paid: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]",
   written_off: "bg-slate-100 text-slate-600",

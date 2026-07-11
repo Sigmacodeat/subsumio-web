@@ -126,7 +126,9 @@ export default function FeatureFlagsPage() {
         <Card className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]">
           <CardContent className="flex items-center gap-3 pt-6">
             <AlertCircle size={16} className="text-[color:var(--ds-danger-text)]" />
-            <p className="text-sm text-[color:var(--ds-danger-text)]">Fehler beim Laden der Feature Flags.</p>
+            <p className="text-sm text-[color:var(--ds-danger-text)]">
+              Fehler beim Laden der Feature Flags.
+            </p>
           </CardContent>
         </Card>
       )}

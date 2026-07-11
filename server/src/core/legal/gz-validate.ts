@@ -50,32 +50,97 @@ export const GATTUNGSZEICHEN_REGISTRY: readonly GattungszeichenInfo[] = [
   // Zivil
   { zeichen: "C", verfahrenstyp: "zivil", beschreibung: "Streitige Zivilsache", ebene: "BG" },
   { zeichen: "Cg", verfahrenstyp: "zivil", beschreibung: "Streitige Zivilsache", ebene: "LG" },
-  { zeichen: "Cga", verfahrenstyp: "arbeitsrecht", beschreibung: "Arbeitsrechtssache", ebene: "LG als ASG" },
-  { zeichen: "Cgs", verfahrenstyp: "sozialrecht", beschreibung: "Sozialrechtssache", ebene: "LG als ASG" },
-  { zeichen: "Nc", verfahrenstyp: "aussersteitig", beschreibung: "Außerstreitsache (allgemein)", ebene: "BG/LG" },
-  { zeichen: "A", verfahrenstyp: "aussersteitig", beschreibung: "Verlassenschaftssache", ebene: "BG" },
+  {
+    zeichen: "Cga",
+    verfahrenstyp: "arbeitsrecht",
+    beschreibung: "Arbeitsrechtssache",
+    ebene: "LG als ASG",
+  },
+  {
+    zeichen: "Cgs",
+    verfahrenstyp: "sozialrecht",
+    beschreibung: "Sozialrechtssache",
+    ebene: "LG als ASG",
+  },
+  {
+    zeichen: "Nc",
+    verfahrenstyp: "aussersteitig",
+    beschreibung: "Außerstreitsache (allgemein)",
+    ebene: "BG/LG",
+  },
+  {
+    zeichen: "A",
+    verfahrenstyp: "aussersteitig",
+    beschreibung: "Verlassenschaftssache",
+    ebene: "BG",
+  },
   { zeichen: "P", verfahrenstyp: "aussersteitig", beschreibung: "Pflegschaftssache", ebene: "BG" },
-  { zeichen: "Fam", verfahrenstyp: "aussersteitig", beschreibung: "Familienrechtssache", ebene: "BG" },
-  { zeichen: "Msch", verfahrenstyp: "aussersteitig", beschreibung: "Mietrechtliche Außerstreitsache", ebene: "BG" },
+  {
+    zeichen: "Fam",
+    verfahrenstyp: "aussersteitig",
+    beschreibung: "Familienrechtssache",
+    ebene: "BG",
+  },
+  {
+    zeichen: "Msch",
+    verfahrenstyp: "aussersteitig",
+    beschreibung: "Mietrechtliche Außerstreitsache",
+    ebene: "BG",
+  },
   { zeichen: "E", verfahrenstyp: "exekution", beschreibung: "Exekutionssache", ebene: "BG" },
-  { zeichen: "S", verfahrenstyp: "insolvenz", beschreibung: "Insolvenzsache (Konkurs)", ebene: "LG" },
+  {
+    zeichen: "S",
+    verfahrenstyp: "insolvenz",
+    beschreibung: "Insolvenzsache (Konkurs)",
+    ebene: "LG",
+  },
   { zeichen: "Se", verfahrenstyp: "insolvenz", beschreibung: "Schuldenregulierung", ebene: "BG" },
   // Straf
   { zeichen: "St", verfahrenstyp: "straf", beschreibung: "Ermittlungsverfahren StA", ebene: "StA" },
   { zeichen: "Vr", verfahrenstyp: "straf", beschreibung: "Voruntersuchung (hist.)", ebene: "LG" },
   { zeichen: "Hv", verfahrenstyp: "straf", beschreibung: "Hauptverhandlung", ebene: "LG" },
   { zeichen: "U", verfahrenstyp: "straf", beschreibung: "Strafsache", ebene: "BG" },
-  { zeichen: "HR", verfahrenstyp: "straf", beschreibung: "Haft- und Rechtsschutzrichter", ebene: "LG" },
+  {
+    zeichen: "HR",
+    verfahrenstyp: "straf",
+    beschreibung: "Haft- und Rechtsschutzrichter",
+    ebene: "LG",
+  },
   { zeichen: "Bl", verfahrenstyp: "straf", beschreibung: "Beschwerdesache", ebene: "LG/OLG" },
-  { zeichen: "Bs", verfahrenstyp: "straf", beschreibung: "Berufungs-/Beschwerdesache Straf", ebene: "OLG" },
+  {
+    zeichen: "Bs",
+    verfahrenstyp: "straf",
+    beschreibung: "Berufungs-/Beschwerdesache Straf",
+    ebene: "OLG",
+  },
   { zeichen: "Os", verfahrenstyp: "straf", beschreibung: "Strafsache OGH", ebene: "OGH" },
   // Rechtsmittel Zivil
   { zeichen: "R", verfahrenstyp: "zivil", beschreibung: "Rekurs-/Berufungssache", ebene: "LG/OLG" },
-  { zeichen: "Ra", verfahrenstyp: "arbeitsrecht", beschreibung: "Rechtsmittel Arbeitsrecht", ebene: "OLG" },
-  { zeichen: "Rs", verfahrenstyp: "sozialrecht", beschreibung: "Rechtsmittel Sozialrecht", ebene: "OLG" },
+  {
+    zeichen: "Ra",
+    verfahrenstyp: "arbeitsrecht",
+    beschreibung: "Rechtsmittel Arbeitsrecht",
+    ebene: "OLG",
+  },
+  {
+    zeichen: "Rs",
+    verfahrenstyp: "sozialrecht",
+    beschreibung: "Rechtsmittel Sozialrecht",
+    ebene: "OLG",
+  },
   { zeichen: "Ob", verfahrenstyp: "zivil", beschreibung: "Zivilsache OGH", ebene: "OGH" },
-  { zeichen: "ObA", verfahrenstyp: "arbeitsrecht", beschreibung: "Arbeitsrechtssache OGH", ebene: "OGH" },
-  { zeichen: "ObS", verfahrenstyp: "sozialrecht", beschreibung: "Sozialrechtssache OGH", ebene: "OGH" },
+  {
+    zeichen: "ObA",
+    verfahrenstyp: "arbeitsrecht",
+    beschreibung: "Arbeitsrechtssache OGH",
+    ebene: "OGH",
+  },
+  {
+    zeichen: "ObS",
+    verfahrenstyp: "sozialrecht",
+    beschreibung: "Sozialrechtssache OGH",
+    ebene: "OGH",
+  },
   // Register
   { zeichen: "Fr", verfahrenstyp: "firmenbuch", beschreibung: "Firmenbuchsache", ebene: "LG" },
   { zeichen: "Nz", verfahrenstyp: "grundbuch", beschreibung: "Grundbuchsache", ebene: "BG" },
@@ -151,7 +216,10 @@ const OCR_CONFUSABLES: Array<[RegExp, string]> = [
 /** Validate one Geschäftszahl. Deterministic, no I/O. */
 export function validiereGZ(
   raw: string,
-  opts?: { erwarteterVerfahrenstyp?: Verfahrenstyp; pruefzeichenAlgorithmus?: PruefzeichenAlgorithmus }
+  opts?: {
+    erwarteterVerfahrenstyp?: Verfahrenstyp;
+    pruefzeichenAlgorithmus?: PruefzeichenAlgorithmus;
+  }
 ): GZValidierung {
   const befunde: GZBefund[] = [];
   const parsed = parseGZ(raw);

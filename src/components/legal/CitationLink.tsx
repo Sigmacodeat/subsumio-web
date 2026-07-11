@@ -29,8 +29,12 @@ export function CitationLink({ citation, className, grounding }: CitationLinkPro
     >
       <BookOpen size={10} />
       {citation}
-      {isVerified === true && <CheckCircle2 size={10} className="text-[color:var(--ds-success-text)]" />}
-      {isVerified === false && <AlertCircle size={10} className="text-[color:var(--ds-warning-text)]" />}
+      {isVerified === true && (
+        <CheckCircle2 size={10} className="text-[color:var(--ds-success-text)]" />
+      )}
+      {isVerified === false && (
+        <AlertCircle size={10} className="text-[color:var(--ds-warning-text)]" />
+      )}
     </Link>
   );
 

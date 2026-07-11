@@ -16,7 +16,12 @@ import "./globals.css";
 // next/font self-hosts at build time — zero runtime requests to Google
 // (GDPR: no visitor IP ever reaches fonts.googleapis.com) and no
 // render-blocking CSS @import.
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap", preload: true });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  preload: true,
+});
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-grotesk",

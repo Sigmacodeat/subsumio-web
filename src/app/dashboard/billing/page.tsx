@@ -158,7 +158,9 @@ function ModelBreakdownCard() {
                       {provider}
                     </span>
                     {model?.dataResidency === "eu" && (
-                      <span className="text-xs font-medium text-[color:var(--ds-success-text)]">EU</span>
+                      <span className="text-xs font-medium text-[color:var(--ds-success-text)]">
+                        EU
+                      </span>
                     )}
                   </div>
                   <div className="flex items-center gap-3 font-mono text-xs text-[color:var(--ds-text-muted)]">

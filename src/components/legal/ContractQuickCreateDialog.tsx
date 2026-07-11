@@ -123,7 +123,12 @@ export function ContractQuickCreateDialog({
         content: content.trim(),
         frontmatter: {
           contract_type: type,
-          parties: [partyOne, partyTwo].filter(Boolean).map((slug) => contacts?.find((contact) => contact.slug === slug)?.title).filter(Boolean).join(" / ") || parties.trim(),
+          parties:
+            [partyOne, partyTwo]
+              .filter(Boolean)
+              .map((slug) => contacts?.find((contact) => contact.slug === slug)?.title)
+              .filter(Boolean)
+              .join(" / ") || parties.trim(),
           party_slugs: [partyOne, partyTwo].filter(Boolean),
           contract_status: "draft",
           risk_level: null,
@@ -181,12 +186,25 @@ export function ContractQuickCreateDialog({
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {[{ id: "party-one", value: partyOne, set: setPartyOne, key: "contracts.party_one" }, { id: "party-two", value: partyTwo, set: setPartyTwo, key: "contracts.party_two" }].map((party) => (
+              {[
+                { id: "party-one", value: partyOne, set: setPartyOne, key: "contracts.party_one" },
+                { id: "party-two", value: partyTwo, set: setPartyTwo, key: "contracts.party_two" },
+              ].map((party) => (
                 <div key={party.id} className="space-y-1.5">
-                  <Label htmlFor={`quick-contract-${party.id}`} className="text-xs">{t(party.key as DashboardKey)}</Label>
+                  <Label htmlFor={`quick-contract-${party.id}`} className="text-xs">
+                    {t(party.key as DashboardKey)}
+                  </Label>
                   <Select value={party.value} onValueChange={party.set}>
-                    <SelectTrigger id={`quick-contract-${party.id}`}><SelectValue placeholder={t("contracts.select_contact" as DashboardKey)} /></SelectTrigger>
-                    <SelectContent>{(contacts ?? []).map((contact) => <SelectItem key={contact.slug} value={contact.slug}>{contact.title}</SelectItem>)}</SelectContent>
+                    <SelectTrigger id={`quick-contract-${party.id}`}>
+                      <SelectValue placeholder={t("contracts.select_contact" as DashboardKey)} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(contacts ?? []).map((contact) => (
+                        <SelectItem key={contact.slug} value={contact.slug}>
+                          {contact.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
               ))}
@@ -259,7 +277,11 @@ export function ContractQuickCreateDialog({
 
           <DialogFooter className="border-t border-[color:var(--ds-border)] px-6 py-4">
             <label className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
-              <input type="checkbox" checked={createAnother} onChange={(event) => setCreateAnother(event.target.checked)} />
+              <input
+                type="checkbox"
+                checked={createAnother}
+                onChange={(event) => setCreateAnother(event.target.checked)}
+              />
               {t("common.create_another")}
             </label>
             <div className="flex gap-2">

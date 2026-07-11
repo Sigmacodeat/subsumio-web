@@ -58,7 +58,14 @@ export const POST = createHandler(
       // Infer memories from a user message
       if (action === "infer" && message) {
         // P0.1: Use LLM-based extraction when available, fall back to regex
-        let extracted: Array<{ type: MemoryType; key: string; value: string; entities?: string[]; validFrom?: string; validTo?: string }> = [];
+        let extracted: Array<{
+          type: MemoryType;
+          key: string;
+          value: string;
+          entities?: string[];
+          validFrom?: string;
+          validTo?: string;
+        }> = [];
 
         if (isLLMExtractionAvailable()) {
           const llmResults = await extractMemoriesWithLLM(message, { caseSlug });

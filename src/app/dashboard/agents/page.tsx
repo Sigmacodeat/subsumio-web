@@ -587,7 +587,11 @@ function JobDetail({
                 <div
                   className={cn(
                     "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
-                    isUser ? "brand-soft" : isSystem ? "bg-[color:var(--ds-warning-bg)]" : "bg-[color:var(--ds-success-bg)]"
+                    isUser
+                      ? "brand-soft"
+                      : isSystem
+                        ? "bg-[color:var(--ds-warning-bg)]"
+                        : "bg-[color:var(--ds-success-bg)]"
                   )}
                 >
                   {isUser ? (
@@ -956,7 +960,8 @@ export default function AgentsPage() {
                     {t("agents.legend_waiting")}
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-[color:var(--ds-danger-solid)]" /> {t("agents.legend_failed")}
+                    <span className="h-2 w-2 rounded-full bg-[color:var(--ds-danger-solid)]" />{" "}
+                    {t("agents.legend_failed")}
                   </span>
                 </div>
               </div>

@@ -361,7 +361,11 @@ export default function DatevExportPage() {
               onClick={copyCsv}
               className="gap-1.5 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             >
-              {copied ? <Check size={14} className="text-[color:var(--ds-success-text)]" /> : <Copy size={14} />}
+              {copied ? (
+                <Check size={14} className="text-[color:var(--ds-success-text)]" />
+              ) : (
+                <Copy size={14} />
+              )}
               {t("datev.copy")}
             </Button>
             <Button

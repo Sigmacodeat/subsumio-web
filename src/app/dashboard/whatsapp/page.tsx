@@ -623,7 +623,9 @@ export default function WhatsAppDashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-[color:var(--ds-warning-text)]">{t("whatsapp.no_identities")}</p>
+              <p className="text-xs text-[color:var(--ds-warning-text)]">
+                {t("whatsapp.no_identities")}
+              </p>
             )}
           </div>
 
@@ -685,7 +687,9 @@ export default function WhatsAppDashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-[color:var(--ds-warning-text)]">{t("whatsapp.no_senders")}</p>
+              <p className="text-xs text-[color:var(--ds-warning-text)]">
+                {t("whatsapp.no_senders")}
+              </p>
             )}
           </div>
 
@@ -776,7 +780,9 @@ function WhatsAppDocumentTriage({
                     {text(fm.uploaded_at) && (
                       <span>{new Date(text(fm.uploaded_at)).toLocaleString(lang)}</span>
                     )}
-                    <span className="text-[color:var(--ds-warning-text)]">{t("whatsapp.triage_needs_case")}</span>
+                    <span className="text-[color:var(--ds-warning-text)]">
+                      {t("whatsapp.triage_needs_case")}
+                    </span>
                   </div>
                 </div>
                 <select
@@ -819,7 +825,11 @@ function Metric({
   ok?: boolean;
   warn?: boolean;
 }) {
-  const color = ok ? "text-[color:var(--ds-success-text)]" : warn ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-text)]";
+  const color = ok
+    ? "text-[color:var(--ds-success-text)]"
+    : warn
+      ? "text-[color:var(--ds-warning-text)]"
+      : "text-[color:var(--ds-text)]";
   return (
     <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
       <div className={`text-lg font-bold ${color}`}>{value}</div>

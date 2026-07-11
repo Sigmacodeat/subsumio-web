@@ -54,28 +54,32 @@ const STATUS_CONFIG: Record<
     label: "Versendet",
     icon: Send,
     iconClass: "text-[color:var(--ds-info-text)]",
-    badgeClass: "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+    badgeClass:
+      "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
     tileClass: "bg-[color:var(--ds-info-bg)]",
   },
   signed: {
     label: "Unterschrieben",
     icon: CheckCircle2,
     iconClass: "text-[color:var(--ds-success-text)]",
-    badgeClass: "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
+    badgeClass:
+      "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
     tileClass: "bg-[color:var(--ds-success-bg)]",
   },
   declined: {
     label: "Abgelehnt",
     icon: XCircle,
     iconClass: "text-[color:var(--ds-danger-text)]",
-    badgeClass: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+    badgeClass:
+      "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
     tileClass: "bg-[color:var(--ds-danger-bg)]",
   },
   expired: {
     label: "Abgelaufen",
     icon: Clock,
     iconClass: "text-[color:var(--ds-warning-text)]",
-    badgeClass: "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
+    badgeClass:
+      "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
     tileClass: "bg-[color:var(--ds-warning-bg)]",
   },
 };
@@ -185,7 +189,10 @@ export default function SignaturePage() {
       {/* Setup hint */}
       <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
         <div className="flex items-start gap-3">
-          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+          <AlertTriangle
+            size={18}
+            className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+          />
           <div>
             <p className="text-sm font-medium text-[color:var(--ds-warning-text)]">
               Externer Signatur-Provider erforderlich

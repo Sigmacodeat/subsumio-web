@@ -264,14 +264,18 @@ export default function FibuPage() {
             <AlertTriangle size={12} />
             Überfällig
           </div>
-          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-attention-text)]">{summary.overdue}</p>
+          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-attention-text)]">
+            {summary.overdue}
+          </p>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
           <div className="flex items-center gap-2 text-xs text-[color:var(--ds-success-text)]">
             <CheckCircle2 size={12} />
             Bezahlt
           </div>
-          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-success-text)]">{summary.paid}</p>
+          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-success-text)]">
+            {summary.paid}
+          </p>
         </div>
       </div>
 
@@ -284,7 +288,9 @@ export default function FibuPage() {
             void handleImport();
           }}
         >
-          <h2 className="text-sm font-semibold text-[color:var(--ds-info-text)]">Bank-Transaktion importieren</h2>
+          <h2 className="text-sm font-semibold text-[color:var(--ds-info-text)]">
+            Bank-Transaktion importieren
+          </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="space-y-1">
               <Label className="text-xs text-[color:var(--ds-text-muted)]">Datum *</Label>
@@ -487,7 +493,10 @@ export default function FibuPage() {
                         }`}
                       >
                         {isOverdue ? (
-                          <AlertTriangle size={14} className="text-[color:var(--ds-attention-text)]" />
+                          <AlertTriangle
+                            size={14}
+                            className="text-[color:var(--ds-attention-text)]"
+                          />
                         ) : item.status === "paid" ? (
                           <CheckCircle2 size={14} className="text-[color:var(--ds-success-text)]" />
                         ) : (

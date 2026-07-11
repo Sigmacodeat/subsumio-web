@@ -23,7 +23,8 @@ function extractAdmissibilityCheck(json: unknown): {
   blockers: string[];
   empfehlung: string;
 } {
-  if (!json || typeof json !== "object") return { checks: [], score: 0, blockers: [], empfehlung: "" };
+  if (!json || typeof json !== "object")
+    return { checks: [], score: 0, blockers: [], empfehlung: "" };
   const obj = json as Record<string, unknown>;
   const checks = Array.isArray(obj.admissibility_checks)
     ? (obj.admissibility_checks as Array<Record<string, unknown>>).map((c) => ({
@@ -43,7 +44,8 @@ function extractAdmissibilityCheck(json: unknown): {
         warnungen: Array.isArray(c.warnungen) ? (c.warnungen as string[]) : [],
       }))
     : [];
-  const score = typeof obj.overall_zulaessigkeit_score === "number" ? obj.overall_zulaessigkeit_score : 0;
+  const score =
+    typeof obj.overall_zulaessigkeit_score === "number" ? obj.overall_zulaessigkeit_score : 0;
   const blockers = Array.isArray(obj.critical_blockers) ? (obj.critical_blockers as string[]) : [];
   const empfehlung = String(obj.empfehlung ?? "");
   return { checks, score, blockers, empfehlung };
@@ -57,9 +59,24 @@ describe("admissibility-checker extraction", () => {
           rechtsbehelf: "Klage LG Wien",
           zulaessig: true,
           pruefungen: [
-            { kriterium: "Zuständigkeit", status: "erfuellt", detail: "LG ZRS Wien zuständig (§ 50 JN)", warnung: null },
-            { kriterium: "Verjährung", status: "erfuellt", detail: "Anspruch nicht verjährt (§ 1489 ABGB)", warnung: null },
-            { kriterium: "Parteifähigkeit", status: "erfuellt", detail: "Kläger parteifähig (§ 1 JN)", warnung: null },
+            {
+              kriterium: "Zuständigkeit",
+              status: "erfuellt",
+              detail: "LG ZRS Wien zuständig (§ 50 JN)",
+              warnung: null,
+            },
+            {
+              kriterium: "Verjährung",
+              status: "erfuellt",
+              detail: "Anspruch nicht verjährt (§ 1489 ABGB)",
+              warnung: null,
+            },
+            {
+              kriterium: "Parteifähigkeit",
+              status: "erfuellt",
+              detail: "Kläger parteifähig (§ 1 JN)",
+              warnung: null,
+            },
           ],
           blockierende_fehler: [],
           warnungen: [],
@@ -85,8 +102,18 @@ describe("admissibility-checker extraction", () => {
           rechtsbehelf: "Klage LG Berlin",
           zulaessig: false,
           pruefungen: [
-            { kriterium: "Zuständigkeit", status: "erfuellt", detail: "LG Berlin zuständig", warnung: null },
-            { kriterium: "Verjährung", status: "nicht_erfuellt", detail: "Anspruch verjährt (§ 195 BGB)", warnung: "Verjährung bereits eingetreten" },
+            {
+              kriterium: "Zuständigkeit",
+              status: "erfuellt",
+              detail: "LG Berlin zuständig",
+              warnung: null,
+            },
+            {
+              kriterium: "Verjährung",
+              status: "nicht_erfuellt",
+              detail: "Anspruch verjährt (§ 195 BGB)",
+              warnung: "Verjährung bereits eingetreten",
+            },
           ],
           blockierende_fehler: ["Anspruch verjährt — Klage unzulässig"],
           warnungen: [],
@@ -111,7 +138,12 @@ describe("admissibility-checker extraction", () => {
           rechtsbehelf: "Beschwerde VwGH",
           zulaessig: true,
           pruefungen: [
-            { kriterium: "Rechtswegerschöpfung", status: "unsicher", detail: "Vorverfahren möglicherweise nicht ausgeschöpft", warnung: "Prüfung erforderlich" },
+            {
+              kriterium: "Rechtswegerschöpfung",
+              status: "unsicher",
+              detail: "Vorverfahren möglicherweise nicht ausgeschöpft",
+              warnung: "Prüfung erforderlich",
+            },
           ],
           blockierende_fehler: [],
           warnungen: ["Vorverfahren möglicherweise nicht ausgeschöpft"],
@@ -146,7 +178,16 @@ function extractSettlementAnalysis(json: unknown): {
   empfehlung: string;
 } {
   if (!json || typeof json !== "object")
-    return { batna_mandant_ev: 0, batna_gegner_ev: 0, zopa_untergrenze: 0, zopa_obergrenze: 0, zopa_ueberlappung: false, optimaler_betrag: 0, walk_away: 0, empfehlung: "" };
+    return {
+      batna_mandant_ev: 0,
+      batna_gegner_ev: 0,
+      zopa_untergrenze: 0,
+      zopa_obergrenze: 0,
+      zopa_ueberlappung: false,
+      optimaler_betrag: 0,
+      walk_away: 0,
+      empfehlung: "",
+    };
   const obj = json as Record<string, unknown>;
   const batnaM = obj.batna_mandant as Record<string, unknown> | undefined;
   const batnaG = obj.batna_gegner as Record<string, unknown> | undefined;
@@ -171,7 +212,11 @@ describe("settlement-analyzer extraction", () => {
       batna_mandant: { ev: 16075, beschreibung: "EV bei Prozess" },
       batna_gegner: { ev: -16075, beschreibung: "EV für Gegner" },
       zopa: { untergrenze: 16075, obergrenze: 45000, breite: 28925, ueberlappung: true },
-      optimaler_vergleich: { betrag: 30000, begruendung: "Mittelpunkt ZOPA", mandant_vorteil: 13925 },
+      optimaler_vergleich: {
+        betrag: 30000,
+        begruendung: "Mittelpunkt ZOPA",
+        mandant_vorteil: 13925,
+      },
       walk_away_punkt: { betrag: 16075, beschreibung: "Unterhalb = Prozess besser" },
       verhandlungsstrategie: { erste_forderung: 40000, ziel_betrag: 30000, walk_away: 16075 },
       vergleich_empfehlung: "EMPFOHLEN",
@@ -239,14 +284,17 @@ function extractFactGaps(json: unknown): {
   kritische: string[];
   empfehlung: string;
 } {
-  if (!json || typeof json !== "object") return { gaps: [], fragen: [], score: 0, kritische: [], empfehlung: "" };
+  if (!json || typeof json !== "object")
+    return { gaps: [], fragen: [], score: 0, kritische: [], empfehlung: "" };
   const obj = json as Record<string, unknown>;
   const gaps = Array.isArray(obj.fact_gaps)
     ? (obj.fact_gaps as Array<Record<string, unknown>>).map((g) => ({
         anspruch: String(g.anspruch ?? ""),
         tatbestandsmerkmal: String(g.tatbestandsmerkmal ?? ""),
         status: String(g.status ?? ""),
-        vorhandene_fakten: Array.isArray(g.vorhandene_fakten) ? (g.vorhandene_fakten as string[]) : [],
+        vorhandene_fakten: Array.isArray(g.vorhandene_fakten)
+          ? (g.vorhandene_fakten as string[])
+          : [],
         fehlende_fakten: Array.isArray(g.fehlende_fakten) ? (g.fehlende_fakten as string[]) : [],
         klaerungsfrage: String(g.klaerungsfrage ?? ""),
         prioritaet: String(g.prioritaet ?? ""),
@@ -260,7 +308,8 @@ function extractFactGaps(json: unknown): {
         prioritaet: String(f.prioritaet ?? ""),
       }))
     : [];
-  const score = typeof obj.overall_vollstaendigkeit_score === "number" ? obj.overall_vollstaendigkeit_score : 0;
+  const score =
+    typeof obj.overall_vollstaendigkeit_score === "number" ? obj.overall_vollstaendigkeit_score : 0;
   const kritische = Array.isArray(obj.kritische_luecken) ? (obj.kritische_luecken as string[]) : [];
   const empfehlung = String(obj.empfehlung ?? "");
   return { gaps, fragen, score, kritische, empfehlung };
@@ -292,7 +341,11 @@ describe("fact-gap-detector extraction", () => {
         },
       ],
       mandanten_fragen: [
-        { frage: "War der Beamte hoheitlich tätig?", hintergrund: "§ 1 AHG erfordert hoheitliches Handeln", prioritaet: "hoch" },
+        {
+          frage: "War der Beamte hoheitlich tätig?",
+          hintergrund: "§ 1 AHG erfordert hoheitliches Handeln",
+          prioritaet: "hoch",
+        },
       ],
       overall_vollstaendigkeit_score: 55,
       kritische_luecken: ["hoheitliches Handeln nicht belegt — Klage gefährdet"],
@@ -368,8 +421,26 @@ describe("fact-gap-detector extraction", () => {
   it("identifies critical gaps by high priority", () => {
     const json = {
       fact_gaps: [
-        { anspruch: "A", tatbestandsmerkmal: "X", status: "luecke", prioritaet: "hoch", vorhandene_fakten: [], fehlende_fakten: ["X"], klaerungsfrage: "Q?", beweismittel: "" },
-        { anspruch: "B", tatbestandsmerkmal: "Y", status: "luecke", prioritaet: "niedrig", vorhandene_fakten: [], fehlende_fakten: ["Y"], klaerungsfrage: "Q2?", beweismittel: "" },
+        {
+          anspruch: "A",
+          tatbestandsmerkmal: "X",
+          status: "luecke",
+          prioritaet: "hoch",
+          vorhandene_fakten: [],
+          fehlende_fakten: ["X"],
+          klaerungsfrage: "Q?",
+          beweismittel: "",
+        },
+        {
+          anspruch: "B",
+          tatbestandsmerkmal: "Y",
+          status: "luecke",
+          prioritaet: "niedrig",
+          vorhandene_fakten: [],
+          fehlende_fakten: ["Y"],
+          klaerungsfrage: "Q2?",
+          beweismittel: "",
+        },
       ],
       mandanten_fragen: [],
       overall_vollstaendigkeit_score: 40,
@@ -392,7 +463,10 @@ describe("BATNA/ZOPA calculation logic", () => {
     return ev;
   }
 
-  function calculateZOPA(mandantBATNA: number, gegnerBATNA: number): {
+  function calculateZOPA(
+    mandantBATNA: number,
+    gegnerBATNA: number
+  ): {
     untergrenze: number;
     obergrenze: number;
     ueberlappung: boolean;

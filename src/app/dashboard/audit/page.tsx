@@ -425,7 +425,9 @@ export default function AuditLogPage() {
       ) : error ? (
         <div className="flex flex-col items-center justify-center gap-3 py-24">
           <AlertTriangle size={32} className="text-[color:var(--ds-danger-text)]" />
-          <p className="text-sm font-medium text-[color:var(--ds-danger-text)]">Fehler beim Laden</p>
+          <p className="text-sm font-medium text-[color:var(--ds-danger-text)]">
+            Fehler beim Laden
+          </p>
           <p className="text-xs text-[color:var(--ds-text-subtle)]">{error}</p>
           <Button variant="outline" size="sm" onClick={loadEntries} className="mt-2 gap-1.5">
             <RefreshCw size={14} /> Erneut versuchen

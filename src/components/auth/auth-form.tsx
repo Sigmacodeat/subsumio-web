@@ -262,9 +262,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
 
         <div className="glass rounded-2xl p-8 shadow-2xl shadow-black/50">
           <ClipReveal delay={0.1} duration={0.6} direction="up">
-            <h1 className={`mb-1 ${H2_CTA_CLASS}`}>
-              {m.title}
-            </h1>
+            <h1 className={`mb-1 ${H2_CTA_CLASS}`}>{m.title}</h1>
           </ClipReveal>
           <ClipReveal delay={0.2} duration={0.6} direction="up">
             <p className="mb-7 text-sm text-pretty [color:var(--mk-text-muted)]">{m.sub}</p>

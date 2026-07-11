@@ -155,12 +155,19 @@ export class ErvImportConnector extends BaseConnector {
     const erledigungsart = pick("erledigungsart", "dokumentart", "art", "schriftsatzart");
     if (!gz && !gericht && !erledigungsart) return null;
 
-    const messageId = pick("nachrichtenid", "erledigungsid", "messageid") || basename(filePath, ".xml");
+    const messageId =
+      pick("nachrichtenid", "erledigungsid", "messageid") || basename(filePath, ".xml");
     const betreff = pick("betreff", "subject", "bezeichnung") || erledigungsart || "ERV-Erledigung";
     const body = pick("inhalt", "text", "anmerkung", "body");
 
     // Einlangen in den elektronischen Verfügungsbereich → Zustellfiktion.
-    const rawEinlangen = pick("einlangen", "eingangsdatum", "uebermittlungsdatum", "datum", "sendedatum");
+    const rawEinlangen = pick(
+      "einlangen",
+      "eingangsdatum",
+      "uebermittlungsdatum",
+      "datum",
+      "sendedatum"
+    );
     let einlangenDatum: string;
     const parsedDate = rawEinlangen ? new Date(rawEinlangen) : new Date();
     einlangenDatum = isNaN(parsedDate.getTime())
@@ -187,7 +194,9 @@ export class ErvImportConnector extends BaseConnector {
       for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
         att.set(k.toLowerCase(), v);
       }
-      const name = String(att.get("name") ?? att.get("dateiname") ?? att.get("filename") ?? "Unbekannt");
+      const name = String(
+        att.get("name") ?? att.get("dateiname") ?? att.get("filename") ?? "Unbekannt"
+      );
       const size = parseInt(String(att.get("groesse") ?? att.get("size") ?? "0"), 10) || 0;
       attachments.push({ name, size });
     }

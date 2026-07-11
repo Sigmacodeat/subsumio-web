@@ -24,13 +24,19 @@ import { useToast } from "@/components/ui/toast";
 import type { DashboardKey } from "@/content/dashboard";
 
 const STATUS_STYLES: Record<string, string> = {
-  pending: "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
-  in_review: "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
-  approved: "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
-  rejected: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-  changes_requested: "bg-[color:var(--ds-attention-bg)] border-[color:var(--ds-attention-border)] text-[color:var(--ds-attention-text)]",
+  pending:
+    "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
+  in_review:
+    "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+  approved:
+    "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
+  rejected:
+    "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+  changes_requested:
+    "bg-[color:var(--ds-attention-bg)] border-[color:var(--ds-attention-border)] text-[color:var(--ds-attention-text)]",
   awaiting_review: "bg-purple-500/10 border-purple-500/20 text-purple-600",
-  needs_human_review: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+  needs_human_review:
+    "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
 };
 
 function useStatusLabels(t: ReturnType<typeof useLang>["t"]): Record<string, string> {

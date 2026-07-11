@@ -153,7 +153,9 @@ export function CertificationStamp({
           >
             <Cpu size={10} />
             {cert.model.name}
-            {cert.model.dataResidency === "eu" && <Globe size={9} className="text-[color:var(--ds-success-text)]" />}
+            {cert.model.dataResidency === "eu" && (
+              <Globe size={9} className="text-[color:var(--ds-success-text)]" />
+            )}
           </span>
         )}
 

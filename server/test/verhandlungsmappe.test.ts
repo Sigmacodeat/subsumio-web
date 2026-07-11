@@ -37,9 +37,15 @@ type: deadline_calendar
 | 09.07.2026 | rot | Berufungsfrist | § 464 ZPO | Rechtskraft | ON 12 |`;
 
 function fakeEngine(pages: Record<string, string>): MappeEngine & {
-  written: Array<{ slug: string; page: { compiled_truth: string; frontmatter: Record<string, unknown> } }>;
+  written: Array<{
+    slug: string;
+    page: { compiled_truth: string; frontmatter: Record<string, unknown> };
+  }>;
 } {
-  const written: Array<{ slug: string; page: { compiled_truth: string; frontmatter: Record<string, unknown> } }> = [];
+  const written: Array<{
+    slug: string;
+    page: { compiled_truth: string; frontmatter: Record<string, unknown> };
+  }> = [];
   return {
     written,
     async executeRaw<T>(_sql: string, params?: unknown[]): Promise<T[]> {

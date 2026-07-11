@@ -125,7 +125,10 @@ export default function SecuritySettingsPage() {
 
       {orgRequires2FA && !enabled && (
         <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
-          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+          <AlertTriangle
+            size={18}
+            className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+          />
           <div>
             <p className="text-sm font-medium text-[color:var(--ds-warning-text)]">
               2FA von Ihrer Kanzlei vorgeschrieben
@@ -143,7 +146,9 @@ export default function SecuritySettingsPage() {
           <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
             <CheckCircle2 size={18} className="text-[color:var(--ds-success-text)]" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-[color:var(--ds-success-text)]">2FA ist aktiviert</p>
+              <p className="text-sm font-medium text-[color:var(--ds-success-text)]">
+                2FA ist aktiviert
+              </p>
               <p className="text-xs text-[color:var(--ds-text-muted)]">
                 Dein Account ist durch TOTP geschützt.
               </p>
@@ -164,7 +169,10 @@ export default function SecuritySettingsPage() {
           {backupCodes && (
             <div className="space-y-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
               <div className="flex items-start gap-2">
-                <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+                <AlertTriangle
+                  size={16}
+                  className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+                />
                 <div>
                   <p className="text-sm font-medium text-[color:var(--ds-warning-text)]">
                     Backup-Codes — sicher speichern!
@@ -209,9 +217,14 @@ export default function SecuritySettingsPage() {
           {showDisableDialog && (
             <div className="space-y-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4">
               <div className="flex items-start gap-2">
-                <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]" />
+                <AlertTriangle
+                  size={16}
+                  className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]"
+                />
                 <div>
-                  <p className="text-sm font-medium text-[color:var(--ds-danger-text)]">2FA deaktivieren</p>
+                  <p className="text-sm font-medium text-[color:var(--ds-danger-text)]">
+                    2FA deaktivieren
+                  </p>
                   <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                     Bitte bestätige mit deinem Passwort, dass du 2FA deaktivieren möchtest.
                   </p>

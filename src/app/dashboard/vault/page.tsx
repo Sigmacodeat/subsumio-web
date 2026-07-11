@@ -737,7 +737,10 @@ export default function VaultPage() {
               {deepAnalysisResult.warnings.length > 0 && (
                 <div className="space-y-1 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3">
                   {deepAnalysisResult.warnings.map((w, i) => (
-                    <div key={i} className="flex items-center gap-1.5 text-xs text-[color:var(--ds-warning-text)]">
+                    <div
+                      key={i}
+                      className="flex items-center gap-1.5 text-xs text-[color:var(--ds-warning-text)]"
+                    >
                       <AlertTriangle size={10} /> {w}
                     </div>
                   ))}

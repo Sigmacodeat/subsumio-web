@@ -121,11 +121,20 @@ export function CaseCloseChecklistDialog({
                   }`}
                 >
                   {item.passed ? (
-                    <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]" />
+                    <CheckCircle2
+                      size={18}
+                      className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]"
+                    />
                   ) : item.severity === "blocker" ? (
-                    <XCircle size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]" />
+                    <XCircle
+                      size={18}
+                      className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]"
+                    />
                   ) : (
-                    <AlertTriangle size={18} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+                    <AlertTriangle
+                      size={18}
+                      className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+                    />
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
@@ -135,7 +144,9 @@ export function CaseCloseChecklistDialog({
                       {!item.passed && (
                         <span
                           className={`shrink-0 text-xs font-semibold ${
-                            item.severity === "blocker" ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-warning-text)]"
+                            item.severity === "blocker"
+                              ? "text-[color:var(--ds-danger-text)]"
+                              : "text-[color:var(--ds-warning-text)]"
                           }`}
                         >
                           {item.count}

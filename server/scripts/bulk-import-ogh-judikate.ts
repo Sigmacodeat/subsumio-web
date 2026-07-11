@@ -86,7 +86,10 @@ function firstListItem(value: unknown): string {
 }
 
 function mapRisReference(ref: Record<string, unknown>): RisReference | null {
-  const metadaten = ((ref.Data as Record<string, unknown> | undefined)?.Metadaten ?? {}) as Record<string, unknown>;
+  const metadaten = ((ref.Data as Record<string, unknown> | undefined)?.Metadaten ?? {}) as Record<
+    string,
+    unknown
+  >;
   const technisch = (metadaten.Technisch ?? {}) as Record<string, unknown>;
   const allgemein = (metadaten.Allgemein ?? {}) as Record<string, unknown>;
   const judikatur = (metadaten.Judikatur ?? {}) as Record<string, unknown>;
@@ -98,7 +101,9 @@ function mapRisReference(ref: Record<string, unknown>): RisReference | null {
   const court = String(justiz.Gericht ?? technisch.Organ ?? "Unbekannt");
   const rawDate = String(judikatur.Entscheidungsdatum ?? "");
   const az = firstListItem(judikatur.Geschaeftszahl);
-  const ecli = judikatur.EuropeanCaseLawIdentifier ? String(judikatur.EuropeanCaseLawIdentifier) : undefined;
+  const ecli = judikatur.EuropeanCaseLawIdentifier
+    ? String(judikatur.EuropeanCaseLawIdentifier)
+    : undefined;
   const keywords = String(judikatur.Schlagworte ?? "")
     .split(";")
     .map((s) => s.trim())

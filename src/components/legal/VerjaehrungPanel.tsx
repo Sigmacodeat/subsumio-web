@@ -38,9 +38,12 @@ interface VerjaehrungPanelProps {
 }
 
 const STATUS_STYLES: Record<StatuteOfLimitations["status"], string> = {
-  active: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
-  barred: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
-  interrupted: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  active:
+    "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+  barred:
+    "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  interrupted:
+    "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   suspended: "border-purple-500/20 bg-purple-500/5 text-purple-700",
 };
 
@@ -376,7 +379,11 @@ export function VerjaehrungPanel({ caseSlug }: VerjaehrungPanelProps) {
                         </strong>
                       </span>
                       {!barred && (
-                        <span className={days <= 30 ? "font-semibold text-[color:var(--ds-warning-text)]" : ""}>
+                        <span
+                          className={
+                            days <= 30 ? "font-semibold text-[color:var(--ds-warning-text)]" : ""
+                          }
+                        >
                           {days > 0
                             ? `${days} ${lang === "en" ? "days left" : "Tage verbleibend"}`
                             : `${Math.abs(days)} ${lang === "en" ? "days overdue" : "Tage überfällig"}`}

@@ -241,7 +241,10 @@ export function MatterSwitcher() {
                   </div>
                 )}
                 {searching && (
-                  <div className="px-2.5 py-3 text-xs text-[color:var(--ds-text-muted)]" role="status">
+                  <div
+                    className="px-2.5 py-3 text-xs text-[color:var(--ds-text-muted)]"
+                    role="status"
+                  >
                     {t("mobile.searching")}
                   </div>
                 )}

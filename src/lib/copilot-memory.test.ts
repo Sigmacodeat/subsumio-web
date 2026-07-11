@@ -16,10 +16,7 @@ vi.mock("@/lib/api", () => ({
 }));
 
 import { api } from "@/lib/api";
-import {
-  inferMemoriesFromMessage,
-  type CopilotMemoryEntry,
-} from "@/lib/copilot-memory";
+import { inferMemoriesFromMessage, type CopilotMemoryEntry } from "@/lib/copilot-memory";
 
 describe("copilot-memory — regex fallback inference", () => {
   test("detects preference patterns", () => {
@@ -229,19 +226,25 @@ describe("session-memory — 3-layer architecture", () => {
 
 describe("copilot-memory-llm — extraction module", () => {
   test("isLLMExtractionAvailable returns false without API key", async () => {
-    const originalKey = process.env.OPENAI_API_KEY;
-    delete process.env.OPENAI_API_KEY;
+    const originalKey = process.env.OPENROUTER_API_KEY;
+    const originalFallback = process.env.OPENROUTER_API_KEY_FALLBACK;
+    delete process.env.OPENROUTER_API_KEY;
+    delete process.env.OPENROUTER_API_KEY_FALLBACK;
     const { isLLMExtractionAvailable } = await import("@/lib/copilot-memory-llm");
     expect(isLLMExtractionAvailable()).toBe(false);
-    if (originalKey) process.env.OPENAI_API_KEY = originalKey;
+    if (originalKey) process.env.OPENROUTER_API_KEY = originalKey;
+    if (originalFallback) process.env.OPENROUTER_API_KEY_FALLBACK = originalFallback;
   });
 
   test("extractMemoriesWithLLM returns empty array without API key", async () => {
-    const originalKey = process.env.OPENAI_API_KEY;
-    delete process.env.OPENAI_API_KEY;
+    const originalKey = process.env.OPENROUTER_API_KEY;
+    const originalFallback = process.env.OPENROUTER_API_KEY_FALLBACK;
+    delete process.env.OPENROUTER_API_KEY;
+    delete process.env.OPENROUTER_API_KEY_FALLBACK;
     const { extractMemoriesWithLLM } = await import("@/lib/copilot-memory-llm");
     const result = await extractMemoriesWithLLM("Ich bevorzuge kurze Antworten");
     expect(result).toEqual([]);
-    if (originalKey) process.env.OPENAI_API_KEY = originalKey;
+    if (originalKey) process.env.OPENROUTER_API_KEY = originalKey;
+    if (originalFallback) process.env.OPENROUTER_API_KEY_FALLBACK = originalFallback;
   });
 });

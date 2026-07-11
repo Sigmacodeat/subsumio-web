@@ -43,9 +43,11 @@ const JURISDICTION_KEYS = ["at", "de", "ch", "all"] as const;
 
 const SEVERITY_COLORS: Record<string, string> = {
   low: "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
-  medium: "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
+  medium:
+    "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
   high: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-  critical: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+  critical:
+    "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
 };
 
 const SEVERITY_KEYS = ["low", "medium", "high", "critical"] as const;
@@ -53,10 +55,13 @@ const SEVERITY_KEYS = ["low", "medium", "high", "critical"] as const;
 const POSITION_KEYS = ["favorable", "neutral", "exclude", "must_include"] as const;
 
 const POSITION_COLORS: Record<string, string> = {
-  favorable: "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
+  favorable:
+    "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
   neutral: "bg-slate-500/10 border-slate-500/20 text-slate-600",
-  exclude: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-  must_include: "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+  exclude:
+    "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+  must_include:
+    "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
 };
 
 const CONTRACT_TYPES = [

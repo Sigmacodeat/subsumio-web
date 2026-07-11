@@ -34,19 +34,22 @@ const levelConfig: Record<
     icon: ShieldCheck,
     label: "Hoch",
     labelEn: "High",
-    classes: "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
+    classes:
+      "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
   },
   medium: {
     icon: ShieldAlert,
     label: "Mittel",
     labelEn: "Medium",
-    classes: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+    classes:
+      "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   },
   low: {
     icon: ShieldX,
     label: "Niedrig",
     labelEn: "Low",
-    classes: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+    classes:
+      "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
   },
   none: {
     icon: ShieldCheck,
@@ -59,13 +62,15 @@ const levelConfig: Record<
     icon: Loader2,
     label: "Läuft…",
     labelEn: "Running…",
-    classes: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+    classes:
+      "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
   },
   failed: {
     icon: ShieldX,
     label: "Fehlgeschlagen",
     labelEn: "Failed",
-    classes: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+    classes:
+      "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
   },
 };
 

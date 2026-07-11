@@ -623,9 +623,11 @@ function TreatmentBadge({
 }) {
   if (count === 0) return null;
   const colors: Record<string, string> = {
-    green: "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] dark:bg-green-950 dark:text-[color:var(--ds-success-text)]",
+    green:
+      "bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)] dark:bg-green-950 dark:text-[color:var(--ds-success-text)]",
     red: "bg-[color:var(--ds-danger-solid)] text-[color:var(--ds-danger-text)] dark:bg-red-950 dark:text-[color:var(--ds-danger-text)]",
-    amber: "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)] dark:bg-amber-950 dark:text-[color:var(--ds-warning-text)]",
+    amber:
+      "bg-[color:var(--ds-warning-solid)] text-[color:var(--ds-warning-text)] dark:bg-amber-950 dark:text-[color:var(--ds-warning-text)]",
     blue: "bg-[color:var(--ds-info-solid)] text-[color:var(--ds-info-text)] dark:bg-blue-950 dark:text-[color:var(--ds-info-text)]",
     gray: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
   };

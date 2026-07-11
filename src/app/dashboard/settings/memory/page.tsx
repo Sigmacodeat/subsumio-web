@@ -185,19 +185,27 @@ export default function MemoryManagementPage() {
           <div className="text-xs text-[color:var(--ds-text-subtle)]">Gesamt</div>
         </Card>
         <Card className="p-4">
-          <div className="text-2xl font-bold text-[color:var(--ds-accent-text)]">{stats.pinned}</div>
+          <div className="text-2xl font-bold text-[color:var(--ds-accent-text)]">
+            {stats.pinned}
+          </div>
           <div className="text-xs text-[color:var(--ds-text-subtle)]">Angepinnt</div>
         </Card>
         <Card className="p-4">
-          <div className="text-2xl font-bold text-[color:var(--ds-success-text)]">{stats.inferred}</div>
+          <div className="text-2xl font-bold text-[color:var(--ds-success-text)]">
+            {stats.inferred}
+          </div>
           <div className="text-xs text-[color:var(--ds-text-subtle)]">Inferiert</div>
         </Card>
         <Card className="p-4">
-          <div className="text-2xl font-bold text-[color:var(--ds-warning-text)]">{stats.agent}</div>
+          <div className="text-2xl font-bold text-[color:var(--ds-warning-text)]">
+            {stats.agent}
+          </div>
           <div className="text-xs text-[color:var(--ds-text-subtle)]">Agent-Aktionen</div>
         </Card>
         <Card className="p-4">
-          <div className="text-2xl font-bold text-[color:var(--ds-text-muted)]">{stats.superseded}</div>
+          <div className="text-2xl font-bold text-[color:var(--ds-text-muted)]">
+            {stats.superseded}
+          </div>
           <div className="text-xs text-[color:var(--ds-text-subtle)]">Überschrieben</div>
         </Card>
       </div>
@@ -221,7 +229,9 @@ export default function MemoryManagementPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-subtle)]">Schlüssel</label>
+              <label className="mb-1 block text-xs text-[color:var(--ds-text-subtle)]">
+                Schlüssel
+              </label>
               <Input
                 placeholder="z.B. antwortstil"
                 value={newMemory.key}
@@ -241,7 +251,11 @@ export default function MemoryManagementPage() {
             <Button variant="outline" size="sm" onClick={() => setShowCreateForm(false)}>
               Abbrechen
             </Button>
-            <Button size="sm" onClick={handleCreate} disabled={!newMemory.key.trim() || !newMemory.value.trim()}>
+            <Button
+              size="sm"
+              onClick={handleCreate}
+              disabled={!newMemory.key.trim() || !newMemory.value.trim()}
+            >
               Speichern
             </Button>
           </div>
@@ -250,7 +264,7 @@ export default function MemoryManagementPage() {
 
       <div className="mb-4 flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--ds-text-subtle)]" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[color:var(--ds-text-subtle)]" />
           <Input
             placeholder="Semantische Suche in Erinnerungen..."
             value={searchQuery}
@@ -260,11 +274,21 @@ export default function MemoryManagementPage() {
           />
         </div>
         <Button onClick={handleSearch} disabled={searching || !searchQuery.trim()}>
-          {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+          {searching ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Search className="h-4 w-4" />
+          )}
           Suchen
         </Button>
         {searchResults && (
-          <Button variant="outline" onClick={() => { setSearchResults(null); setSearchQuery(""); }}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSearchResults(null);
+              setSearchQuery("");
+            }}
+          >
             Zurücksetzen
           </Button>
         )}
@@ -282,7 +306,7 @@ export default function MemoryManagementPage() {
                 : "bg-[color:var(--ds-hover)] text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
             )}
           >
-            {type === "all" ? "Alle" : TYPE_LABELS[type] ?? type}
+            {type === "all" ? "Alle" : (TYPE_LABELS[type] ?? type)}
           </button>
         ))}
         <label className="ml-auto flex items-center gap-2 text-xs text-[color:var(--ds-text-subtle)]">
@@ -374,9 +398,11 @@ export default function MemoryManagementPage() {
                 {(memory.validFrom || memory.validTo) && (
                   <div className="mt-1 flex items-center gap-1 text-[10px] text-[color:var(--ds-text-muted)]">
                     <Clock className="h-2.5 w-2.5" />
-                    {memory.validFrom && `ab ${new Date(memory.validFrom).toLocaleDateString("de-DE")}`}
+                    {memory.validFrom &&
+                      `ab ${new Date(memory.validFrom).toLocaleDateString("de-DE")}`}
                     {memory.validFrom && memory.validTo && " — "}
-                    {memory.validTo && `bis ${new Date(memory.validTo).toLocaleDateString("de-DE")}`}
+                    {memory.validTo &&
+                      `bis ${new Date(memory.validTo).toLocaleDateString("de-DE")}`}
                   </div>
                 )}
 

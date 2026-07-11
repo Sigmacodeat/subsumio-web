@@ -304,7 +304,9 @@ export function MatterHeader() {
     return (
       <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 md:px-6">
         <AlertCircle size={18} className="text-[color:var(--ds-danger-text)]" />
-        <span className="text-sm text-[color:var(--ds-danger-text)]">{error || t("matterheader.not_found")}</span>
+        <span className="text-sm text-[color:var(--ds-danger-text)]">
+          {error || t("matterheader.not_found")}
+        </span>
         <Link href="/dashboard/cases" className="ml-auto">
           <Button variant="ghost" size="sm">
             <ArrowLeft size={14} className="mr-1.5" />

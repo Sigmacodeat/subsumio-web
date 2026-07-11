@@ -104,9 +104,7 @@ describe("ladeFristenbuch", () => {
   });
 
   it("rejects invalid heute", async () => {
-    await expect(
-      ladeFristenbuch(fakeEngine([]), { heute: "02.07.2026" })
-    ).rejects.toThrow();
+    await expect(ladeFristenbuch(fakeEngine([]), { heute: "02.07.2026" })).rejects.toThrow();
   });
 });
 

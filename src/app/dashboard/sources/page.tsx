@@ -89,15 +89,18 @@ const TYPE_CONFIG: Record<SourceType, { labelKey: DashboardKey; icon: React.Elem
 const AUTHORITY_CONFIG: Record<AuthorityTier, { labelKey: DashboardKey; badge: string }> = {
   official: {
     labelKey: "sources.auth_official",
-    badge: "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
+    badge:
+      "bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]",
   },
   "semi-official": {
     labelKey: "sources.auth_semi",
-    badge: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
+    badge:
+      "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
   },
   community: {
     labelKey: "sources.auth_community",
-    badge: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
+    badge:
+      "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
   },
   commercial: {
     labelKey: "sources.auth_commercial",
@@ -283,9 +286,21 @@ function SourceCard({
 function StatsBar({ registry, t }: { registry: SourceRegistryResponse; t: TFunc }) {
   const stats = [
     { label: t("sources.stat_total"), value: registry.total, color: "text-[color:var(--ds-text)]" },
-    { label: t("sources.stat_fresh"), value: registry.fresh, color: "text-[color:var(--ds-success-text)]" },
-    { label: t("sources.stat_stale"), value: registry.stale, color: "text-[color:var(--ds-warning-text)]" },
-    { label: t("sources.stat_error"), value: registry.error, color: "text-[color:var(--ds-danger-text)]" },
+    {
+      label: t("sources.stat_fresh"),
+      value: registry.fresh,
+      color: "text-[color:var(--ds-success-text)]",
+    },
+    {
+      label: t("sources.stat_stale"),
+      value: registry.stale,
+      color: "text-[color:var(--ds-warning-text)]",
+    },
+    {
+      label: t("sources.stat_error"),
+      value: registry.error,
+      color: "text-[color:var(--ds-danger-text)]",
+    },
     {
       label: t("sources.stat_unknown"),
       value: registry.unknown,

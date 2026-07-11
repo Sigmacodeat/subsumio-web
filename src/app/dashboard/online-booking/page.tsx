@@ -138,7 +138,9 @@ export default function OnlineBookingPage() {
                 {slot.status === "booked" ? (
                   <Badge className="mt-2 bg-slate-100 text-slate-500">{t("booking.booked")}</Badge>
                 ) : (
-                  <Badge className="mt-2 bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]">{t("booking.free")}</Badge>
+                  <Badge className="mt-2 bg-[color:var(--ds-success-solid)] text-[color:var(--ds-success-text)]">
+                    {t("booking.free")}
+                  </Badge>
                 )}
               </div>
             ))}

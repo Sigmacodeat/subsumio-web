@@ -169,9 +169,12 @@ export default function RagEvalPage() {
         <div
           className={cn(
             "flex items-start gap-3 rounded-xl border p-4",
-            gateColor === "emerald" && "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]",
-            gateColor === "amber" && "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]",
-            gateColor === "red" && "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
+            gateColor === "emerald" &&
+              "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]",
+            gateColor === "amber" &&
+              "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]",
+            gateColor === "red" &&
+              "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
           )}
         >
           <div className="mt-0.5 shrink-0">{gateIcon}</div>
@@ -205,10 +208,16 @@ export default function RagEvalPage() {
                 {gateResult.checks.map((check: GateCheck) => (
                   <div key={check.name} className="flex items-center gap-2 text-xs">
                     {check.status === "pass" && (
-                      <CheckCircle2 size={12} className="shrink-0 text-[color:var(--ds-success-text)]" />
+                      <CheckCircle2
+                        size={12}
+                        className="shrink-0 text-[color:var(--ds-success-text)]"
+                      />
                     )}
                     {check.status === "warn" && (
-                      <AlertTriangle size={12} className="shrink-0 text-[color:var(--ds-warning-text)]" />
+                      <AlertTriangle
+                        size={12}
+                        className="shrink-0 text-[color:var(--ds-warning-text)]"
+                      />
                     )}
                     {check.status === "fail" && (
                       <XCircle size={12} className="shrink-0 text-[color:var(--ds-danger-text)]" />
@@ -262,19 +271,25 @@ export default function RagEvalPage() {
               </div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-bold text-[color:var(--ds-success-text)]">{reviewSummary.correct}</div>
+              <div className="text-xl font-bold text-[color:var(--ds-success-text)]">
+                {reviewSummary.correct}
+              </div>
               <div className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("rag_eval.correct")}
               </div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">{reviewSummary.incorrect}</div>
+              <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">
+                {reviewSummary.incorrect}
+              </div>
               <div className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("rag_eval.incorrect")}
               </div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-bold text-[color:var(--ds-warning-text)]">{reviewSummary.incomplete}</div>
+              <div className="text-xl font-bold text-[color:var(--ds-warning-text)]">
+                {reviewSummary.incomplete}
+              </div>
               <div className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("rag_eval.incomplete")}
               </div>
@@ -352,7 +367,9 @@ export default function RagEvalPage() {
                         <span
                           className={cn(
                             "flex items-center gap-0.5",
-                            pDelta > 0 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-danger-text)]"
+                            pDelta > 0
+                              ? "text-[color:var(--ds-success-text)]"
+                              : "text-[color:var(--ds-danger-text)]"
                           )}
                         >
                           {pDelta > 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}

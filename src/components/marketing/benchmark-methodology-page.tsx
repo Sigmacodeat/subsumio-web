@@ -84,7 +84,9 @@ export default function BenchmarkMethodologyPage() {
                   <div className="brand-text mb-3 text-3xl font-bold tracking-tight">
                     {m.title.split(" — ")[1]}
                   </div>
-                  <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">{m.title.split(" — ")[0]}</h3>
+                  <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
+                    {m.title.split(" — ")[0]}
+                  </h3>
                   <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{m.desc}</p>
                 </GlowCard>
               </StaggerItem>

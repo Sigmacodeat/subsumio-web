@@ -56,9 +56,11 @@ interface ContractItem {
 
 const _RISK_COLORS: Record<string, string> = {
   low: "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
-  medium: "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
+  medium:
+    "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
   high: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-  critical: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+  critical:
+    "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
 };
 
 const RISK_LABELS: Record<string, string> = {
@@ -72,8 +74,10 @@ const STATUS_COLORS: Record<string, string> = {
   draft:
     "bg-[color:var(--ds-hover)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]",
   reviewed: "brand-soft brand-border brand-text",
-  approved: "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
-  signed: "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+  approved:
+    "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
+  signed:
+    "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
 };
 
 const STATUS_LABELS: Record<string, (t: TFunc) => string> = {
@@ -678,7 +682,9 @@ export default function ContractsPage() {
                     placeholder="Vertragstext"
                     className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                   />
-                  {editError && <p className="text-xs text-[color:var(--ds-danger-text)]">{editError}</p>}
+                  {editError && (
+                    <p className="text-xs text-[color:var(--ds-danger-text)]">{editError}</p>
+                  )}
                   <div className="flex justify-end">
                     <Button
                       onClick={saveEdit}

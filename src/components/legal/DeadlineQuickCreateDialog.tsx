@@ -466,7 +466,9 @@ export function DeadlineQuickCreateDialog({
                 )}
                 {atFristResult && atFristResult.hinweise.length > 0 && (
                   <div className="rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-3 py-2">
-                    <p className="mb-1 text-xs font-medium text-[color:var(--ds-info-text)]">{t("deadlines.at_engine_hints")}</p>
+                    <p className="mb-1 text-xs font-medium text-[color:var(--ds-info-text)]">
+                      {t("deadlines.at_engine_hints")}
+                    </p>
                     <ul className="space-y-0.5 text-xs text-[color:var(--ds-info-text)]">
                       {atFristResult.hinweise.map((h, i) => (
                         <li key={i}>• {h}</li>

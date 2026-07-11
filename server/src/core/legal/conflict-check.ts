@@ -88,8 +88,10 @@ export function nameSimilarity(a: string, b: string): number {
 
 // ── Entity role → side mapping ──────────────────────────────
 
-const CLIENT_SIDE_ROLES = /opfer|privatbeteiligt|geschädigt|geschaedigt|kläger|klaeger|antragsteller|betreib/i;
-const OPPONENT_SIDE_ROLES = /beschuldigt|angeklagt|beklagte|antragsgegner|verpflichtete|tatverdächtig|tatverdaechtig/i;
+const CLIENT_SIDE_ROLES =
+  /opfer|privatbeteiligt|geschädigt|geschaedigt|kläger|klaeger|antragsteller|betreib/i;
+const OPPONENT_SIDE_ROLES =
+  /beschuldigt|angeklagt|beklagte|antragsgegner|verpflichtete|tatverdächtig|tatverdaechtig/i;
 
 export function entityRoleToSide(role: string): ConflictRole {
   if (CLIENT_SIDE_ROLES.test(role)) return "client";
@@ -225,10 +227,7 @@ export async function conflictCheck(
     // matched via title or via alias — prefer whichever actually matched
     let matchedName = r.title;
     if (
-      !(
-        r.title.toLowerCase().includes(lowerName) ||
-        normalizeName(r.title).includes(normName)
-      ) &&
+      !(r.title.toLowerCase().includes(lowerName) || normalizeName(r.title).includes(normName)) &&
       r.aliases
     ) {
       // find the alias that matched
@@ -237,8 +236,7 @@ export async function conflictCheck(
           ? JSON.parse(r.aliases)
           : [];
         const hit = aliasList.find(
-          (a) =>
-            a.toLowerCase().includes(lowerName) || normalizeName(a).includes(normName)
+          (a) => a.toLowerCase().includes(lowerName) || normalizeName(a).includes(normName)
         );
         if (hit) matchedName = `${r.title} (Alias: ${hit})`;
       } catch {

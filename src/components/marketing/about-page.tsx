@@ -103,7 +103,11 @@ const ICON_MAP = { Shield, Brain, Globe, Heart };
 export default function AboutPage({ lang }: { lang: Lang }) {
   const c = (CONTENT as unknown as Record<string, typeof CONTENT.de>)[lang] ?? CONTENT.de;
   return (
-    <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]" lang={lang}>
+    <div
+      data-tone="light"
+      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
+      lang={lang}
+    >
       <PageHero
         badge={c.badge}
         h1a={c.h1a}

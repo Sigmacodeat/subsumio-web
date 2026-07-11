@@ -63,16 +63,58 @@ export interface WidgetMeta {
 export type WidgetPreset = "associate" | "partner" | "admin" | "tax";
 
 const PRESET_ORDER: Record<WidgetPreset, WidgetId[]> = {
-  associate: ["heute-panel", "deadlines", "inbox", "active-cases", "quick-actions", "rundown", "review-gaps", "ai-activity"],
-  partner: ["heute-panel", "kanzlei-insights", "matter-budget", "active-cases", "deadlines", "review-gaps", "confidence-score", "rundown"],
-  admin: ["heute-panel", "secondary-stats", "inbox", "review-gaps", "silent-failures", "legal-hold", "activity-feed", "kanzlei-insights"],
-  tax: ["heute-panel", "secondary-stats", "deadlines", "inbox", "active-cases", "quick-actions", "activity-feed", "rundown"],
+  associate: [
+    "heute-panel",
+    "deadlines",
+    "inbox",
+    "active-cases",
+    "quick-actions",
+    "rundown",
+    "review-gaps",
+    "ai-activity",
+  ],
+  partner: [
+    "heute-panel",
+    "kanzlei-insights",
+    "matter-budget",
+    "active-cases",
+    "deadlines",
+    "review-gaps",
+    "confidence-score",
+    "rundown",
+  ],
+  admin: [
+    "heute-panel",
+    "secondary-stats",
+    "inbox",
+    "review-gaps",
+    "silent-failures",
+    "legal-hold",
+    "activity-feed",
+    "kanzlei-insights",
+  ],
+  tax: [
+    "heute-panel",
+    "secondary-stats",
+    "deadlines",
+    "inbox",
+    "active-cases",
+    "quick-actions",
+    "activity-feed",
+    "rundown",
+  ],
 };
 
 export function getWidgetPreset(preset: WidgetPreset): WidgetPref[] {
   const ordered = PRESET_ORDER[preset];
-  const remaining = WIDGET_REGISTRY.map((widget) => widget.id).filter((id) => !ordered.includes(id));
-  return [...ordered, ...remaining].map((id, order) => ({ id, order, visible: ordered.includes(id) }));
+  const remaining = WIDGET_REGISTRY.map((widget) => widget.id).filter(
+    (id) => !ordered.includes(id)
+  );
+  return [...ordered, ...remaining].map((id, order) => ({
+    id,
+    order,
+    visible: ordered.includes(id),
+  }));
 }
 
 export const WIDGET_REGISTRY: WidgetMeta[] = [

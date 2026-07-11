@@ -146,7 +146,11 @@ function parseArgs(argv: string[]): ParsedArgs {
 
 function loadFixture(path: string): any[] {
   const raw = readFileSync(path, "utf-8");
-  return raw.trim().split("\n").filter((l) => l.trim() && !l.startsWith("#")).map((l) => JSON.parse(l));
+  return raw
+    .trim()
+    .split("\n")
+    .filter((l) => l.trim() && !l.startsWith("#"))
+    .map((l) => JSON.parse(l));
 }
 
 interface CorpusFile {
@@ -188,15 +192,20 @@ class JsonlEmitter {
 // ─── LLM client (OpenRouter via OpenAI SDK) ──────────────────────────────
 
 interface ThinkLLMClient {
-  create: (params: {
-    model: string;
-    max_tokens: number;
-    system: string;
-    messages: Array<{ role: string; content: string }>;
-  }, callOpts?: { signal?: AbortSignal }) => Promise<{ content: Array<{ type: string; text: string }> }>;
+  create: (
+    params: {
+      model: string;
+      max_tokens: number;
+      system: string;
+      messages: Array<{ role: string; content: string }>;
+    },
+    callOpts?: { signal?: AbortSignal }
+  ) => Promise<{ content: Array<{ type: string; text: string }> }>;
 }
 
-async function createLLMClient(model: string): Promise<{ client: ThinkLLMClient; resolvedModel: string }> {
+async function createLLMClient(
+  model: string
+): Promise<{ client: ThinkLLMClient; resolvedModel: string }> {
   const isOpenRouter = model.startsWith("openrouter:");
   const isOpenAI = model.startsWith("openai:");
 
@@ -216,12 +225,16 @@ async function createLLMClient(model: string): Promise<{ client: ThinkLLMClient;
         create: async (params, callOpts) => {
           const messages: Array<{ role: string; content: string }> = [];
           if (params.system) messages.push({ role: "system", content: params.system });
-          for (const m of params.messages ?? []) messages.push({ role: m.role, content: m.content });
-          const res = await client.chat.completions.create({
-            model: resolvedModel,
-            max_tokens: params.max_tokens,
-            messages: messages as any,
-          }, { signal: callOpts?.signal });
+          for (const m of params.messages ?? [])
+            messages.push({ role: m.role, content: m.content });
+          const res = await client.chat.completions.create(
+            {
+              model: resolvedModel,
+              max_tokens: params.max_tokens,
+              messages: messages as any,
+            },
+            { signal: callOpts?.signal }
+          );
           const text = res.choices?.[0]?.message?.content ?? "";
           return { content: [{ type: "text", text }] };
         },
@@ -239,12 +252,16 @@ async function createLLMClient(model: string): Promise<{ client: ThinkLLMClient;
         create: async (params, callOpts) => {
           const messages: Array<{ role: string; content: string }> = [];
           if (params.system) messages.push({ role: "system", content: params.system });
-          for (const m of params.messages ?? []) messages.push({ role: m.role, content: m.content });
-          const res = await client.chat.completions.create({
-            model: resolvedModel,
-            max_tokens: params.max_tokens,
-            messages: messages as any,
-          }, { signal: callOpts?.signal });
+          for (const m of params.messages ?? [])
+            messages.push({ role: m.role, content: m.content });
+          const res = await client.chat.completions.create(
+            {
+              model: resolvedModel,
+              max_tokens: params.max_tokens,
+              messages: messages as any,
+            },
+            { signal: callOpts?.signal }
+          );
           const text = res.choices?.[0]?.message?.content ?? "";
           return { content: [{ type: "text", text }] };
         },
@@ -258,15 +275,17 @@ async function createLLMClient(model: string): Promise<{ client: ThinkLLMClient;
 
 // ─── Context assembly ────────────────────────────────────────────────────
 
-function assembleContext(results: Array<{ slug: string; title: string; chunk_text: string; score: number }>): string {
+function assembleContext(
+  results: Array<{ slug: string; title: string; chunk_text: string; score: number }>
+): string {
   const blocks: string[] = [];
   for (let i = 0; i < results.length; i++) {
     const r = results[i];
     blocks.push(
       `--- Rechtsquelle ${i + 1} ---\n` +
-      `Gesetz: ${r.title}\n` +
-      `Relevanz: ${(r.score * 100).toFixed(1)}%\n` +
-      `Text:\n${r.chunk_text}\n`
+        `Gesetz: ${r.title}\n` +
+        `Relevanz: ${(r.score * 100).toFixed(1)}%\n` +
+        `Text:\n${r.chunk_text}\n`
     );
   }
   return blocks.join("\n");
@@ -277,11 +296,47 @@ function assembleContext(results: Array<{ slug: string; title: string; chunk_tex
 function isGermanAnswer(text: string): boolean {
   // Check for common German function words and legal vocabulary
   const germanWords = [
-    "der", "die", "das", "und", "ist", "wird", "nach", "bei", "von", "mit",
-    "auf", "für", "zu", "über", "aus", "dem", "den", "des", "ein", "eine",
-    "einer", "eines", "einem", "einen", "nicht", "auch", "nur", "noch",
-    "bereits", "jedoch", "allerdings", "dabei", "daher", "somit", "gemäß",
-    "Absatz", "Satz", "gemäß", "bzw", "hinsichtlich", "vorausgesetzt",
+    "der",
+    "die",
+    "das",
+    "und",
+    "ist",
+    "wird",
+    "nach",
+    "bei",
+    "von",
+    "mit",
+    "auf",
+    "für",
+    "zu",
+    "über",
+    "aus",
+    "dem",
+    "den",
+    "des",
+    "ein",
+    "eine",
+    "einer",
+    "eines",
+    "einem",
+    "einen",
+    "nicht",
+    "auch",
+    "nur",
+    "noch",
+    "bereits",
+    "jedoch",
+    "allerdings",
+    "dabei",
+    "daher",
+    "somit",
+    "gemäß",
+    "Absatz",
+    "Satz",
+    "gemäß",
+    "bzw",
+    "hinsichtlich",
+    "vorausgesetzt",
   ];
   const lower = text.toLowerCase();
   let matches = 0;
@@ -388,7 +443,7 @@ async function main() {
   }
   process.stderr.write(`[copilot-test] import complete\n`);
 
-  // System prompt for German legal copilot
+  // System prompt for German legal copilot (synced with production system-prompt.ts)
   const systemPrompt =
     `Du bist ein deutscher Rechtsassistent (Legal Copilot) für die Kanzlei-Software Subsumio. ` +
     `Du beantwortest Rechtsfragen basierend auf den bereitgestellten Rechtsquellen. ` +
@@ -398,7 +453,13 @@ async function main() {
     `3. Antworte auf Deutsch in klarer, professioneller Rechtssprache.\n` +
     `4. Wenn die Rechtsquellen keine ausreichende Antwort enthalten, sage dies offen.\n` +
     `5. Gib keine rechtlichen Ratschläge, sondern erkläre die Rechtslage objektiv.\n` +
-    `6. Halte die Antwort prägnant (max. 3-5 Sätze).\n`;
+    `6. Halte die Antwort prägnant (max. 3-5 Sätze).\n` +
+    `7. VERWENDE NUR Paragraphen und Gesetze, die wörtlich in den bereitgestellten Rechtsquellen vorkommen.\n` +
+    `8. ERFINDE KEINE EU-Richtlinien, Artikel, Verordnungen oder anderen Referenzen.\n` +
+    `9. Wenn du eine Information nicht in den Quellen findest, sage: "Diese Information ist in den bereitgestellten Rechtsquellen nicht enthalten."\n` +
+    `10. LEITE KEINE Definitionen oder Rechtsbegriffe ab oder her. Wenn eine Definition nicht wörtlich in den Quellen steht, sage dies explizit.\n` +
+    `11. SUCHE in ALLEN bereitgestellten Rechtsquellen nach der relevanten Definition oder Regelung. Prüfe jeden Abschnitt sorgfältig.\n` +
+    `12. Wenn ein Begriff in den Quellen definiert wird (z.B. "§ 12 — Betriebstätte"), zitiere DIESE Definition wörtlich.\n`;
 
   // Run benchmark
   const results: CopilotResult[] = [];
@@ -411,7 +472,9 @@ async function main() {
     const legalArea = (q as any).legal_area as string;
     const expectedSlug = `law/de/${(q as any).answer_slug ?? (q as any).expected_slugs?.[0] ?? ""}`;
 
-    process.stderr.write(`[copilot-test] ${qIdx}/${testQuestions.length} (${Math.round(qIdx / testQuestions.length * 100)}%) ${q.question_id}...`);
+    process.stderr.write(
+      `[copilot-test] ${qIdx}/${testQuestions.length} (${Math.round((qIdx / testQuestions.length) * 100)}%) ${q.question_id}...`
+    );
 
     const result: CopilotResult = {
       question_id: q.question_id,
@@ -502,7 +565,9 @@ async function main() {
     const langStr = result.answer_in_german ? "DE" : "??";
     const lawStr = result.answer_references_law ? "§" : "-";
     const groundStr = result.answer_grounded ? "G" : "-";
-    process.stderr.write(` ${hitStr} ${langStr} ${lawStr} ${groundStr} (${result.answer_length} chars)\n`);
+    process.stderr.write(
+      ` ${hitStr} ${langStr} ${lawStr} ${groundStr} (${result.answer_length} chars)\n`
+    );
   }
 
   // Build quality report
@@ -545,7 +610,9 @@ async function main() {
   process.stderr.write(`\n[copilot-test] QUALITY REPORT (${n} questions, top-k=${opts.topK})\n`);
   process.stderr.write(`  Retrieval Hit@5:     ${(report.retrieval_hit_at_5 * 100).toFixed(1)}%\n`);
   process.stderr.write(`  German answers:      ${(report.german_answer_rate * 100).toFixed(1)}%\n`);
-  process.stderr.write(`  References law (§):  ${(report.references_law_rate * 100).toFixed(1)}%\n`);
+  process.stderr.write(
+    `  References law (§):  ${(report.references_law_rate * 100).toFixed(1)}%\n`
+  );
   process.stderr.write(`  Grounded answers:    ${(report.grounded_rate * 100).toFixed(1)}%\n`);
   process.stderr.write(`  Avg answer length:   ${report.avg_answer_length.toFixed(0)} chars\n`);
   process.stderr.write(`  Retrieval errors:    ${report.retrieval_errors}\n`);
@@ -570,8 +637,12 @@ async function main() {
   process.stderr.write(`\n[copilot-test] SAMPLE ANSWERS (first 3):\n`);
   for (const r of results.slice(0, 3)) {
     process.stderr.write(`\n  Q: ${r.question}\n`);
-    process.stderr.write(`  A: ${r.llm_answer.slice(0, 300)}${r.llm_answer.length > 300 ? "..." : ""}\n`);
-    process.stderr.write(`  [DE=${r.answer_in_german} §=${r.answer_references_law} G=${r.answer_grounded}]\n`);
+    process.stderr.write(
+      `  A: ${r.llm_answer.slice(0, 300)}${r.llm_answer.length > 300 ? "..." : ""}\n`
+    );
+    process.stderr.write(
+      `  [DE=${r.answer_in_german} §=${r.answer_references_law} G=${r.answer_grounded}]\n`
+    );
   }
 
   await engine.disconnect();

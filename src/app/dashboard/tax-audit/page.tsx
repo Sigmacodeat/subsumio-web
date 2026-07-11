@@ -54,11 +54,15 @@ const PHASE_LABELS_EN: Record<TaxAuditPhase, string> = {
 };
 
 const PHASE_COLORS: Record<TaxAuditPhase, string> = {
-  vorbereitung: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
-  pruefung: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  vorbereitung:
+    "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+  pruefung:
+    "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   abschluss: "border-violet-500/20 bg-violet-500/10 text-violet-600",
-  rechtsbehelf: "border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]",
-  abgeschlossen: "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
+  rechtsbehelf:
+    "border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]",
+  abgeschlossen:
+    "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
 };
 
 const AUDIT_TYPES_DE: Record<AuditType, string> = {

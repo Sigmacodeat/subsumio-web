@@ -38,8 +38,17 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
 
   const score = summary ? Math.round(summary.coverage_score * 100) : 0;
   const scoreColor =
-    score >= 80 ? "text-[color:var(--ds-success-text)]" : score >= 50 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-danger-text)]";
-  const scoreBg = score >= 80 ? "bg-[color:var(--ds-success-solid)]" : score >= 50 ? "bg-[color:var(--ds-warning-solid)]" : "bg-[color:var(--ds-danger-solid)]";
+    score >= 80
+      ? "text-[color:var(--ds-success-text)]"
+      : score >= 50
+        ? "text-[color:var(--ds-warning-text)]"
+        : "text-[color:var(--ds-danger-text)]";
+  const scoreBg =
+    score >= 80
+      ? "bg-[color:var(--ds-success-solid)]"
+      : score >= 50
+        ? "bg-[color:var(--ds-warning-solid)]"
+        : "bg-[color:var(--ds-danger-solid)]";
 
   return (
     <div
@@ -165,7 +174,10 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
                   key={i}
                   className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2.5 py-1.5"
                 >
-                  <AlertTriangle size={11} className="shrink-0 text-[color:var(--ds-warning-text)]" />
+                  <AlertTriangle
+                    size={11}
+                    className="shrink-0 text-[color:var(--ds-warning-text)]"
+                  />
                   <span className="text-xs text-[color:var(--ds-warning-text)]">{issue}</span>
                 </div>
               ))}
@@ -175,7 +187,9 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
           {summary.quality_issues.length === 0 && summary.total_pages > 0 && (
             <div className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2.5 py-1.5">
               <CheckCircle2 size={12} className="text-[color:var(--ds-success-text)]" />
-              <span className="text-xs text-[color:var(--ds-success-text)]">Alle Quellen aktuell</span>
+              <span className="text-xs text-[color:var(--ds-success-text)]">
+                Alle Quellen aktuell
+              </span>
             </div>
           )}
 

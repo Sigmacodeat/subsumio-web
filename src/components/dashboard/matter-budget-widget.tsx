@@ -227,7 +227,11 @@ export function MatterBudgetWidget() {
           const pct = Math.round(budget.status.utilization * 100);
           const isOver = budget.status.alert_level === "critical";
           const isWarning = budget.status.alert_level === "warning";
-          const barColor = isOver ? "bg-[color:var(--ds-danger-solid)]" : isWarning ? "bg-[color:var(--ds-warning-solid)]" : "bg-[color:var(--ds-success-solid)]";
+          const barColor = isOver
+            ? "bg-[color:var(--ds-danger-solid)]"
+            : isWarning
+              ? "bg-[color:var(--ds-warning-solid)]"
+              : "bg-[color:var(--ds-success-solid)]";
           const Icon = isOver ? AlertTriangle : isWarning ? TrendingUp : CheckCircle2;
           const iconColor = isOver
             ? "text-[color:var(--ds-danger-text)]"

@@ -91,9 +91,12 @@ const TYPE_LABEL: Record<ReviewItem["type"], { de: string; en: string }> = {
 };
 
 const TYPE_BADGE: Record<ReviewItem["type"], string> = {
-  suggested_deadline: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
-  document_request: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
-  client_submission: "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
+  suggested_deadline:
+    "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  document_request:
+    "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+  client_submission:
+    "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
   suggested_party: "border-purple-500/20 bg-purple-500/10 text-purple-600",
   pending_fact: "border-cyan-500/20 bg-cyan-500/10 text-cyan-600",
 };

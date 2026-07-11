@@ -64,15 +64,19 @@ const CHANNEL_LABEL: Record<UnifiedMessage["channel"], { de: string; en: string 
 
 const CHANNEL_BADGE: Record<UnifiedMessage["channel"], string> = {
   bea: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
-  whatsapp: "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
+  whatsapp:
+    "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
   email: "border-violet-500/20 bg-violet-500/10 text-violet-600",
-  portal: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  portal:
+    "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
 };
 
 const URGENCY_STYLES: Record<string, string> = {
-  critical: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  critical:
+    "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
   high: "border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]",
-  medium: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  medium:
+    "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   low: "border-slate-500/20 bg-slate-500/10 text-slate-600",
 };
 
@@ -515,8 +519,10 @@ export default function CommunicationsPage() {
                     className={cn(
                       "group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[border-color,background-color,box-shadow] duration-200 hover:border-[color:var(--brand-primary)]/30 hover:bg-[color:var(--ds-hover)]",
                       !msg.read && "border-l-2 border-l-[color:var(--brand-primary)]",
-                      card?.urgency === "critical" && "border-l-2 border-l-[color:var(--ds-danger-solid)]",
-                      card?.urgency === "high" && "border-l-2 border-l-[color:var(--ds-attention-solid)]"
+                      card?.urgency === "critical" &&
+                        "border-l-2 border-l-[color:var(--ds-danger-solid)]",
+                      card?.urgency === "high" &&
+                        "border-l-2 border-l-[color:var(--ds-attention-solid)]"
                     )}
                   >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">

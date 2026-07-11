@@ -107,14 +107,18 @@ export default function MobilePage() {
               size={18}
               className={cn(
                 "mx-auto mb-2",
-                f.available ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-text-subtle)]"
+                f.available
+                  ? "text-[color:var(--ds-success-text)]"
+                  : "text-[color:var(--ds-text-subtle)]"
               )}
             />
             <div className="text-xs text-[color:var(--ds-text-muted)]">{f.label}</div>
             <div
               className={cn(
                 "text-xs font-medium",
-                f.available ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-text-subtle)]"
+                f.available
+                  ? "text-[color:var(--ds-success-text)]"
+                  : "text-[color:var(--ds-text-subtle)]"
               )}
             >
               {f.available ? "Verfügbar" : "Nicht verfügbar"}

@@ -196,7 +196,11 @@ export function MatterContextPanel({
                     icon={AlertTriangle}
                     label="Lücken"
                     value={bundle.gaps.length}
-                    color={bundle.gaps.length > 0 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-success-text)]"}
+                    color={
+                      bundle.gaps.length > 0
+                        ? "text-[color:var(--ds-danger-text)]"
+                        : "text-[color:var(--ds-success-text)]"
+                    }
                   />
                   <div className="ml-auto flex items-center gap-1.5">
                     <Button
@@ -473,7 +477,9 @@ function DocumentRow({ doc }: { doc: MatterDocumentSummary }) {
     processing: <Loader2 size={11} className="animate-spin text-[color:var(--ds-info-text)]" />,
     text_layer: <CheckCircle2 size={11} className="text-[color:var(--ds-success-text)]" />,
     ocr_needed: <AlertTriangle size={11} className="text-[color:var(--ds-warning-text)]" />,
-    ocr_processing: <Loader2 size={11} className="animate-spin text-[color:var(--ds-warning-text)]" />,
+    ocr_processing: (
+      <Loader2 size={11} className="animate-spin text-[color:var(--ds-warning-text)]" />
+    ),
     ocr_complete: <CheckCircle2 size={11} className="text-[color:var(--ds-success-text)]" />,
     ocr_failed: <XCircle size={11} className="text-[color:var(--ds-danger-text)]" />,
     ready: <CheckCircle2 size={11} className="text-[color:var(--ds-success-text)]" />,
@@ -522,7 +528,11 @@ function DocumentRow({ doc }: { doc: MatterDocumentSummary }) {
 function CoverageDisplay({ coverage }: { coverage: MatterCoverageStatus }) {
   const score = Math.round(coverage.completeness_score * 100);
   const scoreColor =
-    score >= 80 ? "text-[color:var(--ds-success-text)]" : score >= 50 ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-danger-text)]";
+    score >= 80
+      ? "text-[color:var(--ds-success-text)]"
+      : score >= 50
+        ? "text-[color:var(--ds-warning-text)]"
+        : "text-[color:var(--ds-danger-text)]";
   return (
     <div className="space-y-3">
       {/* Score Bar */}
@@ -536,7 +546,11 @@ function CoverageDisplay({ coverage }: { coverage: MatterCoverageStatus }) {
             <div
               className={cn(
                 "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                score >= 80 ? "bg-[color:var(--ds-success-solid)]" : score >= 50 ? "bg-[color:var(--ds-warning-solid)]" : "bg-[color:var(--ds-danger-solid)]"
+                score >= 80
+                  ? "bg-[color:var(--ds-success-solid)]"
+                  : score >= 50
+                    ? "bg-[color:var(--ds-warning-solid)]"
+                    : "bg-[color:var(--ds-danger-solid)]"
               )}
               style={{ width: `${score}%` }}
             />
@@ -646,7 +660,12 @@ function GapRow({ gap }: { gap: MatterGap }) {
       border: "border-[color:var(--ds-warning-border)]",
       icon: AlertTriangle,
     },
-    low: { color: "text-[color:var(--ds-info-text)]", bg: "bg-[color:var(--ds-info-bg)]", border: "border-[color:var(--ds-info-border)]", icon: Eye },
+    low: {
+      color: "text-[color:var(--ds-info-text)]",
+      bg: "bg-[color:var(--ds-info-bg)]",
+      border: "border-[color:var(--ds-info-border)]",
+      icon: Eye,
+    },
     info: {
       color: "text-[color:var(--ds-text-muted)]",
       bg: "",

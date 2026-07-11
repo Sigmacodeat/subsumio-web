@@ -22,9 +22,11 @@ import { useLang } from "@/lib/use-lang";
 
 const URGENCY_STYLES: Record<string, string> = {
   low: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
-  medium: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
+  medium:
+    "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
   high: "bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)] border-[color:var(--ds-attention-border)]",
-  critical: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
+  critical:
+    "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
 };
 
 const TYPE_ICONS: Record<string, typeof ClipboardList> = {

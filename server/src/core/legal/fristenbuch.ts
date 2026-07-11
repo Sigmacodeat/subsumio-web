@@ -310,7 +310,9 @@ export function baueIcs(
     lines.push(`DTSTAMP:${dtstamp}`);
     lines.push(`DTSTART;VALUE=DATE:${icsDate(e.vorfrist)}`);
     lines.push(`DTEND;VALUE=DATE:${icsDate(addDays(e.vorfrist, 1))}`);
-    lines.push(`SUMMARY:${icsEscape(`VORFRIST: ${e.frist} (${e.case_slug}) — Hauptfrist ${e.datum}`)}`);
+    lines.push(
+      `SUMMARY:${icsEscape(`VORFRIST: ${e.frist} (${e.case_slug}) — Hauptfrist ${e.datum}`)}`
+    );
     lines.push(`DESCRIPTION:${icsEscape(description)}`);
     lines.push("CATEGORIES:VORFRIST");
     lines.push("END:VEVENT");

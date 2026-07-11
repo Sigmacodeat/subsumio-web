@@ -121,7 +121,7 @@ die DE/CH-Kunden das falsche Recht unterschiebt.
       **Alltagsfehler:** Ein kurzer Engine-Hiccup während des Uploads sagt dem Anwalt, seine (real
       existierende) Akte gäbe es nicht → Verwirrung, Support-Ticket, evtl. Neuanlage einer Dubletten-Akte.
       **Fix:** HTTP-5xx/Timeout vom echten 404 unterscheiden — bei transientem Fehler `503 „Bitte erneut
-    versuchen"` statt `404 case_not_found`.
+versuchen"` statt `404 case_not_found`.
 
 ### 🟡 P2 — Robustheit, Skalierung, Konsistenz
 

@@ -99,7 +99,9 @@ export default function CaseScannerPage() {
             <label className="text-sm font-medium text-[color:var(--ds-text)]">
               {t("scanner.evidence_threshold")}
             </label>
-            <span className="font-mono text-sm text-[color:var(--ds-success-text)]">{evidenceThreshold}</span>
+            <span className="font-mono text-sm text-[color:var(--ds-success-text)]">
+              {evidenceThreshold}
+            </span>
           </div>
           <input
             type="range"

@@ -348,10 +348,26 @@ export default function FristenbuchPage() {
             value: stats.gesamt,
             color: "text-[color:var(--ds-text)]",
           },
-          { label: t("deadlines.status_overdue"), value: stats.overdue, color: "text-[color:var(--ds-danger-text)]" },
-          { label: t("deadlines.status_critical"), value: stats.critical, color: "text-[color:var(--ds-danger-text)]" },
-          { label: t("deadlines.vorfrist_reached"), value: stats.vorfrist, color: "text-[color:var(--ds-info-text)]" },
-          { label: t("deadlines.fristenbuch_ok"), value: stats.pending, color: "text-[color:var(--ds-success-text)]" },
+          {
+            label: t("deadlines.status_overdue"),
+            value: stats.overdue,
+            color: "text-[color:var(--ds-danger-text)]",
+          },
+          {
+            label: t("deadlines.status_critical"),
+            value: stats.critical,
+            color: "text-[color:var(--ds-danger-text)]",
+          },
+          {
+            label: t("deadlines.vorfrist_reached"),
+            value: stats.vorfrist,
+            color: "text-[color:var(--ds-info-text)]",
+          },
+          {
+            label: t("deadlines.fristenbuch_ok"),
+            value: stats.pending,
+            color: "text-[color:var(--ds-success-text)]",
+          },
         ].map((item) => (
           <div
             key={item.label}

@@ -16,7 +16,15 @@ import { Button } from "@/components/ui/button";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { FEATURES_PAGE } from "@/content/features";
 import SubsumioShowcase from "./subsumio-showcase";
-import { ICONS, useSiteBrand, PageHero, SectionHeading, CTASection, Section, H2_CTA_CLASS } from "./chrome";
+import {
+  ICONS,
+  useSiteBrand,
+  PageHero,
+  SectionHeading,
+  CTASection,
+  Section,
+  H2_CTA_CLASS,
+} from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import {
   GuidedCursor,
@@ -512,14 +520,38 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
   const stats =
     lang === "en"
       ? [
-          { to: 99.8, dec: 1, prefix: "", suffix: "%", label: "Recall@8 on LongMemEval (500 questions)" },
-          { to: 100, dec: 0, prefix: "", suffix: "%", label: "Recall@5 — optimal K on LongMemEval" },
+          {
+            to: 99.8,
+            dec: 1,
+            prefix: "",
+            suffix: "%",
+            label: "Recall@8 on LongMemEval (500 questions)",
+          },
+          {
+            to: 100,
+            dec: 0,
+            prefix: "",
+            suffix: "%",
+            label: "Recall@5 — optimal K on LongMemEval",
+          },
           { to: 9, dec: 0, prefix: "", label: "native data connectors" },
           { to: 66, dec: 0, prefix: "", label: "autonomous jobs in production" },
         ]
       : [
-          { to: 99.8, dec: 1, prefix: "", suffix: " %", label: "Recall@8 auf LongMemEval (500 Fragen)" },
-          { to: 100, dec: 0, prefix: "", suffix: " %", label: "Recall@5 — optimales K bei LongMemEval" },
+          {
+            to: 99.8,
+            dec: 1,
+            prefix: "",
+            suffix: " %",
+            label: "Recall@8 auf LongMemEval (500 Fragen)",
+          },
+          {
+            to: 100,
+            dec: 0,
+            prefix: "",
+            suffix: " %",
+            label: "Recall@5 — optimales K bei LongMemEval",
+          },
           { to: 9, dec: 0, prefix: "", label: "native Daten-Konnektoren" },
           { to: 66, dec: 0, prefix: "", label: "autonome Jobs im Produktivbetrieb" },
         ];
@@ -645,9 +677,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                 <div className="brand-soft brand-border flex h-12 w-12 items-center justify-center rounded-xl border">
                   {CatIcon && <CatIcon size={22} className="brand-text" />}
                 </div>
-                <h2 className={H2_CTA_CLASS}>
-                  {cat.title}
-                </h2>
+                <h2 className={H2_CTA_CLASS}>{cat.title}</h2>
               </div>
               <p className="mb-8 text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
                 {cat.intro}

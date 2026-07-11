@@ -280,7 +280,9 @@ export default function VerfahrensdokuPage() {
         <Input type="text" {...dokuForm.register(name)} placeholder={placeholder} />
       )}
       {dokuForm.formState.errors[name] && (
-        <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{dokuForm.formState.errors[name]?.message}</p>
+        <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
+          {dokuForm.formState.errors[name]?.message}
+        </p>
       )}
     </div>
   );
@@ -330,7 +332,9 @@ export default function VerfahrensdokuPage() {
       {/* Honest framing */}
       <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3">
         <Info size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
-        <p className="text-xs leading-relaxed text-[color:var(--ds-warning-text)]">{t("verfahrensdoku.disclaimer")}</p>
+        <p className="text-xs leading-relaxed text-[color:var(--ds-warning-text)]">
+          {t("verfahrensdoku.disclaimer")}
+        </p>
       </div>
 
       {saveError && <div className="text-xs text-[color:var(--ds-danger-text)]">{saveError}</div>}

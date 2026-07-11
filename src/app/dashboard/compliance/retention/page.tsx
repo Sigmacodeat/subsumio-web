@@ -96,13 +96,17 @@ export default function RetentionPage() {
           </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3 text-center">
-          <div className="text-xl font-bold text-[color:var(--ds-warning-text)]">{toReview.length}</div>
+          <div className="text-xl font-bold text-[color:var(--ds-warning-text)]">
+            {toReview.length}
+          </div>
           <div className="text-xs text-[color:var(--ds-text-muted)]">
             {t("retention.stat_review").replace("{{years}}", String(RETENTION_YEARS))}
           </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-center">
-          <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">{toDelete.length}</div>
+          <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">
+            {toDelete.length}
+          </div>
           <div className="text-xs text-[color:var(--ds-text-muted)]">
             {t("retention.stat_delete").replace("{{years}}", String(RETENTION_YEARS + 4))}
           </div>

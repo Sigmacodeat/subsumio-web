@@ -89,9 +89,9 @@ describe("boostForTier", () => {
 describe("applyCognitiveTierBoost", () => {
   it("boosts Mental Models above Observations above Raw Facts", () => {
     const results = [
-      makeResult("person", 0.80),      // Tier 1 → 0.80 * 1.0 = 0.80
-      makeResult("synthesis", 0.80),   // Tier 3 → 0.80 * 1.08 = 0.864
-      makeResult("meeting", 0.80),     // Tier 2 → 0.80 * 1.04 = 0.832
+      makeResult("person", 0.8), // Tier 1 → 0.80 * 1.0 = 0.80
+      makeResult("synthesis", 0.8), // Tier 3 → 0.80 * 1.08 = 0.864
+      makeResult("meeting", 0.8), // Tier 2 → 0.80 * 1.04 = 0.832
     ];
 
     applyCognitiveTierBoost(results);
@@ -108,8 +108,8 @@ describe("applyCognitiveTierBoost", () => {
 
   it("demotes unknown types (Tier 0)", () => {
     const results = [
-      makeResult("person", 0.80),      // Tier 1 → 0.80 * 1.0 = 0.80
-      makeResult("custom_type", 0.80), // Tier 0 → 0.80 * 0.98 = 0.784
+      makeResult("person", 0.8), // Tier 1 → 0.80 * 1.0 = 0.80
+      makeResult("custom_type", 0.8), // Tier 0 → 0.80 * 0.98 = 0.784
     ];
 
     applyCognitiveTierBoost(results);
@@ -120,8 +120,8 @@ describe("applyCognitiveTierBoost", () => {
 
   it("respects floor-ratio gate (weak results not boosted)", () => {
     const results = [
-      makeResult("synthesis", 0.30),  // weak synthesis
-      makeResult("person", 0.90),     // strong raw fact
+      makeResult("synthesis", 0.3), // weak synthesis
+      makeResult("person", 0.9), // strong raw fact
     ];
 
     // floorThreshold = 0.85 * 0.90 = 0.765 → synthesis at 0.30 is below
@@ -129,13 +129,13 @@ describe("applyCognitiveTierBoost", () => {
 
     // synthesis should NOT be boosted (below floor)
     expect(results[0].cognitive_tier_boost).toBeUndefined();
-    expect(results[0].score).toBe(0.30);
+    expect(results[0].score).toBe(0.3);
   });
 
   it("allows strong synthesis to leapfrog weak raw fact when above floor", () => {
     const results = [
-      makeResult("person", 0.80),     // Tier 1 → 0.80 * 1.0 = 0.80
-      makeResult("synthesis", 0.78),  // Tier 3 → 0.78 * 1.08 = 0.8424
+      makeResult("person", 0.8), // Tier 1 → 0.80 * 1.0 = 0.80
+      makeResult("synthesis", 0.78), // Tier 3 → 0.78 * 1.08 = 0.8424
     ];
 
     // floorThreshold = 0.85 * 0.80 = 0.68 → both above
@@ -145,9 +145,7 @@ describe("applyCognitiveTierBoost", () => {
   });
 
   it("skips NaN scores", () => {
-    const results = [
-      makeResult("synthesis", NaN),
-    ];
+    const results = [makeResult("synthesis", NaN)];
 
     applyCognitiveTierBoost(results);
 
@@ -162,25 +160,22 @@ describe("applyCognitiveTierBoost", () => {
   });
 
   it("respects custom boost multipliers", () => {
-    const results = [
-      makeResult("synthesis", 0.80),
-      makeResult("meeting", 0.80),
-    ];
+    const results = [makeResult("synthesis", 0.8), makeResult("meeting", 0.8)];
 
     applyCognitiveTierBoost(results, {
       tier3Boost: 1.5,
       tier2Boost: 1.2,
     });
 
-    expect(results[0].score).toBeCloseTo(0.80 * 1.5);
-    expect(results[1].score).toBeCloseTo(0.80 * 1.2);
+    expect(results[0].score).toBeCloseTo(0.8 * 1.5);
+    expect(results[1].score).toBeCloseTo(0.8 * 1.2);
   });
 
   it("preserves score ordering for same-tier results", () => {
     const results = [
-      makeResult("synthesis", 0.90),
-      makeResult("synthesis", 0.80),
-      makeResult("synthesis", 0.70),
+      makeResult("synthesis", 0.9),
+      makeResult("synthesis", 0.8),
+      makeResult("synthesis", 0.7),
     ];
 
     applyCognitiveTierBoost(results);
@@ -195,12 +190,12 @@ describe("applyCognitiveTierBoost", () => {
 
 describe("applyCognitiveTierBoost — edge cases", () => {
   it("handles undefined type field (defaults to Tier 0)", () => {
-    const r = makeResult("synthesis", 0.80);
+    const r = makeResult("synthesis", 0.8);
     r.type = undefined as unknown as string;
     applyCognitiveTierBoost([r]);
     // Tier 0 → 0.98 demote
     expect(r.cognitive_tier_boost).toBeCloseTo(0.98);
-    expect(r.score).toBeCloseTo(0.80 * 0.98);
+    expect(r.score).toBeCloseTo(0.8 * 0.98);
   });
 
   it("handles Infinity score (passes gate, boost preserves Infinity)", () => {
@@ -225,10 +220,7 @@ describe("applyCognitiveTierBoost — edge cases", () => {
   });
 
   it("floorThreshold = NEGATIVE_INFINITY boosts everything (no gate)", () => {
-    const results = [
-      makeResult("synthesis", 0.01),
-      makeResult("person", 0.99),
-    ];
+    const results = [makeResult("synthesis", 0.01), makeResult("person", 0.99)];
     applyCognitiveTierBoost(results, {}, Number.NEGATIVE_INFINITY);
     expect(results[0].cognitive_tier_boost).toBeCloseTo(1.08);
     expect(results[1].cognitive_tier_boost).toBeUndefined(); // Tier 1 = 1.0
@@ -241,36 +233,36 @@ describe("applyCognitiveTierBoost — edge cases", () => {
   });
 
   it("does not stamp cognitive_tier_boost when boost = 1.0 (Tier 1 default)", () => {
-    const r = makeResult("person", 0.80);
+    const r = makeResult("person", 0.8);
     applyCognitiveTierBoost([r]);
     expect(r.cognitive_tier_boost).toBeUndefined();
-    expect(r.score).toBe(0.80);
+    expect(r.score).toBe(0.8);
   });
 
   it("stamps cognitive_tier_boost when Tier 1 has custom boost ≠ 1.0", () => {
-    const r = makeResult("person", 0.80);
+    const r = makeResult("person", 0.8);
     applyCognitiveTierBoost([r], { tier1Boost: 1.02 });
     expect(r.cognitive_tier_boost).toBeCloseTo(1.02);
-    expect(r.score).toBeCloseTo(0.80 * 1.02);
+    expect(r.score).toBeCloseTo(0.8 * 1.02);
   });
 
   it("handles all-unknown-types array (all Tier 0)", () => {
     const results = [
-      makeResult("custom_a", 0.80),
-      makeResult("custom_b", 0.80),
-      makeResult("custom_c", 0.80),
+      makeResult("custom_a", 0.8),
+      makeResult("custom_b", 0.8),
+      makeResult("custom_c", 0.8),
     ];
     applyCognitiveTierBoost(results);
     for (const r of results) {
       expect(r.cognitive_tier_boost).toBeCloseTo(0.98);
-      expect(r.score).toBeCloseTo(0.80 * 0.98);
+      expect(r.score).toBeCloseTo(0.8 * 0.98);
     }
   });
 
   it("handles single-element array", () => {
-    const results = [makeResult("synthesis", 0.90)];
+    const results = [makeResult("synthesis", 0.9)];
     applyCognitiveTierBoost(results);
-    expect(results[0].score).toBeCloseTo(0.90 * 1.08);
+    expect(results[0].score).toBeCloseTo(0.9 * 1.08);
   });
 });
 
@@ -278,8 +270,18 @@ describe("applyCognitiveTierBoost — edge cases", () => {
 
 describe("applyCognitiveTierBoost — stress test (1000 results)", () => {
   it("processes 1000 mixed-type results without error", () => {
-    const types = ["synthesis", "concept", "meeting", "note", "email",
-      "person", "company", "deal", "custom_a", "custom_b"];
+    const types = [
+      "synthesis",
+      "concept",
+      "meeting",
+      "note",
+      "email",
+      "person",
+      "company",
+      "deal",
+      "custom_a",
+      "custom_b",
+    ];
     const results: SearchResult[] = [];
     for (let i = 0; i < 1000; i++) {
       const type = types[i % types.length];
@@ -322,15 +324,12 @@ describe("applyCognitiveTierBoost — consistency with other post-fusion stages"
   it("is pure in-memory (no engine calls, no async)", () => {
     // applyCognitiveTierBoost is synchronous and doesn't touch the engine.
     // This test verifies it doesn't throw even with a null engine context.
-    const results = [makeResult("synthesis", 0.80)];
+    const results = [makeResult("synthesis", 0.8)];
     expect(() => applyCognitiveTierBoost(results)).not.toThrow();
   });
 
   it("stamps attribution field (cognitive_tier_boost) like other stages", () => {
-    const results = [
-      makeResult("synthesis", 0.80),
-      makeResult("person", 0.80),
-    ];
+    const results = [makeResult("synthesis", 0.8), makeResult("person", 0.8)];
     applyCognitiveTierBoost(results);
     // Tier 3 gets stamped
     expect(results[0].cognitive_tier_boost).toBeDefined();
@@ -344,8 +343,8 @@ describe("applyCognitiveTierBoost — consistency with other post-fusion stages"
     // to all stages including cognitive tier. This test verifies the
     // cognitive tier function respects it identically.
     const results = [
-      makeResult("synthesis", 0.50),  // below floor
-      makeResult("synthesis", 0.90),  // above floor
+      makeResult("synthesis", 0.5), // below floor
+      makeResult("synthesis", 0.9), // above floor
     ];
     applyCognitiveTierBoost(results, {}, 0.85);
     expect(results[0].cognitive_tier_boost).toBeUndefined();

@@ -55,9 +55,7 @@ function QuickStartSection({ d }: { d: ReturnType<typeof getDocs> }) {
     <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <Reveal variant="up" className="mb-10 text-center">
-          <h2 className={`mb-3 ${H2_CTA_CLASS}`}>
-            {d.quickstart.title}
-          </h2>
+          <h2 className={`mb-3 ${H2_CTA_CLASS}`}>{d.quickstart.title}</h2>
           <p className="text-sm text-pretty [color:var(--mk-text-muted)]">{d.quickstart.sub}</p>
         </Reveal>
         <StaggerContainer
@@ -327,9 +325,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
             >
               <div className="mb-8 flex items-end justify-between gap-6">
                 <div>
-                  <h2 className={`mb-2 ${H2_CTA_CLASS}`}>
-                    {cat.title}
-                  </h2>
+                  <h2 className={`mb-2 ${H2_CTA_CLASS}`}>{cat.title}</h2>
                   <p className="text-sm [color:var(--mk-text-muted)]">{cat.sub}</p>
                 </div>
                 <span className="shrink-0 rounded-full border [border-color:var(--mk-border)] px-2.5 py-1 text-[10px] font-medium [color:var(--mk-text-muted)] [background:var(--mk-surface)]">
@@ -359,9 +355,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
       <Section tone="light" className="px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <Reveal variant="up" className="mb-12 text-center">
-            <h2 className={`mb-3 ${H2_CTA_CLASS}`}>
-              {d.arch.title}
-            </h2>
+            <h2 className={`mb-3 ${H2_CTA_CLASS}`}>{d.arch.title}</h2>
             <p className="text-sm text-pretty [color:var(--mk-text-muted)]">{d.arch.sub}</p>
           </Reveal>
           <StaggerContainer

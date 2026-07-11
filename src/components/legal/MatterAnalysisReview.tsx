@@ -79,7 +79,11 @@ export function MatterAnalysisReview({
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <ShieldCheck size={16} className="text-[color:var(--ds-info-text)]" aria-hidden="true" />
+            <ShieldCheck
+              size={16}
+              className="text-[color:var(--ds-info-text)]"
+              aria-hidden="true"
+            />
             <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
               Analyse prüfen und freigeben
             </h3>

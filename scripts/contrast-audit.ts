@@ -222,7 +222,13 @@ const signalTextTokens = [
   "--ds-info-text",
   "--ds-attention-text",
 ];
-const surfaceTokens = ["--ds-bg", "--ds-surface", "--ds-surface-2", "--ds-hover", "--ds-surface-elevated"];
+const surfaceTokens = [
+  "--ds-bg",
+  "--ds-surface",
+  "--ds-surface-2",
+  "--ds-hover",
+  "--ds-surface-elevated",
+];
 
 const signalBgSolidTokens = [
   "--ds-success-solid",

@@ -24,7 +24,7 @@ export interface ExtractedMemory {
   validTo?: string;
 }
 
-const DEFAULT_MODEL = "gpt-4o-mini";
+const DEFAULT_MODEL = "deepseek/deepseek-chat";
 
 const SYSTEM_PROMPT = `Du bist ein Memory-Extraktor für einen legal AI Copilot (Subsumio).
 Deine Aufgabe: Extrahiere persistente Erinnerungen aus Anwalts-Nachrichten.
@@ -58,7 +58,7 @@ export async function extractMemoriesWithLLM(
   message: string,
   opts?: { caseSlug?: string }
 ): Promise<ExtractedMemory[]> {
-  const apiKey = env("OPENAI_API_KEY");
+  const apiKey = env("OPENROUTER_API_KEY") || env("OPENROUTER_API_KEY_FALLBACK");
   if (!apiKey) return [];
 
   const model = env("COPILOT_MEMORY_LLM_MODEL") || DEFAULT_MODEL;
@@ -68,11 +68,13 @@ export async function extractMemoriesWithLLM(
     : `Nachricht: ${message}`;
 
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
+        "HTTP-Referer": "https://subsum.io",
+        "X-Title": "Subsumio",
       },
       body: JSON.stringify({
         model,
@@ -88,9 +90,7 @@ export async function extractMemoriesWithLLM(
     });
 
     if (!res.ok) {
-      console.error(
-        `[copilot-memory-llm] Extraction failed: HTTP ${res.status} ${res.statusText}`
-      );
+      console.error(`[copilot-memory-llm] Extraction failed: HTTP ${res.status} ${res.statusText}`);
       return [];
     }
 
@@ -117,13 +117,7 @@ export async function extractMemoriesWithLLM(
         ? ((parsed as Record<string, unknown>).memories as unknown[])
         : [];
 
-    const validTypes: MemoryType[] = [
-      "preference",
-      "fact",
-      "topic",
-      "instruction",
-      "case_note",
-    ];
+    const validTypes: MemoryType[] = ["preference", "fact", "topic", "instruction", "case_note"];
 
     const extracted: ExtractedMemory[] = [];
     for (const item of memories) {
@@ -156,5 +150,5 @@ export async function extractMemoriesWithLLM(
  * Check whether LLM-based extraction is available (API key configured).
  */
 export function isLLMExtractionAvailable(): boolean {
-  return Boolean(env("OPENAI_API_KEY"));
+  return Boolean(env("OPENROUTER_API_KEY") || env("OPENROUTER_API_KEY_FALLBACK"));
 }

@@ -32,9 +32,24 @@ const STATUS_CONFIG: Record<
   string,
   { icon: React.ElementType; color: string; label: string; labelEn: string }
 > = {
-  pass: { icon: CheckCircle2, color: "text-[color:var(--ds-success-text)]", label: "Pass", labelEn: "Pass" },
-  warn: { icon: AlertTriangle, color: "text-[color:var(--ds-warning-text)]", label: "Warn", labelEn: "Warning" },
-  fail: { icon: XCircle, color: "text-[color:var(--ds-danger-text)]", label: "Fail", labelEn: "Failed" },
+  pass: {
+    icon: CheckCircle2,
+    color: "text-[color:var(--ds-success-text)]",
+    label: "Pass",
+    labelEn: "Pass",
+  },
+  warn: {
+    icon: AlertTriangle,
+    color: "text-[color:var(--ds-warning-text)]",
+    label: "Warn",
+    labelEn: "Warning",
+  },
+  fail: {
+    icon: XCircle,
+    color: "text-[color:var(--ds-danger-text)]",
+    label: "Fail",
+    labelEn: "Failed",
+  },
   not_run: {
     icon: Clock,
     color: "text-[color:var(--ds-text-subtle)]",
@@ -147,7 +162,10 @@ export function EvalGateWidget() {
       {result.all_breaches.length > 0 && (
         <div className="space-y-1 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-2">
           {result.all_breaches.slice(0, 5).map((b, i) => (
-            <div key={i} className="flex items-start gap-1.5 text-xs text-[color:var(--ds-danger-text)]">
+            <div
+              key={i}
+              className="flex items-start gap-1.5 text-xs text-[color:var(--ds-danger-text)]"
+            >
               <XCircle size={10} className="mt-0.5 shrink-0" />
               <span>{b}</span>
             </div>

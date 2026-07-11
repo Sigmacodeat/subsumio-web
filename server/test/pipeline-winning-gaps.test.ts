@@ -150,9 +150,7 @@ describe("burden-of-proof extraction", () => {
           beweislastumkehr_moeglich: true,
         },
       ],
-      missing_evidence: [
-        { merkmal: "hoheitliches Handeln", prioritaet: "hoch" },
-      ],
+      missing_evidence: [{ merkmal: "hoheitliches Handeln", prioritaet: "hoch" }],
       overall_beweis_score: 55,
     };
     const result = extractBurdenAnalysis(json);

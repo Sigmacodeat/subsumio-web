@@ -892,9 +892,15 @@ export function PipelinePanel({
             {showDamageOverlaps && (
               <div className="mt-3 space-y-2">
                 {pipelineState.damage_overlap_warnings.map((warning, i) => (
-                  <div key={i} className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3">
+                  <div
+                    key={i}
+                    className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3"
+                  >
                     <div className="flex items-start gap-2">
-                      <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+                      <AlertTriangle
+                        size={14}
+                        className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+                      />
                       <p className="text-xs leading-relaxed text-[color:var(--ds-text)]">
                         {warning}
                       </p>
@@ -920,7 +926,11 @@ export function PipelinePanel({
             <div className="flex items-center gap-3">
               <AlertTriangle
                 size={18}
-                className={limitationExpiredCount > 0 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-warning-text)]"}
+                className={
+                  limitationExpiredCount > 0
+                    ? "text-[color:var(--ds-danger-text)]"
+                    : "text-[color:var(--ds-warning-text)]"
+                }
               />
               <div>
                 <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -973,7 +983,10 @@ export function PipelinePanel({
                   className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3"
                 >
                   <div className="flex items-start gap-2">
-                    <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]" />
+                    <AlertTriangle
+                      size={14}
+                      className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]"
+                    />
                     <div className="text-xs leading-relaxed text-[color:var(--ds-text)]">
                       <span className="font-semibold">{String(claim.anspruch ?? "Anspruch")}</span>
                       {claim.gegner ? ` gegen ${String(claim.gegner)}` : ""} — bereits verjährt
@@ -989,7 +1002,10 @@ export function PipelinePanel({
                   className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3"
                 >
                   <div className="flex items-start gap-2">
-                    <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+                    <AlertTriangle
+                      size={14}
+                      className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+                    />
                     <div className="text-xs leading-relaxed text-[color:var(--ds-text)]">
                       <span className="font-semibold">{String(claim.anspruch ?? "Anspruch")}</span>
                       {claim.gegner ? ` gegen ${String(claim.gegner)}` : ""} — noch{" "}
@@ -1178,7 +1194,10 @@ export function PipelinePanel({
                       className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3"
                     >
                       <div className="flex items-start gap-2">
-                        <AlertTriangle size={12} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+                        <AlertTriangle
+                          size={12}
+                          className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+                        />
                         <p className="text-xs leading-relaxed text-[color:var(--ds-text)]">{v}</p>
                       </div>
                     </div>

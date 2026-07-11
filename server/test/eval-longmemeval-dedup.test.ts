@@ -25,9 +25,9 @@ function makeResult(
 describe("dedupBySlug", () => {
   it("keeps only the highest-scoring chunk per slug", () => {
     const results = [
-      makeResult("chat/session-a", 0.80),
-      makeResult("chat/session-a", 0.90), // higher score → should win
-      makeResult("chat/session-a", 0.70),
+      makeResult("chat/session-a", 0.8),
+      makeResult("chat/session-a", 0.9), // higher score → should win
+      makeResult("chat/session-a", 0.7),
       makeResult("chat/session-b", 0.85),
     ];
 
@@ -35,32 +35,32 @@ describe("dedupBySlug", () => {
 
     expect(deduped.length).toBe(2);
     expect(deduped[0].slug).toBe("chat/session-a");
-    expect(deduped[0].score).toBe(0.90);
+    expect(deduped[0].score).toBe(0.9);
     expect(deduped[1].slug).toBe("chat/session-b");
     expect(deduped[1].score).toBe(0.85);
   });
 
   it("sorts results by score descending", () => {
     const results = [
-      makeResult("chat/low", 0.50),
+      makeResult("chat/low", 0.5),
       makeResult("chat/high", 0.95),
-      makeResult("chat/mid", 0.70),
+      makeResult("chat/mid", 0.7),
     ];
 
     const deduped = dedupBySlug(results, 10);
 
     expect(deduped[0].score).toBe(0.95);
-    expect(deduped[1].score).toBe(0.70);
-    expect(deduped[2].score).toBe(0.50);
+    expect(deduped[1].score).toBe(0.7);
+    expect(deduped[2].score).toBe(0.5);
   });
 
   it("truncates to topK after dedup", () => {
     const results = [
-      makeResult("chat/s1", 0.90),
-      makeResult("chat/s2", 0.80),
-      makeResult("chat/s3", 0.70),
-      makeResult("chat/s4", 0.60),
-      makeResult("chat/s5", 0.50),
+      makeResult("chat/s1", 0.9),
+      makeResult("chat/s2", 0.8),
+      makeResult("chat/s3", 0.7),
+      makeResult("chat/s4", 0.6),
+      makeResult("chat/s5", 0.5),
     ];
 
     const deduped = dedupBySlug(results, 3);
@@ -80,7 +80,7 @@ describe("dedupBySlug", () => {
       makeResult("chat/nightly-7-s1", 0.88),
       makeResult("chat/nightly-7-s1", 0.85),
       makeResult("chat/nightly-7-s1", 0.82),
-      makeResult("chat/nightly-7-s2", 0.90),
+      makeResult("chat/nightly-7-s2", 0.9),
       makeResult("chat/nightly-7-s2", 0.87),
       makeResult("chat/nightly-7-s2", 0.84),
       makeResult("chat/nightly-7-s2", 0.81),
@@ -105,29 +105,29 @@ describe("dedupBySlug", () => {
   });
 
   it("handles single result", () => {
-    const deduped = dedupBySlug([makeResult("chat/only", 0.90)], 10);
+    const deduped = dedupBySlug([makeResult("chat/only", 0.9)], 10);
     expect(deduped.length).toBe(1);
     expect(deduped[0].slug).toBe("chat/only");
   });
 
   it("handles all results from same slug", () => {
     const results = [
-      makeResult("chat/same", 0.80),
-      makeResult("chat/same", 0.90),
-      makeResult("chat/same", 0.70),
+      makeResult("chat/same", 0.8),
+      makeResult("chat/same", 0.9),
+      makeResult("chat/same", 0.7),
     ];
 
     const deduped = dedupBySlug(results, 10);
 
     expect(deduped.length).toBe(1);
-    expect(deduped[0].score).toBe(0.90);
+    expect(deduped[0].score).toBe(0.9);
   });
 
   it("topK=1 returns only the best session", () => {
     const results = [
-      makeResult("chat/s1", 0.80),
+      makeResult("chat/s1", 0.8),
       makeResult("chat/s2", 0.95),
-      makeResult("chat/s3", 0.70),
+      makeResult("chat/s3", 0.7),
     ];
 
     const deduped = dedupBySlug(results, 1);
@@ -138,9 +138,9 @@ describe("dedupBySlug", () => {
 
   it("preserves relative ordering when scores are equal (stable sort)", () => {
     const results = [
-      makeResult("chat/first", 0.80),
-      makeResult("chat/second", 0.80),
-      makeResult("chat/third", 0.80),
+      makeResult("chat/first", 0.8),
+      makeResult("chat/second", 0.8),
+      makeResult("chat/third", 0.8),
     ];
 
     const deduped = dedupBySlug(results, 10);
@@ -152,10 +152,7 @@ describe("dedupBySlug", () => {
   });
 
   it("handles topK larger than unique slugs", () => {
-    const results = [
-      makeResult("chat/s1", 0.90),
-      makeResult("chat/s2", 0.80),
-    ];
+    const results = [makeResult("chat/s1", 0.9), makeResult("chat/s2", 0.8)];
 
     const deduped = dedupBySlug(results, 100);
 
@@ -165,8 +162,8 @@ describe("dedupBySlug", () => {
   it("handles NaN scores (NaN treated as lowest)", () => {
     const results = [
       makeResult("chat/s1", NaN),
-      makeResult("chat/s2", 0.80),
-      makeResult("chat/s1", 0.90), // overrides NaN for s1
+      makeResult("chat/s2", 0.8),
+      makeResult("chat/s1", 0.9), // overrides NaN for s1
     ];
 
     const deduped = dedupBySlug(results, 10);
@@ -174,6 +171,6 @@ describe("dedupBySlug", () => {
     expect(deduped.length).toBe(2);
     // s1's best non-NaN chunk (0.90) should be kept
     const s1 = deduped.find((r) => r.slug === "chat/s1");
-    expect(s1?.score).toBe(0.90);
+    expect(s1?.score).toBe(0.9);
   });
 });

@@ -23,9 +23,11 @@ import { CitationPanel } from "@/components/legal/CitationPanel";
 
 const SEVERITY_STYLES: Record<string, string> = {
   low: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
-  medium: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
+  medium:
+    "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]",
   high: "bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)] border-[color:var(--ds-attention-border)]",
-  critical: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
+  critical:
+    "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
 };
 
 export default function AnalyzePage() {
@@ -346,7 +348,10 @@ export default function AnalyzePage() {
                     key={i}
                     className="flex items-start gap-2 text-sm text-[color:var(--ds-text)]"
                   >
-                    <ListChecks size={13} className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]" />
+                    <ListChecks
+                      size={13}
+                      className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]"
+                    />
                     {a}
                   </li>
                 ))}
@@ -357,7 +362,9 @@ export default function AnalyzePage() {
           {/* Warnings */}
           {result.warnings && result.warnings.length > 0 && (
             <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3">
-              <p className="mb-1 text-xs font-medium text-[color:var(--ds-warning-text)]">{t("analyze.warnings")}</p>
+              <p className="mb-1 text-xs font-medium text-[color:var(--ds-warning-text)]">
+                {t("analyze.warnings")}
+              </p>
               {result.warnings.map((w, i) => (
                 <p key={i} className="text-xs text-[color:var(--ds-warning-text)]/80">
                   {w}

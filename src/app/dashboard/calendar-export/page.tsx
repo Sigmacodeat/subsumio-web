@@ -312,11 +312,15 @@ export default function CalendarExportPage() {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">Anstehend</div>
-          <div className="text-xl font-bold text-[color:var(--ds-info-text)]">{upcoming.length}</div>
+          <div className="text-xl font-bold text-[color:var(--ds-info-text)]">
+            {upcoming.length}
+          </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">Überfällig</div>
-          <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">{overdue.length}</div>
+          <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">
+            {overdue.length}
+          </div>
         </div>
       </div>
 

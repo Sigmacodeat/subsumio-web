@@ -363,7 +363,12 @@ export function IntakeAcceptanceWizard({
                         {checkResult.matches.map((m) => (
                           <li key={m.slug} className="text-xs text-[color:var(--ds-text)]">
                             {m.title} ({m.role})
-                            {!m.exact && <span className="text-[color:var(--ds-warning-text)]"> — ähnlich</span>}
+                            {!m.exact && (
+                              <span className="text-[color:var(--ds-warning-text)]">
+                                {" "}
+                                — ähnlich
+                              </span>
+                            )}
                           </li>
                         ))}
                       </ul>
@@ -374,7 +379,10 @@ export function IntakeAcceptanceWizard({
                 {workflow.conflict_check.status === "conflict" && (
                   <div className="space-y-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
                     <div className="flex items-start gap-2">
-                      <ShieldAlert size={16} className="mt-0.5 text-[color:var(--ds-warning-text)]" />
+                      <ShieldAlert
+                        size={16}
+                        className="mt-0.5 text-[color:var(--ds-warning-text)]"
+                      />
                       <p className="text-sm text-[color:var(--ds-warning-text)]">
                         Konflikt erkannt. Nur Partner/Admin kann mit Begründung freigeben.
                       </p>
@@ -673,7 +681,13 @@ function StatusRow({ label, ok }: { label: string; ok: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-[color:var(--ds-text)]">{label}</span>
-      <span className={ok ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-warning-text)]"}>{ok ? "OK" : "offen"}</span>
+      <span
+        className={
+          ok ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-warning-text)]"
+        }
+      >
+        {ok ? "OK" : "offen"}
+      </span>
     </div>
   );
 }

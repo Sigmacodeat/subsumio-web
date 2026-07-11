@@ -157,9 +157,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
                 <span className="mb-4 block font-mono text-sm [color:var(--mk-text-subtle)]">
                   {item.step}
                 </span>
-                <h3 className={`mb-2 ${H3_CLASS}`}>
-                  {item.title}
-                </h3>
+                <h3 className={`mb-2 ${H3_CLASS}`}>{item.title}</h3>
                 <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{item.desc}</p>
               </GlowCard>
             </StaggerItem>

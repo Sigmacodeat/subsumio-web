@@ -67,8 +67,10 @@ export default function AutonomousTasksPage() {
 
   const getPriorityBadge = (priority: string) => {
     const colors = {
-      urgent: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
-      normal: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
+      urgent:
+        "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]",
+      normal:
+        "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
       low: "bg-gray-500/10 text-gray-500 border-gray-500/20",
     };
     return (

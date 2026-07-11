@@ -163,7 +163,10 @@ export default function WordAddinPage() {
         </Link>
       </div>
 
-      <Badge variant="default" className="border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]">
+      <Badge
+        variant="default"
+        className="border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
+      >
         {t("wordaddin.version_badge")}
       </Badge>
     </div>

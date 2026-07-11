@@ -6,7 +6,15 @@ import { Button } from "@/components/ui/button";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import type { SolutionContent, SolutionSlug } from "@/content/solutions";
 import { SOLUTION_SLUGS, SOLUTION_CROSS_LINKS } from "@/content/solutions";
-import { Section, SectionHeading, ICONS, accentTile, CTASection, PageHero, H2_CTA_CLASS } from "./chrome";
+import {
+  Section,
+  SectionHeading,
+  ICONS,
+  accentTile,
+  CTASection,
+  PageHero,
+  H2_CTA_CLASS,
+} from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { GlowCard, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
@@ -35,7 +43,11 @@ function HeroIconConstellation({ content }: { content: SolutionContent }) {
 
 export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionContent }) {
   return (
-    <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]" lang={lang}>
+    <div
+      data-tone="light"
+      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
+      lang={lang}
+    >
       {/* Hero */}
       <PageHero
         badge={content.badge}
@@ -128,9 +140,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
               <div className="brand-soft brand-border mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border">
                 <CheckCircle size={24} className="brand-text" />
               </div>
-              <h2 className={`mb-4 ${H2_CTA_CLASS}`}>
-                {content.proofTitle}
-              </h2>
+              <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{content.proofTitle}</h2>
               <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)]">
                 {content.proof}
               </p>
@@ -150,7 +160,10 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       {/* Cross-link: not quite the right fit? */}
       <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <SectionHeading badge={UI_STRINGS[lang].notQuiteRight} title={UI_STRINGS[lang].seeSolution} />
+          <SectionHeading
+            badge={UI_STRINGS[lang].notQuiteRight}
+            title={UI_STRINGS[lang].seeSolution}
+          />
           <div className="flex flex-wrap items-center justify-center gap-3">
             {SOLUTION_SLUGS.filter((slug) => slug !== content.slug).map((slug: SolutionSlug) => {
               const link = SOLUTION_CROSS_LINKS[lang][slug];

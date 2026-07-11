@@ -125,7 +125,10 @@ export default function PowerOfAttorneyPage() {
 
       {expiringCount > 0 && (
         <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] px-4 py-3">
-          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-attention-text)]" />
+          <AlertTriangle
+            size={16}
+            className="mt-0.5 shrink-0 text-[color:var(--ds-attention-text)]"
+          />
           <p className="text-sm text-[color:var(--ds-attention-text)]">
             <strong>{expiringCount}</strong> Vollmacht(en) laufen innerhalb von 30 Tagen ab.
           </p>

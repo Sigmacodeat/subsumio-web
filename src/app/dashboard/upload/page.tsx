@@ -946,7 +946,9 @@ function UploadPageInner() {
           <strong className="text-[color:var(--ds-text)]">{t("upload.how_title")}</strong>{" "}
           {t("upload.how_desc")}
           <br />
-          <strong className="mt-1 block text-[color:var(--ds-info-text)]">{t("upload.hint_label")}</strong>{" "}
+          <strong className="mt-1 block text-[color:var(--ds-info-text)]">
+            {t("upload.hint_label")}
+          </strong>{" "}
           {t("upload.hint_desc")}
         </div>
       </div>
@@ -1082,7 +1084,9 @@ function UploadPageInner() {
                           Offline-Warteschlange — wird automatisch synchronisiert
                         </span>
                       ) : (
-                        <span className="font-mono text-xs text-[color:var(--ds-success-text)]">→ {f.slug}</span>
+                        <span className="font-mono text-xs text-[color:var(--ds-success-text)]">
+                          → {f.slug}
+                        </span>
                       )}
                       {f.gobdStamped && (
                         <Badge
@@ -1135,7 +1139,9 @@ function UploadPageInner() {
                       )}
                     </span>
                   )}
-                  {f.status === "error" && <span className="text-xs text-[color:var(--ds-danger-text)]">{f.error}</span>}
+                  {f.status === "error" && (
+                    <span className="text-xs text-[color:var(--ds-danger-text)]">{f.error}</span>
+                  )}
                   {f.status === "skipped" && (
                     <span className="text-xs text-[color:var(--ds-warning-text)]">
                       Übersprungen — bereits vorhanden (Duplikat)
@@ -1209,12 +1215,18 @@ function UploadPageInner() {
                     <CheckCircle
                       size={14}
                       className={
-                        f.slug === "offline-queued" ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-success-text)]"
+                        f.slug === "offline-queued"
+                          ? "text-[color:var(--ds-warning-text)]"
+                          : "text-[color:var(--ds-success-text)]"
                       }
                     />
                   )}
-                  {f.status === "error" && <XCircle size={14} className="text-[color:var(--ds-danger-text)]" />}
-                  {f.status === "skipped" && <Info size={14} className="text-[color:var(--ds-warning-text)]" />}
+                  {f.status === "error" && (
+                    <XCircle size={14} className="text-[color:var(--ds-danger-text)]" />
+                  )}
+                  {f.status === "skipped" && (
+                    <Info size={14} className="text-[color:var(--ds-warning-text)]" />
+                  )}
                 </div>
               </div>
             ))}

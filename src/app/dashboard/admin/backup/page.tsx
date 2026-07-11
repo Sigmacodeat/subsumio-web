@@ -338,7 +338,9 @@ export default function BackupRestorePage() {
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-lg border border-[color:var(--ds-border)] p-3 text-center">
-                  <div className="text-xl font-bold text-[color:var(--ds-success-text)]">{restoreResult.restored}</div>
+                  <div className="text-xl font-bold text-[color:var(--ds-success-text)]">
+                    {restoreResult.restored}
+                  </div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">Wiederhergestellt</div>
                 </div>
                 <div className="rounded-lg border border-[color:var(--ds-border)] p-3 text-center">
@@ -348,7 +350,9 @@ export default function BackupRestorePage() {
                   <div className="text-xs text-[color:var(--ds-text-muted)]">Übersprungen</div>
                 </div>
                 <div className="rounded-lg border border-[color:var(--ds-border)] p-3 text-center">
-                  <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">{restoreResult.failed}</div>
+                  <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">
+                    {restoreResult.failed}
+                  </div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">Fehlgeschlagen</div>
                 </div>
               </div>

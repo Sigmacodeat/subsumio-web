@@ -283,7 +283,9 @@ export default function ConnectorsPage() {
                     <span
                       className={cn(
                         "flex items-center gap-1",
-                        c.enabled ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-text-muted)]"
+                        c.enabled
+                          ? "text-[color:var(--ds-success-text)]"
+                          : "text-[color:var(--ds-text-muted)]"
                       )}
                     >
                       {c.enabled ? <CheckCircle2 size={10} /> : <XCircle size={10} />}
@@ -292,7 +294,9 @@ export default function ConnectorsPage() {
                     <span
                       className={cn(
                         "flex items-center gap-1",
-                        c.connected ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-text-muted)]"
+                        c.connected
+                          ? "text-[color:var(--ds-success-text)]"
+                          : "text-[color:var(--ds-text-muted)]"
                       )}
                     >
                       {c.connected ? <CheckCircle2 size={10} /> : <XCircle size={10} />}
@@ -477,13 +481,17 @@ function CoverageMatrix() {
           </div>
         </div>
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <div className="text-lg font-bold text-[color:var(--ds-success-text)]">{matrix.available_count}</div>
+          <div className="text-lg font-bold text-[color:var(--ds-success-text)]">
+            {matrix.available_count}
+          </div>
           <div className="text-xs text-[color:var(--ds-text-muted)]">
             {t("connectors.status_available" as DashboardKey)}
           </div>
         </div>
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <div className="text-lg font-bold text-[color:var(--ds-warning-text)]">{matrix.beta_count}</div>
+          <div className="text-lg font-bold text-[color:var(--ds-warning-text)]">
+            {matrix.beta_count}
+          </div>
           <div className="text-xs text-[color:var(--ds-text-muted)]">Beta</div>
         </div>
         <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
@@ -506,7 +514,10 @@ function CoverageMatrix() {
             </h3>
           </div>
           {matrix.coverage_gaps.map((gap, i) => (
-            <div key={i} className="flex items-start gap-2 text-xs text-[color:var(--ds-warning-text)]">
+            <div
+              key={i}
+              className="flex items-start gap-2 text-xs text-[color:var(--ds-warning-text)]"
+            >
               <Badge
                 variant={
                   gap.severity === "high"

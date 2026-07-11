@@ -51,11 +51,14 @@ const TYPE_ICON: Record<string, React.ElementType> = {
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  person: "text-[color:var(--ds-info-text)] bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)]",
-  company: "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)]",
+  person:
+    "text-[color:var(--ds-info-text)] bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)]",
+  company:
+    "text-[color:var(--ds-success-text)] bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)]",
   idea: "text-[color:var(--ds-warning-text)] bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)]",
   document: "brand-text brand-soft brand-border",
-  event: "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]",
+  event:
+    "text-[color:var(--ds-danger-text)] bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)]",
   place: "text-teal-600 bg-teal-500/10 border-teal-500/20",
 };
 
@@ -185,7 +188,11 @@ export default function BrainDetailPage() {
               onClick={copySlug}
               className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)]"
             >
-              {copied ? <Check size={12} className="text-[color:var(--ds-success-text)]" /> : <Copy size={12} />}
+              {copied ? (
+                <Check size={12} className="text-[color:var(--ds-success-text)]" />
+              ) : (
+                <Copy size={12} />
+              )}
               {copied ? t("braindetail.btn_save") : "Slug"}
             </button>
             <button

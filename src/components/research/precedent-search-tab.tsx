@@ -291,7 +291,9 @@ export default function PrecedentSearchPage() {
               {result.total} {t("precedent.results_count")}
             </span>
             {result.warnings && result.warnings.length > 0 && (
-              <span className="text-xs text-[color:var(--ds-warning-text)]">{result.warnings.join(", ")}</span>
+              <span className="text-xs text-[color:var(--ds-warning-text)]">
+                {result.warnings.join(", ")}
+              </span>
             )}
           </div>
 

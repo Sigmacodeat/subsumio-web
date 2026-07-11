@@ -299,8 +299,14 @@ export default function CompliancePage() {
         className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3"
         role="note"
       >
-        <Info size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" aria-hidden="true" />
-        <p className="text-xs leading-relaxed text-[color:var(--ds-warning-text)]">{t("compliance.disclaimer")}</p>
+        <Info
+          size={16}
+          className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+          aria-hidden="true"
+        />
+        <p className="text-xs leading-relaxed text-[color:var(--ds-warning-text)]">
+          {t("compliance.disclaimer")}
+        </p>
       </div>
 
       {/* Tabs */}

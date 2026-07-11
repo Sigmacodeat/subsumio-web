@@ -489,7 +489,11 @@ export default function BeaPage() {
         className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3"
         role="note"
       >
-        <Info size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" aria-hidden="true" />
+        <Info
+          size={16}
+          className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+          aria-hidden="true"
+        />
         <div className="text-sm text-[color:var(--ds-warning-text)]">
           <p className="mb-1 font-medium">{t("bea.no_send_title")}</p>
           <p className="text-xs leading-relaxed">{t("bea.no_send_desc")}</p>
@@ -516,7 +520,9 @@ export default function BeaPage() {
             void saveDraft();
           }}
         >
-          <h2 className="text-sm font-semibold text-[color:var(--ds-info-text)]">{t("bea.compose_title")}</h2>
+          <h2 className="text-sm font-semibold text-[color:var(--ds-info-text)]">
+            {t("bea.compose_title")}
+          </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="bea-recipient" className="text-xs text-[color:var(--ds-text-muted)]">
@@ -603,7 +609,11 @@ export default function BeaPage() {
           role="status"
           aria-label={t("bea.loading_aria")}
         >
-          <Loader2 size={24} className="animate-spin text-[color:var(--ds-info-text)]" aria-hidden="true" />
+          <Loader2
+            size={24}
+            className="animate-spin text-[color:var(--ds-info-text)]"
+            aria-hidden="true"
+          />
         </div>
       ) : (
         <>

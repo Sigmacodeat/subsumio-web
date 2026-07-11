@@ -89,10 +89,13 @@ interface ContactsCache {
 const ROLE_KEYS: ContactRole[] = ["client", "opponent", "court", "lawyer", "other"];
 
 const ROLE_COLORS: Record<ContactRole, string> = {
-  client: "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
-  opponent: "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+  client:
+    "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+  opponent:
+    "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
   court: "bg-violet-500/10 border-violet-500/20 text-violet-600",
-  lawyer: "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
+  lawyer:
+    "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
   other: "bg-gray-500/10 border-gray-500/20 text-gray-500",
 };
 
@@ -994,7 +997,9 @@ function ContactFormFields({
           autoFocus
         />
         {form.formState.errors.name && (
-          <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{form.formState.errors.name.message}</p>
+          <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
+            {form.formState.errors.name.message}
+          </p>
         )}
       </div>
 
@@ -1048,7 +1053,9 @@ function ContactFormFields({
             className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
           />
           {form.formState.errors.email && (
-            <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{form.formState.errors.email.message}</p>
+            <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
+              {form.formState.errors.email.message}
+            </p>
           )}
         </div>
       </div>

@@ -924,7 +924,9 @@ function ResearchPageInner() {
                             <span>{fm.citations.length} Quellen</span>
                           )}
                           {Array.isArray(fm.gaps) && fm.gaps.length > 0 && (
-                            <span className="text-[color:var(--ds-warning-text)]">{fm.gaps.length} Lücken</span>
+                            <span className="text-[color:var(--ds-warning-text)]">
+                              {fm.gaps.length} Lücken
+                            </span>
                           )}
                         </div>
                       </div>

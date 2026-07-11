@@ -15,7 +15,16 @@ function extractInsuranceCoverage(json: unknown): {
   empfehlung: string;
 } {
   if (!json || typeof json !== "object")
-    return { versicherungen_count: 0, deckungssumme: 0, schaden_gedeckt: false, direktklage_moeglich: false, regress_vorhanden: false, versicherung_bekannt: false, score: 0, empfehlung: "" };
+    return {
+      versicherungen_count: 0,
+      deckungssumme: 0,
+      schaden_gedeckt: false,
+      direktklage_moeglich: false,
+      regress_vorhanden: false,
+      versicherung_bekannt: false,
+      score: 0,
+      empfehlung: "",
+    };
   const obj = json as Record<string, unknown>;
   const vers = Array.isArray(obj.versicherungen) ? obj.versicherungen : [];
   const first = vers[0] as Record<string, unknown> | undefined;
@@ -48,8 +57,17 @@ describe("insurance-coverage-analyzer extraction", () => {
           quelle: "ON 12: Versicherungsschein",
         },
       ],
-      direktklage_moeglich: { moeglich: true, gegen: "Allianz", paragraph: "§ 67 KFG", voraussetzungen: "Kfz im Verkehr" },
-      regressrisiko: { vorhanden: false, grund: "Keine grobe Fahrlässigkeit", risiko_fuer_mandanten: "gering" },
+      direktklage_moeglich: {
+        moeglich: true,
+        gegen: "Allianz",
+        paragraph: "§ 67 KFG",
+        voraussetzungen: "Kfz im Verkehr",
+      },
+      regressrisiko: {
+        vorhanden: false,
+        grund: "Keine grobe Fahrlässigkeit",
+        risiko_fuer_mandanten: "gering",
+      },
       versicherungsstatus: { bekannt: true, detail: "ON 12", recherche_empfehlung: null },
       overall_versicherungsscore: 90,
       empfehlung: "Versicherung deckt Schaden — Direktklage empfohlen",
@@ -67,11 +85,23 @@ describe("insurance-coverage-analyzer extraction", () => {
   it("handles unknown insurance (unsicher)", () => {
     const json = {
       versicherungen: [
-        { typ: "Berufshaftpflicht", versicherer: "unbekannt", deckungssumme: 0, schaden_gedeckt: "unsicher", deckungsausschluesse: [], detail: "", quelle: "" },
+        {
+          typ: "Berufshaftpflicht",
+          versicherer: "unbekannt",
+          deckungssumme: 0,
+          schaden_gedeckt: "unsicher",
+          deckungsausschluesse: [],
+          detail: "",
+          quelle: "",
+        },
       ],
       direktklage_moeglich: { moeglich: false },
       regressrisiko: { vorhanden: false },
-      versicherungsstatus: { bekannt: false, detail: "Kein Versicherungsschein gefunden", recherche_empfehlung: "Versicherungsschein anfordern" },
+      versicherungsstatus: {
+        bekannt: false,
+        detail: "Kein Versicherungsschein gefunden",
+        recherche_empfehlung: "Versicherungsschein anfordern",
+      },
       overall_versicherungsscore: 20,
       empfehlung: "Versicherung unbekannt — Recherche erforderlich",
     };
@@ -85,10 +115,22 @@ describe("insurance-coverage-analyzer extraction", () => {
   it("handles insurance with exclusions (not covered)", () => {
     const json = {
       versicherungen: [
-        { typ: "Kfz-Haftpflicht", versicherer: "Wiener Städtische", deckungssumme: 1000000, schaden_gedeckt: false, deckungsausschluesse: ["Alkohol", "Fahrerflucht"], detail: "Ausschluss: Alkohol", quelle: "ON 8" },
+        {
+          typ: "Kfz-Haftpflicht",
+          versicherer: "Wiener Städtische",
+          deckungssumme: 1000000,
+          schaden_gedeckt: false,
+          deckungsausschluesse: ["Alkohol", "Fahrerflucht"],
+          detail: "Ausschluss: Alkohol",
+          quelle: "ON 8",
+        },
       ],
       direktklage_moeglich: { moeglich: false, grund: "Deckungsausschluss" },
-      regressrisiko: { vorhanden: true, grund: "Alkoholbedingte Fahrt", risiko_fuer_mandanten: "hoch" },
+      regressrisiko: {
+        vorhanden: true,
+        grund: "Alkoholbedingte Fahrt",
+        risiko_fuer_mandanten: "hoch",
+      },
       versicherungsstatus: { bekannt: true, detail: "ON 8" },
       overall_versicherungsscore: 15,
       empfehlung: "Keine Deckung — Ausschluss Alkohol",
@@ -120,11 +162,27 @@ function extractTaxImpact(json: unknown): {
   empfehlung: string;
 } {
   if (!json || typeof json !== "object")
-    return { kategorien_count: 0, schmerzensgeld_steuerfrei: false, verdienstentgang_steuerpflichtig: false, netto_ev_urteil: 0, netto_ev_vergleich: 0, steuervorteil_vergleich: 0, prozesskosten_abzugsfaehig: false, score: 0, empfehlung: "" };
+    return {
+      kategorien_count: 0,
+      schmerzensgeld_steuerfrei: false,
+      verdienstentgang_steuerpflichtig: false,
+      netto_ev_urteil: 0,
+      netto_ev_vergleich: 0,
+      steuervorteil_vergleich: 0,
+      prozesskosten_abzugsfaehig: false,
+      score: 0,
+      empfehlung: "",
+    };
   const obj = json as Record<string, unknown>;
-  const aufschl = Array.isArray(obj.schadensersatz_aufschluesselung) ? obj.schadensersatz_aufschluesselung : [];
-  const schmerzensgeld = aufschl.find((a) => (a as Record<string, unknown>).kategorie === "Schmerzensgeld") as Record<string, unknown> | undefined;
-  const verdienst = aufschl.find((a) => (a as Record<string, unknown>).kategorie === "Verdienstentgang") as Record<string, unknown> | undefined;
+  const aufschl = Array.isArray(obj.schadensersatz_aufschluesselung)
+    ? obj.schadensersatz_aufschluesselung
+    : [];
+  const schmerzensgeld = aufschl.find(
+    (a) => (a as Record<string, unknown>).kategorie === "Schmerzensgeld"
+  ) as Record<string, unknown> | undefined;
+  const verdienst = aufschl.find(
+    (a) => (a as Record<string, unknown>).kategorie === "Verdienstentgang"
+  ) as Record<string, unknown> | undefined;
   const prozesskosten = obj.prozesskosten_abzug as Record<string, unknown> | undefined;
   const nettoU = obj.netto_ev_urteil as Record<string, unknown> | undefined;
   const nettoV = obj.netto_ev_vergleich as Record<string, unknown> | undefined;
@@ -135,7 +193,10 @@ function extractTaxImpact(json: unknown): {
     verdienstentgang_steuerpflichtig: verdienst ? Boolean(verdienst.steuerpflichtig) : false,
     netto_ev_urteil: typeof nettoU?.netto_ev === "number" ? nettoU.netto_ev : 0,
     netto_ev_vergleich: typeof nettoV?.netto_ev === "number" ? nettoV.netto_ev : 0,
-    steuervorteil_vergleich: typeof vergleich?.steuervorteil_vergleich === "number" ? vergleich.steuervorteil_vergleich : 0,
+    steuervorteil_vergleich:
+      typeof vergleich?.steuervorteil_vergleich === "number"
+        ? vergleich.steuervorteil_vergleich
+        : 0,
     prozesskosten_abzugsfaehig: Boolean(prozesskosten?.abzugsfaehig),
     score: typeof obj.overall_steuer_score === "number" ? obj.overall_steuer_score : 0,
     empfehlung: String(obj.empfehlung ?? ""),
@@ -146,15 +207,58 @@ describe("tax-impact-analyzer extraction", () => {
   it("extracts full tax analysis with Schmerzensgeld tax-free and Verdienstentgang taxed", () => {
     const json = {
       schadensersatz_aufschluesselung: [
-        { kategorie: "Schmerzensgeld", betrag: 20000, steuerpflichtig: false, steuersatz: 0, steuer: 0, netto: 20000 },
-        { kategorie: "Verdienstentgang", betrag: 25000, steuerpflichtig: true, steuersatz: 42, steuer: 10500, netto: 14500 },
-        { kategorie: "Sachschaden", betrag: 5000, steuerpflichtig: false, steuersatz: 0, steuer: 0, netto: 5000 },
+        {
+          kategorie: "Schmerzensgeld",
+          betrag: 20000,
+          steuerpflichtig: false,
+          steuersatz: 0,
+          steuer: 0,
+          netto: 20000,
+        },
+        {
+          kategorie: "Verdienstentgang",
+          betrag: 25000,
+          steuerpflichtig: true,
+          steuersatz: 42,
+          steuer: 10500,
+          netto: 14500,
+        },
+        {
+          kategorie: "Sachschaden",
+          betrag: 5000,
+          steuerpflichtig: false,
+          steuersatz: 0,
+          steuer: 0,
+          netto: 5000,
+        },
       ],
-      prozesskosten_abzug: { betrag: 9500, abzugsfaehig: true, paragraph: "§ 33 EStG", steuerersparnis: 3990 },
-      netto_ev_urteil: { brutto_ev: 16075, steuern_auf_schadensersatz: 10500, steuerersparnis_prozesskosten: 3990, netto_ev: 9565 },
-      netto_ev_vergleich: { vergleichsbetrag: 30000, aufteilung: { schmerzensgeld: 15000, sachschaden: 10000, verdienstentgang: 5000 }, steuern: 2100, steuerersparnis_prozesskosten: 3990, netto_ev: 31890 },
-      vergleich_vs_urteil: { steuervorteil_vergleich: 22325, empfehlung: "Vergleich steuerlich deutlich günstiger" },
-      gestaltungsempfehlung: { aufteilung: "Schmerzensgeld €15.000, Sachschaden €10.000, Verdienstentgang €5.000", begruendung: "Maximierung steuerfreier Anteile" },
+      prozesskosten_abzug: {
+        betrag: 9500,
+        abzugsfaehig: true,
+        paragraph: "§ 33 EStG",
+        steuerersparnis: 3990,
+      },
+      netto_ev_urteil: {
+        brutto_ev: 16075,
+        steuern_auf_schadensersatz: 10500,
+        steuerersparnis_prozesskosten: 3990,
+        netto_ev: 9565,
+      },
+      netto_ev_vergleich: {
+        vergleichsbetrag: 30000,
+        aufteilung: { schmerzensgeld: 15000, sachschaden: 10000, verdienstentgang: 5000 },
+        steuern: 2100,
+        steuerersparnis_prozesskosten: 3990,
+        netto_ev: 31890,
+      },
+      vergleich_vs_urteil: {
+        steuervorteil_vergleich: 22325,
+        empfehlung: "Vergleich steuerlich deutlich günstiger",
+      },
+      gestaltungsempfehlung: {
+        aufteilung: "Schmerzensgeld €15.000, Sachschaden €10.000, Verdienstentgang €5.000",
+        begruendung: "Maximierung steuerfreier Anteile",
+      },
       overall_steuer_score: 85,
       empfehlung: "Vergleich steuerlich optimiert — Netto-Vorteil €22.325",
     };
@@ -172,7 +276,14 @@ describe("tax-impact-analyzer extraction", () => {
   it("Schmerzensgeld is always tax-free in AT/DE/CH", () => {
     const json = {
       schadensersatz_aufschluesselung: [
-        { kategorie: "Schmerzensgeld", betrag: 50000, steuerpflichtig: false, steuersatz: 0, steuer: 0, netto: 50000 },
+        {
+          kategorie: "Schmerzensgeld",
+          betrag: 50000,
+          steuerpflichtig: false,
+          steuersatz: 0,
+          steuer: 0,
+          netto: 50000,
+        },
       ],
       netto_ev_urteil: { netto_ev: 50000 },
       netto_ev_vergleich: { netto_ev: 50000 },
@@ -186,11 +297,28 @@ describe("tax-impact-analyzer extraction", () => {
   it("handles pure financial damages (all taxed)", () => {
     const json = {
       schadensersatz_aufschluesselung: [
-        { kategorie: "Verdienstentgang", betrag: 40000, steuerpflichtig: true, steuersatz: 45, steuer: 18000, netto: 22000 },
+        {
+          kategorie: "Verdienstentgang",
+          betrag: 40000,
+          steuerpflichtig: true,
+          steuersatz: 45,
+          steuer: 18000,
+          netto: 22000,
+        },
       ],
       prozesskosten_abzug: { betrag: 12000, abzugsfaehig: true, steuerersparnis: 5400 },
-      netto_ev_urteil: { brutto_ev: 30000, steuern_auf_schadensersatz: 18000, steuerersparnis_prozesskosten: 5400, netto_ev: 17400 },
-      netto_ev_vergleich: { vergleichsbetrag: 35000, steuern: 15750, steuerersparnis_prozesskosten: 5400, netto_ev: 24650 },
+      netto_ev_urteil: {
+        brutto_ev: 30000,
+        steuern_auf_schadensersatz: 18000,
+        steuerersparnis_prozesskosten: 5400,
+        netto_ev: 17400,
+      },
+      netto_ev_vergleich: {
+        vergleichsbetrag: 35000,
+        steuern: 15750,
+        steuerersparnis_prozesskosten: 5400,
+        netto_ev: 24650,
+      },
       vergleich_vs_urteil: { steuervorteil_vergleich: 7250, empfehlung: "Vergleich günstiger" },
       overall_steuer_score: 70,
       empfehlung: "Vergleich steuerlich vorteilhaft",

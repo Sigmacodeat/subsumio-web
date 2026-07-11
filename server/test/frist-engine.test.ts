@@ -176,9 +176,7 @@ describe("berechneFrist — ZPO Grundregeln", () => {
   });
 
   it("throws on empty Dauer", () => {
-    expect(() =>
-      berechneFrist({ ausloeser: "2026-01-01", dauer: {}, regime: "zpo" })
-    ).toThrow();
+    expect(() => berechneFrist({ ausloeser: "2026-01-01", dauer: {}, regime: "zpo" })).toThrow();
   });
 });
 

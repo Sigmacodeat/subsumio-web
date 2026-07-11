@@ -463,7 +463,7 @@ function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-2 text-center sm:px-6 lg:px-8">
             <Link
               href={p(lang, nav.announcement.href)}
-              className="group hover:[color:var(--brand-text)] flex min-h-[28px] items-center gap-2 text-sm font-medium [color:var(--mk-text)] transition-colors"
+              className="group flex min-h-[28px] items-center gap-2 text-sm font-medium [color:var(--mk-text)] transition-colors hover:[color:var(--brand-text)]"
               aria-label={`${nav.announcement.badge ? nav.announcement.badge + ": " : ""}${nav.announcement.text}`}
             >
               {nav.announcement.badge && (
@@ -863,7 +863,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                           >
                                             <Icon
                                               size={16}
-                                              className={`group-hover:[color:var(--brand-text)] [color:var(--mk-text-muted)] ${item.featured ? "brand-text" : ""}`}
+                                              className={`[color:var(--mk-text-muted)] group-hover:[color:var(--brand-text)] ${item.featured ? "brand-text" : ""}`}
                                             />
                                           </div>
                                           <div className="min-w-0 flex-1">
@@ -897,7 +897,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                 <Link
                                   href={p(lang, section.ctaBottom.href)}
                                   onClick={() => setOpenSection(null)}
-                                  className="group hover:[color:var(--brand-text)] flex items-center justify-between border-t [border-color:var(--mk-border)] px-4 py-2.5 text-sm font-medium [color:var(--mk-text-muted)] transition-colors hover:[background:var(--mk-hover)]"
+                                  className="group flex items-center justify-between border-t [border-color:var(--mk-border)] px-4 py-2.5 text-sm font-medium [color:var(--mk-text-muted)] transition-colors hover:[color:var(--brand-text)] hover:[background:var(--mk-hover)]"
                                 >
                                   {section.ctaBottom.label}
                                   <ChevronRight
@@ -985,7 +985,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="hover:[color:var(--brand-text)] text-sm [color:var(--mk-text-muted)]"
+                      className="text-sm [color:var(--mk-text-muted)] hover:[color:var(--brand-text)]"
                     >
                       {nav.ctaSecondary}
                     </Button>
@@ -1371,7 +1371,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="LinkedIn"
-                className="hover:[color:var(--brand-text)] flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-colors"
+                className="flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-colors hover:[color:var(--brand-text)]"
               >
                 <SocialLinkedIn size={16} />
               </a>
@@ -1380,7 +1380,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="GitHub"
-                className="hover:[color:var(--brand-text)] flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-colors"
+                className="flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-colors hover:[color:var(--brand-text)]"
               >
                 <SocialGitHub size={16} />
               </a>
@@ -1389,7 +1389,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="X (Twitter)"
-                className="hover:[color:var(--brand-text)] flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-colors"
+                className="flex min-h-[24px] min-w-[24px] items-center justify-center rounded [color:var(--mk-text-subtle)] transition-colors hover:[color:var(--brand-text)]"
               >
                 <SocialX size={16} />
               </a>

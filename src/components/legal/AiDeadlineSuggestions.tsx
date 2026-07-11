@@ -108,8 +108,10 @@ function riskVariant(
 }
 
 const RISK_STYLES: Record<string, string> = {
-  danger: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
-  warning: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+  danger:
+    "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  warning:
+    "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   info: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
 };
 
@@ -441,7 +443,11 @@ export function AiDeadlineSuggestions() {
                             <span
                               className={cn(
                                 "ml-1 font-medium",
-                                days < 0 ? "text-[color:var(--ds-danger-text)]" : days <= 3 ? "text-[color:var(--ds-warning-text)]" : ""
+                                days < 0
+                                  ? "text-[color:var(--ds-danger-text)]"
+                                  : days <= 3
+                                    ? "text-[color:var(--ds-warning-text)]"
+                                    : ""
                               )}
                             >
                               {days < 0

@@ -342,7 +342,8 @@ export function CryptoForensicsPanel({
                 className="text-xs"
                 style={{
                   backgroundColor: `${BLOCKCHAIN_COLORS[w.blockchain as BlockchainType] ?? "var(--graph-fallback)"}20`,
-                  color: BLOCKCHAIN_COLORS[w.blockchain as BlockchainType] ?? "var(--graph-fallback)",
+                  color:
+                    BLOCKCHAIN_COLORS[w.blockchain as BlockchainType] ?? "var(--graph-fallback)",
                 }}
               >
                 {BLOCKCHAIN_LABELS[w.blockchain as BlockchainType] ?? w.blockchain}
@@ -544,7 +545,9 @@ export function CryptoForensicsPanel({
                       className="text-xs"
                       style={{
                         backgroundColor: `${BLOCKCHAIN_COLORS[w.blockchain as BlockchainType] ?? "var(--graph-fallback)"}20`,
-                        color: BLOCKCHAIN_COLORS[w.blockchain as BlockchainType] ?? "var(--graph-fallback)",
+                        color:
+                          BLOCKCHAIN_COLORS[w.blockchain as BlockchainType] ??
+                          "var(--graph-fallback)",
                       }}
                     >
                       {BLOCKCHAIN_LABELS[w.blockchain as BlockchainType] ?? w.blockchain}

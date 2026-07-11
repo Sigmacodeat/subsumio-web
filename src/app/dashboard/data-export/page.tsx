@@ -104,7 +104,9 @@ export default function DataExportPage() {
         <div className="space-y-3 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
           <div className="flex items-center gap-2">
             <FileJson size={16} className="text-[color:var(--ds-success-text)]" />
-            <span className="text-sm font-medium text-[color:var(--ds-success-text)]">Export erfolgreich</span>
+            <span className="text-sm font-medium text-[color:var(--ds-success-text)]">
+              Export erfolgreich
+            </span>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">

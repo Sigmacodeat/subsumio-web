@@ -153,7 +153,9 @@ export function CaseOverviewWidgets({ caseData, onTabChange }: CaseOverviewWidge
               <span
                 className={cn(
                   "font-medium",
-                  criticalDeadlines.length > 0 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-text)]"
+                  criticalDeadlines.length > 0
+                    ? "text-[color:var(--ds-danger-text)]"
+                    : "text-[color:var(--ds-text)]"
                 )}
               >
                 {daysUntil(activeDeadlines[0].due_date || activeDeadlines[0].date || "") <= 0

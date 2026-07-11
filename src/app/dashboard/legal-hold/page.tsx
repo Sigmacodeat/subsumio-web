@@ -146,14 +146,20 @@ export default function LegalHoldPage() {
         <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4">
           <div className="flex items-center gap-2">
             <Lock size={16} className="text-[color:var(--ds-danger-text)]" />
-            <span className="text-xs text-[color:var(--ds-danger-text)]">{isEn ? "On hold" : "Unter Hold"}</span>
+            <span className="text-xs text-[color:var(--ds-danger-text)]">
+              {isEn ? "On hold" : "Unter Hold"}
+            </span>
           </div>
-          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-danger-text)] tabular-nums">{onHoldCount}</p>
+          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-danger-text)] tabular-nums">
+            {onHoldCount}
+          </p>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
           <div className="flex items-center gap-2">
             <Unlock size={16} className="text-[color:var(--ds-success-text)]" />
-            <span className="text-xs text-[color:var(--ds-success-text)]">{isEn ? "Available" : "Verfügbar"}</span>
+            <span className="text-xs text-[color:var(--ds-success-text)]">
+              {isEn ? "Available" : "Verfügbar"}
+            </span>
           </div>
           <p className="mt-1 text-2xl font-bold text-[color:var(--ds-success-text)] tabular-nums">
             {(cases?.length ?? 0) - onHoldCount}

@@ -85,10 +85,9 @@ describe("conflictCheck", () => {
   });
 
   it("client in one Akt only → none", async () => {
-    const r = await conflictCheck(
-      fakeEngine([caseRow({ client_name: "Max Mustermann" })], []),
-      { name: "Max Mustermann" }
-    );
+    const r = await conflictCheck(fakeEngine([caseRow({ client_name: "Max Mustermann" })], []), {
+      name: "Max Mustermann",
+    });
     expect(r.severity).toBe("none");
     expect(r.matches[0]!.role).toBe("client");
     expect(r.matches[0]!.exact).toBe(true);
@@ -157,10 +156,9 @@ describe("conflictCheck", () => {
   });
 
   it("Zeugen-Entity allein erzeugt keinen Konflikt (contact)", async () => {
-    const r = await conflictCheck(
-      fakeEngine([], [entityRow({ role: "zeuge" })]),
-      { name: "Max Mustermann" }
-    );
+    const r = await conflictCheck(fakeEngine([], [entityRow({ role: "zeuge" })]), {
+      name: "Max Mustermann",
+    });
     expect(r.severity).toBe("none");
     expect(r.matches[0]!.role).toBe("contact");
   });

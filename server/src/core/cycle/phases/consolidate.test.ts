@@ -31,11 +31,13 @@ function makeFact(overrides: Partial<FactRow> = {}): FactRow {
   } as unknown as FactRow;
 }
 
-function mockEngine(opts: {
-  buckets?: Array<{ source_id: string; entity_slug: string; count: number }>;
-  facts?: FactRow[];
-  pageExists?: boolean;
-} = {}): BrainEngine {
+function mockEngine(
+  opts: {
+    buckets?: Array<{ source_id: string; entity_slug: string; count: number }>;
+    facts?: FactRow[];
+    pageExists?: boolean;
+  } = {}
+): BrainEngine {
   const buckets = opts.buckets ?? [];
   const facts = opts.facts ?? [];
   const pageExists = opts.pageExists ?? true;

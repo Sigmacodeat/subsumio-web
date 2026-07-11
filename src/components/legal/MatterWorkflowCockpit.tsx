@@ -26,7 +26,8 @@ import { MatterReviewInbox } from "@/components/legal/MatterReviewInbox";
 import { QuickTimeEntry } from "@/components/legal/QuickTimeEntry";
 
 const PRIORITY_STYLES: Record<MatterWorkflowAction["priority"], string> = {
-  critical: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+  critical:
+    "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
   high: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   medium:
     "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)]",
@@ -244,7 +245,10 @@ export function MatterWorkflowCockpit() {
             aria-label="Aktenverständnis wird geladen"
           />
         ) : understandingError ? (
-          <Badge variant="default" className="gap-1.5 border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">
+          <Badge
+            variant="default"
+            className="gap-1.5 border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+          >
             <AlertTriangle size={13} aria-hidden="true" />
             Superbrain nicht erreichbar
           </Badge>

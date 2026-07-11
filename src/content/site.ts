@@ -946,8 +946,7 @@ export const FOOTER: Record<
 > = {
   en: _footerEn,
   de: {
-    tagline:
-      "KI-Kanzleisoftware, die nie vergisst — das Kanzlei-Brain für Anwälte in Europa.",
+    tagline: "KI-Kanzleisoftware, die nie vergisst — das Kanzlei-Brain für Anwälte in Europa.",
     columns: [
       {
         title: "Plattform",

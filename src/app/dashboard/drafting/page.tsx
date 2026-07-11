@@ -435,7 +435,9 @@ export default function DraftingPage() {
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
             {f.formState.errors.title && (
-              <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{f.formState.errors.title.message}</p>
+              <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
+                {f.formState.errors.title.message}
+              </p>
             )}
           </div>
           <div>
@@ -486,7 +488,9 @@ export default function DraftingPage() {
             className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           />
           {f.formState.errors.facts && (
-            <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{f.formState.errors.facts.message}</p>
+            <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
+              {f.formState.errors.facts.message}
+            </p>
           )}
         </div>
         <div>
@@ -576,7 +580,11 @@ export default function DraftingPage() {
                 title={t("drafting.btn_copy")}
                 aria-label={t("drafting.btn_copy")}
               >
-                {copied ? <Check size={14} className="text-[color:var(--ds-success-text)]" /> : <Copy size={14} />}
+                {copied ? (
+                  <Check size={14} className="text-[color:var(--ds-success-text)]" />
+                ) : (
+                  <Copy size={14} />
+                )}
               </button>
             </div>
           </div>

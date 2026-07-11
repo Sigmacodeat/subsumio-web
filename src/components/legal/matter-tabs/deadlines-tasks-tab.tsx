@@ -515,7 +515,8 @@ export function DeadlinesTasksTab() {
                   warning: {
                     label: t("cases.detail_dl_status_warning"),
                     color: "text-[color:var(--ds-warning-text)]",
-                    border: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]",
+                    border:
+                      "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]",
                   },
                   critical: {
                     label: t("cases.detail_dl_status_critical"),
@@ -530,7 +531,8 @@ export function DeadlinesTasksTab() {
                   done: {
                     label: t("cases.detail_dl_status_done"),
                     color: "text-[color:var(--ds-success-text)]",
-                    border: "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]",
+                    border:
+                      "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]",
                   },
                 };
               const cfg = statusConfig[status];

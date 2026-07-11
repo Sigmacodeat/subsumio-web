@@ -15,7 +15,16 @@ function extractEnforcementAnalysis(json: unknown): {
   empfehlung: string;
 } {
   if (!json || typeof json !== "object")
-    return { vermoegenshoehe: 0, insolvenz_risiko: "", pfaendbar_count: 0, arrest_vorhanden: false, vollstreckungskosten: 0, gesamt_risiko: "", score: 0, empfehlung: "" };
+    return {
+      vermoegenshoehe: 0,
+      insolvenz_risiko: "",
+      pfaendbar_count: 0,
+      arrest_vorhanden: false,
+      vollstreckungskosten: 0,
+      gesamt_risiko: "",
+      score: 0,
+      empfehlung: "",
+    };
   const obj = json as Record<string, unknown>;
   const vermoegen = obj.vermoegenslage as Record<string, unknown> | undefined;
   const insolvenz = obj.insolvenzrisiko as Record<string, unknown> | undefined;
@@ -24,13 +33,20 @@ function extractEnforcementAnalysis(json: unknown): {
   const kosten = obj.vollstreckungskosten as Record<string, unknown> | undefined;
   const risiko = obj.vollstreckungsrisiko as Record<string, unknown> | undefined;
   return {
-    vermoegenshoehe: typeof vermoegen?.geschaetzte_vermoegenshoehe === "number" ? vermoegen.geschaetzte_vermoegenshoehe : 0,
+    vermoegenshoehe:
+      typeof vermoegen?.geschaetzte_vermoegenshoehe === "number"
+        ? vermoegen.geschaetzte_vermoegenshoehe
+        : 0,
     insolvenz_risiko: typeof insolvenz?.risiko === "string" ? insolvenz.risiko : "",
     pfaendbar_count: pfaendbarkeit.length,
     arrest_vorhanden: Boolean(arrest?.vorhanden),
-    vollstreckungskosten: typeof kosten?.geschaetzte_kosten === "number" ? kosten.geschaetzte_kosten : 0,
+    vollstreckungskosten:
+      typeof kosten?.geschaetzte_kosten === "number" ? kosten.geschaetzte_kosten : 0,
     gesamt_risiko: typeof risiko?.gesamt_risiko === "string" ? risiko.gesamt_risiko : "",
-    score: typeof obj.overall_vollstreckbarkeit_score === "number" ? obj.overall_vollstreckbarkeit_score : 0,
+    score:
+      typeof obj.overall_vollstreckbarkeit_score === "number"
+        ? obj.overall_vollstreckbarkeit_score
+        : 0,
     empfehlung: String(obj.empfehlung ?? ""),
   };
 }
@@ -46,12 +62,35 @@ describe("enforcement-analyzer extraction", () => {
       },
       insolvenzrisiko: { risiko: "gering", indikatoren: [], einschaetzung: "Gegner solvent" },
       pfaendbarkeit: [
-        { vermoegenswert: "Liegenschaft Wien 1010", pfandbar: true, art: "Liegenschaftsexekution (§ 50 EO)", erwarteter_erloes: 200000, risiken: ["Dauert 6-12 Monate"] },
-        { vermoegenswert: "Bankkonto", pfandbar: true, art: "Forderungspfändung (§ 291 EO)", erwarteter_erloes: 15000, risiken: [] },
+        {
+          vermoegenswert: "Liegenschaft Wien 1010",
+          pfandbar: true,
+          art: "Liegenschaftsexekution (§ 50 EO)",
+          erwarteter_erloes: 200000,
+          risiken: ["Dauert 6-12 Monate"],
+        },
+        {
+          vermoegenswert: "Bankkonto",
+          pfandbar: true,
+          art: "Forderungspfändung (§ 291 EO)",
+          erwarteter_erloes: 15000,
+          risiken: [],
+        },
       ],
-      arrestgruende: { vorhanden: true, gruende: ["Gegner plant Vermögensverschiebung (ON 18)"], empfehlung: "Arrestantrag stellen (§ 379 EO)" },
-      vollstreckungskosten: { geschaetzte_kosten: 5000, aufschluesselung: ["Gerichtsvollzieher: €1.000", "Rechtsanwalt: €3.000"] },
-      vollstreckungsrisiko: { gesamt_risiko: "mittel", risiken: ["Vermögensverschiebung vor Urteil"], gegenmassnahmen: ["Arrestantrag"] },
+      arrestgruende: {
+        vorhanden: true,
+        gruende: ["Gegner plant Vermögensverschiebung (ON 18)"],
+        empfehlung: "Arrestantrag stellen (§ 379 EO)",
+      },
+      vollstreckungskosten: {
+        geschaetzte_kosten: 5000,
+        aufschluesselung: ["Gerichtsvollzieher: €1.000", "Rechtsanwalt: €3.000"],
+      },
+      vollstreckungsrisiko: {
+        gesamt_risiko: "mittel",
+        risiken: ["Vermögensverschiebung vor Urteil"],
+        gegenmassnahmen: ["Arrestantrag"],
+      },
       overall_vollstreckbarkeit_score: 75,
       empfehlung: "Vollstreckung wahrscheinlich — Arrest empfohlen",
     };
@@ -67,8 +106,16 @@ describe("enforcement-analyzer extraction", () => {
 
   it("handles insolvent opponent (high risk)", () => {
     const json = {
-      vermoegenslage: { bekannte_vermoegenswerte: [], geschaetzte_vermoegenshoehe: 0, unsicherheit: "hoch" },
-      insolvenzrisiko: { risiko: "hoch", indikatoren: ["Insolvenzverfahren anhängig"], einschaetzung: "§ 17 InsO" },
+      vermoegenslage: {
+        bekannte_vermoegenswerte: [],
+        geschaetzte_vermoegenshoehe: 0,
+        unsicherheit: "hoch",
+      },
+      insolvenzrisiko: {
+        risiko: "hoch",
+        indikatoren: ["Insolvenzverfahren anhängig"],
+        einschaetzung: "§ 17 InsO",
+      },
       pfaendbarkeit: [],
       arrestgruende: { vorhanden: false, gruende: [] },
       vollstreckungskosten: { geschaetzte_kosten: 0 },
@@ -104,7 +151,16 @@ function extractAppealRisk(json: unknown): {
   empfehlung: string;
 } {
   if (!json || typeof json !== "object")
-    return { berufungsgruende_count: 0, berufung_wahrscheinlichkeit: 0, revisions_wahrscheinlichkeit: 0, eugh_moeglich: false, egmr_moeglich: false, kosten_gegner: 0, score: 0, empfehlung: "" };
+    return {
+      berufungsgruende_count: 0,
+      berufung_wahrscheinlichkeit: 0,
+      revisions_wahrscheinlichkeit: 0,
+      eugh_moeglich: false,
+      egmr_moeglich: false,
+      kosten_gegner: 0,
+      score: 0,
+      empfehlung: "",
+    };
   const obj = json as Record<string, unknown>;
   const gruende = Array.isArray(obj.berufungsgruende) ? obj.berufungsgruende : [];
   const aussicht = obj.berufungsaussicht_gegner as Record<string, unknown> | undefined;
@@ -114,12 +170,18 @@ function extractAppealRisk(json: unknown): {
   const kosten = obj.kostenrisiko_berufung as Record<string, unknown> | undefined;
   return {
     berufungsgruende_count: gruende.length,
-    berufung_wahrscheinlichkeit: typeof aussicht?.gesamt_wahrscheinlichkeit === "number" ? aussicht.gesamt_wahrscheinlichkeit : 0,
-    revisions_wahrscheinlichkeit: typeof revision?.wahrscheinlichkeit === "number" ? revision.wahrscheinlichkeit : 0,
+    berufung_wahrscheinlichkeit:
+      typeof aussicht?.gesamt_wahrscheinlichkeit === "number"
+        ? aussicht.gesamt_wahrscheinlichkeit
+        : 0,
+    revisions_wahrscheinlichkeit:
+      typeof revision?.wahrscheinlichkeit === "number" ? revision.wahrscheinlichkeit : 0,
     eugh_moeglich: Boolean(europa?.eugh_vorabentscheidung_moeglich),
     egmr_moeglich: Boolean(emrk?.moeglich),
-    kosten_gegner: typeof kosten?.geschaetzte_kosten_gegner === "number" ? kosten.geschaetzte_kosten_gegner : 0,
-    score: typeof obj.overall_berufungsrisiko_score === "number" ? obj.overall_berufungsrisiko_score : 0,
+    kosten_gegner:
+      typeof kosten?.geschaetzte_kosten_gegner === "number" ? kosten.geschaetzte_kosten_gegner : 0,
+    score:
+      typeof obj.overall_berufungsrisiko_score === "number" ? obj.overall_berufungsrisiko_score : 0,
     empfehlung: String(obj.empfehlung ?? ""),
   };
 }
@@ -128,14 +190,41 @@ describe("appeal-risk-analyzer extraction", () => {
   it("extracts appeal grounds and success probability", () => {
     const json = {
       berufungsgruende: [
-        { grund: "Rechtsfehler: Subsumtion § 1 AHG", typ: "rechtsfehler", wahrscheinlichkeit: "mittel", erfolgsaussicht: 40, detail: "Hoheitliches Handeln nicht geprüft" },
-        { grund: "Verfahrensfehler: Gehör verletzt", typ: "verfahrensfehler", wahrscheinlichkeit: "gering", erfolgsaussicht: 15, detail: "Beweisantrag abgelehnt" },
+        {
+          grund: "Rechtsfehler: Subsumtion § 1 AHG",
+          typ: "rechtsfehler",
+          wahrscheinlichkeit: "mittel",
+          erfolgsaussicht: 40,
+          detail: "Hoheitliches Handeln nicht geprüft",
+        },
+        {
+          grund: "Verfahrensfehler: Gehör verletzt",
+          typ: "verfahrensfehler",
+          wahrscheinlichkeit: "gering",
+          erfolgsaussicht: 15,
+          detail: "Beweisantrag abgelehnt",
+        },
       ],
-      berufungsaussicht_gegner: { gesamt_wahrscheinlichkeit: 30, hauptargument: "Subsumtionsfehler", instanz: "OLG Wien" },
-      revisionsrisiko: { wahrscheinlichkeit: 10, instanz: "OGH", voraussetzung: "Erhebliche Rechtsfrage", begruendung: "Nicht gegeben" },
-      europa_recht: { eugh_vorabentscheidung_moeglich: false, grund: "Keine unionsrechtliche Frage" },
+      berufungsaussicht_gegner: {
+        gesamt_wahrscheinlichkeit: 30,
+        hauptargument: "Subsumtionsfehler",
+        instanz: "OLG Wien",
+      },
+      revisionsrisiko: {
+        wahrscheinlichkeit: 10,
+        instanz: "OGH",
+        voraussetzung: "Erhebliche Rechtsfrage",
+        begruendung: "Nicht gegeben",
+      },
+      europa_recht: {
+        eugh_vorabentscheidung_moeglich: false,
+        grund: "Keine unionsrechtliche Frage",
+      },
       emrk_beschwerde: { moeglich: false, grund: "Keine MR-Verletzung" },
-      kostenrisiko_berufung: { geschaetzte_kosten_gegner: 15000, aufschluesselung: ["Anwalt: €8.000", "Gericht: €4.000"] },
+      kostenrisiko_berufung: {
+        geschaetzte_kosten_gegner: 15000,
+        aufschluesselung: ["Anwalt: €8.000", "Gericht: €4.000"],
+      },
       overall_berufungsrisiko_score: 30,
       empfehlung: "Berufungsrisiko mittel — Settlement empfohlen",
     };
@@ -152,9 +241,18 @@ describe("appeal-risk-analyzer extraction", () => {
   it("handles high appeal risk with EGMR possibility", () => {
     const json = {
       berufungsgruende: [
-        { grund: "Schwerer Verfahrensfehler", typ: "verfahrensfehler", wahrscheinlichkeit: "hoch", erfolgsaussicht: 70 },
+        {
+          grund: "Schwerer Verfahrensfehler",
+          typ: "verfahrensfehler",
+          wahrscheinlichkeit: "hoch",
+          erfolgsaussicht: 70,
+        },
       ],
-      berufungsaussicht_gegner: { gesamt_wahrscheinlichkeit: 65, hauptargument: "Gehör verletzt", instanz: "OLG" },
+      berufungsaussicht_gegner: {
+        gesamt_wahrscheinlichkeit: 65,
+        hauptargument: "Gehör verletzt",
+        instanz: "OLG",
+      },
       revisionsrisiko: { wahrscheinlichkeit: 25, instanz: "OGH" },
       europa_recht: { eugh_vorabentscheidung_moeglich: true, grund: "DSGVO Frage" },
       emrk_beschwerde: { moeglich: true, grund: "Art 6 EMRK verletzt" },
@@ -190,7 +288,17 @@ function extractProceduralStrategy(json: unknown): {
   empfehlung: string;
 } {
   if (!json || typeof json !== "object")
-    return { schritte_count: 0, einstweilige_verfuegung: false, beweissicherung: false, prozesskostensicherheit: false, teilklage: false, mediation: false, gesamtkosten: 0, score: 0, empfehlung: "" };
+    return {
+      schritte_count: 0,
+      einstweilige_verfuegung: false,
+      beweissicherung: false,
+      prozesskostensicherheit: false,
+      teilklage: false,
+      mediation: false,
+      gesamtkosten: 0,
+      score: 0,
+      empfehlung: "",
+    };
   const obj = json as Record<string, unknown>;
   const schritte = Array.isArray(obj.empfohlene_schritte) ? obj.empfohlene_schritte : [];
   const verfuegung = obj.einstweilige_verfuegung as Record<string, unknown> | undefined;
@@ -205,7 +313,8 @@ function extractProceduralStrategy(json: unknown): {
     prozesskostensicherheit: Boolean(sicherheit?.erforderlich),
     teilklage: Boolean(teilklage?.empfohlen),
     mediation: Boolean(mediation?.empfohlen),
-    gesamtkosten: typeof obj.geschaetzte_gesamtkosten === "number" ? obj.geschaetzte_gesamtkosten : 0,
+    gesamtkosten:
+      typeof obj.geschaetzte_gesamtkosten === "number" ? obj.geschaetzte_gesamtkosten : 0,
     score: typeof obj.overall_strategie_score === "number" ? obj.overall_strategie_score : 0,
     empfehlung: String(obj.empfehlung ?? ""),
   };
@@ -215,11 +324,40 @@ describe("procedural-strategist extraction", () => {
   it("extracts multi-step strategy with arrest and evidence preservation", () => {
     const json = {
       empfohlene_schritte: [
-        { schritt: 1, aktion: "Arrestantrag (§ 379 EO)", dringlichkeit: "hoch", dauer: "1-2 Wochen", kosten: 2000, erfolgsaussicht: 80, begruendung: "Vermögensverschiebung droht" },
-        { schritt: 2, aktion: "Beweissicherungsverfahren (§ 234 ZPO)", dringlichkeit: "mittel", dauer: "2-4 Wochen", kosten: 3000, erfolgsaussicht: 90, begruendung: "Zeugenalter hoch" },
-        { schritt: 3, aktion: "Klage LG Wien", dringlichkeit: "mittel", dauer: "12-18 Monate", kosten: 15000, erfolgsaussicht: 65, begruendung: "Hauptanspruch" },
+        {
+          schritt: 1,
+          aktion: "Arrestantrag (§ 379 EO)",
+          dringlichkeit: "hoch",
+          dauer: "1-2 Wochen",
+          kosten: 2000,
+          erfolgsaussicht: 80,
+          begruendung: "Vermögensverschiebung droht",
+        },
+        {
+          schritt: 2,
+          aktion: "Beweissicherungsverfahren (§ 234 ZPO)",
+          dringlichkeit: "mittel",
+          dauer: "2-4 Wochen",
+          kosten: 3000,
+          erfolgsaussicht: 90,
+          begruendung: "Zeugenalter hoch",
+        },
+        {
+          schritt: 3,
+          aktion: "Klage LG Wien",
+          dringlichkeit: "mittel",
+          dauer: "12-18 Monate",
+          kosten: 15000,
+          erfolgsaussicht: 65,
+          begruendung: "Hauptanspruch",
+        },
       ],
-      einstweilige_verfuegung: { empfohlen: true, grund: "Vermögensverschiebungsrisiko", voraussetzungen_erfuellt: true, paragraph: "§ 381 EO" },
+      einstweilige_verfuegung: {
+        empfohlen: true,
+        grund: "Vermögensverschiebungsrisiko",
+        voraussetzungen_erfuellt: true,
+        paragraph: "§ 381 EO",
+      },
       beweissicherung: { empfohlen: true, grund: "Zeugenalter", paragraph: "§ 234 ZPO" },
       prozesskostensicherheit: { erforderlich: false, grund: "Inländischer Wohnsitz" },
       teilklage_empfohlen: { empfohlen: true, teilbetrag: 10000, begruendung: "Schneller Titel" },
@@ -244,7 +382,15 @@ describe("procedural-strategist extraction", () => {
   it("handles simple strategy (just file lawsuit)", () => {
     const json = {
       empfohlene_schritte: [
-        { schritt: 1, aktion: "Klage LG Berlin", dringlichkeit: "mittel", dauer: "12 Monate", kosten: 12000, erfolgsaussicht: 70, begruendung: "Standardverfahren" },
+        {
+          schritt: 1,
+          aktion: "Klage LG Berlin",
+          dringlichkeit: "mittel",
+          dauer: "12 Monate",
+          kosten: 12000,
+          erfolgsaussicht: 70,
+          begruendung: "Standardverfahren",
+        },
       ],
       einstweilige_verfuegung: { empfohlen: false },
       beweissicherung: { empfohlen: false },
@@ -266,8 +412,24 @@ describe("procedural-strategist extraction", () => {
   it("handles foreign plaintiff requiring security", () => {
     const json = {
       empfohlene_schritte: [
-        { schritt: 1, aktion: "Sicherheitsleistung", dringlichkeit: "hoch", dauer: "2 Wochen", kosten: 5000, erfolgsaussicht: 100, begruendung: "Ausländischer Kläger" },
-        { schritt: 2, aktion: "Klage", dringlichkeit: "mittel", dauer: "12 Monate", kosten: 15000, erfolgsaussicht: 60, begruendung: "Hauptanspruch" },
+        {
+          schritt: 1,
+          aktion: "Sicherheitsleistung",
+          dringlichkeit: "hoch",
+          dauer: "2 Wochen",
+          kosten: 5000,
+          erfolgsaussicht: 100,
+          begruendung: "Ausländischer Kläger",
+        },
+        {
+          schritt: 2,
+          aktion: "Klage",
+          dringlichkeit: "mittel",
+          dauer: "12 Monate",
+          kosten: 15000,
+          erfolgsaussicht: 60,
+          begruendung: "Hauptanspruch",
+        },
       ],
       prozesskostensicherheit: { erforderlich: true, grund: "§ 110 ZPO — ausländischer Kläger" },
       einstweilige_verfuegung: { empfohlen: false },

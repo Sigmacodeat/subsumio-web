@@ -84,19 +84,28 @@ function parseArgs(argv: string[]): ParsedArgs {
   const args = argv.slice(2);
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === "--output" && i + 1 < args.length) { out.outputPath = args[++i]; continue; }
-    if (a === "--limit" && i + 1 < args.length) { out.limit = parseInt(args[++i], 10); continue; }
+    if (a === "--output" && i + 1 < args.length) {
+      out.outputPath = args[++i];
+      continue;
+    }
+    if (a === "--limit" && i + 1 < args.length) {
+      out.limit = parseInt(args[++i], 10);
+      continue;
+    }
     if (a === "--help" || a === "-h") {
       process.stderr.write(
         `Usage: bun run src/eval/de-legal-retrieval/phase4-scale-isolation.ts <fixture.jsonl> [options]\n` +
-        `  --output PATH   Write JSONL results to PATH\n` +
-        `  --limit N       Only run first N questions (for quick tests)\n`
+          `  --output PATH   Write JSONL results to PATH\n` +
+          `  --limit N       Only run first N questions (for quick tests)\n`
       );
       process.exit(0);
     }
     if (!a.startsWith("--") && !out.fixturePath) out.fixturePath = a;
   }
-  if (!out.fixturePath) { process.stderr.write("Error: fixture path required\n"); process.exit(1); }
+  if (!out.fixturePath) {
+    process.stderr.write("Error: fixture path required\n");
+    process.exit(1);
+  }
   return out;
 }
 
@@ -104,10 +113,18 @@ function parseArgs(argv: string[]): ParsedArgs {
 
 function loadFixture(path: string): PracticeQuestion[] {
   const raw = readFileSync(path, "utf-8");
-  return raw.trim().split("\n").filter((l) => l.trim() && !l.startsWith("#")).map((l) => JSON.parse(l));
+  return raw
+    .trim()
+    .split("\n")
+    .filter((l) => l.trim() && !l.startsWith("#"))
+    .map((l) => JSON.parse(l));
 }
 
-interface CorpusFile { slug: string; content: string; abbreviation: string; }
+interface CorpusFile {
+  slug: string;
+  content: string;
+  abbreviation: string;
+}
 
 function loadLawCorpus(): CorpusFile[] {
   const corpusDir = join(REPO_ROOT, "law-corpus/de");
@@ -195,7 +212,9 @@ async function runScaleTest(
     const applicableQuestions = questions.filter((q) =>
       q.expected_slugs.some((s) => tierSlugs.has(`law/de/${s}`))
     );
-    process.stderr.write(`  ${applicableQuestions.length}/${questions.length} questions have expected law in this tier\n`);
+    process.stderr.write(
+      `  ${applicableQuestions.length}/${questions.length} questions have expected law in this tier\n`
+    );
 
     let hit5 = 0;
     let empty = 0;
@@ -235,7 +254,9 @@ async function runScaleTest(
         }
       } catch (err: any) {
         errors++;
-        process.stderr.write(`  ${qIdx}/${applicableQuestions.length} ${q.question_id} ERROR: ${err.message}\n`);
+        process.stderr.write(
+          `  ${qIdx}/${applicableQuestions.length} ${q.question_id} ERROR: ${err.message}\n`
+        );
       }
     }
 
@@ -256,11 +277,14 @@ async function runScaleTest(
       `  RESULT: Hit@5=${result.hit_at_5_pct.toFixed(1)}% MRR=${result.mrr.toFixed(3)} empty=${empty} errors=${errors}\n`
     );
     for (const [area, stats] of Object.entries(perArea)) {
-      process.stderr.write(`    ${area} (n=${stats.n}): Hit@5=${((stats.hit_at_5 / stats.n) * 100).toFixed(1)}%\n`);
+      process.stderr.write(
+        `    ${area} (n=${stats.n}): Hit@5=${((stats.hit_at_5 / stats.n) * 100).toFixed(1)}%\n`
+      );
     }
 
     results.push(result);
-    if (emitter) emitter.emit({ kind: "scale_result", ...result } as unknown as Record<string, unknown>);
+    if (emitter)
+      emitter.emit({ kind: "scale_result", ...result } as unknown as Record<string, unknown>);
 
     await engine.disconnect();
   }
@@ -297,8 +321,12 @@ async function runIsolationTest(
   const tenantBSlugs = new Set(tenantBFiles.map((f) => `law/de/${f.slug}`));
 
   process.stderr.write(`\n[phase4-isolation] === Setting up multi-tenant engine ===\n`);
-  process.stderr.write(`  Tenant-A: ${tenantAFiles.length} files (${tenantAFiles.map(f => f.abbreviation).join(", ")})\n`);
-  process.stderr.write(`  Tenant-B: ${tenantBFiles.length} files (${tenantBFiles.map(f => f.abbreviation).join(", ")})\n`);
+  process.stderr.write(
+    `  Tenant-A: ${tenantAFiles.length} files (${tenantAFiles.map((f) => f.abbreviation).join(", ")})\n`
+  );
+  process.stderr.write(
+    `  Tenant-B: ${tenantBFiles.length} files (${tenantBFiles.map((f) => f.abbreviation).join(", ")})\n`
+  );
 
   const engine = new PGLiteEngine();
   await engine.connect({});
@@ -336,14 +364,42 @@ async function runIsolationTest(
 
   // Test queries — use questions that should match tenant-a laws
   const testQueries = [
-    { query: "Was ist ein Kaufmann im Sinne des Handelsgesetzbuchs?", expected_tenant: "tenant-a", expected_law: "hgb" },
+    {
+      query: "Was ist ein Kaufmann im Sinne des Handelsgesetzbuchs?",
+      expected_tenant: "tenant-a",
+      expected_law: "hgb",
+    },
     { query: "Wer gilt als Handelsgewerbe?", expected_tenant: "tenant-a", expected_law: "hgb" },
-    { query: "Wann ist eine Tat ein Verbrechen?", expected_tenant: "tenant-a", expected_law: "stgb" },
-    { query: "Was ist Notwehr und wann darf man sich verteidigen?", expected_tenant: "tenant-a", expected_law: "stgb" },
-    { query: "Was ist die regelmäßige Verjährungsfrist?", expected_tenant: "tenant-a", expected_law: "bgb" },
-    { query: "Wie funktioniert das Mahnverfahren?", expected_tenant: "tenant-a", expected_law: "zpo" },
-    { query: "Was ist das Steuergeheimnis und wer ist daran gebunden?", expected_tenant: "tenant-a", expected_law: "ao" },
-    { query: "Was ist eine Betriebstätte im Steuerrecht?", expected_tenant: "tenant-a", expected_law: "ao" },
+    {
+      query: "Wann ist eine Tat ein Verbrechen?",
+      expected_tenant: "tenant-a",
+      expected_law: "stgb",
+    },
+    {
+      query: "Was ist Notwehr und wann darf man sich verteidigen?",
+      expected_tenant: "tenant-a",
+      expected_law: "stgb",
+    },
+    {
+      query: "Was ist die regelmäßige Verjährungsfrist?",
+      expected_tenant: "tenant-a",
+      expected_law: "bgb",
+    },
+    {
+      query: "Wie funktioniert das Mahnverfahren?",
+      expected_tenant: "tenant-a",
+      expected_law: "zpo",
+    },
+    {
+      query: "Was ist das Steuergeheimnis und wer ist daran gebunden?",
+      expected_tenant: "tenant-a",
+      expected_law: "ao",
+    },
+    {
+      query: "Was ist eine Betriebstätte im Steuerrecht?",
+      expected_tenant: "tenant-a",
+      expected_law: "ao",
+    },
   ];
 
   // ── Test B: Tenant-A isolation ──
@@ -376,13 +432,16 @@ async function runIsolationTest(
         passed,
       };
       isolationResults.push(ir);
-      if (emitter) emitter.emit({ kind: "isolation_result", ...ir } as unknown as Record<string, unknown>);
+      if (emitter)
+        emitter.emit({ kind: "isolation_result", ...ir } as unknown as Record<string, unknown>);
 
       process.stderr.write(
         `    ${tq.expected_law}: ${results.length} results, leaked=${leakedSlugs.length} ${passed ? "✓" : "✗ LEAK"}\n`
       );
       if (!passed) {
-        process.stderr.write(`      LEAKED: ${leakedSlugs.join(", ")} from sources: ${leakedSources.join(", ")}\n`);
+        process.stderr.write(
+          `      LEAKED: ${leakedSlugs.join(", ")} from sources: ${leakedSources.join(", ")}\n`
+        );
       }
     } catch (err: any) {
       const ir: IsolationResult = {
@@ -398,7 +457,8 @@ async function runIsolationTest(
         error: String(err.message),
       };
       isolationResults.push(ir);
-      if (emitter) emitter.emit({ kind: "isolation_result", ...ir } as unknown as Record<string, unknown>);
+      if (emitter)
+        emitter.emit({ kind: "isolation_result", ...ir } as unknown as Record<string, unknown>);
       process.stderr.write(`    ${tq.expected_law}: ERROR: ${err.message}\n`);
     }
   }
@@ -410,7 +470,10 @@ async function runIsolationTest(
     { query: "Was ist das Gesetz gegen den unlauteren Wettbewerb?", expected_law: "uwg" },
     { query: "Was sind Grundrechte und welche gibt es?", expected_law: "gg" },
     { query: "Was ist das Baugesetzbuch und was regelt es?", expected_law: "baugb" },
-    { query: "Wie funktioniert die Zwangsvollstreckung in das unbewegliche Vermögen?", expected_law: "zvg" },
+    {
+      query: "Wie funktioniert die Zwangsvollstreckung in das unbewegliche Vermögen?",
+      expected_law: "zvg",
+    },
     { query: "Was ist die Insolvenzordnung?", expected_law: "inso" },
     { query: "Was ist das Urheberrechtsgesetz?", expected_law: "urhg" },
     { query: "Was ist das Gewerbeordnung?", expected_law: "gewo" },
@@ -445,13 +508,16 @@ async function runIsolationTest(
         passed,
       };
       isolationResults.push(ir);
-      if (emitter) emitter.emit({ kind: "isolation_result", ...ir } as unknown as Record<string, unknown>);
+      if (emitter)
+        emitter.emit({ kind: "isolation_result", ...ir } as unknown as Record<string, unknown>);
 
       process.stderr.write(
         `    ${tq.expected_law}: ${results.length} results, leaked=${leakedSlugs.length} ${passed ? "✓" : "✗ LEAK"}\n`
       );
       if (!passed) {
-        process.stderr.write(`      LEAKED: ${leakedSlugs.join(", ")} from sources: ${leakedSources.join(", ")}\n`);
+        process.stderr.write(
+          `      LEAKED: ${leakedSlugs.join(", ")} from sources: ${leakedSources.join(", ")}\n`
+        );
       }
     } catch (err: any) {
       const ir: IsolationResult = {
@@ -467,7 +533,8 @@ async function runIsolationTest(
         error: String(err.message),
       };
       isolationResults.push(ir);
-      if (emitter) emitter.emit({ kind: "isolation_result", ...ir } as unknown as Record<string, unknown>);
+      if (emitter)
+        emitter.emit({ kind: "isolation_result", ...ir } as unknown as Record<string, unknown>);
       process.stderr.write(`    ${tq.expected_law}: ERROR: ${err.message}\n`);
     }
   }
@@ -494,7 +561,8 @@ async function runIsolationTest(
       const resultSlugs = results.map((r) => r.slug);
       const resultSources = results.map((r) => r.source_id ?? "unknown");
       const uniqueSources = [...new Set(resultSources)];
-      const hasBothTenants = uniqueSources.includes("tenant-a") && uniqueSources.includes("tenant-b");
+      const hasBothTenants =
+        uniqueSources.includes("tenant-a") && uniqueSources.includes("tenant-b");
       const leakedSources = resultSources.filter((s) => s !== "tenant-a" && s !== "tenant-b");
 
       const passed = leakedSources.length === 0 && results.length > 0;
@@ -511,7 +579,8 @@ async function runIsolationTest(
         passed,
       };
       federatedResults.push(ir);
-      if (emitter) emitter.emit({ kind: "federated_result", ...ir } as unknown as Record<string, unknown>);
+      if (emitter)
+        emitter.emit({ kind: "federated_result", ...ir } as unknown as Record<string, unknown>);
 
       process.stderr.write(
         `    ${results.length} results, sources=[${uniqueSources.join(", ")}] both=${hasBothTenants} ${passed ? "✓" : "✗"}\n`
@@ -530,17 +599,15 @@ async function runIsolationTest(
         error: String(err.message),
       };
       federatedResults.push(ir);
-      if (emitter) emitter.emit({ kind: "federated_result", ...ir } as unknown as Record<string, unknown>);
+      if (emitter)
+        emitter.emit({ kind: "federated_result", ...ir } as unknown as Record<string, unknown>);
       process.stderr.write(`    ERROR: ${err.message}\n`);
     }
   }
 
   // ── Test D: No sourceId (unscoped search — should return from both) ──
   process.stderr.write(`\n  --- Test D: Unscoped search (no sourceId) ---\n`);
-  const unscopedQueries = [
-    "Was ist ein Kaufmann?",
-    "Was sind Grundrechte?",
-  ];
+  const unscopedQueries = ["Was ist ein Kaufmann?", "Was sind Grundrechte?"];
 
   for (const query of unscopedQueries) {
     try {
@@ -565,7 +632,8 @@ async function runIsolationTest(
         passed: results.length > 0,
       };
       isolationResults.push(ir);
-      if (emitter) emitter.emit({ kind: "isolation_result", ...ir } as unknown as Record<string, unknown>);
+      if (emitter)
+        emitter.emit({ kind: "isolation_result", ...ir } as unknown as Record<string, unknown>);
 
       process.stderr.write(
         `    ${results.length} results, sources=[${uniqueSources.join(", ")}]\n`
@@ -589,7 +657,9 @@ async function main() {
   let testQuestions = questions;
   if (opts.limit && opts.limit > 0) testQuestions = questions.slice(0, opts.limit);
 
-  process.stderr.write(`[phase4] loaded ${testQuestions.length} questions, ${corpusFiles.length} corpus files\n`);
+  process.stderr.write(
+    `[phase4] loaded ${testQuestions.length} questions, ${corpusFiles.length} corpus files\n`
+  );
 
   process.env.GBRAIN_QUERY_EMBED_TIMEOUT_MS = "30000";
 
@@ -619,13 +689,17 @@ async function main() {
   const zeroLeakage = isolationFailed === 0;
 
   process.stderr.write(`\n[phase4] ISOLATION SUMMARY:\n`);
-  process.stderr.write(`  Tests: ${isolationTotal}, Passed: ${isolationPassed}, Failed: ${isolationFailed}\n`);
+  process.stderr.write(
+    `  Tests: ${isolationTotal}, Passed: ${isolationPassed}, Failed: ${isolationFailed}\n`
+  );
   process.stderr.write(`  Zero cross-tenant leakage: ${zeroLeakage ? "✅ YES" : "❌ NO"}\n`);
 
   if (!zeroLeakage) {
     process.stderr.write(`\n  LEAK DETAILS:\n`);
     for (const ir of isolation.filter((r) => r.test !== "unscoped" && !r.passed)) {
-      process.stderr.write(`    ${ir.tenant} / "${ir.query.slice(0, 50)}...": leaked ${ir.leaked_slugs.length} slugs from ${ir.leaked_sources.length} sources\n`);
+      process.stderr.write(
+        `    ${ir.tenant} / "${ir.query.slice(0, 50)}...": leaked ${ir.leaked_slugs.length} slugs from ${ir.leaked_sources.length} sources\n`
+      );
     }
   }
 
@@ -637,7 +711,9 @@ async function main() {
   }).length;
 
   process.stderr.write(`\n[phase4] FEDERATED READ SUMMARY:\n`);
-  process.stderr.write(`  Tests: ${federated.length}, Passed: ${fedPassed}, Both tenants present: ${fedBoth}\n`);
+  process.stderr.write(
+    `  Tests: ${federated.length}, Passed: ${fedPassed}, Both tenants present: ${fedBoth}\n`
+  );
 
   // Final report
   const report: Phase4Report = {
@@ -668,10 +744,18 @@ async function main() {
   const federatedPass = fedPassed === federated.length;
 
   process.stderr.write(`\n[phase4] ═══ FINAL VERDICT ═══\n`);
-  process.stderr.write(`  Scale test (Hit@5 ≥ 90% at all tiers): ${scalePass ? "✅ PASS" : "❌ FAIL"}\n`);
-  process.stderr.write(`  Isolation test (zero leakage):          ${isolationPass ? "✅ PASS" : "❌ FAIL"}\n`);
-  process.stderr.write(`  Federated read (both tenants):          ${federatedPass ? "✅ PASS" : "❌ FAIL"}\n`);
-  process.stderr.write(`  Overall:                                ${scalePass && isolationPass && federatedPass ? "✅ ALL PASS" : "❌ FAILURES"}\n`);
+  process.stderr.write(
+    `  Scale test (Hit@5 ≥ 90% at all tiers): ${scalePass ? "✅ PASS" : "❌ FAIL"}\n`
+  );
+  process.stderr.write(
+    `  Isolation test (zero leakage):          ${isolationPass ? "✅ PASS" : "❌ FAIL"}\n`
+  );
+  process.stderr.write(
+    `  Federated read (both tenants):          ${federatedPass ? "✅ PASS" : "❌ FAIL"}\n`
+  );
+  process.stderr.write(
+    `  Overall:                                ${scalePass && isolationPass && federatedPass ? "✅ ALL PASS" : "❌ FAILURES"}\n`
+  );
 
   process.stderr.write(`\n[phase4] done.\n`);
 }

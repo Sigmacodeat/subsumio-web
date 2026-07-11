@@ -207,7 +207,11 @@ export default function ExperiencePage() {
         </TabButton>
       </div>
 
-      {error && <div className="rounded-md bg-[color:var(--ds-danger-bg)] p-3 text-sm text-[color:var(--ds-danger-text)]">{error}</div>}
+      {error && (
+        <div className="rounded-md bg-[color:var(--ds-danger-bg)] p-3 text-sm text-[color:var(--ds-danger-text)]">
+          {error}
+        </div>
+      )}
 
       {/* Who Knows Tab */}
       {tab === "who_knows" && (

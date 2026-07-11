@@ -99,7 +99,11 @@ const ICON_MAP = { Mail, MessageSquare, FileText };
 export default function ContactPage({ lang }: { lang: Lang }) {
   const c = (CONTENT as unknown as Record<string, typeof CONTENT.de>)[lang] ?? CONTENT.de;
   return (
-    <div data-tone="light" className="min-h-screen overflow-x-clip [background:var(--mk-bg)]" lang={lang}>
+    <div
+      data-tone="light"
+      className="min-h-screen overflow-x-clip [background:var(--mk-bg)]"
+      lang={lang}
+    >
       <PageHero
         badge={c.badge}
         h1a={c.h1a}
@@ -132,9 +136,7 @@ export default function ContactPage({ lang }: { lang: Lang }) {
                   <a href={ch.href} className="group rounded-2xl transition-all">
                     <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--brand-primary)] hover:shadow-xl">
                       <IconTile icon={Icon} />
-                      <h3 className={`mb-1 ${H3_CLASS}`}>
-                        {ch.title}
-                      </h3>
+                      <h3 className={`mb-1 ${H3_CLASS}`}>{ch.title}</h3>
                       <p className="brand-text mb-2 font-mono text-sm">{ch.value}</p>
                       <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
                         {ch.desc}

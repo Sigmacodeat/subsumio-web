@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,7 +37,10 @@ export function PracticeQuickCreateDialogs() {
   const [results, setResults] = useState("");
   const [followUp, setFollowUp] = useState("");
   const { data: cases = [] } = useDialogFetch<CaseOption[]>(kind !== null, async () =>
-    (await api.brain.listPages({ type: "legal_case", limit: 250 })).map(({ slug, title }) => ({ slug, title }))
+    (await api.brain.listPages({ type: "legal_case", limit: 250 })).map(({ slug, title }) => ({
+      slug,
+      title,
+    }))
   );
   const safeCases = cases ?? [];
 
@@ -67,7 +77,12 @@ export function PracticeQuickCreateDialogs() {
           title: description.trim(),
           type: "legal_follow_up",
           content: description.trim(),
-          frontmatter: { date, case_slug: caseSlug || undefined, completed: false, created_at: now },
+          frontmatter: {
+            date,
+            case_slug: caseSlug || undefined,
+            completed: false,
+            created_at: now,
+          },
         });
       } else if (kind === "phone") {
         await api.brain.createPage({
@@ -75,14 +90,26 @@ export function PracticeQuickCreateDialogs() {
           title: subject.trim(),
           type: "legal_phone_note",
           content: notes.trim(),
-          frontmatter: { caller: caller.trim(), case_slug: caseSlug || undefined, occurred_at: now, results: results.trim(), follow_up: followUp.trim() },
+          frontmatter: {
+            caller: caller.trim(),
+            case_slug: caseSlug || undefined,
+            occurred_at: now,
+            results: results.trim(),
+            follow_up: followUp.trim(),
+          },
         });
       }
-      addToast({ type: "success", title: t(kind === "phone" ? "practice.phone.created" : "practice.followup.created") });
+      addToast({
+        type: "success",
+        title: t(kind === "phone" ? "practice.phone.created" : "practice.followup.created"),
+      });
       window.dispatchEvent(new Event("subsumio:practice-data-changed"));
       close();
     } catch (error) {
-      addToast({ type: "error", title: error instanceof Error ? error.message : t("common.error") });
+      addToast({
+        type: "error",
+        title: error instanceof Error ? error.message : t("common.error"),
+      });
     } finally {
       setSubmitting(false);
     }
@@ -93,16 +120,116 @@ export function PracticeQuickCreateDialogs() {
       <DialogContent className="max-w-xl">
         <form onSubmit={submit}>
           <DialogHeader>
-            <DialogTitle>{t(kind === "phone" ? "practice.phone.title" : "practice.followup.new")}</DialogTitle>
-            <DialogDescription>{t(kind === "phone" ? "practice.phone.description" : "practice.followup.description")}</DialogDescription>
+            <DialogTitle>
+              {t(kind === "phone" ? "practice.phone.title" : "practice.followup.new")}
+            </DialogTitle>
+            <DialogDescription>
+              {t(kind === "phone" ? "practice.phone.description" : "practice.followup.description")}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-5">
-            {kind === "phone" && <><div className="grid gap-1.5"><Label htmlFor="phone-caller">{t("practice.phone.caller")}</Label><Input id="phone-caller" value={caller} onChange={(e) => setCaller(e.target.value)} required /></div><div className="grid gap-1.5"><Label htmlFor="phone-subject">{t("practice.phone.subject")}</Label><Input id="phone-subject" value={subject} onChange={(e) => setSubject(e.target.value)} required /></div></>}
-            {kind === "wiedervorlage" && <><div className="grid gap-1.5"><Label htmlFor="followup-description">{t("practice.followup.label")}</Label><Input id="followup-description" value={description} onChange={(e) => setDescription(e.target.value)} required /></div><div className="grid gap-1.5"><Label htmlFor="followup-date">{t("practice.date")}</Label><Input id="followup-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></div></>}
-            <div className="grid gap-1.5"><Label htmlFor="practice-case">{t("practice.case_optional")}</Label><select id="practice-case" value={caseSlug} onChange={(e) => setCaseSlug(e.target.value)} className="h-10 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 text-sm"><option value="">{t("practice.no_case")}</option>{safeCases.map((item) => <option key={item.slug} value={item.slug}>{item.title}</option>)}</select></div>
-            {kind === "phone" && <><div className="grid gap-1.5"><Label htmlFor="phone-notes">{t("practice.phone.notes")}</Label><Textarea id="phone-notes" value={notes} onChange={(e) => setNotes(e.target.value)} required rows={5} /></div><div className="grid gap-1.5"><Label htmlFor="phone-results">{t("practice.phone.results")}</Label><Textarea id="phone-results" value={results} onChange={(e) => setResults(e.target.value)} rows={2} /></div><div className="grid gap-1.5"><Label htmlFor="phone-followup">{t("practice.phone.followup")}</Label><Input id="phone-followup" value={followUp} onChange={(e) => setFollowUp(e.target.value)} /></div></>}
+            {kind === "phone" && (
+              <>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="phone-caller">{t("practice.phone.caller")}</Label>
+                  <Input
+                    id="phone-caller"
+                    value={caller}
+                    onChange={(e) => setCaller(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="phone-subject">{t("practice.phone.subject")}</Label>
+                  <Input
+                    id="phone-subject"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    required
+                  />
+                </div>
+              </>
+            )}
+            {kind === "wiedervorlage" && (
+              <>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="followup-description">{t("practice.followup.label")}</Label>
+                  <Input
+                    id="followup-description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="followup-date">{t("practice.date")}</Label>
+                  <Input
+                    id="followup-date"
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    required
+                  />
+                </div>
+              </>
+            )}
+            <div className="grid gap-1.5">
+              <Label htmlFor="practice-case">{t("practice.case_optional")}</Label>
+              <select
+                id="practice-case"
+                value={caseSlug}
+                onChange={(e) => setCaseSlug(e.target.value)}
+                className="h-10 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 text-sm"
+              >
+                <option value="">{t("practice.no_case")}</option>
+                {safeCases.map((item) => (
+                  <option key={item.slug} value={item.slug}>
+                    {item.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {kind === "phone" && (
+              <>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="phone-notes">{t("practice.phone.notes")}</Label>
+                  <Textarea
+                    id="phone-notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    required
+                    rows={5}
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="phone-results">{t("practice.phone.results")}</Label>
+                  <Textarea
+                    id="phone-results"
+                    value={results}
+                    onChange={(e) => setResults(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="phone-followup">{t("practice.phone.followup")}</Label>
+                  <Input
+                    id="phone-followup"
+                    value={followUp}
+                    onChange={(e) => setFollowUp(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
           </div>
-          <DialogFooter><Button type="button" variant="outline" onClick={close}>{t("common.cancel")}</Button><Button type="submit" disabled={submitting}>{submitting && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}{t("common.save")}</Button></DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={close}>
+              {t("common.cancel")}
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
+              {t("common.save")}
+            </Button>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

@@ -699,7 +699,9 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
               <span
                 className={cn(
                   "text-xs",
-                  saveNotice === t("strategy.save_success") ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-danger-text)]"
+                  saveNotice === t("strategy.save_success")
+                    ? "text-[color:var(--ds-success-text)]"
+                    : "text-[color:var(--ds-danger-text)]"
                 )}
               >
                 {saveNotice}
@@ -835,10 +837,12 @@ function SwotCard({
   emptyText?: string;
 }) {
   const colorClasses: Record<string, string> = {
-    emerald: "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
+    emerald:
+      "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]",
     red: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
     blue: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
-    amber: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+    amber:
+      "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
   };
 
   return (

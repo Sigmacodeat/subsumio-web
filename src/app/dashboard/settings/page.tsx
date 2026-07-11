@@ -149,7 +149,11 @@ function MaskedInput({
             onClick={copy}
             className="p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"
           >
-            {copied ? <Check size={13} className="text-[color:var(--ds-success-text)]" /> : <Copy size={13} />}
+            {copied ? (
+              <Check size={13} className="text-[color:var(--ds-success-text)]" />
+            ) : (
+              <Copy size={13} />
+            )}
           </button>
         )}
       </div>
@@ -533,13 +537,17 @@ function SettingsPageInner() {
                       <AlertTriangle
                         size={14}
                         className={
-                          engineStatus === "online" ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-warning-text)]"
+                          engineStatus === "online"
+                            ? "text-[color:var(--ds-success-text)]"
+                            : "text-[color:var(--ds-warning-text)]"
                         }
                       />
                       <span
                         className={cn(
                           "text-sm",
-                          engineStatus === "online" ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-warning-text)]"
+                          engineStatus === "online"
+                            ? "text-[color:var(--ds-success-text)]"
+                            : "text-[color:var(--ds-warning-text)]"
                         )}
                       >
                         {engineStatus === "checking"
@@ -699,7 +707,9 @@ function SettingsPageInner() {
                       onClick={() => setDreamEnabled(!dreamEnabled)}
                       className={cn(
                         "relative h-6 w-10 rounded-full transition-colors",
-                        dreamEnabled ? "bg-[color:var(--ds-warning-solid)]" : "bg-[color:var(--ds-border)]"
+                        dreamEnabled
+                          ? "bg-[color:var(--ds-warning-solid)]"
+                          : "bg-[color:var(--ds-border)]"
                       )}
                     >
                       <span
@@ -945,7 +955,10 @@ function SettingsPageInner() {
                 {(tarifModellWatch === "rvg" || tarifModellWatch === "ratg") && (
                   <div className="py-4">
                     <div className="flex items-start gap-3 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2">
-                      <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+                      <AlertTriangle
+                        size={14}
+                        className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+                      />
                       <p className="text-xs text-[color:var(--ds-warning-text)]">
                         {tarifModellWatch === "rvg"
                           ? t("settings.rvg_info")

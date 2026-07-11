@@ -135,7 +135,10 @@ export default function ClientPortalPage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4" role="note">
+          <div
+            className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4"
+            role="note"
+          >
             <div className="flex items-start gap-2">
               <AlertTriangle
                 size={14}
@@ -314,7 +317,10 @@ export default function ClientPortalPage() {
 
               <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3">
                 <div className="flex items-start gap-2">
-                  <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+                  <CheckCircle2
+                    size={14}
+                    className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+                  />
                   <div>
                     <p className="text-xs font-medium text-[color:var(--ds-warning-text)]">
                       {t("client_portal.next_step")}

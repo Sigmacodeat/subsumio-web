@@ -216,7 +216,11 @@ export default function AdoptionAnalyticsPage() {
               label="Aktive Nutzer (30d)"
               value={data.active_users_30d}
               sub={`${data.active_users_7d} in 7 Tagen`}
-              color={data.active_users_30d > 0 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-danger-text)]"}
+              color={
+                data.active_users_30d > 0
+                  ? "text-[color:var(--ds-success-text)]"
+                  : "text-[color:var(--ds-danger-text)]"
+              }
             />
             <KPICard
               icon={Activity}

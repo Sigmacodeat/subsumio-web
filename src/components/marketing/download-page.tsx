@@ -51,7 +51,10 @@ function NotifyMe({ lang }: { lang: Lang }) {
         window.location.href = `mailto:hello@subsum.eu?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(email)}`;
       }}
     >
-      <label htmlFor="notify-email" className="mb-2 block text-sm font-medium [color:var(--mk-text)]">
+      <label
+        htmlFor="notify-email"
+        className="mb-2 block text-sm font-medium [color:var(--mk-text)]"
+      >
         {label}
       </label>
       <div className="flex gap-2">

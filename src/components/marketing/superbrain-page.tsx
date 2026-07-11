@@ -214,7 +214,7 @@ function StatsBand({ t }: { t: SuperbrainCopyDe }) {
               decimals={
                 Number.isInteger(stat.value)
                   ? 0
-                  : stat.value.toString().split(".")[1]?.length ?? 1
+                  : (stat.value.toString().split(".")[1]?.length ?? 1)
               }
               suffix={stat.suffix}
               className="brand-text [font-family:var(--font-display)] text-4xl font-bold md:text-5xl"
@@ -261,11 +261,7 @@ function OthersSection({ t }: { t: SuperbrainCopyDe }) {
             </span>
           </motion.div>
           <ClipReveal>
-            <h2
-              className={`mb-4 ${H2_CTA_CLASS}`}
-            >
-              {t.othersTitle}
-            </h2>
+            <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{t.othersTitle}</h2>
           </ClipReveal>
           <motion.p
             {...reveal}
@@ -377,11 +373,7 @@ function OursSection({ t }: { t: SuperbrainCopyDe }) {
             </span>
           </motion.div>
           <ClipReveal>
-            <h2
-              className={`mb-4 ${H2_CTA_CLASS}`}
-            >
-              {t.oursTitle}
-            </h2>
+            <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{t.oursTitle}</h2>
           </ClipReveal>
           <motion.p
             {...reveal}
@@ -499,11 +491,7 @@ function ArchitectureSection({ t }: { t: SuperbrainCopyDe }) {
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2
-              className={`mb-4 ${H2_CTA_CLASS}`}
-            >
-              {t.architectureTitle}
-            </h2>
+            <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{t.architectureTitle}</h2>
           </ClipReveal>
           <motion.p
             {...reveal}
@@ -589,11 +577,7 @@ function DreamCycleSection({ t }: { t: SuperbrainCopyDe }) {
       <div className="relative z-10 mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2
-              className={`mb-4 ${H2_CTA_CLASS}`}
-            >
-              {t.cycleTitle}
-            </h2>
+            <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{t.cycleTitle}</h2>
           </ClipReveal>
           <motion.p
             {...reveal}
@@ -676,11 +660,7 @@ function CompareSection({ t }: { t: SuperbrainCopyDe }) {
       <div className="mx-auto max-w-5xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2
-              className={`mb-4 ${H2_CTA_CLASS}`}
-            >
-              {t.compareTitle}
-            </h2>
+            <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{t.compareTitle}</h2>
           </ClipReveal>
           <motion.p
             {...reveal}
@@ -804,11 +784,7 @@ function FineTuneSection({ t }: { t: SuperbrainCopyDe }) {
             </span>
           </motion.div>
           <ClipReveal>
-            <h2
-              className={`mb-4 ${H2_CTA_CLASS}`}
-            >
-              {t.finetuneTitle}
-            </h2>
+            <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{t.finetuneTitle}</h2>
           </ClipReveal>
           <motion.p
             {...reveal}
@@ -874,11 +850,7 @@ function PrivacySection({ t }: { t: SuperbrainCopyDe }) {
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2
-              className={`mb-4 ${H2_CTA_CLASS}`}
-            >
-              {t.privacyTitle}
-            </h2>
+            <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{t.privacyTitle}</h2>
           </ClipReveal>
           <motion.p
             {...reveal}
@@ -921,11 +893,7 @@ function UseCasesSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2
-              className={`mb-4 ${H2_CTA_CLASS}`}
-            >
-              {t.useCasesTitle}
-            </h2>
+            <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{t.useCasesTitle}</h2>
           </ClipReveal>
           <motion.p
             {...reveal}
@@ -981,11 +949,7 @@ function TrustSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2
-              className={`mb-4 ${H2_CTA_CLASS}`}
-            >
-              {t.trustTitle}
-            </h2>
+            <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{t.trustTitle}</h2>
           </ClipReveal>
           <motion.p
             {...reveal}
@@ -1066,11 +1030,7 @@ function FAQSection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2
-              className={`mb-4 ${H2_CTA_CLASS}`}
-            >
-              {UI_STRINGS[lang].faqSuperbrainTitle}
-            </h2>
+            <h2 className={`mb-4 ${H2_CTA_CLASS}`}>{UI_STRINGS[lang].faqSuperbrainTitle}</h2>
           </ClipReveal>
           <motion.p
             {...reveal}
@@ -1149,11 +1109,7 @@ function CTASection({ t, lang }: { t: SuperbrainCopyDe; lang: Lang }) {
           </div>
         </motion.div>
         <ClipReveal>
-          <h2
-            className={`mb-5 ${H2_CTA_CLASS}`}
-          >
-            {t.ctaTitle}
-          </h2>
+          <h2 className={`mb-5 ${H2_CTA_CLASS}`}>{t.ctaTitle}</h2>
         </ClipReveal>
         <motion.p
           {...reveal}

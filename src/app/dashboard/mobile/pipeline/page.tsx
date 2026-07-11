@@ -158,7 +158,10 @@ export default function MobilePipelinePage() {
     return (
       <div className="min-h-screen bg-[color:var(--ds-bg)] p-4">
         <div className="mb-4 flex items-center justify-between">
-          <button onClick={() => setOutputView(null)} className="text-sm text-[color:var(--ds-info-text)]">
+          <button
+            onClick={() => setOutputView(null)}
+            className="text-sm text-[color:var(--ds-info-text)]"
+          >
             ← Zurück
           </button>
           <a

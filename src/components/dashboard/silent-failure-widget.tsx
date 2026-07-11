@@ -167,7 +167,8 @@ const severityConfig = {
     icon: XCircle,
     label: "Critical",
     labelDe: "Kritisch",
-    classes: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
+    classes:
+      "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
     borderClasses: "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]",
     iconColor: "text-[color:var(--ds-danger-text)]",
   },
@@ -175,7 +176,8 @@ const severityConfig = {
     icon: AlertTriangle,
     label: "Warning",
     labelDe: "Warnung",
-    classes: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
+    classes:
+      "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
     borderClasses: "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]",
     iconColor: "text-[color:var(--ds-warning-text)]",
   },
@@ -183,7 +185,8 @@ const severityConfig = {
     icon: Clock,
     label: "Stuck",
     labelDe: "Stecken geblieben",
-    classes: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+    classes:
+      "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
     borderClasses: "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]",
     iconColor: "text-[color:var(--ds-info-text)]",
   },

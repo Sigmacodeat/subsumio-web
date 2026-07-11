@@ -357,7 +357,9 @@ function OutlookEventDialog({
       className="space-y-4 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4"
       onSubmit={handleSubmit}
     >
-      <h2 className="text-sm font-semibold text-[color:var(--ds-info-text)]">Outlook-Termin erstellen</h2>
+      <h2 className="text-sm font-semibold text-[color:var(--ds-info-text)]">
+        Outlook-Termin erstellen
+      </h2>
       <div className="space-y-1">
         <Label htmlFor="outlook-subject" className="text-xs text-[color:var(--ds-text-muted)]">
           Betreff

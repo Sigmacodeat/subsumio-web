@@ -65,7 +65,9 @@ export default function AIModelSettingsPage() {
           ]}
         />
         <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-6 text-center">
-          <p className="text-sm text-[color:var(--ds-danger-text)]">{t("settings.aimodel.error_save")}</p>
+          <p className="text-sm text-[color:var(--ds-danger-text)]">
+            {t("settings.aimodel.error_save")}
+          </p>
           <button
             onClick={() => query.refetch()}
             className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"

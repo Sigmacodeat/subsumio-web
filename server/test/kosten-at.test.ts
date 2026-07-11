@@ -247,7 +247,12 @@ describe("Kostenverzeichnis", () => {
       20_000,
       [
         { datum: "2026-01-10", leistung: "Klage", tarifpost: "TP3A", erv: "einleitend" },
-        { datum: "2026-03-05", leistung: "Vorbereitender Schriftsatz", tarifpost: "TP3A", erv: "folgend" },
+        {
+          datum: "2026-03-05",
+          leistung: "Vorbereitender Schriftsatz",
+          tarifpost: "TP3A",
+          erv: "folgend",
+        },
         { datum: "2026-04-20", leistung: "Verhandlung", tarifpost: "TP3A", verhandlungsstunden: 2 },
       ],
       { barauslagen: 792 }

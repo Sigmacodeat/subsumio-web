@@ -53,7 +53,9 @@ export default function PricingPage({ lang }: { lang: Lang }) {
                     <div className="brand-soft brand-border mb-4 flex h-12 w-12 items-center justify-center rounded-xl border">
                       <Icon size={22} className="brand-text" />
                     </div>
-                    <h3 className="text-sm font-semibold leading-tight [color:var(--mk-text)]">{sig.label}</h3>
+                    <h3 className="text-sm leading-tight font-semibold [color:var(--mk-text)]">
+                      {sig.label}
+                    </h3>
                   </GlowCard>
                 </StaggerItem>
               );

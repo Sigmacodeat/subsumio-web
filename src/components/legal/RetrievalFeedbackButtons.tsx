@@ -21,10 +21,30 @@ const FEEDBACK_OPTIONS: Array<{
   label: string;
   hoverClass: string;
 }> = [
-  { type: "relevant", icon: ThumbsUp, label: "Relevant", hoverClass: "hover:text-[color:var(--ds-success-text)]" },
-  { type: "irrelevant", icon: ThumbsDown, label: "Irrelevant", hoverClass: "hover:text-[color:var(--ds-warning-text)]" },
-  { type: "outdated", icon: AlertCircle, label: "Veraltet", hoverClass: "hover:text-[color:var(--ds-attention-text)]" },
-  { type: "wrong", icon: XCircle, label: "Falsch", hoverClass: "hover:text-[color:var(--ds-danger-text)]" },
+  {
+    type: "relevant",
+    icon: ThumbsUp,
+    label: "Relevant",
+    hoverClass: "hover:text-[color:var(--ds-success-text)]",
+  },
+  {
+    type: "irrelevant",
+    icon: ThumbsDown,
+    label: "Irrelevant",
+    hoverClass: "hover:text-[color:var(--ds-warning-text)]",
+  },
+  {
+    type: "outdated",
+    icon: AlertCircle,
+    label: "Veraltet",
+    hoverClass: "hover:text-[color:var(--ds-attention-text)]",
+  },
+  {
+    type: "wrong",
+    icon: XCircle,
+    label: "Falsch",
+    hoverClass: "hover:text-[color:var(--ds-danger-text)]",
+  },
 ];
 
 export function RetrievalFeedbackButtons({

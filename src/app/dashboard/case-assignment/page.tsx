@@ -200,16 +200,24 @@ export default function CaseAssignmentPage() {
         <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
           <div className="flex items-center gap-2">
             <UserCheck size={16} className="text-[color:var(--ds-success-text)]" />
-            <span className="text-xs text-[color:var(--ds-success-text)]">{isEn ? "Assigned" : "Zugewiesen"}</span>
+            <span className="text-xs text-[color:var(--ds-success-text)]">
+              {isEn ? "Assigned" : "Zugewiesen"}
+            </span>
           </div>
-          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-success-text)] tabular-nums">{totalAssigned}</p>
+          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-success-text)] tabular-nums">
+            {totalAssigned}
+          </p>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
           <div className="flex items-center gap-2">
             <UserPlus size={16} className="text-[color:var(--ds-warning-text)]" />
-            <span className="text-xs text-[color:var(--ds-warning-text)]">{isEn ? "Unassigned" : "Unzugewiesen"}</span>
+            <span className="text-xs text-[color:var(--ds-warning-text)]">
+              {isEn ? "Unassigned" : "Unzugewiesen"}
+            </span>
           </div>
-          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-warning-text)] tabular-nums">{unassignedCount}</p>
+          <p className="mt-1 text-2xl font-bold text-[color:var(--ds-warning-text)] tabular-nums">
+            {unassignedCount}
+          </p>
         </div>
       </div>
 
@@ -276,7 +284,9 @@ export default function CaseAssignmentPage() {
                       <Badge variant="default" className="text-xs">
                         {cases.length} {isEn ? "cases" : "Akten"}
                       </Badge>
-                      {member?.role === "owner" && <Crown size={12} className="text-[color:var(--ds-warning-text)]" />}
+                      {member?.role === "owner" && (
+                        <Crown size={12} className="text-[color:var(--ds-warning-text)]" />
+                      )}
                     </div>
                     {member?.email && (
                       <div className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">

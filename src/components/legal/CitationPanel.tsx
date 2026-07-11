@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { CitationLink, GroundingBadge } from "@/components/legal/CitationLink";
 import { AI_BADGE_LABEL, AI_NOTICE } from "@/lib/ai-act";
 import { assessGroundedness } from "@/lib/groundedness";
+import { formatCitationTitle } from "@/lib/ogh-format";
 import type { GroundedCitation } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
 
@@ -193,9 +194,15 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                     className="flex items-start gap-2 text-xs"
                   >
                     {gc.verified ? (
-                      <CheckCircle2 size={12} className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]" />
+                      <CheckCircle2
+                        size={12}
+                        className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]"
+                      />
                     ) : (
-                      <AlertCircle size={12} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+                      <AlertCircle
+                        size={12}
+                        className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+                      />
                     )}
                     <div className="min-w-0 flex-1">
                       <CitationLink
@@ -241,7 +248,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                     title={c.title}
                   >
                     <BookOpen size={9} />
-                    {c.title}
+                    {formatCitationTitle(c.title, c.slug)}
                   </a>
                 ))}
               </div>

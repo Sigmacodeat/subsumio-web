@@ -13,13 +13,21 @@ function extractMediationADR(json: unknown): {
   empfehlung: string;
 } {
   if (!json || typeof json !== "object")
-    return { optionen_count: 0, empfohlen_count: 0, empfohlener_weg: "", obl_schlichtung_erforderlich: false, score: 0, empfehlung: "" };
+    return {
+      optionen_count: 0,
+      empfohlen_count: 0,
+      empfohlener_weg: "",
+      obl_schlichtung_erforderlich: false,
+      score: 0,
+      empfehlung: "",
+    };
   const obj = json as Record<string, unknown>;
   const optionen = Array.isArray(obj.adr_optionen) ? obj.adr_optionen : [];
   const obl = obj.obligatorische_schlichtung as Record<string, unknown> | undefined;
   return {
     optionen_count: optionen.length,
-    empfohlen_count: optionen.filter((o) => (o as Record<string, unknown>).empfohlen === true).length,
+    empfohlen_count: optionen.filter((o) => (o as Record<string, unknown>).empfohlen === true)
+      .length,
     empfohlener_weg: String(obj.empfohlener_weg ?? ""),
     obl_schlichtung_erforderlich: Boolean(obl?.erforderlich),
     score: typeof obj.overall_adr_score === "number" ? obj.overall_adr_score : 0,
@@ -31,14 +39,51 @@ describe("mediation-adr-analyzer extraction", () => {
   it("extracts 4 ADR options with mediation recommended", () => {
     const json = {
       adr_optionen: [
-        { typ: "mediation", paragraph: "§ 227 ZPO", voraussetzungen: "Freiwilligkeit", vorteile: ["vertraulich"], nachteile: ["nicht bindend"], geschätzte_dauer_wochen: 8, geschätzte_kosten: 3000, erfolgswahrscheinlichkeit: 75, empfohlen: true, begruendung: "Beziehung wichtig" },
-        { typ: "schiedsverfahren", paragraph: "§ 577 ZPO", geschätzte_dauer_wochen: 20, geschätzte_kosten: 25000, erfolgswahrscheinlichkeit: 85, empfohlen: false },
-        { typ: "schlichtung", paragraph: "§ 15a EGZPO", geschätzte_dauer_wochen: 4, geschätzte_kosten: 0, erfolgswahrscheinlichkeit: 60, empfohlen: false },
-        { typ: "gerichtlich", geschätzte_dauer_wochen: 40, geschätzte_kosten: 15000, erfolgswahrscheinlichkeit: 60, empfohlen: false },
+        {
+          typ: "mediation",
+          paragraph: "§ 227 ZPO",
+          voraussetzungen: "Freiwilligkeit",
+          vorteile: ["vertraulich"],
+          nachteile: ["nicht bindend"],
+          geschätzte_dauer_wochen: 8,
+          geschätzte_kosten: 3000,
+          erfolgswahrscheinlichkeit: 75,
+          empfohlen: true,
+          begruendung: "Beziehung wichtig",
+        },
+        {
+          typ: "schiedsverfahren",
+          paragraph: "§ 577 ZPO",
+          geschätzte_dauer_wochen: 20,
+          geschätzte_kosten: 25000,
+          erfolgswahrscheinlichkeit: 85,
+          empfohlen: false,
+        },
+        {
+          typ: "schlichtung",
+          paragraph: "§ 15a EGZPO",
+          geschätzte_dauer_wochen: 4,
+          geschätzte_kosten: 0,
+          erfolgswahrscheinlichkeit: 60,
+          empfohlen: false,
+        },
+        {
+          typ: "gerichtlich",
+          geschätzte_dauer_wochen: 40,
+          geschätzte_kosten: 15000,
+          erfolgswahrscheinlichkeit: 60,
+          empfohlen: false,
+        },
       ],
       empfohlener_weg: "mediation",
       empfohlener_weg_begruendung: "75% Erfolg bei 1/5 der Kosten",
-      vergleich_gerichtlich: { gerichtlich_dauer_wochen: 40, gerichtlich_kosten: 15000, gerichtlich_erfolgswahrscheinlichkeit: 60, adr_vorteil_zeit: "32 Wochen", adr_vorteil_kosten: "€12.000" },
+      vergleich_gerichtlich: {
+        gerichtlich_dauer_wochen: 40,
+        gerichtlich_kosten: 15000,
+        gerichtlich_erfolgswahrscheinlichkeit: 60,
+        adr_vorteil_zeit: "32 Wochen",
+        adr_vorteil_kosten: "€12.000",
+      },
       obligatorische_schlichtung: { erforderlich: false, paragraph: "§ 15a EGZPO" },
       overall_adr_score: 80,
       empfehlung: "Mediation empfohlen — 75% Erfolg bei 1/5 der Kosten",
@@ -58,7 +103,11 @@ describe("mediation-adr-analyzer extraction", () => {
         { typ: "gerichtlich", empfohlen: false },
       ],
       empfohlener_weg: "schlichtung",
-      obligatorische_schlichtung: { erforderlich: true, paragraph: "§ 15a EGZPO", grund: "Nachbarschaftsstreit" },
+      obligatorische_schlichtung: {
+        erforderlich: true,
+        paragraph: "§ 15a EGZPO",
+        grund: "Nachbarschaftsstreit",
+      },
       overall_adr_score: 50,
       empfehlung: "Obligatorische Schlichtung erforderlich",
     };
@@ -85,14 +134,26 @@ function extractLimitation(json: unknown): {
   empfehlung: string;
 } {
   if (!json || typeof json !== "object")
-    return { ansprueche_count: 0, urgent_count: 0, verjaehrte_count: 0, hemmungen_count: 0, score: 0, empfehlung: "" };
+    return {
+      ansprueche_count: 0,
+      urgent_count: 0,
+      verjaehrte_count: 0,
+      hemmungen_count: 0,
+      score: 0,
+      empfehlung: "",
+    };
   const obj = json as Record<string, unknown>;
   return {
     ansprueche_count: Array.isArray(obj.ansprueche) ? obj.ansprueche.length : 0,
     urgent_count: Array.isArray(obj.urgent_ansprueche) ? obj.urgent_ansprueche.length : 0,
-    verjaehrte_count: Array.isArray(obj.verjaehrte_ansprueche) ? obj.verjaehrte_ansprueche.length : 0,
+    verjaehrte_count: Array.isArray(obj.verjaehrte_ansprueche)
+      ? obj.verjaehrte_ansprueche.length
+      : 0,
     hemmungen_count: Array.isArray(obj.hemmungen_aktiv) ? obj.hemmungen_aktiv.length : 0,
-    score: typeof obj.overall_verjaehrung_risiko_score === "number" ? obj.overall_verjaehrung_risiko_score : 0,
+    score:
+      typeof obj.overall_verjaehrung_risiko_score === "number"
+        ? obj.overall_verjaehrung_risiko_score
+        : 0,
     empfehlung: String(obj.empfehlung ?? ""),
   };
 }
@@ -101,15 +162,57 @@ describe("limitation-scanner extraction", () => {
   it("extracts claims with urgent and verjährt", () => {
     const json = {
       ansprueche: [
-        { anspruch: "Schmerzensgeld", anspruchshoehe: 20000, verjaehrungsfrist_jahre: 3, paragraph: "§ 1489 ABGB", beginn: "2024-03-15", frist_ende: "2027-03-15", verjaehrt: false, restzeit_tage: 365, hemmung: false, handlungsbedarf: "OK" },
-        { anspruch: "Werklohn 2021", anspruchshoehe: 8000, verjaehrungsfrist_jahre: 3, paragraph: "§ 195 BGB", beginn: "2022-01-01", frist_ende: "2025-01-01", verjaehrt: false, restzeit_tage: 45, hemmung: false, handlungsbedarf: "URGENT" },
-        { anspruch: "Schadensersatz 2019", anspruchshoehe: 5000, verjaehrungsfrist_jahre: 3, paragraph: "§ 1489 ABGB", beginn: "2019-06-01", frist_ende: "2022-06-01", verjaehrt: true, restzeit_tage: 0, hemmung: false, handlungsbedarf: "URGENT" },
+        {
+          anspruch: "Schmerzensgeld",
+          anspruchshoehe: 20000,
+          verjaehrungsfrist_jahre: 3,
+          paragraph: "§ 1489 ABGB",
+          beginn: "2024-03-15",
+          frist_ende: "2027-03-15",
+          verjaehrt: false,
+          restzeit_tage: 365,
+          hemmung: false,
+          handlungsbedarf: "OK",
+        },
+        {
+          anspruch: "Werklohn 2021",
+          anspruchshoehe: 8000,
+          verjaehrungsfrist_jahre: 3,
+          paragraph: "§ 195 BGB",
+          beginn: "2022-01-01",
+          frist_ende: "2025-01-01",
+          verjaehrt: false,
+          restzeit_tage: 45,
+          hemmung: false,
+          handlungsbedarf: "URGENT",
+        },
+        {
+          anspruch: "Schadensersatz 2019",
+          anspruchshoehe: 5000,
+          verjaehrungsfrist_jahre: 3,
+          paragraph: "§ 1489 ABGB",
+          beginn: "2019-06-01",
+          frist_ende: "2022-06-01",
+          verjaehrt: true,
+          restzeit_tage: 0,
+          hemmung: false,
+          handlungsbedarf: "URGENT",
+        },
       ],
       urgent_ansprueche: [
-        { anspruch: "Werklohn 2021", restzeit_tage: 45, handlungsbedarf: "URGENT — Klage innerhalb 6 Wochen!", paragraph: "§ 195 BGB" },
+        {
+          anspruch: "Werklohn 2021",
+          restzeit_tage: 45,
+          handlungsbedarf: "URGENT — Klage innerhalb 6 Wochen!",
+          paragraph: "§ 195 BGB",
+        },
       ],
       verjaehrte_ansprueche: [
-        { anspruch: "Schadensersatz 2019", paragraph: "§ 1489 ABGB", grund: "3-Jahres-Frist abgelaufen" },
+        {
+          anspruch: "Schadensersatz 2019",
+          paragraph: "§ 1489 ABGB",
+          grund: "3-Jahres-Frist abgelaufen",
+        },
       ],
       hemmungen_aktiv: [],
       overall_verjaehrung_risiko_score: 70,
@@ -126,7 +229,13 @@ describe("limitation-scanner extraction", () => {
   it("handles all claims within time (low risk)", () => {
     const json = {
       ansprueche: [
-        { anspruch: "Schmerzensgeld", verjaehrungsfrist_jahre: 3, restzeit_tage: 700, verjaehrt: false, handlungsbedarf: "OK" },
+        {
+          anspruch: "Schmerzensgeld",
+          verjaehrungsfrist_jahre: 3,
+          restzeit_tage: 700,
+          verjaehrt: false,
+          handlungsbedarf: "OK",
+        },
       ],
       urgent_ansprueche: [],
       verjaehrte_ansprueche: [],
@@ -143,12 +252,23 @@ describe("limitation-scanner extraction", () => {
   it("handles active Hemmung", () => {
     const json = {
       ansprueche: [
-        { anspruch: "Schmerzensgeld", verjaehrungsfrist_jahre: 3, restzeit_tage: 100, verjaehrt: false, hemmung: true, handlungsbedarf: "WARNUNG" },
+        {
+          anspruch: "Schmerzensgeld",
+          verjaehrungsfrist_jahre: 3,
+          restzeit_tage: 100,
+          verjaehrt: false,
+          hemmung: true,
+          handlungsbedarf: "WARNUNG",
+        },
       ],
       urgent_ansprueche: [],
       verjaehrte_ansprueche: [],
       hemmungen_aktiv: [
-        { anspruch: "Schmerzensgeld", hemmung_grund: "Verhandlungen (§ 1496 ABGB)", hemmung_seit: "2024-06-01" },
+        {
+          anspruch: "Schmerzensgeld",
+          hemmung_grund: "Verhandlungen (§ 1496 ABGB)",
+          hemmung_seit: "2024-06-01",
+        },
       ],
       overall_verjaehrung_risiko_score: 30,
       empfehlung: "Hemmung aktiv — Frist läuft nicht",
@@ -224,13 +344,22 @@ function extractCostAward(json: unknown): {
   empfehlung: string;
 } {
   if (!json || typeof json !== "object")
-    return { szenarien_count: 0, wahrscheinlich: "", erwartete_netto_kosten: 0, erwartete_erstattung: 0, score: 0, empfehlung: "" };
+    return {
+      szenarien_count: 0,
+      wahrscheinlich: "",
+      erwartete_netto_kosten: 0,
+      erwartete_erstattung: 0,
+      score: 0,
+      empfehlung: "",
+    };
   const obj = json as Record<string, unknown>;
   return {
     szenarien_count: Array.isArray(obj.szenarien) ? obj.szenarien.length : 0,
     wahrscheinlich: String(obj.wahrscheinlichstes_szenario ?? ""),
-    erwartete_netto_kosten: typeof obj.erwartete_netto_kosten === "number" ? obj.erwartete_netto_kosten : 0,
-    erwartete_erstattung: typeof obj.erwartete_erstattung === "number" ? obj.erwartete_erstattung : 0,
+    erwartete_netto_kosten:
+      typeof obj.erwartete_netto_kosten === "number" ? obj.erwartete_netto_kosten : 0,
+    erwartete_erstattung:
+      typeof obj.erwartete_erstattung === "number" ? obj.erwartete_erstattung : 0,
     score: typeof obj.kostenrisiko_score === "number" ? obj.kostenrisiko_score : 0,
     empfehlung: String(obj.empfehlung ?? ""),
   };
@@ -240,16 +369,53 @@ describe("cost-award-predictor extraction", () => {
   it("extracts 4 scenarios with teilgewinn most likely", () => {
     const json = {
       szenarien: [
-        { szenario: "vollgewinn", erfolgsquote: 100, eigene_kosten: 9500, erstattung_durch_gegner: 9500, netto_kosten: 0, paragraph: "§ 78 ZPO", begruendung: "Vollgewinn" },
-        { szenario: "teilgewinn_60", erfolgsquote: 60, eigene_kosten: 9500, erstattung_durch_gegner: 5700, netto_kosten: 3800, paragraph: "§ 78(2) ZPO", begruendung: "Teilobsiegen 60%" },
-        { szenario: "vollverlust", erfolgsquote: 0, eigene_kosten: 9500, erstattung_durch_gegner: 0, netto_kosten: 9500, paragraph: "§ 78 ZPO", begruendung: "Vollverlust" },
-        { szenario: "vergleich", erfolgsquote: null, eigene_kosten: 5000, erstattung_durch_gegner: 0, netto_kosten: 5000, paragraph: "§ 98 ZPO", begruendung: "Vergleich" },
+        {
+          szenario: "vollgewinn",
+          erfolgsquote: 100,
+          eigene_kosten: 9500,
+          erstattung_durch_gegner: 9500,
+          netto_kosten: 0,
+          paragraph: "§ 78 ZPO",
+          begruendung: "Vollgewinn",
+        },
+        {
+          szenario: "teilgewinn_60",
+          erfolgsquote: 60,
+          eigene_kosten: 9500,
+          erstattung_durch_gegner: 5700,
+          netto_kosten: 3800,
+          paragraph: "§ 78(2) ZPO",
+          begruendung: "Teilobsiegen 60%",
+        },
+        {
+          szenario: "vollverlust",
+          erfolgsquote: 0,
+          eigene_kosten: 9500,
+          erstattung_durch_gegner: 0,
+          netto_kosten: 9500,
+          paragraph: "§ 78 ZPO",
+          begruendung: "Vollverlust",
+        },
+        {
+          szenario: "vergleich",
+          erfolgsquote: null,
+          eigene_kosten: 5000,
+          erstattung_durch_gegner: 0,
+          netto_kosten: 5000,
+          paragraph: "§ 98 ZPO",
+          begruendung: "Vergleich",
+        },
       ],
       wahrscheinlichstes_szenario: "teilgewinn_60",
       erwartete_netto_kosten: 3800,
       erwartete_erstattung: 5700,
       kostenrisiko_score: 40,
-      vergleich_kosten_vorteil: { gerichtlich_netto_kosten: 3800, vergleich_netto_kosten: 5000, vorteil: "gerichtlich", differenz: -1200 },
+      vergleich_kosten_vorteil: {
+        gerichtlich_netto_kosten: 3800,
+        vergleich_netto_kosten: 5000,
+        vorteil: "gerichtlich",
+        differenz: -1200,
+      },
       empfehlung: "Teilgewinn 60% wahrscheinlich — Netto-Kosten €3.800",
     };
     const result = extractCostAward(json);
@@ -263,7 +429,13 @@ describe("cost-award-predictor extraction", () => {
   it("handles vollgewinn (no net cost)", () => {
     const json = {
       szenarien: [
-        { szenario: "vollgewinn", erfolgsquote: 100, eigene_kosten: 9500, erstattung_durch_gegner: 9500, netto_kosten: 0 },
+        {
+          szenario: "vollgewinn",
+          erfolgsquote: 100,
+          eigene_kosten: 9500,
+          erstattung_durch_gegner: 9500,
+          netto_kosten: 0,
+        },
       ],
       wahrscheinlichstes_szenario: "vollgewinn",
       erwartete_netto_kosten: 0,

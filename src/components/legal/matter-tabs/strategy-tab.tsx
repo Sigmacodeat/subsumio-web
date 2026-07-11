@@ -328,7 +328,10 @@ export function StrategyTab() {
                   key={`sd-${originalIndex}`}
                   className="flex items-start gap-3 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2.5"
                 >
-                  <CalendarPlus size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+                  <CalendarPlus
+                    size={14}
+                    className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium text-[color:var(--ds-text)]">
@@ -401,7 +404,10 @@ export function StrategyTab() {
                   key={`sp-${originalIndex}`}
                   className="flex items-start gap-3 rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-3 py-2.5"
                 >
-                  <UserPlus size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]" />
+                  <UserPlus
+                    size={14}
+                    className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]"
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium text-[color:var(--ds-text)]">
@@ -773,7 +779,11 @@ export function StrategyTab() {
                 aria-label="Antwort kopieren"
                 className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"
               >
-                {ctx.copied ? <Check size={14} className="text-[color:var(--ds-success-text)]" /> : <Copy size={14} />}
+                {ctx.copied ? (
+                  <Check size={14} className="text-[color:var(--ds-success-text)]" />
+                ) : (
+                  <Copy size={14} />
+                )}
               </button>
             </div>
             <div className="text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">

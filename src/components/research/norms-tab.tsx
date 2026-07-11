@@ -325,7 +325,11 @@ function NormsPageInner() {
               className="hover:brand-text hover:brand-border flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
               title={t("norms.copy_title")}
             >
-              {copied ? <Check size={12} className="text-[color:var(--ds-success-text)]" /> : <Copy size={12} />}
+              {copied ? (
+                <Check size={12} className="text-[color:var(--ds-success-text)]" />
+              ) : (
+                <Copy size={12} />
+              )}
               {copied ? t("norms.copied") : t("norms.copy")}
             </button>
           </div>

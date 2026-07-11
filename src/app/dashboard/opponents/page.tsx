@@ -244,7 +244,9 @@ export default function OpponentsPage() {
                   <span>{selectedOpponent.caseCount} Akten</span>
                   <span
                     className={
-                      selectedOpponent.winRate >= 0.5 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-danger-text)]"
+                      selectedOpponent.winRate >= 0.5
+                        ? "text-[color:var(--ds-success-text)]"
+                        : "text-[color:var(--ds-danger-text)]"
                     }
                   >
                     {Math.round(selectedOpponent.winRate * 100)}% Siegquote
@@ -254,11 +256,15 @@ export default function OpponentsPage() {
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-3 text-center">
-                  <div className="text-xl font-bold text-[color:var(--ds-success-text)]">{selectedOpponent.wins}</div>
+                  <div className="text-xl font-bold text-[color:var(--ds-success-text)]">
+                    {selectedOpponent.wins}
+                  </div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">Gewonnen</div>
                 </div>
                 <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-center">
-                  <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">{selectedOpponent.losses}</div>
+                  <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">
+                    {selectedOpponent.losses}
+                  </div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">Verloren</div>
                 </div>
                 <div className="rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-3 text-center">
@@ -349,7 +355,9 @@ export default function OpponentsPage() {
                     <div
                       className={cn(
                         "text-sm font-medium",
-                        o.winRate >= 0.5 ? "text-[color:var(--ds-success-text)]" : "text-[color:var(--ds-danger-text)]"
+                        o.winRate >= 0.5
+                          ? "text-[color:var(--ds-success-text)]"
+                          : "text-[color:var(--ds-danger-text)]"
                       )}
                     >
                       {Math.round(o.winRate * 100)}%

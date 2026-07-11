@@ -103,7 +103,8 @@ export function makeConsolidateIncrementalHandler(engine: BrainEngine) {
         signal: job.signal,
       });
       if (result.status === "ok" && result.details) {
-        factsConsolidated = (result.details as { facts_consolidated?: number }).facts_consolidated ?? 0;
+        factsConsolidated =
+          (result.details as { facts_consolidated?: number }).facts_consolidated ?? 0;
         takesWritten = (result.details as { takes_written?: number }).takes_written ?? 0;
       }
     } catch (err) {

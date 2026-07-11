@@ -28,8 +28,16 @@ const SEVERITY_CONFIG: Record<
     icon: React.ElementType;
   }
 > = {
-  none: { labelKey: "conflict.severity_none", iconClass: "text-[color:var(--ds-success-text)]", icon: CheckCircle2 },
-  low: { labelKey: "conflict.severity_low", iconClass: "text-[color:var(--ds-warning-text)]", icon: AlertTriangle },
+  none: {
+    labelKey: "conflict.severity_none",
+    iconClass: "text-[color:var(--ds-success-text)]",
+    icon: CheckCircle2,
+  },
+  low: {
+    labelKey: "conflict.severity_low",
+    iconClass: "text-[color:var(--ds-warning-text)]",
+    icon: AlertTriangle,
+  },
   critical: {
     labelKey: "conflict.severity_critical",
     iconClass: "text-[color:var(--ds-danger-text)]",
@@ -178,9 +186,17 @@ export default function KollisionspruefungPage() {
                     className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2"
                   >
                     {m.role === "client" ? (
-                      <Users size={14} className="shrink-0 text-[color:var(--ds-success-text)]" aria-hidden="true" />
+                      <Users
+                        size={14}
+                        className="shrink-0 text-[color:var(--ds-success-text)]"
+                        aria-hidden="true"
+                      />
                     ) : (
-                      <Building2 size={14} className="shrink-0 text-[color:var(--ds-danger-text)]" aria-hidden="true" />
+                      <Building2
+                        size={14}
+                        className="shrink-0 text-[color:var(--ds-danger-text)]"
+                        aria-hidden="true"
+                      />
                     )}
                     <span className="flex-1 text-sm text-[color:var(--ds-text)]">{m.title}</span>
                     {!m.exact && (

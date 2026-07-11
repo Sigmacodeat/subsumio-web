@@ -548,12 +548,16 @@ export async function runPostFusionStages(
   if (opts.cognitiveTierEnabled) {
     try {
       const { applyCognitiveTierBoost } = await import("./cognitive-tier.ts");
-      applyCognitiveTierBoost(results, {
-        tier3Boost: opts.cognitiveTier3Boost,
-        tier2Boost: opts.cognitiveTier2Boost,
-        tier1Boost: opts.cognitiveTier1Boost,
-        tier0Boost: opts.cognitiveTier0Boost,
-      }, floorThreshold);
+      applyCognitiveTierBoost(
+        results,
+        {
+          tier3Boost: opts.cognitiveTier3Boost,
+          tier2Boost: opts.cognitiveTier2Boost,
+          tier1Boost: opts.cognitiveTier1Boost,
+          tier0Boost: opts.cognitiveTier0Boost,
+        },
+        floorThreshold
+      );
     } catch {
       // Non-fatal; preserves the per-stage contract.
     }

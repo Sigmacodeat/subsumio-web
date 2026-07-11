@@ -37,7 +37,15 @@ import { PricingGrid } from "./pricing-grid";
 import ScrollPinnedDashboard from "./scroll-pinned-dashboard";
 import { TestimonialsSection } from "./testimonials";
 import AudienceTabs from "./audience-tabs";
-import { Section, SectionHeading, ICONS, accentTile, H2_CTA_CLASS, H3_CLASS, StatCard } from "./chrome";
+import {
+  Section,
+  SectionHeading,
+  ICONS,
+  accentTile,
+  H2_CTA_CLASS,
+  H3_CLASS,
+  StatCard,
+} from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import {
   StaggerContainer,
@@ -159,7 +167,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 transition={
                   reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.35 }
                 }
-                className="mb-3 text-lg font-semibold md:text-xl [color:var(--brand-text)]"
+                className="mb-3 text-lg font-semibold [color:var(--brand-text)] md:text-xl"
               >
                 {t.heroTagline}
               </motion.p>
@@ -404,15 +412,16 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 const Icon = ICONS[f.icon];
                 return (
                   <StaggerItem key={f.title}>
-                    <Link href={p(lang, "/features")} className="group relative flex h-full flex-col overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl">
+                    <Link
+                      href={p(lang, "/features")}
+                      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl"
+                    >
                       <div
                         className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl border ${accentTile(f.color, "light")}`}
                       >
                         {Icon && <Icon size={22} />}
                       </div>
-                      <h3 className={`mb-2 ${H3_CLASS}`}>
-                        {f.title}
-                      </h3>
+                      <h3 className={`mb-2 ${H3_CLASS}`}>{f.title}</h3>
                       <p className="text-sm leading-relaxed [color:var(--mk-text-muted)] md:text-base">
                         {f.desc}
                       </p>
@@ -516,7 +525,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                     <th className="py-3 pr-4 text-left font-semibold text-[color:var(--mk-text)]">
                       {ui.comparisonFeature}
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold text-[color:var(--brand-text)] brand-soft rounded-t-lg">
+                    <th className="brand-soft rounded-t-lg px-4 py-3 text-left font-semibold text-[color:var(--brand-text)]">
                       Subsumio
                     </th>
                     <th className="py-3 pl-4 text-left font-semibold text-[color:var(--mk-text-subtle)]">
@@ -537,7 +546,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                       <td className="py-4 pr-4 font-medium text-[color:var(--mk-text)]">
                         {row.feature}
                       </td>
-                      <td className="px-4 py-4 text-[color:var(--mk-text)] brand-soft">
+                      <td className="brand-soft px-4 py-4 text-[color:var(--mk-text)]">
                         <span className="inline-flex items-start gap-2">
                           <Check
                             size={16}

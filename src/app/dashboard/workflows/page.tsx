@@ -222,7 +222,9 @@ export default function WorkflowsPage() {
           role="alert"
         >
           <AlertCircle size={16} className="shrink-0 text-[color:var(--ds-danger-text)]" />
-          <p className="text-sm text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">{error}</p>
+          <p className="text-sm text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
+            {error}
+          </p>
           <Button
             size="icon"
             variant="ghost"
@@ -587,9 +589,14 @@ function WorkflowCard({
                 key={`err-${s.id}`}
                 className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2"
               >
-                <AlertCircle size={14} className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]" />
+                <AlertCircle
+                  size={14}
+                  className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]"
+                />
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">{s.label}</p>
+                  <p className="text-xs font-medium text-[color:var(--ds-danger-text)] dark:text-[color:var(--ds-danger-text)]">
+                    {s.label}
+                  </p>
                   <p className="mt-0.5 text-xs text-[color:var(--ds-danger-text)]/80">{s.error}</p>
                 </div>
               </div>

@@ -155,7 +155,7 @@ Pipeline-Version verpufft ungenutzt.
       eine Liste der enthaltenen Sub-Analysen mit eigenem Icon/Label rendern, statt eines einzigen
       generischen Namens. Da das Rendering der Inhalte selbst schon generisch funktioniert, ist der
       Umfang überschaubar: Datenstruktur von `LAYER_INFO` auf `Array<{ bucket: number; subTypes:
-    {type: string; label: string; icon}[] }>` erweitern und beim Rendern nach `fm.type` gruppieren
+{type: string; label: string; icon}[] }>` erweitern und beim Rendern nach `fm.type` gruppieren
       statt nach dem Bucket allein.
 - [ ] **Verjährungsscan (`limitation_scan`) einen eigenen sichtbaren Alarm geben.**
       Analog zu Fristen/Widersprüchen: eigenes Badge/Insight mit Ampel-Status (URGENT/WARNUNG/OK) im

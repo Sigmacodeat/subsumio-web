@@ -32,7 +32,12 @@ export interface MappeEngine {
   executeRaw<T>(sql: string, params?: unknown[]): Promise<T[]>;
   putPage(
     slug: string,
-    page: { type: string; title: string; compiled_truth: string; frontmatter: Record<string, unknown> },
+    page: {
+      type: string;
+      title: string;
+      compiled_truth: string;
+      frontmatter: Record<string, unknown>;
+    },
     opts?: { sourceId?: string }
   ): Promise<unknown>;
 }
@@ -88,7 +93,10 @@ export function extractBody(compiledTruth: string): string {
     if (end !== -1) body = body.slice(end + 4);
   }
   // Remove gbrain facts fences (## Facts + markers)
-  body = body.replace(/## Facts\s*\n+<!---? ?gbrain:facts:begin[\s\S]*?gbrain:facts:end ?-?-->/g, "");
+  body = body.replace(
+    /## Facts\s*\n+<!---? ?gbrain:facts:begin[\s\S]*?gbrain:facts:end ?-?-->/g,
+    ""
+  );
   return body.trim();
 }
 
@@ -113,12 +121,28 @@ export async function generiereVerhandlungsmappe(
   // The pipeline writes on-indexes/ (main path) and on-indices/ (rerun path);
   // try both.
   const sources: Array<{ key: string; slugs: string[]; titel: string }> = [
-    { key: "on_index", slugs: [`on-indexes/${caseSlug}`, `on-indices/${caseSlug}`], titel: "Chronologie (ON-Index)" },
-    { key: "grounding", slugs: [`legal-grounding/${caseSlug}`, `legal-grounding-maps/${caseSlug}`], titel: "§-Spickzettel (Grounding-Map)" },
+    {
+      key: "on_index",
+      slugs: [`on-indexes/${caseSlug}`, `on-indices/${caseSlug}`],
+      titel: "Chronologie (ON-Index)",
+    },
+    {
+      key: "grounding",
+      slugs: [`legal-grounding/${caseSlug}`, `legal-grounding-maps/${caseSlug}`],
+      titel: "§-Spickzettel (Grounding-Map)",
+    },
     { key: "burden", slugs: [`burden-of-proof/${caseSlug}`], titel: "Beweislastverteilung" },
-    { key: "factgaps", slugs: [`fact-gaps/${caseSlug}`], titel: "Sachverhaltslücken + Fragenkatalog" },
+    {
+      key: "factgaps",
+      slugs: [`fact-gaps/${caseSlug}`],
+      titel: "Sachverhaltslücken + Fragenkatalog",
+    },
     { key: "counter", slugs: [`counter-arguments/${caseSlug}`], titel: "Erwartete Gegenargumente" },
-    { key: "settlement", slugs: [`settlement-analysis/${caseSlug}`], titel: "Vergleichsrahmen (BATNA/ZOPA)" },
+    {
+      key: "settlement",
+      slugs: [`settlement-analysis/${caseSlug}`],
+      titel: "Vergleichsrahmen (BATNA/ZOPA)",
+    },
     { key: "deadlines", slugs: [`deadline-calendars/${caseSlug}`], titel: "Fristen-Snapshot" },
   ];
 

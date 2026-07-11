@@ -1231,7 +1231,11 @@ function VerjaehrungsScanCard({ caseSlug, lang }: { caseSlug: string; lang: "de"
       ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
       : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]";
 
-  const iconClass = isCritical ? "text-[color:var(--ds-danger-text)]" : isWarning ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-success-text)]";
+  const iconClass = isCritical
+    ? "text-[color:var(--ds-danger-text)]"
+    : isWarning
+      ? "text-[color:var(--ds-warning-text)]"
+      : "text-[color:var(--ds-success-text)]";
 
   const titleText = isCritical
     ? lang === "en"
@@ -1369,7 +1373,9 @@ function VerjaehrungsScanCard({ caseSlug, lang }: { caseSlug: string; lang: "de"
                     <td
                       className={cn(
                         "px-2 py-1.5 font-mono font-medium",
-                        (u.restzeit_tage ?? 0) <= 30 ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-warning-text)]"
+                        (u.restzeit_tage ?? 0) <= 30
+                          ? "text-[color:var(--ds-danger-text)]"
+                          : "text-[color:var(--ds-warning-text)]"
                       )}
                     >
                       {u.restzeit_tage ?? "—"} {lang === "en" ? "d" : "T"}

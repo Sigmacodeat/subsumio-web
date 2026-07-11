@@ -625,7 +625,9 @@ export default function NewCasePage() {
                 autoFocus
               />
               {f.formState.errors.title && (
-                <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{f.formState.errors.title.message}</p>
+                <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
+                  {f.formState.errors.title.message}
+                </p>
               )}
             </div>
 

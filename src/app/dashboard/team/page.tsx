@@ -114,7 +114,11 @@ export default function TeamPage() {
           role="alert"
           className="flex items-start gap-2.5 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3.5"
         >
-          <AlertCircle size={15} className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]" aria-hidden />
+          <AlertCircle
+            size={15}
+            className="mt-0.5 shrink-0 text-[color:var(--ds-danger-text)]"
+            aria-hidden
+          />
           <p className="text-sm text-[color:var(--ds-danger-text)]">{error}</p>
         </div>
       )}
@@ -123,7 +127,11 @@ export default function TeamPage() {
           role="status"
           className="flex items-start gap-2.5 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-3.5"
         >
-          <CheckCircle size={15} className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]" aria-hidden />
+          <CheckCircle
+            size={15}
+            className="mt-0.5 shrink-0 text-[color:var(--ds-success-text)]"
+            aria-hidden
+          />
           <p className="text-sm [color:var(--mk-text-subtle)]">{notice}</p>
         </div>
       )}

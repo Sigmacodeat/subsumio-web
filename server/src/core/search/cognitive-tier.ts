@@ -109,10 +109,7 @@ export function cognitiveTierForType(type: PageType): CognitiveTier {
 /**
  * Get the boost multiplier for a given cognitive tier.
  */
-export function boostForTier(
-  tier: CognitiveTier,
-  opts: CognitiveTierBoostOpts = {}
-): number {
+export function boostForTier(tier: CognitiveTier, opts: CognitiveTierBoostOpts = {}): number {
   switch (tier) {
     case 3:
       return opts.tier3Boost ?? DEFAULT_TIER3_BOOST;

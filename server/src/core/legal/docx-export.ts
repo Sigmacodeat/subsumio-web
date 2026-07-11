@@ -116,9 +116,7 @@ function rubrumParagraphs(kanzlei: Kanzlei | undefined, rubrum: Rubrum | undefin
   const out: string[] = [];
   if (kanzlei) {
     out.push(paragraphXml([{ text: kanzlei.name, bold: true }], { center: true }));
-    const kontakt = [kanzlei.adresse, kanzlei.telefon, kanzlei.email]
-      .filter(Boolean)
-      .join(" · ");
+    const kontakt = [kanzlei.adresse, kanzlei.telefon, kanzlei.email].filter(Boolean).join(" · ");
     if (kontakt) out.push(paragraphXml([{ text: kontakt }], { center: true }));
     out.push(paragraphXml([{ text: "" }]));
   }
@@ -132,12 +130,13 @@ function rubrumParagraphs(kanzlei: Kanzlei | undefined, rubrum: Rubrum | undefin
         out.push(paragraphXml([{ text: `vertreten durch: ${rubrum.klaegerVertreter}` }]));
     }
     if (rubrum.beklagter) {
-      out.push(paragraphXml([{ text: "Beklagte Partei: ", bold: true }, { text: rubrum.beklagter }]));
+      out.push(
+        paragraphXml([{ text: "Beklagte Partei: ", bold: true }, { text: rubrum.beklagter }])
+      );
       if (rubrum.beklagterVertreter)
         out.push(paragraphXml([{ text: `vertreten durch: ${rubrum.beklagterVertreter}` }]));
     }
-    if (rubrum.streitwert)
-      out.push(paragraphXml([{ text: `Streitwert: ${rubrum.streitwert}` }]));
+    if (rubrum.streitwert) out.push(paragraphXml([{ text: `Streitwert: ${rubrum.streitwert}` }]));
     out.push(paragraphXml([{ text: "" }]));
     if (rubrum.betreff)
       out.push(paragraphXml([{ text: rubrum.betreff, bold: true }], { center: true }));

@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getWidgetPreset, mergeWithDefaults, type WidgetPref, type WidgetPreset } from "@/lib/widget-registry";
+import {
+  getWidgetPreset,
+  mergeWithDefaults,
+  type WidgetPref,
+  type WidgetPreset,
+} from "@/lib/widget-registry";
 import { csrfFetch } from "@/lib/csrf";
 
 const STORAGE_KEY = "subsumio:widget-prefs";

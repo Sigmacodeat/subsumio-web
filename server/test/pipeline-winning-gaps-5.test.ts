@@ -13,13 +13,21 @@ function extractWitnessExpert(json: unknown): {
   empfehlung: string;
 } {
   if (!json || typeof json !== "object")
-    return { zeugen_count: 0, zeugenluecken_count: 0, gutachten_count: 0, gutachter_kosten_gesamt: 0, score: 0, empfehlung: "" };
+    return {
+      zeugen_count: 0,
+      zeugenluecken_count: 0,
+      gutachten_count: 0,
+      gutachter_kosten_gesamt: 0,
+      score: 0,
+      empfehlung: "",
+    };
   const obj = json as Record<string, unknown>;
   return {
     zeugen_count: Array.isArray(obj.zeugen) ? obj.zeugen.length : 0,
     zeugenluecken_count: Array.isArray(obj.zeugenluecken) ? obj.zeugenluecken.length : 0,
     gutachten_count: Array.isArray(obj.gutachten_bedarf) ? obj.gutachten_bedarf.length : 0,
-    gutachter_kosten_gesamt: typeof obj.gutachter_kosten_gesamt === "number" ? obj.gutachter_kosten_gesamt : 0,
+    gutachter_kosten_gesamt:
+      typeof obj.gutachter_kosten_gesamt === "number" ? obj.gutachter_kosten_gesamt : 0,
     score: typeof obj.zeugen_score === "number" ? obj.zeugen_score : 0,
     empfehlung: String(obj.empfehlung ?? ""),
   };
@@ -29,15 +37,50 @@ describe("witness-expert-analyzer extraction", () => {
   it("extracts witnesses, gaps, and expert needs", () => {
     const json = {
       zeugen: [
-        { name: "Zeuge 1 (ON 5)", glaubwuerdigkeit: "hoch", belastbarkeit: "hoch", widersprueche: [], parteilichkeit: "neutral", aussagekraft: "hoch", empfehlung: "Hauptzeuge" },
-        { name: "Zeuge 2 (ON 8)", glaubwuerdigkeit: "gering", belastbarkeit: "gering", widersprueche: ["Widerspruch zu ON 12"], parteilichkeit: "gegnerfreundlich", aussagekraft: "mittel", empfehlung: "Kreuzverhör vorbereiten" },
+        {
+          name: "Zeuge 1 (ON 5)",
+          glaubwuerdigkeit: "hoch",
+          belastbarkeit: "hoch",
+          widersprueche: [],
+          parteilichkeit: "neutral",
+          aussagekraft: "hoch",
+          empfehlung: "Hauptzeuge",
+        },
+        {
+          name: "Zeuge 2 (ON 8)",
+          glaubwuerdigkeit: "gering",
+          belastbarkeit: "gering",
+          widersprueche: ["Widerspruch zu ON 12"],
+          parteilichkeit: "gegnerfreundlich",
+          aussagekraft: "mittel",
+          empfehlung: "Kreuzverhör vorbereiten",
+        },
       ],
       zeugenluecken: [
-        { fehlt: "Augenzeuge", relevanz: "Kausalität", beschaffung: "Zeugenaufruf", prioritaet: "hoch" },
+        {
+          fehlt: "Augenzeuge",
+          relevanz: "Kausalität",
+          beschaffung: "Zeugenaufruf",
+          prioritaet: "hoch",
+        },
       ],
       gutachten_bedarf: [
-        { typ: "medizinisch", thema: "Kausalität", dringlichkeit: "hoch", paragraph: "§ 271 ZPO", gerichtlich_oder_privat: "gerichtlich", geschätzte_kosten: 5000 },
-        { typ: "technisch", thema: "Unfallrekonstruktion", dringlichkeit: "mittel", paragraph: "§ 402 ZPO", gerichtlich_oder_privat: "gerichtlich", geschätzte_kosten: 8000 },
+        {
+          typ: "medizinisch",
+          thema: "Kausalität",
+          dringlichkeit: "hoch",
+          paragraph: "§ 271 ZPO",
+          gerichtlich_oder_privat: "gerichtlich",
+          geschätzte_kosten: 5000,
+        },
+        {
+          typ: "technisch",
+          thema: "Unfallrekonstruktion",
+          dringlichkeit: "mittel",
+          paragraph: "§ 402 ZPO",
+          gerichtlich_oder_privat: "gerichtlich",
+          geschätzte_kosten: 8000,
+        },
       ],
       gutachter_kosten_gesamt: 13000,
       zeugen_score: 65,
@@ -89,7 +132,19 @@ function extractCounterclaim(json: unknown): {
   empfehlung: string;
 } {
   if (!json || typeof json !== "object")
-    return { gegenansprueche_count: 0, widerklage_moeglich: false, widerklage_wahrscheinlichkeit: 0, aufrechnung_moeglich: false, aufrechnung_betrag: 0, einwendungen_count: 0, netto_ev: 0, brutto_ev: 0, anpassung: 0, score: 0, empfehlung: "" };
+    return {
+      gegenansprueche_count: 0,
+      widerklage_moeglich: false,
+      widerklage_wahrscheinlichkeit: 0,
+      aufrechnung_moeglich: false,
+      aufrechnung_betrag: 0,
+      einwendungen_count: 0,
+      netto_ev: 0,
+      brutto_ev: 0,
+      anpassung: 0,
+      score: 0,
+      empfehlung: "",
+    };
   const obj = json as Record<string, unknown>;
   const widerklage = obj.widerklage_moeglich as Record<string, unknown> | undefined;
   const aufrechnung = obj.aufrechnung as Record<string, unknown> | undefined;
@@ -97,14 +152,20 @@ function extractCounterclaim(json: unknown): {
   return {
     gegenansprueche_count: Array.isArray(obj.gegenansprueche) ? obj.gegenansprueche.length : 0,
     widerklage_moeglich: Boolean(widerklage?.moeglich),
-    widerklage_wahrscheinlichkeit: typeof widerklage?.wahrscheinlichkeit === "number" ? widerklage.wahrscheinlichkeit : 0,
+    widerklage_wahrscheinlichkeit:
+      typeof widerklage?.wahrscheinlichkeit === "number" ? widerklage.wahrscheinlichkeit : 0,
     aufrechnung_moeglich: Boolean(aufrechnung?.moeglich),
     aufrechnung_betrag: typeof aufrechnung?.betrag === "number" ? aufrechnung.betrag : 0,
-    einwendungen_count: Array.isArray(obj.prozessuale_einwendungen) ? obj.prozessuale_einwendungen.length : 0,
+    einwendungen_count: Array.isArray(obj.prozessuale_einwendungen)
+      ? obj.prozessuale_einwendungen.length
+      : 0,
     netto_ev: typeof netto?.netto_ev === "number" ? netto.netto_ev : 0,
     brutto_ev: typeof netto?.brutto_ev === "number" ? netto.brutto_ev : 0,
     anpassung: typeof netto?.anpassung === "number" ? netto.anpassung : 0,
-    score: typeof obj.overall_widerklage_risiko_score === "number" ? obj.overall_widerklage_risiko_score : 0,
+    score:
+      typeof obj.overall_widerklage_risiko_score === "number"
+        ? obj.overall_widerklage_risiko_score
+        : 0,
     empfehlung: String(obj.empfehlung ?? ""),
   };
 }
@@ -113,14 +174,43 @@ describe("counterclaim-analyzer extraction", () => {
   it("extracts counterclaims with widerklage and aufrechnung", () => {
     const json = {
       gegenansprueche: [
-        { typ: "Schadensersatz", anspruch: "Reparaturkosten", paragraph: "§ 1431 ABGB", wahrscheinlichkeit: "mittel", betrag: 5000, ev: 2500, begruendung: "ON 15" },
+        {
+          typ: "Schadensersatz",
+          anspruch: "Reparaturkosten",
+          paragraph: "§ 1431 ABGB",
+          wahrscheinlichkeit: "mittel",
+          betrag: 5000,
+          ev: 2500,
+          begruendung: "ON 15",
+        },
       ],
-      widerklage_moeglich: { moeglich: true, paragraph: "§ 229 ZPO", voraussetzung: "Zusammenhang", wahrscheinlichkeit: 40 },
-      aufrechnung: { moeglich: true, paragraph: "§ 1441 ABGB", voraussetzungen_erfuellt: true, betrag: 5000 },
+      widerklage_moeglich: {
+        moeglich: true,
+        paragraph: "§ 229 ZPO",
+        voraussetzung: "Zusammenhang",
+        wahrscheinlichkeit: 40,
+      },
+      aufrechnung: {
+        moeglich: true,
+        paragraph: "§ 1441 ABGB",
+        voraussetzungen_erfuellt: true,
+        betrag: 5000,
+      },
       prozessuale_einwendungen: [
-        { einrede: "Verjährung", paragraph: "§ 1489 ABGB", wahrscheinlichkeit: "gering", auswirkung: "Klage abweislich" },
+        {
+          einrede: "Verjährung",
+          paragraph: "§ 1489 ABGB",
+          wahrscheinlichkeit: "gering",
+          auswirkung: "Klage abweislich",
+        },
       ],
-      netto_ev_nach_widerklage: { brutto_ev: 16075, widerklage_risiko_ev: 2500, aufrechnungsbetrag: 5000, netto_ev: 8575, anpassung: -7500 },
+      netto_ev_nach_widerklage: {
+        brutto_ev: 16075,
+        widerklage_risiko_ev: 2500,
+        aufrechnungsbetrag: 5000,
+        netto_ev: 8575,
+        anpassung: -7500,
+      },
       overall_widerklage_risiko_score: 45,
       empfehlung: "Widerklage möglich — Netto-EV reduziert",
     };
@@ -143,7 +233,13 @@ describe("counterclaim-analyzer extraction", () => {
       widerklage_moeglich: { moeglich: false },
       aufrechnung: { moeglich: false },
       prozessuale_einwendungen: [],
-      netto_ev_nach_widerklage: { brutto_ev: 20000, widerklage_risiko_ev: 0, aufrechnungsbetrag: 0, netto_ev: 20000, anpassung: 0 },
+      netto_ev_nach_widerklage: {
+        brutto_ev: 20000,
+        widerklage_risiko_ev: 0,
+        aufrechnungsbetrag: 0,
+        netto_ev: 20000,
+        anpassung: 0,
+      },
       overall_widerklage_risiko_score: 5,
       empfehlung: "Widerklage unwahrscheinlich — EV unverändert",
     };
@@ -204,12 +300,25 @@ function extractEvidenceQuality(json: unknown): {
   empfehlung: string;
 } {
   if (!json || typeof json !== "object")
-    return { beweise_count: 0, sehr_hoch_count: 0, hoch_count: 0, angreifbar_count: 0, schwachstellen_count: 0, beweisluecken_count: 0, score: 0, empfehlung: "" };
+    return {
+      beweise_count: 0,
+      sehr_hoch_count: 0,
+      hoch_count: 0,
+      angreifbar_count: 0,
+      schwachstellen_count: 0,
+      beweisluecken_count: 0,
+      score: 0,
+      empfehlung: "",
+    };
   const obj = json as Record<string, unknown>;
   const beweise = Array.isArray(obj.beweise) ? obj.beweise : [];
-  const sehrHoch = beweise.filter((b) => (b as Record<string, unknown>).beweiskraft === "sehr_hoch").length;
+  const sehrHoch = beweise.filter(
+    (b) => (b as Record<string, unknown>).beweiskraft === "sehr_hoch"
+  ).length;
   const hoch = beweise.filter((b) => (b as Record<string, unknown>).beweiskraft === "hoch").length;
-  const angreifbar = beweise.filter((b) => (b as Record<string, unknown>).angreifbar === true).length;
+  const angreifbar = beweise.filter(
+    (b) => (b as Record<string, unknown>).angreifbar === true
+  ).length;
   return {
     beweise_count: beweise.length,
     sehr_hoch_count: sehrHoch,
@@ -226,15 +335,48 @@ describe("evidence-quality-assessor extraction", () => {
   it("extracts mixed evidence with varying quality", () => {
     const json = {
       beweise: [
-        { on_nummer: "ON 1", bezeichnung: "Notarieller Vertrag", beweisart: "urkunden", beweiskraft: "sehr_hoch", angreifbar: false, begruendung: "Notariell beurkundet" },
-        { on_nummer: "ON 5", bezeichnung: "Zeugenaussage Müller", beweisart: "zeugen", beweiskraft: "hoch", angreifbar: false, begruendung: "Neutraler Zeuge" },
-        { on_nummer: "ON 8", bezeichnung: "Fotokopie Rechnung", beweisart: "urkunden", beweiskraft: "mittel", angreifbar: true, begruendung: "Nur Kopie", angriffsvektoren: ["Echtheit", "Vollständigkeit"], verifikation: "Original anfordern" },
+        {
+          on_nummer: "ON 1",
+          bezeichnung: "Notarieller Vertrag",
+          beweisart: "urkunden",
+          beweiskraft: "sehr_hoch",
+          angreifbar: false,
+          begruendung: "Notariell beurkundet",
+        },
+        {
+          on_nummer: "ON 5",
+          bezeichnung: "Zeugenaussage Müller",
+          beweisart: "zeugen",
+          beweiskraft: "hoch",
+          angreifbar: false,
+          begruendung: "Neutraler Zeuge",
+        },
+        {
+          on_nummer: "ON 8",
+          bezeichnung: "Fotokopie Rechnung",
+          beweisart: "urkunden",
+          beweiskraft: "mittel",
+          angreifbar: true,
+          begruendung: "Nur Kopie",
+          angriffsvektoren: ["Echtheit", "Vollständigkeit"],
+          verifikation: "Original anfordern",
+        },
       ],
       schwachstellen: [
-        { on_nummer: "ON 8", problem: "Nur Fotokopie", auswirkung: "Echtheit fraglich", gegenmassnahme: "Original anfordern" },
+        {
+          on_nummer: "ON 8",
+          problem: "Nur Fotokopie",
+          auswirkung: "Echtheit fraglich",
+          gegenmassnahme: "Original anfordern",
+        },
       ],
       beweisluecken: [
-        { streitfrage: "Kausalität", fehlender_beweis: "Medizinisches Gutachten", beschaffung: "Gerichtliches Gutachten", prioritaet: "hoch" },
+        {
+          streitfrage: "Kausalität",
+          fehlender_beweis: "Medizinisches Gutachten",
+          beschaffung: "Gerichtliches Gutachten",
+          prioritaet: "hoch",
+        },
       ],
       beweisqualitaet_score: 72,
       empfehlung: "Beweislage stark — 1 Schwachstelle, 1 Lücke",
@@ -252,9 +394,27 @@ describe("evidence-quality-assessor extraction", () => {
   it("handles all very high quality evidence (strong case)", () => {
     const json = {
       beweise: [
-        { on_nummer: "ON 1", bezeichnung: "Notarielle Urkunde", beweisart: "urkunden", beweiskraft: "sehr_hoch", angreifbar: false },
-        { on_nummer: "ON 2", bezeichnung: "Gerichtliches Gutachten", beweisart: "gutachten", beweiskraft: "sehr_hoch", angreifbar: false },
-        { on_nummer: "ON 3", bezeichnung: "Gerichtlicher Augenschein", beweisart: "augenschein", beweiskraft: "sehr_hoch", angreifbar: false },
+        {
+          on_nummer: "ON 1",
+          bezeichnung: "Notarielle Urkunde",
+          beweisart: "urkunden",
+          beweiskraft: "sehr_hoch",
+          angreifbar: false,
+        },
+        {
+          on_nummer: "ON 2",
+          bezeichnung: "Gerichtliches Gutachten",
+          beweisart: "gutachten",
+          beweiskraft: "sehr_hoch",
+          angreifbar: false,
+        },
+        {
+          on_nummer: "ON 3",
+          bezeichnung: "Gerichtlicher Augenschein",
+          beweisart: "augenschein",
+          beweiskraft: "sehr_hoch",
+          angreifbar: false,
+        },
       ],
       schwachstellen: [],
       beweisluecken: [],
@@ -272,15 +432,42 @@ describe("evidence-quality-assessor extraction", () => {
   it("handles weak evidence (all angreifbar)", () => {
     const json = {
       beweise: [
-        { on_nummer: "ON 1", bezeichnung: "Fotokopie", beweisart: "urkunden", beweiskraft: "gering", angreifbar: true },
-        { on_nummer: "ON 2", bezeichnung: "Hörensagen", beweisart: "zeugen", beweiskraft: "sehr_gering", angreifbar: true },
+        {
+          on_nummer: "ON 1",
+          bezeichnung: "Fotokopie",
+          beweisart: "urkunden",
+          beweiskraft: "gering",
+          angreifbar: true,
+        },
+        {
+          on_nummer: "ON 2",
+          bezeichnung: "Hörensagen",
+          beweisart: "zeugen",
+          beweiskraft: "sehr_gering",
+          angreifbar: true,
+        },
       ],
       schwachstellen: [
-        { on_nummer: "ON 1", problem: "Kopie", auswirkung: "Echtheit fraglich", gegenmassnahme: "Original" },
-        { on_nummer: "ON 2", problem: "Hörensagen", auswirkung: "Beweiskraft minimal", gegenmassnahme: "Augenzeuge finden" },
+        {
+          on_nummer: "ON 1",
+          problem: "Kopie",
+          auswirkung: "Echtheit fraglich",
+          gegenmassnahme: "Original",
+        },
+        {
+          on_nummer: "ON 2",
+          problem: "Hörensagen",
+          auswirkung: "Beweiskraft minimal",
+          gegenmassnahme: "Augenzeuge finden",
+        },
       ],
       beweisluecken: [
-        { streitfrage: "Haftung", fehlender_beweis: "Originaldokument", beschaffung: "Anfordern", prioritaet: "hoch" },
+        {
+          streitfrage: "Haftung",
+          fehlender_beweis: "Originaldokument",
+          beschaffung: "Anfordern",
+          prioritaet: "hoch",
+        },
       ],
       beweisqualitaet_score: 20,
       empfehlung: "Beweislage schwach — 2 Schwachstellen, 1 Lücke",

@@ -371,8 +371,14 @@ export default function ImportKanzleiPage() {
         className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] px-4 py-3"
         role="note"
       >
-        <Info size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]" aria-hidden="true" />
-        <p className="text-xs leading-relaxed text-[color:var(--ds-info-text)]/90">{t("importkanz.info")}</p>
+        <Info
+          size={16}
+          className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]"
+          aria-hidden="true"
+        />
+        <p className="text-xs leading-relaxed text-[color:var(--ds-info-text)]/90">
+          {t("importkanz.info")}
+        </p>
       </div>
 
       {/* Upload */}
@@ -483,7 +489,11 @@ export default function ImportKanzleiPage() {
           {/* Dry Run — validates mappings + estimates error rate, writes nothing */}
           <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-text)]">
-              <FlaskConical size={14} className="text-[color:var(--ds-info-text)]" aria-hidden="true" />
+              <FlaskConical
+                size={14}
+                className="text-[color:var(--ds-info-text)]"
+                aria-hidden="true"
+              />
               Dry Run
             </h2>
             <p className="text-xs text-[color:var(--ds-text-muted)]">
@@ -509,7 +519,10 @@ export default function ImportKanzleiPage() {
                   Fehlerquote: <strong>{project.dry_run_result.stats.error_rate}%</strong>
                 </p>
                 {project.dry_run_result.warnings.map((w, i) => (
-                  <p key={i} className="flex items-center gap-1.5 text-[color:var(--ds-warning-text)]">
+                  <p
+                    key={i}
+                    className="flex items-center gap-1.5 text-[color:var(--ds-warning-text)]"
+                  >
                     <AlertTriangle size={11} aria-hidden="true" /> {w}
                   </p>
                 ))}
@@ -518,7 +531,9 @@ export default function ImportKanzleiPage() {
                     <CheckCircle2 size={11} aria-hidden="true" /> {t("importkanz.dry_run_ready")}
                   </p>
                 ) : (
-                  <p className="text-[color:var(--ds-danger-text)]">{t("importkanz.dry_run_error")}</p>
+                  <p className="text-[color:var(--ds-danger-text)]">
+                    {t("importkanz.dry_run_error")}
+                  </p>
                 )}
               </div>
             )}
@@ -549,7 +564,9 @@ export default function ImportKanzleiPage() {
                 <CheckCircle2 size={15} className="text-[color:var(--ds-success-text)]" />
                 <span className="text-[color:var(--ds-success-text)]">{result.ok} importiert</span>
                 {result.failed > 0 && (
-                  <span className="text-[color:var(--ds-danger-text)]">· {result.failed} fehlgeschlagen</span>
+                  <span className="text-[color:var(--ds-danger-text)]">
+                    · {result.failed} fehlgeschlagen
+                  </span>
                 )}
               </span>
             )}

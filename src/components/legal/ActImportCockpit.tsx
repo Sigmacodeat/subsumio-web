@@ -416,7 +416,11 @@ export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
                 <div key={item.id} className="flex items-center gap-2 text-xs">
                   <AlertTriangle
                     size={12}
-                    className={item.status === "failed" ? "text-[color:var(--ds-danger-text)]" : "text-[color:var(--ds-warning-text)]"}
+                    className={
+                      item.status === "failed"
+                        ? "text-[color:var(--ds-danger-text)]"
+                        : "text-[color:var(--ds-warning-text)]"
+                    }
                   />
                   <span className="min-w-0 flex-1 truncate">{item.relativePath}</span>
                   <Badge variant="info">{item.status}</Badge>

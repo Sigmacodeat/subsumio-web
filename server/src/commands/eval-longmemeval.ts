@@ -13,7 +13,11 @@ import { readFileSync, existsSync, openSync, writeSync, closeSync, writeFileSync
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import { withBenchmarkBrain, resetTables } from "../eval/longmemeval/harness.ts";
-import { haystackToPages, buildSlugToSessionIdMap, type LongMemEvalQuestion } from "../eval/longmemeval/adapter.ts";
+import {
+  haystackToPages,
+  buildSlugToSessionIdMap,
+  type LongMemEvalQuestion,
+} from "../eval/longmemeval/adapter.ts";
 import { renderChatBlock, type ChatSessionForPrompt } from "../eval/longmemeval/sanitize.ts";
 import { importFromContent } from "../core/import-file.ts";
 import { hybridSearch } from "../core/search/hybrid.ts";
@@ -423,7 +427,8 @@ async function generateAnswer(
   // → no "Known trajectory:" header, no cue to the model.
   const trajectorySection =
     trajectoryBlock.length > 0 ? `Known trajectory:\n${trajectoryBlock}\n\n` : "";
-  const userText = `Question:\n${question}\n\n${trajectorySection}Retrieved sessions:\n${rendered}\n\n` +
+  const userText =
+    `Question:\n${question}\n\n${trajectorySection}Retrieved sessions:\n${rendered}\n\n` +
     `Instructions: Read the retrieved sessions above and answer the question in natural language. ` +
     `Output ONLY your answer as plain text. Do NOT include <chat_session> tags, session IDs, ` +
     `frontmatter, or any metadata from the retrieved sessions in your response.`;
@@ -551,13 +556,23 @@ export async function runEvalLongMemEval(args: string[], runOpts: RunOpts = {}):
 
   const hasAnthropicKey = !!process.env.ANTHROPIC_API_KEY;
   const hasOpenRouterKey = !!process.env.OPENROUTER_API_KEY;
-  const cliModelIsOpenAI = opts.model && (opts.model.startsWith("openai:") || opts.model.startsWith("gpt") || opts.model.startsWith("o1") || opts.model.startsWith("o3") || opts.model.startsWith("o4"));
+  const cliModelIsOpenAI =
+    opts.model &&
+    (opts.model.startsWith("openai:") ||
+      opts.model.startsWith("gpt") ||
+      opts.model.startsWith("o1") ||
+      opts.model.startsWith("o3") ||
+      opts.model.startsWith("o4"));
   const cliModelIsOpenRouter = opts.model && opts.model.startsWith("openrouter:");
   const model = await resolveModel(null, {
     cliFlag: opts.model,
     configKey: "models.eval.longmemeval",
     envVar: "GBRAIN_MODEL",
-    fallback: cliModelIsOpenRouter ? (opts.model!) : (!hasAnthropicKey || cliModelIsOpenAI) ? "openai:gpt-4.1" : "sonnet",
+    fallback: cliModelIsOpenRouter
+      ? opts.model!
+      : !hasAnthropicKey || cliModelIsOpenAI
+        ? "openai:gpt-5.4"
+        : "sonnet",
   });
 
   // v0.43 — provider-agnostic client: use OpenAI when the resolved model is
@@ -565,7 +580,12 @@ export async function runEvalLongMemEval(args: string[], runOpts: RunOpts = {}):
   // v0.44 — OpenRouter support: route through OpenAI SDK with OpenRouter base URL.
   // This lets the benchmark run without Anthropic credits by routing answer
   // generation through OpenAI GPT models or OpenRouter-hosted models.
-  const isOpenAIModel = model.startsWith("openai:") || model.startsWith("gpt") || model.startsWith("o1") || model.startsWith("o3") || model.startsWith("o4");
+  const isOpenAIModel =
+    model.startsWith("openai:") ||
+    model.startsWith("gpt") ||
+    model.startsWith("o1") ||
+    model.startsWith("o3") ||
+    model.startsWith("o4");
   const isOpenRouterModel = model.startsWith("openrouter:");
   const useOpenAI = isOpenAIModel || (!hasAnthropicKey && !isOpenRouterModel) || isOpenRouterModel;
   const useOpenRouter = isOpenRouterModel && hasOpenRouterKey;
@@ -585,21 +605,32 @@ export async function runEvalLongMemEval(args: string[], runOpts: RunOpts = {}):
       : new OpenAI();
     const openaiModel = useOpenRouter
       ? model.replace(/^openrouter:/, "")
-      : model.startsWith("openai:") ? model.split(":").slice(1).join(":") : model;
+      : model.startsWith("openai:")
+        ? model.split(":").slice(1).join(":")
+        : model;
     return {
       create: async (params, callOpts) => {
         const messages: Array<{ role: string; content: string }> = [];
         if (params.system) {
-          messages.push({ role: "system", content: typeof params.system === "string" ? params.system : String(params.system) });
+          messages.push({
+            role: "system",
+            content: typeof params.system === "string" ? params.system : String(params.system),
+          });
         }
         for (const m of params.messages ?? []) {
-          messages.push({ role: m.role, content: typeof m.content === "string" ? m.content : JSON.stringify(m.content) });
+          messages.push({
+            role: m.role,
+            content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+          });
         }
-        const res = await openai.chat.completions.create({
-          model: openaiModel,
-          max_tokens: params.max_tokens,
-          messages: messages as any,
-        }, { signal: callOpts?.signal });
+        const res = await openai.chat.completions.create(
+          {
+            model: openaiModel,
+            max_tokens: params.max_tokens,
+            messages: messages as any,
+          },
+          { signal: callOpts?.signal }
+        );
         const text = res.choices?.[0]?.message?.content ?? "";
         return { content: [{ type: "text", text }] } as any;
       },
@@ -625,7 +656,11 @@ export async function runEvalLongMemEval(args: string[], runOpts: RunOpts = {}):
     ? await resolveModel(null, {
         cliFlag: runOpts.extractorModel,
         tier: "utility",
-        fallback: useOpenRouter ? "openrouter:deepseek/deepseek-chat" : useOpenAI ? "openai:gpt-4.1-mini" : "haiku",
+        fallback: useOpenRouter
+          ? "openrouter:deepseek/deepseek-chat"
+          : useOpenAI
+            ? "openai:gpt-5.4-mini"
+            : "haiku",
       })
     : "";
 
@@ -839,7 +874,9 @@ async function runOneQuestion(
   // stays as `answer_4be1b6b4_2` in answer_session_ids. Without this map,
   // recall always fails on the full HuggingFace dataset.
   const slugToSessionId = buildSlugToSessionIdMap(q);
-  const originalSessionIds = results.map((r) => slugToSessionId.get(r.slug) ?? sessionIdFromSlug(r.slug));
+  const originalSessionIds = results.map(
+    (r) => slugToSessionId.get(r.slug) ?? sessionIdFromSlug(r.slug)
+  );
   const retrievedOriginalIds = [...new Set(originalSessionIds)];
   // Recall: did any retrieved session match ground-truth answer_session_ids?
   if (q.answer_session_ids && q.answer_session_ids.length > 0) {

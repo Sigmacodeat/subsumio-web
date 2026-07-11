@@ -18,23 +18,30 @@ import * as path from "path";
 
 const ROOT = path.join(process.cwd(), "src");
 const COLORS = [
-  "red", "green", "blue", "amber", "emerald", "yellow", "orange",
-  "rose", "violet", "purple", "pink", "teal", "cyan", "sky",
-  "indigo", "fuchsia",
+  "red",
+  "green",
+  "blue",
+  "amber",
+  "emerald",
+  "yellow",
+  "orange",
+  "rose",
+  "violet",
+  "purple",
+  "pink",
+  "teal",
+  "cyan",
+  "sky",
+  "indigo",
+  "fuchsia",
 ];
 const STEPS = ["50", "100", "200", "300", "400", "500", "600", "700", "800", "900"];
 
 // text-{color}-{step} — these are the critical ones that don't adapt
-const TEXT_COLOR_RE = new RegExp(
-  `\\btext-(?:${COLORS.join("|")})-(?:${STEPS.join("|")})\\b`,
-  "g"
-);
+const TEXT_COLOR_RE = new RegExp(`\\btext-(?:${COLORS.join("|")})-(?:${STEPS.join("|")})\\b`, "g");
 
 // bg-{color}-{step} WITHOUT /opacity — solid backgrounds that don't adapt
-const BG_SOLID_RE = new RegExp(
-  `\\bbg-(?:${COLORS.join("|")})-(?:${STEPS.join("|")})\\b(?!/)`,
-  "g"
-);
+const BG_SOLID_RE = new RegExp(`\\bbg-(?:${COLORS.join("|")})-(?:${STEPS.join("|")})\\b(?!/)`, "g");
 
 type Violation = {
   file: string;
@@ -166,7 +173,9 @@ function main() {
 
   console.log(`\n=== Color Token Lint ===`);
   console.log(`Files scanned: ${filesScanned}`);
-  console.log(`Total violations: ${allViolations.length} (text-color: ${textCount}, bg-solid: ${bgCount})`);
+  console.log(
+    `Total violations: ${allViolations.length} (text-color: ${textCount}, bg-solid: ${bgCount})`
+  );
 
   if (allViolations.length === 0) {
     console.log("✅ No hardcoded color utilities found.");

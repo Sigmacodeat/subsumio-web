@@ -108,7 +108,11 @@ export function gerichtsgebuehr(
 ): { betrag: number; tarifpost: string; tarif_stand: string } {
   if (!(streitwert >= 0)) throw new Error("kosten-at: streitwert must be >= 0");
   if (opts?.arbeitsrecht && instanz === 1) {
-    return { betrag: 0, tarifpost: "GGG TP 1 (ASG: gebührenfrei 1. Instanz)", tarif_stand: TARIF_STAND };
+    return {
+      betrag: 0,
+      tarifpost: "GGG TP 1 (ASG: gebührenfrei 1. Instanz)",
+      tarif_stand: TARIF_STAND,
+    };
   }
   const tabelle = instanz === 1 ? GGG_TP1 : instanz === 2 ? GGG_TP2 : GGG_TP3;
   const stufe = lookupStufe(tabelle, streitwert);
@@ -234,7 +238,9 @@ export function berechneLeistung(opts: LeistungOpts): LeistungErgebnis {
     );
     ansatz = round2(ansatz + zuschlag);
   }
-  aufschluesselung.push(`${opts.tarifpost} Ansatz (BMG € ${opts.bemessungsgrundlage.toLocaleString("de-AT")}): € ${ansatz.toFixed(2)}`);
+  aufschluesselung.push(
+    `${opts.tarifpost} Ansatz (BMG € ${opts.bemessungsgrundlage.toLocaleString("de-AT")}): € ${ansatz.toFixed(2)}`
+  );
 
   let einheitssatz = 0;
   if (opts.einheitssatz !== false) {
@@ -248,7 +254,9 @@ export function berechneLeistung(opts: LeistungOpts): LeistungErgebnis {
   if (personen > 1) {
     const pct = Math.min((personen - 1) * 10, 50);
     streitgenossenzuschlag = round2(((ansatz + einheitssatz) * pct) / 100);
-    aufschluesselung.push(`Streitgenossenzuschlag ${pct}% (§ 15 RATG): € ${streitgenossenzuschlag.toFixed(2)}`);
+    aufschluesselung.push(
+      `Streitgenossenzuschlag ${pct}% (§ 15 RATG): € ${streitgenossenzuschlag.toFixed(2)}`
+    );
   }
 
   let ervZuschlag = 0;
@@ -440,7 +448,10 @@ export function kostenersatz(
       ersatzquote: 1,
       anwaltskostenersatz: round2(eigeneAnwaltskosten),
       gerichtsgebuehrenersatz: round2(gerichtsgebuehren),
-      regel: quote === 1 ? "§ 41 ZPO — voller Kostenersatz" : "§ 43 Abs 2 ZPO — geringfügiges Unterliegen, voller Ersatz",
+      regel:
+        quote === 1
+          ? "§ 41 ZPO — voller Kostenersatz"
+          : "§ 43 Abs 2 ZPO — geringfügiges Unterliegen, voller Ersatz",
     };
   }
   if (quote <= 0.1) {
@@ -523,7 +534,9 @@ export function kostenverzeichnisMarkdown(kv: Kostenverzeichnis): string {
       `| ${p.datum} | ${p.leistung} | ${p.tarifpost} | € ${p.nettoSumme.toFixed(2)} | € ${p.ust.toFixed(2)} | € ${p.bruttoSumme.toFixed(2)} |`
     );
   }
-  lines.push(`| | **Summe** | | **€ ${kv.nettoGesamt.toFixed(2)}** | **€ ${kv.ustGesamt.toFixed(2)}** | **€ ${round2(kv.nettoGesamt + kv.ustGesamt).toFixed(2)}** |`);
+  lines.push(
+    `| | **Summe** | | **€ ${kv.nettoGesamt.toFixed(2)}** | **€ ${kv.ustGesamt.toFixed(2)}** | **€ ${round2(kv.nettoGesamt + kv.ustGesamt).toFixed(2)}** |`
+  );
   if (kv.barauslagen > 0) {
     lines.push(`| | Barauslagen (GGG etc.) | | | | € ${kv.barauslagen.toFixed(2)} |`);
   }

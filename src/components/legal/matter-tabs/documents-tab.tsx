@@ -145,7 +145,9 @@ export function DocumentsTab() {
           wird automatisch dieser Akte zugeordnet
         </p>
         {!isOnline() && (
-          <p className="mt-2 text-xs text-[color:var(--ds-warning-text)]">{t("casesdetail.upload.offline_mode")}</p>
+          <p className="mt-2 text-xs text-[color:var(--ds-warning-text)]">
+            {t("casesdetail.upload.offline_mode")}
+          </p>
         )}
         <label className="mt-3 inline-block cursor-pointer">
           <input
@@ -296,7 +298,9 @@ export function DocumentsTab() {
                   />
                 </div>
                 {item.status === "error" && (
-                  <div className="mt-1 text-xs text-[color:var(--ds-danger-text)]">{item.error}</div>
+                  <div className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
+                    {item.error}
+                  </div>
                 )}
               </div>
               {item.status === "error" && (

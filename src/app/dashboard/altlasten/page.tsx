@@ -384,21 +384,31 @@ export default function AltlastenPage() {
         <div className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4">
           <div className="flex items-center gap-2">
             <Flame className="h-5 w-5 text-[color:var(--ds-danger-text)]" />
-            <span className="text-sm font-medium text-[color:var(--ds-danger-text)]">Verjährung URGENT</span>
+            <span className="text-sm font-medium text-[color:var(--ds-danger-text)]">
+              Verjährung URGENT
+            </span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-[color:var(--ds-danger-text)]">{urgentCount}</p>
+          <p className="mt-2 text-2xl font-bold text-[color:var(--ds-danger-text)]">
+            {urgentCount}
+          </p>
         </div>
         <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-[color:var(--ds-warning-text)]" />
-            <span className="text-sm font-medium text-[color:var(--ds-warning-text)]">Verjährung WARNUNG</span>
+            <span className="text-sm font-medium text-[color:var(--ds-warning-text)]">
+              Verjährung WARNUNG
+            </span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-[color:var(--ds-warning-text)]">{warningCount}</p>
+          <p className="mt-2 text-2xl font-bold text-[color:var(--ds-warning-text)]">
+            {warningCount}
+          </p>
         </div>
         <div className="rounded-lg border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4">
           <div className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-[color:var(--ds-info-text)]" />
-            <span className="text-sm font-medium text-[color:var(--ds-info-text)]">Pipeline durchgeführt</span>
+            <span className="text-sm font-medium text-[color:var(--ds-info-text)]">
+              Pipeline durchgeführt
+            </span>
           </div>
           <p className="mt-2 text-2xl font-bold text-[color:var(--ds-info-text)]">{pipelineRan}</p>
         </div>

@@ -88,7 +88,7 @@ der Root-Layout erzwingt `force-dynamic` für die gesamte SEO-Site.
       (in 43 Komponenten importiert). Hinzufügen tree-shaked die Icon-/Motion-Importe und
       senkt das JS-Bundle spürbar.
 - [ ] **P2-4 · `images.remotePatterns` mit `hostname: "**"`ist zu offen.**
-   `next.config.ts:15` erlaubt Bildoptimierung von **jedem** HTTPS-Host — potenzieller
+`next.config.ts:15` erlaubt Bildoptimierung von **jedem** HTTPS-Host — potenzieller
       Missbrauchs-/SSRF-Vektor über den Next-Image-Optimizer. Auf die tatsächlich benötigten
       Hosts einschränken.
 - [ ] **P2-5 · Unfertige Widget-Verdrahtung.**
