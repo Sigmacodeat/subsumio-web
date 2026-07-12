@@ -169,8 +169,4 @@ describe("createStorage", () => {
   test("S3Storage requires credentials", async () => {
     expect(createStorage({ backend: "s3", bucket: "test" })).rejects.toThrow("accessKeyId");
   });
-
-  test("SupabaseStorage requires projectUrl", async () => {
-    expect(createStorage({ backend: "supabase", bucket: "test" })).rejects.toThrow("projectUrl");
-  });
 });

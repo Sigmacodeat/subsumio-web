@@ -175,16 +175,16 @@ export function detectEnvOverride(
   env: NodeJS.ProcessEnv = process.env
 ): EnvOverrideWarning {
   const vars: EnvOverrideWarning["vars"] = [];
-  const envModel = env.GBRAIN_EMBEDDING_MODEL?.trim();
+  const envModel = (env.SUBSUMIO_EMBEDDING_MODEL ?? env.GBRAIN_EMBEDDING_MODEL)?.trim();
   if (envModel && envModel !== targetModel) {
-    vars.push({ name: "GBRAIN_EMBEDDING_MODEL", current: envModel, target: targetModel });
+    vars.push({ name: "SUBSUMIO/GBRAIN_EMBEDDING_MODEL", current: envModel, target: targetModel });
   }
-  const envDimRaw = env.GBRAIN_EMBEDDING_DIMENSIONS?.trim();
+  const envDimRaw = (env.SUBSUMIO_EMBEDDING_DIMENSIONS ?? env.GBRAIN_EMBEDDING_DIMENSIONS)?.trim();
   if (envDimRaw) {
     const envDim = Number(envDimRaw);
     if (!Number.isFinite(envDim) || envDim !== targetDim) {
       vars.push({
-        name: "GBRAIN_EMBEDDING_DIMENSIONS",
+        name: "SUBSUMIO/GBRAIN_EMBEDDING_DIMENSIONS",
         current: envDimRaw,
         target: String(targetDim),
       });

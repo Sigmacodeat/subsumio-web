@@ -3,30 +3,30 @@ title: "StGB — Schweizerisches Strafgesetzbuch"
 type: "law"
 jurisdiction: "ch"
 abbreviation: "StGB"
-version_date: "2026-01-01"
-retrieved_at: "2026-06-21"
-source_url: "https://www.odat.ch/de/cc/311.0-20260101-de.html"
+version_date: "2026-06-12"
+retrieved_at: "2026-07-10"
+source_url: "https://www.odat.ch/de/cc/311.0-20260612-de.html"
 license: "Quelle: odat.ch (Forma Legis) — CC-BY-SA-4.0. Nicht-amtliche Veröffentlichung."
 ---
 
--
--
--
+- 
+- 
+- 
 - CH · StGB · Schweizerisches Strafgesetzbuch vom 21. Dezember 1937 | odat
--
--
--
--
--
--
--
--
--
--
--
--
--
-- DEFRITEN
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+DEFRITEN
 
 Dark ModeSchnellauswahlSuche
 
@@ -40,7 +40,7 @@ SR-Nummer:
 311.0
 
 Version (odat):
-20260101
+20260612
 
 Erlassdatum:
 21.12.1937
@@ -49,7 +49,7 @@ Inkraftsetzungsdatum:
 01.01.1942
 
 Publikationsdatum:
-01.01.2026
+12.06.2026
 
 Aufhebungsdatum:
 N/A
@@ -57,24 +57,20 @@ N/A
 Text in Kraft
 Schweizerisches Strafgesetzbuch vom 21. Dezember 1937
 
-311.0-20260101 (amtliche Quelle)
-
-Überholte Version
-zur neusten Version
+311.0-20260612 (amtliche Quelle)
 
 Immer zur neusten Version
 ch.odat.ch/de/cc/311.0
 
 Immer zu dieser Version
-ch.odat.ch/de/cc/311.0-20260101-de.html
+ch.odat.ch/de/cc/311.0-20260612-de.html
 
 ## Schweizerisches Strafgesetzbuch
-
-vom 21. Dezember 1937 (Stand am 1. Januar 2026)
+vom 21. Dezember 1937 (Stand am 12. Juni 2026)
 
 Die Bundesversammlung der Schweizerischen Eidgenossenschaft,
 
-gestützt auf Artikel 123 Absätze 1 und 3 der Bundesverfassung[1],[2]
+gestützt auf Artikel 123 Absätze 1 und 3 der Bundesverfassung[1],[2] 
 nach Einsicht in eine Botschaft des Bundesrates vom 23. Juli 1918[3],
 
 beschliesst:
@@ -84,7 +80,6 @@ beschliesst:
 ## Erster Teil: Verbrechen und Vergehen
 
 ## Erster Titel: Geltungsbereich
-
 Art. 1Keine Sanktion ohne Gesetz
 Eine Strafe oder Massnahme darf nur wegen einer Tat verhängt werden, die das Gesetz ausdrücklich unter Strafe stellt.
 
@@ -231,7 +226,6 @@ Dieses Gesetz ist nicht anwendbar auf Personen, soweit deren Taten nach dem Mili
 Für Personen, welche zum Zeitpunkt der Tat das 18. Altersjahr noch nicht vollendet haben, bleiben die Vorschriften des Jugendstrafgesetzes vom 20. Juni 2003[13] (JStG) vorbehalten. Sind gleichzeitig eine vor und eine nach der Vollendung des 18. Altersjahres begangene Tat zu beurteilen, so ist Artikel 3 Absatz 2 JStG anwendbar.[14]
 
 ## Zweiter Titel: Strafbarkeit
-
 Art. 10Begriff
 1
 
@@ -476,7 +470,6 @@ Erhebt ein Beschuldigter gegen den Rückzug des Strafantrages Einspruch, so gilt
 ## Erstes Kapitel: Strafen
 
 ## Erster Abschnitt: Geldstrafe und Freiheitsstrafe[23]
-
 Art. 34Bemessung
 1
 
@@ -549,7 +542,6 @@ Es hat die Wahl der Freiheitsstrafe näher zu begründen.
 Vorbehalten bleibt die Freiheitsstrafe anstelle einer nicht bezahlten Geldstrafe (Art. 36).
 
 ## Zweiter Abschnitt: Bedingte und teilbedingte Strafen
-
 Art. 42Bedingte Strafen
 1
 
@@ -622,7 +614,6 @@ Entzieht sich der Verurteilte der Bewährungshilfe oder missachtet er die Weisun
 Der Widerruf darf nicht mehr angeordnet werden, wenn seit dem Ablauf der Probezeit drei Jahre vergangen sind.
 
 ## Dritter Abschnitt: Strafzumessung
-
 Art. 47Grundsatz
 1
 
@@ -682,7 +673,6 @@ Art. 51Anrechnung der Untersuchungshaft
 Das Gericht rechnet die Untersuchungshaft, die der Täter während dieses oder eines anderen Verfahrens ausgestanden hat, auf die Strafe an. Ein Tag Haft entspricht einem Tagessatz Geldstrafe.[41]
 
 ## Vierter Abschnitt: Strafbefreiung sowie Sistierung und Einstellung des Verfahrens[42]
-
 Art. 52Fehlendes Strafbedürfnis[43]
 Die zuständige Behörde sieht von einer Strafverfolgung, einer Überweisung an das Gericht oder einer Bestrafung ab, wenn Schuld und Tatfolgen geringfügig sind.
 
@@ -749,7 +739,6 @@ Vor Ende der Sistierung nimmt die Staatsanwaltschaft oder das Gericht eine Beurt
 ## Zweites Kapitel: Massnahmen
 
 ## Erster Abschnitt: Therapeutische Massnahmen und Verwahrung
-
 Art. 56Grundsätze
 1
 
@@ -1183,7 +1172,6 @@ Sind bei einem Verurteilten vor oder während des Vollzuges einer Freiheitsstraf
 Ergibt sich bei einem Verurteilten während des Vollzuges der Freiheitsstrafe aufgrund neuer Tatsachen oder Beweismittel, dass die Voraussetzungen der Verwahrung gegeben sind und im Zeitpunkt der Verurteilung bereits bestanden haben, ohne dass das Gericht davon Kenntnis haben konnte, so kann das Gericht die Verwahrung nachträglich anordnen. Zuständigkeit und Verfahren bestimmen sich nach den Regeln, die für die Revision (Art. 410−415 der Strafprozessordnung[68]) gelten.[69] [70]
 
 ## Zweiter Abschnitt: Andere Massnahmen
-
 Art. 66Friedensbürgschaft
 1
 
@@ -1224,8 +1212,8 @@ j.[79] vorsätzliche Gefährdung durch gentechnisch veränderte oder pathogene O
 
 k.[80] Störung des öffentlichen Verkehrs (Art. 237 Ziff. 1);
 
-l.[81] strafbare Vorbereitungshandlungen (Art. 260bis Abs. 1 und 3), Beteiligung an oder Unterstützung einer kriminellen oder terroristischen Organisation (Art. 260ter), Gefährdung der öffentlichen Sicherheit mit Waffen (Art. 260quater), Finanzierung des Terrorismus (Art. 260quinquies), Anwerbung, Ausbildung
-und Reisen im Hinblick auf eine terroristische Straftat (Art. 260sexies);
+l.[81] strafbare Vorbereitungshandlungen (Art. 260bis Abs. 1 und 3), Beteiligung an oder Unterstützung einer kriminellen oder terroristischen Organisation (Art. 260ter), Gefährdung der öffentlichen Sicherheit mit Waffen (Art. 260quater), Finanzierung des Terrorismus (Art. 260quinquies), Anwerbung, Ausbildung 
+ und Reisen im Hinblick auf eine terroristische Straftat (Art. 260sexies);
 
 m.Völkermord (Art. 264), Verbrechen gegen die Menschlichkeit (Art. 264a), schwere Verletzungen der Genfer Konventionen vom 12. August 1949[82] (Art. 264c), andere Kriegsverbrechen (Art. 264d–264h);
 
@@ -1580,7 +1568,6 @@ Das Gericht kann die Verwendung zu Gunsten des Geschädigten jedoch nur anordnen
 Die Kantone sehen für den Fall, dass die Zusprechung nicht schon im Strafurteil möglich ist, ein einfaches und rasches Verfahren vor.
 
 ## Vierter Titel: Vollzug von Freiheitsstrafen und freiheitsentziehenden Massnahmen
-
 Art. 74Vollzugsgrundsätze
 Die Menschenwürde des Gefangenen oder des Eingewiesenen ist zu achten. Seine Rechte dürfen nur so weit beschränkt werden, als der Freiheitsentzug und das Zusammenleben in der Vollzugseinrichtung es erfordern.
 
@@ -1984,7 +1971,6 @@ Sie kann nur dann die Information verweigern oder einen früheren Entscheid zu i
 Heisst die Vollzugsbehörde ein Gesuch gut, so macht sie die informationsberechtigte Person auf die Vertraulichkeit der bekannt gegebenen Informationen aufmerksam. Personen, die Anspruch auf Opferhilfe nach dem OHG haben, sind gegenüber der beratenden Person einer Beratungsstelle nach Artikel 9 OHG nicht zur Vertraulichkeit verpflichtet.
 
 ## Fünfter Titel: Bewährungshilfe, Weisungen und freiwillige soziale Betreuung
-
 Art. 93Bewährungshilfe
 1
 
@@ -2038,7 +2024,6 @@ Art. 96Soziale Betreuung
 Die Kantone stellen für die Dauer des Strafverfahrens und des Strafvollzugs eine soziale Betreuung sicher, die freiwillig in Anspruch genommen werden kann.
 
 ## Sechster Titel: Verjährung
-
 Art. 97Fristen
 1
 
@@ -2123,7 +2108,6 @@ Wäre die Strafverfolgung bei Anwendung der Artikel 97 und 98 verjährt, so kann
 Die Absätze 1 Buchstaben a, c und d sowie 2 gelten, wenn die Strafverfolgung oder die Strafe am 1. Januar 1983 nach dem bis zu jenem Zeitpunkt geltenden Recht noch nicht verjährt war. Absatz 1 Buchstabe b gilt, wenn die Strafverfolgung oder die Strafe beim Inkrafttreten der Änderung vom 18. Juni 2010 dieses Gesetzes nach bisherigem Recht noch nicht verjährt war. Absatz 1 Buchstabe e gilt, wenn die Strafverfolgung oder die Strafe am 30. November 2008 nach dem bis zu jenem Zeitpunkt geltenden Recht noch nicht verjährt war.[145] [146]
 
 ## Siebenter Titel: Verantwortlichkeit des Unternehmens
-
 Art. 102Strafbarkeit
 1
 
@@ -2152,7 +2136,6 @@ d.Einzelfirmen[148].
 Art. 102a[149]Strafbarkeit
 
 ## Zweiter Teil: Übertretungen
-
 Art. 103Begriff
 Übertretungen sind Taten, die mit Busse bedroht sind.
 
@@ -2201,7 +2184,6 @@ Art. 109Verjährung
 Die Strafverfolgung und die Strafe verjähren in drei Jahren.
 
 ## Dritter Teil: Begriffe
-
 Art. 110
 1
 
@@ -2238,7 +2220,6 @@ Untersuchungshaft ist jede in einem Strafverfahren verhängte Haft, Untersuchung
 ## Zweites Buch: Besondere Bestimmungen
 
 ## Erster Titel: Strafbare Handlungen gegen Leib und Leben
-
 Art. 111Vorsätzliche Tötung
 Wer vorsätzlich einen Menschen tötet, ohne dass eine der besondern Voraussetzungen der nachfolgenden Artikel zutrifft, wird mit Freiheitsstrafe[157] nicht unter fünf Jahren bestraft.
 
@@ -2331,7 +2312,6 @@ b.den Körper, ein wichtiges Organ oder Glied eines Menschen verstümmelt oder e
 c.eine andere schwere Schädigung des Körpers oder der körperlichen oder geistigen Gesundheit eines Menschen verursacht.
 
 Art. 123[174]Einfache Körperverletzung
-
 1.
 
 Wer vorsätzlich einen Menschen in anderer Weise an Körper oder Gesundheit schädigt, wird, auf Antrag, mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
@@ -2434,9 +2414,7 @@ Art. 136[195]Verabreichen gesundheitsgefährdender Stoffe an Kinder
 Wer einem Kind unter 16 Jahren alkoholische Getränke oder andere Stoffe in einer Menge, welche die Gesundheit gefährden kann, verabreicht oder zum Konsum zur Verfügung stellt, wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 
 ## Zweiter Titel:[196] Strafbare Handlungen gegen das Vermögen
-
 Art. 137Unrechtmässige Aneignung
-
 1.
 
 Wer sich eine fremde bewegliche Sache aneignet, um sich oder einen andern damit unrechtmässig zu bereichern, wird, wenn nicht die besonderen Voraussetzungen der Artikel 138–140 zutreffen, mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
@@ -2452,7 +2430,6 @@ handelt er zum Nachteil eines Angehörigen oder Familiengenossen,
 so wird die Tat nur auf Antrag verfolgt.
 
 Art. 138Veruntreuung
-
 1.
 
 Wer sich eine ihm anvertraute fremde bewegliche Sache aneignet, um sich oder einen andern damit unrechtmässig zu bereichern,
@@ -2468,7 +2445,6 @@ Die Veruntreuung zum Nachteil eines Angehörigen oder Familiengenossen wird nur 
 Wer die Tat als Mitglied einer Behörde, als Beamter, Vormund, Beistand, berufsmässiger Vermögensverwalter oder bei Ausübung eines Berufes, Gewerbes oder Handelsgeschäftes, zu der er durch eine Behörde ermächtigt ist, begeht, wird mit Freiheitsstrafe bis zu zehn Jahren oder Geldstrafe[197] bestraft.
 
 Art. 139Diebstahl
-
 1.
 
 Wer jemandem eine fremde bewegliche Sache zur Aneignung wegnimmt, um sich oder einen andern damit unrechtmässig zu bereichern, wird mit Freiheitsstrafe bis zu fünf Jahren oder Geldstrafe bestraft.
@@ -2494,7 +2470,6 @@ d.sonst wie durch die Art, wie er den Diebstahl begeht, seine besondere Gefährl
 Der Diebstahl zum Nachteil eines Angehörigen oder Familiengenossen wird nur auf Antrag verfolgt.
 
 Art. 140Raub
-
 1.
 
 Wer mit Gewalt gegen eine Person oder unter Androhung gegenwärtiger Gefahr für Leib oder Leben oder nachdem er den Betroffenen zum Widerstand unfähig gemacht hat, einen Diebstahl begeht, wird mit Freiheitsstrafe von sechs Monaten bis zu zehn Jahren bestraft.[200]
@@ -2564,7 +2539,6 @@ Hat der Täter die Sachbeschädigung aus Anlass einer öffentlichen Zusammenrott
 Hat der Täter einen grossen Schaden verursacht, so wird er mit Freiheitsstrafe bis zu fünf Jahren oder Geldstrafe bestraft. Die Tat wird von Amtes wegen verfolgt.[203]
 
 Art. 144bisDatenbeschädigung
-
 1.
 
 Wer unbefugt elektronisch oder in vergleichbarer Weise gespeicherte oder übermittelte Daten verändert, löscht oder unbrauchbar macht, wird, auf Antrag, mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
@@ -2692,7 +2666,6 @@ Nimmt der Täter die Möglichkeit der Verwirklichung einer Tat nach Absatz 1 ode
 Für die Berechnung der Geldstrafe ist das Gericht nicht an die maximale Höhe des Tagessatzes (Art. 34 Abs. 2 erster Satz) gebunden; die Geldstrafe darf jedoch das Sechsfache der Jahresvergütung, die im Zeitpunkt der Tat mit der betroffenen Gesellschaft vereinbart ist, nicht übersteigen.
 
 Art. 155Warenfälschung
-
 1.
 
 Wer zum Zwecke der Täuschung in Handel und Verkehr
@@ -2708,7 +2681,6 @@ wird, sofern die Tat nicht nach einer andern Bestimmung mit höherer Strafe bedr
 Handelt der Täter gewerbsmässig, so wird er, sofern die Tat nicht nach einer andern Bestimmung mit höherer Strafe bedroht ist, mit Freiheitsstrafe bis zu fünf Jahren oder Geldstrafe bestraft.[215]
 
 Art. 156Erpressung
-
 1.
 
 Wer in der Absicht, sich oder einen andern unrechtmässig zu bereichern, jemanden durch Gewalt oder Androhung ernstlicher Nachteile zu einem Verhalten bestimmt, wodurch dieser sich selber oder einen andern am Vermögen schädigt, wird mit Freiheitsstrafe bis zu fünf Jahren oder Geldstrafe bestraft.
@@ -2726,7 +2698,6 @@ Wendet der Täter gegen eine Person Gewalt an oder bedroht er sie mit einer gege
 Droht der Täter mit einer Gefahr für Leib und Leben vieler Menschen oder mit schwerer Schädigung von Sachen, an denen ein hohes öffentliches Interesse besteht, so wird er mit Freiheitsstrafe nicht unter einem Jahr[217] bestraft.
 
 Art. 157Wucher
-
 1.
 
 Wer die Zwangslage, die Abhängigkeit, die Unerfahrenheit oder die Schwäche im Urteilsvermögen einer Person dadurch ausbeutet, dass er sich oder einem anderen für eine Leistung Vermögensvorteile gewähren oder versprechen lässt, die zur Leistung wirtschaftlich in einem offenbaren Missverhältnis stehen,
@@ -2740,7 +2711,6 @@ wird mit Freiheitsstrafe bis zu fünf Jahren oder Geldstrafe bestraft.
 Handelt der Täter gewerbsmässig, so wird er mit Freiheitsstrafe von sechs Monaten bis zu zehn Jahren bestraft.[218]
 
 Art. 158Ungetreue Geschäftsbesorgung
-
 1.
 
 Wer aufgrund des Gesetzes, eines behördlichen Auftrages oder eines Rechtsgeschäfts damit betraut ist, Vermögen eines andern zu verwalten oder eine solche Vermögensverwaltung zu beaufsichtigen, und dabei unter Verletzung seiner Pflichten bewirkt oder zulässt, dass der andere am Vermögen geschädigt wird, wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
@@ -2761,7 +2731,6 @@ Art. 159Missbrauch von Lohnabzügen
 Der Arbeitgeber, der die Verpflichtung verletzt, einen Lohnabzug für Steuern, Abgaben, Versicherungsprämien und ‑beiträge oder in anderer Weise für Rechnung des Arbeitnehmers zu verwenden, und damit diesen am Vermögen schädigt, wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 
 Art. 160Hehlerei
-
 1.
 
 Wer eine Sache, von der er weiss oder annehmen muss, dass sie ein anderer durch eine strafbare Handlung gegen das Vermögen erlangt hat, erwirbt, sich schenken lässt, zum Pfande nimmt, verheimlicht oder veräussern hilft, wird mit Freiheitsstrafe bis zu fünf Jahren oder Geldstrafe bestraft.
@@ -2786,7 +2755,6 @@ wer den Verrat für sich oder einen andern ausnützt,
 wird, auf Antrag, mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 
 Art. 163Betrügerischer Konkurs und Pfändungsbetrug
-
 1.
 
 Der Schuldner, der zum Schaden der Gläubiger sein Vermögen zum Scheine vermindert, namentlich
@@ -2804,7 +2772,6 @@ wird, wenn über ihn der Konkurs eröffnet oder gegen ihn ein Verlustschein ausg
 Unter den gleichen Voraussetzungen wird der Dritte, der zum Schaden der Gläubiger eine solche Handlung vornimmt, mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 
 Art. 164Gläubigerschädigung durch Vermögensminderung
-
 1.
 
 Der Schuldner, der zum Schaden der Gläubiger sein Vermögen vermindert, indem er
@@ -2822,7 +2789,6 @@ wird, wenn über ihn der Konkurs eröffnet oder gegen ihn ein Verlustschein ausg
 Unter den gleichen Voraussetzungen wird der Dritte, der zum Schaden der Gläubiger eine solche Handlung vornimmt, mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 
 Art. 165Misswirtschaft
-
 1.
 
 Der Schuldner, der in anderer Weise als nach Artikel 164, durch Misswirtschaft, namentlich durch ungenügende Kapitalausstattung, unverhältnismässigen Aufwand, gewagte Spekulationen, leichtsinniges Gewähren oder Benützen von Kredit, Verschleudern von Vermögenswerten oder arge Nachlässigkeit in der Berufsausübung oder Vermögensverwaltung,
@@ -2901,9 +2867,7 @@ Richtet sich die Tat nur auf einen geringen Vermögenswert oder auf einen gering
 Diese Vorschrift gilt nicht bei qualifiziertem Diebstahl (Art. 139 Ziff. 2[230] und 3), bei Raub und Erpressung.
 
 ## Dritter Titel: Strafbare Handlungen gegen die Ehre und den Geheim- oder Privatbereich[231]
-
 Art. 173[232]Üble Nachrede
-
 1.
 
 Wer jemanden bei einem andern eines unehrenhaften Verhaltens oder anderer Tatsachen, die geeignet sind, seinen Ruf zu schädigen, beschuldigt oder verdächtigt,
@@ -2929,7 +2893,6 @@ Nimmt der Täter seine Äusserung als unwahr zurück, so kann er milder bestraft
 Hat der Beschuldigte den Wahrheitsbeweis nicht erbracht oder sind seine Äusserungen unwahr oder nimmt der Beschuldigte sie zurück, so hat das Gericht dies im Urteil oder in einer andern Urkunde festzustellen.
 
 Art. 174Verleumdung
-
 1.
 
 Wer jemanden wider besseres Wissen bei einem andern eines unehrenhaften Verhaltens oder anderer Tatsachen, die geeignet sind, seinen Ruf zu schädigen, beschuldigt oder verdächtigt,
@@ -3026,7 +2989,6 @@ b.im Geschäftsverkehr aufnimmt, welche Bestellungen, Aufträge, Reservationen u
 Aufnahmen nach Absatz 1 dürfen ausschliesslich zum Zweck der Beweisführung verwertet werden.[242]
 
 Art. 179sexies [243]Inverkehrbringen und Anpreisen von Abhör-, Ton- und Bildaufnahmegeräten
-
 1.
 
 Wer technische Geräte, die insbesondere dem widerrechtlichen Abhören oder der widerrechtlichen Ton- oder Bildaufnahme dienen, herstellt, einführt, ausführt, erwirbt, lagert, besitzt, weiterschafft, einem andern übergibt, verkauft, vermietet, verleiht oder sonst wie in Verkehr bringt oder anpreist oder zur Herstellung solcher Geräte Anleitung gibt,
@@ -3058,7 +3020,6 @@ Art. 179decies [249]Identitätsmissbrauch
 Wer die Identität einer anderen Person ohne deren Einwilligung verwendet, um dieser zu schaden oder um sich oder einem Dritten einen unrechtmässigen Vorteil zu verschaffen, wird auf Antrag mit Freiheitsstrafe bis zu einem Jahr oder Geldstrafe bestraft.
 
 ## Vierter Titel: Verbrechen und Vergehen gegen die Freiheit
-
 Art. 180Drohung
 1
 
@@ -3107,7 +3068,6 @@ Handelt es sich beim Opfer um eine minderjährige[256] Person oder handelt der T
 Strafbar ist auch der Täter, der die Tat im Ausland verübt. Die Artikel 5 und 6 sind anwendbar.
 
 Art. 183[258]Freiheitsberaubung und Entführung
-
 1.
 
 Wer jemanden unrechtmässig festnimmt oder gefangen hält oder jemandem in anderer Weise unrechtmässig die Freiheit entzieht,
@@ -3132,7 +3092,6 @@ wenn der Entzug der Freiheit mehr als zehn Tage dauert oder
 wenn die Gesundheit des Opfers erheblich gefährdet wird.
 
 Art. 185[260]Geiselnahme
-
 1.
 
 Wer jemanden der Freiheit beraubt, entführt oder sich seiner sonst wie bemächtigt, um einen Dritten zu einer Handlung, Unterlassung oder Duldung zu nötigen,
@@ -3174,9 +3133,7 @@ Art. 186Hausfriedensbruch
 Wer gegen den Willen des Berechtigten in ein Haus, in eine Wohnung, in einen abgeschlossenen Raum eines Hauses oder in einen unmittelbar zu einem Hause gehörenden umfriedeten Platz, Hof oder Garten oder in einen Werkplatz unrechtmässig eindringt oder, trotz der Aufforderung eines Berechtigten, sich zu entfernen, darin verweilt, wird, auf Antrag, mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 
 ## Fünfter Titel:[264] Strafbare Handlungen gegen die sexuelle Integrität
-
 Art. 187Sexuelle Handlungen mit Kindern[265]
-
 1.
 
 Wer mit einem Kind unter 16 Jahren eine sexuelle Handlung vornimmt,
@@ -3374,7 +3331,6 @@ Wird eine strafbare Handlung nach diesem Titel gemeinsam von mehreren Personen a
 Art. 201–212[290]Gemeinsame Begehung
 
 ## Sechster Titel: Verbrechen und Vergehen gegen die Familie
-
 Art. 213[291]Inzest
 1
 
@@ -3423,7 +3379,6 @@ Art. 220[300]Entziehen von Minderjährigen
 Wer eine minderjährige Person dem Inhaber des Rechts zur Bestimmung des Aufenthaltsortes entzieht oder sich weigert, sie ihm zurückzugeben, wird, auf Antrag, mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 
 ## Siebenter Titel: Gemeingefährliche Verbrechen und Vergehen
-
 Art. 221Brandstiftung
 1
 
@@ -3447,7 +3402,6 @@ Wer fahrlässig zum Schaden eines anderen oder unter Herbeiführung einer Gemein
 Bringt der Täter fahrlässig Leib und Leben von Menschen in Gefahr, so ist die Strafe Freiheitsstrafe bis zu drei Jahren oder Geldstrafe.
 
 Art. 223Verursachung einer Explosion
-
 1.
 
 Wer vorsätzlich eine Explosion von Gas, Benzin, Petroleum oder ähnlichen Stoffen verursacht und dadurch wissentlich Leib und Leben von Menschen oder fremdes Eigentum in Gefahr bringt, wird mit Freiheitsstrafe nicht unter einem Jahr bestraft.
@@ -3512,7 +3466,6 @@ Wer radioaktive Stoffe, Anlagen, Apparate oder Gegenstände, die radioaktive Sto
 Wer jemanden zur Herstellung von solchen Stoffen, Anlagen, Apparaten oder Gegenständen anleitet, wird, wenn er weiss oder annehmen muss, dass sie zu strafbarem Gebrauch bestimmt sind, mit Freiheitsstrafe bis zu fünf Jahren oder Geldstrafe bestraft.
 
 Art. 227Verursachen einer Überschwemmung oder eines Einsturzes
-
 1.
 
 Wer vorsätzlich eine Überschwemmung oder den Einsturz eines Bauwerks oder den Absturz von Erd- und Felsmassen verursacht und dadurch wissentlich Leib und Leben von Menschen oder fremdes Eigentum in Gefahr bringt, wird mit Freiheitsstrafe nicht unter einem Jahr bestraft.
@@ -3524,7 +3477,6 @@ Ist nur ein geringer Schaden entstanden, so kann auf Freiheitsstrafe bis zu drei
 Handelt der Täter fahrlässig, so ist die Strafe Freiheitsstrafe bis zu drei Jahren oder Geldstrafe.
 
 Art. 228Beschädigung von elektrischen Anlagen, Wasserbauten und Schutzvorrichtungen
-
 1.
 
 Wer vorsätzlich elektrische Anlagen, Wasserbauten, namentlich Dämme, Wehre, Deiche, Schleusen, oder Schutzvorrichtungen gegen Naturereignisse wie Bergstürze oder Lawinen beschädigt oder zerstört und dadurch wissentlich Leib und Leben von Menschen oder fremdes Eigentum in Gefahr bringt, wird mit Freiheitsstrafe nicht unter einem Jahr bestraft.[309]
@@ -3545,7 +3497,6 @@ Wer vorsätzlich bei der Leitung oder Ausführung eines Bauwerks oder eines Abbr
 Lässt der Täter die anerkannten Regeln der Baukunde fahrlässig ausser Acht, so ist die Strafe Freiheitsstrafe bis zu drei Jahren oder Geldstrafe.
 
 Art. 230Beseitigung oder Nichtanbringung von Sicherheitsvorrichtungen
-
 1.
 
 Wer vorsätzlich in Fabriken oder in anderen Betrieben oder an Maschinen eine zur Verhütung von Unfällen dienende Vorrichtung beschädigt, zerstört, beseitigt oder sonst unbrauchbar macht oder ausser Tätigkeit setzt,
@@ -3561,7 +3512,6 @@ wird mit Freiheitsstrafe bis zu fünf Jahren oder Geldstrafe bestraft.[311]
 Handelt der Täter fahrlässig, so ist die Strafe Freiheitsstrafe bis zu drei Jahren oder Geldstrafe.
 
 ## Achter Titel: Verbrechen und Vergehen gegen die öffentliche Gesundheit
-
 Art. 230bis [312]Gefährdung durch gentechnisch veränderte oder pathogene Organismen
 1
 
@@ -3579,7 +3529,6 @@ Art. 231[313]Verbreiten menschlicher Krankheiten
 Wer aus gemeiner Gesinnung eine gefährliche übertragbare menschliche Krankheit verbreitet, wird mit Freiheitsstrafe von einem bis zu fünf Jahren bestraft.
 
 Art. 232Verbreiten von Tierseuchen
-
 1.
 
 Wer vorsätzlich eine Seuche unter Haustieren verbreitet, wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
@@ -3591,7 +3540,6 @@ Hat der Täter aus gemeiner Gesinnung einen grossen Schaden verursacht, so ist d
 Handelt der Täter fahrlässig, so ist die Strafe Freiheitsstrafe bis zu drei Jahren oder Geldstrafe.
 
 Art. 233Verbreiten von Schädlingen
-
 1.
 
 Wer vorsätzlich einen für die Landwirtschaft oder für die Forstwirtschaft gefährlichen Schädling verbreitet, wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
@@ -3612,7 +3560,6 @@ Wer vorsätzlich das Trinkwasser für Menschen oder Haustiere mit gesundheitssch
 Handelt der Täter fahrlässig, so ist die Strafe Freiheitsstrafe bis zu drei Jahren oder Geldstrafe.
 
 Art. 235Herstellen von gesundheitsschädlichem Futter
-
 1.
 
 Wer vorsätzlich Futter oder Futtermittel für Haustiere so behandelt oder herstellt, dass sie die Gesundheit der Tiere gefährden, wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
@@ -3641,9 +3588,7 @@ Handelt der Täter fahrlässig, so ist die Strafe Geldstrafe.[317]
 Die Ware wird eingezogen. Sie kann unschädlich gemacht oder vernichtet werden.
 
 ## Neunter Titel: Verbrechen und Vergehen gegen den öffentlichen Verkehr
-
 Art. 237Störung des öffentlichen Verkehrs
-
 1.
 
 Wer vorsätzlich den öffentlichen Verkehr, namentlich den Verkehr auf der Strasse, auf dem Wasser, in der Luft oder auf der Schiene hindert, stört oder gefährdet und dadurch wissentlich Leib und Leben von Menschen oder fremdes Eigentum in Gefahr bringt, wird mit Freiheitsstrafe bis zu fünf Jahren oder Geldstrafe bestraft.
@@ -3657,7 +3602,6 @@ Handelt der Täter fahrlässig, so ist die Strafe Freiheitsstrafe bis zu drei Ja
 Art. 238[319]Störung des öffentlichen Verkehrs
 
 Art. 239Störung von Betrieben im Dienste der Allgemeinheit[320]
-
 1.
 
 Wer vorsätzlich den Betrieb einer öffentlichen Verkehrsanstalt, namentlich den Eisenbahn‑, Post‑, Telegrafen- oder Telefonbetrieb hindert, stört oder gefährdet,
@@ -3671,7 +3615,6 @@ wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 Handelt der Täter fahrlässig, so ist die Strafe Freiheitsstrafe bis zu einem Jahr oder Geldstrafe.[321]
 
 ## Zehnter Titel: Fälschung von Geld, amtlichen Wertzeichen, amtlichen Zeichen, Mass und Gewicht
-
 Art. 240Geldfälschung
 1
 
@@ -3730,7 +3673,6 @@ Wer falsches oder verfälschtes Metallgeld oder Papiergeld, falsche oder verfäl
 Wer sie in grosser Menge einführt, erwirbt oder lagert, wird mit Freiheitsstrafe von einem Jahr bis zu fünf Jahren bestraft.
 
 Art. 245[328]Fälschung amtlicher Wertzeichen
-
 1.
 
 Wer amtliche Wertzeichen, namentlich Postmarken, Stempel- oder Gebührenmarken, fälscht oder verfälscht, um sie als echt oder unverfälscht zu verwenden,
@@ -3783,9 +3725,7 @@ Art. 250Geld und Wertzeichen des Auslandes
 Die Bestimmungen dieses Titels finden auch Anwendung auf Metallgeld, Papiergeld, Banknoten und Wertzeichen des Auslandes.
 
 ## Elfter Titel: Urkundenfälschung
-
 Art. 251[331]Urkundenfälschung
-
 1.
 
 Wer in der Absicht, jemanden am Vermögen oder an andern Rechten zu schädigen oder sich oder einem andern einen unrechtmässigen Vorteil zu verschaffen,
@@ -3837,7 +3777,6 @@ Art. 257Beseitigung von Vermessungs- und Wasserstandszeichen
 Wer ein öffentliches Vermessungs- oder Wasserstandszeichen beseitigt, verrückt, unkenntlich macht oder falsch setzt, wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 
 ## Zwölfter Titel: Verbrechen und Vergehen gegen den öffentlichen Frieden
-
 Art. 258[334]Schreckung der Bevölkerung
 Wer die Bevölkerung durch Androhen oder Vorspiegeln einer Gefahr für Leib, Leben oder Eigentum in Schrecken versetzt, wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 
@@ -3991,7 +3930,6 @@ wer eine von ihm angebotene Leistung, die für die Allgemeinheit bestimmt ist, e
 wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 
 Art. 262Störung des Totenfriedens
-
 1.
 
 Wer die Ruhestätte eines Toten in roher Weise verunehrt,
@@ -4016,7 +3954,6 @@ Wer infolge selbstverschuldeter Trunkenheit oder Betäubung unzurechnungsfähig 
 Hat der Täter in diesem selbstverschuldeten Zustand ein mit Freiheitsstrafe als einzige Strafe bedrohtes Verbrechen begangen, so ist die Strafe Freiheitsstrafe bis zu drei Jahren oder Geldstrafe.[353]
 
 ## Zwölfter Titelbis:[354] Völkermord und Verbrechen gegen die Menschlichkeit
-
 Art. 264Völkermord
 Mit lebenslänglicher Freiheitsstrafe oder mit Freiheitsstrafe nicht unter zehn Jahren wird bestraft, wer, in der Absicht, eine durch ihre Staatsangehörigkeit, Rasse, Religion oder ethnische, soziale oder politische Zugehörigkeit gekennzeichnete Gruppe als solche ganz oder teilweise zu vernichten:
 
@@ -4066,7 +4003,6 @@ j.eine andere Handlung von vergleichbarer Schwere wie die in diesem Absatz gena
  In weniger schweren Fällen nach Absatz 1 Buchstaben c–j kann auf Freiheitsstrafe nicht unter einem Jahr erkannt werden.
 
 ## Zwölfter Titelter:[356] Kriegsverbrechen
-
 Art. 264bAnwendungsbereich
 Die Artikel 264d–264j finden Anwendung im Zusammenhang mit internationalen bewaffneten Konflikten einschliesslich Besetzungen sowie, soweit aus der Natur der Straftaten nichts anderes hervorgeht, im Zusammenhang mit nicht internationalen bewaffneten Konflikten.
 
@@ -4217,7 +4153,6 @@ Art. 264jAndere Verstösse gegen das humanitäre Völkerrecht
 Mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe wird bestraft, wer im Zusammenhang mit einem bewaffneten Konflikt auf andere Weise als nach den Artikeln 264c–264i eine Vorschrift des humanitären Völkerrechts verletzt, deren Verletzung durch das Völkergewohnheitsrecht oder ein internationales, von der Schweiz als verbindlich anerkanntes Übereinkommen als strafbar erklärt wird.
 
 ## Zwölfter Titelquater:[360] Gemeinsame Bestimmungen für den zwölften Titelbis und den zwölften Titelter
-
 Art. 264kStrafbarkeit des Vorgesetzten
 1
 
@@ -4267,7 +4202,6 @@ g.Artikel 16 des Patentgerichtsgesetzes vom 20. März 2009[367];
 h.Artikel 50 des Strafbehördenorganisationsgesetzes vom 19. März 2010[368].
 
 ## Dreizehnter Titel: Verbrechen und Vergehen gegen den Staat und die Landesverteidigung
-
 Art. 265Hochverrat
 Wer eine Handlung vornimmt, die darauf gerichtet ist, mit Gewalt
 
@@ -4280,7 +4214,6 @@ schweizerisches Gebiet von der Eidgenossenschaft oder Gebiet von einem Kanton ab
 wird mit Freiheitsstrafe nicht unter einem Jahr[371] bestraft.
 
 Art. 266Angriffe auf die Unabhängigkeit der Eidgenossenschaft
-
 1.
 
 Wer eine Handlung vornimmt, die darauf gerichtet ist,
@@ -4307,7 +4240,6 @@ Wer mit dem Zwecke, ausländische, gegen die Sicherheit der Schweiz gerichtete U
 In schweren Fällen ist die Strafe Freiheitsstrafe nicht unter einem Jahr.[374]
 
 Art. 267Diplomatischer Landesverrat
-
 1.
 
 Wer vorsätzlich ein Geheimnis, dessen Bewahrung zum Wohle der Eidgenossenschaft geboten ist, einem fremden Staate oder dessen Agenten bekannt oder zugänglich macht,[375]
@@ -4336,7 +4268,6 @@ Art. 270Tätliche Angriffe auf schweizerische Hoheitszeichen
 Wer ein von einer Behörde angebrachtes schweizerisches Hoheitszeichen, insbesondere das Wappen oder die Fahne der Eidgenossenschaft oder eines Kantons, böswillig wegnimmt, beschädigt oder beleidigende Handlungen daran verübt, wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 
 Art. 271[378]Verbotene Handlungen für einen fremden Staat
-
 1.
 
 Wer auf schweizerischem Gebiet ohne Bewilligung für einen fremden Staat Handlungen vornimmt, die einer Behörde oder einem Beamten zukommen,
@@ -4356,7 +4287,6 @@ Wer jemanden durch Gewalt, List oder Drohung ins Ausland entführt, um ihn einer
 Wer eine solche Entführung vorbereitet, wird mit Freiheitsstrafe oder Geldstrafe bestraft.
 
 Art. 272[380]Politischer Nachrichtendienst
-
 1.
 
 Wer im Interesse eines fremden Staates oder einer ausländischen Partei oder einer andern Organisation des Auslandes zum Nachteil der Schweiz oder ihrer Angehörigen, Einwohner oder Organisationen politischen Nachrichtendienst betreibt oder einen solchen Dienst einrichtet,
@@ -4377,7 +4307,6 @@ wer ein Fabrikations- oder Geschäftsgeheimnis einer fremden amtlichen Stelle od
 wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe, in schweren Fällen mit Freiheitsstrafe nicht unter einem Jahr bestraft.[381]
 
 Art. 274[382]Militärischer Nachrichtendienst
-
 1.
 
 Wer für einen fremden Staat zum Nachteile der Schweiz militärischen Nachrichtendienst betreibt oder einen solchen Dienst einrichtet,
@@ -4398,7 +4327,6 @@ Wer eine Handlung vornimmt, die darauf gerichtet ist, die verfassungsmässige Or
 Art. 275bis und 275ter [387]Angriffe auf die verfassungsmässige Ordnung
 
 Art. 276Aufforderung und Verleitung zur Verletzung militärischer Dienstpflichten
-
 1.
 
 Wer öffentlich zum Ungehorsam gegen militärische Befehle, zur Dienstverletzung, zur Dienstverweigerung oder zum Ausreissen auffordert,
@@ -4412,7 +4340,6 @@ wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 Geht die Aufforderung auf Meuterei oder auf Vorbereitung einer Meuterei, oder wird zur Meuterei oder zur Vorbereitung einer Meuterei verleitet, so ist die Strafe Freiheitsstrafe oder Geldstrafe.
 
 Art. 277[388]Fälschung von Aufgeboten oder Weisungen
-
 1.
 
 Wer vorsätzlich ein militärisches Aufgebot oder eine für Dienstpflichtige bestimmte Weisung fälscht, verfälscht, unterdrückt oder beseitigt,
@@ -4429,7 +4356,6 @@ Art. 278Störung des Militärdienstes
 Wer eine Militärperson in der Ausübung des Dienstes hindert oder stört, wird mit Geldstrafe bestraft.[389]
 
 ## Vierzehnter Titel: Vergehen gegen den Volkswillen
-
 Art. 279Störung und Hinderung von Wahlen und Abstimmungen
 Wer eine durch Verfassung oder Gesetz vorgeschriebene Versammlung, Wahl oder Abstimmung durch Gewalt oder Androhung ernstlicher Nachteile hindert oder stört,
 
@@ -4454,7 +4380,6 @@ wer sich als Stimmberechtigter einen solchen Vorteil versprechen oder geben läs
 wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 
 Art. 282Wahlfälschung
-
 1.
 
 Wer ein Stimmregister fälscht, verfälscht, beseitigt oder vernichtet,
@@ -4478,9 +4403,7 @@ Wer sich durch unrechtmässiges Vorgehen Kenntnis davon verschafft, wie einzelne
 Art. 284[392]Verletzung des Abstimmungs- und Wahlgeheimnisses
 
 ## Fünfzehnter Titel: Strafbare Handlungen gegen die öffentliche Gewalt
-
 Art. 285Gewalt und Drohung gegen Behörden und Beamte
-
 1.
 
 Wer eine Behörde, ein Mitglied einer Behörde oder einen Beamten durch Gewalt oder Drohung an einer Handlung, die innerhalb ihrer Amtsbefugnisse liegt, hindert, zu einer Amtshandlung nötigt oder während einer Amtshandlung tätlich angreift, wird mit Freiheitsstrafe bis zu drei Jahren bestraft. In leichten Fällen kann auf Geldstrafe erkannt werden.[393]
@@ -4549,7 +4472,6 @@ Art. 295[412]Missachtung von Bewährungshilfe oder Weisungen
 Wer sich der vom Gericht oder den Vollzugsbehörden angeordneten Bewährungshilfe entzieht oder die vom Gericht oder den Vollzugsbehörden erteilten Weisungen missachtet, wird mit Busse bestraft.
 
 ## Sechzehnter Titel: Störung der Beziehungen zum Ausland
-
 Art. 296[413]Beleidigung eines fremden Staates
 Wer einen fremden Staat in der Person seines Oberhauptes, in seiner Regierung oder in der Person eines seiner diplomatischen Vertreter oder eines seiner offiziellen Delegierten an einer in der Schweiz tagenden diplomatischen Konferenz oder eines seiner offiziellen Vertreter bei einer in der Schweiz niedergelassenen oder tagenden zwischenstaatlichen Organisation oder Abteilung einer solchen öffentlich beleidigt, wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 
@@ -4560,7 +4482,6 @@ Art. 298Tätliche Angriffe auf fremde Hoheitszeichen
 Wer Hoheitszeichen eines fremden Staates, die von einer anerkannten Vertretung dieses Staates öffentlich angebracht sind, namentlich sein Wappen oder seine Fahne böswillig wegnimmt, beschädigt oder beleidigende Handlungen daran verübt, wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 
 Art. 299Verletzung fremder Gebietshoheit
-
 1.
 
 Wer die Gebietshoheit eines fremden Staates verletzt, insbesondere durch unerlaubte Vornahme von Amtshandlungen auf dem fremden Staatsgebiete,
@@ -4581,7 +4502,6 @@ wer Feindseligkeiten gegen in die Schweiz zugelassene fremde Truppen unternimmt,
 wird mit Freiheitsstrafe oder Geldstrafe bestraft.
 
 Art. 301Nachrichtendienst gegen fremde Staaten
-
 1.
 
 Wer im Gebiete der Schweiz für einen fremden Staat zum Nachteil eines andern fremden Staates militärischen Nachrichtendienst betreibt oder einen solchen Dienst einrichtet,
@@ -4608,9 +4528,7 @@ Der Bundesrat ordnet die Verfolgung nur an, wenn in den Fällen des Artikels 296
 In den Fällen der Artikel 296 und 297 tritt die Verjährung in zwei Jahren ein.[416]
 
 ## Siebzehnter Titel: Verbrechen und Vergehen gegen die Rechtspflege
-
 Art. 303[417]Falsche Anschuldigung
-
 1.
 
 Wer einen Nichtschuldigen wider besseres Wissen bei der Behörde eines Verbrechens oder eines Vergehens beschuldigt, in der Absicht, eine Strafverfolgung gegen ihn herbeizuführen,
@@ -4624,7 +4542,6 @@ wird mit Freiheitsstrafe bis zu fünf Jahren oder Geldstrafe bestraft.
 Betrifft die falsche Anschuldigung eine Übertretung, so ist die Strafe Freiheitsstrafe bis zu einem Jahr oder Geldstrafe.
 
 Art. 304Irreführung der Rechtspflege
-
 1.
 
 Wer bei einer Behörde wider besseres Wissen anzeigt, es sei eine strafbare Handlung begangen worden,
@@ -4651,7 +4568,6 @@ Ebenso wird bestraft, wer jemanden, der im Ausland wegen eines Verbrechens nach 
 Begünstigt der Täter seine Angehörigen oder jemand anderen, zu dem er in so nahen persönlichen Beziehungen steht, dass sein Verhalten entschuldbar ist, so bleibt er straflos.[421]
 
 Art. 305bis [422]Geldwäscherei
-
 1.
 
 Wer eine Handlung vornimmt, die geeignet ist, die Ermittlung der Herkunft, die Auffindung oder die Einziehung von Vermögenswerten zu vereiteln, die, wie er weiss oder annehmen muss, aus einem Verbrechen oder aus einem qualifizierten Steuervergehen herrühren, wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.[423]
@@ -4730,7 +4646,6 @@ a.das Verwaltungsgerichtsverfahren, das Schiedsgerichtsverfahren und das Verfahr
 b.das Verfahren vor internationalen Gerichten, deren Zuständigkeit die Schweiz als verbindlich anerkennt.
 
 Art. 310Befreiung von Gefangenen
-
 1.
 
 Wer mit Gewalt, Drohung oder List einen Verhafteten, einen Gefangenen oder einen andern auf amtliche Anordnung in eine Anstalt Eingewiesenen befreit oder ihm zur Flucht behilflich ist, wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
@@ -4742,7 +4657,6 @@ Wird die Tat von einem zusammengerotteten Haufen begangen, so wird jeder, der an
 Der Teilnehmer, der Gewalt an Personen oder Sachen verübt, wird mit Freiheitsstrafe von drei Monaten bis zu drei Jahren oder Geldstrafe nicht unter 90 Tagessätzen bestraft.[440]
 
 Art. 311Meuterei von Gefangenen
-
 1.
 
 Gefangene oder andere auf amtliche Anordnung in eine Anstalt Eingewiesene, die sich in der Absicht zusammenrotten,
@@ -4760,7 +4674,6 @@ werden mit Freiheitsstrafe von einem Monat bis zu drei Jahren oder Geldstrafe ni
 Der Teilnehmer, der Gewalt an Personen oder Sachen verübt, wird mit Freiheitsstrafe von drei Monaten bis zu fünf Jahren oder Geldstrafe nicht unter 90 Tagessätzen bestraft.[442]
 
 ## Achtzehnter Titel: Strafbare Handlungen gegen die Amts- und Berufspflicht
-
 Art. 312Amtsmissbrauch
 Mitglieder einer Behörde oder Beamte, die ihre Amtsgewalt missbrauchen, um sich oder einem andern einen unrechtmässigen Vorteil zu verschaffen oder einem andern einen Nachteil zuzufügen, werden mit Freiheitsstrafe bis zu fünf Jahren oder Geldstrafe bestraft.
 
@@ -4773,7 +4686,6 @@ Mitglieder einer Behörde oder Beamte, die bei einem Rechtsgeschäft die von ihn
 Art. 315–316[445]Ungetreue Amtsführung
 
 Art. 317[446]Urkundenfälschung im Amt
-
 1.
 
 Beamte oder Personen öffentlichen Glaubens, die vorsätzlich eine Urkunde fälschen oder verfälschen oder die echte Unterschrift oder das echte Handzeichen eines andern zur Herstellung einer unechten Urkunde benützen,
@@ -4800,7 +4712,6 @@ Wer mit Bewilligung für eine verdeckte Ermittlung oder im Auftrag der zuständi
 Wer im Rahmen des Bundesgesetzes vom 23. Dezember 2011[452] über den ausserprozessualen Zeugenschutz Urkunden herstellt, verändert oder gebraucht, ist nicht nach den Artikeln 251, 252, 255 und 317 strafbar.[453]
 
 Art. 318Falsches ärztliches Zeugnis
-
 1.
 
 Ärzte, Zahnärzte, Tierärzte und Hebammen, die vorsätzlich ein unwahres Zeugnis ausstellen, das zum Gebrauche bei einer Behörde oder zur Erlangung eines unberechtigten Vorteils bestimmt, oder das geeignet ist, wichtige und berechtigte Interessen Dritter zu verletzen, werden mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
@@ -4815,7 +4726,6 @@ Art. 319Entweichenlassen von Gefangenen
 Der Beamte, der einem Verhafteten, einem Gefangenen oder einem andern auf amtliche Anordnung in eine Anstalt Eingewiesenen zur Flucht behilflich ist oder ihn entweichen lässt, wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
 
 Art. 320[456]Verletzung des Amtsgeheimnisses
-
 1.
 
 Wer ein Geheimnis offenbart, das ihm in seiner Eigenschaft als Mitglied einer Behörde oder als Beamter anvertraut worden ist oder das er in seiner amtlichen oder dienstlichen Stellung oder als Hilfsperson eines Beamten oder einer Behörde wahrgenommen hat, wird mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.
@@ -4827,7 +4737,6 @@ Die Verletzung des Amtsgeheimnisses ist auch nach Beendigung des amtlichen oder 
 Der Täter ist nicht strafbar, wenn er das Geheimnis mit schriftlicher Einwilligung seiner vorgesetzten Behörde offenbart hat.
 
 Art. 321Verletzung des Berufsgeheimnisses
-
 1.
 
 Geistliche, Rechtsanwälte, Verteidiger, Notare, Patentanwälte, nach Obligationenrecht[457] zur Verschwiegenheit verpflichtete Revisoren, Ärzte, Zahnärzte, Chiropraktoren, Apotheker, Hebammen, Psychologen, Pflegefachpersonen, Physiotherapeuten, Ergotherapeuten, Ernährungsberater, Optometristen, Osteopathen sowie ihre Hilfspersonen, die ein Geheimnis offenbaren, das ihnen infolge ihres Berufes anvertraut worden ist oder das sie in dessen Ausübung wahrgenommen haben, werden, auf Antrag, mit Freiheitsstrafe bis zu drei Jahren oder Geldstrafe bestraft.[458]
@@ -4901,7 +4810,6 @@ Ist die Strafdrohung des Delikts, das auf den Autor nach Artikel 28 Absatz 1 anw
 Ist die durch den Autor begangene Tat ein Antragsdelikt, so wird die strafbare Handlung nach Absatz 1 nur verfolgt, wenn ein Antrag auf Verfolgung des Autors vorliegt.
 
 ## Neunzehnter Titel:[468] Bestechung
-
 Art. 322terBestechen
 Wer einem Mitglied einer richterlichen oder anderen Behörde, einem Beamten, einem amtlich bestellten Sachverständigen, Übersetzer oder Dolmetscher, einem Schiedsrichter oder einem Angehörigen der Armee im Zusammenhang mit dessen amtlicher Tätigkeit für eine pflichtwidrige oder eine im Ermessen stehende Handlung oder Unterlassung zu dessen Gunsten oder zu Gunsten eines Dritten einen nicht gebührenden Vorteil anbietet, verspricht oder gewährt,
 
@@ -4957,7 +4865,6 @@ b.geringfügige, sozial übliche Vorteile.
 Private, die öffentliche Aufgaben erfüllen, sind Amtsträgern gleichgestellt.
 
 ## Zwanzigster Titel:[475] Übertretungen bundesrechtlicher Bestimmungen
-
 Art. 323[476]Ungehorsam des Schuldners im Betreibungs- und Konkursverfahren
 Mit Busse wird bestraft:
 
@@ -5087,7 +4994,6 @@ Wer vorsätzlich die Pflichten von Vereinen nach den Artikeln 61a und 69 Absat
 Art. 328[506]Verletzung gesetzlicher Pflichten von Vereinen
 
 Art. 329Verletzung militärischer Geheimnisse
-
 1.
 
 Wer unrechtmässig:
@@ -5112,7 +5018,6 @@ Art. 332[509]Unbefugtes Tragen der militärischen Uniform
 ## Drittes Buch:[510] Einführung und Anwendung des Gesetzes
 
 ## Erster Titel: Verhältnis dieses Gesetzes zu andern Gesetzen des Bundes und zu den Gesetzen der Kantone
-
 Art. 333Anwendung des Allgemeinen Teils auf andere Bundesgesetze
 1
 
@@ -5165,15 +5070,12 @@ Den Kantonen bleibt die Gesetzgebung über das Übertretungsstrafrecht insoweit 
 Die Kantone sind befugt, die Widerhandlungen gegen das kantonale Verwaltungs- und Prozessrecht mit Sanktionen zu bedrohen.
 
 ## Zweiter Titel: …
-
 Art. 336–338[514]
 
 ## Dritter Titel: …
-
 Art. 339–348[515]
 
 ## Vierter Titel: Amtshilfe im Bereich der Polizei[516]
-
 Art. 349[517]
 
 Art. 349a[518]Rechtsgrundlagen
@@ -5413,34 +5315,34 @@ h.die kantonalen Migrationsbehörden.[545]
 
 3
 
-Die Personendaten, die sich auf Daten nach Absatz 1 beziehen, werden in getrennten Informationssystemen bearbeitet; dabei gelten die Bestimmungen des Bundesgesetzes vom 13. Juni 2008[546] über die polizeilichen Informationssysteme des Bundes, des Asylgesetzes vom 26. Juni 1998[547], des Ausländer- und Integrationsgesetz vom 16. Dezember 2005[548] und des Zollgesetzes vom 18. März 2005[549].
+ Die Personendaten, die sich auf Daten nach Absatz 1 beziehen, werden in getrennten Informationssystemen bearbeitet; dabei gelten die Bestimmungen des Bundesgesetzes vom 13. Juni 2008[546] über die polizeilichen Informationssysteme des Bundes, des Asylgesetzes vom 26. Juni 1998[547], des Ausländer- und Integrationsgesetzes vom 16. Dezember 2005[548], des Bundesgesetzes vom 20. Juni 2003[549] über das Informationssystem für den Ausländer- und den Asylbereich und des Zollgesetzes vom 18. März 2005[550].[551]
 
 4
 
 Die Daten dürfen verwendet werden:
 
-a.bis zum Ablauf der Fristen für die Löschung von DNA-Profilen nach den Artikeln 16–19 des DNA-Profil-Gesetzes vom 20. Juni 2003[550]; oder
+a.bis zum Ablauf der Fristen für die Löschung von DNA-Profilen nach den Artikeln 16–19 des DNA-Profil-Gesetzes vom 20. Juni 2003[552]; oder
 
-b.[551] bei einer Verurteilung wegen einer Übertretung: für eine Dauer von fünf Jahren ab dem Datum des Urteils, sofern dieses in Rechtskraft erwachsen ist.[552]
+b.[553] bei einer Verurteilung wegen einer Übertretung: für eine Dauer von fünf Jahren ab dem Datum des Urteils, sofern dieses in Rechtskraft erwachsen ist.[554]
 
 5
 
-Der Bundesrat regelt die Einzelheiten, insbesondere die Aufbewahrungsdauer der Daten, die ausserhalb von Strafverfahren erfasst worden sind, das Löschverfahren und die Zusammenarbeit mit den Kantonen. Er regelt die Übermittlung der erkennungsdienstlichen Daten durch die zuständigen Bundesbehörden und die Kantone.[553]
+Der Bundesrat regelt die Einzelheiten, insbesondere die Aufbewahrungsdauer der Daten, die ausserhalb von Strafverfahren erfasst worden sind, das Löschverfahren und die Zusammenarbeit mit den Kantonen. Er regelt die Übermittlung der erkennungsdienstlichen Daten durch die zuständigen Bundesbehörden und die Kantone.[555]
 
 6
 
-Das SEM oder das Bundesamt für Polizei (fedpol) können die Daten zwecks Ausschreibungen im Schengener Informationssystem (SIS) in einem automatisierten Verfahren in den nationalen Teil des Schengener Informationssystems (N-SIS) und das SIS überführen.[554]
+Das SEM oder das Bundesamt für Polizei (fedpol) können die Daten zwecks Ausschreibungen im Schengener Informationssystem (SIS) in einem automatisierten Verfahren in den nationalen Teil des Schengener Informationssystems (N-SIS) und das SIS überführen.[556]
 
-Art. 355[555]…
+Art. 355[557]…
 
-Art. 355a[557]Datenaustausch[556]
+Art. 355a[559]Datenaustausch[558]
 1
 
-Das fedpol und der Nachrichtendienst des Bundes (NDB) können dem Europäischen Polizeiamt (Europol) Personendaten, einschliesslich besonders schützenswerter Personendaten, weitergeben.[558]
+Das fedpol und der Nachrichtendienst des Bundes (NDB) können dem Europäischen Polizeiamt (Europol) Personendaten, einschliesslich besonders schützenswerter Personendaten, weitergeben.[560]
 
 2
 
-Für die Weitergabe dieser Daten gelten insbesondere die Voraussetzungen nach den Artikeln 3 und 10–13 des Abkommens vom 24. September 2004[559] zwischen der Schweizerischen Eidgenossenschaft und dem Europäischen Polizeiamt.
+Für die Weitergabe dieser Daten gelten insbesondere die Voraussetzungen nach den Artikeln 3 und 10–13 des Abkommens vom 24. September 2004[561] zwischen der Schweizerischen Eidgenossenschaft und dem Europäischen Polizeiamt.
 
 3
 
@@ -5448,44 +5350,44 @@ Gleichzeitig mit der Weitergabe von Daten unterrichtet das Bundesamt für Polize
 
 4
 
-Der Austausch von Personendaten mit Europol wird dem Austausch mit einer zuständigen Behörde eines Schengen-Staates gleichgesetzt (Art. 349b).[560]
+Der Austausch von Personendaten mit Europol wird dem Austausch mit einer zuständigen Behörde eines Schengen-Staates gleichgesetzt (Art. 349b).[562]
 
-Art. 355b[562]Mandatserweiterung[561]
-Der Bundesrat wird ermächtigt, mit Europol im Rahmen von Artikel 3 Absatz 3 des Abkommens vom 24. September 2004[563] zwischen der Schweizerischen Eidgenossenschaft und dem Europäischen Polizeiamt Änderungen des Mandatsbereichs zu vereinbaren.
+Art. 355b[564]Mandatserweiterung[563]
+Der Bundesrat wird ermächtigt, mit Europol im Rahmen von Artikel 3 Absatz 3 des Abkommens vom 24. September 2004[565] zwischen der Schweizerischen Eidgenossenschaft und dem Europäischen Polizeiamt Änderungen des Mandatsbereichs zu vereinbaren.
 
-Art. 355c[564]Zuständigkeit
-Die Polizeiorgane des Bundes und der Kantone vollziehen die Bestimmungen der Schengen-Assoziierungsabkommen[565] nach Massgabe des innerstaatlichen Rechts.
+Art. 355c[566]Zuständigkeit
+Die Polizeiorgane des Bundes und der Kantone vollziehen die Bestimmungen der Schengen-Assoziierungsabkommen[567] nach Massgabe des innerstaatlichen Rechts.
 
-Art. 355d[566]…
+Art. 355d[568]…
 
-Art. 355e[567]SIRENE-Büro
+Art. 355e[569]SIRENE-Büro
 1
 
-Das fedpol führt die zentrale Stelle für den Austausch von Zusatzinformationen mit den Schengen Staaten (SIRENE-Büro).[568]
+Das fedpol führt die zentrale Stelle für den Austausch von Zusatzinformationen mit den Schengen Staaten (SIRENE-Büro).[570]
 
 2
 
 Das SIRENE-Büro ist Anlauf-, Koordinations- und Konsultationsstelle für den Informationsaustausch im Zusammenhang mit den Ausschreibungen im SIS. Es überprüft die formelle Zulässigkeit der in- und ausländischen Ausschreibungen im SIS.
 
-Art. 355f und 355g[569]SIRENE-Büro
+Art. 355f und 355g[571]SIRENE-Büro
 
-Art. 356[570]Abgleich von daktyloskopischen Daten sowie Fahrzeug- und Fahrzeughalterdaten
+Art. 356[572]Abgleich von daktyloskopischen Daten sowie Fahrzeug- und Fahrzeughalterdaten
 1
 
 Der Bund und die Kantone unterstützen mittels Abgleich von Informationssystemen, die daktyloskopische Daten, Fahrzeug- und Fahrzeughalterdaten enthalten, und mittels des Austauschs von Informationen die teilnehmenden Staaten insbesondere bei der Bekämpfung des Terrorismus und der grenzüberschreitenden Kriminalität.
 
 2
 
-Die nationalen Kontaktstellen der teilnehmenden Staaten können nach Artikel 9 Absatz 1 des Beschlusses 2008/615/JI[571] im Einzelfall zur Verhinderung und Verfolgung von Straftaten, daktyloskopische Daten mit den Fundstellendatensätzen in den Informationssystemen der Schweiz abgleichen.
+Die nationalen Kontaktstellen der teilnehmenden Staaten können nach Artikel 9 Absatz 1 des Beschlusses 2008/615/JI[573] im Einzelfall zur Verhinderung und Verfolgung von Straftaten, daktyloskopische Daten mit den Fundstellendatensätzen in den Informationssystemen der Schweiz abgleichen.
 
 3
 
 Zur Verfolgung strafbarer Handlungen nimmt die nationale Kontaktstelle nach Artikel 357 Absatz 1 aufgrund eines Antrags den Abgleich mit den daktyloskopischen Daten in den Informationssystemen der Vertragsstaaten vor.
 
-Art. 357[572]Nationale Kontaktstellen
+Art. 357[574]Nationale Kontaktstellen
 1
 
-Fedpol ist die nationale Kontaktstelle für den Austausch von daktyloskopischen Daten und Personendaten nach den Artikeln 6, 11, 15 sowie 16 Absatz 3 des Beschlusses 2008/615/JI[573].
+Fedpol ist die nationale Kontaktstelle für den Austausch von daktyloskopischen Daten und Personendaten nach den Artikeln 6, 11, 15 sowie 16 Absatz 3 des Beschlusses 2008/615/JI[575].
 
 2
 
@@ -5513,35 +5415,32 @@ c.die kantonalen Polizei- und Strafverfolgungsbehörden.
 
 4
 
-Das Bundesamt für Strassen ist die nationale Kontaktstelle für den Austausch von Daten über Eigentümer oder Halter von Fahrzeugen sowie von Fahrzeugdaten nach Artikel 12 Absatz 2 des Beschlusses 2008/615/JI. Als Kontaktstelle gewährt das ASTRA dem ersuchenden Vertragsstaat Zugang auf die Fahrzeug- und Fahrzeughalterdaten im Subsystem IVZ-Fahrzeuge zu den Zwecken nach Artikel 12 Absatz 1 des Beschlusses 2008/615/JI. Der Zugang zu den Daten erfolgt gemäss Artikel 15 sowie Kapitel 3 des Anhangs des Beschlusses 2008/616/JI[574].
+Das Bundesamt für Strassen ist die nationale Kontaktstelle für den Austausch von Daten über Eigentümer oder Halter von Fahrzeugen sowie von Fahrzeugdaten nach Artikel 12 Absatz 2 des Beschlusses 2008/615/JI. Als Kontaktstelle gewährt das ASTRA dem ersuchenden Vertragsstaat Zugang auf die Fahrzeug- und Fahrzeughalterdaten im Subsystem IVZ-Fahrzeuge zu den Zwecken nach Artikel 12 Absatz 1 des Beschlusses 2008/615/JI. Der Zugang zu den Daten erfolgt gemäss Artikel 15 sowie Kapitel 3 des Anhangs des Beschlusses 2008/616/JI[576].
 
 5
 
-Als terroristische Straftaten im Sinne von Artikel 16 des Beschlusses 2008/615/JI gelten die in Artikel 111j Absatz 6 Buchstabe a des Ausländer- und Integrationsgesetzes vom 16. Dezember 2005[575] genannten Verbrechen und Vergehen.
+Als terroristische Straftaten im Sinne von Artikel 16 des Beschlusses 2008/615/JI gelten die im Anhang 3 Ziffer 22 des Schengen-Informationsaustauschgesetzes vom 21. März 2025[577] genannten Verbrechen und Vergehen.[578]
 
-Art. 358–361[576]Nationale Kontaktstellen
+Art. 358–361[579]Nationale Kontaktstellen
 
-Art. 362[577]Mitteilung bei Pornografie
+Art. 362[580]Mitteilung bei Pornografie
 Stellt eine Untersuchungsbehörde fest, dass pornografische Gegenstände (Art. 197 Abs. 4) in einem fremden Staate hergestellt oder von dort aus eingeführt worden sind, so informiert sie sofort die zur Bekämpfung der Pornografie eingesetzte Zentralstelle des Bundes.
 
 ## Fünfter Titel: …
+Art. 363[581]
 
-Art. 363[578]
-
-Art. 364[579]
+Art. 364[582]
 
 ## Sechster Titel: …
+Art. 365–369[583]
 
-Art. 365–369[580]
+Art. 369a[584]
 
-Art. 369a[581]
+Art. 370 und 371[585]
 
-Art. 370 und 371[582]
-
-Art. 371a[583]
+Art. 371a[586]
 
 ## Siebenter Titel: Straf- und Massnahmenvollzug, Bewährungshilfe, Anstalten und Einrichtungen
-
 Art. 372Pflicht zum Straf- und Massnahmenvollzug
 1
 
@@ -5553,7 +5452,7 @@ Den Urteilen sind die von Polizeibehörden und andern zuständigen Behörden erl
 
 3
 
-Die Kantone gewährleisten einen einheitlichen Vollzug strafrechtlicher Sanktionen.[584]
+Die Kantone gewährleisten einen einheitlichen Vollzug strafrechtlicher Sanktionen.[587]
 
 Art. 373Vollstreckung
 Die auf Grund des Strafrechts des Bundes oder der Kantone ergangenen rechtskräftigen Entscheide sind mit Bezug auf Geldstrafen, Bussen, Kosten und Einziehungen in der ganzen Schweiz vollstreckbar.
@@ -5565,7 +5464,7 @@ Art. 374Verfügungsrecht
 
 2
 
-In den von der Straf- oder Berufungskammer des Bundesstrafgerichts beurteilten Fällen verfügt darüber der Bund.[585]
+In den von der Straf- oder Berufungskammer des Bundesstrafgerichts beurteilten Fällen verfügt darüber der Bund.[588]
 
 3
 
@@ -5573,7 +5472,7 @@ Die Verwendung zu Gunsten des Geschädigten nach Artikel 73 bleibt vorbehalten.
 
 4
 
-Vorbehalten sind die Bestimmungen des Bundesgesetzes vom 19. März 2004[586] über die Teilung eingezogener Vermögenswerte.[587]
+Vorbehalten sind die Bestimmungen des Bundesgesetzes vom 19. März 2004[589] über die Teilung eingezogener Vermögenswerte.[590]
 
 Art. 375Gemeinnützige Arbeit
 1
@@ -5657,14 +5556,13 @@ a.durch deren Verrechnung mit seiner Arbeitsleistung im Straf- oder Massnahmenvo
 
 b.nach Massgabe seines Einkommens und Vermögens, wenn er eine ihm zugewiesene Arbeit verweigert, obwohl sie den Vorgaben der Artikel 81 oder 90 Absatz 3 genügt; oder
 
-c.[588] durch Abzug eines Teils des Einkommens, das er auf Grund einer Tätigkeit im Rahmen der Halbgefangenschaft, des Vollzugs durch elektronische Überwachung, des Arbeitsexternats oder des Wohn- und Arbeitsexternats erzielt.
+c.[591] durch Abzug eines Teils des Einkommens, das er auf Grund einer Tätigkeit im Rahmen der Halbgefangenschaft, des Vollzugs durch elektronische Überwachung, des Arbeitsexternats oder des Wohn- und Arbeitsexternats erzielt.
 
 3
 
 Die Kantone erlassen nähere Vorschriften über die Kostenbeteiligung der Verurteilten.
 
-## 7a. Titel:[589] Haftung bei Aufhebung der lebenslänglichen Verwahrung
-
+## 7a. Titel:[592] Haftung bei Aufhebung der lebenslänglichen Verwahrung
 Art. 380a
 1
 
@@ -5672,25 +5570,24 @@ Wird eine lebenslänglich verwahrte Person bedingt entlassen oder wird ihre Verw
 
 2
 
-Für den Rückgriff auf den Täter und die Verjährung des Anspruchs auf Schadenersatz oder Genugtuung gelten die Bestimmungen des Obligationenrechts[590] über die unerlaubten Handlungen.
+Für den Rückgriff auf den Täter und die Verjährung des Anspruchs auf Schadenersatz oder Genugtuung gelten die Bestimmungen des Obligationenrechts[593] über die unerlaubten Handlungen.
 
 3
 
-Für den Rückgriff auf die Mitglieder der anordnenden Behörde ist das kantonale Recht beziehungsweise das Verantwortlichkeitsgesetz vom 14. März 1958[591] massgebend.
+Für den Rückgriff auf die Mitglieder der anordnenden Behörde ist das kantonale Recht beziehungsweise das Verantwortlichkeitsgesetz vom 14. März 1958[594] massgebend.
 
 ## Achter Titel: Begnadigung, Amnestie, Wiederaufnahme des Verfahrens
-
 Art. 381Zuständigkeit
 Das Recht der Begnadigung mit Bezug auf Urteile, die auf Grund dieses oder eines andern Bundesgesetzes ergangen sind, wird ausgeübt:
 
-a.[592] in den Fällen, in denen die Straf- oder Berufungskammer des Bundesstrafgerichts oder eine Verwaltungsbehörde des Bundes geurteilt hat, durch die Bundesversammlung;
+a.[595] in den Fällen, in denen die Straf- oder Berufungskammer des Bundesstrafgerichts oder eine Verwaltungsbehörde des Bundes geurteilt hat, durch die Bundesversammlung;
 
 b.in den Fällen, in denen eine kantonale Behörde geurteilt hat, durch die Begnadigungsbehörde des Kantons.
 
 Art. 382Begnadigungsgesuch
 1
 
-Das Begnadigungsgesuch kann vom Verurteilten, von seinem gesetzlichen Vertreter und, mit Einwilligung des Verurteilten, von seinem Verteidiger oder von seinem Ehegatten, seiner eingetragenen Partnerin oder seinem eingetragenen Partner gestellt werden.[593]
+Das Begnadigungsgesuch kann vom Verurteilten, von seinem gesetzlichen Vertreter und, mit Einwilligung des Verurteilten, von seinem Verteidiger oder von seinem Ehegatten, seiner eingetragenen Partnerin oder seinem eingetragenen Partner gestellt werden.[596]
 
 2
 
@@ -5722,8 +5619,7 @@ Art. 385Wiederaufnahme des Verfahrens
 Die Kantone haben gegenüber Urteilen, die auf Grund dieses oder eines andern Bundesgesetzes ergangen sind, wegen erheblicher Tatsachen oder Beweismittel, die dem Gericht zur Zeit des früheren Verfahrens nicht bekannt waren, die Wiederaufnahme des Verfahrens zu Gunsten des Verurteilten zu gestatten.
 
 ## Neunter Titel: Präventionsmassnahmen, ergänzende Bestimmungen und allgemeine Übergangsbestimmungen
-
-Art. 386[594]Präventionsmassnahmen
+Art. 386[597]Präventionsmassnahmen
 1
 
 Der Bund kann Aufklärungs‑, Erziehungs- und weitere Massnahmen ergreifen, die darauf hinzielen, Straftaten zu verhindern und der Kriminalität vorzubeugen.
@@ -5757,7 +5653,7 @@ e.das Arbeitsentgelt des Gefangenen nach Artikel 83.
 
 1bis
 
-Der Bundesrat erlässt die für die Bildung der Eidgenössischen Fachkommission zur Beurteilung der Behandelbarkeit lebenslänglich verwahrter Straftäter (Art. 64c Abs. 1) notwendigen Bestimmungen über die Wahl der Kommissionsmitglieder und deren Entschädigung, über das Verfahren und die Organisation der Kommission.[595]
+Der Bundesrat erlässt die für die Bildung der Eidgenössischen Fachkommission zur Beurteilung der Behandelbarkeit lebenslänglich verwahrter Straftäter (Art. 64c Abs. 1) notwendigen Bestimmungen über die Wahl der Kommissionsmitglieder und deren Entschädigung, über das Verfahren und die Organisation der Kommission.[598]
 
 2
 
@@ -5765,7 +5661,7 @@ Der Bundesrat kann über die Trennung der Anstalten des Kantons Tessin auf Antra
 
 3
 
-…[596]
+…[599]
 
 4
 
@@ -5820,44 +5716,40 @@ Die Kantone teilen dem Bund die nötigen Einführungsbestimmungen zum Schweizeri
 Art. 392Inkrafttreten dieses Gesetzes
 Dieses Gesetz tritt am 1. Januar 1942 in Kraft.
 
-## Schlussbestimmungen der Änderung vom 18. März 1971[597]
+## Schlussbestimmungen der Änderung vom 18. März 1971[600]
 
-## Schlussbestimmungen der Änderung vom 13. Dezember 2002[598]
-
+## Schlussbestimmungen der Änderung vom 13. Dezember 2002[601]
 1. Vollzug von Strafen
 
 1 Artikel 46 ist auf den Widerruf des bedingten Strafvollzugs, der nach bisherigem Recht angeordnet wurde, anwendbar. Das Gericht kann an Stelle der Freiheitsstrafe eine Geldstrafe (Art. 34–36) oder gemeinnützige Arbeit (Art. 37–39) anordnen.
 
-2 Die nach bisherigem Recht ausgesprochenen Nebenstrafen Amtsunfähigkeit (alt-Art. 51[599]), Entziehung der elterlichen Gewalt und der Vormundschaft (alt-Art. 53[600]), Landesverweisung auf Grund eines Strafurteils (alt-Art. 55[601]), Wirtshausverbot (alt-Art. 56[602]) sind mit Inkrafttreten des neuen Rechts aufgehoben.
+2 Die nach bisherigem Recht ausgesprochenen Nebenstrafen Amtsunfähigkeit (alt-Art. 51[602]), Entziehung der elterlichen Gewalt und der Vormundschaft (alt-Art. 53[603]), Landesverweisung auf Grund eines Strafurteils (alt-Art. 55[604]), Wirtshausverbot (alt-Art. 56[605]) sind mit Inkrafttreten des neuen Rechts aufgehoben.
 
 3 Die Bestimmungen des neuen Rechts über den Vollzug von Freiheitsstrafen (Art. 74–85, 91 und 92) sowie über die Bewährungshilfe, die Weisungen und die freiwillige soziale Betreuung (Art. 93–96) sind auch auf die Täter anwendbar, die nach bisherigem Recht verurteilt worden sind.
 
-2.[603] Anordnung und Vollzug von Massnahmen
+2.[606] Anordnung und Vollzug von Massnahmen
 
 1 Die Bestimmungen des neuen Rechts über die Massnahmen (Art. 56–65) und über den Massnahmenvollzug (Art. 90) sind auch auf die Täter anwendbar, die vor deren Inkrafttreten eine Tat begangen haben oder beurteilt worden sind. Jedoch gilt:
 
 a.Die nachträgliche Anordnung der Verwahrung nach Artikel 65 Absatz 2 ist nur zulässig, wenn die Verwahrung auch gestützt auf Artikel 42 oder 43 Ziffer 1 Absatz 2 des bisherigen Rechts möglich gewesen wäre.
 
-b.Die Einweisung junger Erwachsener in eine Arbeitserziehungsanstalt (Art. 100bis in der Fassung vom 18. März 1971[604]) und eine Massnahme für junge Erwachsene (Art. 61) dürfen nicht länger als vier Jahre dauern.
+b.Die Einweisung junger Erwachsener in eine Arbeitserziehungsanstalt (Art. 100bis in der Fassung vom 18. März 1971[607]) und eine Massnahme für junge Erwachsene (Art. 61) dürfen nicht länger als vier Jahre dauern.
 
 2 Bis spätestens zwölf Monate nach Inkrafttreten des neuen Rechts überprüft das Gericht, ob bei Personen, die nach den Artikeln 42 oder 43 Ziffer 1 Absatz 2 des bisherigen Rechts verwahrt sind, die Voraussetzungen für eine therapeutische Massnahme (Art. 59–61 oder 63) erfüllt sind. Trifft dies zu, so ordnet das Gericht die entsprechende Massnahme an; andernfalls wird die Verwahrung nach neuem Recht weitergeführt.
 
-3.[605] …
+3.[608] …
 
 4. Einrichtungen für den Massnahmenvollzug
 
 Die Kantone errichten bis spätestens zehn Jahre nach Inkrafttreten dieser Änderungen Einrichtungen für den Vollzug der Massnahmen nach den Artikeln 59 Absatz 3 sowie 64 Absatz 3.
 
-## Übergangsbestimmung zur Änderung vom 26. September 2014[606]
-
+## Übergangsbestimmung zur Änderung vom 26. September 2014[609]
 Das Informationsrecht nach Artikel 92a ist auch auf den Vollzug anwendbar, der nach bisherigem Recht angeordnet worden ist.
 
-## Übergangsbestimmung der Änderung vom 12. Dezember 2014[607]
-
+## Übergangsbestimmung der Änderung vom 12. Dezember 2014[610]
 Artikel 305bis ist nicht anwendbar auf qualifizierte Steuervergehen im Sinne von Artikel 305bis Ziffer 1bis, die vor dem Inkrafttreten der Änderung vom 12. Dezember 2014 begangen wurden.
 
-## Übergangsbestimmung zur Änderung vom 19. Juni 2015[608]
-
+## Übergangsbestimmung zur Änderung vom 19. Juni 2015[611]
 Wurde der Täter innerhalb der letzten fünf Jahre vor der Tat nach bisherigem Recht zu einer Geldstrafe von mehr als 180 Tagessätzen verurteilt, so ist der Aufschub des Vollzugs einer Strafe (Art. 42 Abs. 1) nur zulässig, wenn besonders günstige Umstände vorliegen.
 
 [1] SR 101
@@ -6956,125 +6848,131 @@ Wurde der Täter innerhalb der letzten fünf Jahre vor der Tat nach bisherigem R
 
 [548] SR 142.20
 
-[549] SR 631.0
+[549] SR 142.51
 
-[550] SR 363
+[550] SR 631.0
 
-[551] Fassung gemäss Anhang 1 Ziff. 1 des BG vom 17. Dez. 2021, in Kraft seit 1. Aug. 2023 (AS 2023 309; BBl 2021 44).
+[551] Fassung gemäss Anhang 1 Ziff. 4 des BB vom 26. Sept. 2025 über die Genehmigung und Umsetzung des Notenaustauschs zwischen de Schweiz und der EU betreffend die Übernahme der Verordnung (EU) 2024/1358 über die Einrichtung von Eurodac für den Abgleich biometrischer Daten, in Kraft seit 12. Juni 2026 (AS 2026 231; BBl 2025 1478).
 
-[552] Fassung gemäss Anhang 2 Ziff. 1 des BB vom 18. Dez. 2020 über die Genehmigung und die Umsetzung der Notenaustausche zwischen der Schweiz und der EU betreffend die Übernahme der Rechtsgrundlagen über die Einrichtung, den Betrieb und die Nutzung des Schengener Informationssystems (SIS), in Kraft seit 23. Jan. 2023 (AS 2021 365; 2022 638; BBl 2020 3465).
+[552] SR 363
 
-[553] Fassung gemäss Anhang 2 Ziff. 1 des BB vom 18. Dez. 2020 über die Genehmigung und die Umsetzung der Notenaustausche zwischen der Schweiz und der EU betreffend die Übernahme der Rechtsgrundlagen über die Einrichtung, den Betrieb und die Nutzung des Schengener Informationssystems (SIS), in Kraft seit 23. Jan. 2023 (AS 2021 365; 2022 638; BBl 2020 3465).
+[553] Fassung gemäss Anhang 1 Ziff. 1 des BG vom 17. Dez. 2021, in Kraft seit 1. Aug. 2023 (AS 2023 309; BBl 2021 44).
 
-[554] Eingefügt durch Anhang 2 Ziff. 1 des BB vom 18. Dez. 2020 über die Genehmigung und die Umsetzung der Notenaustausche zwischen der Schweiz und der EU betreffend die Übernahme der Rechtsgrundlagen über die Einrichtung, den Betrieb und die Nutzung des Schengener Informationssystems (SIS), in Kraft seit 23. Jan. 2023 (AS 2021 365; 2022 638; BBl 2020 3465).
+[554] Fassung gemäss Anhang 2 Ziff. 1 des BB vom 18. Dez. 2020 über die Genehmigung und die Umsetzung der Notenaustausche zwischen der Schweiz und der EU betreffend die Übernahme der Rechtsgrundlagen über die Einrichtung, den Betrieb und die Nutzung des Schengener Informationssystems (SIS), in Kraft seit 23. Jan. 2023 (AS 2021 365; 2022 638; BBl 2020 3465).
 
-[555] Aufgehoben durch Anhang 1 Ziff. 5 des BG vom 13. Juni 2008 über die polizeilichen Informationssysteme des Bundes, mit Wirkung seit 5. Dez. 2008 (AS 2008 4989; BBl 2006 5061).
+[555] Fassung gemäss Anhang 2 Ziff. 1 des BB vom 18. Dez. 2020 über die Genehmigung und die Umsetzung der Notenaustausche zwischen der Schweiz und der EU betreffend die Übernahme der Rechtsgrundlagen über die Einrichtung, den Betrieb und die Nutzung des Schengener Informationssystems (SIS), in Kraft seit 23. Jan. 2023 (AS 2021 365; 2022 638; BBl 2020 3465).
 
-[556] Fassung gemäss Anhang 1 Ziff. II 8 der Strafprozessordnung vom 5. Okt. 2007, in Kraft seit 1. Jan. 2011 (AS 2010 1881; BBl 2006 1085).
+[556] Eingefügt durch Anhang 2 Ziff. 1 des BB vom 18. Dez. 2020 über die Genehmigung und die Umsetzung der Notenaustausche zwischen der Schweiz und der EU betreffend die Übernahme der Rechtsgrundlagen über die Einrichtung, den Betrieb und die Nutzung des Schengener Informationssystems (SIS), in Kraft seit 23. Jan. 2023 (AS 2021 365; 2022 638; BBl 2020 3465).
 
-[557] Eingefügt durch Art. 2 des BB vom 7. Okt. 2005 über die Genehmigung und die Umsetzung des Abk. zwischen der Schweiz und dem Europol, in Kraft seit 1. April 2006 (AS 2006 1017; BBl 2005 983).
+[557] Aufgehoben durch Anhang 1 Ziff. 5 des BG vom 13. Juni 2008 über die polizeilichen Informationssysteme des Bundes, mit Wirkung seit 5. Dez. 2008 (AS 2008 4989; BBl 2006 5061).
 
-[558] Fassung gemäss Anhang 2 Ziff. 1 des BB vom 18. Dez. 2020 über die Genehmigung und die Umsetzung der Notenaustausche zwischen der Schweiz und der EU betreffend die Übernahme der Rechtsgrundlagen über die Einrichtung, den Betrieb und die Nutzung des Schengener Informationssystems (SIS), in Kraft seit 1. Sept. 2023 (AS 2021 365; 2022 491; BBl 2020 3465).
+[558] Fassung gemäss Anhang 1 Ziff. II 8 der Strafprozessordnung vom 5. Okt. 2007, in Kraft seit 1. Jan. 2011 (AS 2010 1881; BBl 2006 1085).
 
-[559] SR 0.362.2
+[559] Eingefügt durch Art. 2 des BB vom 7. Okt. 2005 über die Genehmigung und die Umsetzung des Abk. zwischen der Schweiz und dem Europol, in Kraft seit 1. April 2006 (AS 2006 1017; BBl 2005 983).
 
-[560] Eingefügt durch Ziff. II 2 des BG vom 28. Sept. 2018 über die Umsetzung der Richtlinie (EU) 2016/680 zum Schutz natürlicher Personen bei der Verarbeitung personenbezogener Daten zum Zwecke der Verhütung, Ermittlung, Aufdeckung oder Verfolgung von Straftaten oder der Strafvollstreckung, in Kraft seit 1. März 2019 (AS 2019 625; BBl 2017 6941).
+[560] Fassung gemäss Anhang 2 Ziff. 1 des BB vom 18. Dez. 2020 über die Genehmigung und die Umsetzung der Notenaustausche zwischen der Schweiz und der EU betreffend die Übernahme der Rechtsgrundlagen über die Einrichtung, den Betrieb und die Nutzung des Schengener Informationssystems (SIS), in Kraft seit 1. Sept. 2023 (AS 2021 365; 2022 491; BBl 2020 3465).
 
-[561] Fassung gemäss Anhang 1 Ziff. II 8 der Strafprozessordnung vom 5. Okt. 2007, in Kraft seit 1. Jan. 2011 (AS 2010 1881; BBl 2006 1085).
+[561] SR 0.362.2
 
-[562] Eingefügt durch Art. 2 des BB vom 7. Okt. 2005 über die Genehmigung und die Umsetzung des Abk. zwischen der Schweiz und dem Europol, in Kraft seit 1. April 2006 (AS 2006 1017; BBl 2005 983).
+[562] Eingefügt durch Ziff. II 2 des BG vom 28. Sept. 2018 über die Umsetzung der Richtlinie (EU) 2016/680 zum Schutz natürlicher Personen bei der Verarbeitung personenbezogener Daten zum Zwecke der Verhütung, Ermittlung, Aufdeckung oder Verfolgung von Straftaten oder der Strafvollstreckung, in Kraft seit 1. März 2019 (AS 2019 625; BBl 2017 6941).
 
-[563] SR 0.362.2
+[563] Fassung gemäss Anhang 1 Ziff. II 8 der Strafprozessordnung vom 5. Okt. 2007, in Kraft seit 1. Jan. 2011 (AS 2010 1881; BBl 2006 1085).
 
-[564] Eingefügt durch Art. 3 Ziff. 4 des BB vom 17. Dez. 2004 über die Genehmigung und die Umsetzung der bilateralen Abkommen zwischen der Schweiz und der EU über die Assoziierung an Schengen und an Dublin, in Kraft seit 1. Juni 2008 (AS 2008 447 2179 2227; BBl 2004 5965).
+[564] Eingefügt durch Art. 2 des BB vom 7. Okt. 2005 über die Genehmigung und die Umsetzung des Abk. zwischen der Schweiz und dem Europol, in Kraft seit 1. April 2006 (AS 2006 1017; BBl 2005 983).
 
-[565] Abk. vom 26. Okt. 2004 zwischen der Schweizerischen Eidgenossenschaft, der Europäi-schen Union und der Europäischen Gemeinschaft über die Assoziierung dieses Staates bei der Umsetzung, Anwendung und Entwicklung des Schengen-Besitzstands (SR 0.362.31); Abk. vom 28. April 2005 zwischen der Schweizerischen Eidgenossenschaft und dem Kö-nigreich Dänemark über die Begründung von Rechten und Pflichten zwischen diesen bei-den Staaten hinsichtlich der Schengener Zusammenarbeit (SR 0.362.33); Übereink. vom 17. Dez. 2004 zwischen der Schweizerischen Eidgenossenschaft, der Republik Island und dem Königreich Norwegen über die Umsetzung, Anwendung und Entwicklung des Schengen-Besitzstands und über die Kriterien und Verfahren zur Bestimmung des zustän- digen Staates für die Prüfung eines in der Schweiz, in Island oder in Norwegen gestellten Asylantrags (SR 0.362.32); Prot. vom 28. Febr. 2008 zwischen der Schweizerischen Eid-genossenschaft, der Europäischen Union, der Europäischen Gemeinschaft und dem Für-stentum Liechtenstein über den Beitritt des Fürstentums Liechtenstein zum Abkommen zwischen der Schweizerischen Eidgenossenschaft, der Europäischen Union und der Europäischen Gemeinschaft über die Assoziierung der Schweizerischen Eidgenossenschaft bei der Umsetzung, Anwendung und Entwicklung des Schengen-Besitzstands (SR 0.362.311).
+[565] SR 0.362.2
 
-[566] Eingefügt durch Art. 3 Ziff. 4 des BB vom 17. Dez. 2004 über die Genehmigung und die Umsetzung der bilateralen Abkommen zwischen der Schweiz und der EU über die Assoziierung an Schengen und an Dublin (AS 2008 447 2179; BBl 2004 5965). Aufgehoben durch Anhang 2 Ziff. II des BG vom 13. Juni 2008 über die polizeilichen Informationssysteme des Bundes, mit Wirkung seit 5. Dez. 2008 (AS 2008 4989; BBl 2006 5061).
+[566] Eingefügt durch Art. 3 Ziff. 4 des BB vom 17. Dez. 2004 über die Genehmigung und die Umsetzung der bilateralen Abkommen zwischen der Schweiz und der EU über die Assoziierung an Schengen und an Dublin, in Kraft seit 1. Juni 2008 (AS 2008 447 2179 2227; BBl 2004 5965).
 
-[567] Eingefügt durch Art. 3 Ziff. 4 des BB vom 17. Dez. 2004 über die Genehmigung und die Umsetzung der bilateralen Abkommen zwischen der Schweiz und der EU über die Assoziierung an Schengen und an Dublin, in Kraft seit 1. Juni 2008 (AS 2008 447 2179 2227; BBl 2004 5965).
+[567] Abk. vom 26. Okt. 2004 zwischen der Schweizerischen Eidgenossenschaft, der Europäi-schen Union und der Europäischen Gemeinschaft über die Assoziierung dieses Staates bei der Umsetzung, Anwendung und Entwicklung des Schengen-Besitzstands (SR 0.362.31); Abk. vom 28. April 2005 zwischen der Schweizerischen Eidgenossenschaft und dem Kö-nigreich Dänemark über die Begründung von Rechten und Pflichten zwischen diesen bei-den Staaten hinsichtlich der Schengener Zusammenarbeit (SR 0.362.33); Übereink. vom 17. Dez. 2004 zwischen der Schweizerischen Eidgenossenschaft, der Republik Island und dem Königreich Norwegen über die Umsetzung, Anwendung und Entwicklung des Schengen-Besitzstands und über die Kriterien und Verfahren zur Bestimmung des zustän- digen Staates für die Prüfung eines in der Schweiz, in Island oder in Norwegen gestellten Asylantrags (SR 0.362.32); Prot. vom 28. Febr. 2008 zwischen der Schweizerischen Eid-genossenschaft, der Europäischen Union, der Europäischen Gemeinschaft und dem Für-stentum Liechtenstein über den Beitritt des Fürstentums Liechtenstein zum Abkommen zwischen der Schweizerischen Eidgenossenschaft, der Europäischen Union und der Europäischen Gemeinschaft über die Assoziierung der Schweizerischen Eidgenossenschaft bei der Umsetzung, Anwendung und Entwicklung des Schengen-Besitzstands (SR 0.362.311).
 
-[568] Fassung gemäss Anhang 1 Ziff. 4 des BB vom 18. Dez. 2020 über die Genehmigung und die Umsetzung der Notenaustausche zwischen der Schweiz und der EU betreffend die Übernahme der Rechtsgrundlagen über die Einrichtung, den Betrieb und die Nutzung des Schengener Informationssystems (SIS), in Kraft seit 22. Nov. 2022 (AS 2021 365, 2022 638; BBl 2020 3465).
+[568] Eingefügt durch Art. 3 Ziff. 4 des BB vom 17. Dez. 2004 über die Genehmigung und die Umsetzung der bilateralen Abkommen zwischen der Schweiz und der EU über die Assoziierung an Schengen und an Dublin (AS 2008 447 2179; BBl 2004 5965). Aufgehoben durch Anhang 2 Ziff. II des BG vom 13. Juni 2008 über die polizeilichen Informationssysteme des Bundes, mit Wirkung seit 5. Dez. 2008 (AS 2008 4989; BBl 2006 5061).
 
-[569] Eingefügt durch Ziff. 4 des BG vom 19. März 2010 über die Umsetzung des Rahmenbe-schlusses 2008/977/JI über den Schutz von Personendaten im Rahmen der polizeilichen und justiziellen Zusammenarbeit in Strafsachen (AS 2010 3387; BBl 2009 6749). Aufgehoben durch Ziff. II 2 des BG vom 28. Sept. 2018 über die Umsetzung der Richtlinie (EU) 2016/680 zum Schutz natürlicher Personen bei der Verarbeitung personenbezogener Daten zum Zwecke der Verhütung, Ermittlung, Aufdeckung oder Verfolgung von Straftaten oder der Strafvollstreckung, mit Wirkung seit 1. März 2019 (AS 2019 625; BBl 2017 6941).
+[569] Eingefügt durch Art. 3 Ziff. 4 des BB vom 17. Dez. 2004 über die Genehmigung und die Umsetzung der bilateralen Abkommen zwischen der Schweiz und der EU über die Assoziierung an Schengen und an Dublin, in Kraft seit 1. Juni 2008 (AS 2008 447 2179 2227; BBl 2004 5965).
 
-[570] Fassung gemäss Anhang Ziff. 3 des BB vom 1. Okt. 2021 über die Genehmigung und die Umsetzung des Abkommens zwischen der Schweiz und der EU zur Vertiefung der grenzüberschreitenden Zusammenarbeit (Prümer Zusammenarbeit) und des Eurodac-Protokolls zwischen der Schweiz, der EU und dem Fürstentum Liechtenstein betreffend den Zugang zu Eurodac für Gefahrenabwehr- und Strafverfolgungszwecke, in Kraft seit 1. Aug. 2025 (AS 2025 348, 401; BBl 2021 738).
+[570] Fassung gemäss Anhang 1 Ziff. 4 des BB vom 18. Dez. 2020 über die Genehmigung und die Umsetzung der Notenaustausche zwischen der Schweiz und der EU betreffend die Übernahme der Rechtsgrundlagen über die Einrichtung, den Betrieb und die Nutzung des Schengener Informationssystems (SIS), in Kraft seit 22. Nov. 2022 (AS 2021 365, 2022 638; BBl 2020 3465).
 
-[571] Beschluss 2008/615/JI des Rates vom 23. Juni 2008 zur Vertiefung der grenzüberschreitenden Zusammenarbeit, insbesondere zur Bekämpfung des Terrorismus und der grenzüberschreitenden Kriminalität, Fassung gemäss ABl. L 210 vom 6.8.2008, S. 1.
+[571] Eingefügt durch Ziff. 4 des BG vom 19. März 2010 über die Umsetzung des Rahmenbe-schlusses 2008/977/JI über den Schutz von Personendaten im Rahmen der polizeilichen und justiziellen Zusammenarbeit in Strafsachen (AS 2010 3387; BBl 2009 6749). Aufgehoben durch Ziff. II 2 des BG vom 28. Sept. 2018 über die Umsetzung der Richtlinie (EU) 2016/680 zum Schutz natürlicher Personen bei der Verarbeitung personenbezogener Daten zum Zwecke der Verhütung, Ermittlung, Aufdeckung oder Verfolgung von Straftaten oder der Strafvollstreckung, mit Wirkung seit 1. März 2019 (AS 2019 625; BBl 2017 6941).
 
 [572] Fassung gemäss Anhang Ziff. 3 des BB vom 1. Okt. 2021 über die Genehmigung und die Umsetzung des Abkommens zwischen der Schweiz und der EU zur Vertiefung der grenzüberschreitenden Zusammenarbeit (Prümer Zusammenarbeit) und des Eurodac-Protokolls zwischen der Schweiz, der EU und dem Fürstentum Liechtenstein betreffend den Zugang zu Eurodac für Gefahrenabwehr- und Strafverfolgungszwecke, in Kraft seit 1. Aug. 2025 (AS 2025 348, 401; BBl 2021 738).
 
-[573] Siehe Fussnote zu Art. 356 Abs. 2.
+[573] Beschluss 2008/615/JI des Rates vom 23. Juni 2008 zur Vertiefung der grenzüberschreitenden Zusammenarbeit, insbesondere zur Bekämpfung des Terrorismus und der grenzüberschreitenden Kriminalität, Fassung gemäss ABl. L 210 vom 6.8.2008, S. 1.
 
-[574] Beschluss 2008/616/JI des Rates vom 23. Juni 2008 zur Durchführung des Beschlusses 2008/615/JI zur Vertiefung der grenzüberschreitenden Zusammenarbeit, insbesondere zur Bekämpfung des Terrorismus und der grenzüberschreitenden Kriminalität, ABl. L 210 vom 6.8.2008, S. 12.
+[574] Fassung gemäss Anhang Ziff. 3 des BB vom 1. Okt. 2021 über die Genehmigung und die Umsetzung des Abkommens zwischen der Schweiz und der EU zur Vertiefung der grenzüberschreitenden Zusammenarbeit (Prümer Zusammenarbeit) und des Eurodac-Protokolls zwischen der Schweiz, der EU und dem Fürstentum Liechtenstein betreffend den Zugang zu Eurodac für Gefahrenabwehr- und Strafverfolgungszwecke, in Kraft seit 1. Aug. 2025 (AS 2025 348, 401; BBl 2021 738).
 
-[575] SR 142.20
+[575] Siehe Fussnote zu Art. 356 Abs. 2.
 
-[576] Aufgehoben durch Anhang 1 Ziff. II 8 der Strafprozessordnung vom 5. Okt. 2007, mit Wirkung seit 1. Jan. 2011 (AS 2010 1881; BBl 2006 1085).
+[576] Beschluss 2008/616/JI des Rates vom 23. Juni 2008 zur Durchführung des Beschlusses 2008/615/JI zur Vertiefung der grenzüberschreitenden Zusammenarbeit, insbesondere zur Bekämpfung des Terrorismus und der grenzüberschreitenden Kriminalität, ABl. L 210 vom 6.8.2008, S. 12.
 
-[577] Fassung gemäss Anhang Ziff. 1 des BB vom 27. Sept. 2013 (Lanzarote-Konvention), in Kraft seit 1. Juli 2014 (AS 2014 1159; BBl 2012 7571).
+[577] SR 362.2
 
-[578] Aufgehoben durch Anhang 1 Ziff. II 8 der Strafprozessordnung vom 5. Okt. 2007, mit Wirkung seit 1. Jan. 2011 (AS 2010 1881; BBl 2006 1085). Berichtigt durch die Redaktionskommission der BVers am 20. Febr. 2013 (AS 2013 845).
+[578] Fassung gemäss Anhang 1 Ziff. 4 des BB vom 26. Sept. 2025 über die Genehmigung und Umsetzung des Notenaustauschs zwischen de Schweiz und der EU betreffend die Übernahme der Verordnung (EU) 2024/1358 über die Einrichtung von Eurodac für den Abgleich biometrischer Daten, in Kraft seit 12. Juni 2026 (AS 2026 231; BBl 2025 1478).
 
-[579] Aufgehoben durch Anhang Ziff. 1 des BG vom 15. Dez. 2017 (Kindesschutz), mit Wirkung seit 1. Jan. 2019 (AS 2018 2947; BBl 2015 3431).
+[579] Aufgehoben durch Anhang 1 Ziff. II 8 der Strafprozessordnung vom 5. Okt. 2007, mit Wirkung seit 1. Jan. 2011 (AS 2010 1881; BBl 2006 1085).
 
-[580] Aufgehoben durch Anhang 1 Ziff. 3 des Strafregistergesetzes vom 17. Juni 2016, mit Wirkung seit 23. Jan. 2023 (AS 2022 600; BBl 2014 5713).
+[580] Fassung gemäss Anhang Ziff. 1 des BB vom 27. Sept. 2013 (Lanzarote-Konvention), in Kraft seit 1. Juli 2014 (AS 2014 1159; BBl 2012 7571).
 
-[581] Eingefügt durch Ziff. I 1 des BG vom 13. Dez. 2013 über das Tätigkeitsverbot und das Kontakt- und Rayonverbot (AS 2014 2055; BBl 2012 8819). Aufgehoben durch Anhang 1 Ziff. 3 des Strafregistergesetzes vom 17. Juni 2016, mit Wirkung seit 23. Jan. 2023 (AS 2022 600; BBl 2014 5713).
+[581] Aufgehoben durch Anhang 1 Ziff. II 8 der Strafprozessordnung vom 5. Okt. 2007, mit Wirkung seit 1. Jan. 2011 (AS 2010 1881; BBl 2006 1085). Berichtigt durch die Redaktionskommission der BVers am 20. Febr. 2013 (AS 2013 845).
 
-[582] Aufgehoben durch Anhang 1 Ziff. 3 des Strafregistergesetzes vom 17. Juni 2016, mit Wirkung seit 23. Jan. 2023 (AS 2022 600; BBl 2014 5713).
+[582] Aufgehoben durch Anhang Ziff. 1 des BG vom 15. Dez. 2017 (Kindesschutz), mit Wirkung seit 1. Jan. 2019 (AS 2018 2947; BBl 2015 3431).
 
-[583] Eingefügt durch Ziff. I 1 des BG vom 13. Dez. 2013 über das Tätigkeitsverbot und das Kontakt- und Rayonverbot (AS 2014 2055; BBl 2012 8819). Aufgehoben durch Anhang 1 Ziff. 3 des Strafregistergesetzes vom 17. Juni 2016, mit Wirkung seit 23. Jan. 2023 (AS 2022 600; BBl 2014 5713).
+[583] Aufgehoben durch Anhang 1 Ziff. 3 des Strafregistergesetzes vom 17. Juni 2016, mit Wirkung seit 23. Jan. 2023 (AS 2022 600; BBl 2014 5713).
 
-[584] Eingefügt durch Ziff. II 2 des BG vom 6. Okt. 2006 über die Neugestaltung des Finanzausgleichs und die Aufgabenteilung zwischen Bund und Kantonen (NFA), in Kraft seit 1. Jan. 2008 (AS 2007 5779; BBl 2005 6029).
+[584] Eingefügt durch Ziff. I 1 des BG vom 13. Dez. 2013 über das Tätigkeitsverbot und das Kontakt- und Rayonverbot (AS 2014 2055; BBl 2012 8819). Aufgehoben durch Anhang 1 Ziff. 3 des Strafregistergesetzes vom 17. Juni 2016, mit Wirkung seit 23. Jan. 2023 (AS 2022 600; BBl 2014 5713).
 
-[585] Fassung gemäss Ziff. II 2 des BG vom 17. März 2017 (Schaffung einer Berufungskammer am Bundesstrafgericht), in Kraft seit 1. Jan. 2019 (AS 2017 5769; BBl 2013 7109, 2016 6199).
+[585] Aufgehoben durch Anhang 1 Ziff. 3 des Strafregistergesetzes vom 17. Juni 2016, mit Wirkung seit 23. Jan. 2023 (AS 2022 600; BBl 2014 5713).
 
-[586] SR 312.4
+[586] Eingefügt durch Ziff. I 1 des BG vom 13. Dez. 2013 über das Tätigkeitsverbot und das Kontakt- und Rayonverbot (AS 2014 2055; BBl 2012 8819). Aufgehoben durch Anhang 1 Ziff. 3 des Strafregistergesetzes vom 17. Juni 2016, mit Wirkung seit 23. Jan. 2023 (AS 2022 600; BBl 2014 5713).
 
-[587] Eingefügt durch Anhang Ziff. 1 des BG vom 19. März 2004 über die Teilung eingezogener Vermögenswerte, in Kraft seit 1. Aug. 2004 (AS 2004 3503; BBl 2002 441).
+[587] Eingefügt durch Ziff. II 2 des BG vom 6. Okt. 2006 über die Neugestaltung des Finanzausgleichs und die Aufgabenteilung zwischen Bund und Kantonen (NFA), in Kraft seit 1. Jan. 2008 (AS 2007 5779; BBl 2005 6029).
 
-[588] Fassung gemäss Ziff. I 1 des BG vom 19. Juni 2015 (Änderungen des Sanktionenrechts), in Kraft seit 1. Jan. 2018 (AS 2016 1249; BBl 2012 4721).
+[588] Fassung gemäss Ziff. II 2 des BG vom 17. März 2017 (Schaffung einer Berufungskammer am Bundesstrafgericht), in Kraft seit 1. Jan. 2019 (AS 2017 5769; BBl 2013 7109, 2016 6199).
 
-[589] Eingefügt durch Ziff. I des BG vom 21. Dez. 2007 (Lebenslängliche Verwahrung extrem gefährlicher Straftäter), in Kraft seit 1. Aug. 2008 (AS 2008 2961; BBl 2006 889).
+[589] SR 312.4
 
-[590] SR 220
+[590] Eingefügt durch Anhang Ziff. 1 des BG vom 19. März 2004 über die Teilung eingezogener Vermögenswerte, in Kraft seit 1. Aug. 2004 (AS 2004 3503; BBl 2002 441).
 
-[591] SR 170.32
+[591] Fassung gemäss Ziff. I 1 des BG vom 19. Juni 2015 (Änderungen des Sanktionenrechts), in Kraft seit 1. Jan. 2018 (AS 2016 1249; BBl 2012 4721).
 
-[592] Fassung gemäss Ziff. II 2 des BG vom 17. März 2017 (Schaffung einer Berufungskammer am Bundesstrafgericht), in Kraft seit 1. Jan. 2019 (AS 2017 5769; BBl 2013 7109, 2016 6199).
+[592] Eingefügt durch Ziff. I des BG vom 21. Dez. 2007 (Lebenslängliche Verwahrung extrem gefährlicher Straftäter), in Kraft seit 1. Aug. 2008 (AS 2008 2961; BBl 2006 889).
 
-[593] Fassung gemäss Anhang Ziff. 18 des Partnerschaftsgesetzes vom 18. Juni 2004, in Kraft seit 1. Jan. 2007 (AS 2005 5685; BBl 2003 1288).
+[593] SR 220
 
-[594] In Kraft seit 1. Jan. 2006 gemäss V vom 2. Dez. 2005 (AS 2005 5723).
+[594] SR 170.32
 
-[595] Eingefügt durch Ziff. I des BG vom 21. Dez. 2007 (Lebenslängliche Verwahrung extrem gefährlicher Straftäter), in Kraft seit 1. Aug. 2008 (AS 2008 2961; BBl 2006 889).
+[595] Fassung gemäss Ziff. II 2 des BG vom 17. März 2017 (Schaffung einer Berufungskammer am Bundesstrafgericht), in Kraft seit 1. Jan. 2019 (AS 2017 5769; BBl 2013 7109, 2016 6199).
 
-[596] Aufgehoben durch Anhang 1 Ziff. 3 des Strafregistergesetzes vom 17. Juni 2016, mit Wirkung seit 23. Jan. 2023 (AS 2022 600; BBl 2014 5713).
+[596] Fassung gemäss Anhang Ziff. 18 des Partnerschaftsgesetzes vom 18. Juni 2004, in Kraft seit 1. Jan. 2007 (AS 2005 5685; BBl 2003 1288).
 
-[597] BG vom 18. März 1971, in Kraft seit 1. Juli 1971 (AS 1971 777; BBl 1965 I 561) und für die Art. 49 Ziff. 4 Abs. 2, 82–99, 370, 372, 373, 379 Ziff. 1 Abs. 2Ziff. 4 Abs. 2, 82–99, 370, 372, 373, 379 Ziff. 1 Abs. 2, 385 und 391 in Kraft seit 1. Jan. 1974 (AS 1973 1840). Aufgehoben durch Ziff. IV des BG vom 13. Dez. 2002, mit Wirkung seit 1. Jan. 2007 (AS 2006 3459; BBl 1999 1979).
+[597] In Kraft seit 1. Jan. 2006 gemäss V vom 2. Dez. 2005 (AS 2005 5723).
 
-[598] AS 2006 3459; BBl 1999 1979
+[598] Eingefügt durch Ziff. I des BG vom 21. Dez. 2007 (Lebenslängliche Verwahrung extrem gefährlicher Straftäter), in Kraft seit 1. Aug. 2008 (AS 2008 2961; BBl 2006 889).
 
-[599] AS 1971 777
+[599] Aufgehoben durch Anhang 1 Ziff. 3 des Strafregistergesetzes vom 17. Juni 2016, mit Wirkung seit 23. Jan. 2023 (AS 2022 600; BBl 2014 5713).
 
-[600] BS 3 203
+[600] BG vom 18. März 1971, in Kraft seit 1. Juli 1971 (AS 1971 777; BBl 1965 I 561) und für die Art. 49 Ziff. 4 Abs. 2, 82–99, 370, 372, 373, 379 Ziff. 1 Abs. 2Ziff. 4 Abs. 2, 82–99, 370, 372, 373, 379 Ziff. 1 Abs. 2, 385 und 391 in Kraft seit 1. Jan. 1974 (AS 1973 1840). Aufgehoben durch Ziff. IV des BG vom 13. Dez. 2002, mit Wirkung seit 1. Jan. 2007 (AS 2006 3459; BBl 1999 1979).
 
-[601] AS 1951 1
+[601] AS 2006 3459; BBl 1999 1979
 
-[602] BS 3 203
+[602] AS 1971 777
 
-[603] Fassung gemäss Ziff. I des BG vom 24. März 2006 (Korrekturen am Sanktions- und Strafregisterrecht), in Kraft seit 1. Jan. 2007 (AS 2006 3539; BBl 2005 4689).
+[603] BS 3 203
 
-[604] AS 1971 777
+[604] AS 1951 1
 
-[605] Aufgehoben durch Anhang 1 Ziff. 3 des Strafregistergesetzes vom 17. Juni 2016, mit Wirkung seit 23. Jan. 2023 (AS 2022 600; BBl 2014 5713).
+[605] BS 3 203
 
-[606] AS 2015 1623; BBl 2014 889 913
+[606] Fassung gemäss Ziff. I des BG vom 24. März 2006 (Korrekturen am Sanktions- und Strafregisterrecht), in Kraft seit 1. Jan. 2007 (AS 2006 3539; BBl 2005 4689).
 
-[607] AS 2015 1389; BBl 2014 605
+[607] AS 1971 777
 
-[608] AS 2016 1249; BBl 2012 4721
+[608] Aufgehoben durch Anhang 1 Ziff. 3 des Strafregistergesetzes vom 17. Juni 2016, mit Wirkung seit 23. Jan. 2023 (AS 2022 600; BBl 2014 5713).
+
+[609] AS 2015 1623; BBl 2014 889 913
+
+[610] AS 2015 1389; BBl 2014 605
+
+[611] AS 2016 1249; BBl 2012 4721
 
 Inhalt
 
@@ -7174,11 +7072,10 @@ Inhalt
 
 - Schlussbestimmungen der Änderung vom 13. Dezember 2002
 
--
--
+- 
+- 
 
 ## 311.0 – Versionen
-
 IDPublikationAufhebung2026061212.06.2026—Version öffnen2026010101.01.2026—Version öffnen2025080101.08.202531.12.2025Version öffnen2025010101.01.202531.07.2025Version öffnen2024070101.07.202431.12.2024Version öffnen2024010101.01.202430.06.2024Version öffnen2023120606.12.202331.12.2023Version öffnen2023090101.09.202305.12.2023Version öffnen2023080101.08.202331.08.2023Version öffnen2023070101.07.202331.07.2023Version öffnen2023012323.01.202330.06.2023Version öffnen2023010101.01.202322.01.2023Version öffnen2022112222.11.202231.12.2022Version öffnen2022060101.06.202221.11.2022Version öffnen2022010101.01.202231.05.2022Version öffnen2021070101.07.202131.12.2021Version öffnen2020070101.07.202030.06.2021Version öffnen2020020101.02.202002.03.2020Version öffnen
 
 Über odat·Datenschutz·Hilfe·API und Lizenz·Nutzungshinweis

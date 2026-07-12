@@ -142,6 +142,102 @@ export async function logAudit(
   }
 }
 
+// ── AI Compliance Audit Helpers ───────────────────────────────────────
+
+/**
+ * Log an injection detection event to the audit trail.
+ * Call this when scanForInjection detects an injection attempt.
+ */
+export async function logInjectionAudit(opts: {
+  brainId: string;
+  userId?: string;
+  userEmail?: string;
+  ip?: string;
+  blocked: boolean;
+  riskScore: number;
+  flags: Array<{ category: string; severity: string; match: string }>;
+  sanitizedInputPreview?: string;
+}): Promise<void> {
+  const action = opts.blocked ? "ai.injection_blocked" : "ai.injection_detected";
+  await logAudit(action, "ai_input", {
+    brainId: opts.brainId,
+    userId: opts.userId,
+    userEmail: opts.userEmail,
+    ip: opts.ip,
+    details: {
+      blocked: opts.blocked,
+      risk_score: opts.riskScore,
+      flag_count: opts.flags.length,
+      categories: opts.flags.map((f) => f.category),
+      severities: opts.flags.map((f) => f.severity),
+      matches: opts.flags.map((f) => f.match.slice(0, 100)),
+      sanitized_preview: opts.sanitizedInputPreview?.slice(0, 200),
+    },
+  });
+}
+
+/**
+ * Log a reasoning trace creation to the audit trail.
+ * This links the trace_id to the audit log for cross-referencing.
+ */
+export async function logTraceAudit(opts: {
+  brainId: string;
+  userId?: string;
+  userEmail?: string;
+  traceId: string;
+  traceHash: string;
+  modelUsed: string;
+  guardrailPassed?: boolean;
+  injectionDetected: boolean;
+  injectionBlocked: boolean;
+  confidenceLevel?: string;
+  regenerationCount: number;
+}): Promise<void> {
+  await logAudit("ai.reasoning_trace", "reasoning_trace", {
+    brainId: opts.brainId,
+    userId: opts.userId,
+    userEmail: opts.userEmail,
+    entityId: opts.traceId,
+    details: {
+      trace_id: opts.traceId,
+      trace_hash: opts.traceHash,
+      model_used: opts.modelUsed,
+      guardrail_passed: opts.guardrailPassed,
+      injection_detected: opts.injectionDetected,
+      injection_blocked: opts.injectionBlocked,
+      confidence_level: opts.confidenceLevel,
+      regeneration_count: opts.regenerationCount,
+    },
+  });
+}
+
+/**
+ * Log a webhook escalation event to the audit trail.
+ */
+export async function logWebhookAudit(opts: {
+  brainId: string;
+  traceId: string;
+  event: "ESCALATE" | "BLOCK";
+  severity: string;
+  webhookUrl?: string;
+  deliveryStatus: "sent" | "failed" | "skipped";
+  statusCode?: number;
+}): Promise<void> {
+  const action = opts.event === "BLOCK" ? "ai.webhook_block" : "ai.webhook_escalate";
+  await logAudit(action, "webhook", {
+    brainId: opts.brainId,
+    entityId: opts.traceId,
+    details: {
+      trace_id: opts.traceId,
+      event: opts.event,
+      severity: opts.severity,
+      webhook_url: opts.webhookUrl ? "[configured]" : undefined,
+      delivery_status: opts.deliveryStatus,
+      status_code: opts.statusCode,
+    },
+  });
+}
+
 export async function listAuditLogs(opts: {
   brainId: string;
   action?: string;

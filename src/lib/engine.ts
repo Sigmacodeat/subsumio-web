@@ -112,6 +112,13 @@ export async function engineContext(): Promise<EngineContext | null> {
   const headers: Record<string, string> = { "x-subsumio-source": brainId };
   const apiKey = env("SUBSUMIO_WEB_API_KEY");
   if (apiKey) headers["x-subsumio-api-key"] = apiKey;
+  // Thread the user's jurisdiction to the engine so readSourcesFor() can
+  // scope the shared statute corpus to the attorney's country only.
+  // DE → law-de + law-eu, AT → law-at + law-eu, CH → law-ch + law-eu.
+  // Without this header the engine falls back to all shared sources (backward compat).
+  if (user.jurisdiction) {
+    headers["x-subsumio-jurisdiction"] = user.jurisdiction;
+  }
   return { headers, brainId, plan, user };
 }
 
@@ -127,6 +134,88 @@ export async function engineHeaders(): Promise<Record<string, string> | null> {
 
 export function unauthorized(): Response {
   return Response.json({ error: "unauthorized" }, { status: 401 });
+}
+
+// ── Case Jurisdiction Resolution (WP3) ────────────────────────────────
+
+/**
+ * In-memory cache for case jurisdiction lookups.
+ * Key: `${brainId}:${caseSlug}`, Value: `{ jurisdiction, expiresAt }`.
+ * TTL: 60 seconds — balances freshness with performance for rapid
+ * successive queries on the same case.
+ */
+const caseJurisdictionCache = new Map<
+  string,
+  { jurisdiction: string; expiresAt: number }
+>();
+const CASE_JURISDICTION_CACHE_TTL_MS = 60_000;
+
+/**
+ * Resolve the jurisdiction of a case from its engine page frontmatter.
+ * Used to set `x-subsumio-case-jurisdiction` on engine calls so
+ * `readSourcesFor()` scopes the law corpus to the case's country
+ * (Case > User > Fail-Closed architecture).
+ *
+ * Returns undefined when the case page cannot be fetched or has no
+ * jurisdiction set — in that case the engine falls back to the user's
+ * jurisdiction header (`x-subsumio-jurisdiction`).
+ */
+export async function resolveCaseJurisdiction(
+  caseSlug: string,
+  headers: Record<string, string>
+): Promise<string | undefined> {
+  const cacheKey = `${headers["x-subsumio-source"] ?? "default"}:${caseSlug}`;
+  const cached = caseJurisdictionCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.jurisdiction;
+  }
+
+  try {
+    const encodedSlug = caseSlug.split("/").map(encodeURIComponent).join("/");
+    const res = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
+      headers,
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!res.ok) return undefined;
+    const page = (await res.json()) as {
+      frontmatter?: Record<string, unknown>;
+    };
+    const fm = page.frontmatter ?? {};
+    const jurisdiction =
+      typeof fm.jurisdiction === "string" ? fm.jurisdiction.toLowerCase() : undefined;
+    if (jurisdiction && ["at", "de", "ch", "eu"].includes(jurisdiction)) {
+      caseJurisdictionCache.set(cacheKey, {
+        jurisdiction,
+        expiresAt: Date.now() + CASE_JURISDICTION_CACHE_TTL_MS,
+      });
+      return jurisdiction;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Build engine headers with case jurisdiction injected.
+ *
+ * Resolves the case's jurisdiction from the engine page frontmatter and
+ * adds `x-subsumio-case-jurisdiction` header. This header takes priority
+ * over `x-subsumio-jurisdiction` (user jurisdiction) in the engine's
+ * `readSourcesFor()` — implementing the "Case > User > Fail-Closed"
+ * jurisdiction isolation architecture.
+ *
+ * When caseSlug is empty or the case has no jurisdiction, the returned
+ * headers are unchanged (user jurisdiction remains active).
+ */
+export async function engineHeadersWithCaseJurisdiction(
+  baseHeaders: Record<string, string>,
+  caseSlug: string | undefined
+): Promise<Record<string, string>> {
+  if (!caseSlug?.trim()) return baseHeaders;
+  const caseJur = await resolveCaseJurisdiction(caseSlug.trim(), baseHeaders);
+  if (!caseJur) return baseHeaders;
+  return { ...baseHeaders, "x-subsumio-case-jurisdiction": caseJur };
 }
 
 /**

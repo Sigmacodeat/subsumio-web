@@ -82,6 +82,20 @@ interface PipelineState {
   contradiction_findings?: number;
   cost_spent_usd?: number;
   total_duration_ms?: number;
+  guardrail_results?: Record<number, {
+    passed: boolean;
+    flags_count: number;
+    flag_types: string[];
+    regenerated: boolean;
+    regen_passed?: boolean;
+  }>;
+  cross_verify_results?: {
+    clean: boolean;
+    flags_count: number;
+    flag_types: string[];
+    regenerated: boolean;
+    regen_clean?: boolean;
+  };
 }
 
 // Corrected against the actual backend bucket assignments in
@@ -580,6 +594,34 @@ export function PipelinePanel({
                         className="ml-1 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                       >
                         {layerState!.output_slugs!.length}
+                      </Badge>
+                    )}
+                    {pipelineState?.guardrail_results?.[layer.num] && (
+                      <Badge
+                        variant="default"
+                        className={cn(
+                          "ml-1 border text-xs",
+                          pipelineState.guardrail_results[layer.num]!.passed
+                            ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+                            : "border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]"
+                        )}
+                        title={`Guardrail: ${pipelineState.guardrail_results[layer.num]!.flag_types.join(", ") || "no flags"}`}
+                      >
+                        {pipelineState.guardrail_results[layer.num]!.passed ? "✓ Guardrail" : `⚠ ${pipelineState.guardrail_results[layer.num]!.flags_count} Flag${pipelineState.guardrail_results[layer.num]!.flags_count > 1 ? "s" : ""}`}
+                      </Badge>
+                    )}
+                    {layer.num === 6 && pipelineState?.cross_verify_results && (
+                      <Badge
+                        variant="default"
+                        className={cn(
+                          "ml-1 border text-xs",
+                          pipelineState.cross_verify_results.clean
+                            ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+                            : "border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] text-[color:var(--ds-attention-text)]"
+                        )}
+                        title={`Cross-verify: ${pipelineState.cross_verify_results.flag_types.join(", ") || "clean"}`}
+                      >
+                        {pipelineState.cross_verify_results.clean ? "✓ Cross-Verify" : `⚠ Cross-Verify (${pipelineState.cross_verify_results.flags_count})`}
                       </Badge>
                     )}
                     {layerState?.completed_at && (

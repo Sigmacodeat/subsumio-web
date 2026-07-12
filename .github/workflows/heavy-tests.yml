@@ -66,6 +66,18 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gbrain_test
         run: bun run test:heavy
 
+      - name: Run Akten-Retrieval Benchmark
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gbrain_test
+        working-directory: server
+        run: bun run src/eval/akten-retrieval/run.ts --output /tmp/akten-retrieval-results.jsonl
+
+      - name: Run E2E Pipeline Benchmark
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gbrain_test
+        working-directory: server
+        run: bun run src/eval/e2e-pipeline/run.ts --output /tmp/e2e-pipeline-results.jsonl
+
       # The heavy runner writes per-script logs to ~/.gbrain/audit/ on every
       # run. Upload those + the rss workload JSON on failure for triage
       # without re-running locally.
@@ -79,6 +91,8 @@ jobs:
           mkdir -p heavy-artifacts
           cp -r "$HOME/.gbrain/audit"/heavy-* heavy-artifacts/ 2>/dev/null || true
           cp tests/heavy/rss-baseline.json heavy-artifacts/ 2>/dev/null || true
+          cp /tmp/akten-retrieval-results.jsonl heavy-artifacts/ 2>/dev/null || true
+          cp /tmp/e2e-pipeline-results.jsonl heavy-artifacts/ 2>/dev/null || true
       - name: Upload heavy-test artifacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

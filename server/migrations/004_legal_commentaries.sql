@@ -16,7 +16,7 @@
 -- ============================================================
 CREATE TABLE IF NOT EXISTS subsumio_legal_commentaries (
   id              TEXT PRIMARY KEY,          -- e.g. "de/bgb/§-823" or "at/abgb/§-1311"
-  jurisdiction    TEXT NOT NULL,             -- de, at, ch, eu
+  jurisdiction    TEXT NOT NULL CHECK (jurisdiction IN ('de', 'at', 'ch', 'eu')), -- de, at, ch, eu
   statute_abbr    TEXT NOT NULL,             -- BGB, ABGB, OR, ZGB
   section_num     TEXT NOT NULL,             -- "823", "1311", "Art-41"
   commentary_type TEXT NOT NULL,             -- synthetic, open_access

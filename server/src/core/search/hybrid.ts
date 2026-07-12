@@ -36,10 +36,37 @@ import { enforceTokenBudget } from "./token-budget.ts";
 import { recordSearchTelemetry } from "./telemetry.ts";
 import { weightsForIntent, effectiveRrfK, applyExactMatchBoost } from "./intent-weights.ts";
 import { SemanticQueryCache, loadCacheConfig } from "./query-cache.ts";
+import { foreignStatutePrefixes } from "./source-boost.ts";
 
 export const RRF_K = 60;
 const COMPILED_TRUTH_BOOST = 2.0;
 const pendingCacheWrites = new Set<Promise<unknown>>();
+
+const LEGAL_RELAXED_STOPWORDS = new Set([
+  "aber", "als", "bei", "das", "dem", "den", "der", "des", "die", "durch",
+  "ein", "eine", "einer", "eines", "für", "gegen", "im", "ist", "mit", "nach",
+  "oder", "sich", "und", "von", "vom", "was", "welche", "welcher", "zu", "zur",
+]);
+
+/**
+ * German legal questions often combine modern terminology with historical
+ * statutory wording. `websearch_to_tsquery` treats whitespace as AND, which
+ * can otherwise produce zero candidates before semantic ranking gets a say.
+ * This bounded OR fallback is used only for jurisdiction-scoped searches and
+ * only when the strict keyword arm returned too few candidates.
+ */
+export function buildRelaxedLegalKeywordQuery(query: string): string | null {
+  const terms = query
+    .toLocaleLowerCase("de-AT")
+    .match(/[\p{L}\p{N}]+/gu)
+    ?.filter((term) => term.length >= 3 && !LEGAL_RELAXED_STOPWORDS.has(term));
+  const unique = [...new Set(terms ?? [])].slice(0, 12);
+  return unique.length >= 2 ? unique.join(" OR ") : null;
+}
+
+function isLikelyLegalQuery(query: string): boolean {
+  return /(?:§|\b(?:abgb|bgb|mrg|gmbhg|stgb|stpo|zpo|io|insolvenz|verjähr|gewähr|schadenersatz|vertrag|kündigung|stammkapital|diebstahl|mord|berufung|klage|frist)\w*)/iu.test(query);
+}
 
 /**
  * v0.42 (issue #1699) agent-warning channel. Stamps `SearchResult.content_flag`
@@ -758,6 +785,40 @@ export interface HybridSearchOpts extends SearchOpts {
   _queryEmbedDeadline?: QueryEmbedDeadline;
 }
 
+/** Keep only the newest available version per statute section for as-of reads. */
+export function selectLegalVersionsAsOf(results: SearchResult[], asOfDate?: string): SearchResult[] {
+  if (!asOfDate) return results;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(asOfDate)) {
+    throw new Error(`Invalid as_of date: ${asOfDate}. Expected YYYY-MM-DD.`);
+  }
+  const groups = new Map<string, SearchResult[]>();
+  for (const result of results) {
+    if (!result.slug.startsWith("legal/statutes/")) {
+      groups.set(`nonlegal:${result.chunk_id}`, [result]);
+      continue;
+    }
+    const base = result.slug.replace(/--v-\d{4}-\d{2}-\d{2}$/, "");
+    const group = groups.get(base) ?? [];
+    group.push(result);
+    groups.set(base, group);
+  }
+  const selected: SearchResult[] = [];
+  for (const group of groups.values()) {
+    const canonical = group.find((result) => !/--v-\d{4}-\d{2}-\d{2}$/.test(result.slug));
+    if (canonical) {
+      selected.push(canonical);
+      continue;
+    }
+    const dated = group
+      .map((result) => ({ result, match: /--v-(\d{4}-\d{2}-\d{2})$/.exec(result.slug) }))
+      .filter((entry): entry is { result: SearchResult; match: RegExpExecArray } => Boolean(entry.match))
+      .filter((entry) => entry.match[1] <= asOfDate)
+      .sort((a, b) => b.match[1].localeCompare(a.match[1]));
+    if (dated[0]) selected.push(dated[0].result);
+  }
+  return selected.sort((a, b) => b.score - a.score);
+}
+
 /**
  * v0.42.20.0 (Fix 3, #1775) — bound the query-time embed so a stalled provider
  * (the user's zeroentropy case) fails over to keyword instead of hanging past
@@ -921,6 +982,7 @@ export async function hybridSearch(
     // PR #618 callers compiling while the new names are the public surface.
     afterDate: opts?.since ?? opts?.afterDate,
     beforeDate: opts?.until ?? opts?.beforeDate,
+    asOfDate: opts?.asOfDate,
     // v0.34.1 (#861, D9 — P0 leak seal): thread source-scoping through so the
     // inner engine.searchKeyword / engine.searchVector calls apply the
     // WHERE source_id filter at SQL level. Pre-fix, this explicit pick
@@ -931,6 +993,18 @@ export async function hybridSearch(
     // ordering means we can't lazy-spread the full opts).
     sourceId: opts?.sourceId,
     sourceIds: opts?.sourceIds,
+    // Hard jurisdiction isolation: fold the OTHER jurisdictions' statute
+    // prefixes into the hard-exclude set so the inner engine WHERE clause
+    // filters them out. `include_slug_prefixes` is threaded alongside so a
+    // caller's opt-back-in still works (and so caller-supplied excludes are no
+    // longer silently dropped on the hybrid path). A no-op when jurisdiction is
+    // unset. The cache-key knobs_hash also folds in jurisdiction (below).
+    exclude_slug_prefixes: [
+      ...(opts?.exclude_slug_prefixes ?? []),
+      ...foreignStatutePrefixes(opts?.jurisdiction),
+    ],
+    include_slug_prefixes: opts?.include_slug_prefixes,
+    jurisdiction: opts?.jurisdiction,
     // v0.36 (D11): pass the pre-validated descriptor into the engine so
     // it never has to read config. Engines normalize string-or-descriptor
     // via normalizeEngineColumn; the descriptor path is the strict one.
@@ -989,8 +1063,25 @@ export async function hybridSearch(
     opts?.crossModal && opts.crossModal !== "auto"
       ? opts.crossModal
       : (suggestions.suggestedModality ?? "text");
-  const keywordResults: SearchResult[] =
+  let keywordResults: SearchResult[] =
     earlyModality === "image" ? [] : await engine.searchKeyword(query, searchOpts);
+  if (
+    earlyModality !== "image" &&
+    (opts?.jurisdiction || isLikelyLegalQuery(query)) &&
+    keywordResults.length < Math.min(3, limit)
+  ) {
+    const relaxedQuery = buildRelaxedLegalKeywordQuery(query);
+    if (relaxedQuery) {
+      const relaxedResults = await engine.searchKeyword(relaxedQuery, searchOpts);
+      const merged = new Map<string, SearchResult>();
+      for (const result of [...keywordResults, ...relaxedResults]) {
+        const key = `${result.source_id ?? "default"}:${result.slug}:${result.chunk_index ?? 0}`;
+        const prior = merged.get(key);
+        if (!prior || result.score > prior.score) merged.set(key, result);
+      }
+      keywordResults = [...merged.values()].sort((a, b) => b.score - a.score);
+    }
+  }
 
   // v0.29.1: resolve salience/recency from caller (back-compat aliases for
   // PR #618's `recencyBoost` numeric scale) or fall back to the heuristic.
@@ -1481,7 +1572,10 @@ export async function hybridSearch(
   // aliasing in the postFusionOpts resolver near line ~256.
 
   // Dedup
-  const deduped = dedupResults(fused, dedupOpts);
+  const deduped = selectLegalVersionsAsOf(
+    dedupResults(fused, dedupOpts),
+    opts?.asOfDate
+  );
 
   // Auto-escalate: if detail=low returned 0, retry with high. The inner
   // call's onMeta fires with the escalated detail_resolved; do NOT also
@@ -1682,6 +1776,11 @@ export async function hybridSearchCached(
   const cacheKnobsHash = knobsHash(resolvedForCache, {
     embeddingColumn: resolvedColCached.name,
     embeddingModel: resolvedColCached.embeddingModel,
+    // Hard jurisdiction isolation: a jurisdiction-scoped read must never be
+    // served an unscoped or foreign-jurisdiction cache row (same contamination
+    // class as the column/provider and schema-pack folds above).
+    jurisdiction: opts?.jurisdiction,
+    asOfDate: opts?.asOfDate,
   });
 
   // Cache decision: opts.useCache (explicit) wins over global config; global

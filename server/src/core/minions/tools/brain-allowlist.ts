@@ -25,7 +25,7 @@
 import type { BrainEngine } from "../../engine.ts";
 import type { GBrainConfig } from "../../config.ts";
 import { operations } from "../../operations.ts";
-import type { Operation, OperationContext } from "../../operations.ts";
+import type { Operation, OperationContext, AuthInfo } from "../../operations.ts";
 import { paramDefToSchema } from "../../../mcp/tool-defs.ts";
 import type { ToolCtx, ToolDef } from "../types.ts";
 
@@ -220,6 +220,16 @@ export interface BuildBrainToolsOpts {
    * 'default' (host source) for local jobs.
    */
   sourceId?: string;
+  /**
+   * Federated READ sources (law corpus) this subagent may search alongside
+   * its own source. Threaded into `ctx.auth.allowedSources` so that
+   * `sourceScopeOpts()` returns `{sourceIds: [...]}` — giving the subagent
+   * search tools access to the law corpus scoped by jurisdiction.
+   *
+   * Set by the legal pipeline from `JURISDICTION_LAW_SOURCES[jurisdiction]`.
+   * Without this, the Law Matcher cannot search the law corpus at all.
+   */
+  sourceIds?: string[];
 }
 
 interface OpContextDeps {
@@ -231,6 +241,7 @@ interface OpContextDeps {
   brainId?: string;
   allowedSlugPrefixes?: readonly string[];
   sourceId?: string;
+  sourceIds?: string[];
 }
 
 function buildOpContext(deps: OpContextDeps): OperationContext {
@@ -248,6 +259,11 @@ function buildOpContext(deps: OpContextDeps): OperationContext {
     // the host default. NEVER hardcode 'default' here — a tenant agent
     // reading/writing the host source is a cross-tenant data leak.
     sourceId: deps.sourceId ?? "default",
+    // Federated READ sources (law corpus) — threaded into ctx.auth.allowedSources
+    // so sourceScopeOpts() returns {sourceIds: [...]} for scoped search access.
+    ...(deps.sourceIds && deps.sourceIds.length > 0
+      ? { auth: { token: "", clientId: "", scopes: [], allowedSources: deps.sourceIds } as AuthInfo }
+      : {}),
     jobId: deps.jobId,
     subagentId: deps.subagentId,
     viaSubagent: true, // FAIL-CLOSED: put_page etc. enforce namespace
@@ -300,6 +316,7 @@ export function buildBrainTools(opts: BuildBrainToolsOpts): ToolDef[] {
           brainId: opts.brainId,
           allowedSlugPrefixes: opts.allowedSlugPrefixes,
           sourceId: opts.sourceId,
+          sourceIds: opts.sourceIds,
         });
         const params = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
         return op.handler(opCtx, params);

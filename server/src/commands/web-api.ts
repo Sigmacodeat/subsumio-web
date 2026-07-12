@@ -30,6 +30,7 @@ import {
   InvalidDocumentPasswordError,
 } from "../core/extract-document.ts";
 import { slugifySegment, isImageFilePath } from "../core/sync.ts";
+import { splitStatute } from "../core/legal/split-statute.ts";
 import { loadConfig } from "../core/config.ts";
 import { OperationError } from "../core/operations.ts";
 import {
@@ -38,6 +39,7 @@ import {
   ConnectionError as EngineConnectionError,
 } from "../core/engine-errors.ts";
 import type { ThinkResult } from "../core/think/index.ts";
+import { formatCitationTitle } from "../core/think/ogh-format.ts";
 import { MinionQueue } from "../core/minions/queue.ts";
 import {
   readSafeZipEntries,
@@ -1513,9 +1515,15 @@ export function aclGroupsMiddleware(engine: BrainEngine) {
 /**
  * Shared, public, READ-ONLY reference sources every tenant may query alongside
  * their own (e.g. the statute corpus imported into `law-at`/`law-de`). Set via
- * `GBRAIN_SHARED_READ_SOURCES=law-at,law-de`. Empty by default → behaviour is
- * unchanged unless a deployment opts in. Statute text is public, so federating
- * it into reads is not a data-isolation concern; writes are unaffected.
+ * `SUBSUMIO_SHARED_READ_SOURCES=law-at,law-de,law-ch,law-eu`. Empty by default →
+ * behaviour is unchanged unless a deployment opts in. Statute text is public,
+ * so federating it into reads is not a data-isolation concern; writes are
+ * unaffected.
+ *
+ * Jurisdiction scoping: when the request includes `x-subsumio-jurisdiction`
+ * (set by the Next.js proxy from the user's onboarding country), only the
+ * matching national law source + `law-eu` are federated — preventing
+ * cross-jurisdiction contamination (e.g. an AT attorney getting DE StPO results).
  */
 const SHARED_READ_SOURCES: string[] = (
   process.env.SUBSUMIO_SHARED_READ_SOURCES ??
@@ -1527,14 +1535,47 @@ const SHARED_READ_SOURCES: string[] = (
   .filter((s) => s && SOURCE_RE.test(s));
 
 /**
+ * Map a jurisdiction code to the law sources that jurisdiction's attorneys need.
+ * DE → law-de + law-eu, AT → law-at + law-eu, CH → law-ch + law-eu.
+ * EU law applies to all DACH jurisdictions, so it's always included.
+ */
+const JURISDICTION_LAW_SOURCES: Record<string, string[]> = {
+  DE: ["law-de", "law-eu"],
+  AT: ["law-at", "law-at-judikatur", "law-eu"],
+  CH: ["law-ch", "law-eu"],
+};
+
+/**
  * The federated READ scope for a request: the tenant's own source plus the
- * shared statute sources. Returns undefined when no shared sources are
- * configured (preserves the scalar-sourceId path). Never used for writes.
+ * shared statute sources scoped by jurisdiction. Never used for writes.
+ *
+ * Jurisdiction resolution priority (Case > User > Fail-closed):
+ *  1. `x-subsumio-case-jurisdiction` — set by the Next.js proxy from the
+ *     active case's frontmatter. A lawyer working on a DE case gets DE law
+ *     even if their own jurisdiction is AT.
+ *  2. `x-subsumio-jurisdiction` — set from the user's onboarding country.
+ *     Used when no case is active.
+ *  3. Neither → fail-closed: only the tenant's own source, NO law corpus.
+ *     This prevents cross-jurisdiction contamination when jurisdiction is
+ *     unknown. The tenant can still search their own documents.
  */
 function readSourcesFor(req: Request): string[] | undefined {
   if (SHARED_READ_SOURCES.length === 0) return undefined;
   const own = requestSourceId(req);
-  return [...new Set([own, ...SHARED_READ_SOURCES])];
+  const caseJurHeader = req.headers["x-subsumio-case-jurisdiction"] as string | undefined;
+  const userJurHeader = req.headers["x-subsumio-jurisdiction"] as string | undefined;
+  const caseJur = caseJurHeader?.toUpperCase();
+  const userJur = userJurHeader?.toUpperCase();
+  const jur = caseJur ?? userJur;
+  if (jur && JURISDICTION_LAW_SOURCES[jur]) {
+    const scoped = JURISDICTION_LAW_SOURCES[jur].filter((s) =>
+      SHARED_READ_SOURCES.includes(s)
+    );
+    return [...new Set([own, ...scoped])];
+  }
+  // Fail-closed: no jurisdiction determined → no law corpus access.
+  // The tenant can still search their own documents (own source).
+  return [own];
 }
 
 export async function invokeOp(
@@ -1709,7 +1750,8 @@ async function enrichCitations(
 
   return citations.map((c) => {
     const slug = c.page_slug;
-    const title = titleMap.get(slug) ?? slug.split("/").pop() ?? slug;
+    const rawTitle = titleMap.get(slug) ?? slug.split("/").pop() ?? slug;
+    const title = formatCitationTitle(rawTitle, slug);
     const chunk = chunkMap.get(slug);
     const truth = truthMap.get(slug);
     const pageCount = pageCountMap.get(slug);
@@ -1880,9 +1922,19 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   const ensuredSources = new Set<string>(["default"]);
   async function ensureSource(sourceId: string): Promise<void> {
     if (ensuredSources.has(sourceId)) return;
+    const legalJurisdiction: Record<string, string> = {
+      "law-at": "at",
+      "law-de": "de",
+      "law-ch": "ch",
+      "law-eu": "eu",
+    };
     await engine.executeRaw(
-      `INSERT INTO sources (id, name) VALUES ($1, $1) ON CONFLICT (id) DO NOTHING`,
-      [sourceId]
+      `INSERT INTO sources (id, name, jurisdiction, config)
+       VALUES ($1, $1, $2, jsonb_build_object('jurisdiction', $2, 'legal_reference', $2 IS NOT NULL))
+       ON CONFLICT (id) DO UPDATE SET
+         jurisdiction = COALESCE(sources.jurisdiction, EXCLUDED.jurisdiction),
+         config = sources.config || EXCLUDED.config`,
+      [sourceId, legalJurisdiction[sourceId] ?? null]
     );
     ensuredSources.add(sourceId);
   }
@@ -2800,8 +2852,28 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       // P0-SECR-002: Verified matter scope is attached by the global middleware.
       // It is also passed to runThink via its own options so retrieval can
       // reject out-of-scope pages before citations are even generated.
-      const matterScope = req.matterScope ?? "all";
+      const authorizedMatterScope = req.matterScope ?? "all";
+      const activeCaseSlug =
+        typeof body?.case_slug === "string" && body.case_slug.trim()
+          ? body.case_slug.trim()
+          : undefined;
+      if (activeCaseSlug) {
+        assertMatterScope(authorizedMatterScope, activeCaseSlug);
+      }
+      // An active Copilot matter narrows retrieval to that case even when the
+      // caller is authorized for many matters. Canonical law sources are kept
+      // separately by runThink's evidence filter.
+      const matterScope = activeCaseSlug ? [activeCaseSlug] : authorizedMatterScope;
       const aclGroups = req.aclGroups ?? "all";
+
+      // Jurisdiction from the request header (set by readSourcesFor middleware).
+      // Propagated to runThink so cross-verify can detect cross-jurisdiction
+      // contamination (e.g. DE §§ cited in an AT case) and the legal prompt
+      // can apply jurisdiction-aware citation discipline.
+      // Case jurisdiction header takes priority over user jurisdiction (Case > User > Fail-Closed).
+      const caseJurHeader = req.headers["x-subsumio-case-jurisdiction"] as string | undefined;
+      const userJurHeader = req.headers["x-subsumio-jurisdiction"] as string | undefined;
+      const jurisdiction = (caseJurHeader ?? userJurHeader)?.toUpperCase();
 
       const result = await runThink(engine, {
         question: query,
@@ -2813,6 +2885,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         searchMode,
         matterScope,
         aclGroups,
+        // Activate legal mode when the attorney has a jurisdiction set —
+        // this enables the citation guardrail, cross-verify, and the
+        // legal-aware system prompt with statute citation discipline.
+        legalMode: true,
+        jurisdiction,
         // Real-time token streaming: each text delta fires an SSE chunk event.
         onStreamChunk: (text) => {
           res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
@@ -7412,12 +7489,42 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   };
 
   async function ensureSharedSource(sourceId: string): Promise<void> {
+    const jurisdiction = Object.entries(LAW_SOURCE_MAP).find(([, id]) => id === sourceId)?.[0] ?? null;
     await engine.executeRaw(
-      `INSERT INTO sources (id, name, config)
-       VALUES ($1, $1, '{"federated": true}'::jsonb)
-       ON CONFLICT (id) DO NOTHING`,
-      [sourceId]
+      `INSERT INTO sources (id, name, jurisdiction, config)
+       VALUES ($1, $1, $2, jsonb_build_object('federated', true, 'legal_reference', true, 'jurisdiction', $2))
+       ON CONFLICT (id) DO UPDATE SET
+         config = sources.config || EXCLUDED.config,
+         jurisdiction = COALESCE(sources.jurisdiction, EXCLUDED.jurisdiction)`,
+      [sourceId, jurisdiction]
     );
+  }
+
+  /** Build per-§ page markdown (mirrors import-statutes-split.ts sectionPage). */
+  function sectionPage(
+    jur: string,
+    abbr: string,
+    meta: { abbreviation?: string; title?: string; version_date?: string; source_url?: string; license?: string },
+    section: { marker: "§" | "Art."; ref: string; title: string; body: string }
+  ): string {
+    const abbrUpper = meta.abbreviation || abbr.toUpperCase();
+    const head = `${section.marker} ${section.ref} ${abbrUpper}`;
+    const heading = section.title ? `${head} — ${section.title}` : head;
+    const fm: Record<string, string> = {
+      title: heading,
+      type: "law",
+      jurisdiction: jur,
+      abbreviation: abbrUpper,
+      paragraph: section.ref,
+      statute: meta.title || abbrUpper,
+    };
+    if (meta.version_date) fm.version_date = meta.version_date;
+    if (meta.source_url) fm.source_url = meta.source_url;
+    if (meta.license) fm.license = meta.license;
+    const front = `---\n${Object.entries(fm)
+      .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+      .join("\n")}\n---\n`;
+    return `${front}\n# ${heading}\n\n${section.body}\n`;
   }
 
   async function syncLawCorpus(): Promise<{
@@ -7454,26 +7561,43 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       result[sourceId].files = files.length;
       for (const file of files) {
         const filePath = join(dirPath, file);
-        const slug = `statutes/${dir}/${file.replace(/\.md$/, "")}`;
+        const abbr = file.replace(/\.md$/, "");
         try {
-          const content = readFileSync(filePath, "utf8");
-          const importResult = await importFromContent(engine, slug, content, {
-            noEmbed,
-            sourceId,
-            sourcePath: `law-corpus/${dir}/${file}`,
-            source_kind: "law_corpus",
-            source_uri: `file://${filePath}`,
-            ingested_via: "law_sync",
-          });
-          if (importResult.status === "imported") {
-            result[sourceId].imported++;
-          } else {
-            result[sourceId].skipped++;
+          const raw = readFileSync(filePath, "utf8");
+          const { meta, sections } = splitStatute(raw);
+          if (sections.length === 0) {
+            result[sourceId].errors++;
+            console.error(`[law-sync] ${filePath}: 0 sections parsed`);
+            continue;
+          }
+          for (const section of sections) {
+            const slug = `legal/statutes/${dir}/${abbr}/${section.id}`;
+            const content = sectionPage(dir, abbr, meta, section);
+            try {
+              const importResult = await importFromContent(engine, slug, content, {
+                noEmbed,
+                sourceId,
+                sourcePath: `law-corpus/${dir}/${file}`,
+                source_kind: "law_corpus",
+                source_uri: `file://${filePath}`,
+                ingested_via: "law_sync",
+              });
+              if (importResult.status === "imported") {
+                result[sourceId].imported++;
+              } else {
+                result[sourceId].skipped++;
+              }
+            } catch (e) {
+              result[sourceId].errors++;
+              console.error(
+                `[law-sync] failed to import ${slug}: ${e instanceof Error ? e.message : String(e)}`
+              );
+            }
           }
         } catch (e) {
           result[sourceId].errors++;
           console.error(
-            `[law-sync] failed to import ${filePath}: ${e instanceof Error ? e.message : String(e)}`
+            `[law-sync] failed to read ${filePath}: ${e instanceof Error ? e.message : String(e)}`
           );
         }
       }

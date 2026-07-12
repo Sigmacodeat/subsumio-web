@@ -57,6 +57,10 @@ interface AtLaw {
   matchTitle?: string;
   abbr: string;
   title: string;
+  /** Stable official RIS identity. Prefer this over ambiguous title search. */
+  gesetzesnummer?: string;
+  /** Explicit corpus filename when abbreviation transliteration is ambiguous. */
+  outputFile?: string;
 }
 
 // Starter set — the load-bearing codes for our legal + tax verticals.
@@ -182,6 +186,16 @@ const AT_LAWS: AtLaw[] = [
     matchTitle: "Außerstreitgesetz",
     abbr: "AußStrG",
     title: "Außerstreitgesetz (Österreich)",
+    gesetzesnummer: "20003047",
+    outputFile: "au-strg.md",
+  },
+  {
+    searchTitle: "Jurisdiktionsnorm",
+    matchTitle: "Jurisdiktionsnorm",
+    abbr: "JN",
+    title: "Jurisdiktionsnorm (Österreich)",
+    gesetzesnummer: "10001697",
+    outputFile: "jn.md",
   },
   {
     searchTitle: "Gerichtsorganisationsgesetz",
@@ -556,6 +570,7 @@ const CH_LAWS: ChLaw[] = [
   { srNumber: "220", abbr: "OR", title: "Obligationenrecht (Schweiz)" },
   { srNumber: "311.0", abbr: "StGB", title: "Schweizerisches Strafgesetzbuch" },
   { srNumber: "210", abbr: "ZGB", title: "Schweizerisches Zivilgesetzbuch" },
+  { srNumber: "312.0", abbr: "StPO", title: "Schweizerische Strafprozessordnung" },
 ];
 
 // ── EU (key regulations via EUR-Lex Cellar API) ───────────────────────
@@ -692,6 +707,7 @@ const RIS_UA = {
 /** Resolve the RIS Gesetzesnummer via the OGD API + one norm page (the
  *  API search result links the norm; the norm page carries the number). */
 async function resolveGesetzesnummer(law: AtLaw): Promise<string | null> {
+  if (law.gesetzesnummer) return law.gesetzesnummer;
   // Title search ranks related laws first ("Einführungsgesetz zur
   // Exekutionsordnung" beats "Exekutionsordnung" on page 1) — paginate
   // until the EXACT Kurztitel shows up.
@@ -924,8 +940,8 @@ async function fetchCh(law: ChLaw): Promise<{ markdown: string; versionDate: str
       console.error(`  [ch:${law.abbr}] no versions found on odat.ch`);
       return null;
     }
-    // Prefer in-force, fall back to latest overall
-    const latest = inForce.length > 0 ? inForce[inForce.length - 1] : all[all.length - 1];
+    // Prefer in-force (newest first from API), fall back to latest overall
+    const latest = inForce.length > 0 ? inForce[0] : all[0];
     const versionCode = latest.refno_version; // e.g. "20260101"
     const versionDate = `${versionCode.slice(0, 4)}-${versionCode.slice(4, 6)}-${versionCode.slice(6, 8)}`;
 
@@ -1077,7 +1093,11 @@ async function main() {
         failed++;
         continue;
       }
-      const file = join(OUT, "at", `${law.abbr.toLowerCase().replace(/[^a-z0-9-]/g, "-")}.md`);
+      const file = join(
+        OUT,
+        "at",
+        law.outputFile ?? `${law.abbr.toLowerCase().replace(/[^a-z0-9-]/g, "-")}.md`
+      );
       writeFileSync(file, result.markdown, "utf-8");
       console.error(
         `  [at:${law.abbr}] ok — Fassung vom ${result.versionDate}, ${(result.markdown.length / 1024).toFixed(0)} KB`

@@ -4,7 +4,7 @@ type: "law"
 jurisdiction: "de"
 abbreviation: "GmbHG"
 version_date: "2024-12-31"
-retrieved_at: "2026-06-21"
+retrieved_at: "2026-07-10"
 source_url: "https://www.gesetze-im-internet.de/gmbhg/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
 ---
@@ -676,76 +676,76 @@ Mit Freiheitsstrafe bis zu einem Jahr oder mit Geldstrafe wird bestraft, wer als
 
 (Fundstelle: BGBl. I 2021, 3364 - 3366)
 
-a)Musterprotokoll für die Gründung einer Einpersonengesellschaft mittels VideokommunikationUR. Nr.**\*\*\*\***\*\***\*\*\*\***\_\_**\*\*\*\***\*\***\*\*\*\***Heute, den**\*\*\*\***\*\***\*\*\*\***\_\_**\*\*\*\***\*\***\*\*\*\***,erschien mittels Videokommunikation vor mir,**\*\*\*\***\*\***\*\*\*\***\_\_**\*\*\*\***\*\***\*\*\*\***,Notar/in mit dem Amtssitz in**\*\***\*\***\*\***\_\_\_\_**\*\***\*\***\*\***,Herr/Frau**\*\***\*\***\*\***\*\***\*\***\*\***\*\***\_\_\_\_**\*\***\*\***\*\***\*\***\*\***\*\***\*\***1.Der/Die Erschienene errichtet hiermit nach § 2 Absatz 3 GmbHG mittels einer Beurkundung im Wege der Videokommunikation nach den §§ 16a ff. BeurkG eine Gesellschaft mit beschränkter Haftung unter der Firma **\*\*\*\***\*\***\*\*\*\***\_\_**\*\*\*\***\*\***\*\*\*\***
+a)Musterprotokoll für die Gründung einer Einpersonengesellschaft mittels VideokommunikationUR. Nr.______________________________________Heute, den______________________________________,erschien mittels Videokommunikation vor mir,______________________________________,Notar/in mit dem Amtssitz in________________________________,Herr/Frau________________________________________________________________1.Der/Die Erschienene errichtet hiermit nach § 2 Absatz 3 GmbHG mittels einer Beurkundung im Wege der Videokommunikation nach den §§ 16a ff. BeurkG eine Gesellschaft mit beschränkter Haftung unter der Firma ______________________________________
 
----
+_______________________________________________________________________________________
 
 mit dem Sitz in
 
-**\*\*\*\***\*\*\*\***\*\*\*\***\*\***\*\*\*\***\*\*\*\***\*\*\*\***\_\_\_**\*\*\*\***\*\*\*\***\*\*\*\***\*\***\*\*\*\***\*\*\*\***\*\*\*\***2.Gegenstand des Unternehmens ist   \***\*\*\*\*\*\*\***\*\*\*\*\***\*\*\*\*\*\*\***\_\_\***\*\*\*\*\*\*\***\*\*\*\*\***\*\*\*\*\*\*\***3.Das Stammkapital der Gesellschaft beträgt \***\*\*\*\*\***\_\_\_\***\*\*\*\*\*** € (i. W. \***\*\*\*\*\***\_\_\_\***\*\*\*\*\*** Euro)
+_______________________________________________________________________________________2.Gegenstand des Unternehmens ist   __________________________________________________________3.Das Stammkapital der Gesellschaft beträgt _______________________ € (i. W. _______________________ Euro)
 und wird vollständig von:
 
-Herrn/Frau \***\*\*\*\*\***\_\_\_\***\*\*\*\*\*** (Geschäftsanteil Nr. 1) übernommen.
+Herrn/Frau _______________________ (Geschäftsanteil Nr. 1) übernommen.
 
 Die Einlage ist in Geld zu erbringen, und zwar sofort in voller Höhe/zu 50 Prozent sofort, im Übrigen sobald die Gesellschafterversammlung ihre Einforderung beschließt.4.Zum Geschäftsführer der Gesellschaft wird/Zu den Geschäftsführern der Gesellschaft werden
 
 Herr/Frau
 
----
+_______________________________________________________________________________________
 
-geboren am \***\*\*\*\*\***\_\_\_\***\*\*\*\*\***, wohnhaft in \***\*\*\*\*\***\_\_\_\***\*\*\*\*\***
+geboren am _______________________, wohnhaft in _______________________
 
----
+_______________________________________________________________________________________
 
-**\*\*\*\***\*\***\*\*\*\***\*\***\*\*\*\***\*\***\*\*\*\***\_\_\_**\*\*\*\***\*\***\*\*\*\***\*\***\*\*\*\***\*\***\*\*\*\***bestellt.
+_______________________________________________________________________________bestellt.
 
 Der Geschäftsführer ist/Die Geschäftsführer sind von den Beschränkungen des § 181 des Bürgerlichen Gesetzbuchs befreit. Ist nur ein Geschäftsführer bestellt, so vertritt dieser die Gesellschaft allein. Sind mehrere Geschäftsführer bestellt, so wird die Gesellschaft durch zwei Geschäftsführer gemeinsam oder durch einen Geschäftsführer gemeinschaftlich mit einem Prokuristen vertreten.5.Die Gesellschaft trägt die mit der Gründung verbundenen Kosten bis zu einem Gesamtbetrag von 600 €, höchstens jedoch bis zum Betrag ihres Stammkapitals. Darüberhinausgehende Kosten trägt der Gesellschafter.6.Von dieser Urkunde erhält eine Ausfertigung jeder Gesellschafter, beglaubigte Ablichtungen die Gesellschaft und das Registergericht (in elektronischer Form) sowie eine einfache Abschrift das Finanzamt – Körperschaftsteuerstelle –.7.Der/Die Erschienene wurden vom Notar/von der Notarin insbesondere auf Folgendes hingewiesen:
 
----
+_______________________________________________________________________________________
 
-b)Musterprotokoll für die Gründung einer Mehrpersonengesellschaft mittels VideokommunikationUR. Nr.**\*\*\*\***\*\***\*\*\*\***\_\_**\*\*\*\***\*\***\*\*\*\***Heute, den**\*\*\*\***\*\***\*\*\*\***\_\_**\*\*\*\***\*\***\*\*\*\***,erschien mittels Videokommunikation vor mir,**\*\*\*\***\*\***\*\*\*\***\_\_**\*\*\*\***\*\***\*\*\*\***,Notar/in mit dem Amtssitz in**\*\***\*\***\*\***\_\_\_\_**\*\***\*\***\*\***,Herr/Frau**\*\***\*\***\*\***\*\***\*\***\*\***\*\***\_\_\_\_**\*\***\*\***\*\***\*\***\*\***\*\***\*\***Herr/Frau**\*\***\*\***\*\***\*\***\*\***\*\***\*\***\_\_\_\_**\*\***\*\***\*\***\*\***\*\***\*\***\*\***Herr/Frau**\*\***\*\***\*\***\*\***\*\***\*\***\*\***\_\_\_\_**\*\***\*\***\*\***\*\***\*\***\*\***\*\***1.Die Erschienenen errichten hiermit nach § 2 Absatz 3 GmbHG durch Beurkundung des Gesellschaftsvertrages mittels Videokommunikation nach den §§ 16a ff. BeurkG eine Gesellschaft mit beschränkter Haftung unter der Firma**\*\*\*\***\*\*\*\***\*\*\*\***\*\***\*\*\*\***\*\*\*\***\*\*\*\***\_\_\_**\*\*\*\***\*\*\*\***\*\*\*\***\*\***\*\*\*\***\*\*\*\***\*\*\*\***
+b)Musterprotokoll für die Gründung einer Mehrpersonengesellschaft mittels VideokommunikationUR. Nr.______________________________________Heute, den______________________________________,erschien mittels Videokommunikation vor mir,______________________________________,Notar/in mit dem Amtssitz in________________________________,Herr/Frau________________________________________________________________Herr/Frau________________________________________________________________Herr/Frau________________________________________________________________1.Die Erschienenen errichten hiermit nach § 2 Absatz 3 GmbHG durch Beurkundung des Gesellschaftsvertrages mittels Videokommunikation nach den §§ 16a ff. BeurkG eine Gesellschaft mit beschränkter Haftung unter der Firma_______________________________________________________________________________________
 
----
+_______________________________________________________________________________________
 
 mit dem Sitz in
 
-**\*\*\*\***\*\*\*\***\*\*\*\***\*\***\*\*\*\***\*\*\*\***\*\*\*\***\_\_\_**\*\*\*\***\*\*\*\***\*\*\*\***\*\***\*\*\*\***\*\*\*\***\*\*\*\***2.Gegenstand des Unternehmens ist   \***\*\*\*\*\*\*\***\*\*\*\*\***\*\*\*\*\*\*\***\_\_\***\*\*\*\*\*\*\***\*\*\*\*\***\*\*\*\*\*\*\***3.Das Stammkapital der Gesellschaft beträgt \***\*\*\*\*\***\_\_\_\***\*\*\*\*\*** € (i. W. \***\*\*\*\*\***\_\_\_\***\*\*\*\*\*** Euro)
+_______________________________________________________________________________________2.Gegenstand des Unternehmens ist   __________________________________________________________3.Das Stammkapital der Gesellschaft beträgt _______________________ € (i. W. _______________________ Euro)
 und wird wie folgt übernommen:
 
-Herr/Frau \***\*\*\*\*\***\_\_\_\***\*\*\*\*\*** übernimmt einen
-Geschäftsanteil mit einem Nennbetrag in Höhe von \***\*\*\*\*\***\_\_\_\***\*\*\*\*\***€ (i. W. \***\*\*\*\*\***\_\_\_\***\*\*\*\*\*** Euro)
-(Geschäftsanteil Nr. 1),
+Herr/Frau _______________________ übernimmt einen
+ Geschäftsanteil mit einem Nennbetrag in Höhe von _______________________€ (i. W. _______________________ Euro)
+ (Geschäftsanteil Nr. 1),
 
-Herr/Frau \***\*\*\*\*\***\_\_\_\***\*\*\*\*\*** übernimmt einen
-Geschäftsanteil mit einem Nennbetrag in Höhe von \***\*\*\*\*\***\_\_\_\***\*\*\*\*\*** € (i. W. \***\*\*\*\*\***\_\_\_\***\*\*\*\*\***Euro)
-(Geschäftsanteil Nr. 2),
+Herr/Frau _______________________ übernimmt einen 
+Geschäftsanteil mit einem Nennbetrag in Höhe von _______________________ € (i. W. _______________________Euro)
+ (Geschäftsanteil Nr. 2),
 
-Herr/Frau \***\*\*\*\*\***\_\_\_\***\*\*\*\*\*** übernimmt einen
-Geschäftsanteil mit einem Nennbetrag in Höhe von \***\*\*\*\*\***\_\_\_\***\*\*\*\*\*** € (i. W. \***\*\*\*\*\***\_\_\_\***\*\*\*\*\*** Euro)
-(Geschäftsanteil Nr. 3).
+Herr/Frau _______________________ übernimmt einen 
+ Geschäftsanteil mit einem Nennbetrag in Höhe von _______________________ € (i. W. _______________________ Euro)
+ (Geschäftsanteil Nr. 3).
 
 Die Einlagen sind in Geld zu erbringen, und zwar sofort in voller Höhe/zu 50 Prozent sofort, im Übrigen sobald die Gesellschafterversammlung ihre Einforderung beschließt.4.Zum Geschäftsführer der Gesellschaft wird/Zu den Geschäftsführern der Gesellschaft werden
 
 Herr/Frau
 
----
+_______________________________________________________________________________________
 
-geboren am \***\*\*\*\*\***\_\_\_\***\*\*\*\*\***, wohnhaft in \***\*\*\*\*\***\_\_\_\***\*\*\*\*\***
+geboren am _______________________, wohnhaft in _______________________
 
----
+_______________________________________________________________________________________
 
 Herr/Frau
 
----
+_______________________________________________________________________________________
 
-geboren am \***\*\*\*\*\***\_\_\_\***\*\*\*\*\***, wohnhaft in \***\*\*\*\*\***\_\_\_\***\*\*\*\*\***
+geboren am _______________________, wohnhaft in _______________________
 
----
+_______________________________________________________________________________________
 
-**\*\*\*\***\*\***\*\*\*\***\*\***\*\*\*\***\*\***\*\*\*\***\_\_\_**\*\*\*\***\*\***\*\*\*\***\*\***\*\*\*\***\*\***\*\*\*\***bestellt.
+_______________________________________________________________________________bestellt.
 
 Der Geschäftsführer ist/Die Geschäftsführer sind von den Beschränkungen des § 181 des Bürgerlichen Gesetzbuchs befreit. Ist nur ein Geschäftsführer bestellt, so vertritt dieser die Gesellschaft allein. Sind mehrere Geschäftsführer bestellt, so wird die Gesellschaft durch zwei Geschäftsführer gemeinsam oder durch einen Geschäftsführer gemeinschaftlich mit einem Prokuristen vertreten.5.Die Gesellschaft trägt die mit der Gründung verbundenen Kosten bis zu einem Gesamtbetrag von 600 €, höchstens jedoch bis zum Betrag ihres Stammkapitals. Darüberhinausgehende Kosten tragen die Gesellschafter im Verhältnis der Nennbeträge ihrer Geschäftsanteile.6.Von dieser Urkunde erhält eine Ausfertigung jeder Gesellschafter, beglaubigte Ablichtungen die Gesellschaft und das Registergericht (in elektronischer Form) sowie eine einfache Abschrift das Finanzamt – Körperschaftsteuerstelle –.7.Die Erschienenen wurden vom Notar/von der Notarin insbesondere auf Folgendes hingewiesen:
 
----
+_______________________________________________________________________________________
 
 Nicht Zutreffendes streichen. Bei juristischen Personen ist die Anrede Herr/Frau wegzulassen.Hier sind neben der Bezeichnung des Gesellschafters und den Angaben zur notariellen Identitätsfeststellung ggf. der Güterstand und die Zustimmung des Ehegatten sowie die Angaben zu einer etwaigen Vertretung zu vermerken.Nicht Zutreffendes streichen. Bei der Unternehmergesellschaft muss die zweite Alternative gestrichen werden.Nicht Zutreffendes streichen.Weitere Geschäftsführer können ergänzt werden.Nicht Zutreffendes streichen. Bei juristischen Personen ist die Anrede Herr/Frau wegzulassen.Hier sind jeweils neben der Bezeichnung des Gesellschafters und den Angaben zur notariellen Identitätsfeststellung ggf. der Güterstand und die Zustimmung des Ehegatten sowie die Angaben zu einer etwaigen Vertretung zu vermerken.Nicht Zutreffendes streichen.Nicht Zutreffendes streichen. Bei der Unternehmergesellschaft muss die zweite Alternative gestrichen werden.Weitere Geschäftsführer können ergänzt werden.

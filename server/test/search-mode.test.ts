@@ -422,7 +422,10 @@ describe("knobsHash determinism + cross-mode separation (CDX-4)", () => {
     // v0.43: bumped 9→10 for the relational recall arm (rel=/reld=) — a
     // relational-on write must not be served to a relational-off lookup.
     // v0.46: bumped 10→11 for the cognitive tier cascade (ct=/ct3=/ct2=/ct1=/ct0=).
-    expect(KNOBS_HASH_VERSION).toBe(11);
+    // Hard jurisdiction isolation: bumped 11→12 for the statute jurisdiction
+    // scope (jur=) — an at-scoped read must not be served a de/unscoped row.
+    // 12→13: as-of-date (asof=) for historical legal cutoff isolation.
+    expect(KNOBS_HASH_VERSION).toBe(13);
   });
 
   test("T1 (codex): floor_ratio set vs unset produces DIFFERENT hashes (cache contamination prevention)", () => {
@@ -605,8 +608,8 @@ describe("v0.40.4 — graph_signals knob", () => {
 });
 
 describe("v0.42.3.0 — autocut knobs", () => {
-  test("KNOBS_HASH_VERSION is 11 (10→11 cognitive tier cascade, v0.46)", () => {
-    expect(KNOBS_HASH_VERSION).toBe(11);
+  test("KNOBS_HASH_VERSION is 13 (11→12 jurisdiction; 12→13 as-of-date)", () => {
+    expect(KNOBS_HASH_VERSION).toBe(13);
   });
 
   test("bundle defaults: conservative off, balanced/tokenmax on @0.20", () => {

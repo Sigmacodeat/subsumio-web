@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { NextRequest } from "next/server";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersWithCaseJurisdiction } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
 
 export const maxDuration = 30;
@@ -89,9 +89,15 @@ export const POST = createHandler(
     const { question, jurisdiction, case_slugs, budget_cents } = body;
     const prompt = buildResearchPrompt(question, jurisdiction, case_slugs);
 
+    const firstCaseSlug = case_slugs?.[0];
+    const caseScopedHeaders = await engineHeadersWithCaseJurisdiction(
+      ctx.headers,
+      firstCaseSlug
+    );
+
     const res = await fetch(`${ENGINE_URL}/api/agents/supervisor`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
+      headers: { "Content-Type": "application/json", ...caseScopedHeaders },
       body: JSON.stringify({
         prompt,
         name: "legal-research",

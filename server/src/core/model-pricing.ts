@@ -21,10 +21,13 @@
  * regression trip-wire if anyone later re-hardcodes a view back into a duplicate)
  * and that the cross-modal panel models are all present in canonical.
  *
- * Prices verified 2026-06-03 against published provider pricing:
+ * Prices verified 2026-07-11 against published provider pricing:
  *   - Anthropic: https://platform.claude.com/docs/en/about-claude/models/overview
  *   - OpenAI:    https://openai.com/api/pricing
  *   - Google:    https://ai.google.dev/gemini-api/docs/pricing
+ *   - xAI:       https://x.ai/api
+ *   - DeepSeek:  https://platform.deepseek.com/api_docs
+ *   - Moonshot:  https://platform.moonshot.cn/docs
  * The dream-budget audit JSONL snapshots the rate per call, so historical
  * estimates stay reproducible even after this table changes.
  *
@@ -58,6 +61,11 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
   "anthropic:claude-opus-4-7": { input: 5.0, output: 25.0 },
   "anthropic:claude-opus-4-6": { input: 5.0, output: 25.0 },
   "anthropic:claude-sonnet-4-6": { input: 3.0, output: 15.0 },
+  // Sonnet 5 (released 2026-06-30): promo pricing $2 in / $10 out.
+  "anthropic:claude-sonnet-5": { input: 2.0, output: 10.0 },
+  // Fable 5: top-tier model with adaptive reasoning + Opus 4.8 fallback.
+  // $10 in / $50 out — premium above Opus. Harvey LAB #1 at 16.91% all-pass.
+  "anthropic:claude-fable-5": { input: 10.0, output: 50.0 },
   // Haiku 4.5 — both the dateless canonical id and the dated snapshot.
   "anthropic:claude-haiku-4-5": { input: 1.0, output: 5.0 },
   "anthropic:claude-haiku-4-5-20251001": { input: 1.0, output: 5.0 },
@@ -65,10 +73,18 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
   "anthropic:claude-3-5-haiku-20241022": { input: 0.8, output: 4.0 },
 
   // ── OpenAI ─────────────────────────────────────────────────────────────
+  // GPT-5: $5 in / $15 out (verified LEXam July 2026, was stale $5/$20).
   "openai:gpt-4o": { input: 2.5, output: 10.0 },
   "openai:gpt-4o-mini": { input: 0.15, output: 0.6 },
-  "openai:gpt-5": { input: 5.0, output: 20.0 },
-  "openai:gpt-5.5": { input: 4.0, output: 16.0 },
+  "openai:gpt-5": { input: 5.0, output: 15.0 },
+  // GPT-5.4 family (released 2026-06): BenGER 83.5, best general legal reasoning.
+  // GPT-5.4: $5/$15, mini: $0.50/$2, nano: $0.25/$1.
+  "openai:gpt-5.4": { input: 5.0, output: 15.0 },
+  "openai:gpt-5.4-mini": { input: 0.5, output: 2.0 },
+  "openai:gpt-5.4-nano": { input: 0.25, output: 1.0 },
+  // GPT-5.5: $5 in / $30 out (verified July 2026, was stale $4/$16).
+  // Lowest hallucination rate (3% on HAQQ). Harvey LAB 2.1% all-pass.
+  "openai:gpt-5.5": { input: 5.0, output: 30.0 },
 
   // ── Google ─────────────────────────────────────────────────────────────
   "google:gemini-1.5-pro": { input: 1.25, output: 5.0 },
@@ -81,12 +97,18 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
   "google:gemini-2.0-flash": { input: 0.1, output: 0.4 },
   "google:gemini-2-flash": { input: 0.1, output: 0.4 },
 
-  // ── Together / DeepSeek (cross-modal-eval panel) ───────────────────────
+  // ── Together / DeepSeek ───────────────────────────────────────────────
+  // DeepSeek V3.2: $0.14/$0.28, LEXam 57.42 (best open-weight legal model).
+  // V3.2 deprecated July 2026 — replaced by V4 Flash/Pro at same pricing.
   "together:meta-llama/Llama-3.3-70B-Instruct-Turbo": { input: 0.88, output: 0.88 },
   "deepseek:deepseek-chat": { input: 0.14, output: 0.28 },
   "deepseek:deepseek-v3.2": { input: 0.14, output: 0.28 },
   "deepseek:deepseek-v3.2-exp": { input: 0.14, output: 0.28 },
   "deepseek:deepseek-reasoner": { input: 0.14, output: 0.28 },
+  // DeepSeek V4 family (released July 2026): same $0.14/$0.28 pricing.
+  // V4 Pro: BenGER 76.1, V4 Flash: BenGER 71.3 — best open-weight legal scores.
+  "deepseek:deepseek-v4-flash": { input: 0.14, output: 0.28 },
+  "deepseek:deepseek-v4-pro": { input: 0.14, output: 0.28 },
 
   // ── Mistral (EU-hosted, GDPR-compliant) ────────────────────────────────
   // Verified 2026-06-20 via docsbot.ai + llmcosthub.com + tickerr.ai.
@@ -97,12 +119,18 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
   "mistral:mistral-medium-3.5": { input: 0.4, output: 1.2 },
 
   // ── xAI (Grok) — fast reasoning, 2M context ────────────────────────────
-  // Grok 4.3: 98% of Claude Opus legal quality at 1/20th cost (HAQQ June 2026).
-  // Verified 2026-06-29 via aipricing.guru + aifreeapi.com.
-  "xai:grok-4.3": { input: 0.2, output: 0.5 },
+  // Grok 4.3: $1.25 in / $2.50 out (verified 2026-07-11 via x.ai/api).
+  // HAQQ 29.0 (98% of Opus 4.8), $0.003/task, 8.8s — best speed-to-quality.
+  // Was stale $0.20/$0.50 — corrected after audit found 6.25x/5x underpricing.
+  "xai:grok-4.3": { input: 1.25, output: 2.5 },
+  // Grok 4.1: same tier as 4.3, earlier version.
+  "xai:grok-4.1": { input: 1.25, output: 2.5 },
+  // Grok 4.1 Fast: budget variant, kept at $0.20/$0.50 (fast-tier pricing).
   "xai:grok-4.1-fast": { input: 0.2, output: 0.5 },
-  "xai:grok-4.1": { input: 0.2, output: 0.5 },
-  "xai:grok-4": { input: 0.2, output: 0.5 },
+  // Grok 4: $3 in / $15 out (verified 2026-07-11). Was stale $0.20/$0.50.
+  "xai:grok-4": { input: 3.0, output: 15.0 },
+  // Grok 4.5: $2 in / $6 out (verified 2026-07-11). Harvey LAB-AA 13.3%.
+  "xai:grok-4.5": { input: 2.0, output: 6.0 },
 
   // ── Cohere — RAG with native citations ──────────────────────────────────
   // Verified 2026-06-10 via aipricing.guru + costbench.com.
@@ -112,9 +140,9 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
   "cohere:command-r7b-12-2024": { input: 0.037, output: 0.144 },
 
   // ── Moonshot AI (Kimi) — 1T MoE, long context ──────────────────────────
-  // Verified 2026-06-20 via deepinfra.com + medium.com/@tentenco.
-  "moonshot:kimi-k2.6": { input: 0.6, output: 2.5 },
-  "moonshot:kimi-k2.7-code": { input: 0.6, output: 2.5 },
+  // K2.6: $0.95 in / $4 out (verified 2026-07-11). Was stale $0.60/$2.50.
+  "moonshot:kimi-k2.6": { input: 0.95, output: 4.0 },
+  "moonshot:kimi-k2.7-code": { input: 0.95, output: 4.0 },
   "moonshot:moonshot-v1-128k": { input: 0.8, output: 3.2 },
   "moonshot:moonshot-v1-32k": { input: 0.4, output: 1.6 },
 

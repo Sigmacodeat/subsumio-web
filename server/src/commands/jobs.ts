@@ -9,6 +9,7 @@ import { MinionWorker } from "../core/minions/worker.ts";
 import { WORKER_EXIT_RSS_WATCHDOG } from "../core/minions/worker-exit-codes.ts";
 import type { MinionJob, MinionJobStatus, MinionJobContext } from "../core/minions/types.ts";
 import { loadConfig, isThinClient } from "../core/config.ts";
+import { TIER_DEFAULTS } from "../core/model-config.ts";
 import { callRemoteTool, unpackToolResult } from "../core/mcp-client.ts";
 import {
   parseNiceValue,
@@ -2194,9 +2195,9 @@ export async function registerBuiltinHandlers(
       lr: Number(data.lr ?? 4),
       lrSchedule: (data.lr_schedule as "cosine" | "linear" | "constant") ?? "cosine",
       split: (data.split as [number, number, number]) ?? [4, 1, 5],
-      optimizerModel: String(data.optimizer_model ?? "anthropic:claude-opus-4-7"),
-      targetModel: String(data.target_model ?? "anthropic:claude-sonnet-4-6"),
-      judgeModel: String(data.judge_model ?? "anthropic:claude-sonnet-4-6"),
+      optimizerModel: String(data.optimizer_model ?? TIER_DEFAULTS.deep),
+      targetModel: String(data.target_model ?? TIER_DEFAULTS.subagent),
+      judgeModel: String(data.judge_model ?? TIER_DEFAULTS.reasoning),
       mode: (data.mode as "patch" | "rewrite") ?? "patch",
       dryRun: Boolean(data.dry_run),
       noMutate: Boolean(data.no_mutate),

@@ -4,7 +4,7 @@ type: "law"
 jurisdiction: "de"
 abbreviation: "UrhG"
 version_date: "2026-05-29"
-retrieved_at: "2026-06-21"
+retrieved_at: "2026-07-10"
 source_url: "https://www.gesetze-im-internet.de/urhg/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
 ---
@@ -33,25 +33,25 @@ Unterabschnitt 1Rechtsnachfolge in das Urheberrecht
 Unterabschnitt 2Nutzungsrechte
 §  31Einräumung von Nutzungsrechten§  31aVerträge über unbekannte Nutzungsarten§  32Angemessene Vergütung§  32aWeitere Beteiligung des Urhebers§  32bZwingende Anwendung§  32cVergütung für später bekannte Nutzungsarten§  32dAuskunft und Rechenschaft des Vertragspartners§  32eAuskunft und Rechenschaft Dritter in der Lizenzkette§  32fMediation und außergerichtliche Konfliktbeilegung§  32gVertretung durch Vereinigungen§  33Weiterwirkung von Nutzungsrechten§  34Übertragung von Nutzungsrechten§  35Einräumung weiterer Nutzungsrechte§  35aMediation und außergerichtliche Konfliktbeilegung bei Videoabrufdiensten§  36Gemeinsame Vergütungsregeln§  36aSchlichtungsstelle§  36bUnterlassungsanspruch bei Verstoß gegen gemeinsame Vergütungsregeln§  36cIndividualvertragliche Folgen des Verstoßes gegen gemeinsame Vergütungsregeln§  36dUnterlassungsanspruch bei Nichterteilung von Auskünften§  37Verträge über die Einräumung von Nutzungsrechten§  38Beiträge zu Sammlungen§  39Änderungen des Werkes§  40Verträge über künftige Werke§  40aRecht zur anderweitigen Verwertung nach zehn Jahren bei pauschaler Vergütung§  41Rückrufsrecht wegen Nichtausübung§  42Rückrufsrecht wegen gewandelter Überzeugung§  42aZwangslizenz zur Herstellung von Tonträgern§  43Urheber in Arbeits- oder Dienstverhältnissen§  44Veräußerung des Originals des Werkes
 Abschnitt 6Schranken des Urheberrechts
-durch gesetzlich erlaubte Nutzungen
+ durch gesetzlich erlaubte Nutzungen
 Unterabschnitt 1Gesetzlich erlaubte Nutzungen
 §  44aVorübergehende Vervielfältigungshandlungen§  44bText und Data Mining§  45Rechtspflege und öffentliche Sicherheit§  45aMenschen mit Behinderungen§  45bMenschen mit einer Seh- oder Lesebehinderung§  45cBefugte Stellen; Vergütung; Verordnungsermächtigung§  45dGesetzlich erlaubte Nutzung und vertragliche Nutzungsbefugnis§  46Sammlungen für den religiösen Gebrauch§  47Schulfunksendungen§  48Öffentliche Reden§  49Zeitungsartikel und Rundfunkkommentare§  50Berichterstattung über Tagesereignisse§  51Zitate§  51aKarikatur, Parodie und Pastiche§  52Öffentliche Wiedergabe§§ 52a und 52b (weggefallen)§  53Vervielfältigungen zum privaten und sonstigen eigenen Gebrauch§  53a(weggefallen)
 Unterabschnitt 2Vergütung der nach den
-§§ 53, 60a bis 60f erlaubten Vervielfältigungen
+ §§ 53, 60a bis 60f erlaubten Vervielfältigungen
 §  54Vergütungspflicht§  54aVergütungshöhe§  54bVergütungspflicht des Händlers oder Importeurs§  54cVergütungspflicht des Betreibers von Ablichtungsgeräten§  54dHinweispflicht§  54eMeldepflicht§  54fAuskunftspflicht§  54gKontrollbesuch§  54hVerwertungsgesellschaften; Handhabung der Mitteilungen
 Unterabschnitt 3Weitere gesetzlich erlaubte Nutzungen
 §  55Vervielfältigung durch Sendeunternehmen§  55aBenutzung eines Datenbankwerkes§  56Vervielfältigung und öffentliche Wiedergabe in Geschäftsbetrieben§  57Unwesentliches Beiwerk§  58Werbung für die Ausstellung und den öffentlichen Verkauf von Werken§  59Werke an öffentlichen Plätzen§  60Bildnisse
 Unterabschnitt 4Gesetzlich erlaubte Nutzungen
-für Unterricht, Wissenschaft und Institutionen
+ für Unterricht, Wissenschaft und Institutionen
 §  60aUnterricht und Lehre§  60bUnterrichts- und Lehrmedien§  60cWissenschaftliche Forschung§  60dText und Data Mining für Zwecke der wissenschaftlichen Forschung§  60eBibliotheken§  60fArchive, Museen und Bildungseinrichtungen§  60gGesetzlich erlaubte Nutzung und vertragliche Nutzungsbefugnis§  60hAngemessene Vergütung der gesetzlich erlaubten Nutzungen
 Unterabschnitt 5Besondere gesetzlich
-erlaubte Nutzungen verwaister Werke
+ erlaubte Nutzungen verwaister Werke
 §  61Verwaiste Werke§  61aSorgfältige Suche und Dokumentationspflichten§  61bBeendigung der Nutzung und Vergütungspflicht der nutzenden Institution§  61cNutzung verwaister Werke durch öffentlich-rechtliche Rundfunkanstalten
 Unterabschnitt 5aBesondere gesetzlich
-erlaubte Nutzungen nicht verfügbarer Werke
+ erlaubte Nutzungen nicht verfügbarer Werke
 §  61dNicht verfügbare Werke§  61eVerordnungsermächtigung§  61fInformation über nicht verfügbare Werke§  61gGesetzlich erlaubte Nutzung und vertragliche Nutzungsbefugnis
 Unterabschnitt 6Gemeinsame Vorschriften
-für gesetzlich erlaubte Nutzungen
+ für gesetzlich erlaubte Nutzungen
 §  62Änderungsverbot§  63Quellenangabe§  63aGesetzliche Vergütungsansprüche
 Abschnitt 7Dauer des Urheberrechts
 §  64Allgemeines§  65Miturheber, Filmwerke, Musikkomposition mit Text§  66Anonyme und pseudonyme Werke§  67Lieferungswerke§  68Vervielfältigungen gemeinfreier visueller Werke§  69Berechnung der Fristen
@@ -92,17 +92,17 @@ Abschnitt 3Zwangsvollstreckung
 Unterabschnitt 1Allgemeines
 § 112Allgemeines
 Unterabschnitt 2Zwangsvollstreckung wegen
-Geldforderungen gegen den Urheber
+ Geldforderungen gegen den Urheber
 § 113Urheberrecht§ 114Originale von Werken
 Unterabschnitt 3Zwangsvollstreckung wegen Geldforderungen
-gegen den Rechtsnachfolger des Urhebers
+ gegen den Rechtsnachfolger des Urhebers
 § 115Urheberrecht§ 116Originale von Werken§ 117Testamentsvollstrecker
 Unterabschnitt 4Zwangsvollstreckung wegen Geldforderungen
-gegen den Verfasser wissenschaftlicher
-Ausgaben und gegen den Lichtbildner
+ gegen den Verfasser wissenschaftlicher
+ Ausgaben und gegen den Lichtbildner
 § 118Entsprechende Anwendung
 Unterabschnitt 5Zwangsvollstreckung wegen
-Geldforderungen in bestimmte Vorrichtungen
+ Geldforderungen in bestimmte Vorrichtungen
 § 119Zwangsvollstreckung in bestimmte Vorrichtungen
 Teil 5Anwendungsbereich,
 Übergangs- und Schlussbestimmungen
@@ -122,7 +122,7 @@ Die Urheber von Werken der Literatur, Wissenschaft und Kunst genießen für ihre
 
 ## § 2 — Geschützte Werke
 
-(1) Zu den geschützten Werken der Literatur, Wissenschaft und Kunst gehören insbesondere: 1.Sprachwerke, wie Schriftwerke, Reden und Computerprogramme; 2.Werke der Musik; 3.pantomimische Werke einschließlich der Werke der Tanzkunst; 4.Werke der bildenden Künste einschließlich der Werke der Baukunst und der angewandten Kunst und Entwürfe solcher Werke; 5.Lichtbildwerke einschließlich der Werke, die ähnlich wie Lichtbildwerke geschaffen werden; 6.Filmwerke einschließlich der Werke, die ähnlich wie Filmwerke geschaffen werden; 7.Darstellungen wissenschaftlicher oder technischer Art, wie Zeichnungen, Pläne, Karten, Skizzen, Tabellen und plastische Darstellungen.
+(1) Zu den geschützten Werken der Literatur, Wissenschaft und Kunst gehören insbesondere: 1.Sprachwerke, wie Schriftwerke, Reden und Computerprogramme; 2.Werke der Musik; 3.pantomimische Werke einschließlich der Werke der Tanzkunst; 4.Werke der bildenden Künste einschließlich der Werke der Baukunst und der angewandten Kunst und Entwürfe solcher Werke; 5.Lichtbildwerke einschließlich der Werke, die ähnlich wie Lichtbildwerke geschaffen werden; 6.Filmwerke einschließlich der Werke, die ähnlich wie Filmwerke geschaffen werden; 7.Darstellungen wissenschaftlicher oder technischer Art, wie Zeichnungen, Pläne, Karten, Skizzen, Tabellen und plastische Darstellungen. 
 (2) Werke im Sinne dieses Gesetzes sind nur persönliche geistige Schöpfungen.
 
 ## § 3 — Bearbeitungen
@@ -185,8 +185,8 @@ Der Urheber hat das Recht, eine Entstellung oder eine andere Beeinträchtigung s
 
 ## § 15 — Allgemeines
 
-(1) Der Urheber hat das ausschließliche Recht, sein Werk in körperlicher Form zu verwerten; das Recht umfaßt insbesondere 1.das Vervielfältigungsrecht (§ 16), 2.das Verbreitungsrecht (§ 17), 3.das Ausstellungsrecht (§ 18).
-(2) Der Urheber hat ferner das ausschließliche Recht, sein Werk in unkörperlicher Form öffentlich wiederzugeben (Recht der öffentlichen Wiedergabe). Das Recht der öffentlichen Wiedergabe umfasst insbesondere 1.das Vortrags-, Aufführungs- und Vorführungsrecht (§ 19), 2.das Recht der öffentlichen Zugänglichmachung (§ 19a), 3.das Senderecht (§ 20), 4.das Recht der Wiedergabe durch Bild- oder Tonträger (§ 21), 5.das Recht der Wiedergabe von Funksendungen und von öffentlicher Zugänglichmachung (§ 22).
+(1) Der Urheber hat das ausschließliche Recht, sein Werk in körperlicher Form zu verwerten; das Recht umfaßt insbesondere 1.das Vervielfältigungsrecht (§ 16), 2.das Verbreitungsrecht (§ 17), 3.das Ausstellungsrecht (§ 18). 
+(2) Der Urheber hat ferner das ausschließliche Recht, sein Werk in unkörperlicher Form öffentlich wiederzugeben (Recht der öffentlichen Wiedergabe). Das Recht der öffentlichen Wiedergabe umfasst insbesondere 1.das Vortrags-, Aufführungs- und Vorführungsrecht (§ 19), 2.das Recht der öffentlichen Zugänglichmachung (§ 19a), 3.das Senderecht (§ 20), 4.das Recht der Wiedergabe durch Bild- oder Tonträger (§ 21), 5.das Recht der Wiedergabe von Funksendungen und von öffentlicher Zugänglichmachung (§ 22). 
 (3) Die Wiedergabe ist öffentlich, wenn sie für eine Mehrzahl von Mitgliedern der Öffentlichkeit bestimmt ist. Zur Öffentlichkeit gehört jeder, der nicht mit demjenigen, der das Werk verwertet, oder mit den anderen Personen, denen das Werk in unkörperlicher Form wahrnehmbar oder zugänglich gemacht wird, durch persönliche Beziehungen verbunden ist.
 
 ## § 16 — Vervielfältigungsrecht
@@ -248,7 +248,6 @@ Das Senderecht ist das Recht, das Werk durch Funk, wie Ton- und Fernsehrundfunk,
 Das Recht der Wiedergabe durch Bild- oder Tonträger ist das Recht, Vorträge oder Aufführungen des Werkes mittels Bild- oder Tonträger öffentlich wahrnehmbar zu machen. § 19 Abs. 3 gilt entsprechend.
 
 ## § 22 — Recht der Wiedergabe von Funksendungen und von öffentlicher
-
 Zugänglichmachung
 
 Das Recht der Wiedergabe von Funksendungen und der Wiedergabe von öffentlicher Zugänglichmachung ist das Recht, Funksendungen und auf öffentlicher Zugänglichmachung beruhende Wiedergaben des Werkes durch Bildschirm, Lautsprecher oder ähnliche technische Einrichtungen öffentlich wahrnehmbar zu machen. § 19 Abs. 3 gilt entsprechend.
@@ -535,7 +534,7 @@ Auf Vereinbarungen, die nach den §§ 45b und 45c erlaubte Nutzungen zum Nachtei
 
 ## § 48 — Öffentliche Reden
 
-(1) Zulässig ist 1.die Vervielfältigung und Verbreitung von Reden über Tagesfragen in Zeitungen, Zeitschriften sowie in anderen Druckschriften oder sonstigen Datenträgern, die im Wesentlichen den Tagesinteressen Rechnung tragen, wenn die Reden bei öffentlichen Versammlungen gehalten oder durch öffentliche Wiedergabe im Sinne von § 19a oder § 20 veröffentlicht worden sind, sowie die öffentliche Wiedergabe solcher Reden, 2.die Vervielfältigung, Verbreitung und öffentliche Wiedergabe von Reden, die bei öffentlichen Verhandlungen vor staatlichen, kommunalen oder kirchlichen Organen gehalten worden sind.
+(1) Zulässig ist 1.die Vervielfältigung und Verbreitung von Reden über Tagesfragen in Zeitungen, Zeitschriften sowie in anderen Druckschriften oder sonstigen Datenträgern, die im Wesentlichen den Tagesinteressen Rechnung tragen, wenn die Reden bei öffentlichen Versammlungen gehalten oder durch öffentliche Wiedergabe im Sinne von § 19a oder § 20 veröffentlicht worden sind, sowie die öffentliche Wiedergabe solcher Reden, 2.die Vervielfältigung, Verbreitung und öffentliche Wiedergabe von Reden, die bei öffentlichen Verhandlungen vor staatlichen, kommunalen oder kirchlichen Organen gehalten worden sind. 
 (2) Unzulässig ist jedoch die Vervielfältigung und Verbreitung der in Absatz 1 Nr. 2 bezeichneten Reden in Form einer Sammlung, die überwiegend Reden desselben Urhebers enthält.
 
 ## § 49 — Zeitungsartikel und Rundfunkkommentare
@@ -832,8 +831,8 @@ Der Rechtsinhaber hat das ausschließliche Recht, folgende Handlungen vorzunehme
 
 ## § 69e — Dekompilierung
 
-(1) Die Zustimmung des Rechtsinhabers ist nicht erforderlich, wenn die Vervielfältigung des Codes oder die Übersetzung der Codeform im Sinne des § 69c Nr. 1 und 2 unerläßlich ist, um die erforderlichen Informationen zur Herstellung der Interoperabilität eines unabhängig geschaffenen Computerprogramms mit anderen Programmen zu erhalten, sofern folgende Bedingungen erfüllt sind: 1.Die Handlungen werden von dem Lizenznehmer oder von einer anderen zur Verwendung eines Vervielfältigungsstücks des Programms berechtigten Person oder in deren Namen von einer hierzu ermächtigten Person vorgenommen; 2.die für die Herstellung der Interoperabilität notwendigen Informationen sind für die in Nummer 1 genannten Personen noch nicht ohne weiteres zugänglich gemacht; 3.die Handlungen beschränken sich auf die Teile des ursprünglichen Programms, die zur Herstellung der Interoperabilität notwendig sind.
-(2) Bei Handlungen nach Absatz 1 gewonnene Informationen dürfen nicht 1.zu anderen Zwecken als zur Herstellung der Interoperabilität des unabhängig geschaffenen Programms verwendet werden, 2.an Dritte weitergegeben werden, es sei denn, daß dies für die Interoperabilität des unabhängig geschaffenen Programms notwendig ist, 3.für die Entwicklung, Herstellung oder Vermarktung eines Programms mit im wesentlichen ähnlicher Ausdrucksform oder für irgendwelche anderen das Urheberrecht verletzenden Handlungen verwendet werden.
+(1) Die Zustimmung des Rechtsinhabers ist nicht erforderlich, wenn die Vervielfältigung des Codes oder die Übersetzung der Codeform im Sinne des § 69c Nr. 1 und 2 unerläßlich ist, um die erforderlichen Informationen zur Herstellung der Interoperabilität eines unabhängig geschaffenen Computerprogramms mit anderen Programmen zu erhalten, sofern folgende Bedingungen erfüllt sind: 1.Die Handlungen werden von dem Lizenznehmer oder von einer anderen zur Verwendung eines Vervielfältigungsstücks des Programms berechtigten Person oder in deren Namen von einer hierzu ermächtigten Person vorgenommen; 2.die für die Herstellung der Interoperabilität notwendigen Informationen sind für die in Nummer 1 genannten Personen noch nicht ohne weiteres zugänglich gemacht; 3.die Handlungen beschränken sich auf die Teile des ursprünglichen Programms, die zur Herstellung der Interoperabilität notwendig sind. 
+(2) Bei Handlungen nach Absatz 1 gewonnene Informationen dürfen nicht 1.zu anderen Zwecken als zur Herstellung der Interoperabilität des unabhängig geschaffenen Programms verwendet werden, 2.an Dritte weitergegeben werden, es sei denn, daß dies für die Interoperabilität des unabhängig geschaffenen Programms notwendig ist, 3.für die Entwicklung, Herstellung oder Vermarktung eines Programms mit im wesentlichen ähnlicher Ausdrucksform oder für irgendwelche anderen das Urheberrecht verletzenden Handlungen verwendet werden. 
 (3) Die Absätze 1 und 2 sind so auszulegen, daß ihre Anwendung weder die normale Auswertung des Werkes beeinträchtigt noch die berechtigten Interessen des Rechtsinhabers unzumutbar verletzt.
 
 ## § 69f — Rechtsverletzungen; ergänzende Schutzbestimmungen
@@ -890,8 +889,8 @@ Die in den §§ 74 und 75 bezeichneten Rechte erlöschen mit dem Tode des ausüb
 
 ## § 78 — Öffentliche Wiedergabe
 
-(1) Der ausübende Künstler hat das ausschließliche Recht, seine Darbietung 1.öffentlich zugänglich zu machen (§ 19a), 2.zu senden, es sei denn, dass die Darbietung erlaubterweise auf Bild- oder Tonträger aufgenommen worden ist, die erschienen oder erlaubterweise öffentlich zugänglich gemacht worden sind, 3.außerhalb des Raumes, in dem sie stattfindet, durch Bildschirm, Lautsprecher oder ähnliche technische Einrichtungen öffentlich wahrnehmbar zu machen.
-(2) Dem ausübenden Künstler ist eine angemessene Vergütung zu zahlen, wenn 1.die Darbietung nach Absatz 1 Nr. 2 erlaubterweise gesendet, 2.die Darbietung mittels Bild- oder Tonträger öffentlich wahrnehmbar gemacht oder 3.die Sendung oder die auf öffentlicher Zugänglichmachung beruhende Wiedergabe der Darbietung öffentlich wahrnehmbar gemacht wird.
+(1) Der ausübende Künstler hat das ausschließliche Recht, seine Darbietung 1.öffentlich zugänglich zu machen (§ 19a), 2.zu senden, es sei denn, dass die Darbietung erlaubterweise auf Bild- oder Tonträger aufgenommen worden ist, die erschienen oder erlaubterweise öffentlich zugänglich gemacht worden sind, 3.außerhalb des Raumes, in dem sie stattfindet, durch Bildschirm, Lautsprecher oder ähnliche technische Einrichtungen öffentlich wahrnehmbar zu machen. 
+(2) Dem ausübenden Künstler ist eine angemessene Vergütung zu zahlen, wenn 1.die Darbietung nach Absatz 1 Nr. 2 erlaubterweise gesendet, 2.die Darbietung mittels Bild- oder Tonträger öffentlich wahrnehmbar gemacht oder 3.die Sendung oder die auf öffentlicher Zugänglichmachung beruhende Wiedergabe der Darbietung öffentlich wahrnehmbar gemacht wird. 
 (3) Auf Vergütungsansprüche nach Absatz 2 kann der ausübende Künstler im Voraus nicht verzichten. Sie können im Voraus nur an eine Verwertungsgesellschaft abgetreten werden.
 (4) § 20b gilt entsprechend.
 
@@ -1196,7 +1195,6 @@ Für alle Rechtsstreitigkeiten, durch die ein Anspruch aus einem der in diesem G
 (2) Der Versuch ist strafbar.
 
 ## § 108b — Unerlaubte Eingriffe in technische Schutzmaßnahmen und
-
 zur Rechtewahrnehmung erforderliche Informationen
 
 (1) Wer 1.in der Absicht, sich oder einem Dritten den Zugang zu einem nach diesem Gesetz geschützten Werk oder einem anderen nach diesem Gesetz geschützten Schutzgegenstand oder deren Nutzung zu ermöglichen, eine wirksame technische Maßnahme ohne Zustimmung des Rechtsinhabers umgeht oder 2.wissentlich unbefugta)eine von Rechtsinhabern stammende Information für die Rechtewahrnehmung entfernt oder verändert, wenn irgendeine der betreffenden Informationen an einem Vervielfältigungsstück eines Werkes oder eines sonstigen Schutzgegenstandes angebracht ist oder im Zusammenhang mit der öffentlichen Wiedergabe eines solchen Werkes oder Schutzgegenstandes erscheint, oder b)ein Werk oder einen sonstigen Schutzgegenstand, bei dem eine Information für die Rechtewahrnehmung unbefugt entfernt oder geändert wurde, verbreitet, zur Verbreitung einführt, sendet, öffentlich wiedergibt oder öffentlich zugänglich macht und dadurch wenigstens leichtfertig die Verletzung von Urheberrechten oder verwandten Schutzrechten veranlasst, ermöglicht, erleichtert oder verschleiert, wird, wenn die Tat nicht ausschließlich zum eigenen privaten Gebrauch des Täters oder mit dem Täter persönlich verbundener Personen erfolgt oder sich auf einen derartigen Gebrauch bezieht, mit Freiheitsstrafe bis zu einem Jahr oder mit Geldstrafe bestraft.
@@ -1272,7 +1270,6 @@ Die §§ 113 bis 117 sind sinngemäß anzuwenden 1.auf die Zwangsvollstreckung w
 (3) Die Absätze 1 und 2 sind auf die nach den §§ 70 und 71 geschützten Ausgaben, die nach § 72 geschützten Lichtbilder, die nach § 77 Abs. 2 Satz 1, §§ 85, 87, 94 und 95 geschützten Bild- und Tonträger und die nach § 87b Abs. 1 geschützten Datenbanken entsprechend anzuwenden.
 
 ## § 120 — Deutsche Staatsangehörige und Staatsangehörige
-
 anderer EU-Staaten und EWR-Staaten
 
 (1) Deutsche Staatsangehörige genießen den urheberrechtlichen Schutz für alle ihre Werke, gleichviel, ob und wo die Werke erschienen sind. Ist ein Werk von Miturhebern (§ 8) geschaffen, so genügt es, wenn ein Miturheber deutscher Staatsangehöriger ist.
@@ -1506,7 +1503,6 @@ Soweit personenbezogene Daten im Register anonymer und pseudonymer Werke enthalt
 -
 
 ## § 140 — Änderung des Gesetzes über das am 6. September 1952
-
 unterzeichnete Welturheberrechtsabkommen
 
 -

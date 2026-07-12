@@ -22,6 +22,10 @@
  */
 
 import { readFileSync, readdirSync } from "node:fs";
+import {
+  assertLegalSourceJurisdiction,
+  LEGAL_SOURCE_BY_JURISDICTION,
+} from "../src/core/legal/jurisdiction.ts";
 
 const ENGINE =
   getArg("--engine") ??
@@ -39,6 +43,8 @@ const API_KEY =
 
 const BRAIN = getArg("--brain") ?? process.env.IMPORT_BRAIN_ID ?? "";
 
+// `law-all` is retained as a compatibility alias, but pages are always
+// routed to their canonical per-jurisdiction source below.
 const SOURCE = getArg("--source") ?? "law-all";
 
 const JUR_FILTER = getArg("--jur");
@@ -116,6 +122,8 @@ async function importPage(filePath: string): Promise<ImportResult> {
     fm.slug || `law/${jur}/${abbr.toLowerCase()}/${para.replace(/[^a-z0-9]/gi, "").toLowerCase()}`;
 
   const title = fm.title || `${abbr} ${para}`.trim();
+  const effectiveSource = SOURCE === "law-all" ? LEGAL_SOURCE_BY_JURISDICTION[jur as keyof typeof LEGAL_SOURCE_BY_JURISDICTION] ?? "" : SOURCE;
+  assertLegalSourceJurisdiction(jur, effectiveSource, slug);
 
   // Extract body (everything after frontmatter)
   const fmEnd = text.indexOf("---", 3);
@@ -133,7 +141,7 @@ async function importPage(filePath: string): Promise<ImportResult> {
     content: body,
     type: fm.type || "law",
     tags: ["statute", jur, abbr.toLowerCase()].filter(Boolean),
-    source: SOURCE,
+    source: effectiveSource,
     // Metadata fields stored on the page
     meta: {
       jurisdiction: jur,
@@ -183,10 +191,11 @@ async function ensureSource(sourceId: string): Promise<void> {
   if (BRAIN) headers["x-subsumio-source"] = BRAIN;
 
   try {
+    const jurisdiction = Object.entries(LEGAL_SOURCE_BY_JURISDICTION).find(([, id]) => id === sourceId)?.[0];
     const res = await fetch(`${ENGINE}/api/sources`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ id: sourceId, name: sourceId, public: true }),
+      body: JSON.stringify({ id: sourceId, name: sourceId, public: true, jurisdiction }),
     });
     if (res.ok) {
       console.log(`  Source "${sourceId}" created`);
@@ -251,7 +260,7 @@ async function main() {
   }
 
   // Ensure sources exist
-  const sources = SOURCE === "law-all" ? ["law-de", "law-at", "law-ch", "law-all"] : [SOURCE];
+  const sources = SOURCE === "law-all" ? Object.values(LEGAL_SOURCE_BY_JURISDICTION) : [SOURCE];
   for (const s of sources) {
     await ensureSource(s);
   }

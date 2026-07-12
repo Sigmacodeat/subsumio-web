@@ -52,6 +52,14 @@ import { isUndefinedTableError, warnOncePerProcess } from "./utils.ts";
 import { computeCorpusGeneration } from "./contextual-retrieval-service.ts";
 import { runGuardrails } from "./guardrails.ts";
 
+// --- Config cache: avoid 6 sequential DB queries per page during bulk import ---
+// loadConfigWithEngine makes ~6 async engine.getConfig() calls per invocation.
+// During a 10K-page law corpus import, that's 60K DB round-trips just for config
+// that doesn't change between pages. This WeakMap caches the resolved config per
+// engine for 60 seconds, reducing the overhead to ~1 DB round-trip per minute.
+const _configCache = new WeakMap<object, { cfg: any; ts: number }>();
+const CONFIG_CACHE_TTL_MS = 60_000;
+
 /**
  * v0.20.0 Cathedral II Layer 8 D2 — markdown fence extraction helper.
  *
@@ -392,11 +400,9 @@ export async function importFromContent(
   //     empty; the existing `tx.deleteChunks` at the empty-chunks
   //     branch fires to purge old chunks (D9 transition invariant).
   //
-  // Effective config: env > file > DB > defaults. The DB-plane lift
-  // adds ~4 SQL round-trips per import (one per content_sanity.* key);
-  // acceptable for the per-page cost since the gate runs at most once
-  // per ingest. Power-users with 10K-file syncs who care about this
-  // overhead can set the keys via env vars instead and skip the DB read.
+  // Effective config: env > file > DB > defaults. The DB-plane lift is cached
+  // per-engine for 60s (see _configCache above) so bulk imports don't pay 6 DB
+  // round-trips per page. Power-users can also set keys via env vars to skip DB.
   // Content-quality gate disposition flags (issue #1699), threaded onto
   // the ImportResult so callers (sync reporting, tests) see what happened.
   let pageQuarantined = false;
@@ -407,10 +413,15 @@ export async function importFromContent(
     let effectiveCfg = baseCfg;
     try {
       // loadConfigWithEngine merges DB-plane content_sanity.* on top
-      // of file/env. Wrapped in try/catch so a transient engine error
-      // doesn't kill the import — the gate falls back to file/env
-      // values (which include defaults via the assessor itself).
-      effectiveCfg = await loadConfigWithEngine(engine, baseCfg);
+      // of file/env. Cached per-engine for CONFIG_CACHE_TTL_MS to avoid
+      // 6 sequential DB queries on every page during bulk imports.
+      const cached = _configCache.get(engine as object);
+      if (cached && Date.now() - cached.ts < CONFIG_CACHE_TTL_MS) {
+        effectiveCfg = cached.cfg;
+      } else {
+        effectiveCfg = await loadConfigWithEngine(engine, baseCfg);
+        _configCache.set(engine as object, { cfg: effectiveCfg, ts: Date.now() });
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       process.stderr.write(

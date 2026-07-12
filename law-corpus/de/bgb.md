@@ -3,8 +3,8 @@ title: "BGB — Bürgerliches Gesetzbuch"
 type: "law"
 jurisdiction: "de"
 abbreviation: "BGB"
-version_date: "2026-06-18"
-retrieved_at: "2026-06-21"
+version_date: "2026-07-09"
+retrieved_at: "2026-07-10"
 source_url: "https://www.gesetze-im-internet.de/bgb/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
 ---
@@ -184,8 +184,8 @@ Verbraucherverträge über digitale Produkte
 Untertitel 2
 
 Besondere
-Bestimmungen für Verträge über
-digitale Produkte zwischen Unternehmern
+ Bestimmungen für Verträge über
+ digitale Produkte zwischen Unternehmern
 
 Titel 3
 
@@ -382,7 +382,7 @@ Besonderheiten bei der Bildung von Wohnungseigentum an vermieteten Wohnungen
 Untertitel 3
 
 Mietverhältnisse über
-andere Sachen und digitale Produkte
+ andere Sachen und digitale Produkte
 
 Untertitel 4
 
@@ -971,7 +971,7 @@ Vermögenssorge
 Untertitel 3
 
 Beratung und Aufsicht
-durch das Familiengericht
+ durch das Familiengericht
 
 Untertitel 4
 
@@ -1016,7 +1016,7 @@ Allgemeine Vorschriften
 Unterkapitel 2
 
 Verwaltung von Geld,
-Wertpapieren und Wertgegenständen
+ Wertpapieren und Wertgegenständen
 
 Unterkapitel 3
 
@@ -1037,12 +1037,12 @@ Befreiungen
 Untertitel 3
 
 Beratung und Aufsicht
-durch das Betreuungsgericht
+ durch das Betreuungsgericht
 
 Untertitel 4
 
 Beendigung, Aufhebung oder Änderung
-von Betreuung und Einwilligungsvorbehalt
+ von Betreuung und Einwilligungsvorbehalt
 
 Untertitel 5
 
@@ -2220,7 +2220,6 @@ Die Verjährung ist gehemmt, solange der Gläubiger innerhalb der letzten sechs 
 (2) § 208 bleibt unberührt.
 
 ## § 208 — Hemmung der Verjährung bei Ansprüchen wegen Verletzung der sexuellen
-
 Selbstbestimmung
 
 Die Verjährung von Ansprüchen wegen Verletzung der sexuellen Selbstbestimmung ist bis zur Vollendung des 21. Lebensjahrs des Gläubigers gehemmt. Lebt der Gläubiger von Ansprüchen wegen Verletzung der sexuellen Selbstbestimmung bei Beginn der Verjährung mit dem Schuldner in häuslicher Gemeinschaft, so ist die Verjährung auch bis zur Beendigung der häuslichen Gemeinschaft gehemmt.
@@ -2240,12 +2239,11 @@ Die Verjährung eines Anspruchs, der zu einem Nachlass gehört oder sich gegen e
 
 ## § 212 — Neubeginn der Verjährung
 
-(1) Die Verjährung beginnt erneut, wenn 1.der Schuldner dem Gläubiger gegenüber den Anspruch durch Abschlagszahlung, Zinszahlung, Sicherheitsleistung oder in anderer Weise anerkennt oder 2.eine gerichtliche oder behördliche Vollstreckungshandlung vorgenommen oder beantragt wird.
+(1) Die Verjährung beginnt erneut, wenn 1.der Schuldner dem Gläubiger gegenüber den Anspruch durch Abschlagszahlung, Zinszahlung, Sicherheitsleistung oder in anderer Weise anerkennt oder 2.eine gerichtliche oder behördliche Vollstreckungshandlung vorgenommen oder beantragt wird. 
 (2) Der erneute Beginn der Verjährung infolge einer Vollstreckungshandlung gilt als nicht eingetreten, wenn die Vollstreckungshandlung auf Antrag des Gläubigers oder wegen Mangels der gesetzlichen Voraussetzungen aufgehoben wird.
 (3) Der erneute Beginn der Verjährung durch den Antrag auf Vornahme einer Vollstreckungshandlung gilt als nicht eingetreten, wenn dem Antrag nicht stattgegeben oder der Antrag vor der Vollstreckungshandlung zurückgenommen oder die erwirkte Vollstreckungshandlung nach Absatz 2 aufgehoben wird.
 
 ## § 213 — Hemmung, Ablaufhemmung und erneuter Beginn der Verjährung bei anderen
-
 Ansprüchen
 
 Die Hemmung, die Ablaufhemmung und der erneute Beginn der Verjährung gelten auch für Ansprüche, die aus demselben Grunde wahlweise neben dem Anspruch oder an seiner Stelle gegeben sind.
@@ -2300,16 +2298,16 @@ Wer zum Zwecke der Selbsthilfe eine Sache wegnimmt, zerstört oder beschädigt o
 
 ## § 231 — Irrtümliche Selbsthilfe
 
-Wer eine der im § 229 bezeichneten Handlungen in der irrigen Annahme vornimmt, dass die für den Ausschluss der Widerrechtlichkeit erforderlichen Voraussetzungen vorhanden seien, ist dem anderen Teil zum Schadensersatz verpflichtet, auch wenn der Irrtum nicht auf Fahrlässigkeit beruht.
+Wer eine der in § 229 bezeichneten Handlungen in der irrigen Annahme vornimmt, dass die für den Ausschluss der Widerrechtlichkeit erforderlichen Voraussetzungen vorhanden seien, ist dem anderen Teil zum Schadensersatz verpflichtet, auch wenn der Irrtum nicht auf Fahrlässigkeit beruht.
 
 ## § 232 — Arten
 
-(1) Wer Sicherheit zu leisten hat, kann dies bewirken
-durch Hinterlegung von Geld oder Wertpapieren,
-durch Verpfändung von Forderungen, die in das Bundesschuldbuch oder in das Landesschuldbuch eines Landes eingetragen sind,
-durch Verpfändung beweglicher Sachen,
-durch Bestellung von Schiffshypotheken an Schiffen oder Schiffsbauwerken, die in einem deutschen Schiffsregister oder Schiffsbauregister eingetragen sind,
-durch Bestellung von Hypotheken an inländischen Grundstücken,
+(1) Wer Sicherheit zu leisten hat, kann dies bewirken 
+durch Hinterlegung von Geld oder Wertpapieren, 
+durch Verpfändung von Forderungen, die in das Bundesschuldbuch oder in das Landesschuldbuch eines Landes eingetragen sind, 
+durch Verpfändung beweglicher Sachen, 
+durch Bestellung von Schiffshypotheken an Schiffen oder Schiffsbauwerken, die in einem deutschen Schiffsregister oder Schiffsbauregister eingetragen sind, 
+durch Bestellung von Hypotheken an inländischen Grundstücken, 
 durch Verpfändung von Forderungen, für die eine Hypothek an einem inländischen Grundstück besteht, oder durch Verpfändung von Grundschulden oder Rentenschulden an inländischen Grundstücken.
 (2) Kann die Sicherheit nicht in dieser Weise geleistet werden, so ist die Stellung eines tauglichen Bürgen zulässig.
 
@@ -2450,7 +2448,6 @@ Wer berechtigt ist, von einer Sache, die er einem anderen herauszugeben hat, ein
 (3) In Angelegenheiten von geringer Bedeutung besteht eine Verpflichtung zur Abgabe der eidesstattlichen Versicherung nicht.
 
 ## § 260 — Pflichten bei Herausgabe oder Auskunft über Inbegriff
-
 von Gegenständen
 
 (1) Wer verpflichtet ist, einen Inbegriff von Gegenständen herauszugeben oder über den Bestand eines solchen Inbegriffs Auskunft zu erteilen, hat dem Berechtigten ein Verzeichnis des Bestands vorzulegen.
@@ -2574,7 +2571,6 @@ Der Schuldner hat ein Verschulden seines gesetzlichen Vertreters und der Persone
 (3) Schadensersatz statt der Leistung kann der Gläubiger nur unter den zusätzlichen Voraussetzungen des § 281, des § 282 oder des § 283 verlangen.
 
 ## § 281 — Schadensersatz statt der Leistung wegen nicht oder nicht wie geschuldet
-
 erbrachter Leistung
 
 (1) Soweit der Schuldner die fällige Leistung nicht oder nicht wie geschuldet erbringt, kann der Gläubiger unter den Voraussetzungen des § 280 Abs. 1 Schadensersatz statt der Leistung verlangen, wenn er dem Schuldner erfolglos eine angemessene Frist zur Leistung oder Nacherfüllung bestimmt hat. Hat der Schuldner eine Teilleistung bewirkt, so kann der Gläubiger Schadensersatz statt der ganzen Leistung nur verlangen, wenn er an der Teilleistung kein Interesse hat. Hat der Schuldner die Leistung nicht wie geschuldet bewirkt, so kann der Gläubiger Schadensersatz statt der ganzen Leistung nicht verlangen, wenn die Pflichtverletzung unerheblich ist.
@@ -2584,7 +2580,6 @@ erbrachter Leistung
 (5) Verlangt der Gläubiger Schadensersatz statt der ganzen Leistung, so ist der Schuldner zur Rückforderung des Geleisteten nach den §§ 346 bis 348 berechtigt.
 
 ## § 282 — Schadensersatz statt der Leistung wegen Verletzung einer Pflicht nach §
-
 241 Abs. 2
 
 Verletzt der Schuldner eine Pflicht nach § 241 Abs. 2, kann der Gläubiger unter den Voraussetzungen des § 280 Abs. 1 Schadensersatz statt der Leistung verlangen, wenn ihm die Leistung durch den Schuldner nicht mehr zuzumuten ist.
@@ -2726,7 +2721,7 @@ Die Vorschriften dieses Abschnitts finden auch Anwendung, wenn sie durch anderwe
 ## § 307 — Inhaltskontrolle
 
 (1) Bestimmungen in Allgemeinen Geschäftsbedingungen sind unwirksam, wenn sie den Vertragspartner des Verwenders entgegen den Geboten von Treu und Glauben unangemessen benachteiligen. Eine unangemessene Benachteiligung kann sich auch daraus ergeben, dass die Bestimmung nicht klar und verständlich ist.
-(2) Eine unangemessene Benachteiligung ist im Zweifel anzunehmen, wenn eine Bestimmung 1.mit wesentlichen Grundgedanken der gesetzlichen Regelung, von der abgewichen wird, nicht zu vereinbaren ist oder 2.wesentliche Rechte oder Pflichten, die sich aus der Natur des Vertrags ergeben, so einschränkt, dass die Erreichung des Vertragszwecks gefährdet ist.
+(2) Eine unangemessene Benachteiligung ist im Zweifel anzunehmen, wenn eine Bestimmung 1.mit wesentlichen Grundgedanken der gesetzlichen Regelung, von der abgewichen wird, nicht zu vereinbaren ist oder 2.wesentliche Rechte oder Pflichten, die sich aus der Natur des Vertrags ergeben, so einschränkt, dass die Erreichung des Vertragszwecks gefährdet ist. 
 (3) Die Absätze 1 und 2 sowie die §§ 308 und 309 gelten nur für Bestimmungen in Allgemeinen Geschäftsbedingungen, durch die von Rechtsvorschriften abweichende oder diese ergänzende Regelungen vereinbart werden. Andere Bestimmungen können nach Absatz 1 Satz 2 in Verbindung mit Absatz 1 Satz 1 unwirksam sein.
 
 ## § 308 — Klauselverbote mit Wertungsmöglichkeit
@@ -2748,7 +2743,7 @@ Auch soweit eine Abweichung von den gesetzlichen Vorschriften zulässig ist, ist
 ## § 311 — Rechtsgeschäftliche und rechtsgeschäftsähnliche Schuldverhältnisse
 
 (1) Zur Begründung eines Schuldverhältnisses durch Rechtsgeschäft sowie zur Änderung des Inhalts eines Schuldverhältnisses ist ein Vertrag zwischen den Beteiligten erforderlich, soweit nicht das Gesetz ein anderes vorschreibt.
-(2) Ein Schuldverhältnis mit Pflichten nach § 241 Abs. 2 entsteht auch durch 1.die Aufnahme von Vertragsverhandlungen, 2.die Anbahnung eines Vertrags, bei welcher der eine Teil im Hinblick auf eine etwaige rechtsgeschäftliche Beziehung dem anderen Teil die Möglichkeit zur Einwirkung auf seine Rechte, Rechtsgüter und Interessen gewährt oder ihm diese anvertraut, oder 3.ähnliche geschäftliche Kontakte.
+(2) Ein Schuldverhältnis mit Pflichten nach § 241 Abs. 2 entsteht auch durch 1.die Aufnahme von Vertragsverhandlungen, 2.die Anbahnung eines Vertrags, bei welcher der eine Teil im Hinblick auf eine etwaige rechtsgeschäftliche Beziehung dem anderen Teil die Möglichkeit zur Einwirkung auf seine Rechte, Rechtsgüter und Interessen gewährt oder ihm diese anvertraut, oder 3.ähnliche geschäftliche Kontakte. 
 (3) Ein Schuldverhältnis mit Pflichten nach § 241 Abs. 2 kann auch zu Personen entstehen, die nicht selbst Vertragspartei werden sollen. Ein solches Schuldverhältnis entsteht insbesondere, wenn der Dritte in besonderem Maße Vertrauen für sich in Anspruch nimmt und dadurch die Vertragsverhandlungen oder den Vertragsschluss erheblich beeinflusst.
 
 ## § 311a — Leistungshindernis bei Vertragsschluss
@@ -3669,7 +3664,7 @@ Ist die Sache mangelhaft, kann der Käufer, wenn die Voraussetzungen der folgend
 
 ## § 438 — Verjährung der Mängelansprüche
 
-(1) Die in § 437 Nr. 1 und 3 bezeichneten Ansprüche verjähren 1.in 30 Jahren, wenn der Mangela)in einem dinglichen Recht eines Dritten, auf Grund dessen Herausgabe der Kaufsache verlangt werden kann, oder b)in einem sonstigen Recht, das im Grundbuch eingetragen ist, besteht, 2.in fünf Jahrena)bei einem Bauwerk und b)bei einer Sache, die entsprechend ihrer üblichen Verwendungsweise für ein Bauwerk verwendet worden ist und dessen Mangelhaftigkeit verursacht hat, und 3.im Übrigen in zwei Jahren.
+(1) Die in § 437 Nr. 1 und 3 bezeichneten Ansprüche verjähren 1.in 30 Jahren, wenn der Mangela)in einem dinglichen Recht eines Dritten, auf Grund dessen Herausgabe der Kaufsache verlangt werden kann, oder b)in einem sonstigen Recht, das im Grundbuch eingetragen ist, besteht, 2.in fünf Jahrena)bei einem Bauwerk und b)bei einer Sache, die entsprechend ihrer üblichen Verwendungsweise für ein Bauwerk verwendet worden ist und dessen Mangelhaftigkeit verursacht hat, und 3.im Übrigen in zwei Jahren. 
 (2) Die Verjährung beginnt bei Grundstücken mit der Übergabe, im Übrigen mit der Ablieferung der Sache.
 (3) Abweichend von Absatz 1 Nr. 2 und 3 und Absatz 2 verjähren die Ansprüche in der regelmäßigen Verjährungsfrist, wenn der Verkäufer den Mangel arglistig verschwiegen hat. Im Falle des Absatzes 1 Nr. 2 tritt die Verjährung jedoch nicht vor Ablauf der dort bestimmten Frist ein.
 (4) Für das in § 437 bezeichnete Rücktrittsrecht gilt § 218. Der Käufer kann trotz einer Unwirksamkeit des Rücktritts nach § 218 Abs. 1 die Zahlung des Kaufpreises insoweit verweigern, als er auf Grund des Rücktritts dazu berechtigt sein würde. Macht er von diesem Recht Gebrauch, kann der Verkäufer vom Vertrag zurücktreten.
@@ -4363,7 +4358,7 @@ Setzt der Mieter einen vertragswidrigen Gebrauch der Mietsache trotz einer Abmah
 
 (1) Jede Vertragspartei kann das Mietverhältnis aus wichtigem Grund außerordentlich fristlos kündigen. Ein wichtiger Grund liegt vor, wenn dem Kündigenden unter Berücksichtigung aller Umstände des Einzelfalls, insbesondere eines Verschuldens der Vertragsparteien, und unter Abwägung der beiderseitigen Interessen die Fortsetzung des Mietverhältnisses bis zum Ablauf der Kündigungsfrist oder bis zur sonstigen Beendigung des Mietverhältnisses nicht zugemutet werden kann.
 (2) Ein wichtiger Grund liegt insbesondere vor, wenn 1.dem Mieter der vertragsgemäße Gebrauch der Mietsache ganz oder zum Teil nicht rechtzeitig gewährt oder wieder entzogen wird, 2.der Mieter die Rechte des Vermieters dadurch in erheblichem Maße verletzt, dass er die Mietsache durch Vernachlässigung der ihm obliegenden Sorgfalt erheblich gefährdet oder sie unbefugt einem Dritten überlässt oder 3.der Mietera)für zwei aufeinander folgende Termine mit der Entrichtung der Miete oder eines nicht unerheblichen Teils der Miete in Verzug ist oder b)in einem Zeitraum, der sich über mehr als zwei Termine erstreckt, mit der Entrichtung der Miete in Höhe eines Betrages in Verzug ist, der die Miete für zwei Monate erreicht. Im Falle des Satzes 1 Nr. 3 ist die Kündigung ausgeschlossen, wenn der Vermieter vorher befriedigt wird. Sie wird unwirksam, wenn sich der Mieter von seiner Schuld durch Aufrechnung befreien konnte und unverzüglich nach der Kündigung die Aufrechnung erklärt.
-(3) Besteht der wichtige Grund in der Verletzung einer Pflicht aus dem Mietvertrag, so ist die Kündigung erst nach erfolglosem Ablauf einer zur Abhilfe bestimmten angemessenen Frist oder nach erfolgloser Abmahnung zulässig. Dies gilt nicht, wenn 1.eine Frist oder Abmahnung offensichtlich keinen Erfolg verspricht, 2.die sofortige Kündigung aus besonderen Gründen unter Abwägung der beiderseitigen Interessen gerechtfertigt ist oder 3.der Mieter mit der Entrichtung der Miete im Sinne des Absatzes 2 Nr. 3 in Verzug ist.
+(3) Besteht der wichtige Grund in der Verletzung einer Pflicht aus dem Mietvertrag, so ist die Kündigung erst nach erfolglosem Ablauf einer zur Abhilfe bestimmten angemessenen Frist oder nach erfolgloser Abmahnung zulässig. Dies gilt nicht, wenn 1.eine Frist oder Abmahnung offensichtlich keinen Erfolg verspricht, 2.die sofortige Kündigung aus besonderen Gründen unter Abwägung der beiderseitigen Interessen gerechtfertigt ist oder 3.der Mieter mit der Entrichtung der Miete im Sinne des Absatzes 2 Nr. 3 in Verzug ist. 
 (4) Auf das dem Mieter nach Absatz 2 Nr. 1 zustehende Kündigungsrecht sind die §§ 536b und 536d entsprechend anzuwenden. Ist streitig, ob der Vermieter den Gebrauch der Mietsache rechtzeitig gewährt oder die Abhilfe vor Ablauf der hierzu bestimmten Frist bewirkt hat, so trifft ihn die Beweislast.
 
 ## § 544 — Vertrag über mehr als 30 Jahre
@@ -4560,7 +4555,7 @@ Die Vertragsparteien können nach Abschluss des Mietvertrags aus Anlass von Erha
 ## § 558a — Form und Begründung der Mieterhöhung
 
 (1) Das Mieterhöhungsverlangen nach § 558 ist dem Mieter in Textform zu erklären und zu begründen.
-(2) Zur Begründung kann insbesondere Bezug genommen werden auf 1.einen Mietspiegel (§§ 558c, 558d), 2.eine Auskunft aus einer Mietdatenbank (§ 558e), 3.ein mit Gründen versehenes Gutachten eines öffentlich bestellten und vereidigten Sachverständigen, 4.entsprechende Entgelte für einzelne vergleichbare Wohnungen; hierbei genügt die Benennung von drei Wohnungen.
+(2) Zur Begründung kann insbesondere Bezug genommen werden auf 1.einen Mietspiegel (§§ 558c, 558d), 2.eine Auskunft aus einer Mietdatenbank (§ 558e), 3.ein mit Gründen versehenes Gutachten eines öffentlich bestellten und vereidigten Sachverständigen, 4.entsprechende Entgelte für einzelne vergleichbare Wohnungen; hierbei genügt die Benennung von drei Wohnungen. 
 (3) Enthält ein qualifizierter Mietspiegel (§ 558d Abs. 1), bei dem die Vorschrift des § 558d Abs. 2 eingehalten ist, Angaben für die Wohnung, so hat der Vermieter in seinem Mieterhöhungsverlangen diese Angaben auch dann mitzuteilen, wenn er die Mieterhöhung auf ein anderes Begründungsmittel nach Absatz 2 stützt.
 (4) Bei der Bezugnahme auf einen Mietspiegel, der Spannen enthält, reicht es aus, wenn die verlangte Miete innerhalb der Spanne liegt. Ist in dem Zeitpunkt, in dem der Vermieter seine Erklärung abgibt, kein Mietspiegel vorhanden, bei dem § 558c Abs. 3 oder § 558d Abs. 2 eingehalten ist, so kann auch ein anderer, insbesondere ein veralteter Mietspiegel oder ein Mietspiegel einer vergleichbaren Gemeinde verwendet werden.
 (5) Eine zum Nachteil des Mieters abweichende Vereinbarung ist unwirksam.
@@ -4691,7 +4686,6 @@ Wird eine Sache, die dem Pfandrecht des Vermieters unterliegt, für einen andere
 (3) Der Vermieter kann, falls der verstorbene Mieter keine Sicherheit geleistet hat, von den Personen, die nach § 563 in das Mietverhältnis eingetreten sind oder mit denen es nach § 563a fortgesetzt wird, nach Maßgabe des § 551 eine Sicherheitsleistung verlangen.
 
 ## § 564 — Fortsetzung des Mietverhältnisses mit dem Erben,
-
 außerordentliche Kündigung
 
 Treten beim Tod des Mieters keine Personen im Sinne des § 563 in das Mietverhältnis ein oder wird es nicht mit ihnen nach § 563a fortgesetzt, so wird es mit dem Erben fortgesetzt. In diesem Fall ist sowohl der Erbe als auch der Vermieter berechtigt, das Mietverhältnis innerhalb eines Monats außerordentlich mit der gesetzlichen Frist zu kündigen, nachdem sie vom Tod des Mieters und davon Kenntnis erlangt haben, dass ein Eintritt in das Mietverhältnis oder dessen Fortsetzung nicht erfolgt sind.
@@ -4766,7 +4760,6 @@ Dem Mieter steht kein Zurückbehaltungsrecht gegen den Rückgabeanspruch des Ver
 (3) Eine zum Nachteil des Mieters abweichende Vereinbarung ist unwirksam.
 
 ## § 572 — Vereinbartes Rücktrittsrecht; Mietverhältnis unter
-
 auflösender Bedingung
 
 (1) Auf eine Vereinbarung, nach der der Vermieter berechtigt sein soll, nach Überlassung des Wohnraums an den Mieter vom Vertrag zurückzutreten, kann der Vermieter sich nicht berufen.
@@ -4775,7 +4768,7 @@ auflösender Bedingung
 ## § 573 — Ordentliche Kündigung des Vermieters
 
 (1) Der Vermieter kann nur kündigen, wenn er ein berechtigtes Interesse an der Beendigung des Mietverhältnisses hat. Die Kündigung zum Zwecke der Mieterhöhung ist ausgeschlossen.
-(2) Ein berechtigtes Interesse des Vermieters an der Beendigung des Mietverhältnisses liegt insbesondere vor, wenn 1.der Mieter seine vertraglichen Pflichten schuldhaft nicht unerheblich verletzt hat, 2.der Vermieter die Räume als Wohnung für sich, seine Familienangehörigen oder Angehörige seines Haushalts benötigt oder 3.der Vermieter durch die Fortsetzung des Mietverhältnisses an einer angemessenen wirtschaftlichen Verwertung des Grundstücks gehindert und dadurch erhebliche Nachteile erleiden würde; die Möglichkeit, durch eine anderweitige Vermietung als Wohnraum eine höhere Miete zu erzielen, bleibt außer Betracht; der Vermieter kann sich auch nicht darauf berufen, dass er die Mieträume im Zusammenhang mit einer beabsichtigten oder nach Überlassung an den Mieter erfolgten Begründung von Wohnungseigentum veräußern will.
+(2) Ein berechtigtes Interesse des Vermieters an der Beendigung des Mietverhältnisses liegt insbesondere vor, wenn 1.der Mieter seine vertraglichen Pflichten schuldhaft nicht unerheblich verletzt hat, 2.der Vermieter die Räume als Wohnung für sich, seine Familienangehörigen oder Angehörige seines Haushalts benötigt oder 3.der Vermieter durch die Fortsetzung des Mietverhältnisses an einer angemessenen wirtschaftlichen Verwertung des Grundstücks gehindert und dadurch erhebliche Nachteile erleiden würde; die Möglichkeit, durch eine anderweitige Vermietung als Wohnraum eine höhere Miete zu erzielen, bleibt außer Betracht; der Vermieter kann sich auch nicht darauf berufen, dass er die Mieträume im Zusammenhang mit einer beabsichtigten oder nach Überlassung an den Mieter erfolgten Begründung von Wohnungseigentum veräußern will. 
 (3) Die Gründe für ein berechtigtes Interesse des Vermieters sind in dem Kündigungsschreiben anzugeben. Andere Gründe werden nur berücksichtigt, soweit sie nachträglich entstanden sind.
 (4) Eine zum Nachteil des Mieters abweichende Vereinbarung ist unwirksam.
 
@@ -4788,7 +4781,7 @@ auflösender Bedingung
 
 ## § 573b — Teilkündigung des Vermieters
 
-(1) Der Vermieter kann nicht zum Wohnen bestimmte Nebenräume oder Teile eines Grundstücks ohne ein berechtigtes Interesse im Sinne des § 573 kündigen, wenn er die Kündigung auf diese Räume oder Grundstücksteile beschränkt und sie dazu verwenden will, 1.Wohnraum zum Zwecke der Vermietung zu schaffen oder 2.den neu zu schaffenden und den vorhandenen Wohnraum mit Nebenräumen oder Grundstücksteilen auszustatten.
+(1) Der Vermieter kann nicht zum Wohnen bestimmte Nebenräume oder Teile eines Grundstücks ohne ein berechtigtes Interesse im Sinne des § 573 kündigen, wenn er die Kündigung auf diese Räume oder Grundstücksteile beschränkt und sie dazu verwenden will, 1.Wohnraum zum Zwecke der Vermietung zu schaffen oder 2.den neu zu schaffenden und den vorhandenen Wohnraum mit Nebenräumen oder Grundstücksteilen auszustatten. 
 (2) Die Kündigung ist spätestens am dritten Werktag eines Kalendermonats zum Ablauf des übernächsten Monats zulässig.
 (3) Verzögert sich der Beginn der Bauarbeiten, so kann der Mieter eine Verlängerung des Mietverhältnisses um einen entsprechenden Zeitraum verlangen.
 (4) Der Mieter kann eine angemessene Senkung der Miete verlangen.
@@ -4827,7 +4820,6 @@ auflösender Bedingung
 (3) Eine zum Nachteil des Mieters abweichende Vereinbarung ist unwirksam.
 
 ## § 574c — Weitere Fortsetzung des Mietverhältnisses bei
-
 unvorhergesehenen Umständen
 
 (1) Ist auf Grund der §§ 574 bis 574b durch Einigung oder Urteil bestimmt worden, dass das Mietverhältnis auf bestimmte Zeit fortgesetzt wird, so kann der Mieter dessen weitere Fortsetzung nur verlangen, wenn dies durch eine wesentliche Änderung der Umstände gerechtfertigt ist oder wenn Umstände nicht eingetreten sind, deren vorgesehener Eintritt für die Zeitdauer der Fortsetzung bestimmend gewesen war.
@@ -4856,7 +4848,7 @@ unvorhergesehenen Umständen
 ## § 576a — Besonderheiten des Widerspruchsrechts bei Werkmietwohnungen
 
 (1) Bei der Anwendung der §§ 574 bis 574c auf Werkmietwohnungen sind auch die Belange des Dienstberechtigten zu berücksichtigen.
-(2) Die §§ 574 bis 574c gelten nicht, wenn 1.der Vermieter nach § 576 Abs. 1 Nr. 2 gekündigt hat; 2.der Mieter das Dienstverhältnis gelöst hat, ohne dass ihm von dem Dienstberechtigten gesetzlich begründeter Anlass dazu gegeben war, oder der Mieter durch sein Verhalten dem Dienstberechtigten gesetzlich begründeten Anlass zur Auflösung des Dienstverhältnisses gegeben hat.
+(2) Die §§ 574 bis 574c gelten nicht, wenn 1.der Vermieter nach § 576 Abs. 1 Nr. 2 gekündigt hat; 2.der Mieter das Dienstverhältnis gelöst hat, ohne dass ihm von dem Dienstberechtigten gesetzlich begründeter Anlass dazu gegeben war, oder der Mieter durch sein Verhalten dem Dienstberechtigten gesetzlich begründeten Anlass zur Auflösung des Dienstverhältnisses gegeben hat. 
 (3) Eine zum Nachteil des Mieters abweichende Vereinbarung ist unwirksam.
 
 ## § 576b — Entsprechende Geltung des Mietrechts bei Werkdienstwohnungen
@@ -4979,7 +4971,6 @@ Wird der Landpachtvertrag für längere Zeit als zwei Jahre nicht in Textform ge
 Der Verpächter hat die auf der Pachtsache ruhenden Lasten zu tragen.
 
 ## § 587 — Fälligkeit der Pacht; Entrichtung der Pacht bei persönlicher
-
 Verhinderung des Pächters
 
 (1) Die Pacht ist am Ende der Pachtzeit zu entrichten. Ist die Pacht nach Zeitabschnitten bemessen, so ist sie am ersten Werktag nach dem Ablauf der einzelnen Zeitabschnitte zu entrichten.
@@ -4998,7 +4989,6 @@ Verhinderung des Pächters
 (2) Überlässt der Pächter die Nutzung der Pachtsache einem Dritten, so hat er ein Verschulden, das dem Dritten bei der Nutzung zur Last fällt, zu vertreten, auch wenn der Verpächter die Erlaubnis zur Überlassung erteilt hat.
 
 ## § 590 — Änderung der landwirtschaftlichen Bestimmung oder der
-
 bisherigen Nutzung
 
 (1) Der Pächter darf die landwirtschaftliche Bestimmung der Pachtsache nur mit vorheriger Erlaubnis des Verpächters ändern.
@@ -5211,7 +5201,7 @@ Der zur Dienstleistung Verpflichtete hat die Dienste im Zweifel in Person zu lei
 (2) Der bisherige Arbeitgeber haftet neben dem neuen Inhaber für Verpflichtungen nach Absatz 1, soweit sie vor dem Zeitpunkt des Übergangs entstanden sind und vor Ablauf von einem Jahr nach diesem Zeitpunkt fällig werden, als Gesamtschuldner. Werden solche Verpflichtungen nach dem Zeitpunkt des Übergangs fällig, so haftet der bisherige Arbeitgeber für sie jedoch nur in dem Umfang, der dem im Zeitpunkt des Übergangs abgelaufenen Teil ihres Bemessungszeitraums entspricht.
 (3) Absatz 2 gilt nicht, wenn eine juristische Person oder eine Personenhandelsgesellschaft durch Umwandlung erlischt.
 (4) Die Kündigung des Arbeitsverhältnisses eines Arbeitnehmers durch den bisherigen Arbeitgeber oder durch den neuen Inhaber wegen des Übergangs eines Betriebs oder eines Betriebsteils ist unwirksam. Das Recht zur Kündigung des Arbeitsverhältnisses aus anderen Gründen bleibt unberührt.
-(5) Der bisherige Arbeitgeber oder der neue Inhaber hat die von einem Übergang betroffenen Arbeitnehmer vor dem Übergang in Textform zu unterrichten über: 1.den Zeitpunkt oder den geplanten Zeitpunkt des Übergangs, 2.den Grund für den Übergang, 3.die rechtlichen, wirtschaftlichen und sozialen Folgen des Übergangs für die Arbeitnehmer und 4.die hinsichtlich der Arbeitnehmer in Aussicht genommenen Maßnahmen.
+(5) Der bisherige Arbeitgeber oder der neue Inhaber hat die von einem Übergang betroffenen Arbeitnehmer vor dem Übergang in Textform zu unterrichten über: 1.den Zeitpunkt oder den geplanten Zeitpunkt des Übergangs, 2.den Grund für den Übergang, 3.die rechtlichen, wirtschaftlichen und sozialen Folgen des Übergangs für die Arbeitnehmer und 4.die hinsichtlich der Arbeitnehmer in Aussicht genommenen Maßnahmen. 
 (6) Der Arbeitnehmer kann dem Übergang des Arbeitsverhältnisses innerhalb eines Monats nach Zugang der Unterrichtung nach Absatz 5 schriftlich widersprechen. Der Widerspruch kann gegenüber dem bisherigen Arbeitgeber oder dem neuen Inhaber erklärt werden.
 
 ## § 614 — Fälligkeit der Vergütung
@@ -6212,7 +6202,7 @@ Verwendet der Verwahrer hinterlegtes Geld für sich, so ist er verpflichtet, es 
 ## § 702 — Beschränkung der Haftung; Wertsachen
 
 (1) Der Gastwirt haftet auf Grund des § 701 nur bis zu einem Betrag, der dem Hundertfachen des Beherbergungspreises für einen Tag entspricht, jedoch mindestens bis zu dem Betrag von 600 Euro und höchstens bis zu dem Betrag von 3.500 Euro; für Geld, Wertpapiere und Kostbarkeiten tritt an die Stelle von 3.500 Euro der Betrag von 800 Euro.
-(2) Die Haftung des Gastwirts ist unbeschränkt, 1.wenn der Verlust, die Zerstörung oder die Beschädigung von ihm oder seinen Leuten verschuldet ist, 2.wenn es sich um eingebrachte Sachen handelt, die er zur Aufbewahrung übernommen oder deren Übernahme zur Aufbewahrung er entgegen der Vorschrift des Absatzes 3 abgelehnt hat.
+(2) Die Haftung des Gastwirts ist unbeschränkt, 1.wenn der Verlust, die Zerstörung oder die Beschädigung von ihm oder seinen Leuten verschuldet ist, 2.wenn es sich um eingebrachte Sachen handelt, die er zur Aufbewahrung übernommen oder deren Übernahme zur Aufbewahrung er entgegen der Vorschrift des Absatzes 3 abgelehnt hat. 
 (3) Der Gastwirt ist verpflichtet, Geld, Wertpapiere, Kostbarkeiten und andere Wertsachen zur Aufbewahrung zu übernehmen, es sei denn, dass sie im Hinblick auf die Größe oder den Rang der Gastwirtschaft von übermäßigem Wert oder Umfang oder dass sie gefährlich sind. Er kann verlangen, dass sie in einem verschlossenen oder versiegelten Behältnis übergeben werden.
 
 ## § 702a — Erlass der Haftung
@@ -6675,7 +6665,7 @@ Der Bürge kann die Befriedigung des Gläubigers verweigern, solange nicht der G
 
 ## § 773 — Ausschluss der Einrede der Vorausklage
 
-(1) Die Einrede der Vorausklage ist ausgeschlossen: 1.wenn der Bürge auf die Einrede verzichtet, insbesondere wenn er sich als Selbstschuldner verbürgt hat, 2.wenn die Rechtsverfolgung gegen den Hauptschuldner infolge einer nach der Übernahme der Bürgschaft eingetretenen Änderung des Wohnsitzes, der gewerblichen Niederlassung oder des Aufenthaltsorts des Hauptschuldners wesentlich erschwert ist, 3.wenn über das Vermögen des Hauptschuldners das Insolvenzverfahren eröffnet ist, 4.wenn anzunehmen ist, dass die Zwangsvollstreckung in das Vermögen des Hauptschuldners nicht zur Befriedigung des Gläubigers führen wird.
+(1) Die Einrede der Vorausklage ist ausgeschlossen: 1.wenn der Bürge auf die Einrede verzichtet, insbesondere wenn er sich als Selbstschuldner verbürgt hat, 2.wenn die Rechtsverfolgung gegen den Hauptschuldner infolge einer nach der Übernahme der Bürgschaft eingetretenen Änderung des Wohnsitzes, der gewerblichen Niederlassung oder des Aufenthaltsorts des Hauptschuldners wesentlich erschwert ist, 3.wenn über das Vermögen des Hauptschuldners das Insolvenzverfahren eröffnet ist, 4.wenn anzunehmen ist, dass die Zwangsvollstreckung in das Vermögen des Hauptschuldners nicht zur Befriedigung des Gläubigers führen wird. 
 (2) In den Fällen der Nummern 3, 4 ist die Einrede insoweit zulässig, als sich der Gläubiger aus einer beweglichen Sache des Hauptschuldners befriedigen kann, an der er ein Pfandrecht oder ein Zurückbehaltungsrecht hat; die Vorschrift des § 772 Abs. 2 Satz 2 findet Anwendung.
 
 ## § 774 — Gesetzlicher Forderungsübergang
@@ -6685,7 +6675,7 @@ Der Bürge kann die Befriedigung des Gläubigers verweigern, solange nicht der G
 
 ## § 775 — Anspruch des Bürgen auf Befreiung
 
-(1) Hat sich der Bürge im Auftrag des Hauptschuldners verbürgt oder stehen ihm nach den Vorschriften über die Geschäftsführung ohne Auftrag wegen der Übernahme der Bürgschaft die Rechte eines Beauftragten gegen den Hauptschuldner zu, so kann er von diesem Befreiung von der Bürgschaft verlangen: 1.wenn sich die Vermögensverhältnisse des Hauptschuldners wesentlich verschlechtert haben, 2.wenn die Rechtsverfolgung gegen den Hauptschuldner infolge einer nach der Übernahme der Bürgschaft eingetretenen Änderung des Wohnsitzes, der gewerblichen Niederlassung oder des Aufenthaltsorts des Hauptschuldners wesentlich erschwert ist, 3.wenn der Hauptschuldner mit der Erfüllung seiner Verbindlichkeit im Verzug ist, 4.wenn der Gläubiger gegen den Bürgen ein vollstreckbares Urteil auf Erfüllung erwirkt hat.
+(1) Hat sich der Bürge im Auftrag des Hauptschuldners verbürgt oder stehen ihm nach den Vorschriften über die Geschäftsführung ohne Auftrag wegen der Übernahme der Bürgschaft die Rechte eines Beauftragten gegen den Hauptschuldner zu, so kann er von diesem Befreiung von der Bürgschaft verlangen: 1.wenn sich die Vermögensverhältnisse des Hauptschuldners wesentlich verschlechtert haben, 2.wenn die Rechtsverfolgung gegen den Hauptschuldner infolge einer nach der Übernahme der Bürgschaft eingetretenen Änderung des Wohnsitzes, der gewerblichen Niederlassung oder des Aufenthaltsorts des Hauptschuldners wesentlich erschwert ist, 3.wenn der Hauptschuldner mit der Erfüllung seiner Verbindlichkeit im Verzug ist, 4.wenn der Gläubiger gegen den Bürgen ein vollstreckbares Urteil auf Erfüllung erwirkt hat. 
 (2) Ist die Hauptverbindlichkeit noch nicht fällig, so kann der Hauptschuldner dem Bürgen, statt ihn zu befreien, Sicherheit leisten.
 
 ## § 776 — Aufgabe einer Sicherheit
@@ -7976,10 +7966,9 @@ Im Verhältnis zwischen dem Nießbraucher und dem Eigentümer gilt zugunsten des
 Der Nießbrauch ist nicht übertragbar. Die Ausübung des Nießbrauchs kann einem anderen überlassen werden.
 
 ## § 1059a — Übertragbarkeit bei juristischer Person oder rechtsfähiger
-
 Personengesellschaft
 
-(1) Steht ein Nießbrauch einer juristischen Person zu, so ist er nach Maßgabe der folgenden Vorschriften übertragbar: 1.Geht das Vermögen der juristischen Person auf dem Wege der Gesamtrechtsnachfolge auf einen anderen über, so geht auch der Nießbrauch auf den Rechtsnachfolger über, es sei denn, dass der Übergang ausdrücklich ausgeschlossen ist. 2.Wird sonst ein von einer juristischen Person betriebenes Unternehmen oder ein Teil eines solchen Unternehmens auf einen anderen übertragen, so kann auf den Erwerber auch ein Nießbrauch übertragen werden, sofern er den Zwecken des Unternehmens oder des Teils des Unternehmens zu dienen geeignet ist. Ob diese Voraussetzungen gegeben sind, wird durch eine Erklärung der zuständigen Landesbehörde festgestellt. Die Erklärung bindet die Gerichte und die Verwaltungsbehörden. Die Landesregierungen bestimmen durch Rechtsverordnung die zuständige Landesbehörde. Die Landesregierungen können die Ermächtigung durch Rechtsverordnung auf die Landesjustizverwaltungen übertragen.
+(1) Steht ein Nießbrauch einer juristischen Person zu, so ist er nach Maßgabe der folgenden Vorschriften übertragbar: 1.Geht das Vermögen der juristischen Person auf dem Wege der Gesamtrechtsnachfolge auf einen anderen über, so geht auch der Nießbrauch auf den Rechtsnachfolger über, es sei denn, dass der Übergang ausdrücklich ausgeschlossen ist. 2.Wird sonst ein von einer juristischen Person betriebenes Unternehmen oder ein Teil eines solchen Unternehmens auf einen anderen übertragen, so kann auf den Erwerber auch ein Nießbrauch übertragen werden, sofern er den Zwecken des Unternehmens oder des Teils des Unternehmens zu dienen geeignet ist. Ob diese Voraussetzungen gegeben sind, wird durch eine Erklärung der zuständigen Landesbehörde festgestellt. Die Erklärung bindet die Gerichte und die Verwaltungsbehörden. Die Landesregierungen bestimmen durch Rechtsverordnung die zuständige Landesbehörde. Die Landesregierungen können die Ermächtigung durch Rechtsverordnung auf die Landesjustizverwaltungen übertragen. 
 (2) Einer juristischen Person steht eine rechtsfähige Personengesellschaft gleich.
 
 ## § 1059b — Unpfändbarkeit
@@ -9453,7 +9442,7 @@ Vereinbaren die Ehegatten durch Ehevertrag Gütergemeinschaft, so gelten die nac
 ## § 1418 — Vorbehaltsgut
 
 (1) Vom Gesamtgut ist das Vorbehaltsgut ausgeschlossen.
-(2) Vorbehaltsgut sind die Gegenstände, 1.die durch Ehevertrag zum Vorbehaltsgut eines Ehegatten erklärt sind, 2.die ein Ehegatte von Todes wegen erwirbt oder die ihm von einem Dritten unentgeltlich zugewendet werden, wenn der Erblasser durch letztwillige Verfügung, der Dritte bei der Zuwendung bestimmt hat, dass der Erwerb Vorbehaltsgut sein soll, 3.die ein Ehegatte auf Grund eines zu seinem Vorbehaltsgut gehörenden Rechts oder als Ersatz für die Zerstörung, Beschädigung oder Entziehung eines zum Vorbehaltsgut gehörenden Gegenstands oder durch ein Rechtsgeschäft erwirbt, das sich auf das Vorbehaltsgut bezieht.
+(2) Vorbehaltsgut sind die Gegenstände, 1.die durch Ehevertrag zum Vorbehaltsgut eines Ehegatten erklärt sind, 2.die ein Ehegatte von Todes wegen erwirbt oder die ihm von einem Dritten unentgeltlich zugewendet werden, wenn der Erblasser durch letztwillige Verfügung, der Dritte bei der Zuwendung bestimmt hat, dass der Erwerb Vorbehaltsgut sein soll, 3.die ein Ehegatte auf Grund eines zu seinem Vorbehaltsgut gehörenden Rechts oder als Ersatz für die Zerstörung, Beschädigung oder Entziehung eines zum Vorbehaltsgut gehörenden Gegenstands oder durch ein Rechtsgeschäft erwirbt, das sich auf das Vorbehaltsgut bezieht. 
 (3) Jeder Ehegatte verwaltet das Vorbehaltsgut selbständig. Er verwaltet es für eigene Rechnung.
 (4) Gehören Vermögensgegenstände zum Vorbehaltsgut, so ist dies Dritten gegenüber nur nach Maßgabe des § 1412 wirksam.
 
@@ -10072,7 +10061,6 @@ Der unterhaltspflichtige geschiedene Ehegatte haftet vor den Verwandten des Bere
 Die Ehegatten können über die Unterhaltspflicht für die Zeit nach der Scheidung Vereinbarungen treffen. Eine Vereinbarung, die vor der Rechtskraft der Scheidung getroffen wird, bedarf der notariellen Beurkundung. § 127a findet auch auf eine Vereinbarung Anwendung, die in einem Verfahren in Ehesachen vor dem Prozessgericht protokolliert wird.
 
 ## § 1586 — Wiederverheiratung, Begründung einer Lebenspartnerschaft oder Tod des
-
 Berechtigten
 
 (1) Der Unterhaltsanspruch erlischt mit der Wiederheirat, der Begründung einer Lebenspartnerschaft oder dem Tode des Berechtigten.
@@ -10301,7 +10289,7 @@ Werden für Aufwendungen infolge eines Körper- oder Gesundheitsschadens Soziall
 ## § 1613 — Unterhalt für die Vergangenheit
 
 (1) Für die Vergangenheit kann der Berechtigte Erfüllung oder Schadensersatz wegen Nichterfüllung nur von dem Zeitpunkt an fordern, zu welchem der Verpflichtete zum Zwecke der Geltendmachung des Unterhaltsanspruchs aufgefordert worden ist, über seine Einkünfte und sein Vermögen Auskunft zu erteilen, zu welchem der Verpflichtete in Verzug gekommen oder der Unterhaltsanspruch rechtshängig geworden ist. Der Unterhalt wird ab dem Ersten des Monats, in den die bezeichneten Ereignisse fallen, geschuldet, wenn der Unterhaltsanspruch dem Grunde nach zu diesem Zeitpunkt bestanden hat.
-(2) Der Berechtigte kann für die Vergangenheit ohne die Einschränkung des Absatzes 1 Erfüllung verlangen 1.wegen eines unregelmäßigen außergewöhnlich hohen Bedarfs (Sonderbedarf); nach Ablauf eines Jahres seit seiner Entstehung kann dieser Anspruch nur geltend gemacht werden, wenn vorher der Verpflichtete in Verzug gekommen oder der Anspruch rechtshängig geworden ist; 2.für den Zeitraum, in dem era)aus rechtlichen Gründen oder b)aus tatsächlichen Gründen, die in den Verantwortungsbereich des Unterhaltspflichtigen fallen, an der Geltendmachung des Unterhaltsanspruchs gehindert war.
+(2) Der Berechtigte kann für die Vergangenheit ohne die Einschränkung des Absatzes 1 Erfüllung verlangen 1.wegen eines unregelmäßigen außergewöhnlich hohen Bedarfs (Sonderbedarf); nach Ablauf eines Jahres seit seiner Entstehung kann dieser Anspruch nur geltend gemacht werden, wenn vorher der Verpflichtete in Verzug gekommen oder der Anspruch rechtshängig geworden ist; 2.für den Zeitraum, in dem era)aus rechtlichen Gründen oder b)aus tatsächlichen Gründen, die in den Verantwortungsbereich des Unterhaltspflichtigen fallen, an der Geltendmachung des Unterhaltsanspruchs gehindert war. 
 (3) In den Fällen des Absatzes 2 Nr. 2 kann Erfüllung nicht, nur in Teilbeträgen oder erst zu einem späteren Zeitpunkt verlangt werden, soweit die volle oder die sofortige Erfüllung für den Verpflichteten eine unbillige Härte bedeuten würde. Dies gilt auch, soweit ein Dritter vom Verpflichteten Ersatz verlangt, weil er anstelle des Verpflichteten Unterhalt gewährt hat.
 
 ## § 1614 — Verzicht auf den Unterhaltsanspruch; Vorausleistung
@@ -10467,7 +10455,6 @@ Sorgeerklärungen und Zustimmungen sind nur unwirksam, wenn sie den Erforderniss
 Die Eltern haben die elterliche Sorge in eigener Verantwortung und in gegenseitigem Einvernehmen zum Wohl des Kindes auszuüben. Bei Meinungsverschiedenheiten müssen sie versuchen, sich zu einigen.
 
 ## § 1628 — Gerichtliche Entscheidung bei Meinungsverschiedenheiten
-
 der Eltern
 
 Können sich die Eltern in einer einzelnen Angelegenheit oder in einer bestimmten Art von Angelegenheiten der elterlichen Sorge, deren Regelung für das Kind von erheblicher Bedeutung ist, nicht einigen, so kann das Familiengericht auf Antrag eines Elternteils die Entscheidung einem Elternteil übertragen. Die Übertragung kann mit Beschränkungen oder mit Auflagen verbunden werden.
@@ -10752,7 +10739,6 @@ Sind die Eltern verhindert, die elterliche Sorge auszuüben, so hat das Familien
 (2) Über die Nutzungen des Kindesvermögens brauchen die Eltern nur insoweit Rechenschaft abzulegen, als Grund zu der Annahme besteht, dass sie die Nutzungen entgegen der Vorschrift des § 1649 verwendet haben.
 
 ## § 1698a — Fortführung der Geschäfte in Unkenntnis der Beendigung
-
 der elterlichen Sorge
 
 (1) Die Eltern dürfen die mit der Personensorge und mit der Vermögenssorge für das Kind verbundenen Geschäfte fortführen, bis sie von der Beendigung der elterlichen Sorge Kenntnis erlangen oder sie kennen müssen. Ein Dritter kann sich auf diese Befugnis nicht berufen, wenn er bei der Vornahme eines Rechtsgeschäfts die Beendigung kennt oder kennen muss.
@@ -11897,7 +11883,6 @@ Ist die Nachlassverwaltung angeordnet oder das Nachlassinsolvenzverfahren eröff
 (2) Das Gleiche gilt, wenn ein Gläubiger, der nicht Nachlassgläubiger ist, die ihm gegen den Erben zustehende Forderung gegen eine zum Nachlass gehörende Forderung aufgerechnet hat.
 
 ## § 1978 — Verantwortlichkeit des Erben für bisherige Verwaltung,
-
 Aufwendungsersatz
 
 (1) Ist die Nachlassverwaltung angeordnet oder das Nachlassinsolvenzverfahren eröffnet, so ist der Erbe den Nachlassgläubigern für die bisherige Verwaltung des Nachlasses so verantwortlich, wie wenn er von der Annahme der Erbschaft an die Verwaltung für sie als Beauftragter zu führen gehabt hätte. Auf die vor der Annahme der Erbschaft von dem Erben besorgten erbschaftlichen Geschäfte finden die Vorschriften über die Geschäftsführung ohne Auftrag entsprechende Anwendung.
@@ -12034,7 +12019,7 @@ Befindet sich bei dem Nachlassgericht schon ein den Vorschriften der §§ 2002, 
 
 ## § 2006 — Eidesstattliche Versicherung
 
-(1) Der Erbe hat auf Verlangen eines Nachlassgläubigers zu Protokoll des Nachlassgerichts an Eides statt zu versichern, dass er nach bestem Wissen die Nachlassgegenstände so vollständig angegeben habe, als er dazu imstande sei.
+(1) Der Erbe hat auf Verlangen eines Nachlassgläubigers zu Protokoll des Nachlassgerichts an Eides statt zu versichern, dass er nach bestem Wissen die Nachlassgegenstände so vollständig angegeben habe, als er dazu imstande sei. 
 (2) Der Erbe kann vor der Abgabe der eidesstattlichen Versicherung das Inventar vervollständigen.
 (3) Verweigert der Erbe die Abgabe der eidesstattlichen Versicherung, so haftet er dem Gläubiger, der den Antrag gestellt hat, unbeschränkt. Das Gleiche gilt, wenn er weder in dem Termin noch in einem auf Antrag des Gläubigers bestimmten neuen Termin erscheint, es sei denn, dass ein Grund vorliegt, durch den das Nichterscheinen in diesem Termin genügend entschuldigt wird.
 (4) Eine wiederholte Abgabe der eidesstattlichen Versicherung kann derselbe Gläubiger oder ein anderer Gläubiger nur verlangen, wenn Grund zu der Annahme besteht, dass dem Erben nach der Abgabe der eidesstattlichen Versicherung weitere Nachlassgegenstände bekannt geworden sind.
@@ -12364,7 +12349,6 @@ Hat der Erblasser eine letztwillige Zuwendung unter der Bedingung gemacht, dass 
 Bezweckt die Bedingung, unter der eine letztwillige Zuwendung gemacht ist, den Vorteil eines Dritten, so gilt sie im Zweifel als eingetreten, wenn der Dritte die zum Eintritt der Bedingung erforderliche Mitwirkung verweigert.
 
 ## § 2077 — Unwirksamkeit letztwilliger Verfügungen bei Auflösung der Ehe oder
-
 Verlobung
 
 (1) Eine letztwillige Verfügung, durch die der Erblasser seinen Ehegatten bedacht hat, ist unwirksam, wenn die Ehe vor dem Tode des Erblassers aufgelöst worden ist. Der Auflösung der Ehe steht es gleich, wenn zur Zeit des Todes des Erblassers die Voraussetzungen für die Scheidung der Ehe gegeben waren und der Erblasser die Scheidung beantragt oder ihr zugestimmt hatte. Das Gleiche gilt, wenn der Erblasser zur Zeit seines Todes berechtigt war, die Aufhebung der Ehe zu beantragen, und den Antrag gestellt hatte.
@@ -12516,7 +12500,7 @@ Hat der Erblasser einem Abkömmling, der zur Zeit der Errichtung der letztwillig
 
 ## § 2109 — Unwirksamwerden der Nacherbschaft
 
-(1) Die Einsetzung eines Nacherben wird mit dem Ablauf von 30 Jahren nach dem Erbfall unwirksam, wenn nicht vorher der Fall der Nacherbfolge eingetreten ist. Sie bleibt auch nach dieser Zeit wirksam, 1.wenn die Nacherbfolge für den Fall angeordnet ist, dass in der Person des Vorerben oder des Nacherben ein bestimmtes Ereignis eintritt, und derjenige, in dessen Person das Ereignis eintreten soll, zur Zeit des Erbfalls lebt, 2.wenn dem Vorerben oder einem Nacherben für den Fall, dass ihm ein Bruder oder eine Schwester geboren wird, der Bruder oder die Schwester als Nacherbe bestimmt ist.
+(1) Die Einsetzung eines Nacherben wird mit dem Ablauf von 30 Jahren nach dem Erbfall unwirksam, wenn nicht vorher der Fall der Nacherbfolge eingetreten ist. Sie bleibt auch nach dieser Zeit wirksam, 1.wenn die Nacherbfolge für den Fall angeordnet ist, dass in der Person des Vorerben oder des Nacherben ein bestimmtes Ereignis eintritt, und derjenige, in dessen Person das Ereignis eintreten soll, zur Zeit des Erbfalls lebt, 2.wenn dem Vorerben oder einem Nacherben für den Fall, dass ihm ein Bruder oder eine Schwester geboren wird, der Bruder oder die Schwester als Nacherbe bestimmt ist. 
 (2) Ist der Vorerbe oder der Nacherbe, in dessen Person das Ereignis eintreten soll, eine juristische Person, so bewendet es bei der dreißigjährigen Frist.
 
 ## § 2110 — Umfang des Nacherbrechts
@@ -12613,7 +12597,6 @@ Der Nacherbe ist berechtigt, von dem Vorerben Auskunft über den Bestand der Erb
 (2) Die Vorschriften zugunsten derjenigen, welche Rechte von einem Nichtberechtigten herleiten, finden entsprechende Anwendung. Für die zur Erbschaft gehörenden Forderungen ist die Entziehung der Verwaltung dem Schuldner gegenüber erst wirksam, wenn er von der getroffenen Anordnung Kenntnis erlangt oder wenn ihm eine Mitteilung von der Anordnung zugestellt wird. Das Gleiche gilt von der Aufhebung der Entziehung.
 
 ## § 2130 — Herausgabepflicht nach dem Eintritt der Nacherbfolge,
-
 Rechenschaftspflicht
 
 (1) Der Vorerbe ist nach dem Eintritt der Nacherbfolge verpflichtet, dem Nacherben die Erbschaft in dem Zustand herauszugeben, der sich bei einer bis zur Herausgabe fortgesetzten ordnungsmäßigen Verwaltung ergibt. Auf die Herausgabe eines landwirtschaftlichen Grundstücks findet die Vorschrift des § 596a, auf die Herausgabe eines Landguts finden die Vorschriften der §§ 596a, 596b entsprechende Anwendung.
@@ -12707,7 +12690,6 @@ Hat der Erblasser bestimmt, dass dem eingesetzten Erben ein Erbschaftsgegenstand
 Das einem Erben zugewendete Vermächtnis (Vorausvermächtnis) gilt als Vermächtnis auch insoweit, als der Erbe selbst beschwert ist.
 
 ## § 2151 — Bestimmungsrecht des Beschwerten oder eines Dritten bei mehreren
-
 Bedachten
 
 (1) Der Erblasser kann mehrere mit einem Vermächtnis in der Weise bedenken, dass der Beschwerte oder ein Dritter zu bestimmen hat, wer von den mehreren das Vermächtnis erhalten soll.
@@ -12766,7 +12748,7 @@ Ein Vermächtnis bleibt, sofern nicht ein anderer Wille des Erblassers anzunehme
 
 ## § 2163 — Ausnahmen von der dreißigjährigen Frist
 
-(1) Das Vermächtnis bleibt in den Fällen des § 2162 auch nach dem Ablauf von 30 Jahren wirksam: 1.wenn es für den Fall angeordnet ist, dass in der Person des Beschwerten oder des Bedachten ein bestimmtes Ereignis eintritt, und derjenige, in dessen Person das Ereignis eintreten soll, zur Zeit des Erbfalls lebt, 2.wenn ein Erbe, ein Nacherbe oder ein Vermächtnisnehmer für den Fall, dass ihm ein Bruder oder eine Schwester geboren wird, mit einem Vermächtnis zugunsten des Bruders oder der Schwester beschwert ist.
+(1) Das Vermächtnis bleibt in den Fällen des § 2162 auch nach dem Ablauf von 30 Jahren wirksam: 1.wenn es für den Fall angeordnet ist, dass in der Person des Beschwerten oder des Bedachten ein bestimmtes Ereignis eintritt, und derjenige, in dessen Person das Ereignis eintreten soll, zur Zeit des Erbfalls lebt, 2.wenn ein Erbe, ein Nacherbe oder ein Vermächtnisnehmer für den Fall, dass ihm ein Bruder oder eine Schwester geboren wird, mit einem Vermächtnis zugunsten des Bruders oder der Schwester beschwert ist. 
 (2) Ist der Beschwerte oder der Bedachte, in dessen Person das Ereignis eintreten soll, eine juristische Person, so bewendet es bei der dreißigjährigen Frist.
 
 ## § 2164 — Erstreckung auf Zubehör und Ersatzansprüche
@@ -12981,7 +12963,6 @@ Der Testamentsvollstrecker hat den Nachlass zu verwalten. Er ist insbesondere be
 Der Erblasser kann anordnen, dass der Testamentsvollstrecker in der Eingehung von Verbindlichkeiten für den Nachlass nicht beschränkt sein soll. Der Testamentsvollstrecker ist auch in einem solchen Falle zu einem Schenkungsversprechen nur nach Maßgabe des § 2205 Satz 3 berechtigt.
 
 ## § 2208 — Beschränkung der Rechte des Testamentsvollstreckers, Ausführung durch den
-
 Erben
 
 (1) Der Testamentsvollstrecker hat die in den §§ 2203 bis 2206 bestimmten Rechte nicht, soweit anzunehmen ist, dass sie ihm nach dem Willen des Erblassers nicht zustehen sollen. Unterliegen der Verwaltung des Testamentsvollstreckers nur einzelne Nachlassgegenstände, so stehen ihm die in § 2205 Satz 2 bestimmten Befugnisse nur in Ansehung dieser Gegenstände zu.
@@ -13001,7 +12982,6 @@ Eine nach § 2209 getroffene Anordnung wird unwirksam, wenn seit dem Erbfall 30 
 (2) Die Vorschriften zugunsten derjenigen, welche Rechte von einem Nichtberechtigten herleiten, finden entsprechende Anwendung.
 
 ## § 2212 — Gerichtliche Geltendmachung von der Testamentsvollstreckung
-
 unterliegenden Rechten
 
 Ein der Verwaltung des Testamentsvollstreckers unterliegendes Recht kann nur von dem Testamentsvollstrecker gerichtlich geltend gemacht werden.
@@ -13308,7 +13288,6 @@ Durch den Erbvertrag wird das Recht des Erblassers, über sein Vermögen durch R
 (2) Hat der Erblasser den Gegenstand in der Absicht, den Bedachten zu beeinträchtigen, veräußert oder belastet, so ist der Erbe verpflichtet, dem Bedachten den Gegenstand zu verschaffen oder die Belastung zu beseitigen; auf diese Verpflichtung findet die Vorschrift des § 2170 Abs. 2 entsprechende Anwendung. Ist die Veräußerung oder die Belastung schenkweise erfolgt, so steht dem Bedachten, soweit er Ersatz nicht von dem Erben erlangen kann, der im § 2287 bestimmte Anspruch gegen den Beschenkten zu.
 
 ## § 2289 — Wirkung des Erbvertrags auf letztwillige Verfügungen; Anwendung von
-
 § 2338
 
 (1) Durch den Erbvertrag wird eine frühere letztwillige Verfügung des Erblassers aufgehoben, soweit sie das Recht des vertragsmäßig Bedachten beeinträchtigen würde. In dem gleichen Umfang ist eine spätere Verfügung von Todes wegen unwirksam, unbeschadet der Vorschrift des § 2297.
@@ -13424,7 +13403,6 @@ Bei der Feststellung des für die Berechnung des Pflichtteils maßgebenden Erbte
 (3) Diese Vorschriften finden nur Anwendung, wenn der Erbe, der das Landgut erwirbt, zu den in § 2303 bezeichneten pflichtteilsberechtigten Personen gehört.
 
 ## § 2313 — Ansatz bedingter, ungewisser oder unsicherer Rechte; Feststellungspflicht
-
 des Erben
 
 (1) Bei der Feststellung des Wertes des Nachlasses bleiben Rechte und Verbindlichkeiten, die von einer aufschiebenden Bedingung abhängig sind, außer Ansatz. Rechte und Verbindlichkeiten, die von einer auflösenden Bedingung abhängig sind, kommen als unbedingte in Ansatz. Tritt die Bedingung ein, so hat die der veränderten Rechtslage entsprechende Ausgleichung zu erfolgen.
@@ -13464,7 +13442,6 @@ des Erben
 Ist einer von mehreren Erben selbst pflichtteilsberechtigt, so kann er nach der Teilung die Befriedigung eines anderen Pflichtteilsberechtigten soweit verweigern, dass ihm sein eigener Pflichtteil verbleibt. Für den Ausfall haften die übrigen Erben.
 
 ## § 2320 — Pflichtteilslast des an die Stelle des Pflichtteilsberechtigten
-
 getretenen Erben
 
 (1) Wer anstelle des Pflichtteilsberechtigten gesetzlicher Erbe wird, hat im Verhältnis zu Miterben die Pflichtteilslast und, wenn der Pflichtteilsberechtigte ein ihm zugewendetes Vermächtnis annimmt, das Vermächtnis in Höhe des erlangten Vorteils zu tragen.
@@ -13561,7 +13538,7 @@ Das Recht zur Entziehung des Pflichtteils erlischt durch Verzeihung. Eine Verfü
 
 ## § 2339 — Gründe für Erbunwürdigkeit
 
-(1) Erbunwürdig ist: 1.wer den Erblasser vorsätzlich und widerrechtlich getötet oder zu töten versucht oder in einen Zustand versetzt hat, infolge dessen der Erblasser bis zu seinem Tode unfähig war, eine Verfügung von Todes wegen zu errichten oder aufzuheben, 2.wer den Erblasser vorsätzlich und widerrechtlich verhindert hat, eine Verfügung von Todes wegen zu errichten oder aufzuheben, 3.wer den Erblasser durch arglistige Täuschung oder widerrechtlich durch Drohung bestimmt hat, eine Verfügung von Todes wegen zu errichten oder aufzuheben, 4.wer sich in Ansehung einer Verfügung des Erblassers von Todes wegen einer Straftat nach den §§ 267, 271 bis 274 des Strafgesetzbuchs schuldig gemacht hat.
+(1) Erbunwürdig ist: 1.wer den Erblasser vorsätzlich und widerrechtlich getötet oder zu töten versucht oder in einen Zustand versetzt hat, infolge dessen der Erblasser bis zu seinem Tode unfähig war, eine Verfügung von Todes wegen zu errichten oder aufzuheben, 2.wer den Erblasser vorsätzlich und widerrechtlich verhindert hat, eine Verfügung von Todes wegen zu errichten oder aufzuheben, 3.wer den Erblasser durch arglistige Täuschung oder widerrechtlich durch Drohung bestimmt hat, eine Verfügung von Todes wegen zu errichten oder aufzuheben, 4.wer sich in Ansehung einer Verfügung des Erblassers von Todes wegen einer Straftat nach den §§ 267, 271 bis 274 des Strafgesetzbuchs schuldig gemacht hat. 
 (2) Die Erbunwürdigkeit tritt in den Fällen des Absatzes 1 Nr. 3, 4 nicht ein, wenn vor dem Eintritt des Erbfalls die Verfügung, zu deren Errichtung der Erblasser bestimmt oder in Ansehung deren die Straftat begangen worden ist, unwirksam geworden ist, oder die Verfügung, zu deren Aufhebung er bestimmt worden ist, unwirksam geworden sein würde.
 
 ## § 2340 — Geltendmachung der Erbunwürdigkeit durch Anfechtung
@@ -13728,7 +13705,6 @@ Der Käufer trägt von dem Abschluss des Kaufs an die Gefahr des zufälligen Unt
 (2) Die Errichtung des Inventars durch den Verkäufer oder den Käufer kommt auch dem anderen Teil zustatten, es sei denn, dass dieser unbeschränkt haftet.
 
 ## § 2384 — Anzeigepflicht des Verkäufers gegenüber Nachlassgläubigern,
-
 Einsichtsrecht
 
 (1) Der Verkäufer ist den Nachlassgläubigern gegenüber verpflichtet, den Verkauf der Erbschaft und den Namen des Käufers unverzüglich dem Nachlassgericht anzuzeigen. Die Anzeige des Verkäufers wird durch die Anzeige des Käufers ersetzt.

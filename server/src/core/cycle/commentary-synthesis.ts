@@ -17,7 +17,7 @@
  *   6. Embed commentary chunks for vector search
  *
  * Cost optimization:
- *   - Uses DeepSeek-V3.2 (Layer 1 model) for synthesis
+ *   - Uses DeepSeek V4 Flash (Layer 1 model) for synthesis
  *   - Only processes §s with ≥2 linked cases (skip trivial)
  *   - Per-cycle cap: max 50 §s (configurable)
  *   - Skip §s already commented within 7 days (stale check)
@@ -30,6 +30,7 @@
 
 import type { BrainEngine } from "../engine.ts";
 import type { PhaseResult, PhaseStatus } from "../cycle.ts";
+import { chat as gatewayChat, isAvailable } from "../ai/gateway.ts";
 
 export interface CommentarySynthesisOpts {
   dryRun?: boolean;
@@ -38,6 +39,8 @@ export interface CommentarySynthesisOpts {
   maxSectionsPerCycle?: number;
   maxCostUsd?: number;
   staleHours?: number;
+  /** Test seam: alternative chat function (bypasses real LLM calls). */
+  _chat?: typeof gatewayChat;
 }
 
 interface StatuteSection {
@@ -81,6 +84,18 @@ export async function runPhaseLegalCommentarySynthesis(
   engine: BrainEngine,
   opts: CommentarySynthesisOpts
 ): Promise<PhaseResult> {
+  const chat = opts._chat ?? gatewayChat;
+
+  if (!opts.dryRun && !isAvailable("chat")) {
+    return {
+      phase: "legal_commentary_synthesis",
+      status: "skipped",
+      duration_ms: 0,
+      summary: "no chat gateway configured",
+      details: { reason: "no_chat_gateway" },
+    };
+  }
+
   const maxSections = opts.maxSectionsPerCycle ?? DEFAULT_MAX_SECTIONS;
   const staleHours = opts.staleHours ?? DEFAULT_STALE_HOURS;
   const maxCost = opts.maxCostUsd ?? DEFAULT_MAX_COST;
@@ -213,8 +228,8 @@ export async function runPhaseLegalCommentarySynthesis(
         // Build LLM prompt
         const prompt = buildSynthesisPrompt(section, linkedCases);
 
-        // Call engine /api/think
-        const llmResponse = await callEngineForSynthesis(engine, prompt);
+        // Call LLM via gateway.chat()
+        const llmResponse = await callEngineForSynthesis(engine, prompt, chat);
 
         // Parse response
         const commentary = parseCommentaryResponse(llmResponse, linkedCases);
@@ -230,7 +245,7 @@ export async function runPhaseLegalCommentarySynthesis(
           title: `§ ${section.section_num} ${section.statute_abbr} — Synthetische Kommentierung`,
           content: commentary.content,
           statute_text: section.statute_text,
-          source_model: "deepseek-v3.2",
+          source_model: "deepseek-v4-flash",
           source_name: "subsumio-synthetic",
           case_count: linkedCases.length,
           linked_cases: linkedCases.map((c) => c.judgement_id),
@@ -255,7 +270,7 @@ export async function runPhaseLegalCommentarySynthesis(
               case_count: linkedCases.length,
               treatment_summary: commentary.treatment_summary,
               key_holdings: commentary.key_holdings,
-              source_model: "deepseek-v3.2",
+              source_model: "deepseek-v4-flash",
             },
           },
           opts.sourceId ? { sourceId: opts.sourceId } : undefined
@@ -423,19 +438,25 @@ function treatmentLabelDe(treatment: string): string {
 
 // ── Helper: Call engine for LLM synthesis ────────────────────────
 
-async function callEngineForSynthesis(engine: BrainEngine, prompt: string): Promise<string> {
-  // Use the engine's /api/think endpoint via the BrainEngine interface
-  // The engine resolves the configured model (DeepSeek-V3.2 for Layer 1)
-  const response = await engine
-    .executeRaw<{ response: string }>(`SELECT $1::text as response`, [prompt])
-    .catch(() => null);
-
-  // Fallback: if engine doesn't support direct LLM calls, use a simple synthesis
-  if (!response || response.length === 0) {
-    return fallbackSynthesis(prompt);
+async function callEngineForSynthesis(
+  _engine: BrainEngine,
+  prompt: string,
+  chat: typeof gatewayChat
+): Promise<string> {
+  try {
+    const result = await chat({
+      system: "Du bist ein juristischer Kommentator. Erstelle präzise, strukturierte Kommentierungen basierend auf Gerichtsentscheidungen. Jede Behauptung muss durch ein Urteil belegbar sein.",
+      messages: [{ role: "user", content: prompt }],
+      maxTokens: 4096,
+    });
+    if (result.text && result.text.trim().length > 0) {
+      return result.text;
+    }
+  } catch (err) {
+    console.error(`[commentary-synthesis] LLM call failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 
-  return response[0]!.response;
+  return fallbackSynthesis(prompt);
 }
 
 // ── Helper: Fallback synthesis (no LLM available) ────────────────

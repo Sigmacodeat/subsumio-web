@@ -13,8 +13,8 @@
  *
  * `gbrain book-mirror` — flagship of the v0.25.1 skills wave.
  *
- * Takes pre-extracted chapter text + context, fans out N read-only Opus
- * subagents (one per chapter), waits for all to complete, assembles the
+ * Takes pre-extracted chapter text + context, fans out N read-only
+ * deep-tier subagents (one per chapter), waits for all to complete, assembles the
  * two-column personalized analysis, and writes ONE put_page under
  * `media/books/<slug>-personalized.md` using the operator-trust path.
  *
@@ -34,9 +34,9 @@
  * Separation of concerns: skill prepares inputs, CLI is the trusted
  * runtime.
  *
- * Cost: a 20-chapter book at Opus pricing is ~$6/run. The CLI prints an
- * estimate before launching and prompts for confirmation unless
- * --no-confirm is passed.
+ * Cost: a 20-chapter book at deep-tier pricing (Grok 4.3) is ~$6/run.
+ * The CLI prints an estimate before launching and prompts for confirmation
+ * unless --no-confirm is passed.
  */
 
 import * as fs from "node:fs";
@@ -48,9 +48,10 @@ import type { MinionJobInput, SubagentHandlerData } from "../core/minions/types.
 import { operations } from "../core/operations.ts";
 import { loadConfig } from "../core/config.ts";
 import { getCliOptions } from "../core/cli-options.ts";
+import { resolveModel, TIER_DEFAULTS } from "../core/model-config.ts";
 
-const COST_PER_CHAPTER_OPUS = 0.3; // rough; depends on chapter length
-const COST_PER_CHAPTER_SONNET = 0.06;
+const COST_PER_CHAPTER_DEEP = 0.3; // rough; Grok 4.3 / Opus-class, depends on chapter length
+const COST_PER_CHAPTER_REASONING = 0.06; // DeepSeek / Sonnet-class
 const DEFAULT_MAX_TURNS = 10;
 const DEFAULT_WORKERS = 4; // queue concurrency hint; rate-leases enforce real cap
 
@@ -60,7 +61,7 @@ interface BookMirrorFlags {
   slug?: string;
   title?: string;
   author?: string;
-  model: string;
+  model?: string;
   maxTurns: number;
   timeoutMs?: number;
   noConfirm: boolean;
@@ -98,7 +99,7 @@ function parseFlags(args: string[]): BookMirrorFlags {
   const slug = parseFlag(args, "--slug");
   const title = parseFlag(args, "--title");
   const author = parseFlag(args, "--author");
-  const model = parseFlag(args, "--model") ?? "claude-opus-4-7";
+  const model = parseFlag(args, "--model");
   const maxTurnsStr = parseFlag(args, "--max-turns");
   const timeoutMsStr = parseFlag(args, "--timeout-ms");
 
@@ -139,9 +140,8 @@ OPTIONAL
   --title "<title>"         Book title (used in the assembled page header).
                             Defaults to slug if omitted.
   --author "<author>"       Book author (used in frontmatter + page header).
-  --model <id>              Anthropic model id for chapter analysis.
-                            Default: claude-opus-4-7. Sonnet works but the
-                            right-column quality drops.
+  --model <id>              Model id for chapter analysis (overrides tier system).
+                            Default: resolved via resolveModel(tier: "deep").
   --max-turns <n>           Per-chapter subagent turn budget. Default ${DEFAULT_MAX_TURNS}.
   --timeout-ms <n>          Per-chapter wall-clock timeout.
   --no-confirm / --yes      Skip the cost-estimate confirmation prompt.
@@ -160,8 +160,8 @@ TRUST CONTRACT (read this)
   rationale (codex HIGH-1 fix vs the v0.25.1 plan's earlier draft).
 
 COST
-  ~\$${COST_PER_CHAPTER_OPUS.toFixed(2)} per chapter at Opus, ~\$${COST_PER_CHAPTER_SONNET.toFixed(2)} at Sonnet. A 20-chapter book
-  is ~\$${(20 * COST_PER_CHAPTER_OPUS).toFixed(2)} at Opus. The CLI prints an estimate before launching.
+  ~\$${COST_PER_CHAPTER_DEEP.toFixed(2)} per chapter at deep-tier (Grok 4.3), ~\$${COST_PER_CHAPTER_REASONING.toFixed(2)} at reasoning-tier (DeepSeek). A 20-chapter book
+  is ~\$${(20 * COST_PER_CHAPTER_DEEP).toFixed(2)} at deep-tier. The CLI prints an estimate before launching.
 
 EXAMPLES
   # After the skill extracts chapters to /tmp/books/<slug>/chapters/:
@@ -214,7 +214,10 @@ function loadChapters(dir: string): ChapterEntry[] {
 // ── cost confirm ───────────────────────────────────────────
 
 function estimateCost(chapters: ChapterEntry[], model: string): number {
-  const perChapter = model.includes("opus") ? COST_PER_CHAPTER_OPUS : COST_PER_CHAPTER_SONNET;
+  // Deep-tier models (Grok 4.3, Opus, GPT-5) cost ~5x more than reasoning-tier
+  // (DeepSeek, Sonnet). Detect by model name heuristic.
+  const isDeepTier = /opus|grok|gpt-5|o1|o3/i.test(model);
+  const perChapter = isDeepTier ? COST_PER_CHAPTER_DEEP : COST_PER_CHAPTER_REASONING;
   return chapters.length * perChapter;
 }
 
@@ -386,17 +389,21 @@ export async function runBookMirrorCmd(engine: BrainEngine, args: string[]): Pro
   const bookTitle = flags.title ?? flags.slug;
   const targetSlug = `media/books/${flags.slug}-personalized`;
 
+  // Resolve model via tier system when not explicitly provided.
+  const resolvedModel = flags.model ??
+    await resolveModel(engine, { tier: "deep", fallback: TIER_DEFAULTS.deep });
+
   process.stderr.write(
     `\ngbrain book-mirror — plan\n` +
       `  slug:        ${flags.slug}\n` +
       `  output:      ${targetSlug}\n` +
       `  chapters:    ${chapters.length} (from ${flags.chaptersDir})\n` +
       `  context:     ${flags.contextFile ?? "(none)"}\n` +
-      `  model:       ${flags.model}\n` +
+      `  model:       ${resolvedModel}\n` +
       `  max_turns:   ${flags.maxTurns}\n`
   );
 
-  const estimateUsd = estimateCost(chapters, flags.model);
+  const estimateUsd = estimateCost(chapters, resolvedModel);
   process.stderr.write(
     `  est. cost:   ~$${estimateUsd.toFixed(2)} (${chapters.length} subagents)\n\n`
   );
@@ -422,7 +429,7 @@ export async function runBookMirrorCmd(engine: BrainEngine, args: string[]): Pro
   for (const ch of chapters) {
     const data: SubagentHandlerData = {
       prompt: buildChapterPrompt(ch, chapters.length, bookTitle, flags.author, contextPack),
-      model: flags.model,
+      model: resolvedModel,
       max_turns: flags.maxTurns,
       // CODEX HIGH-1 FIX: read-only tool allowlist. Subagents cannot call
       // put_page or any mutating op. Their only output is final_message text.

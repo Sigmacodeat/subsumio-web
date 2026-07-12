@@ -21,6 +21,7 @@ export const POST = createEngineProxy({
   stream: true,
   citationGate: true,
   label: "memo",
+  caseSlugField: "case_slug",
   transformBody: (b) => ({
     question: b.question,
     facts: b.facts,

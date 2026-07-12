@@ -87,7 +87,8 @@
     "postinstall": "command -v gbrain >/dev/null 2>&1 && gbrain apply-migrations --yes --non-interactive || echo '[gbrain] postinstall skipped. If installed via bun install -g github:...: run `gbrain doctor` and `gbrain apply-migrations --yes` manually. See https://github.com/garrytan/gbrain/issues/218' 1>&2",
     "prepublish:clawhub": "bun run build:all",
     "publish:clawhub": "clawhub package publish . --family bundle-plugin",
-    "law-corpus": "bun scripts/ingest-law-corpus.ts"
+    "law-corpus": "bun scripts/ingest-law-corpus.ts",
+    "check:legal-corpus": "bun scripts/check-legal-corpus-manifest.ts"
   },
   "openclaw": {
     "compat": {

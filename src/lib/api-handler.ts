@@ -41,6 +41,7 @@ import {
   engineConfigurationResponse,
   ENGINE_URL,
   recordQuota,
+  engineHeadersWithCaseJurisdiction,
   type EngineContext,
 } from "@/lib/engine";
 import type { RouteAction } from "@/lib/permissions";
@@ -677,6 +678,10 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
   label?: string;
   /** Transform the validated body before sending to the engine. */
   transformBody?: (body: z.infer<B>) => Record<string, unknown>;
+  /** When set, resolves case jurisdiction from this body field (case_slug)
+   *  and injects `x-subsumio-case-jurisdiction` header for the engine call.
+   *  Implements Case > User > Fail-Closed jurisdiction isolation. */
+  caseSlugField?: keyof z.infer<B>;
   audit?: (ctx: HandlerContext, body: z.infer<B>) => AuditSpec | AuditSpec[];
   /** Cache-Control max-age for GET responses (seconds). */
   cacheMaxAge?: number;
@@ -697,10 +702,19 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
         : (body as Record<string, unknown>);
       const payload =
         (options.sanitizeBody ?? true) ? sanitizeObjectStrings(rawPayload) : rawPayload;
+      // Resolve case jurisdiction header if caseSlugField is configured.
+      // This injects x-subsumio-case-jurisdiction so the engine's readSourcesFor()
+      // scopes the law corpus to the case's country (Case > User > Fail-Closed).
+      const caseSlugValue = options.caseSlugField
+        ? String((body as Record<string, unknown>)[options.caseSlugField as string] ?? "").trim() || undefined
+        : undefined;
+      const scopedHeaders = caseSlugValue
+        ? await engineHeadersWithCaseJurisdiction(ctx.headers, caseSlugValue)
+        : ctx.headers;
       try {
         const upstream = await fetch(`${ENGINE_URL}${options.enginePath}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...ctx.headers },
+          headers: { "Content-Type": "application/json", ...scopedHeaders },
           body: JSON.stringify(payload),
           signal: AbortSignal.timeout(options.stream ? 300_000 : 30_000),
         });

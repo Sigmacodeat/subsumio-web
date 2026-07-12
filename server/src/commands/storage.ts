@@ -88,7 +88,7 @@ function warnIfPGLite(engine: BrainEngine): void {
     `Note: storage tiering has limited effect on PGLite — pages live in your ` +
       `local database file regardless of tier. The .gitignore management still ` +
       `keeps bulk content out of git history. To get full tiering, migrate to ` +
-      `Postgres with \`gbrain migrate --to supabase\`.`
+      `Postgres with \`gbrain migrate --to postgres\`.`
   );
 }
 

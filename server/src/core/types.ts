@@ -845,6 +845,20 @@ export interface SearchResult {
    * incident's duplicate-stub class.
    */
   create_safety?: import("./search/evidence.ts").CreateSafety;
+  /**
+   * Gap 2 — character offset of the chunk_text start within the full page
+   * content. Used by the provenance builder to locate the exact passage
+   * for claim-level source linking. Undefined when the engine doesn't
+   * project chunk offsets (pre-Gap 2 engines).
+   */
+  passage_start?: number;
+  /**
+   * Gap 2 — character offset of the chunk_text end within the full page
+   * content. Used by the provenance builder to locate the exact passage
+   * for claim-level source linking. Undefined when the engine doesn't
+   * project chunk offsets (pre-Gap 2 engines).
+   */
+  passage_end?: number;
 }
 
 /**
@@ -956,6 +970,20 @@ export interface SearchOpts {
    * though they're hard-excluded by default.
    */
   include_slug_prefixes?: string[];
+  /**
+   * Hard jurisdiction isolation. When set (e.g. "at"), statute pages
+   * (`legal/statutes/<jur>/...`) of every OTHER jurisdiction are hard-excluded
+   * from results — a FILTER, not a boost: an Austrian query can never surface a
+   * German or Swiss §. Non-statute pages (matters, clients, notes) are
+   * unaffected. Implemented by folding the other jurisdictions' statute
+   * prefixes into the resolved hard-exclude set (see foreignStatutePrefixes),
+   * so it flows through the same tested WHERE clause as every other exclude in
+   * both engines. Folded into the cache knobs_hash so a jurisdiction-scoped
+   * read is never served an unscoped or foreign-jurisdiction cache row.
+   */
+  jurisdiction?: string;
+  /** Historical legal retrieval cutoff. Legal statute pages newer than this date are excluded. */
+  asOfDate?: string;
   detail?: "low" | "medium" | "high";
   /**
    * v0.20.0 Cathedral II: filter by content_chunks.language (e.g., 'typescript',

@@ -1,9 +1,39 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { renderMarkdown } from "@/lib/markdown";
 import { formatCitationTitle } from "@/lib/ogh-format";
-import { Copy, Check, Download, ChevronRight } from "lucide-react";
+import { Copy, Check, Download, ChevronRight, Save, FolderOpen, Trash2 } from "lucide-react";
+
+const STORAGE_KEY = "subsumio:subsumption-sessions";
+
+interface SavedSession {
+  id: string;
+  title: string;
+  scenario: string;
+  messages: Message[];
+  jurisdiction: string;
+  savedAt: string;
+}
+
+function loadSessions(): SavedSession[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as SavedSession[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveSessions(sessions: SavedSession[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+  } catch {
+    // localStorage might be full or unavailable
+  }
+}
 
 interface SubsumptionResult {
   answer: string;
@@ -56,6 +86,48 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
   const [isStreaming, setIsStreaming] = useState(false);
   const [followUp, setFollowUp] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+
+  // Persistence state
+  const [sessions, setSessions] = useState<SavedSession[]>([]);
+  const [showSessions, setShowSessions] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  // Load sessions from localStorage on mount
+  useEffect(() => {
+    setSessions(loadSessions());
+  }, []);
+
+  const handleSaveSession = useCallback(() => {
+    if (messages.length === 0) return;
+    const session: SavedSession = {
+      id: `session-${Date.now()}`,
+      title: scenario.slice(0, 80) || "Subsumtion",
+      scenario,
+      messages,
+      jurisdiction,
+      savedAt: new Date().toISOString(),
+    };
+    const updated = [session, ...loadSessions()].slice(0, 20);
+    saveSessions(updated);
+    setSessions(updated);
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 2000);
+  }, [messages, scenario, jurisdiction]);
+
+  const handleLoadSession = useCallback((id: string) => {
+    const session = loadSessions().find((s) => s.id === id);
+    if (!session) return;
+    setScenario(session.scenario);
+    setMessages(session.messages);
+    setFollowUp("");
+    setShowSessions(false);
+  }, []);
+
+  const handleDeleteSession = useCallback((id: string) => {
+    const updated = loadSessions().filter((s) => s.id !== id);
+    saveSessions(updated);
+    setSessions(updated);
+  }, []);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -362,12 +434,41 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
         </div>
         <div className="flex items-center gap-2">
           {messages.length > 0 && (
-            <button
-              onClick={handleReset}
-              className="text-xs text-[var(--ds-text-muted)] transition-colors hover:text-[var(--ds-text)]"
-            >
-              Zurücksetzen
-            </button>
+            <>
+              <button
+                onClick={handleSaveSession}
+                className="inline-flex items-center gap-1 text-xs text-[var(--ds-text-muted)] transition-colors hover:text-[var(--ds-text)]"
+                title="Sitzung speichern"
+              >
+                {savedFlash ? (
+                  <>
+                    <Check className="h-3 w-3 text-green-500" /> Gespeichert
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-3 w-3" /> Speichern
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setShowSessions((v) => !v)}
+                className="inline-flex items-center gap-1 text-xs text-[var(--ds-text-muted)] transition-colors hover:text-[var(--ds-text)]"
+                title="Gespeicherte Sitzungen"
+              >
+                <FolderOpen className="h-3 w-3" /> Laden
+                {sessions.length > 0 && (
+                  <span className="rounded-full bg-[var(--ds-surface-2)] px-1.5 text-[10px]">
+                    {sessions.length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={handleReset}
+                className="text-xs text-[var(--ds-text-muted)] transition-colors hover:text-[var(--ds-text)]"
+              >
+                Zurücksetzen
+              </button>
+            </>
           )}
           {onClose && (
             <button
@@ -392,6 +493,46 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
           )}
         </div>
       </div>
+
+      {/* Saved sessions dropdown */}
+      {showSessions && (
+        <div className="border-b border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 py-3">
+          <div className="mb-2 text-xs font-semibold text-[var(--ds-text-muted)]">
+            Gespeicherte Sitzungen
+          </div>
+          {sessions.length === 0 ? (
+            <p className="text-xs text-[var(--ds-text-muted)]">
+              Noch keine Sitzungen gespeichert.
+            </p>
+          ) : (
+            <div className="max-h-48 space-y-1 overflow-y-auto">
+              {sessions.map((s) => (
+                <div
+                  key={s.id}
+                  className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-[var(--ds-surface-1)]"
+                >
+                  <button
+                    onClick={() => handleLoadSession(s.id)}
+                    className="flex-1 truncate text-left text-[var(--ds-text)]"
+                  >
+                    <span className="font-medium">{s.title}</span>
+                    <span className="ml-2 text-xs text-[var(--ds-text-muted)]">
+                      {new Date(s.savedAt).toLocaleDateString("de-DE")} · {s.messages.length} Nachrichten
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteSession(s.id)}
+                    className="ml-2 text-[var(--ds-text-muted)] hover:text-red-500"
+                    title="Löschen"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">

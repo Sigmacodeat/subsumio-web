@@ -46,6 +46,55 @@ describe("CANONICAL_PRICING — table integrity", () => {
       CANONICAL_PRICING["google:gemini-2.0-flash"]
     );
   });
+
+  // ── 2026-07-11 audit corrections ──────────────────────────────────────
+
+  test("Grok 4.3 at $1.25/$2.50 (not the stale $0.20/$0.50)", () => {
+    expect(CANONICAL_PRICING["xai:grok-4.3"]).toEqual({ input: 1.25, output: 2.5 });
+  });
+
+  test("Grok 4 at $3.00/$15.00 (not the stale $0.20/$0.50)", () => {
+    expect(CANONICAL_PRICING["xai:grok-4"]).toEqual({ input: 3.0, output: 15.0 });
+  });
+
+  test("Grok 4.5 at $2.00/$6.00 (new entry)", () => {
+    expect(CANONICAL_PRICING["xai:grok-4.5"]).toEqual({ input: 2.0, output: 6.0 });
+  });
+
+  test("Grok 4.1 Fast remains at $0.20/$0.50 (budget variant)", () => {
+    expect(CANONICAL_PRICING["xai:grok-4.1-fast"]).toEqual({ input: 0.2, output: 0.5 });
+  });
+
+  test("GPT-5 at $5/$15 (not the stale $5/$20)", () => {
+    expect(CANONICAL_PRICING["openai:gpt-5"]).toEqual({ input: 5.0, output: 15.0 });
+  });
+
+  test("GPT-5.5 at $5/$30 (not the stale $4/$16)", () => {
+    expect(CANONICAL_PRICING["openai:gpt-5.5"]).toEqual({ input: 5.0, output: 30.0 });
+  });
+
+  test("GPT-5.4 family present with correct pricing", () => {
+    expect(CANONICAL_PRICING["openai:gpt-5.4"]).toEqual({ input: 5.0, output: 15.0 });
+    expect(CANONICAL_PRICING["openai:gpt-5.4-mini"]).toEqual({ input: 0.5, output: 2.0 });
+    expect(CANONICAL_PRICING["openai:gpt-5.4-nano"]).toEqual({ input: 0.25, output: 1.0 });
+  });
+
+  test("DeepSeek V4 Flash/Pro present at $0.14/$0.28", () => {
+    expect(CANONICAL_PRICING["deepseek:deepseek-v4-flash"]).toEqual({ input: 0.14, output: 0.28 });
+    expect(CANONICAL_PRICING["deepseek:deepseek-v4-pro"]).toEqual({ input: 0.14, output: 0.28 });
+  });
+
+  test("Moonshot K2.6 at $0.95/$4.00 (not the stale $0.60/$2.50)", () => {
+    expect(CANONICAL_PRICING["moonshot:kimi-k2.6"]).toEqual({ input: 0.95, output: 4.0 });
+  });
+
+  test("Claude Sonnet 5 at promo $2/$10", () => {
+    expect(CANONICAL_PRICING["anthropic:claude-sonnet-5"]).toEqual({ input: 2.0, output: 10.0 });
+  });
+
+  test("Claude Fable 5 at $10/$50 (premium above Opus)", () => {
+    expect(CANONICAL_PRICING["anthropic:claude-fable-5"]).toEqual({ input: 10.0, output: 50.0 });
+  });
 });
 
 describe("canonicalLookup — id normalization", () => {

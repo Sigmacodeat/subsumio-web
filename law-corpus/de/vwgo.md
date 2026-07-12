@@ -3,8 +3,8 @@ title: "VwGO — Verwaltungsgerichtsordnung"
 type: "law"
 jurisdiction: "de"
 abbreviation: "VwGO"
-version_date: "2026-06-09"
-retrieved_at: "2026-06-21"
+version_date: "2026-06-30"
+retrieved_at: "2026-07-10"
 source_url: "https://www.gesetze-im-internet.de/vwgo/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
 ---
@@ -978,7 +978,9 @@ Wird der Rechtsstreit durch Vergleich erledigt und haben die Beteiligten keine B
 
 ## § 163
 
-(weggefallen)
+(1) Wird die Wertfestsetzung für die Gerichtsgebühren 1.nach § 63 Absatz 3 des Gerichtskostengesetzes oder2.infolge einer Beschwerde gegen die Festsetzung des Streitwerts nach § 68 des Gerichtskostengesetzesgeändert, so kann das Gericht seine getroffene Kostenentscheidung von Amts wegen ändern. Wird die Kostenentscheidung nach Satz 1 geändert, ist auch eine bereits erfolgte Kostenfestsetzung von Amts wegen zu ändern.
+(2) Für die Entscheidung nach Absatz 1 Satz 1 gilt § 118 Absatz 2 entsprechend. Vor der Entscheidung sind die Beteiligten zu hören. Die Änderung der Kostenentscheidung ist nur innerhalb von sechs Monaten zulässig, nachdem die Änderung der Wertfestsetzung Rechtskraft erlangt hat. Die Änderung der Kostenentscheidung hat keine Änderung der übrigen Teile des Urteils oder des Beschlusses zur Folge.
+(3) Entscheidungen nach Absatz 1 Satz 1 sind unanfechtbar. Auf Entscheidungen nach Absatz 1 Satz 2 ist § 165 anzuwenden.
 
 ## § 164
 

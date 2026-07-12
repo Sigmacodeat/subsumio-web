@@ -630,7 +630,7 @@ Configure routing:
   gbrain config set models.tier.<tier> <model>       # per-tier (utility/reasoning/deep/subagent)
   gbrain config set models.aliases.<name> <model>    # custom alias
 
-Tiers: utility (haiku-class) | reasoning (sonnet) | deep (opus) | subagent (Anthropic-only)
+Tiers: utility (DeepSeek V4 Flash) | reasoning (DeepSeek V4 Flash) | deep (Grok 4.3) | subagent (Claude Haiku 4.5, Anthropic-only)
 `
     );
     return;

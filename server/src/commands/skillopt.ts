@@ -6,7 +6,7 @@
  */
 
 import * as path from "node:path";
-import { resolveModel } from "../core/model-config.ts";
+import { resolveModel, TIER_DEFAULTS } from "../core/model-config.ts";
 import { autoDetectSkillsDirReadOnly } from "../core/repo-root.ts";
 import { runBootstrap, runBootstrapFromSkill } from "../core/skillopt/bootstrap-benchmark.ts";
 import { SKILLOPT_HELP_TEXT } from "../core/skillopt/help.ts";
@@ -97,13 +97,13 @@ export async function runSkillOptCommand(
   // Resolve models via the tier system.
   const optimizerModel =
     parsed.optimizerModel ??
-    (await resolveModel(engine, { tier: "deep", fallback: "anthropic:claude-opus-4-7" }));
+    (await resolveModel(engine, { tier: "deep", fallback: TIER_DEFAULTS.deep }));
   const targetModel =
     parsed.targetModel ??
-    (await resolveModel(engine, { tier: "subagent", fallback: "anthropic:claude-sonnet-4-6" }));
+    (await resolveModel(engine, { tier: "subagent", fallback: TIER_DEFAULTS.subagent }));
   const judgeModel =
     parsed.judgeModel ??
-    (await resolveModel(engine, { tier: "reasoning", fallback: "anthropic:claude-sonnet-4-6" }));
+    (await resolveModel(engine, { tier: "reasoning", fallback: TIER_DEFAULTS.reasoning }));
 
   // ── Bootstrap mode (short-circuits before the optimization loop) ────────
   if (parsed.bootstrapFromRouting) {

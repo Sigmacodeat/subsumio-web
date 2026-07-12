@@ -8,9 +8,12 @@ import type { Recipe } from "../types.ts";
  * and 1/7th the latency (8.8s vs 60.8s). Best speed-to-quality ratio
  * for legal tasks. Also won 13 of 51 legal practice areas outright.
  *
- * Pricing (verified 2026-06-29):
- *   - Grok 4.3: $0.20/$0.50 per 1M tokens, 2M context
+ * Pricing (verified 2026-07-11 via x.ai/api):
+ *   - Grok 4.3: $1.25/$2.50 per 1M tokens, 2M context
+ *   - Grok 4.1: $1.25/$2.50 (earlier version, same tier)
  *   - Grok 4.1 Fast: $0.20/$0.50 (budget variant)
+ *   - Grok 4: $3.00/$15.00 (original release)
+ *   - Grok 4.5: $2.00/$6.00 (Harvey LAB-AA 13.3%)
  *
  * Note: 12% hallucination rate on legal citations — higher than
  * Claude (8%) and GPT-5.5 (3%). Use for speed-sensitive tasks where
@@ -28,14 +31,14 @@ export const xai: Recipe = {
   },
   touchpoints: {
     chat: {
-      models: ["grok-4.3", "grok-4.1-fast", "grok-4.1", "grok-4"],
+      models: ["grok-4.3", "grok-4.1", "grok-4.1-fast", "grok-4", "grok-4.5"],
       supports_tools: true,
       supports_subagent_loop: true,
       supports_prompt_cache: false,
       max_context_tokens: 2_000_000,
-      cost_per_1m_input_usd: 0.2,
-      cost_per_1m_output_usd: 0.5,
-      price_last_verified: "2026-06-29",
+      cost_per_1m_input_usd: 1.25,
+      cost_per_1m_output_usd: 2.5,
+      price_last_verified: "2026-07-11",
     },
   },
   setup_hint: "Get an API key at https://console.x.ai, then `export XAI_API_KEY=...`",

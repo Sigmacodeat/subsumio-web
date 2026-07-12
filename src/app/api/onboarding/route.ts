@@ -45,6 +45,12 @@ export const POST = createHandler(
       }
     }
 
+    // Save jurisdiction from onboarding country selection — drives law corpus scoping
+    const country = body.profile?.country?.toUpperCase();
+    if (country === "DE" || country === "AT" || country === "CH") {
+      patch.jurisdiction = country;
+    }
+
     const updated = await getStore().update(ctx.user.id, patch);
     if (!updated) {
       return Response.json({ error: "user_not_found" }, { status: 404 });
@@ -63,6 +69,7 @@ export const GET = createHandler(
     return Response.json({
       onboardingCompletedAt: ctx.user.onboardingCompletedAt ?? null,
       industry: ctx.user.industry ?? null,
+      jurisdiction: ctx.user.jurisdiction ?? null,
     });
   }
 );

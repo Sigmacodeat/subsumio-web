@@ -24,14 +24,14 @@ import { sendMail, isMailConfigured } from "@/lib/mail";
 import { env } from "@/lib/env";
 import type { QuietHours } from "@/lib/whatsapp/outbound-gate";
 
-// One GPT-4o-mini call to sharpen the "Empfehlungen für heute" section.
+// One OpenRouter LLM call to sharpen the "Empfehlungen für heute" section.
 // Input: structured briefing data (already computed, $0). Output: 3-5 German sentences.
 // Cost: ~$0.001/day. Falls back silently to deterministic recommendations on any error.
 async function enrichRecommendationsWithAI(
   baseText: string,
   context: { deadlineCount: number; approvalCount: number; docCount: number; activityCount: number }
 ): Promise<string> {
-  const apiKey = env("OPENAI_API_KEY");
+  const apiKey = env("OPENROUTER_API_KEY") || env("OPENROUTER_API_KEY_FALLBACK");
   if (!apiKey) return baseText;
 
   const systemPrompt = `Du bist ein erfahrener Kanzleiassistent. Gib 3-5 präzise, priorisierte Handlungsempfehlungen für den heutigen Arbeitstag auf Basis der strukturierten Kanzleidaten. Deutsch, kurz, actionable. Keine Wiederholung von Fakten die im Briefing schon stehen.`;
@@ -47,11 +47,16 @@ ${baseText.split("🎯 Empfehlungen für heute:")[1]?.split("\n\n")[0] ?? "–"}
 Verbessere die Empfehlungen: priorisiere klarer, erkenne Muster (z.B. viele Fristen + keine Fortschritte = Kapazitätsproblem), formuliere konkrete nächste Schritte.`;
 
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+        "HTTP-Referer": "https://subsum.io",
+        "X-Title": "Subsumio",
+      },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "deepseek/deepseek-chat",
         max_tokens: 300,
         temperature: 0.3,
         messages: [

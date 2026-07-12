@@ -86,6 +86,7 @@ export type RouteAction =
   | "legal.retrieval_feedback"
   | "legal.strategy"
   | "legal.research"
+  | "legal.subsumption"
   | "legal.ground"
   | "legal.case_scanner"
   | "legal.obligation_extract"
@@ -183,6 +184,7 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.retrieval_feedback": ["admin", "lawyer", "assistant"],
   "legal.strategy": ["admin", "lawyer"],
   "legal.research": ["admin", "lawyer"],
+  "legal.subsumption": ["admin", "lawyer"],
   "legal.ground": ["admin", "lawyer", "assistant"],
   "legal.translate": ["admin", "lawyer", "assistant"],
   "legal.obligation_extract": ["admin", "lawyer", "assistant"],
@@ -274,6 +276,7 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "legal.retrieval_feedback": "legal.retrieval_feedback",
     "legal.strategy": "legal.strategy",
     "legal.research": "legal.research",
+    "legal.subsumption": "legal.subsumption",
     "legal.ground": "legal.ground",
     "legal.translate": "legal.translate",
     "legal.obligation_extract": "legal.obligation_extract",

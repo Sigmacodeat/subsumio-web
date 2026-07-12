@@ -76,16 +76,35 @@ export const DEFAULT_ALIASES: Record<string, string> = {
  * Default model for each tier. Used as the hardcoded fallback when no
  * `models.tier.<tier>` config + no `models.default` is set. All tiers
  * route through OpenRouter (single API key for all providers).
- * DeepSeek V3.2: LEXam 57.42, supports tool-calling, $0.14/$0.28 per 1M.
- * GPT-4.1: LEXam 57.50, highest quality for deep reasoning.
+ *
+ * Tier strategy (updated 2026-07-11 after competitive architecture audit):
+ *   utility/reasoning → DeepSeek V4 Flash ($0.14/$0.28)
+ *     - BenGER 71.3, LEXam 57.42, best open-weight legal model
+ *     - 10-50x cheaper than Harvey's Claude/GPT stack
+ *   deep → Grok 4.3 ($1.25/$2.50)
+ *     - HAQQ 29.0 (98% of Claude Opus 4.8 quality)
+ *     - $0.003/task vs Opus $0.069/task — 23x cheaper at near-equal quality
+ *     - 12% hallucination rate mitigated by Tier 0 deterministic guardrail
+ *     - Replaces GPT-4.1 ($2/$8) which was 1.6x more expensive with lower
+ *       legal benchmark scores (LEXam 57.50 vs HAQQ 29.0)
+ *   subagent → Claude Haiku 4.5 ($1.00/$5.00)
+ *     - The subagent tool loop uses Anthropic Messages API with prompt
+ *       caching and tool_use blocks — non-Anthropic models throw at
+ *       runtime unless agent.use_gateway_loop=true is explicitly set.
+ *     - Haiku 4.5 is the cheapest Anthropic model with tool support +
+ *       prompt caching (7x cheaper than Sonnet 4.6, 25x cheaper than Opus).
+ *     - To use DeepSeek or other non-Anthropic models for subagent:
+ *       gbrain config set agent.use_gateway_loop true
+ *       gbrain config set models.tier.subagent openrouter:deepseek/deepseek-chat
  *
  * Users override via `gbrain config set models.tier.<tier> <model>`.
+ * Per-specialist override: `gbrain config set models.specialist.<name> <model>`.
  */
 export const TIER_DEFAULTS: Record<ModelTier, string> = {
   utility: "openrouter:deepseek/deepseek-chat",
   reasoning: "openrouter:deepseek/deepseek-chat",
-  deep: "openrouter:openai/gpt-4.1",
-  subagent: "openrouter:deepseek/deepseek-chat",
+  deep: "openrouter:xai/grok-4.3",
+  subagent: "anthropic:claude-haiku-4-5",
 };
 
 /**

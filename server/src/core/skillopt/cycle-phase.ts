@@ -119,7 +119,7 @@ export async function runPhaseSkillopt(opts: SkilloptPhaseOpts): Promise<Skillop
   // Resolve models once. Tiers default to deep/subagent/reasoning.
   const optimizerModel = await resolveModel(engine, {
     tier: "deep",
-    fallback: "openrouter:openai/gpt-4.1",
+    fallback: "openrouter:xai/grok-4.3",
   });
   const targetModel = await resolveModel(engine, {
     tier: "subagent",

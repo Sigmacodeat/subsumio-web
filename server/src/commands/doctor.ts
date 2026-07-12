@@ -2658,8 +2658,8 @@ export async function checkEvalDrift(engine: BrainEngine): Promise<Check> {
  * for the embed pipeline running there.
  */
 async function checkEmbeddingEnvOverride(engine: BrainEngine): Promise<Check> {
-  const envModel = process.env.GBRAIN_EMBEDDING_MODEL?.trim();
-  const envDim = process.env.GBRAIN_EMBEDDING_DIMENSIONS?.trim();
+  const envModel = (process.env.SUBSUMIO_EMBEDDING_MODEL ?? process.env.GBRAIN_EMBEDDING_MODEL)?.trim();
+  const envDim = (process.env.SUBSUMIO_EMBEDDING_DIMENSIONS ?? process.env.GBRAIN_EMBEDDING_DIMENSIONS)?.trim();
   if (!envModel && !envDim) {
     return {
       name: "embedding_env_override",
@@ -2681,10 +2681,10 @@ async function checkEmbeddingEnvOverride(engine: BrainEngine): Promise<Check> {
   }
   const mismatches: Array<{ key: string; env: string; db: string }> = [];
   if (envModel && dbModel && envModel !== dbModel) {
-    mismatches.push({ key: "GBRAIN_EMBEDDING_MODEL", env: envModel, db: dbModel });
+    mismatches.push({ key: "SUBSUMIO/GBRAIN_EMBEDDING_MODEL", env: envModel, db: dbModel });
   }
   if (envDim && dbDim && envDim !== dbDim) {
-    mismatches.push({ key: "GBRAIN_EMBEDDING_DIMENSIONS", env: envDim, db: dbDim });
+    mismatches.push({ key: "SUBSUMIO/GBRAIN_EMBEDDING_DIMENSIONS", env: envDim, db: dbDim });
   }
   if (mismatches.length === 0) {
     return {
@@ -2707,6 +2707,7 @@ async function checkEmbeddingEnvOverride(engine: BrainEngine): Promise<Check> {
 async function checkSubagentCapability(engine: BrainEngine): Promise<Check> {
   try {
     const { classifyCapabilities } = await import("../core/ai/capabilities.ts");
+    const { TIER_DEFAULTS } = await import("../core/model-config.ts");
     const tierSubagent = await engine.getConfig("models.tier.subagent");
     const modelsDefault = await engine.getConfig("models.default");
 
@@ -2719,8 +2720,8 @@ async function checkSubagentCapability(engine: BrainEngine): Promise<Check> {
           status: "warn",
           message:
             `${source} is "${resolved}" but that provider/model lacks native tool calling. ` +
-            `The subagent loop cannot run on this model — runtime will fall back to claude-sonnet-4-6. ` +
-            `Fix: \`gbrain config set ${source} <provider>:<model-with-tools>\` (e.g. anthropic:claude-sonnet-4-6 or openai:gpt-5.2).`,
+            `The subagent loop cannot run on this model — runtime will fall back to ${TIER_DEFAULTS.subagent}. ` +
+            `Fix: \`gbrain config set ${source} <provider>:<model-with-tools>\` (e.g. anthropic:claude-haiku-4-5 or openai:gpt-5.4).`,
         };
       }
       if (verdict === "unknown") {
@@ -2730,7 +2731,7 @@ async function checkSubagentCapability(engine: BrainEngine): Promise<Check> {
           message:
             `${source} is "${resolved}" which references an unknown provider. ` +
             `Use a recipe-declared provider. ` +
-            `Fix: \`gbrain config set ${source} anthropic:claude-sonnet-4-6\` or pick another known provider.`,
+            `Fix: \`gbrain config set ${source} anthropic:claude-haiku-4-5\` or pick another known provider.`,
         };
       }
       if (verdict === "degraded:no_caching") {
@@ -2741,7 +2742,7 @@ async function checkSubagentCapability(engine: BrainEngine): Promise<Check> {
             `${source} is "${resolved}" — provider does not support prompt caching. ` +
             `The subagent loop runs hot (cost scales linearly with conversation length). ` +
             `For lower cost on long loops, use an Anthropic model: ` +
-            `\`gbrain config set models.tier.subagent anthropic:claude-sonnet-4-6\`.`,
+            `\`gbrain config set models.tier.subagent anthropic:claude-haiku-4-5\`.`,
         };
       }
       return null;
@@ -2786,7 +2787,7 @@ async function checkSubagentCapability(engine: BrainEngine): Promise<Check> {
       status: "ok",
       message: tierSubagent
         ? `Subagent tier resolves to "${tierSubagent}" with full tool-loop capability`
-        : `Subagent tier resolves to default (claude-sonnet-4-6) — full tool-loop capability`,
+        : `Subagent tier resolves to default (${TIER_DEFAULTS.subagent}) — full tool-loop capability`,
     };
   } catch (e) {
     return {

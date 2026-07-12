@@ -114,6 +114,90 @@ export async function fetchRisOgdStatuteVersion(
 }
 
 /**
+ * Query RIS-OGD by Gesetzesnummer (law number) — more reliable than text search
+ * for AT laws with non-standard abbreviations.
+ */
+export async function fetchRisOgdByGesetzesnummer(
+  gesetzesnummer: string,
+  statuteAbbr: string
+): Promise<LiveStatuteVersion | null> {
+  try {
+    const url = new URL("https://data.bka.gv.at/ris/api/v2.6/bundesrecht");
+    url.searchParams.set("Applikation", "BrKons");
+    url.searchParams.set("Gesetzesnummer", gesetzesnummer);
+    url.searchParams.set("DokumenteProSeite", "Ten");
+    url.searchParams.set("Seitennummer", "1");
+
+    const res = await fetch(url.toString(), {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as Record<string, unknown>;
+    const result = (data.OgdSearchResult ?? data) as Record<string, unknown>;
+    const docResults = result.OgdDocumentResults as Record<string, unknown> | undefined;
+    const rawRefs = docResults?.OgdDocumentReference;
+    const refs: Array<Record<string, unknown>> = Array.isArray(rawRefs)
+      ? (rawRefs as Array<Record<string, unknown>>)
+      : rawRefs && typeof rawRefs === "object"
+        ? [rawRefs as Record<string, unknown>]
+        : [];
+
+    if (refs.length === 0) return null;
+
+    let bestRef: Record<string, unknown> | null = null;
+    let bestDate: string | null = null;
+
+    for (const ref of refs) {
+      const metadaten = ((ref.Data as Record<string, unknown> | undefined)?.Metadaten ??
+        {}) as Record<string, unknown>;
+      const technisch = (metadaten.Technisch ?? {}) as Record<string, unknown>;
+      const allgemein = (metadaten.Allgemein ?? {}) as Record<string, unknown>;
+      const br = (metadaten.Bundesrecht ?? {}) as Record<string, unknown>;
+
+      const isMainStatute = !String(technisch.ID ?? "").includes("/");
+      const inKraft = String(allgemein.Veroeffentlicht ?? br.Inkrafttretensdatum ?? "");
+      const date = inKraft || null;
+
+      if (isMainStatute) {
+        bestRef = ref;
+        bestDate = date;
+        break;
+      }
+    }
+
+    if (!bestRef) bestRef = refs[0]!;
+    if (!bestRef) return null;
+
+    const meta = ((bestRef.Data as Record<string, unknown> | undefined)?.Metadaten ?? {}) as Record<
+      string,
+      unknown
+    >;
+    const br = (meta.Bundesrecht ?? {}) as Record<string, unknown>;
+    const technisch = (meta.Technisch ?? {}) as Record<string, unknown>;
+    const allgemein = (meta.Allgemein ?? {}) as Record<string, unknown>;
+    const title = String(br.Kurztitel ?? br.Titel ?? statuteAbbr);
+    const docUrl = String(
+      allgemein.DokumentUrl ??
+        `https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=BrKons&Dokumentnummer=${technisch.ID ?? ""}`
+    );
+
+    return {
+      statute_id: statuteAbbr,
+      jurisdiction: "at",
+      source: "ris-ogd",
+      version_date: bestDate,
+      title,
+      source_url: docUrl,
+      fetched_at: new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Query buzer.de for the current version date of a German federal law.
  * buzer.de provides a search API and detail pages with version metadata.
  *
@@ -123,108 +207,81 @@ export async function fetchRisOgdStatuteVersion(
 export async function fetchBuzerStatuteVersion(
   statuteAbbr: string
 ): Promise<LiveStatuteVersion | null> {
+  // buzer.de uses mixed-case URLs (StGB, StPO, BauGB, etc.)
+  // We need an explicit mapping from lowercase corpus names to buzer.de URL slugs.
+  const BUZER_MAP: Record<string, string> = {
+    bgb: "BGB", gg: "GG", hgb: "HGB", stgb: "StGB", stpo: "StPO",
+    zpo: "ZPO", ao: "AO", estg: "EStG", kstg: "KStG", ustg: "UStG",
+    gewstg: "GewStG", gmbhg: "GmbHG", baugb: "BauGB", bewg: "BewG",
+    betrvg: "BetrVG", inso: "InsO", vwgo: "VwGO", zvg: "ZVG",
+    urhg: "UrhG", gewo: "GewO", famfg: "FamFG", erbstg: "ErbStG",
+    bdsg: "BDSG", stbvv: "StBVV", rvg: "RVG", uwg: "UWG",
+    lstdv: "LStDV", grestg: "GrEStG", stberg: "StBerG",
+    aoIndex: "AO",
+  };
+  const buzerAbbr = BUZER_MAP[statuteAbbr.toLowerCase()] ?? statuteAbbr.toUpperCase();
+  const lawUrl = `https://www.buzer.de/${encodeURIComponent(buzerAbbr)}.htm`;
+
+  let detailRes: Response;
   try {
-    // buzer.de search endpoint
-    const searchUrl = `https://www.buzer.de/suche.htm?suchbegriff=${encodeURIComponent(statuteAbbr)}`;
-    const res = await fetch(searchUrl, {
+    detailRes = await fetch(lawUrl, {
       headers: { Accept: "text/html", "User-Agent": "Subsumio-LegalBrain/1.0" },
       signal: AbortSignal.timeout(10000),
+      redirect: "error",
     });
-    if (!res.ok) return null;
-
-    const html = await res.text();
-
-    // Find the first law link in search results
-    const lawLinkMatch = html.match(/href="(\/gesetz\/[^"]+)"[^>]*>([^<]+)/i);
-    if (!lawLinkMatch) return null;
-
-    const lawPath = lawLinkMatch[1]!;
-    const lawTitle = lawLinkMatch[2]!.trim();
-    const lawUrl = `https://www.buzer.de${lawPath}`;
-
-    // Fetch the law detail page to extract the "Stand" date
-    const detailRes = await fetch(lawUrl, {
-      headers: { Accept: "text/html", "User-Agent": "Subsumio-LegalBrain/1.0" },
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!detailRes.ok) {
-      // Still return what we have from search
-      return {
-        statute_id: statuteAbbr,
-        jurisdiction: "de",
-        source: "buzer",
-        version_date: null,
-        title: lawTitle,
-        source_url: lawUrl,
-        fetched_at: new Date().toISOString(),
-      };
-    }
-
-    const detailHtml = await detailRes.text();
-
-    // Extract "Stand: DD.MM.YYYY" or "Stand: DD. Monat YYYY" from the page
-    const standMatch = detailHtml.match(/Stand:\s*(\d{1,2}\.\s*(?:\d{1,2}\.\d{4}|\w+\s+\d{4}))/i);
-    let versionDate: string | null = null;
-
-    if (standMatch) {
-      const dateStr = standMatch[1]!.trim();
-      // Parse "DD.MM.YYYY" format
-      const numericMatch = dateStr.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
-      if (numericMatch) {
-        const [, day, month, year] = numericMatch;
-        versionDate = `${year}-${month!.padStart(2, "0")}-${day!.padStart(2, "0")}`;
-      } else {
-        // Try "DD. Monat YYYY" format (German month names)
-        const germanMonthMatch = dateStr.match(/(\d{1,2})\.\s*(\w+)\s+(\d{4})/);
-        if (germanMonthMatch) {
-          const months: Record<string, string> = {
-            Januar: "01",
-            Februar: "02",
-            März: "03",
-            April: "04",
-            Mai: "05",
-            Juni: "06",
-            Juli: "07",
-            August: "08",
-            September: "09",
-            Oktober: "10",
-            November: "11",
-            Dezember: "12",
-          };
-          const monthNum = months[germanMonthMatch[2]!];
-          if (monthNum) {
-            versionDate = `${germanMonthMatch[3]}-${monthNum}-${germanMonthMatch[1]!.padStart(2, "0")}`;
-          }
-        }
-      }
-    }
-
-    // Also try to find "Zuletzt geändert am..." pattern
-    if (!versionDate) {
-      const geaendertMatch = detailHtml.match(
-        /(?:zuletzt\s+ge(?:ä|ae)ndert(?:\s+am)?)\s*:?\s*(\d{1,2}\.\s*\d{1,2}\.\d{4})/i
-      );
-      if (geaendertMatch) {
-        const numericMatch = geaendertMatch[1]!.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
-        if (numericMatch) {
-          const [, day, month, year] = numericMatch;
-          versionDate = `${year}-${month!.padStart(2, "0")}-${day!.padStart(2, "0")}`;
-        }
-      }
-    }
-
-    return {
-      statute_id: statuteAbbr,
-      jurisdiction: "de",
-      source: "buzer",
-      version_date: versionDate,
-      title: lawTitle,
-      source_url: lawUrl,
-      fetched_at: new Date().toISOString(),
-    };
   } catch {
     return null;
   }
+  if (!detailRes.ok) return null;
+
+  const detailHtml = await detailRes.text();
+
+  // Extract title from the page
+  const titleMatch = detailHtml.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+  const lawTitle = titleMatch
+    ? titleMatch[1]!.replace(/&[a-z]+;/g, "").trim()
+    : statuteAbbr;
+
+  let versionDate: string | null = null;
+
+  // Pattern 1: "zuletzt geändert durch ... G. v. DD.MM.YYYY" (law amendment)
+  const geaendertMatch = detailHtml.match(
+    /zuletzt\s+ge(?:ä|ae)ndert\s+durch\s+[^<]*?(?:G|V)\.\s*v\.\s+(\d{1,2})\.(\d{1,2})\.(\d{4})/i
+  );
+  if (geaendertMatch) {
+    const [, day, month, year] = geaendertMatch;
+    versionDate = `${year}-${month!.padStart(2, "0")}-${day!.padStart(2, "0")}`;
+  }
+
+  // Pattern 2: "neugefasst durch B. v. DD.MM.YYYY" (consolidated version)
+  if (!versionDate) {
+    const neugefasstMatch = detailHtml.match(
+      /neugefasst\s+durch\s+[^<]*?B\.\s*v\.\s+(\d{1,2})\.(\d{1,2})\.(\d{4})/i
+    );
+    if (neugefasstMatch) {
+      const [, day, month, year] = neugefasstMatch;
+      versionDate = `${year}-${month!.padStart(2, "0")}-${day!.padStart(2, "0")}`;
+    }
+  }
+
+  // Pattern 3: "Stand: DD.MM.YYYY" (fallback)
+  if (!versionDate) {
+    const standMatch = detailHtml.match(/Stand:\s*(\d{1,2})\.\s*(\d{1,2})\.(\d{4})/i);
+    if (standMatch) {
+      const [, day, month, year] = standMatch;
+      versionDate = `${year}-${month!.padStart(2, "0")}-${day!.padStart(2, "0")}`;
+    }
+  }
+
+  return {
+    statute_id: statuteAbbr,
+    jurisdiction: "de",
+    source: "buzer",
+    version_date: versionDate,
+    title: lawTitle,
+    source_url: lawUrl,
+    fetched_at: new Date().toISOString(),
+  };
 }
 
 /**

@@ -224,7 +224,7 @@ export function embeddingMismatchMessage(opts: EmbeddingMismatchOpts): string {
     `  COMMIT;`,
     ``,
     `Then re-init config (file plane is canonical post-v0.37):`,
-    `  gbrain init --supabase${modelArg} --embedding-dimensions ${requestedDims}`,
+    `  gbrain init --url <URL>${modelArg} --embedding-dimensions ${requestedDims}`,
     `  gbrain embed --stale`,
     ``,
     `Full guide: docs/embedding-migrations.md`,

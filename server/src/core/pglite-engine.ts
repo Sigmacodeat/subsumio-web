@@ -1638,6 +1638,10 @@ export class PGLiteEngine implements BrainEngine {
       params.push(opts.beforeDate);
       extraFilter += ` AND COALESCE(p.effective_date, p.updated_at, p.created_at) < $${params.length}::timestamptz`;
     }
+    if (opts?.asOfDate) {
+      params.push(opts.asOfDate);
+      extraFilter += ` AND (p.slug NOT LIKE 'legal/statutes/%' OR ((p.frontmatter->>'version_date') ~ '^\\d{4}-\\d{2}-\\d{2}$' AND (p.frontmatter->>'version_date')::date <= $${params.length}::date))`;
+    }
     // v0.34.1 (#861 — P0 leak seal): source-isolation. Array wins over scalar.
     if (opts?.sourceIds && opts.sourceIds.length > 0) {
       params.push(opts.sourceIds);
@@ -1751,6 +1755,10 @@ export class PGLiteEngine implements BrainEngine {
     if (opts?.beforeDate) {
       params.push(opts.beforeDate);
       extraFilter += ` AND COALESCE(p.effective_date, p.updated_at, p.created_at) < $${params.length}::timestamptz`;
+    }
+    if (opts?.asOfDate) {
+      params.push(opts.asOfDate);
+      extraFilter += ` AND (p.slug NOT LIKE 'legal/statutes/%' OR ((p.frontmatter->>'version_date') ~ '^\\d{4}-\\d{2}-\\d{2}$' AND (p.frontmatter->>'version_date')::date <= $${params.length}::date))`;
     }
     // v0.34.1 (#861 — P0 leak seal): source-isolation on the CJK fallback path.
     if (opts?.sourceIds && opts.sourceIds.length > 0) {
@@ -1888,6 +1896,10 @@ export class PGLiteEngine implements BrainEngine {
     if (opts?.beforeDate) {
       params.push(opts.beforeDate);
       extraFilter += ` AND COALESCE(p.effective_date, p.updated_at, p.created_at) < $${params.length}::timestamptz`;
+    }
+    if (opts?.asOfDate) {
+      params.push(opts.asOfDate);
+      extraFilter += ` AND (p.slug NOT LIKE 'legal/statutes/%' OR ((p.frontmatter->>'version_date') ~ '^\\d{4}-\\d{2}-\\d{2}$' AND (p.frontmatter->>'version_date')::date <= $${params.length}::date))`;
     }
     // v0.34.1 (#861 — P0 leak seal): source-isolation for the chunk-grain
     // anchor primitive. Layer 7 two-pass walks from these anchors so a

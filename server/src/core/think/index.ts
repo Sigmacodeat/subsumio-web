@@ -21,14 +21,63 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { BrainEngine, SynthesisEvidenceInput } from "../engine.ts";
 import { runGather, renderPagesBlock, takesHitToTakeForPrompt } from "./gather.ts";
 import { renderTakesBlock } from "./sanitize.ts";
-import { buildThinkSystemPrompt, buildThinkUserMessage } from "./prompt.ts";
+import {
+  buildThinkSystemPrompt,
+  buildThinkUserMessage,
+  buildStreamingSystemPrompt,
+  buildStreamingUserMessage,
+} from "./prompt.ts";
 import {
   resolveCitations,
   validateCitationsAgainstContext,
   type ParsedCitation,
 } from "./cite-render.ts";
+import {
+  checkCitationGrounding,
+  buildRegenerationPrompt,
+  type GuardrailResult,
+} from "../citation-guardrail.ts";
+import {
+  crossVerifyCitations,
+  buildCrossVerifyRegenerationPrompt,
+  type CrossVerifyResult,
+} from "./cross-verify.ts";
+import {
+  computeDocumentConfidence,
+  type DocumentConfidence,
+} from "../confidence-scoring.ts";
+import {
+  buildProvenance,
+  type ProvenanceResult,
+} from "../provenance.ts";
+import {
+  computeGraphStats,
+  type LegalKnowledgeGraph,
+  type GraphStats,
+} from "../legal/knowledge-graph.ts";
+import {
+  runEnsembleVerification,
+  type EnsembleVerifyResult,
+  type EnsembleMode,
+} from "../ensemble-verify.ts";
+import {
+  scanForInjection,
+  ANTI_INJECTION_PROMPT,
+  type AdversarialScanResult,
+} from "../adversarial-defense.ts";
+import {
+  buildReasoningTrace,
+  type ReasoningTrace,
+  type TraceCaptureOpts,
+} from "../reasoning-trace.ts";
 import { resolveModel } from "../model-config.ts";
-import { chat as gatewayChat, probeChatModel, type ChatResult } from "../ai/gateway.ts";
+import {
+  chat as gatewayChat,
+  chatStream as gatewayChatStream,
+  probeChatModel,
+  type ChatResult,
+  type ChatMessage,
+} from "../ai/gateway.ts";
 import { AIConfigError } from "../ai/errors.ts";
 import { normalizeModelId } from "../model-id.ts";
 import { hasAnthropicKey } from "../ai/anthropic-key.ts";
@@ -159,6 +208,12 @@ export interface RunThinkOpts {
    */
   legalMode?: boolean;
   /**
+   * Attorney's jurisdiction ("AT", "DE", "CH", "EU"). Propagated to
+   * cross-verify (jurisdiction mismatch detection) and the legal prompt.
+   * When absent, cross-verify falls back to "unbekannt" (less precise).
+   */
+  jurisdiction?: string;
+  /**
    * When set, called with each text delta from the LLM as it streams.
    * Enables real-time token delivery to SSE clients. The final answer is
    * still parsed from the accumulated text after the stream completes, so
@@ -202,9 +257,45 @@ export interface ThinkResult {
     takesFromVector: number;
     graphHits: number;
   };
+  /** Per-claim confidence scores (Gap 1). Set when legalMode is active. */
+  documentConfidence?: DocumentConfidence;
+  /** Provenance chain linking claims to source passages (Gap 2). */
+  provenance?: ProvenanceResult;
+  /** Hierarchical legal knowledge graph metadata (Gap 4). */
+  graphMetadata?: GraphStats;
+  /** Multi-model ensemble citation verification result (Gap 5). */
+  ensembleVerification?: EnsembleVerifyResult;
+  /** Adversarial injection scan result (Gap 6). */
+  adversarialScan?: AdversarialScanResult;
+  /** EU AI Act Art. 12 reasoning trace (Gap 7). */
+  reasoningTrace?: ReasoningTrace;
 }
 
 const DEFAULT_MAX_OUTPUT_TOKENS = 4000;
+
+/**
+ * Dynamic max_tokens based on query complexity.
+ * Simple → 2000, Moderate → 4000, Complex → 6000.
+ * Complex legal questions (subsumption, cross-law) need more room for
+ * structured output; simple §-lookups don't waste tokens.
+ */
+function computeMaxTokens(question: string, legalMode?: boolean): number {
+  if (!legalMode) return DEFAULT_MAX_OUTPUT_TOKENS;
+  // Reuse the complexity classifier from intent.ts
+  // Inline check to avoid async import overhead on the hot path
+  const complexSignals = [
+    /subsum/i, /pruef/i, /prüf/i, /anwend/i,
+    /defini/i, /ausleg/i, /interpret/i,
+    /Tatbestand/i, /Grundrecht/i, /Verfass/i,
+    /Rechtsmittel/i, /Berufung/i, /Revision/i, /Beschwerde/i,
+  ];
+  const isComplex = complexSignals.some((rx) => rx.test(question));
+  if (isComplex) return 6000;
+  const moderateSignals = [/§\s*\d+/, /\b(?:BGB|ABGB|StGB|HGB|ZPO|AO|OR|ZGB)\b/i];
+  const isModerate = moderateSignals.some((rx) => rx.test(question));
+  if (isModerate) return 4000;
+  return 2000;
+}
 
 function inferIntent(question: string, anchor?: string): string {
   if (anchor) return "entity";
@@ -289,12 +380,59 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
   const warnings: string[] = [];
 
   // Resolve the model through the 6-tier chain.
+  // Intent-specific routing: when no explicit model is provided and legalMode
+  // is active, classify the question's complexity to route to the appropriate
+  // tier. Complex legal questions (subsumption, cross-law) → deep tier;
+  // moderate/simple → reasoning tier (cost savings).
+  let modelTier: "deep" | "reasoning" = "deep";
+  let modelFallback = "opus";
+  if (!opts.model && opts.legalMode) {
+    const { classifyLegalComplexity, complexityToTier } = await import("./intent.ts");
+    const complexity = classifyLegalComplexity(opts.question);
+    modelTier = complexityToTier(complexity);
+    if (modelTier === "reasoning") {
+      modelFallback = "deepseek"; // cheaper fallback for non-complex questions
+    }
+    warnings.push(`INTENT_MODEL_ROUTING: complexity=${complexity} tier=${modelTier}`);
+  }
+
   const modelUsed = await resolveModel(engine, {
     cliFlag: opts.model,
     configKey: "models.think",
-    tier: "deep",
-    fallback: "opus", // think is the high-stakes synthesis op; opus is the right default
+    tier: modelTier,
+    fallback: modelFallback,
   });
+
+  // Dynamic max_tokens based on query complexity (legal mode only).
+  // Complex questions get more room; simple ones save tokens.
+  const dynamicMaxTokens = computeMaxTokens(opts.question, opts.legalMode);
+
+  // ── Adversarial Injection Scan (Gap 6) ──
+  // Scan user question for prompt injection / jailbreak patterns before processing.
+  const adversarialScan = scanForInjection(opts.question);
+  if (adversarialScan.flags.length > 0) {
+    for (const flag of adversarialScan.flags) {
+      warnings.push(`INJECTION_DETECTED: ${flag.category} (${flag.severity}) — ${flag.match.slice(0, 80)}`);
+    }
+    if (adversarialScan.blocked) {
+      warnings.push("INJECTION_BLOCKED: Query blocked due to high-risk injection patterns");
+      return {
+        question: opts.question,
+        answer: "Ihre Anfrage wurde aufgrund verdächtiger Muster blockiert. Bitte formulieren Sie Ihre juristische Frage ohne Injektionsversuche neu.",
+        citations: [],
+        gaps: ["Query blocked by adversarial defense"],
+        pagesGathered: 0,
+        takesGathered: 0,
+        graphHits: 0,
+        modelUsed,
+        rounds: 0,
+        warnings,
+        synthesisOk: false,
+        diagnostics: { pagesFromHybrid: 0, takesFromKeyword: 0, takesFromVector: 0, graphHits: 0 },
+        adversarialScan,
+      };
+    }
+  }
 
   // #1698: fail fast on an unresolvable EXPLICIT model (CLI --model, or the MCP op's
   // model param) BEFORE gather, so we don't waste retrieval per failure (the 200-call
@@ -339,21 +477,52 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     takesLimit: modeLimits.takesLimit,
     sourceId: opts.sourceId,
     sourceIds: opts.allowedSources,
+    legalGraphEnabled: true,
   });
 
-  // P0-SECR-002: Filter gathered pages by verified matter scope.
-  // This prevents the LLM from seeing pages outside the caller's allowed matter.
+  // P0-SECR-002: Filter gathered evidence by verified matter scope. Uploaded
+  // documents are commonly stored below `documents/...` and linked to a case
+  // through `case_slug`, so slug-prefix filtering alone is insufficient.
+  // Canonical law sources remain available: they are shared authority, not
+  // confidential matter evidence.
   const scope = opts.matterScope;
   if (scope && scope !== "all") {
-    const inScope = (slug: string) =>
-      scope.some((prefix) => slug === prefix || slug.startsWith(`${prefix}/`));
+    const matchesScope = (slug: string, caseSlug?: string) =>
+      scope.some(
+        (prefix) =>
+          slug === prefix ||
+          slug.startsWith(`${prefix}/`) ||
+          caseSlug === prefix ||
+          caseSlug?.startsWith(`${prefix}/`)
+      );
+    const evidencePageIds = [
+      ...new Set([
+        ...gather.pages.map((p) => p.page_id),
+        ...gather.takes.map((t) => t.page_id),
+      ].filter((id): id is number => Number.isFinite(id))),
+    ];
+    const evidenceRows = evidencePageIds.length
+      ? await engine.executeRaw<{ id: number; source_id: string; slug: string; case_slug?: string }>(
+          `SELECT id, source_id, slug, frontmatter->>'case_slug' AS case_slug
+             FROM pages
+            WHERE id = ANY($1::bigint[]) AND deleted_at IS NULL`,
+          [evidencePageIds]
+        )
+      : [];
+    const metadata = new Map(evidenceRows.map((row) => [row.id, row]));
+    const pageAllowed = (pageId: number, slug: string, projectedCaseSlug?: string) => {
+      const row = metadata.get(pageId);
+      const sourceId = row?.source_id;
+      if (sourceId?.startsWith("law-")) return true;
+      return matchesScope(slug, projectedCaseSlug ?? row?.case_slug);
+    };
     gather = {
       ...gather,
-      pages: gather.pages.filter((p) => {
-        const slug = (p as unknown as { slug?: string }).slug ?? "";
-        return inScope(slug);
-      }),
-      graphSlugs: gather.graphSlugs.filter((slug) => inScope(slug)),
+      pages: gather.pages.filter((p) => pageAllowed(p.page_id, p.slug, p.case_slug)),
+      takes: gather.takes.filter((t) => pageAllowed(t.page_id, t.page_slug)),
+      graphSlugs: gather.graphSlugs.filter(
+        (slug) => slug.startsWith("legal/statutes/") || slug.startsWith("legal/judikatur/") || matchesScope(slug)
+      ),
     };
   }
 
@@ -536,7 +705,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     willSave: opts.save,
     withCalibration: !!calibrationBlockOpts,
     ...(legalMode ? { legalMode: true } : {}),
-  });
+  }) + (adversarialScan.flags.length > 0 ? ANTI_INJECTION_PROMPT : "");
   const userMessage = buildThinkUserMessage({
     question: opts.question,
     pagesBlock,
@@ -552,6 +721,13 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
   // return ANDs it with a non-empty-answer check (catches valid-but-empty JSON).
   let synthesisOk = true;
   let response: ThinkResponse;
+  let documentConfidence: DocumentConfidence | undefined;
+  let provenanceResult: ProvenanceResult | undefined;
+  let graphMetadata: GraphStats | undefined;
+  let ensembleVerification: EnsembleVerifyResult | undefined;
+  let reasoningTrace: ReasoningTrace | undefined;
+  let lastGuardrailResult: GuardrailResult | undefined;
+  let lastCrossVerifyResult: CrossVerifyResult | undefined;
   if (opts.stubResponse) {
     response = opts.stubResponse;
   } else {
@@ -593,38 +769,379 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
         },
       };
     }
-    const result = await client.create({
-      model: modelUsed,
-      max_tokens: DEFAULT_MAX_OUTPUT_TOKENS,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userMessage }],
-    });
-    const block = result.content.find((b) => b.type === "text");
-    const rawText = block && "text" in block ? block.text : "";
-    const parsed = tryParseJSON(rawText);
-    if (!parsed || typeof parsed !== "object") {
-      warnings.push("LLM_OUTPUT_NOT_JSON");
-      synthesisOk = false; // #1698: malformed output (and the non-JSON graceful sentinel)
-      response = { answer: rawText, citations: [], gaps: [] };
+    // ── True Token Streaming Path ──
+    // When onStreamChunk is provided, use gateway.chatStream for real-time
+    // token delivery. The prompt switches to plain-text mode (inline [slug]
+    // citations) instead of JSON, so tokens can be streamed as they arrive.
+    // Citations are extracted post-completion via the existing regex fallback.
+    if (opts.onStreamChunk && !opts.stubResponse) {
+      const streamSystemPrompt = buildStreamingSystemPrompt(systemPrompt, legalMode);
+      const streamUserMessage = buildStreamingUserMessage({
+        question: opts.question,
+        pagesBlock,
+        takesBlock,
+        ...(graphBlock !== undefined ? { graphBlock } : {}),
+        ...(calibrationBlockOpts !== undefined ? { calibration: calibrationBlockOpts } : {}),
+        ...(trajectoryBlock.length > 0 ? { trajectoryBlock } : {}),
+      });
+
+      let accumulated = "";
+      try {
+        const modelStr = normalizeModelId(modelUsed);
+        const streamMessages: ChatMessage[] = [
+          { role: "user", content: streamUserMessage },
+        ];
+        for await (const chunk of gatewayChatStream({
+          model: modelStr,
+          system: streamSystemPrompt,
+          messages: streamMessages,
+          maxTokens: dynamicMaxTokens,
+        })) {
+          if (chunk.type === "text" && chunk.text) {
+            accumulated += chunk.text;
+            opts.onStreamChunk(chunk.text);
+          }
+        }
+        // Parse the streamed text for citations using the regex fallback path
+        const streamResolved = resolveCitations([], accumulated);
+        response = {
+          answer: accumulated.trim(),
+          citations: streamResolved.citations,
+          gaps: [],
+        };
+        if (streamResolved.warnings.length > 0) {
+          for (const w of streamResolved.warnings) warnings.push(w);
+        }
+      } catch (streamErr) {
+        // Fallback to non-streaming path if streaming fails
+        warnings.push(
+          `STREAM_FAILED_FALLBACK: ${streamErr instanceof Error ? streamErr.message : "unknown"}`
+        );
+        const result = await client.create({
+          model: modelUsed,
+          max_tokens: dynamicMaxTokens,
+          system: systemPrompt,
+          messages: [{ role: "user", content: userMessage }],
+        });
+        const block = result.content.find((b) => b.type === "text");
+        const rawText = block && "text" in block ? block.text : "";
+        const parsed = tryParseJSON(rawText);
+        if (!parsed || typeof parsed !== "object") {
+          warnings.push("LLM_OUTPUT_NOT_JSON");
+          synthesisOk = false;
+          response = { answer: rawText, citations: [], gaps: [] };
+        } else {
+          const r = parsed as Partial<ThinkResponse>;
+          response = {
+            answer: typeof r.answer === "string" ? r.answer : "",
+            citations: Array.isArray(r.citations) ? (r.citations as ThinkResponse["citations"]) : [],
+            gaps: Array.isArray(r.gaps)
+              ? (r.gaps as string[]).filter((g) => typeof g === "string")
+              : [],
+          };
+        }
+      }
     } else {
-      const r = parsed as Partial<ThinkResponse>;
-      response = {
-        answer: typeof r.answer === "string" ? r.answer : "",
-        citations: Array.isArray(r.citations) ? (r.citations as ThinkResponse["citations"]) : [],
-        gaps: Array.isArray(r.gaps)
-          ? (r.gaps as string[]).filter((g) => typeof g === "string")
-          : [],
-      };
+      // ── Non-Streaming JSON Path (original) ──
+      const result = await client.create({
+        model: modelUsed,
+        max_tokens: dynamicMaxTokens,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMessage }],
+      });
+      const block = result.content.find((b) => b.type === "text");
+      const rawText = block && "text" in block ? block.text : "";
+      const parsed = tryParseJSON(rawText);
+      if (!parsed || typeof parsed !== "object") {
+        warnings.push("LLM_OUTPUT_NOT_JSON");
+        synthesisOk = false; // #1698: malformed output (and the non-JSON graceful sentinel)
+        response = { answer: rawText, citations: [], gaps: [] };
+      } else {
+        const r = parsed as Partial<ThinkResponse>;
+        response = {
+          answer: typeof r.answer === "string" ? r.answer : "",
+          citations: Array.isArray(r.citations) ? (r.citations as ThinkResponse["citations"]) : [],
+          gaps: Array.isArray(r.gaps)
+            ? (r.gaps as string[]).filter((g) => typeof g === "string")
+            : [],
+        };
+      }
     }
 
-    // Post-parse streaming: emit the final answer word-by-word so SSE clients
-    // see natural text appearance rather than all-at-once delivery. The LLM
-    // call is still non-streaming (JSON response format is required for
-    // citations + gaps); we simulate streaming on the parsed answer text.
-    if (opts.onStreamChunk && response.answer) {
-      const words = response.answer.split(/(\s+)/);
-      for (const word of words) {
-        if (word) opts.onStreamChunk(word);
+    // ── Tier 0 Citation Guardrail (deterministic, zero-cost) ──
+    // Checks: citation presence in context, law validation, non-§ reference
+    // grounding, hedging detection, cross-law contamination.
+    // If high-severity flags → regenerate once with stricter prompt.
+    if (legalMode && response.answer && !opts.stubResponse) {
+      const guardrailContext = pagesBlock + "\n" + takesBlock;
+      const guardrailSlugs = gather.pages.map((p) =>
+        String((p as unknown as { slug?: string }).slug ?? "")
+      );
+      const guardrailResult = checkCitationGrounding({
+        answer: response.answer,
+        context: guardrailContext,
+        topSlugs: guardrailSlugs,
+      });
+      lastGuardrailResult = guardrailResult;
+
+      if (!guardrailResult.passed) {
+        warnings.push(
+          `GUARDRAIL_FLAGGED: ${guardrailResult.flags.length} flags (${guardrailResult.flags.map((f) => f.type).join(", ")})`
+        );
+
+        // Regenerate with stricter prompt (max 1 regeneration)
+        const stricterSystem = buildRegenerationPrompt(
+          systemPrompt,
+          guardrailResult,
+          guardrailContext
+        );
+        try {
+          const regenResult = await client.create({
+            model: modelUsed,
+            max_tokens: dynamicMaxTokens,
+            system: stricterSystem,
+            messages: [{ role: "user", content: userMessage }],
+          });
+          const regenBlock = regenResult.content.find((b) => b.type === "text");
+          const regenRaw = regenBlock && "text" in regenBlock ? regenBlock.text : "";
+          const regenParsed = tryParseJSON(regenRaw);
+          if (regenParsed && typeof regenParsed === "object") {
+            const rp = regenParsed as Partial<ThinkResponse>;
+            const regenAnswer = typeof rp.answer === "string" ? rp.answer : "";
+            if (regenAnswer.length > 0) {
+              // Re-run guardrail on regenerated answer
+              const regenGuardrail = checkCitationGrounding({
+                answer: regenAnswer,
+                context: guardrailContext,
+                topSlugs: guardrailSlugs,
+              });
+              if (regenGuardrail.passed) {
+                warnings.push("GUARDRAIL_REGENERATION_PASSED");
+                response = {
+                  answer: regenAnswer,
+                  citations: Array.isArray(rp.citations)
+                    ? (rp.citations as ThinkResponse["citations"])
+                    : [],
+                  gaps: Array.isArray(rp.gaps)
+                    ? (rp.gaps as string[]).filter((g) => typeof g === "string")
+                    : [],
+                };
+              } else {
+                warnings.push(
+                  `GUARDRAIL_REGENERATION_STILL_FLAGGED: ${regenGuardrail.flags.length} flags`
+                );
+                // Use regenerated answer anyway — it's likely better than the original
+                response = {
+                  answer: regenAnswer,
+                  citations: Array.isArray(rp.citations)
+                    ? (rp.citations as ThinkResponse["citations"])
+                    : [],
+                  gaps: Array.isArray(rp.gaps)
+                    ? (rp.gaps as string[]).filter((g) => typeof g === "string")
+                    : [],
+                };
+              }
+            }
+          }
+        } catch (regenErr) {
+          warnings.push(
+            `GUARDRAIL_REGENERATION_FAILED: ${regenErr instanceof Error ? regenErr.message : "unknown"}`
+          );
+        }
+      } else {
+        warnings.push("GUARDRAIL_PASSED");
+      }
+    }
+
+    // ── Tier 1 Cross-Model Verification (Grok 4.3, ~$0.003) ──
+    // After deterministic guardrail, send answer + context to deep-tier model
+    // for semantic hallucination detection (misapplied §§, derived definitions).
+    if (legalMode && response.answer && !opts.stubResponse) {
+      try {
+        const verifyContext = pagesBlock + "\n" + takesBlock;
+        const verifyResult = await crossVerifyCitations(
+          response.answer,
+          verifyContext,
+          opts.jurisdiction,
+          engine
+        );
+        lastCrossVerifyResult = verifyResult;
+
+        if (!verifyResult.clean && verifyResult.flags.length > 0) {
+          const highFlags = verifyResult.flags.filter((f) => f.severity === "high");
+          if (highFlags.length > 0) {
+            warnings.push(
+              `CROSS_VERIFY_FLAGGED: ${verifyResult.flags.length} flags (${highFlags.length} high)`
+            );
+
+            // Regenerate with cross-verify feedback
+            const stricterSystem = buildCrossVerifyRegenerationPrompt(
+              systemPrompt,
+              verifyResult
+            );
+            try {
+              const regenResult = await client.create({
+                model: modelUsed,
+                max_tokens: DEFAULT_MAX_OUTPUT_TOKENS,
+                system: stricterSystem,
+                messages: [{ role: "user", content: userMessage }],
+              });
+              const regenBlock = regenResult.content.find((b) => b.type === "text");
+              const regenRaw = regenBlock && "text" in regenBlock ? regenBlock.text : "";
+              const regenParsed = tryParseJSON(regenRaw);
+              if (regenParsed && typeof regenParsed === "object") {
+                const rp = regenParsed as Partial<ThinkResponse>;
+                const regenAnswer = typeof rp.answer === "string" ? rp.answer : "";
+                if (regenAnswer.length > 0) {
+                  warnings.push("CROSS_VERIFY_REGENERATION_DONE");
+                  response = {
+                    answer: regenAnswer,
+                    citations: Array.isArray(rp.citations)
+                      ? (rp.citations as ThinkResponse["citations"])
+                      : [],
+                    gaps: Array.isArray(rp.gaps)
+                      ? (rp.gaps as string[]).filter((g) => typeof g === "string")
+                      : [],
+                  };
+                }
+              }
+            } catch (regenErr) {
+              warnings.push(
+                `CROSS_VERIFY_REGEN_FAILED: ${regenErr instanceof Error ? regenErr.message : "unknown"}`
+              );
+            }
+          } else {
+            warnings.push(
+              `CROSS_VERIFY_PASSED_WITH_NOTES: ${verifyResult.flags.length} low/medium flags`
+            );
+          }
+        } else {
+          warnings.push("CROSS_VERIFY_PASSED");
+        }
+      } catch (verifyErr) {
+        // Cross-verify failure is non-fatal — answer is still returned
+        warnings.push(
+          `CROSS_VERIFY_SKIPPED: ${verifyErr instanceof Error ? verifyErr.message : "unknown"}`
+        );
+      }
+    }
+
+    // ── Claim-Level Confidence Scoring (Gap 1) ──
+    // Decompose answer into claims, score each claim's confidence based on
+    // citation grounding, guardrail flags, cross-verify results, and hedging.
+    // Produces per-claim scores + document-level aggregate.
+    if (legalMode && response.answer && !opts.stubResponse) {
+      const confContext = pagesBlock + "\n" + takesBlock;
+      const confSlugs = gather.pages.map((p) =>
+        String((p as unknown as { slug?: string }).slug ?? "")
+      );
+      documentConfidence = computeDocumentConfidence({
+        answer: response.answer,
+        context: confContext,
+        guardrailResult: lastGuardrailResult,
+        crossVerifyResult: lastCrossVerifyResult,
+        retrievedSlugs: confSlugs,
+      });
+      warnings.push(
+        `CONFIDENCE: ${documentConfidence.confidence_level} (${documentConfidence.overall_confidence.toFixed(2)}) — ${documentConfidence.claim_confidences.length} claims`
+      );
+
+      // ── Provenance Chain (Gap 2) ──
+      // Build click-through links from claims to source passages.
+      provenanceResult = buildProvenance(response.answer, confContext);
+      if (provenanceResult.links.length > 0) {
+        warnings.push(`PROVENANCE: ${provenanceResult.links.length} links, ${provenanceResult.unsupported_claims.length} unsupported`);
+      }
+
+      // ── Hierarchical Legal Knowledge Graph (Gap 4) ──
+      // Report graph retrieval diagnostics from the gather phase.
+      // The actual graph traversal happens in gather.ts via relationalFanout;
+      // here we surface the stats for certification and monitoring.
+      if (gather.graphSlugs.length > 0) {
+        graphMetadata = {
+          total_nodes: gather.graphSlugs.length,
+          total_edges: 0, // Edges are in the DB links table, not counted here
+          by_type: {
+            jurisdiction: 0,
+            statute: 0,
+            paragraph: gather.graphSlugs.length,
+            subsection: 0,
+            case: 0,
+          },
+          by_edge_type: {
+            contains: 0,
+            references: 0,
+            cites: 0,
+            amends: 0,
+            repeals: 0,
+            implements: 0,
+          },
+          by_jurisdiction: {},
+          max_degree: 0,
+          avg_degree: 0,
+        };
+        warnings.push(`GRAPH: ${gather.graphSlugs.length} reachable nodes via relational fan-out`);
+      }
+
+      // ── Multi-Model Ensemble Citation Verification (Gap 5) ──
+      // Stage 3 (paraphrase judge) runs on every legal answer.
+      // Stage 4 (ensemble strict) runs only for high-stakes outputs.
+      if (response.citations && response.citations.length > 0) {
+        const ensembleMode: EnsembleMode = opts.searchMode === "conservative" ? "strict" : "standard";
+        // Extract §-citation strings from the answer text for ensemble verification
+        const citationStrings = (response.answer.match(/§\s*\d+[a-z]?\s+[A-Z][A-Za-z]{1,10}/g) ?? []);
+        if (citationStrings.length > 0) {
+          try {
+            ensembleVerification = await runEnsembleVerification({
+              answer: response.answer,
+              context: confContext,
+              citations: citationStrings,
+              stage1Flags: lastGuardrailResult?.flags.map((f) => ({
+                type: f.type,
+                detail: f.detail,
+                citation: f.citation,
+                severity: f.severity,
+              })),
+              stage2Result: lastCrossVerifyResult ? {
+                clean: lastCrossVerifyResult.clean,
+                flags: lastCrossVerifyResult.flags.map((f) => ({
+                  type: f.type,
+                  detail: f.detail,
+                  citation: f.citation,
+                  severity: f.severity,
+                })),
+                verified_citations: lastCrossVerifyResult.verified_citations,
+                flagged_citations: lastCrossVerifyResult.flagged_citations,
+              } : undefined,
+              ensembleMode,
+            });
+
+            if (ensembleVerification.clean) {
+              warnings.push(`ENSEMBLE_VERIFY: clean (${ensembleVerification.method})`);
+            } else {
+              const flagged = ensembleVerification.citations.filter((c) => !c.verified).length;
+              warnings.push(`ENSEMBLE_VERIFY: ${flagged} citations flagged (${ensembleVerification.method})`);
+            }
+          } catch (ensErr) {
+            warnings.push(`ENSEMBLE_VERIFY_SKIPPED: ${ensErr instanceof Error ? ensErr.message : "unknown"}`);
+          }
+        }
+      }
+    }
+
+    // Note: True token streaming was already handled above via gatewayChatStream.
+    // This simulated streaming path only runs for the non-streaming JSON path
+    // when onStreamChunk is set but the streaming path was not used (e.g. fallback).
+    if (opts.onStreamChunk && response.answer && !opts.stubResponse) {
+      // Check if we already streamed via the true streaming path
+      // by looking for the STREAM_FAILED_FALLBACK warning — if absent,
+      // the true streaming path already delivered tokens.
+      const alreadyStreamed = !warnings.some((w) => w.startsWith("STREAM_FAILED_FALLBACK"));
+      if (!alreadyStreamed) {
+        const words = response.answer.split(/(\s+)/);
+        for (const word of words) {
+          if (word) opts.onStreamChunk(word);
+        }
       }
     }
   }
@@ -664,6 +1181,44 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     break; // v0.28: single-pass only
   }
 
+  // ── Reasoning Trace (Gap 7 — EU AI Act Art. 12) ──
+  // Build an immutable, hash-chained reasoning trace for compliance auditing.
+  reasoningTrace = buildReasoningTrace({
+    brain_id: opts.sourceId ?? "default",
+    query: opts.question,
+    jurisdiction: opts.jurisdiction,
+    search_mode: opts.searchMode,
+    retrieved_chunks: gather.pages.map((p, i) => ({
+      slug: p.slug,
+      score: (p as unknown as { score?: number }).score ?? 0,
+      rank: i + 1,
+      source: "hybrid",
+    })),
+    pages_gathered: gather.pages.length,
+    takes_gathered: gather.takes.length,
+    graph_hits: gather.graphSlugs.length,
+    model_used: modelUsed,
+    system_prompt: systemPrompt,
+    max_tokens: dynamicMaxTokens,
+    answer: response.answer,
+    citations: grounded.valid,
+    warnings,
+    guardrail_passed: lastGuardrailResult ? !lastGuardrailResult.flags.some((f: { severity: string }) => f.severity === "high") : undefined,
+    guardrail_flags: lastGuardrailResult?.flags,
+    cross_verify_clean: lastCrossVerifyResult?.clean,
+    cross_verify_flags: lastCrossVerifyResult?.flags,
+    ensemble_clean: ensembleVerification?.clean,
+    ensemble_flags: ensembleVerification?.all_flags,
+    ensemble_method: ensembleVerification?.method,
+    regeneration_count: warnings.filter((w) => w.includes("REGENERATION")).length,
+    injection_detected: adversarialScan.flags.length > 0,
+    injection_blocked: adversarialScan.blocked,
+    injection_flags: adversarialScan.flags,
+    confidence_level: documentConfidence?.confidence_level,
+    overall_confidence: documentConfidence?.overall_confidence,
+    provenance_links: provenanceResult?.links,
+  });
+
   return {
     question: opts.question,
     answer: response.answer,
@@ -684,6 +1239,12 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
       takesFromVector: gather.diagnostics.takesFromVector,
       graphHits: gather.diagnostics.graphHits,
     },
+    documentConfidence,
+    provenance: provenanceResult,
+    graphMetadata,
+    ensembleVerification,
+    adversarialScan,
+    reasoningTrace,
   };
 }
 

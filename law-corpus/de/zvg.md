@@ -4,7 +4,7 @@ type: "law"
 jurisdiction: "de"
 abbreviation: "ZVG"
 version_date: "2026-05-26"
-retrieved_at: "2026-06-21"
+retrieved_at: "2026-07-10"
 source_url: "https://www.gesetze-im-internet.de/zvg/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
 ---
@@ -178,7 +178,7 @@ War das Verfahren gemäß § 30a einstweilen eingestellt, so kann es auf Grund d
 (1) Ist über das Vermögen des Schuldners ein Insolvenzverfahren eröffnet, so ist auf Antrag des Insolvenzverwalters die Zwangsversteigerung einstweilen einzustellen, wenn 1.im Insolvenzverfahren der Berichtstermin nach § 29 Abs. 1 Nr. 1 der Insolvenzordnung noch bevorsteht,2.das Grundstück nach dem Ergebnis des Berichtstermins nach § 29 Abs. 1 Nr. 1 der Insolvenzordnung im Insolvenzverfahren für eine Fortführung des Unternehmens oder für die Vorbereitung der Veräußerung eines Betriebs oder einer anderen Gesamtheit von Gegenständen benötigt wird,3.durch die Versteigerung die Durchführung eines vorgelegten Insolvenzplans gefährdet würde oder4.in sonstiger Weise durch die Versteigerung die angemessene Verwertung der Insolvenzmasse wesentlich erschwert würde.Der Antrag ist abzulehnen, wenn die einstweilige Einstellung dem Gläubiger unter Berücksichtigung seiner wirtschaftlichen Verhältnisse nicht zuzumuten ist.
 (2) Hat der Schuldner einen Insolvenzplan vorgelegt und ist dieser nicht nach § 231 der Insolvenzordnung zurückgewiesen worden, so ist die Zwangsversteigerung auf Antrag des Schuldners unter den Voraussetzungen des Absatzes 1 Satz 1 Nr. 3, Satz 2 einstweilen einzustellen.
 (3) § 30b Abs. 2 bis 4 gilt entsprechend mit der Maßgabe, daß an die Stelle des Schuldners der Insolvenzverwalter tritt, wenn dieser den Antrag gestellt hat, und daß die Zwangsversteigerung eingestellt wird, wenn die Voraussetzungen für die Einstellung glaubhaft gemacht sind.
-(4) Ist vor der Eröffnung des Insolvenzverfahrens ein vorläufiger Verwalter bestellt, so ist auf dessen Antrag die Zwangsversteigerung einstweilen einzustellen, wenn glaubhaft gemacht wird, daß die einstweilige Einstellung zur Verhütung nachteiliger Veränderungen in der Vermögenslage des Schuldners erforderlich ist. Ist ein vorläufiger Sachwalter bestellt, so steht dieses Antragsrecht dem Schuldner zu.\*%
+(4) Ist vor der Eröffnung des Insolvenzverfahrens ein vorläufiger Verwalter bestellt, so ist auf dessen Antrag die Zwangsversteigerung einstweilen einzustellen, wenn glaubhaft gemacht wird, daß die einstweilige Einstellung zur Verhütung nachteiliger Veränderungen in der Vermögenslage des Schuldners erforderlich ist. Ist ein vorläufiger Sachwalter bestellt, so steht dieses Antragsrecht dem Schuldner zu.*%
 
 ## § 30e
 
@@ -201,7 +201,7 @@ War das Verfahren gemäß § 30a einstweilen eingestellt, so kann es auf Grund d
 ## § 31
 
 (1) Im Falle einer einstweiligen Einstellung darf das Verfahren, soweit sich nicht aus dem Gesetz etwas anderes ergibt, nur auf Antrag des Gläubigers fortgesetzt werden. Wird der Antrag nicht binnen sechs Monaten gestellt, so ist das Verfahren aufzuheben.
-(2) Die Frist nach Absatz 1 Satz 2 beginnt a)im Falle des § 30 mit der Einstellung des Verfahrens, b)im Falle des § 30a mit dem Zeitpunkt, bis zu dem die Einstellung angeordnet war, c)im Falle des § 30f Abs. 1 mit dem Ende des Insolvenzverfahrens, im Falle des § 30f Abs. 2 mit der Rücknahme oder der Abweisung des Antrags auf Eröffnung des Insolvenzverfahrens, d)wenn die Einstellung vom Prozeßgericht angeordnet war, mit der Wiederaufhebung der Anordnung oder mit einer sonstigen Erledigung der Einstellung.
+(2) Die Frist nach Absatz 1 Satz 2 beginnt a)im Falle des § 30 mit der Einstellung des Verfahrens, b)im Falle des § 30a mit dem Zeitpunkt, bis zu dem die Einstellung angeordnet war, c)im Falle des § 30f Abs. 1 mit dem Ende des Insolvenzverfahrens, im Falle des § 30f Abs. 2 mit der Rücknahme oder der Abweisung des Antrags auf Eröffnung des Insolvenzverfahrens, d)wenn die Einstellung vom Prozeßgericht angeordnet war, mit der Wiederaufhebung der Anordnung oder mit einer sonstigen Erledigung der Einstellung. 
 (3) Das Vollstreckungsgericht soll den Gläubiger auf den Fristbeginn unter Bekanntgabe der Rechtsfolgen eines fruchtlosen Fristablaufs hinweisen; die Frist beginnt erst zu laufen, nachdem der Hinweis auf die Rechtsfolgen eines fruchtlosen Fristablaufs dem Gläubiger zugestellt worden ist.
 
 ## § 32
@@ -294,7 +294,7 @@ Bedingte Rechte sind wie unbedingte, Rechte, die durch Eintragung eines Widerspr
 ## § 50
 
 (1) Soweit eine bei der Feststellung des geringsten Gebots berücksichtigte Hypothek, Grundschuld oder Rentenschuld nicht besteht, hat der Ersteher außer dem Bargebot auch den Betrag des berücksichtigten Kapitals zu zahlen. In Ansehung der Verzinslichkeit, des Zinssatzes, der Zahlungszeit, der Kündigung und des Zahlungsorts bleiben die für das berücksichtigte Recht getroffenen Bestimmungen maßgebend.
-(2) Das gleiche gilt: 1.wenn das Recht bedingt ist und die aufschiebende Bedingung ausfällt oder die auflösende Bedingung eintritt; 2.wenn das Recht noch an einem anderen Grundstück besteht und an dem versteigerten Grundstück nach den besonderen Vorschriften über die Gesamthypothek erlischt.
+(2) Das gleiche gilt: 1.wenn das Recht bedingt ist und die aufschiebende Bedingung ausfällt oder die auflösende Bedingung eintritt; 2.wenn das Recht noch an einem anderen Grundstück besteht und an dem versteigerten Grundstück nach den besonderen Vorschriften über die Gesamthypothek erlischt. 
 (3) Haftet der Ersteher im Falle des Absatzes 2 Nr. 2 zugleich persönlich, so ist die Erhöhung des zu zahlenden Betrags ausgeschlossen, soweit der Ersteher nicht bereichert ist.
 
 ## § 51

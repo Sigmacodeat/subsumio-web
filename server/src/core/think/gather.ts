@@ -19,6 +19,7 @@ import type { BrainEngine, TakeHit, Take } from "../engine.ts";
 import { hybridSearch } from "../search/hybrid.ts";
 import type { SearchResult } from "../types.ts";
 import { sanitizeQueryForPrompt } from "../search/expansion.ts";
+import { expandLegalQuery } from "./legal-query-expand.ts";
 
 export interface ThinkGatherOpts {
   question: string;
@@ -38,6 +39,13 @@ export interface ThinkGatherOpts {
   sourceId?: string;
   /** Federated source scope; wins over sourceId when present. */
   sourceIds?: string[];
+  /**
+   * When true (default), activates legal graph fan-out using the top hybrid
+   * search results as seeds for relationalFanout. This finds related pages
+   * via typed edges even without an explicit --anchor flag.
+   * Set false to disable (e.g. non-legal mode, or to save latency).
+   */
+  legalGraphEnabled?: boolean;
 }
 
 export interface ThinkGatherResult {
@@ -106,8 +114,14 @@ export async function runGather(
   // (Direct DB search is fine — those are parameterized queries.)
   const sanitizedQuestion = sanitizeQueryForPrompt(opts.question);
 
+  // Expand the query with legal synonyms so hybrid search finds statutes
+  // even when the user uses colloquial terms (e.g. "Hund" → "Tier Tierhalter").
+  // The original question is still sent to the LLM verbatim; this only
+  // affects the retrieval/search phase.
+  const searchQuery = expandLegalQuery(opts.question);
+
   // Stream 1: hybrid page search (existing primitive).
-  const pagesPromise = hybridSearch(engine, opts.question, {
+  const pagesPromise = hybridSearch(engine, searchQuery, {
     limit: gatherLimit,
     expansion: false, // think provides its own anchor + graph context; no need for re-expansion
     sourceId: opts.sourceId,
@@ -170,11 +184,45 @@ export async function runGather(
         })
     : Promise.resolve([] as string[]);
 
-  const [pages, takesKw, takesVec, graphSlugs] = await Promise.all([
+  // Stream 5: legal graph fan-out (default-enabled, no anchor needed).
+  // Uses the top hybrid search result slugs as seeds for relationalFanout,
+  // discovering related pages via typed edges (cites, references, etc.).
+  // This activates graph-based retrieval by default in legal mode, finding
+  // related statutes/cases even without an explicit --anchor flag.
+  const legalGraphEnabled = opts.legalGraphEnabled !== false;
+  const legalGraphPromise: Promise<string[]> = (legalGraphEnabled && !opts.anchor)
+    ? pagesPromise.then(async (pages) => {
+        const seeds = pages
+          .slice(0, 5)
+          .map((p) => String((p as unknown as { slug?: string }).slug ?? ""))
+          .filter((s) => s.length > 0);
+        if (seeds.length === 0) return [];
+        try {
+          const fanout = await engine.relationalFanout(seeds, {
+            depth: 2,
+            direction: "both",
+            limit: 20,
+            ...(opts.sourceId !== undefined ? { sourceId: opts.sourceId } : {}),
+            ...(opts.sourceIds !== undefined ? { sourceIds: opts.sourceIds } : {}),
+          });
+          return fanout
+            .filter((r) => r.hop <= 2)
+            .map((r) => r.slug);
+        } catch (e) {
+          process.stderr.write(
+            `[think.gather] legal graph fan-out failed: ${(e as Error).message}\n`
+          );
+          return [];
+        }
+      })
+    : Promise.resolve([] as string[]);
+
+  const [pages, takesKw, takesVec, graphSlugs, legalGraphSlugs] = await Promise.all([
     pagesPromise,
     takesKwPromise,
     takesVecPromise,
     graphPromise,
+    legalGraphPromise,
   ]);
 
   // Fuse takes streams (keyword + vector). Key by (page_slug, row_num).
@@ -184,15 +232,18 @@ export async function runGather(
     (h: TakeHit) => `${h.page_slug}#${h.row_num}`
   ).slice(0, takesLimit);
 
+  // Merge anchor-graph slugs with legal-graph fan-out slugs (dedup'd).
+  const allGraphSlugs = Array.from(new Set([...graphSlugs, ...legalGraphSlugs]));
+
   return {
     pages: pages.slice(0, gatherLimit),
     takes: fusedTakes,
-    graphSlugs,
+    graphSlugs: allGraphSlugs,
     diagnostics: {
       pagesFromHybrid: pages.length,
       takesFromKeyword: takesKw.length,
       takesFromVector: takesVec.length,
-      graphHits: graphSlugs.length,
+      graphHits: allGraphSlugs.length,
       questionSanitizedFor: sanitizedQuestion === opts.question ? "none" : "expansion",
     },
   };
@@ -214,7 +265,13 @@ export function renderPagesBlock(pages: SearchResult[], excerptLen = 600): strin
           (p as unknown as { snippet?: string }).snippet ??
           ""
       ).slice(0, excerptLen);
-      return `<page slug="${slug}" rank="${idx + 1}">\n${excerpt}\n</page>`;
+      const passageStart = (p as SearchResult).passage_start;
+      const passageEnd = (p as SearchResult).passage_end;
+      const offsetAttrs =
+        passageStart != null && passageEnd != null
+          ? ` passage_start="${passageStart}" passage_end="${passageEnd}"`
+          : "";
+      return `<page slug="${slug}" rank="${idx + 1}"${offsetAttrs}>\n${excerpt}\n</page>`;
     })
     .join("\n\n");
 }

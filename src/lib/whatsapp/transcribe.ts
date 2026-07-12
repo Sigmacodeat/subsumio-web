@@ -2,10 +2,10 @@
  * WhatsApp Voice Message Transcription
  *
  * Downloads the voice message audio (via media.ts download logic),
- * sends it to OpenAI Whisper API for transcription,
+ * sends it to OpenRouter Whisper API for transcription,
  * and returns the transcribed text for further intent parsing.
  *
- * Fallback: if no OpenAI key is configured, returns a placeholder
+ * Fallback: if no OpenRouter key is configured, returns a placeholder
  * and logs a warning — the audio file is still stored in the vault.
  */
 
@@ -19,7 +19,7 @@ interface TranscriptionResult {
   text: string;
   language?: string;
   durationSeconds?: number;
-  provider: "openai-whisper" | "none";
+  provider: "openrouter-whisper" | "none";
 }
 
 /**
@@ -32,10 +32,10 @@ interface TranscriptionResult {
 export async function transcribeVoiceMessage(
   media: StoredWhatsAppMedia
 ): Promise<TranscriptionResult> {
-  const openaiKey = process.env.OPENAI_API_KEY;
+  const orKey = process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY_FALLBACK;
 
-  if (!openaiKey) {
-    log.warn("OPENAI_API_KEY not configured — voice transcription skipped");
+  if (!orKey) {
+    log.warn("OPENROUTER_API_KEY not configured — voice transcription skipped");
     return {
       text: "",
       provider: "none",
@@ -69,10 +69,12 @@ export async function transcribeVoiceMessage(
     formData.append("language", process.env.WHATSAPP_TRANSCRIPTION_LANGUAGE || "de");
 
     const res = await withRetry(() =>
-      fetch("https://api.openai.com/v1/audio/transcriptions", {
+      fetch("https://openrouter.ai/api/v1/audio/transcriptions", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${openaiKey}`,
+          Authorization: `Bearer ${orKey}`,
+          "HTTP-Referer": "https://subsum.io",
+          "X-Title": "Subsumio",
         },
         body: formData,
         signal: externalFetchTimeout(60_000),
@@ -97,7 +99,7 @@ export async function transcribeVoiceMessage(
       text: data.text?.trim() ?? "",
       language: data.language,
       durationSeconds: data.duration,
-      provider: "openai-whisper",
+      provider: "openrouter-whisper",
     };
   } catch (err) {
     log.error("Whisper request failed", {

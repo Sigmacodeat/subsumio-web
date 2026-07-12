@@ -828,7 +828,7 @@ export function attributeKnob<K extends keyof ModeBundle>(
 // to take effect immediately (one-time global cache cold-miss on upgrade; refills
 // within cache.ttl_seconds). Same cache-key-contamination convention as the
 // autocut / title_boost / graph_signals bumps above.
-export const KNOBS_HASH_VERSION = 11;
+export const KNOBS_HASH_VERSION = 13;
 
 /**
  * v0.36 (D8 / CDX-2) — second-arg context for the cache key. The
@@ -857,6 +857,16 @@ export interface KnobsHashContext {
    */
   schemaPack?: string;
   schemaPackVersion?: string;
+  /**
+   * v=12 (hard jurisdiction isolation): the statute jurisdiction scope of the
+   * query, e.g. 'at'. An at-scoped read resolves a different candidate set
+   * (foreign statutes hard-excluded) than an unscoped or de-scoped read, so a
+   * cache row written under one jurisdiction must never be served to another.
+   * Undefined folds in as 'all' (no statute filtering) for backward compat.
+   */
+  jurisdiction?: string;
+  /** Historical legal cutoff; different dates resolve different statute versions. */
+  asOfDate?: string;
 }
 
 export function knobsHash(knobs: ResolvedSearchKnobs, ctx?: KnobsHashContext): string {
@@ -950,6 +960,13 @@ export function knobsHash(knobs: ResolvedSearchKnobs, ctx?: KnobsHashContext): s
     `ct2=${knobs.cognitive_tier2_boost.toFixed(2)}`,
     `ct1=${knobs.cognitive_tier1_boost.toFixed(2)}`,
     `ct0=${knobs.cognitive_tier0_boost.toFixed(2)}`,
+    // v=12 addition (append-only): hard jurisdiction isolation. A jurisdiction-
+    // scoped read (foreign statutes hard-excluded) must NOT be served from an
+    // unscoped or foreign-jurisdiction cache row. Undefined → 'all'. ONE-TIME
+    // cold-miss on upgrade as v=11 rows become unreachable.
+    `jur=${ctx?.jurisdiction ?? "all"}`,
+    // v=13: historical legal cutoff isolation.
+    `asof=${ctx?.asOfDate ?? "current"}`,
   ];
   const h = createHash("sha256");
   h.update(parts.join("|"));

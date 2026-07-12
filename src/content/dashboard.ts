@@ -158,6 +158,7 @@ export const D = {
   "nav.review_queue": { de: "Review-Warteschlange", en: "Review Queue" },
   "nav.version_history": { de: "Versionshistorie", en: "Version History" },
   "nav.monitoring": { de: "Monitoring", en: "Monitoring" },
+  "nav.compliance_export": { de: "Compliance-Audit", en: "Compliance Audit" },
   "nav.sources": { de: "Rechtsquellen", en: "Legal Sources" },
 
   // ── Sidebar: nav items (drafts & billing) ──

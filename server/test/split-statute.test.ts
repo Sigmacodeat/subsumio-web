@@ -77,6 +77,33 @@ describe("splitStatute", () => {
   });
 });
 
+describe("structured ToC repair", () => {
+  test("replaces an isolated short ToC capture with the substantive duplicate norm", () => {
+    const substantive23 =
+      "§ 23. Einkünfte aus Gewerbebetrieb sind Einkünfte aus einer selbständigen, " +
+      "nachhaltigen Betätigung mit Gewinnabsicht und Beteiligung am allgemeinen " +
+      "wirtschaftlichen Verkehr. ".repeat(5);
+    const dump = `---
+title: "EStG"
+jurisdiction: "at"
+---
+## § 23 — Gewerbebetrieb
+Kurzer Inhaltsverzeichnis-Eintrag.
+## § 24 — Veräußerungsgewinne
+Kurzer Inhaltsverzeichnis-Eintrag.
+Text
+${substantive23}
+§ 24. Ausführlicher Normtext des Folgeparagraphen mit genügend Inhalt. ${"Folgetext ".repeat(50)}
+`;
+
+    const { sections } = splitStatute(dump);
+    const section23 = sections.find((section) => section.ref === "23");
+    expect(section23).toBeDefined();
+    expect(section23!.body).toContain("Einkünfte aus Gewerbebetrieb sind");
+    expect(section23!.body).not.toContain("Kurzer Inhaltsverzeichnis-Eintrag");
+  });
+});
+
 const ART_FIXTURE = `---
 title: "OR — Obligationenrecht"
 type: "law"

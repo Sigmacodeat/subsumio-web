@@ -12,6 +12,7 @@ import type { PageType } from "./types.ts";
 import { importFromContent } from "./import-file.ts";
 import { writePageThrough } from "./write-through.ts";
 import { hybridSearch, hybridSearchCached, stampContentFlags } from "./search/hybrid.ts";
+import { foreignStatutePrefixes } from "./search/source-boost.ts";
 import { expandQuery } from "./search/expansion.ts";
 import { dedupResults } from "./search/dedup.ts";
 import { captureEvalCandidate, isEvalCaptureEnabled, isEvalScrubEnabled } from "./eval-capture.ts";
@@ -574,6 +575,36 @@ export function sourceScopeOpts(ctx: OperationContext): {
   if (allowed && allowed.length > 0) return { sourceIds: allowed };
   if (ctx.sourceId) return { sourceId: ctx.sourceId };
   return {};
+}
+
+/**
+ * Subsumio WP4: Defense-in-depth hard source filter.
+ *
+ * Post-search filter that strips results whose `source_id` is NOT in the
+ * caller's allowed source set. This is a BACKSTOP — the SQL-level source
+ * filter in hybridSearch/searchKeyword is the primary defense, but graph
+ * traversal, expansion, or engine bugs can leak results from foreign
+ * sources. This filter catches those leaks before they reach the caller.
+ *
+ * When no source scope is set (local CLI, tests), returns results unchanged.
+ * When sourceIds is set, only results with matching `source_id` pass.
+ * When only scalar sourceId is set, only results with matching `source_id` pass.
+ */
+export function hardSourceFilter<
+  T extends { source_id?: string },
+>(results: T[], ctx: OperationContext): T[] {
+  const scope = sourceScopeOpts(ctx);
+  if (scope.sourceIds) {
+    const allowed = new Set(scope.sourceIds);
+    return results.filter((r) => {
+      const sid = r.source_id ?? "default";
+      return allowed.has(sid);
+    });
+  }
+  if (scope.sourceId) {
+    return results.filter((r) => (r.source_id ?? "default") === scope.sourceId);
+  }
+  return results;
 }
 
 /**
@@ -1840,6 +1871,15 @@ const search: Operation = {
       type: "string",
       description: "Search mode (conservative|balanced|tokenmax). Local callers only.",
     },
+    jurisdiction: {
+      type: "string",
+      description:
+        "Restrict statute retrieval to ONE jurisdiction (at|de|ch|eu). Statutes of every other jurisdiction are hard-excluded. Falls back to the brain's legal.jurisdiction default.",
+    },
+    as_of: {
+      type: "string",
+      description: "Historical legal cutoff (YYYY-MM-DD). Selects statute versions available on that date.",
+    },
     refine_query: {
       type: "boolean",
       description:
@@ -1864,8 +1904,25 @@ const search: Operation = {
     const keywordOnly = (await ctx.engine.getConfig("search.mcp_keyword_only")) === "true";
     const wantRefine = p.refine_query === true;
 
+    // Hard jurisdiction isolation: a per-call `jurisdiction` param wins;
+    // otherwise the brain's configured default (`legal.jurisdiction`) applies,
+    // so an Austrian firm's EVERY query hard-excludes foreign statutes without
+    // the client remembering to pass it. Unset on both → no statute filtering.
+    const jurisdiction =
+      (typeof p.jurisdiction === "string" && p.jurisdiction.trim()) ||
+      (await ctx.engine.getConfig("legal.jurisdiction")) ||
+      undefined;
+
     if (keywordOnly) {
-      const raw = await ctx.engine.searchKeyword(queryText, { limit, offset, ...scope });
+      // The keyword-only escape hatch bypasses hybridSearch (which folds
+      // jurisdiction into the exclude set), so fold it in explicitly here or
+      // this path would leak foreign statutes.
+      const raw = await ctx.engine.searchKeyword(queryText, {
+        limit,
+        offset,
+        ...scope,
+        exclude_slug_prefixes: foreignStatutePrefixes(jurisdiction || undefined),
+      });
       const results = dedupResults(raw);
       stampEvidenceSafe(results);
       // #1699: the keyword-only opt-out must STILL surface the content_flag
@@ -1877,8 +1934,10 @@ const search: Operation = {
         results.map((r) => r.page_id)
       );
       maybeCaptureSearch(ctx, queryText, results, Date.now() - startedAt, false);
+      // Subsumio WP4: Defense-in-depth hard source filter
+      const sourceFiltered = hardSourceFilter(results, ctx);
       // Subsumio P0-SECR-002: Filter by verified matter scope
-      const scoped = matterScopeFilter(results, ctx);
+      const scoped = matterScopeFilter(sourceFiltered, ctx);
       // Subsumio R3: Filter by document-level ACLs
       const finalResults = await aclFilter(scoped, ctx);
       if (wantRefine) {
@@ -1904,6 +1963,10 @@ const search: Operation = {
       expansion: false,
       ...scope,
       ...(perCallMode ? { mode: perCallMode } : {}),
+      // Hard jurisdiction isolation: foreign-jurisdiction statutes are
+      // hard-excluded when a jurisdiction is resolved (param or config default).
+      jurisdiction: jurisdiction || undefined,
+      asOfDate: typeof p.as_of === "string" ? p.as_of : undefined,
       onMeta: (m) => {
         capturedMeta = m;
       },
@@ -1914,8 +1977,10 @@ const search: Operation = {
       results.map((r) => r.page_id)
     );
     maybeCaptureSearch(ctx, queryText, results, latency_ms, true, capturedMeta);
+    // Subsumio WP4: Defense-in-depth hard source filter
+    const sourceFiltered = hardSourceFilter(results, ctx);
     // Subsumio P0-SECR-002: Filter by verified matter scope
-    const scoped = matterScopeFilter(results, ctx);
+    const scoped = matterScopeFilter(sourceFiltered, ctx);
     // Subsumio R3: Filter by document-level ACLs
     const finalResults = await aclFilter(scoped, ctx);
     if (wantRefine) {
@@ -1969,6 +2034,15 @@ const query: Operation = {
       type: "string",
       description:
         "Search mode (conservative|balanced|tokenmax). Local callers only; remote uses configured mode.",
+    },
+    jurisdiction: {
+      type: "string",
+      description:
+        "Restrict statute retrieval to ONE jurisdiction (at|de|ch|eu). Statutes of every other jurisdiction are hard-excluded — an Austrian query never surfaces a German or Swiss §. Non-statute pages are unaffected.",
+    },
+    as_of: {
+      type: "string",
+      description: "Historical legal cutoff (YYYY-MM-DD). Selects statute versions available on that date.",
     },
     // v0.20.0 Cathedral II Layer 10 C1/C2: language + symbol-kind filters.
     lang: {
@@ -2120,6 +2194,14 @@ const query: Operation = {
     // search). When the param is the literal '__all__', force-allow
     // cross-source mode (matches SearchOpts.sourceId contract).
     let capturedMeta: HybridSearchMeta | null = null;
+    // Hard jurisdiction isolation: a per-call `jurisdiction` param wins;
+    // otherwise the brain's configured default (`legal.jurisdiction`) applies,
+    // so an Austrian firm's EVERY query hard-excludes foreign statutes without
+    // the client remembering to pass it. Unset on both → no statute filtering.
+    const jurisdiction =
+      (typeof p.jurisdiction === "string" && p.jurisdiction.trim()) ||
+      (await ctx.engine.getConfig("legal.jurisdiction")) ||
+      undefined;
     // v0.32.x search-lite: route the query op through hybridSearchCached so
     // semantic cache + token budget + intent weighting fire automatically.
     // Plain hybridSearch remains the bare API for callers that opt out.
@@ -2127,6 +2209,8 @@ const query: Operation = {
       limit: (p.limit as number) || 20,
       offset: (p.offset as number) || 0,
       expansion: expand,
+      jurisdiction: jurisdiction || undefined,
+      asOfDate: typeof p.as_of === "string" ? p.as_of : undefined,
       expandFn: expand ? expandQuery : undefined,
       // T4/D5 — per-call mode (local/trusted only; remote ignored).
       ...((): { mode?: string } => {
@@ -2208,8 +2292,10 @@ const query: Operation = {
       );
     }
 
+    // Subsumio WP4: Defense-in-depth hard source filter
+    const sourceFiltered = hardSourceFilter(results, ctx);
     // Subsumio P0-SECR-002: Filter by verified matter scope
-    return matterScopeFilter(results, ctx);
+    return matterScopeFilter(sourceFiltered, ctx);
   },
   scope: "read",
   cliHints: { name: "query", positional: ["query"] },
@@ -5192,7 +5278,8 @@ const search_by_image: Operation = {
       });
     }
 
-    return results;
+    // Subsumio WP4: Defense-in-depth hard source filter
+    return hardSourceFilter(results, ctx);
   },
   cliHints: { name: "search-by-image" },
 };
@@ -5831,7 +5918,7 @@ const run_skillopt: Operation = {
     }
     const optimizerModel = await resolveModel(ctx.engine, {
       tier: "deep",
-      fallback: "openrouter:openai/gpt-4.1",
+      fallback: "openrouter:xai/grok-4.3",
     });
     const targetModel = await resolveModel(ctx.engine, {
       tier: "subagent",

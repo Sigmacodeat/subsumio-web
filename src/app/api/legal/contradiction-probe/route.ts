@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersWithCaseJurisdiction } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
 export const maxDuration = 30;
@@ -32,12 +32,17 @@ export const GET = createHandler(
       headers["x-subsumio-api-key"] = ctx.headers["x-subsumio-api-key"];
     }
     headers["x-subsumio-source"] = ctx.headers["x-subsumio-source"] ?? "law-de";
+    // Inject case jurisdiction so readSourcesFor() scopes law corpus correctly.
+    const caseScopedHeaders = await engineHeadersWithCaseJurisdiction(
+      headers,
+      query?.case_slug
+    );
 
     // Call the engine's find_contradictions operation via the think API
     // The engine reads eval_contradictions_runs and filters by slug
     const res = await fetch(`${ENGINE_URL}/api/think`, {
       method: "POST",
-      headers: { ...headers, "Content-Type": "application/json" },
+      headers: { ...caseScopedHeaders, "Content-Type": "application/json" },
       body: JSON.stringify({
         prompt: `find_contradictions slug=${query?.case_slug ?? ""}`,
         tools: ["find_contradictions"],

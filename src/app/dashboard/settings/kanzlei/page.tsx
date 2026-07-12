@@ -40,6 +40,15 @@ export default function KanzleiSettingsPage() {
     setError(null);
     try {
       await saveKanzleiSettings(settings);
+      // Sync jurisdiction to User model so engineContext() can set the
+      // x-subsumio-jurisdiction header for jurisdiction-scoped law search.
+      if (settings.rechtsraumCountry) {
+        await fetch("/api/settings/jurisdiction", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jurisdiction: settings.rechtsraumCountry }),
+        }).catch(() => {});
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {

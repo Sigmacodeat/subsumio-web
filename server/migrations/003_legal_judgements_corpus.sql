@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS subsumio_judgements (
   file_number     TEXT,                      -- Aktenzeichen (e.g. "I ZR 1/24")
   court           TEXT NOT NULL,             -- Gericht (e.g. "BGH", "BVerfG")
   court_level     TEXT,                      -- Hierarchy: supreme, appeals, district, specialized
-  jurisdiction    TEXT NOT NULL DEFAULT 'de', -- de, at, ch, eu
+  jurisdiction    TEXT NOT NULL DEFAULT 'de' CHECK (jurisdiction IN ('de', 'at', 'ch', 'eu')), -- de, at, ch, eu
   decision_date   DATE,                      -- Datum der Entscheidung
   decision_type   TEXT,                      -- Urteil, Beschluss, Verordnung, etc.
   legal_area      TEXT,                      -- Zivilrecht, Strafrecht, Öffentliches Recht, etc.

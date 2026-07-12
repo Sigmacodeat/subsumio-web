@@ -24,6 +24,12 @@
 
 import { join } from "path";
 import { splitStatute } from "../src/core/legal/split-statute.ts";
+import {
+  assertLegalSourceJurisdiction,
+  LEGAL_SOURCE_BY_JURISDICTION,
+} from "../src/core/legal/jurisdiction.ts";
+import { legalVersionId } from "../src/core/legal/versioning.ts";
+import { isQuarantinedLegalSource } from "../src/core/legal/corpus-policy.ts";
 
 const args = Bun.argv.slice(2);
 const NO_EMBED = args.includes("--no-embed");
@@ -45,9 +51,9 @@ const ONLY_PREFIXED =
     : null;
 const dbIdx = args.indexOf("--db");
 const DB_OVERRIDE = dbIdx !== -1 ? args[dbIdx + 1] : null;
-// Target source. For the hosted SaaS the statutes live in ONE shared, public
-// `law-at`/`law-de` source that every tenant reads (the text is public — no
-// per-tenant copy). Omit for the local/host brain (default scope).
+// Target source. Legal reference sources are canonical and cannot be
+// overridden: AT material always belongs in law-at, DE in law-de, etc.
+// This prevents an operator typo from contaminating a shared source.
 const srcIdx = args.indexOf("--source");
 const SOURCE_ID = srcIdx !== -1 ? args[srcIdx + 1] : null;
 
@@ -60,79 +66,152 @@ interface StatuteFile {
 }
 
 const FILES: StatuteFile[] = [
-  // AT
+  // AT — civil + constitutional
   { file: "at/abgb.md", abbr: "abgb", jurisdiction: "at" },
-  { file: "at/ahg.md", abbr: "ahg", jurisdiction: "at" },
-  { file: "at/bao.md", abbr: "bao", jurisdiction: "at" },
-  { file: "at/eo.md", abbr: "eo", jurisdiction: "at" },
+  { file: "at/b-vg.md", abbr: "b-vg", jurisdiction: "at" },
+  { file: "at/bvergg.md", abbr: "bvergg", jurisdiction: "at" },
+  // AT — criminal + procedure
   { file: "at/stgb-at.md", abbr: "stgb", jurisdiction: "at" },
   { file: "at/stpo-at.md", abbr: "stpo", jurisdiction: "at" },
-  { file: "at/ugb.md", abbr: "ugb", jurisdiction: "at" },
+  { file: "at/jgg-at.md", abbr: "jgg", jurisdiction: "at" },
+  // AT — civil procedure + enforcement
+  { file: "at/eo.md", abbr: "eo", jurisdiction: "at" },
   { file: "at/zpo-at.md", abbr: "zpo", jurisdiction: "at" },
-  // AT — tax (Austrian, NOT the German EStG/UStG)
+  { file: "at/au-strg.md", abbr: "au-strg", jurisdiction: "at" },
+  { file: "at/jn.md", abbr: "jn", jurisdiction: "at" },
+  // AT — tax
   { file: "at/estg-at.md", abbr: "estg", jurisdiction: "at" },
   { file: "at/kstg-at.md", abbr: "kstg", jurisdiction: "at" },
   { file: "at/ustg-at.md", abbr: "ustg", jurisdiction: "at" },
-  // AT — labour + social insurance
-  { file: "at/asvg.md", abbr: "asvg", jurisdiction: "at" },
-  { file: "at/arbvg.md", abbr: "arbvg", jurisdiction: "at" },
-  { file: "at/angg.md", abbr: "angg", jurisdiction: "at" },
-  // AT — consumer + tenancy
-  { file: "at/kschg.md", abbr: "kschg", jurisdiction: "at" },
-  { file: "at/mrg.md", abbr: "mrg", jurisdiction: "at" },
-  // AT — corporate + insolvency
+  { file: "at/bao.md", abbr: "bao", jurisdiction: "at" },
+  { file: "at/bewg.md", abbr: "bewg", jurisdiction: "at" },
+  // AT — corporate + commercial
+  { file: "at/ugb.md", abbr: "ugb", jurisdiction: "at" },
   { file: "at/gmbhg-at.md", abbr: "gmbhg", jurisdiction: "at" },
   { file: "at/aktg-at.md", abbr: "aktg", jurisdiction: "at" },
   { file: "at/io.md", abbr: "io", jurisdiction: "at" },
-  // AT — administrative + traffic
+  { file: "at/gewo-at.md", abbr: "gewo", jurisdiction: "at" },
+  { file: "at/gwg.md", abbr: "gwg", jurisdiction: "at" },
+  { file: "at/kartg.md", abbr: "kartg", jurisdiction: "at" },
+  // AT — labour + social
+  { file: "at/asvg.md", abbr: "asvg", jurisdiction: "at" },
+  { file: "at/arbvg.md", abbr: "arbvg", jurisdiction: "at" },
+  { file: "at/angg.md", abbr: "angg", jurisdiction: "at" },
+  { file: "at/azg.md", abbr: "azg", jurisdiction: "at" },
+  { file: "at/avrag.md", abbr: "avrag", jurisdiction: "at" },
+  { file: "at/bbg.md", abbr: "bbg", jurisdiction: "at" },
+  { file: "at/buag.md", abbr: "buag", jurisdiction: "at" },
+  { file: "at/alvg.md", abbr: "alvg", jurisdiction: "at" },
+  { file: "at/mschg.md", abbr: "mschg", jurisdiction: "at" },
+  { file: "at/mschg-at.md", abbr: "mschg-at", jurisdiction: "at" },
+  // AT — consumer + tenancy + housing
+  { file: "at/kschg.md", abbr: "kschg", jurisdiction: "at" },
+  { file: "at/mrg.md", abbr: "mrg", jurisdiction: "at" },
+  { file: "at/weg.md", abbr: "weg", jurisdiction: "at" },
+  { file: "at/gebg.md", abbr: "gebg", jurisdiction: "at" },
+  { file: "at/grstg.md", abbr: "grstg", jurisdiction: "at" },
+  { file: "at/gukg.md", abbr: "gukg", jurisdiction: "at" },
+  // AT — administrative + traffic + security
   { file: "at/avg.md", abbr: "avg", jurisdiction: "at" },
   { file: "at/stvo-at.md", abbr: "stvo", jurisdiction: "at" },
+  { file: "at/spg.md", abbr: "spg", jurisdiction: "at" },
+  { file: "at/asylg.md", abbr: "asylg", jurisdiction: "at" },
+  { file: "at/aufenthg.md", abbr: "aufenthg", jurisdiction: "at" },
+  { file: "at/auslbg.md", abbr: "auslbg", jurisdiction: "at" },
+  { file: "at/waffg.md", abbr: "waffg", jurisdiction: "at" },
+  { file: "at/awg.md", abbr: "awg", jurisdiction: "at" },
   // AT — data protection + telecom + IP
   { file: "at/dsg-at.md", abbr: "dsg", jurisdiction: "at" },
   { file: "at/tkg.md", abbr: "tkg", jurisdiction: "at" },
   { file: "at/urhg-at.md", abbr: "urhg", jurisdiction: "at" },
-  // AT — construction + housing + environment
-  { file: "at/weg.md", abbr: "weg", jurisdiction: "at" },
-  { file: "at/gebg.md", abbr: "gebg", jurisdiction: "at" },
-  // AT — commercial + competition + energy
-  { file: "at/gewo-at.md", abbr: "gewo", jurisdiction: "at" },
-  { file: "at/kartg.md", abbr: "kartg", jurisdiction: "at" },
-  { file: "at/ecg.md", abbr: "ecg", jurisdiction: "at" },
-  // AT — financial + legal profession
+  { file: "at/patg.md", abbr: "patg", jurisdiction: "at" },
+  { file: "at/medieng.md", abbr: "medieng", jurisdiction: "at" },
+  // AT — health + food + chemicals
+  { file: "at/amg.md", abbr: "amg", jurisdiction: "at" },
+  { file: "at/smg.md", abbr: "smg", jurisdiction: "at" },
+  { file: "at/chemg.md", abbr: "chemg", jurisdiction: "at" },
+  // AT — energy + environment + forestry
+  { file: "at/eiwog.md", abbr: "eiwog", jurisdiction: "at" },
+  { file: "at/forstg.md", abbr: "forstg", jurisdiction: "at" },
+  { file: "at/epig.md", abbr: "epig", jurisdiction: "at" },
+  // AT — financial + legal profession + government
   { file: "at/rao.md", abbr: "rao", jurisdiction: "at" },
   { file: "at/gog.md", abbr: "gog", jurisdiction: "at" },
-  // AT — social + misc
-  { file: "at/mschg.md", abbr: "mschg", jurisdiction: "at" },
-  { file: "at/au-strg.md", abbr: "au-strg", jurisdiction: "at" },
+  { file: "at/bdg.md", abbr: "bdg", jurisdiction: "at" },
+  { file: "at/e-govg.md", abbr: "e-govg", jurisdiction: "at" },
+  // AT — misc + small laws
+  { file: "at/ahg.md", abbr: "ahg", jurisdiction: "at" },
+  { file: "at/arg.md", abbr: "arg", jurisdiction: "at" },
   { file: "at/brag.md", abbr: "brag", jurisdiction: "at" },
-  // DE
-  { file: "de/ao.md", abbr: "ao", jurisdiction: "de" },
+  { file: "at/ecg.md", abbr: "ecg", jurisdiction: "at" },
+  { file: "at/eheg.md", abbr: "eheg", jurisdiction: "at" },
+  { file: "at/fpg.md", abbr: "fpg", jurisdiction: "at" },
+  { file: "at/glbg.md", abbr: "glbg", jurisdiction: "at" },
+  { file: "at/kag.md", abbr: "kag", jurisdiction: "at" },
+  { file: "at/n-g.md", abbr: "n-g", jurisdiction: "at" },
+  { file: "at/pstg.md", abbr: "pstg", jurisdiction: "at" },
+  { file: "at/stbg.md", abbr: "stbg", jurisdiction: "at" },
+  { file: "at/stregg.md", abbr: "stregg", jurisdiction: "at" },
+  { file: "at/tilgg.md", abbr: "tilgg", jurisdiction: "at" },
+  { file: "at/tschg.md", abbr: "tschg", jurisdiction: "at" },
+  { file: "at/vbvg.md", abbr: "vbvg", jurisdiction: "at" },
+  { file: "at/vkgg.md", abbr: "vkgg", jurisdiction: "at" },
+  { file: "at/vstg.md", abbr: "vstg", jurisdiction: "at" },
+  { file: "at/vvg.md", abbr: "vvg", jurisdiction: "at" },
+  { file: "at/wrg.md", abbr: "wrg", jurisdiction: "at" },
+  { file: "at/zustg.md", abbr: "zustg", jurisdiction: "at" },
+
+  // DE — core
   { file: "de/bgb.md", abbr: "bgb", jurisdiction: "de" },
-  { file: "de/estg.md", abbr: "estg", jurisdiction: "de" },
-  { file: "de/famfg.md", abbr: "famfg", jurisdiction: "de" },
-  { file: "de/gg.md", abbr: "gg", jurisdiction: "de" },
-  { file: "de/gmbhg.md", abbr: "gmbhg", jurisdiction: "de" },
-  { file: "de/hgb.md", abbr: "hgb", jurisdiction: "de" },
-  { file: "de/inso.md", abbr: "inso", jurisdiction: "de" },
   { file: "de/stgb.md", abbr: "stgb", jurisdiction: "de" },
   { file: "de/stpo.md", abbr: "stpo", jurisdiction: "de" },
-  { file: "de/ustg.md", abbr: "ustg", jurisdiction: "de" },
-  { file: "de/uwg.md", abbr: "uwg", jurisdiction: "de" },
   { file: "de/zpo.md", abbr: "zpo", jurisdiction: "de" },
-  // DE — additional
+  { file: "de/hgb.md", abbr: "hgb", jurisdiction: "de" },
+  { file: "de/gg.md", abbr: "gg", jurisdiction: "de" },
+  // DE — tax
+  { file: "de/ao.md", abbr: "ao", jurisdiction: "de" },
+  { file: "de/estg.md", abbr: "estg", jurisdiction: "de" },
+  { file: "de/ustg.md", abbr: "ustg", jurisdiction: "de" },
   { file: "de/kstg.md", abbr: "kstg", jurisdiction: "de" },
+  { file: "de/gewstg.md", abbr: "gewstg", jurisdiction: "de" },
+  { file: "de/erbstg.md", abbr: "erbstg", jurisdiction: "de" },
+  { file: "de/bewg.md", abbr: "bewg", jurisdiction: "de" },
+  { file: "de/grestg.md", abbr: "grestg", jurisdiction: "de" },
+  { file: "de/lstdv.md", abbr: "lstdv", jurisdiction: "de" },
+  { file: "de/rvg.md", abbr: "rvg", jurisdiction: "de" },
+  { file: "de/stberg.md", abbr: "stberg", jurisdiction: "de" },
+  { file: "de/stbvv.md", abbr: "stbvv", jurisdiction: "de" },
+  // DE — corporate + commercial
+  { file: "de/gmbhg.md", abbr: "gmbhg", jurisdiction: "de" },
+  { file: "de/inso.md", abbr: "inso", jurisdiction: "de" },
+  { file: "de/uwg.md", abbr: "uwg", jurisdiction: "de" },
+  // DE — administrative + regulatory
   { file: "de/baugb.md", abbr: "baugb", jurisdiction: "de" },
   { file: "de/bdsg.md", abbr: "bdsg", jurisdiction: "de" },
   { file: "de/betrvg.md", abbr: "betrvg", jurisdiction: "de" },
   { file: "de/gewo.md", abbr: "gewo", jurisdiction: "de" },
-  { file: "de/rvg.md", abbr: "rvg", jurisdiction: "de" },
-  { file: "de/urhg.md", abbr: "urhg", jurisdiction: "de" },
   { file: "de/vwgo.md", abbr: "vwgo", jurisdiction: "de" },
   { file: "de/zvg.md", abbr: "zvg", jurisdiction: "de" },
-  // CH
+  // DE — IP + family
+  { file: "de/urhg.md", abbr: "urhg", jurisdiction: "de" },
+  { file: "de/famfg.md", abbr: "famfg", jurisdiction: "de" },
+  // DE — index
+  { file: "de/ao-index.md", abbr: "ao-index", jurisdiction: "de" },
+
+  // CH — core
   { file: "ch/or.md", abbr: "or", jurisdiction: "ch" },
   { file: "ch/zgb.md", abbr: "zgb", jurisdiction: "ch" },
   { file: "ch/stgb.md", abbr: "stgb", jurisdiction: "ch" },
+  { file: "ch/stpo.md", abbr: "stpo", jurisdiction: "ch" },
+  { file: "ch/zpo.md", abbr: "zpo", jurisdiction: "ch" },
+  // CH — additional
+  { file: "ch/bgfa.md", abbr: "bgfa", jurisdiction: "ch" },
+  { file: "ch/bvg.md", abbr: "bvg", jurisdiction: "ch" },
+  { file: "ch/dsg.md", abbr: "dsg", jurisdiction: "ch" },
+  { file: "ch/schkg.md", abbr: "schkg", jurisdiction: "ch" },
+  { file: "ch/uwg.md", abbr: "uwg", jurisdiction: "ch" },
+  { file: "ch/vwvg.md", abbr: "vwvg", jurisdiction: "ch" },
+
   // EU
   { file: "eu/dsgvo.md", abbr: "dsgvo", jurisdiction: "eu" },
   { file: "eu/dsrl.md", abbr: "dsrl", jurisdiction: "eu" },
@@ -170,7 +249,10 @@ function sectionPage(
     paragraph: section.ref,
     statute: meta.title || abbr,
   };
-  if (meta.version_date) fm.version_date = meta.version_date;
+  if (meta.version_date) {
+    fm.version_date = meta.version_date;
+    fm.legal_version_id = legalVersionId(sf.jurisdiction, sf.abbr, meta.version_date);
+  }
   if (meta.source_url) fm.source_url = meta.source_url;
   if (meta.license) fm.license = meta.license;
   const front = `---\n${Object.entries(fm)
@@ -179,14 +261,59 @@ function sectionPage(
   return `${front}\n# ${heading}\n\n${section.body}\n`;
 }
 
+function versionedSectionSlug(slug: string, versionDate: string): string {
+  return `${slug}--v-${versionDate}`;
+}
+
+async function preservePreviousVersion(
+  engine: any,
+  importFromContent: any,
+  slug: string,
+  sourceId: string,
+  currentVersionId: string,
+  noEmbed: boolean
+): Promise<void> {
+  const previous = await engine.getPage(slug, { sourceId });
+  if (!previous) return;
+  const previousVersionId =
+    typeof previous.frontmatter?.legal_version_id === "string"
+      ? previous.frontmatter.legal_version_id
+      : "";
+  if (!previousVersionId || previousVersionId === currentVersionId) return;
+  const previousDate = previousVersionId.split(":").at(-1);
+  if (!previousDate || !/^\d{4}-\d{2}-\d{2}$/.test(previousDate)) {
+    console.warn(`  ⚠️  ${slug}: existing version has no valid legal_version_id; archive skipped`);
+    return;
+  }
+
+  const archiveSlug = versionedSectionSlug(slug, previousDate);
+  const archiveFrontmatter = {
+    ...(previous.frontmatter ?? {}),
+    type: "law",
+    legal_version_id: previousVersionId,
+    version_date: previousDate,
+    archived_version: true,
+  };
+  const archiveMarkdown = `---\n${Object.entries(archiveFrontmatter)
+    .filter(([, value]) => ["string", "number", "boolean"].includes(typeof value))
+    .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
+    .join("\n")}\n---\n\n${previous.compiled_truth}\n`;
+  await importFromContent(engine, archiveSlug, archiveMarkdown, {
+    noEmbed,
+    sourceId,
+  });
+}
+
 async function main() {
-  const selected = FILES.filter(
+  const requested = FILES.filter(
     (f) =>
       !ONLY ||
       ONLY.has(f.abbr) ||
       ONLY.has(`${f.jurisdiction}:${f.abbr}`) ||
       ONLY.has(f.file.replace("/", ":"))
   );
+  const selected = requested.filter((file) => !isQuarantinedLegalSource(file.file));
+  const skippedQuarantine = requested.length - selected.length;
 
   console.log("═══════════════════════════════════════════════════════════");
   console.log("  Subsumio — Gesetze-Import (pro § / per-paragraph)");
@@ -195,6 +322,49 @@ async function main() {
     `Mode: ${DRY ? "DRY-RUN (kein DB-Write)" : NO_EMBED ? "import, no-embed" : "import + embed"}`
   );
   console.log("");
+  if (skippedQuarantine > 0) {
+    console.log(`Quarantäne: ${skippedQuarantine} nicht-kanonische Quellen vom Import ausgeschlossen.`);
+  }
+
+  // Preflight the complete batch before opening the database or writing a
+  // single source/version row. This makes corpus quality failures atomic:
+  // an incomplete statute can no longer leave a half-imported batch behind.
+  const prepared: Array<{
+    sf: StatuteFile;
+    meta: { abbreviation?: string; title?: string; version_date?: string; source_url?: string; license?: string };
+    sections: Array<{ id: string; marker: "§" | "Art."; ref: string; title: string; body: string }>;
+  }> = [];
+  const preflightErrors: string[] = [];
+  for (const sf of selected) {
+    const path = join(CORPUS, sf.file);
+    let raw: string;
+    try {
+      raw = await Bun.file(path).text();
+    } catch {
+      preflightErrors.push(`${sf.file}: not found`);
+      continue;
+    }
+    try {
+      const { meta, sections } = splitStatute(raw);
+      const effectiveSourceId = SOURCE_ID ?? `law-${sf.jurisdiction}`;
+      assertLegalSourceJurisdiction(sf.jurisdiction, effectiveSourceId);
+      if (!meta.version_date || !/^\d{4}-\d{2}-\d{2}$/.test(meta.version_date)) {
+        preflightErrors.push(`${sf.file}: missing or invalid version_date (expected YYYY-MM-DD)`);
+      }
+      if (!meta.source_url || !/^https?:\/\//.test(meta.source_url)) {
+        preflightErrors.push(`${sf.file}: missing or invalid source_url`);
+      }
+      if (sections.length === 0) preflightErrors.push(`${sf.file}: 0 sections parsed`);
+      prepared.push({ sf, meta, sections });
+    } catch (error) {
+      preflightErrors.push(`${sf.file}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  if (preflightErrors.length > 0) {
+    console.error(`[legal-import-preflight] FAILED (${preflightErrors.length} errors)`);
+    for (const error of preflightErrors) console.error(`  ❌ ${error}`);
+    process.exit(1);
+  }
 
   // Lazy-load the engine only when actually importing — keeps --dry-run dependency-free.
   let engine: any = null;
@@ -246,11 +416,16 @@ async function main() {
     // When --source is set explicitly, create that one. Otherwise create all
     // jurisdiction-based sources (law-at, law-de, law-ch, law-eu) since the
     // auto-derived sourceId will reference them.
-    const sourceIdsToCreate = SOURCE_ID ? [SOURCE_ID] : ["law-at", "law-de", "law-ch", "law-eu"];
+    const sourceIdsToCreate = SOURCE_ID ? [SOURCE_ID] : Object.values(LEGAL_SOURCE_BY_JURISDICTION);
     for (const sid of sourceIdsToCreate) {
+      const jurisdiction = Object.entries(LEGAL_SOURCE_BY_JURISDICTION).find(([, id]) => id === sid)?.[0];
       await engine.executeRaw(
-        `INSERT INTO sources (id, name) VALUES ($1, $1) ON CONFLICT (id) DO NOTHING`,
-        [sid]
+        `INSERT INTO sources (id, name, jurisdiction, config)
+         VALUES ($1, $1, $2, jsonb_build_object('federated', true, 'legal_reference', true, 'jurisdiction', $2))
+         ON CONFLICT (id) DO UPDATE SET
+           config = sources.config || EXCLUDED.config,
+           jurisdiction = COALESCE(sources.jurisdiction, EXCLUDED.jurisdiction)`,
+        [sid, jurisdiction ?? null]
       );
     }
     // expose for the loop
@@ -260,21 +435,7 @@ async function main() {
   let totalSections = 0;
   let totalErrors = 0;
 
-  for (const sf of selected) {
-    const path = join(CORPUS, sf.file);
-    let raw: string;
-    try {
-      raw = await Bun.file(path).text();
-    } catch {
-      console.error(`  ❌ ${sf.file}: not found`);
-      totalErrors++;
-      continue;
-    }
-    const { meta, sections } = splitStatute(raw);
-    if (sections.length === 0) {
-      console.error(`  ⚠️  ${sf.file}: 0 sections parsed (unexpected format?)`);
-      continue;
-    }
+  for (const { sf, meta, sections } of prepared) {
 
     if (DRY) {
       console.log(`  ${sf.jurisdiction}/${sf.abbr}: ${sections.length} §-sections`);
@@ -287,11 +448,41 @@ async function main() {
     // This prevents cross-jurisdiction contamination: AT statutes go to law-at,
     // DE statutes go to law-de, etc.
     const effectiveSourceId = SOURCE_ID ?? `law-${sf.jurisdiction}`;
+    assertLegalSourceJurisdiction(sf.jurisdiction, effectiveSourceId);
+    const versionDate = meta.version_date!; // guaranteed by the batch preflight above
+    const versionId = legalVersionId(sf.jurisdiction, sf.abbr, versionDate);
+    await engine.executeRaw(
+      `INSERT INTO legal_source_versions
+         (id, source_id, jurisdiction, statute_abbr, version_date, source_url, valid_from)
+       VALUES ($1, $2, $3, $4, $5::date, $6, $5::date)
+       ON CONFLICT (source_id, statute_abbr, version_date) DO UPDATE SET
+         source_url = EXCLUDED.source_url,
+         retrieved_at = now(),
+         status = 'current',
+         valid_to = NULL`,
+      [versionId, effectiveSourceId, sf.jurisdiction, sf.abbr, versionDate, meta.source_url ?? null]
+    );
+    await engine.executeRaw(
+      `UPDATE legal_source_versions
+          SET valid_to = ($1::date - 1), status = 'superseded'
+        WHERE source_id = $2 AND statute_abbr = $3
+          AND version_date < $1::date AND valid_to IS NULL AND id <> $4`,
+      [versionDate, effectiveSourceId, sf.abbr, versionId]
+    );
     let okForLaw = 0;
     let skippedForLaw = 0;
     for (const section of sections) {
       const slug = `legal/statutes/${sf.jurisdiction}/${sf.abbr}/${section.id}`;
+      assertLegalSourceJurisdiction(sf.jurisdiction, effectiveSourceId, slug);
       try {
+        await preservePreviousVersion(
+          engine,
+          importFromContent,
+          slug,
+          effectiveSourceId,
+          versionId,
+          NO_EMBED
+        );
         const result = await importFromContent(engine, slug, sectionPage(sf, meta, section), {
           noEmbed: NO_EMBED,
           sourceId: effectiveSourceId,

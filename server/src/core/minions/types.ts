@@ -479,6 +479,15 @@ export interface SubagentHandlerData {
    */
   _source_id?: string;
   /**
+   * Federated READ sources (law corpus) this subagent may search alongside
+   * its own _source_id. Set by the legal pipeline from
+   * JURISDICTION_LAW_SOURCES[jurisdiction]. Threaded into
+   * OperationContext.auth.allowedSources so sourceScopeOpts() returns
+   * {sourceIds: [...]} — giving search/get_page tools access to the
+   * jurisdiction-scoped law corpus.
+   */
+  _source_ids?: string[];
+  /**
    * v0.41 Approach C: opt out of the auto-generated tool-usage preamble
    * that `buildSystemPrompt()` splices into `system`. Default behavior
    * (omitted or false) prepends a deterministic preamble listing each

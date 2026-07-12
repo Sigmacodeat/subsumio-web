@@ -80,6 +80,12 @@ export const KNOWN_LINK_TYPES: ReadonlySet<string> = new Set([
   "source",
   "related_to",
   "wikilink_basename",
+  // ── Legal typed edges (legal-phases.ts) ──
+  "case_to_statute",
+  "case_to_opponent",
+  "entity_to_case",
+  "legal_precedent",
+  "statute_to_statute",
 ]);
 
 // Seeds that are pronouns / generic nouns, not entities. If a pattern's seed
@@ -108,6 +114,31 @@ const STOPWORD_SEEDS: ReadonlySet<string> = new Set([
   "who",
   "what",
   "which",
+  // German stopwords
+  "wer",
+  "was",
+  "welche",
+  "welcher",
+  "welches",
+  "die",
+  "der",
+  "das",
+  "ein",
+ "eine",
+  "einer",
+  "eines",
+  "sich",
+  "es",
+  "man",
+  "jemand",
+  "niemand",
+  "alle",
+  "alles",
+  "diese",
+  "dieser",
+  "dieses",
+  "jene",
+  "solche",
 ]);
 
 interface CompiledPattern {
@@ -135,6 +166,11 @@ const WHO_REL_VERBS: Array<{ verb: string; linkTypes: string[]; direction: Relat
   { verb: "advises|advised", linkTypes: ["advises"], direction: "in" },
   { verb: "works at|worked at|works for", linkTypes: ["works_at"], direction: "in" },
   { verb: "attended", linkTypes: ["attended"], direction: "in" },
+  // ── German legal verbs ──
+  { verb: "verweist auf|bezieht sich auf|referenziert", linkTypes: ["statute_to_statute"], direction: "out" },
+  { verb: "interpretiert|ausgelegt in|kommentiert", linkTypes: ["case_to_statute"], direction: "in" },
+  { verb: "aufgehoben durch|überholt durch|bestätigt durch", linkTypes: ["legal_precedent"], direction: "both" },
+  { verb: "haftet für|verantwortlich für|regelt|betrifft", linkTypes: ["case_to_statute", "statute_to_statute"], direction: "both" },
 ];
 
 function buildPatterns(vocab?: RelationVocab): CompiledPattern[] {
@@ -161,6 +197,27 @@ function buildPatterns(vocab?: RelationVocab): CompiledPattern[] {
     direction: "both",
     seedGroups: 2,
   });
+  // ── German connects: "Zusammenhang zwischen X und Y", "Beziehung X Y" ──
+  patterns.push({
+    re: new RegExp(
+      `\\b(?:welcher|welche|was)\\s+(?:Zusammenhang|Beziehung|Verbindung)\\s+(?:zwischen|von)\\s+${SEED}\\s+(?:und|&)\\s+${SEED}\\s*\\??$`,
+      "i"
+    ),
+    kind: "connects",
+    linkTypes: null,
+    direction: "both",
+    seedGroups: 2,
+  });
+  patterns.push({
+    re: new RegExp(
+      `\\bwie\\s+(?:hängt|stehen|sind|verhält)\\s+${SEED}\\s+(?:mit|und|&)\\s+${SEED}\\s+(?:zusammen|in Beziehung|verbunden)\\b`,
+      "i"
+    ),
+    kind: "connects",
+    linkTypes: null,
+    direction: "both",
+    seedGroups: 2,
+  });
 
   // intro — type-agnostic walk around the named person (no `introduced` edge).
   patterns.push({
@@ -173,6 +230,17 @@ function buildPatterns(vocab?: RelationVocab): CompiledPattern[] {
     direction: "both",
     seedGroups: 1,
   });
+  // ── German intro: "wer verweist auf X", "welche Urteile beziehen sich auf X" ──
+  patterns.push({
+    re: new RegExp(
+      `\\b(?:welche|wer)\\s+(?:Urteile|Entscheidungen|Fälle)\\s+(?:verweisen|beziehen sich|referenzieren)\\s+(?:auf|zu)\\s+${SEED}\\s*\\??$`,
+      "i"
+    ),
+    kind: "intro",
+    linkTypes: ["case_to_statute", "legal_precedent"],
+    direction: "in",
+    seedGroups: 1,
+  });
 
   // who_at — entity in the middle: "who at acme works on payments".
   patterns.push({
@@ -182,6 +250,17 @@ function buildPatterns(vocab?: RelationVocab): CompiledPattern[] {
     ),
     kind: "who_at",
     linkTypes: ["works_at"],
+    direction: "in",
+    seedGroups: 1,
+  });
+  // ── German who_at: "welche Urteile zu X", "wer hat zu X entschieden" ──
+  patterns.push({
+    re: new RegExp(
+      `\\b(?:welche|wer)\\s+(?:Urteile|Entscheidungen|Fälle)\\s+(?:zu|über|betreffend|zu §)\\s+${SEED}\\s*\\??$`,
+      "i"
+    ),
+    kind: "who_at",
+    linkTypes: ["case_to_statute"],
     direction: "in",
     seedGroups: 1,
   });
@@ -215,6 +294,27 @@ function buildPatterns(vocab?: RelationVocab): CompiledPattern[] {
     direction: "out",
     seedGroups: 1,
   });
+  // ── German outgoing: "worauf verweist X", "welche Gesetze referenziert X" ──
+  patterns.push({
+    re: new RegExp(
+      `\\b(?:worauf|auf welche|welche)\\s+(?:Gesetze|Paragraphen|§§|Normen)?\\s*(?:verweist|referenziert|bezieht sich)\\s+${SEED}\\b`,
+      "i"
+    ),
+    kind: "who_rel",
+    linkTypes: ["statute_to_statute"],
+    direction: "out",
+    seedGroups: 1,
+  });
+  patterns.push({
+    re: new RegExp(
+      `\\bwelche\\s+(?:Urteile|Entscheidungen|Fälle)\\s+(?:haben|hat)\\s+${SEED}\\s+(?:interpretiert|ausgelegt|kommentiert)\\b`,
+      "i"
+    ),
+    kind: "who_rel",
+    linkTypes: ["case_to_statute"],
+    direction: "out",
+    seedGroups: 1,
+  });
 
   // schema-pack extensions: "who <verb> <seed>" for each extra verb.
   for (const v of vocab?.extraVerbs ?? []) {
@@ -236,7 +336,7 @@ function cleanSeed(raw: string): string {
     .trim()
     .replace(/\?+$/, "")
     .replace(/^["'`]|["'`]$/g, "")
-    .replace(/^(?:the|a|an)\s+/i, "")
+    .replace(/^(?:the|a|an|der|die|das|ein|eine|einer|eines)\s+/i, "")
     .trim();
 }
 

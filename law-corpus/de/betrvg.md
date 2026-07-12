@@ -4,7 +4,7 @@ type: "law"
 jurisdiction: "de"
 abbreviation: "BetrVG"
 version_date: "2024-07-24"
-retrieved_at: "2026-06-21"
+retrieved_at: "2026-07-10"
 source_url: "https://www.gesetze-im-internet.de/betrvg/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
 ---
@@ -21,7 +21,6 @@ Erster TeilAllgemeine Vorschriften§§ 1 bis 6 Zweiter TeilBetriebsrat, Betrieb
 (2) Ein gemeinsamer Betrieb mehrerer Unternehmen wird vermutet, wenn 1.zur Verfolgung arbeitstechnischer Zwecke die Betriebsmittel sowie die Arbeitnehmer von den Unternehmen gemeinsam eingesetzt werden oder 2.die Spaltung eines Unternehmens zur Folge hat, dass von einem Betrieb ein oder mehrere Betriebsteile einem an der Spaltung beteiligten anderen Unternehmen zugeordnet werden, ohne dass sich dabei die Organisation des betroffenen Betriebs wesentlich ändert.
 
 ## § 2 — Stellung der Gewerkschaften und Vereinigungen der
-
 Arbeitgeber
 
 (1) Arbeitgeber und Betriebsrat arbeiten unter Beachtung der geltenden Tarifverträge vertrauensvoll und im Zusammenwirken mit den im Betrieb vertretenen Gewerkschaften und Arbeitgebervereinigungen zum Wohl der Arbeitnehmer und des Betriebs zusammen.
@@ -30,7 +29,7 @@ Arbeitgeber
 
 ## § 3 — Abweichende Regelungen
 
-(1) Durch Tarifvertrag können bestimmt werden: 1.für Unternehmen mit mehreren Betriebena)die Bildung eines unternehmenseinheitlichen Betriebsrats oder b)die Zusammenfassung von Betrieben, wenn dies die Bildung von Betriebsräten erleichtert oder einer sachgerechten Wahrnehmung der Interessen der Arbeitnehmer dient; 2.für Unternehmen und Konzerne, soweit sie nach produkt- oder projektbezogenen Geschäftsbereichen (Sparten) organisiert sind und die Leitung der Sparte auch Entscheidungen in beteiligungspflichtigen Angelegenheiten trifft, die Bildung von Betriebsräten in den Sparten (Spartenbetriebsräte), wenn dies der sachgerechten Wahrnehmung der Aufgaben des Betriebsrats dient; 3.andere Arbeitnehmervertretungsstrukturen, soweit dies insbesondere aufgrund der Betriebs-, Unternehmens- oder Konzernorganisation oder aufgrund anderer Formen der Zusammenarbeit von Unternehmen einer wirksamen und zweckmäßigen Interessenvertretung der Arbeitnehmer dient; 4.zusätzliche betriebsverfassungsrechtliche Gremien (Arbeitsgemeinschaften), die der unternehmensübergreifenden Zusammenarbeit von Arbeitnehmervertretungen dienen; 5.zusätzliche betriebsverfassungsrechtliche Vertretungen der Arbeitnehmer, die die Zusammenarbeit zwischen Betriebsrat und Arbeitnehmern erleichtern.
+(1) Durch Tarifvertrag können bestimmt werden: 1.für Unternehmen mit mehreren Betriebena)die Bildung eines unternehmenseinheitlichen Betriebsrats oder b)die Zusammenfassung von Betrieben, wenn dies die Bildung von Betriebsräten erleichtert oder einer sachgerechten Wahrnehmung der Interessen der Arbeitnehmer dient; 2.für Unternehmen und Konzerne, soweit sie nach produkt- oder projektbezogenen Geschäftsbereichen (Sparten) organisiert sind und die Leitung der Sparte auch Entscheidungen in beteiligungspflichtigen Angelegenheiten trifft, die Bildung von Betriebsräten in den Sparten (Spartenbetriebsräte), wenn dies der sachgerechten Wahrnehmung der Aufgaben des Betriebsrats dient; 3.andere Arbeitnehmervertretungsstrukturen, soweit dies insbesondere aufgrund der Betriebs-, Unternehmens- oder Konzernorganisation oder aufgrund anderer Formen der Zusammenarbeit von Unternehmen einer wirksamen und zweckmäßigen Interessenvertretung der Arbeitnehmer dient; 4.zusätzliche betriebsverfassungsrechtliche Gremien (Arbeitsgemeinschaften), die der unternehmensübergreifenden Zusammenarbeit von Arbeitnehmervertretungen dienen; 5.zusätzliche betriebsverfassungsrechtliche Vertretungen der Arbeitnehmer, die die Zusammenarbeit zwischen Betriebsrat und Arbeitnehmern erleichtern. 
 (2) Besteht in den Fällen des Absatzes 1 Nr. 1, 2, 4 oder 5 keine tarifliche Regelung und gilt auch kein anderer Tarifvertrag, kann die Regelung durch Betriebsvereinbarung getroffen werden.
 (3) Besteht im Fall des Absatzes 1 Nr. 1 Buchstabe a keine tarifliche Regelung und besteht in dem Unternehmen kein Betriebsrat, können die Arbeitnehmer mit Stimmenmehrheit die Wahl eines unternehmenseinheitlichen Betriebsrats beschließen. Die Abstimmung kann von mindestens drei wahlberechtigten Arbeitnehmern des Unternehmens oder einer im Unternehmen vertretenen Gewerkschaft veranlasst werden.
 (4) Sofern der Tarifvertrag oder die Betriebsvereinbarung nichts anderes bestimmt, sind Regelungen nach Absatz 1 Nr. 1 bis 3 erstmals bei der nächsten regelmäßigen Betriebsratswahl anzuwenden, es sei denn, es besteht kein Betriebsrat oder es ist aus anderen Gründen eine Neuwahl des Betriebsrats erforderlich. Sieht der Tarifvertrag oder die Betriebsvereinbarung einen anderen Wahlzeitpunkt vor, endet die Amtszeit bestehender Betriebsräte, die durch die Regelungen nach Absatz 1 Nr. 1 bis 3 entfallen, mit Bekanntgabe des Wahlergebnisses.
@@ -61,30 +60,30 @@ Wahlberechtigt sind alle Arbeitnehmer des Betriebs, die das 16. Lebensjahr volle
 (1) Wählbar sind alle Wahlberechtigten, die das 18. Lebensjahr vollendet haben und sechs Monate dem Betrieb angehören oder als in Heimarbeit Beschäftigte in der Hauptsache für den Betrieb gearbeitet haben. Auf diese sechsmonatige Betriebszugehörigkeit werden Zeiten angerechnet, in denen der Arbeitnehmer unmittelbar vorher einem anderen Betrieb desselben Unternehmens oder Konzerns (§ 18 Abs. 1 des Aktiengesetzes) angehört hat. Nicht wählbar ist, wer infolge strafgerichtlicher Verurteilung die Fähigkeit, Rechte aus öffentlichen Wahlen zu erlangen, nicht besitzt.
 (2) Besteht der Betrieb weniger als sechs Monate, so sind abweichend von der Vorschrift in Absatz 1 über die sechsmonatige Betriebszugehörigkeit diejenigen Arbeitnehmer wählbar, die bei der Einleitung der Betriebsratswahl im Betrieb beschäftigt sind und die übrigen Voraussetzungen für die Wählbarkeit erfüllen.
 
-## § 9 — Zahl der Betriebsratsmitglieder \*)
+## § 9 — Zahl der Betriebsratsmitglieder *)
 
-Der Betriebsrat besteht in Betrieben mit in der Regel
-5 bis 20 wahlberechtigten Arbeitnehmern aus einer Person,
-21 bis 50 wahlberechtigten Arbeitnehmern aus 3 Mitgliedern,
-51 wahlberechtigten Arbeitnehmern
-bis 100 Arbeitnehmern aus 5 Mitgliedern,
-101 bis 200 Arbeitnehmern aus 7 Mitgliedern,
-201 bis 400 Arbeitnehmern aus 9 Mitgliedern,
-401 bis 700 Arbeitnehmern aus 11 Mitgliedern,
-701 bis 1.000 Arbeitnehmern aus 13 Mitgliedern,
-1.001 bis 1.500 Arbeitnehmern aus 15 Mitgliedern,
-1.501 bis 2.000 Arbeitnehmern aus 17 Mitgliedern,
-2.001 bis 2.500 Arbeitnehmern aus 19 Mitgliedern,
-2.501 bis 3.000 Arbeitnehmern aus 21 Mitgliedern,
-3.001 bis 3.500 Arbeitnehmern aus 23 Mitgliedern,
-3.501 bis 4.000 Arbeitnehmern aus 25 Mitgliedern,
-4.001 bis 4.500 Arbeitnehmern aus 27 Mitgliedern,
-4.501 bis 5.000 Arbeitnehmern aus 29 Mitgliedern,
-5.001 bis 6.000 Arbeitnehmern aus 31 Mitgliedern,
-6.001 bis 7.000 Arbeitnehmern aus 33 Mitgliedern,
-7.001 bis 9.000 Arbeitnehmern aus 35 Mitgliedern.
-In Betrieben mit mehr als 9.000 Arbeitnehmern erhöht sich die Zahl der Mitglieder des Betriebsrats für je angefangene weitere 3.000 Arbeitnehmer um 2 Mitglieder.
------ \*) Gemäß Artikel 14 Satz 2 des Gesetzes zur Reform des Betriebsverfassungsgesetzes (BetrVerf-Reformgesetz) vom 23. Juli 2001 (BGBl. I S. 1852) gilt § 9 (Artikel 1 Nr. 8 des BetrVerf-Reformgesetzes) für im Zeitpunkt des Inkrafttretens bestehende Betriebsräte erst bei deren Neuwahl.
+Der Betriebsrat besteht in Betrieben mit in der Regel 
+5 bis 20 wahlberechtigten Arbeitnehmern aus einer Person, 
+21 bis 50 wahlberechtigten Arbeitnehmern aus 3 Mitgliedern, 
+51 wahlberechtigten Arbeitnehmern 
+bis 100 Arbeitnehmern aus 5 Mitgliedern, 
+101 bis 200 Arbeitnehmern aus 7 Mitgliedern, 
+201 bis 400 Arbeitnehmern aus 9 Mitgliedern, 
+401 bis 700 Arbeitnehmern aus 11 Mitgliedern, 
+701 bis 1.000 Arbeitnehmern aus 13 Mitgliedern, 
+1.001 bis 1.500 Arbeitnehmern aus 15 Mitgliedern, 
+1.501 bis 2.000 Arbeitnehmern aus 17 Mitgliedern, 
+2.001 bis 2.500 Arbeitnehmern aus 19 Mitgliedern, 
+2.501 bis 3.000 Arbeitnehmern aus 21 Mitgliedern, 
+3.001 bis 3.500 Arbeitnehmern aus 23 Mitgliedern, 
+3.501 bis 4.000 Arbeitnehmern aus 25 Mitgliedern, 
+4.001 bis 4.500 Arbeitnehmern aus 27 Mitgliedern, 
+4.501 bis 5.000 Arbeitnehmern aus 29 Mitgliedern, 
+5.001 bis 6.000 Arbeitnehmern aus 31 Mitgliedern, 
+6.001 bis 7.000 Arbeitnehmern aus 33 Mitgliedern, 
+7.001 bis 9.000 Arbeitnehmern aus 35 Mitgliedern. 
+In Betrieben mit mehr als 9.000 Arbeitnehmern erhöht sich die Zahl der Mitglieder des Betriebsrats für je angefangene weitere 3.000 Arbeitnehmer um 2 Mitglieder. 
+----- *) Gemäß Artikel 14 Satz 2 des Gesetzes zur Reform des Betriebsverfassungsgesetzes (BetrVerf-Reformgesetz) vom 23. Juli 2001 (BGBl. I S. 1852) gilt § 9 (Artikel 1 Nr. 8 des BetrVerf-Reformgesetzes) für im Zeitpunkt des Inkrafttretens bestehende Betriebsräte erst bei deren Neuwahl.
 
 ## § 10
 
@@ -101,7 +100,7 @@ Hat ein Betrieb nicht die ausreichende Zahl von wählbaren Arbeitnehmern, so ist
 ## § 13 — Zeitpunkt der Betriebsratswahlen
 
 (1) Die regelmäßigen Betriebsratswahlen finden alle vier Jahre in der Zeit vom 1. März bis 31. Mai statt. Sie sind zeitgleich mit den regelmäßigen Wahlen nach § 5 Abs. 1 des Sprecherausschussgesetzes einzuleiten.
-(2) Außerhalb dieser Zeit ist der Betriebsrat zu wählen, wenn 1.mit Ablauf von 24 Monaten, vom Tage der Wahl an gerechnet, die Zahl der regelmäßig beschäftigten Arbeitnehmer um die Hälfte, mindestens aber um fünfzig, gestiegen oder gesunken ist, 2.die Gesamtzahl der Betriebsratsmitglieder nach Eintreten sämtlicher Ersatzmitglieder unter die vorgeschriebene Zahl der Betriebsratsmitglieder gesunken ist, 3.der Betriebsrat mit der Mehrheit seiner Mitglieder seinen Rücktritt beschlossen hat, 4.die Betriebsratswahl mit Erfolg angefochten worden ist, 5.der Betriebsrat durch eine gerichtliche Entscheidung aufgelöst ist oder 6.im Betrieb ein Betriebsrat nicht besteht.
+(2) Außerhalb dieser Zeit ist der Betriebsrat zu wählen, wenn 1.mit Ablauf von 24 Monaten, vom Tage der Wahl an gerechnet, die Zahl der regelmäßig beschäftigten Arbeitnehmer um die Hälfte, mindestens aber um fünfzig, gestiegen oder gesunken ist, 2.die Gesamtzahl der Betriebsratsmitglieder nach Eintreten sämtlicher Ersatzmitglieder unter die vorgeschriebene Zahl der Betriebsratsmitglieder gesunken ist, 3.der Betriebsrat mit der Mehrheit seiner Mitglieder seinen Rücktritt beschlossen hat, 4.die Betriebsratswahl mit Erfolg angefochten worden ist, 5.der Betriebsrat durch eine gerichtliche Entscheidung aufgelöst ist oder 6.im Betrieb ein Betriebsrat nicht besteht. 
 (3) Hat außerhalb des für die regelmäßigen Betriebsratswahlen festgelegten Zeitraums eine Betriebsratswahl stattgefunden, so ist der Betriebsrat in dem auf die Wahl folgenden nächsten Zeitraum der regelmäßigen Betriebsratswahlen neu zu wählen. Hat die Amtszeit des Betriebsrats zu Beginn des für die regelmäßigen Betriebsratswahlen festgelegten Zeitraums noch nicht ein Jahr betragen, so ist der Betriebsrat in dem übernächsten Zeitraum der regelmäßigen Betriebsratswahlen neu zu wählen.
 
 ## § 14 — Wahlvorschriften
@@ -120,11 +119,11 @@ Hat ein Betrieb nicht die ausreichende Zahl von wählbaren Arbeitnehmern, so ist
 (4) Wahlberechtigten Arbeitnehmern, die an der Wahlversammlung zur Wahl des Betriebsrats nicht teilnehmen können, ist Gelegenheit zur schriftlichen Stimmabgabe zu geben.
 (5) In Betrieben mit in der Regel 101 bis 200 wahlberechtigten Arbeitnehmern können der Wahlvorstand und der Arbeitgeber die Anwendung des vereinfachten Wahlverfahrens vereinbaren.
 
-## § 15 — Zusammensetzung nach Beschäftigungsarten und Geschlechter \*)
+## § 15 — Zusammensetzung nach Beschäftigungsarten und Geschlechter *)
 
 (1) Der Betriebsrat soll sich möglichst aus Arbeitnehmern der einzelnen Organisationsbereiche und der verschiedenen Beschäftigungsarten der im Betrieb tätigen Arbeitnehmer zusammensetzen.
-(2) Das Geschlecht, das in der Belegschaft in der Minderheit ist, muss mindestens entsprechend seinem zahlenmäßigen Verhältnis im Betriebsrat vertreten sein, wenn dieser aus mindestens drei Mitgliedern besteht.
------ \*) Gemäß Artikel 14 Satz 2 des Gesetzes zur Reform des Betriebsverfassungsgesetzes (BetrVerf-Reformgesetz) vom 23. Juli 2001 (BGBl. I S. 1852) gilt § 15 (Artikel 1 Nr. 13 des BetrVerf-Reformgesetzes) für im Zeitraum des Inkrafftretens bestehende Betriebsräte erst bei deren Neuwahl.
+(2) Das Geschlecht, das in der Belegschaft in der Minderheit ist, muss mindestens entsprechend seinem zahlenmäßigen Verhältnis im Betriebsrat vertreten sein, wenn dieser aus mindestens drei Mitgliedern besteht. 
+----- *) Gemäß Artikel 14 Satz 2 des Gesetzes zur Reform des Betriebsverfassungsgesetzes (BetrVerf-Reformgesetz) vom 23. Juli 2001 (BGBl. I S. 1852) gilt § 15 (Artikel 1 Nr. 13 des BetrVerf-Reformgesetzes) für im Zeitraum des Inkrafftretens bestehende Betriebsräte erst bei deren Neuwahl.
 
 ## § 16 — Bestellung des Wahlvorstands
 
@@ -173,12 +172,12 @@ Im Fall des § 14a finden die §§ 16 und 17 mit folgender Maßgabe Anwendung: 1
 
 Die regelmäßige Amtszeit des Betriebsrats beträgt vier Jahre. Die Amtszeit beginnt mit der Bekanntgabe des Wahlergebnisses oder, wenn zu diesem Zeitpunkt noch ein Betriebsrat besteht, mit Ablauf von dessen Amtszeit. Die Amtszeit endet spätestens am 31. Mai des Jahres, in dem nach § 13 Abs. 1 die regelmäßigen Betriebsratswahlen stattfinden. In dem Fall des § 13 Abs. 3 Satz 2 endet die Amtszeit spätestens am 31. Mai des Jahres, in dem der Betriebsrat neu zu wählen ist. In den Fällen des § 13 Abs. 2 Nr. 1 und 2 endet die Amtszeit mit der Bekanntgabe des Wahlergebnisses des neu gewählten Betriebsrats.
 
-## § 21a — Übergangsmandat \*)
+## § 21a — Übergangsmandat *)
 
 (1) Wird ein Betrieb gespalten, so bleibt dessen Betriebsrat im Amt und führt die Geschäfte für die ihm bislang zugeordneten Betriebsteile weiter, soweit sie die Voraussetzungen des § 1 Abs. 1 Satz 1 erfüllen und nicht in einen Betrieb eingegliedert werden, in dem ein Betriebsrat besteht (Übergangsmandat). Der Betriebsrat hat insbesondere unverzüglich Wahlvorstände zu bestellen. Das Übergangsmandat endet, sobald in den Betriebsteilen ein neuer Betriebsrat gewählt und das Wahlergebnis bekannt gegeben ist, spätestens jedoch sechs Monate nach Wirksamwerden der Spaltung. Durch Tarifvertrag oder Betriebsvereinbarung kann das Übergangsmandat um weitere sechs Monate verlängert werden.
 (2) Werden Betriebe oder Betriebsteile zu einem Betrieb zusammengefasst, so nimmt der Betriebsrat des nach der Zahl der wahlberechtigten Arbeitnehmer größten Betriebs oder Betriebsteils das Übergangsmandat wahr. Absatz 1 gilt entsprechend.
-(3) Die Absätze 1 und 2 gelten auch, wenn die Spaltung oder Zusammenlegung von Betrieben und Betriebsteilen im Zusammenhang mit einer Betriebsveräußerung oder einer Umwandlung nach dem Umwandlungsgesetz erfolgt.
------ \*) Diese Vorschrift dient der Umsetzung des Artikels 6 der Richtlinie 2001/23/EG des Rates vom 12. März 2001 zur Angleichung der Rechtsvorschriften der Mitgliedstaaten über die Wahrung von Ansprüchen der Arbeitnehmer beim Übergang von Unternehmen, Betrieben oder Betriebsteilen (ABl. EG Nr. L 82 S. 16).
+(3) Die Absätze 1 und 2 gelten auch, wenn die Spaltung oder Zusammenlegung von Betrieben und Betriebsteilen im Zusammenhang mit einer Betriebsveräußerung oder einer Umwandlung nach dem Umwandlungsgesetz erfolgt. 
+----- *) Diese Vorschrift dient der Umsetzung des Artikels 6 der Richtlinie 2001/23/EG des Rates vom 12. März 2001 zur Angleichung der Rechtsvorschriften der Mitgliedstaaten über die Wahrung von Ansprüchen der Arbeitnehmer beim Übergang von Unternehmen, Betrieben oder Betriebsteilen (ABl. EG Nr. L 82 S. 16).
 
 ## § 21b — Restmandat
 
@@ -210,28 +209,43 @@ Die Mitgliedschaft im Betriebsrat erlischt durch 1.Ablauf der Amtszeit, 2.Nieder
 
 ## § 27 — Betriebsausschuss
 
-(1) Hat ein Betriebsrat neun oder mehr Mitglieder, so bildet er einen Betriebsausschuss. Der Betriebsausschuss besteht aus dem Vorsitzenden des Betriebsrats, dessen Stellvertreter und bei Betriebsräten mit
+(1) Hat ein Betriebsrat neun oder mehr Mitglieder, so bildet er einen Betriebsausschuss. Der Betriebsausschuss besteht aus dem Vorsitzenden des Betriebsrats, dessen Stellvertreter und bei Betriebsräten mit 
 
-9 bis 15
-Mitgliedern
-
-aus 3 weiteren Ausschussmitgliedern,
-
-17 bis 23
-Mitgliedern
-
-aus 5 weiteren Ausschussmitgliedern,
-
-25 bis 35
-Mitgliedern
-
-aus 7 weiteren Ausschussmitgliedern,
-
-37 oder mehr
-Mitgliedern
-
-aus 9 weiteren Ausschussmitgliedern.
-
+ 
+ 
+ 
+ 
+ 
+ 9 bis 15
+ Mitgliedern
+ 
+ 
+ aus 3 weiteren Ausschussmitgliedern,
+ 
+ 
+ 17 bis 23
+ Mitgliedern
+ 
+ 
+ aus 5 weiteren Ausschussmitgliedern,
+ 
+ 
+ 25 bis 35
+ Mitgliedern
+ 
+ 
+ aus 7 weiteren Ausschussmitgliedern,
+ 
+ 
+ 37 oder mehr
+ Mitgliedern
+ 
+ 
+ aus 9 weiteren Ausschussmitgliedern.
+ 
+ 
+ 
+ 
 Die weiteren Ausschussmitglieder werden vom Betriebsrat aus seiner Mitte in geheimer Wahl und nach den Grundsätzen der Verhältniswahl gewählt. Wird nur ein Wahlvorschlag gemacht, so erfolgt die Wahl nach den Grundsätzen der Mehrheitswahl. Sind die weiteren Ausschussmitglieder nach den Grundsätzen der Verhältniswahl gewählt, so erfolgt die Abberufung durch Beschluss des Betriebsrats, der in geheimer Abstimmung gefasst wird und einer Mehrheit von drei Vierteln der Stimmen der Mitglieder des Betriebsrats bedarf.
 (2) Der Betriebsausschuss führt die laufenden Geschäfte des Betriebsrats. Der Betriebsrat kann dem Betriebsausschuss mit der Mehrheit der Stimmen seiner Mitglieder Aufgaben zur selbständigen Erledigung übertragen; dies gilt nicht für den Abschluss von Betriebsvereinbarungen. Die Übertragung bedarf der Schriftform. Die Sätze 2 und 3 gelten entsprechend für den Widerruf der Übertragung von Aufgaben.
 (3) Betriebsräte mit weniger als neun Mitgliedern können die laufenden Geschäfte auf den Vorsitzenden des Betriebsrats oder andere Betriebsratsmitglieder übertragen.
@@ -300,7 +314,7 @@ Sonstige Bestimmungen über die Geschäftsführung sollen in einer schriftlichen
 
 ## § 38 — Freistellungen
 
-(1) Von ihrer beruflichen Tätigkeit sind mindestens freizustellen in Betrieben mit in der Regel
+(1) Von ihrer beruflichen Tätigkeit sind mindestens freizustellen in Betrieben mit in der Regel 
 
 200 bis 500Arbeitnehmern ein Betriebsratsmitglied,501 bis 900Arbeitnehmern 2 Betriebsratsmitglieder,901 bis 1.500Arbeitnehmern 3 Betriebsratsmitglieder,1.501 bis 2.000Arbeitnehmern 4 Betriebsratsmitglieder,2.001 bis 3.000Arbeitnehmern 5 Betriebsratsmitglieder,3.001 bis 4.000Arbeitnehmern 6 Betriebsratsmitglieder,4.001 bis 5.000Arbeitnehmern 7 Betriebsratsmitglieder,5.001 bis 6.000Arbeitnehmern 8 Betriebsratsmitglieder,6.001 bis 7.000Arbeitnehmern 9 Betriebsratsmitglieder,7.001 bis 8.000Arbeitnehmern 10 Betriebsratsmitglieder,8.001 bis 9.000Arbeitnehmern 11 Betriebsratsmitglieder,9.001 bis 10.000Arbeitnehmern 12 Betriebsratsmitglieder.
 In Betrieben mit über 10.000 Arbeitnehmern ist für je angefangene weitere 2.000 Arbeitnehmer ein weiteres Betriebsratsmitglied freizustellen. Freistellungen können auch in Form von Teilfreistellungen erfolgen. Diese dürfen zusammengenommen nicht den Umfang der Freistellungen nach den Sätzen 1 und 2 überschreiten. Durch Tarifvertrag oder Betriebsvereinbarung können anderweitige Regelungen über die Freistellung vereinbart werden.
@@ -349,7 +363,7 @@ Die Betriebs- und Abteilungsversammlungen können Angelegenheiten einschließlic
 (1) An den Betriebs- oder Abteilungsversammlungen können Beauftragte der im Betrieb vertretenen Gewerkschaften beratend teilnehmen. Nimmt der Arbeitgeber an Betriebs- oder Abteilungsversammlungen teil, so kann er einen Beauftragten der Vereinigung der Arbeitgeber, der er angehört, hinzuziehen.
 (2) Der Zeitpunkt und die Tagesordnung der Betriebs- oder Abteilungsversammlungen sind den im Betriebsrat vertretenen Gewerkschaften rechtzeitig schriftlich mitzuteilen.
 
-## § 47 — Voraussetzungen der Errichtung, Mitgliederzahl, Stimmengewicht \*)
+## § 47 — Voraussetzungen der Errichtung, Mitgliederzahl, Stimmengewicht *)
 
 (1) Bestehen in einem Unternehmen mehrere Betriebsräte, so ist ein Gesamtbetriebsrat zu errichten.
 (2) In den Gesamtbetriebsrat entsendet jeder Betriebsrat mit bis zu drei Mitgliedern eines seiner Mitglieder; jeder Betriebsrat mit mehr als drei Mitgliedern entsendet zwei seiner Mitglieder. Die Geschlechter sollen angemessen berücksichtigt werden.
@@ -359,7 +373,7 @@ Die Betriebs- und Abteilungsversammlungen können Angelegenheiten einschließlic
 (6) Kommt im Fall des Absatzes 5 eine Einigung nicht zustande, so entscheidet eine für das Gesamtunternehmen zu bildende Einigungsstelle. Der Spruch der Einigungsstelle ersetzt die Einigung zwischen Arbeitgeber und Gesamtbetriebsrat.
 (7) Jedes Mitglied des Gesamtbetriebsrats hat so viele Stimmen, wie in dem Betrieb, in dem es gewählt wurde, wahlberechtigte Arbeitnehmer in der Wählerliste eingetragen sind. Entsendet der Betriebsrat mehrere Mitglieder, so stehen ihnen die Stimmen nach Satz 1 anteilig zu.
 (8) Ist ein Mitglied des Gesamtbetriebsrats für mehrere Betriebe entsandt worden, so hat es so viele Stimmen, wie in den Betrieben, für die es entsandt ist, wahlberechtigte Arbeitnehmer in den Wählerlisten eingetragen sind; sind mehrere Mitglieder entsandt worden, gilt Absatz 7 Satz 2 entsprechend.
-(9) Für Mitglieder des Gesamtbetriebsrats, die aus einem gemeinsamen Betrieb mehrerer Unternehmen entsandt worden sind, können durch Tarifvertrag oder Betriebsvereinbarung von den Absätzen 7 und 8 abweichende Regelungen getroffen werden.
+(9) Für Mitglieder des Gesamtbetriebsrats, die aus einem gemeinsamen Betrieb mehrerer Unternehmen entsandt worden sind, können durch Tarifvertrag oder Betriebsvereinbarung von den Absätzen 7 und 8 abweichende Regelungen getroffen werden. 
 ----- +) Gemäß Artikel 14 Satz 2 des Gesetzes zur Reform des Betriebsverfassungsgesetzes (BetrVerf-Reformgesetz) vom 23. Juli 2001 (BGBl. I S. 1852) gilt § 47 Abs. 2 (Artikel 1 Nr. 35 Buchstabe a des BetrVerf-Reformgesetzes) für im Zeitpunkt des Inkrafttretens bestehende Betriebsräte erst bei deren Neuwahl.
 
 ## § 48 — Ausschluss von Gesamtbetriebsratsmitgliedern
@@ -377,7 +391,7 @@ Die Mitgliedschaft im Gesamtbetriebsrat endet mit dem Erlöschen der Mitgliedsch
 
 ## § 51 — Geschäftsführung
 
-(1) Für den Gesamtbetriebsrat gelten § 25 Abs. 1, die §§ 26, 27 Abs. 2 und 3, § 28 Abs. 1 Satz 1 und 3, Abs. 2, die §§ 30, 31, 34, 35, 36, 37 Abs. 1 bis 3 sowie die §§ 40 und 41 entsprechend. § 27 Abs. 1 gilt entsprechend mit der Maßgabe, dass der Gesamtbetriebsausschuss aus dem Vorsitzenden des Gesamtbetriebsrats, dessen Stellvertreter und bei Gesamtbetriebsräten mit
+(1) Für den Gesamtbetriebsrat gelten § 25 Abs. 1, die §§ 26, 27 Abs. 2 und 3, § 28 Abs. 1 Satz 1 und 3, Abs. 2, die §§ 30, 31, 34, 35, 36, 37 Abs. 1 bis 3 sowie die §§ 40 und 41 entsprechend. § 27 Abs. 1 gilt entsprechend mit der Maßgabe, dass der Gesamtbetriebsausschuss aus dem Vorsitzenden des Gesamtbetriebsrats, dessen Stellvertreter und bei Gesamtbetriebsräten mit 
 9 bis 16Mitgliedernaus 3 weiteren Ausschußmitgliedern,17 bis 24Mitgliedernaus 5 weiteren Ausschußmitgliedern,25 bis 36Mitgliedernaus 7 weiteren Ausschußmitgliedern,mehr als 36Mitgliedernaus 9 weiteren Ausschußmitgliedern
 besteht.
 (2) Ist ein Gesamtbetriebsrat zu errichten, so hat der Betriebsrat der Hauptverwaltung des Unternehmens oder, soweit ein solcher Betriebsrat nicht besteht, der Betriebsrat des nach der Zahl der wahlberechtigten Arbeitnehmer größten Betriebs zu der Wahl des Vorsitzenden und des stellvertretenden Vorsitzenden des Gesamtbetriebsrats einzuladen. Der Vorsitzende des einladenden Betriebsrats hat die Sitzung zu leiten, bis der Gesamtbetriebsrat aus seiner Mitte einen Wahlleiter bestellt hat. § 29 Abs. 2 bis 4 gilt entsprechend.
@@ -440,17 +454,16 @@ Die Konzernschwerbehindertenvertretung (§ 180 Absatz 2 des Neunten Buches Sozia
 (2) Wählbar sind alle Arbeitnehmer des Betriebs, die das 25. Lebensjahr noch nicht vollendet haben oder die zu ihrer Berufsausbildung beschäftigt sind; § 8 Abs. 1 Satz 3 findet Anwendung. Mitglieder des Betriebsrats können nicht zu Jugend- und Auszubildendenvertretern gewählt werden.
 
 ## § 62 — Zahl der Jugend- und Auszubildendenvertreter, Zusammensetzung der
-
 Jugend- und Auszubildendenvertretung
 
-(1) Die Jugend- und Auszubildendenvertretung besteht in Betrieben mit in der Regel
-5 bis 20 der in § 60 Abs. 1 genannten Arbeitnehmer aus einer Person,
-21 bis 50 der in § 60 Abs. 1 genannten Arbeitnehmer aus 3 Mitgliedern,
-51 bis 150 der in § 60 Abs. 1 genannten Arbeitnehmer aus 5 Mitgliedern,
-151 bis 300 der in § 60 Abs. 1 genannten Arbeitnehmer aus 7 Mitgliedern,
-301 bis 500 der in § 60 Abs. 1 genannten Arbeitnehmer aus 9 Mitgliedern,
-501 bis 700 der in § 60 Abs. 1 genannten Arbeitnehmer aus 11 Mitgliedern,
-701 bis 1.000 der in § 60 Abs. 1 genannten Arbeitnehmer aus 13 Mitgliedern,
+(1) Die Jugend- und Auszubildendenvertretung besteht in Betrieben mit in der Regel 
+5 bis 20 der in § 60 Abs. 1 genannten Arbeitnehmer aus einer Person, 
+21 bis 50 der in § 60 Abs. 1 genannten Arbeitnehmer aus 3 Mitgliedern, 
+51 bis 150 der in § 60 Abs. 1 genannten Arbeitnehmer aus 5 Mitgliedern, 
+151 bis 300 der in § 60 Abs. 1 genannten Arbeitnehmer aus 7 Mitgliedern, 
+301 bis 500 der in § 60 Abs. 1 genannten Arbeitnehmer aus 9 Mitgliedern, 
+501 bis 700 der in § 60 Abs. 1 genannten Arbeitnehmer aus 11 Mitgliedern, 
+701 bis 1.000 der in § 60 Abs. 1 genannten Arbeitnehmer aus 13 Mitgliedern, 
 mehr als 1.000 der in § 60 Abs. 1 genannten Arbeitnehmer aus 15 Mitgliedern.
 (2) Die Jugend- und Auszubildendenvertretung soll sich möglichst aus Vertretern der verschiedenen Beschäftigungsarten und Ausbildungsberufe der im Betrieb tätigen in § 60 Abs. 1 genannten Arbeitnehmer zusammensetzen.
 (3) Das Geschlecht, das unter den in § 60 Abs. 1 genannten Arbeitnehmern in der Minderheit ist, muss mindestens entsprechend seinem zahlenmäßigen Verhältnis in der Jugend- und Auszubildendenvertretung vertreten sein, wenn diese aus mindestens drei Mitgliedern besteht.
@@ -495,7 +508,7 @@ In Betrieben, die in der Regel mehr als fünfzig der in § 60 Abs. 1 genannten A
 
 ## § 70 — Allgemeine Aufgaben
 
-(1) Die Jugend- und Auszubildendenvertretung hat folgende allgemeine Aufgaben: 1.Maßnahmen, die den in § 60 Abs. 1 genannten Arbeitnehmern dienen, insbesondere in Fragen der Berufsbildung und der Übernahme der zu ihrer Berufsausbildung Beschäftigten in ein Arbeitsverhältnis, beim Betriebsrat zu beantragen; 1a.Maßnahmen zur Durchsetzung der tatsächlichen Gleichstellung der in § 60 Abs. 1 genannten Arbeitnehmer entsprechend § 80 Abs. 1 Nr. 2a und 2b beim Betriebsrat zu beantragen; 2.darüber zu wachen, dass die zugunsten der in § 60 Abs. 1 genannten Arbeitnehmer geltenden Gesetze, Verordnungen, Unfallverhütungsvorschriften, Tarifverträge und Betriebsvereinbarungen durchgeführt werden; 3.Anregungen von in § 60 Abs. 1 genannten Arbeitnehmern, insbesondere in Fragen der Berufsbildung, entgegenzunehmen und, falls sie berechtigt erscheinen, beim Betriebsrat auf eine Erledigung hinzuwirken. Die Jugend- und Auszubildendenvertretung hat die betroffenen in § 60 Abs. 1 genannten Arbeitnehmer über den Stand und das Ergebnis der Verhandlungen zu informieren; 4.die Integration ausländischer, in § 60 Abs. 1 genannter Arbeitnehmer im Betrieb zu fördern und entsprechende Maßnahmen beim Betriebsrat zu beantragen.
+(1) Die Jugend- und Auszubildendenvertretung hat folgende allgemeine Aufgaben: 1.Maßnahmen, die den in § 60 Abs. 1 genannten Arbeitnehmern dienen, insbesondere in Fragen der Berufsbildung und der Übernahme der zu ihrer Berufsausbildung Beschäftigten in ein Arbeitsverhältnis, beim Betriebsrat zu beantragen; 1a.Maßnahmen zur Durchsetzung der tatsächlichen Gleichstellung der in § 60 Abs. 1 genannten Arbeitnehmer entsprechend § 80 Abs. 1 Nr. 2a und 2b beim Betriebsrat zu beantragen; 2.darüber zu wachen, dass die zugunsten der in § 60 Abs. 1 genannten Arbeitnehmer geltenden Gesetze, Verordnungen, Unfallverhütungsvorschriften, Tarifverträge und Betriebsvereinbarungen durchgeführt werden; 3.Anregungen von in § 60 Abs. 1 genannten Arbeitnehmern, insbesondere in Fragen der Berufsbildung, entgegenzunehmen und, falls sie berechtigt erscheinen, beim Betriebsrat auf eine Erledigung hinzuwirken. Die Jugend- und Auszubildendenvertretung hat die betroffenen in § 60 Abs. 1 genannten Arbeitnehmer über den Stand und das Ergebnis der Verhandlungen zu informieren; 4.die Integration ausländischer, in § 60 Abs. 1 genannter Arbeitnehmer im Betrieb zu fördern und entsprechende Maßnahmen beim Betriebsrat zu beantragen. 
 (2) Zur Durchführung ihrer Aufgaben ist die Jugend- und Auszubildendenvertretung durch den Betriebsrat rechtzeitig und umfassend zu unterrichten. Die Jugend- und Auszubildendenvertretung kann verlangen, dass ihr der Betriebsrat die zur Durchführung ihrer Aufgaben erforderlichen Unterlagen zur Verfügung stellt.
 
 ## § 71 — Jugend- und Auszubildendenversammlung
@@ -711,7 +724,7 @@ Der Betriebsrat kann verlangen, dass Arbeitsplätze, die besetzt werden sollen, 
 ## § 99 — Mitbestimmung bei personellen Einzelmaßnahmen
 
 (1) In Unternehmen mit in der Regel mehr als zwanzig wahlberechtigten Arbeitnehmern hat der Arbeitgeber den Betriebsrat vor jeder Einstellung, Eingruppierung, Umgruppierung und Versetzung zu unterrichten, ihm die erforderlichen Bewerbungsunterlagen vorzulegen und Auskunft über die Person der Beteiligten zu geben; er hat dem Betriebsrat unter Vorlage der erforderlichen Unterlagen Auskunft über die Auswirkungen der geplanten Maßnahme zu geben und die Zustimmung des Betriebsrats zu der geplanten Maßnahme einzuholen. Bei Einstellungen und Versetzungen hat der Arbeitgeber insbesondere den in Aussicht genommenen Arbeitsplatz und die vorgesehene Eingruppierung mitzuteilen. Die Mitglieder des Betriebsrats sind verpflichtet, über die ihnen im Rahmen der personellen Maßnahmen nach den Sätzen 1 und 2 bekanntgewordenen persönlichen Verhältnisse und Angelegenheiten der Arbeitnehmer, die ihrer Bedeutung oder ihrem Inhalt nach einer vertraulichen Behandlung bedürfen, Stillschweigen zu bewahren; § 79 Abs. 1 Satz 2 bis 4 gilt entsprechend.
-(2) Der Betriebsrat kann die Zustimmung verweigern, wenn 1.die personelle Maßnahme gegen ein Gesetz, eine Verordnung, eine Unfallverhütungsvorschrift oder gegen eine Bestimmung in einem Tarifvertrag oder in einer Betriebsvereinbarung oder gegen eine gerichtliche Entscheidung oder eine behördliche Anordnung verstoßen würde, 2.die personelle Maßnahme gegen eine Richtlinie nach § 95 verstoßen würde, 3.die durch Tatsachen begründete Besorgnis besteht, dass infolge der personellen Maßnahme im Betrieb beschäftigte Arbeitnehmer gekündigt werden oder sonstige Nachteile erleiden, ohne dass dies aus betrieblichen oder persönlichen Gründen gerechtfertigt ist; als Nachteil gilt bei unbefristeter Einstellung auch die Nichtberücksichtigung eines gleich geeigneten befristet Beschäftigten, 4.der betroffene Arbeitnehmer durch die personelle Maßnahme benachteiligt wird, ohne dass dies aus betrieblichen oder in der Person des Arbeitnehmers liegenden Gründen gerechtfertigt ist, 5.eine nach § 93 erforderliche Ausschreibung im Betrieb unterblieben ist oder 6.die durch Tatsachen begründete Besorgnis besteht, dass der für die personelle Maßnahme in Aussicht genommene Bewerber oder Arbeitnehmer den Betriebsfrieden durch gesetzwidriges Verhalten oder durch grobe Verletzung der in § 75 Abs. 1 enthaltenen Grundsätze, insbesondere durch rassistische oder fremdenfeindliche Betätigung, stören werde.
+(2) Der Betriebsrat kann die Zustimmung verweigern, wenn 1.die personelle Maßnahme gegen ein Gesetz, eine Verordnung, eine Unfallverhütungsvorschrift oder gegen eine Bestimmung in einem Tarifvertrag oder in einer Betriebsvereinbarung oder gegen eine gerichtliche Entscheidung oder eine behördliche Anordnung verstoßen würde, 2.die personelle Maßnahme gegen eine Richtlinie nach § 95 verstoßen würde, 3.die durch Tatsachen begründete Besorgnis besteht, dass infolge der personellen Maßnahme im Betrieb beschäftigte Arbeitnehmer gekündigt werden oder sonstige Nachteile erleiden, ohne dass dies aus betrieblichen oder persönlichen Gründen gerechtfertigt ist; als Nachteil gilt bei unbefristeter Einstellung auch die Nichtberücksichtigung eines gleich geeigneten befristet Beschäftigten, 4.der betroffene Arbeitnehmer durch die personelle Maßnahme benachteiligt wird, ohne dass dies aus betrieblichen oder in der Person des Arbeitnehmers liegenden Gründen gerechtfertigt ist, 5.eine nach § 93 erforderliche Ausschreibung im Betrieb unterblieben ist oder 6.die durch Tatsachen begründete Besorgnis besteht, dass der für die personelle Maßnahme in Aussicht genommene Bewerber oder Arbeitnehmer den Betriebsfrieden durch gesetzwidriges Verhalten oder durch grobe Verletzung der in § 75 Abs. 1 enthaltenen Grundsätze, insbesondere durch rassistische oder fremdenfeindliche Betätigung, stören werde. 
 (3) Verweigert der Betriebsrat seine Zustimmung, so hat er dies unter Angabe von Gründen innerhalb einer Woche nach Unterrichtung durch den Arbeitgeber diesem schriftlich mitzuteilen. Teilt der Betriebsrat dem Arbeitgeber die Verweigerung seiner Zustimmung nicht innerhalb der Frist schriftlich mit, so gilt die Zustimmung als erteilt.
 (4) Verweigert der Betriebsrat seine Zustimmung, so kann der Arbeitgeber beim Arbeitsgericht beantragen, die Zustimmung zu ersetzen.
 
@@ -729,9 +742,9 @@ Führt der Arbeitgeber eine personelle Maßnahme im Sinne des § 99 Abs. 1 Satz 
 
 (1) Der Betriebsrat ist vor jeder Kündigung zu hören. Der Arbeitgeber hat ihm die Gründe für die Kündigung mitzuteilen. Eine ohne Anhörung des Betriebsrats ausgesprochene Kündigung ist unwirksam.
 (2) Hat der Betriebsrat gegen eine ordentliche Kündigung Bedenken, so hat er diese unter Angabe der Gründe dem Arbeitgeber spätestens innerhalb einer Woche schriftlich mitzuteilen. Äußert er sich innerhalb dieser Frist nicht, gilt seine Zustimmung zur Kündigung als erteilt. Hat der Betriebsrat gegen eine außerordentliche Kündigung Bedenken, so hat er diese unter Angabe der Gründe dem Arbeitgeber unverzüglich, spätestens jedoch innerhalb von drei Tagen, schriftlich mitzuteilen. Der Betriebsrat soll, soweit dies erforderlich erscheint, vor seiner Stellungnahme den betroffenen Arbeitnehmer hören. § 99 Abs. 1 Satz 3 gilt entsprechend.
-(3) Der Betriebsrat kann innerhalb der Frist des Absatzes 2 Satz 1 der ordentlichen Kündigung widersprechen, wenn 1.der Arbeitgeber bei der Auswahl des zu kündigenden Arbeitnehmers soziale Gesichtspunkte nicht oder nicht ausreichend berücksichtigt hat, 2.die Kündigung gegen eine Richtlinie nach § 95 verstößt, 3.der zu kündigende Arbeitnehmer an einem anderen Arbeitsplatz im selben Betrieb oder in einem anderen Betrieb des Unternehmens weiterbeschäftigt werden kann, 4.die Weiterbeschäftigung des Arbeitnehmers nach zumutbaren Umschulungs- oder Fortbildungsmaßnahmen möglich ist oder 5.eine Weiterbeschäftigung des Arbeitnehmers unter geänderten Vertragsbedingungen möglich ist und der Arbeitnehmer sein Einverständnis hiermit erklärt hat.
+(3) Der Betriebsrat kann innerhalb der Frist des Absatzes 2 Satz 1 der ordentlichen Kündigung widersprechen, wenn 1.der Arbeitgeber bei der Auswahl des zu kündigenden Arbeitnehmers soziale Gesichtspunkte nicht oder nicht ausreichend berücksichtigt hat, 2.die Kündigung gegen eine Richtlinie nach § 95 verstößt, 3.der zu kündigende Arbeitnehmer an einem anderen Arbeitsplatz im selben Betrieb oder in einem anderen Betrieb des Unternehmens weiterbeschäftigt werden kann, 4.die Weiterbeschäftigung des Arbeitnehmers nach zumutbaren Umschulungs- oder Fortbildungsmaßnahmen möglich ist oder 5.eine Weiterbeschäftigung des Arbeitnehmers unter geänderten Vertragsbedingungen möglich ist und der Arbeitnehmer sein Einverständnis hiermit erklärt hat. 
 (4) Kündigt der Arbeitgeber, obwohl der Betriebsrat nach Absatz 3 der Kündigung widersprochen hat, so hat er dem Arbeitnehmer mit der Kündigung eine Abschrift der Stellungnahme des Betriebsrats zuzuleiten.
-(5) Hat der Betriebsrat einer ordentlichen Kündigung frist- und ordnungsgemäß widersprochen, und hat der Arbeitnehmer nach dem Kündigungsschutzgesetz Klage auf Feststellung erhoben, dass das Arbeitsverhältnis durch die Kündigung nicht aufgelöst ist, so muss der Arbeitgeber auf Verlangen des Arbeitnehmers diesen nach Ablauf der Kündigungsfrist bis zum rechtskräftigen Abschluss des Rechtsstreits bei unveränderten Arbeitsbedingungen weiterbeschäftigen. Auf Antrag des Arbeitgebers kann das Gericht ihn durch einstweilige Verfügung von der Verpflichtung zur Weiterbeschäftigung nach Satz 1 entbinden, wenn 1.die Klage des Arbeitnehmers keine hinreichende Aussicht auf Erfolg bietet oder mutwillig erscheint oder 2.die Weiterbeschäftigung des Arbeitnehmers zu einer unzumutbaren wirtschaftlichen Belastung des Arbeitgebers führen würde oder 3.der Widerspruch des Betriebsrats offensichtlich unbegründet war.
+(5) Hat der Betriebsrat einer ordentlichen Kündigung frist- und ordnungsgemäß widersprochen, und hat der Arbeitnehmer nach dem Kündigungsschutzgesetz Klage auf Feststellung erhoben, dass das Arbeitsverhältnis durch die Kündigung nicht aufgelöst ist, so muss der Arbeitgeber auf Verlangen des Arbeitnehmers diesen nach Ablauf der Kündigungsfrist bis zum rechtskräftigen Abschluss des Rechtsstreits bei unveränderten Arbeitsbedingungen weiterbeschäftigen. Auf Antrag des Arbeitgebers kann das Gericht ihn durch einstweilige Verfügung von der Verpflichtung zur Weiterbeschäftigung nach Satz 1 entbinden, wenn 1.die Klage des Arbeitnehmers keine hinreichende Aussicht auf Erfolg bietet oder mutwillig erscheint oder 2.die Weiterbeschäftigung des Arbeitnehmers zu einer unzumutbaren wirtschaftlichen Belastung des Arbeitgebers führen würde oder 3.der Widerspruch des Betriebsrats offensichtlich unbegründet war. 
 (6) Arbeitgeber und Betriebsrat können vereinbaren, dass Kündigungen der Zustimmung des Betriebsrats bedürfen und dass bei Meinungsverschiedenheiten über die Berechtigung der Nichterteilung der Zustimmung die Einigungsstelle entscheidet.
 (7) Die Vorschriften über die Beteiligung des Betriebsrats nach dem Kündigungsschutzgesetz bleiben unberührt.
 
@@ -819,25 +832,37 @@ In Unternehmen mit in der Regel mehr als zwanzig wahlberechtigten Arbeitnehmern 
 ## § 115 — Bordvertretung
 
 (1) Auf Schiffen, die mit in der Regel mindestens fünf wahlberechtigten Besatzungsmitgliedern besetzt sind, von denen drei wählbar sind, wird eine Bordvertretung gewählt. Auf die Bordvertretung finden, soweit sich aus diesem Gesetz oder aus anderen gesetzlichen Vorschriften nicht etwas anderes ergibt, die Vorschriften über die Rechte und Pflichten des Betriebsrats und die Rechtsstellung seiner Mitglieder Anwendung.
-(2) Die Vorschriften über die Wahl und Zusammensetzung des Betriebsrats finden mit folgender Maßgabe Anwendung: 1.Wahlberechtigt sind alle Besatzungsmitglieder des Schiffes. 2.Wählbar sind die Besatzungsmitglieder des Schiffes, die am Wahltag das 18. Lebensjahr vollendet haben und ein Jahr Besatzungsmitglied eines Schiffes waren, das nach dem Flaggenrechtsgesetz die Bundesflagge führt. § 8 Abs. 1 Satz 3 bleibt unberührt. 3.Die Bordvertretung besteht auf Schiffen mit in der Regel
+(2) Die Vorschriften über die Wahl und Zusammensetzung des Betriebsrats finden mit folgender Maßgabe Anwendung: 1.Wahlberechtigt sind alle Besatzungsmitglieder des Schiffes. 2.Wählbar sind die Besatzungsmitglieder des Schiffes, die am Wahltag das 18. Lebensjahr vollendet haben und ein Jahr Besatzungsmitglied eines Schiffes waren, das nach dem Flaggenrechtsgesetz die Bundesflagge führt. § 8 Abs. 1 Satz 3 bleibt unberührt. 3.Die Bordvertretung besteht auf Schiffen mit in der Regel 
 
-5 bis 20 wahlberechtigten Besatzungsmitgliedern
-
- 
-aus einer Person,
-
-21 bis 75 wahlberechtigten Besatzungsmitgliedern
-
- 
-aus drei Mitgliedern,
-
-über 75 wahlberechtigten Besatzungsmitgliedern
-
- 
-aus fünf Mitgliedern.
-
-4.(weggefallen) 5.§ 13 Abs. 1 und 3 findet keine Anwendung. Die Bordvertretung ist vor Ablauf ihrer Amtszeit unter den in § 13 Abs. 2 Nr. 2 bis 5 genannten Voraussetzungen neu zu wählen. 6.Die wahlberechtigten Besatzungsmitglieder können mit der Mehrheit aller Stimmen beschließen, die Wahl der Bordvertretung binnen 24 Stunden durchzuführen. 7.Die in § 16 Abs. 1 Satz 1 genannte Frist wird auf zwei Wochen, die in § 16 Abs. 2 Satz 1 genannte Frist wird auf eine Woche verkürzt. 8.Bestellt die im Amt befindliche Bordvertretung nicht rechtzeitig einen Wahlvorstand oder besteht keine Bordvertretung, wird der Wahlvorstand in einer Bordversammlung von der Mehrheit der anwesenden Besatzungsmitglieder gewählt; § 17 Abs. 3 gilt entsprechend. Kann aus Gründen der Aufrechterhaltung des ordnungsgemäßen Schiffsbetriebs eine Bordversammlung nicht stattfinden, so kann der Kapitän auf Antrag von drei Wahlberechtigten den Wahlvorstand bestellen. Bestellt der Kapitän den Wahlvorstand nicht, so ist der Seebetriebsrat berechtigt, den Wahlvorstand zu bestellen. Die Vorschriften über die Bestellung des Wahlvorstands durch das Arbeitsgericht bleiben unberührt. 9.Die Frist für die Wahlanfechtung beginnt für Besatzungsmitglieder an Bord, wenn das Schiff nach Bekanntgabe des Wahlergebnisses erstmalig einen Hafen im Geltungsbereich dieses Gesetzes oder einen Hafen, in dem ein Seemannsamt seinen Sitz hat, anläuft. Die Wahlanfechtung kann auch zu Protokoll des Seemannsamtes erklärt werden. Wird die Wahl zur Bordvertretung angefochten, zieht das Seemannsamt die an Bord befindlichen Wahlunterlagen ein. Die Anfechtungserklärung und die eingezogenen Wahlunterlagen sind vom Seemannsamt unverzüglich an das für die Anfechtung zuständige Arbeitsgericht weiterzuleiten.
-(3) Auf die Amtszeit der Bordvertretung finden die §§ 21, 22 bis 25 mit der Maßgabe Anwendung, dass 1.die Amtszeit ein Jahr beträgt, 2.die Mitgliedschaft in der Bordvertretung auch endet, wenn das Besatzungsmitglied den Dienst an Bord beendet, es sei denn, dass es den Dienst an Bord vor Ablauf der Amtszeit nach Nummer 1 wieder antritt.
+ 
+ 
+ 
+ 
+ 
+ 5 bis 20 wahlberechtigten Besatzungsmitgliedern
+ 
+ 
+  
+ aus einer Person,
+ 
+ 
+ 21 bis 75 wahlberechtigten Besatzungsmitgliedern
+ 
+ 
+  
+ aus drei Mitgliedern,
+ 
+ 
+ über 75 wahlberechtigten Besatzungsmitgliedern
+ 
+ 
+  
+ aus fünf Mitgliedern.
+ 
+ 
+ 
+ 4.(weggefallen) 5.§ 13 Abs. 1 und 3 findet keine Anwendung. Die Bordvertretung ist vor Ablauf ihrer Amtszeit unter den in § 13 Abs. 2 Nr. 2 bis 5 genannten Voraussetzungen neu zu wählen. 6.Die wahlberechtigten Besatzungsmitglieder können mit der Mehrheit aller Stimmen beschließen, die Wahl der Bordvertretung binnen 24 Stunden durchzuführen. 7.Die in § 16 Abs. 1 Satz 1 genannte Frist wird auf zwei Wochen, die in § 16 Abs. 2 Satz 1 genannte Frist wird auf eine Woche verkürzt. 8.Bestellt die im Amt befindliche Bordvertretung nicht rechtzeitig einen Wahlvorstand oder besteht keine Bordvertretung, wird der Wahlvorstand in einer Bordversammlung von der Mehrheit der anwesenden Besatzungsmitglieder gewählt; § 17 Abs. 3 gilt entsprechend. Kann aus Gründen der Aufrechterhaltung des ordnungsgemäßen Schiffsbetriebs eine Bordversammlung nicht stattfinden, so kann der Kapitän auf Antrag von drei Wahlberechtigten den Wahlvorstand bestellen. Bestellt der Kapitän den Wahlvorstand nicht, so ist der Seebetriebsrat berechtigt, den Wahlvorstand zu bestellen. Die Vorschriften über die Bestellung des Wahlvorstands durch das Arbeitsgericht bleiben unberührt. 9.Die Frist für die Wahlanfechtung beginnt für Besatzungsmitglieder an Bord, wenn das Schiff nach Bekanntgabe des Wahlergebnisses erstmalig einen Hafen im Geltungsbereich dieses Gesetzes oder einen Hafen, in dem ein Seemannsamt seinen Sitz hat, anläuft. Die Wahlanfechtung kann auch zu Protokoll des Seemannsamtes erklärt werden. Wird die Wahl zur Bordvertretung angefochten, zieht das Seemannsamt die an Bord befindlichen Wahlunterlagen ein. Die Anfechtungserklärung und die eingezogenen Wahlunterlagen sind vom Seemannsamt unverzüglich an das für die Anfechtung zuständige Arbeitsgericht weiterzuleiten. 
+(3) Auf die Amtszeit der Bordvertretung finden die §§ 21, 22 bis 25 mit der Maßgabe Anwendung, dass 1.die Amtszeit ein Jahr beträgt, 2.die Mitgliedschaft in der Bordvertretung auch endet, wenn das Besatzungsmitglied den Dienst an Bord beendet, es sei denn, dass es den Dienst an Bord vor Ablauf der Amtszeit nach Nummer 1 wieder antritt. 
 (4) Für die Geschäftsführung der Bordvertretung gelten die §§ 26 bis 36, § 37 Abs. 1 bis 3 sowie die §§ 39 bis 41 entsprechend. § 40 Abs. 2 ist mit der Maßgabe anzuwenden, dass die Bordvertretung in dem für ihre Tätigkeit erforderlichen Umfang auch die für die Verbindung des Schiffes zur Reederei eingerichteten Mittel zur beschleunigten Übermittlung von Nachrichten in Anspruch nehmen kann.
 (5) Die §§ 42 bis 46 über die Betriebsversammlung finden für die Versammlung der Besatzungsmitglieder eines Schiffes (Bordversammlung) entsprechende Anwendung. Auf Verlangen der Bordvertretung hat der Kapitän der Bordversammlung einen Bericht über die Schiffsreise und die damit zusammenhängenden Angelegenheiten zu erstatten. Er hat Fragen, die den Schiffsbetrieb, die Schiffsreise und die Schiffssicherheit betreffen, zu beantworten.
 (6) Die §§ 47 bis 59 über den Gesamtbetriebsrat und den Konzernbetriebsrat finden für die Bordvertretung keine Anwendung.
@@ -846,8 +871,8 @@ aus fünf Mitgliedern.
 ## § 116 — Seebetriebsrat
 
 (1) In Seebetrieben werden Seebetriebsräte gewählt. Auf die Seebetriebsräte finden, soweit sich aus diesem Gesetz oder aus anderen gesetzlichen Vorschriften nicht etwas anderes ergibt, die Vorschriften über die Rechte und Pflichten des Betriebsrats und die Rechtsstellung seiner Mitglieder Anwendung.
-(2) Die Vorschriften über die Wahl, Zusammensetzung und Amtszeit des Betriebsrats finden mit folgender Maßgabe Anwendung: 1.Wahlberechtigt zum Seebetriebsrat sind alle zum Seeschifffahrtsunternehmen gehörenden Besatzungsmitglieder. 2.Für die Wählbarkeit zum Seebetriebsrat gilt § 8 mit der Maßgabe, dassa)in Seeschifffahrtsunternehmen, zu denen mehr als acht Schiffe gehören oder in denen in der Regel mehr als 250 Besatzungsmitglieder beschäftigt sind, nur nach § 115 Abs. 2 Nr. 2 wählbare Besatzungsmitglieder wählbar sind; b)in den Fällen, in denen die Voraussetzungen des Buchstabens a nicht vorliegen, nur Arbeitnehmer wählbar sind, die nach § 8 die Wählbarkeit im Landbetrieb des Seeschifffahrtsunternehmens besitzen, es sei denn, dass der Arbeitgeber mit der Wahl von Besatzungsmitgliedern einverstanden ist. 3.Der Seebetriebsrat besteht in Seebetrieben mit in der Regel5 bis 400 wahlberechtigten Besatzungsmitgliedern aus einer Person,401 bis 800 wahlberechtigten Besatzungsmitgliedern aus drei Mitgliedern,über 800 wahlberechtigten Besatzungsmitgliedern aus fünf Mitgliedern. 4.Ein Wahlvorschlag ist gültig, wenn er im Fall des § 14 Abs. 4 Satz 1 erster Halbsatz und Satz 2 mindestens von drei wahlberechtigten Besatzungsmitgliedern unterschrieben ist. 5.§ 14a findet keine Anwendung. 6.Die in § 16 Abs. 1 Satz 1 genannte Frist wird auf drei Monate, die in § 16 Abs. 2 Satz 1 genannte Frist auf zwei Monate verlängert. 7.Zu Mitgliedern des Wahlvorstands können auch im Landbetrieb des Seeschifffahrtsunternehmens beschäftigte Arbeitnehmer bestellt werden. § 17 Abs. 2 bis 4 findet keine Anwendung. Besteht kein Seebetriebsrat, so bestellt der Gesamtbetriebsrat oder, falls ein solcher nicht besteht, der Konzernbetriebsrat den Wahlvorstand. Besteht weder ein Gesamtbetriebsrat noch ein Konzernbetriebsrat wird der Wahlvorstand gemeinsam vom Arbeitgeber und den im Seebetrieb vertretenen Gewerkschaften bestellt; Gleiches gilt, wenn der Gesamtbetriebsrat oder der Konzernbetriebsrat die Bestellung des Wahlvorstands nach Satz 3 unterlässt. Einigen sich Arbeitgeber und Gewerkschaften nicht, so bestellt ihn das Arbeitsgericht auf Antrag des Arbeitgebers, einer im Seebetrieb vertretenen Gewerkschaft oder von mindestens drei wahlberechtigten Besatzungsmitgliedern. § 16 Abs. 2 Satz 2 und 3 gilt entsprechend. 8.Die Frist für die Wahlanfechtung nach § 19 Abs. 2 beginnt für Besatzungsmitglieder an Bord, wenn das Schiff nach Bekanntgabe des Wahlergebnisses erstmalig einen Hafen im Geltungsbereich dieses Gesetzes oder einen Hafen, in dem ein Seemannsamt seinen Sitz hat, anläuft. Nach Ablauf von drei Monaten seit Bekanntgabe des Wahlergebnisses ist eine Wahlanfechtung unzulässig. Die Wahlanfechtung kann auch zu Protokoll des Seemannsamtes erklärt werden. Die Anfechtungserklärung ist vom Seemannsamt unverzüglich an das für die Anfechtung zuständige Arbeitsgericht weiterzuleiten. 9.Die Mitgliedschaft im Seebetriebsrat endet, wenn der Seebetriebsrat aus Besatzungsmitgliedern besteht, auch, wenn das Mitglied des Seebetriebsrats nicht mehr Besatzungsmitglied ist. Die Eigenschaft als Besatzungsmitglied wird durch die Tätigkeit im Seebetriebsrat oder durch eine Beschäftigung gemäß Absatz 3 Nr. 2 nicht berührt.
-(3) Die §§ 26 bis 41 über die Geschäftsführung des Betriebsrats finden auf den Seebetriebsrat mit folgender Maßgabe Anwendung: 1.In Angelegenheiten, in denen der Seebetriebsrat nach diesem Gesetz innerhalb einer bestimmten Frist Stellung zu nehmen hat, kann er, abweichend von § 33 Abs. 2, ohne Rücksicht auf die Zahl der zur Sitzung erschienenen Mitglieder einen Beschluss fassen, wenn die Mitglieder ordnungsgemäß geladen worden sind. 2.Soweit die Mitglieder des Seebetriebsrats nicht freizustellen sind, sind sie so zu beschäftigen, dass sie durch ihre Tätigkeit nicht gehindert sind, die Aufgaben des Seebetriebsrats wahrzunehmen. Der Arbeitsplatz soll den Fähigkeiten und Kenntnissen des Mitglieds des Seebetriebsrats und seiner bisherigen beruflichen Stellung entsprechen. Der Arbeitsplatz ist im Einvernehmen mit dem Seebetriebsrat zu bestimmen. Kommt eine Einigung über die Bestimmung des Arbeitsplatzes nicht zustande, so entscheidet die Einigungsstelle. Der Spruch der Einigungsstelle ersetzt die Einigung zwischen Arbeitgeber und Seebetriebsrat. 3.Den Mitgliedern des Seebetriebsrats, die Besatzungsmitglieder sind, ist die Heuer auch dann fortzuzahlen, wenn sie im Landbetrieb beschäftigt werden. Sachbezüge sind angemessen abzugelten. Ist der neue Arbeitsplatz höherwertig, so ist das diesem Arbeitsplatz entsprechende Arbeitsentgelt zu zahlen. 4.Unter Berücksichtigung der örtlichen Verhältnisse ist über die Unterkunft der in den Seebetriebsrat gewählten Besatzungsmitglieder eine Regelung zwischen dem Seebetriebsrat und dem Arbeitgeber zu treffen, wenn der Arbeitsplatz sich nicht am Wohnort befindet. Kommt eine Einigung nicht zustande, so entscheidet die Einigungsstelle. Der Spruch der Einigungsstelle ersetzt die Einigung zwischen Arbeitgeber und Seebetriebsrat. 5.Der Seebetriebsrat hat das Recht, jedes zum Seebetrieb gehörende Schiff zu betreten, dort im Rahmen seiner Aufgaben tätig zu werden sowie an den Sitzungen der Bordvertretung teilzunehmen. § 115 Abs. 7 Nr. 5 Satz 1 gilt entsprechend. 6.Liegt ein Schiff in einem Hafen innerhalb des Geltungsbereichs dieses Gesetzes, so kann der Seebetriebsrat nach Unterrichtung des Kapitäns Sprechstunden an Bord abhalten und Bordversammlungen der Besatzungsmitglieder durchführen. 7.Läuft ein Schiff innerhalb eines Kalenderjahres keinen Hafen im Geltungsbereich dieses Gesetzes an, so gelten die Nummern 5 und 6 für europäische Häfen. Die Schleusen des Nordostseekanals gelten nicht als Häfen. 8.Im Einvernehmen mit dem Arbeitgeber können Sprechstunden und Bordversammlungen, abweichend von den Nummern 6 und 7, auch in anderen Liegehäfen des Schiffes durchgeführt werden, wenn ein dringendes Bedürfnis hierfür besteht. Kommt eine Einigung nicht zustande, so entscheidet die Einigungsstelle. Der Spruch der Einigungsstelle ersetzt die Einigung zwischen Arbeitgeber und Seebetriebsrat.
+(2) Die Vorschriften über die Wahl, Zusammensetzung und Amtszeit des Betriebsrats finden mit folgender Maßgabe Anwendung: 1.Wahlberechtigt zum Seebetriebsrat sind alle zum Seeschifffahrtsunternehmen gehörenden Besatzungsmitglieder. 2.Für die Wählbarkeit zum Seebetriebsrat gilt § 8 mit der Maßgabe, dassa)in Seeschifffahrtsunternehmen, zu denen mehr als acht Schiffe gehören oder in denen in der Regel mehr als 250 Besatzungsmitglieder beschäftigt sind, nur nach § 115 Abs. 2 Nr. 2 wählbare Besatzungsmitglieder wählbar sind; b)in den Fällen, in denen die Voraussetzungen des Buchstabens a nicht vorliegen, nur Arbeitnehmer wählbar sind, die nach § 8 die Wählbarkeit im Landbetrieb des Seeschifffahrtsunternehmens besitzen, es sei denn, dass der Arbeitgeber mit der Wahl von Besatzungsmitgliedern einverstanden ist. 3.Der Seebetriebsrat besteht in Seebetrieben mit in der Regel5 bis 400 wahlberechtigten Besatzungsmitgliedern aus einer Person,401 bis 800 wahlberechtigten Besatzungsmitgliedern aus drei Mitgliedern,über 800 wahlberechtigten Besatzungsmitgliedern aus fünf Mitgliedern. 4.Ein Wahlvorschlag ist gültig, wenn er im Fall des § 14 Abs. 4 Satz 1 erster Halbsatz und Satz 2 mindestens von drei wahlberechtigten Besatzungsmitgliedern unterschrieben ist. 5.§ 14a findet keine Anwendung. 6.Die in § 16 Abs. 1 Satz 1 genannte Frist wird auf drei Monate, die in § 16 Abs. 2 Satz 1 genannte Frist auf zwei Monate verlängert. 7.Zu Mitgliedern des Wahlvorstands können auch im Landbetrieb des Seeschifffahrtsunternehmens beschäftigte Arbeitnehmer bestellt werden. § 17 Abs. 2 bis 4 findet keine Anwendung. Besteht kein Seebetriebsrat, so bestellt der Gesamtbetriebsrat oder, falls ein solcher nicht besteht, der Konzernbetriebsrat den Wahlvorstand. Besteht weder ein Gesamtbetriebsrat noch ein Konzernbetriebsrat wird der Wahlvorstand gemeinsam vom Arbeitgeber und den im Seebetrieb vertretenen Gewerkschaften bestellt; Gleiches gilt, wenn der Gesamtbetriebsrat oder der Konzernbetriebsrat die Bestellung des Wahlvorstands nach Satz 3 unterlässt. Einigen sich Arbeitgeber und Gewerkschaften nicht, so bestellt ihn das Arbeitsgericht auf Antrag des Arbeitgebers, einer im Seebetrieb vertretenen Gewerkschaft oder von mindestens drei wahlberechtigten Besatzungsmitgliedern. § 16 Abs. 2 Satz 2 und 3 gilt entsprechend. 8.Die Frist für die Wahlanfechtung nach § 19 Abs. 2 beginnt für Besatzungsmitglieder an Bord, wenn das Schiff nach Bekanntgabe des Wahlergebnisses erstmalig einen Hafen im Geltungsbereich dieses Gesetzes oder einen Hafen, in dem ein Seemannsamt seinen Sitz hat, anläuft. Nach Ablauf von drei Monaten seit Bekanntgabe des Wahlergebnisses ist eine Wahlanfechtung unzulässig. Die Wahlanfechtung kann auch zu Protokoll des Seemannsamtes erklärt werden. Die Anfechtungserklärung ist vom Seemannsamt unverzüglich an das für die Anfechtung zuständige Arbeitsgericht weiterzuleiten. 9.Die Mitgliedschaft im Seebetriebsrat endet, wenn der Seebetriebsrat aus Besatzungsmitgliedern besteht, auch, wenn das Mitglied des Seebetriebsrats nicht mehr Besatzungsmitglied ist. Die Eigenschaft als Besatzungsmitglied wird durch die Tätigkeit im Seebetriebsrat oder durch eine Beschäftigung gemäß Absatz 3 Nr. 2 nicht berührt. 
+(3) Die §§ 26 bis 41 über die Geschäftsführung des Betriebsrats finden auf den Seebetriebsrat mit folgender Maßgabe Anwendung: 1.In Angelegenheiten, in denen der Seebetriebsrat nach diesem Gesetz innerhalb einer bestimmten Frist Stellung zu nehmen hat, kann er, abweichend von § 33 Abs. 2, ohne Rücksicht auf die Zahl der zur Sitzung erschienenen Mitglieder einen Beschluss fassen, wenn die Mitglieder ordnungsgemäß geladen worden sind. 2.Soweit die Mitglieder des Seebetriebsrats nicht freizustellen sind, sind sie so zu beschäftigen, dass sie durch ihre Tätigkeit nicht gehindert sind, die Aufgaben des Seebetriebsrats wahrzunehmen. Der Arbeitsplatz soll den Fähigkeiten und Kenntnissen des Mitglieds des Seebetriebsrats und seiner bisherigen beruflichen Stellung entsprechen. Der Arbeitsplatz ist im Einvernehmen mit dem Seebetriebsrat zu bestimmen. Kommt eine Einigung über die Bestimmung des Arbeitsplatzes nicht zustande, so entscheidet die Einigungsstelle. Der Spruch der Einigungsstelle ersetzt die Einigung zwischen Arbeitgeber und Seebetriebsrat. 3.Den Mitgliedern des Seebetriebsrats, die Besatzungsmitglieder sind, ist die Heuer auch dann fortzuzahlen, wenn sie im Landbetrieb beschäftigt werden. Sachbezüge sind angemessen abzugelten. Ist der neue Arbeitsplatz höherwertig, so ist das diesem Arbeitsplatz entsprechende Arbeitsentgelt zu zahlen. 4.Unter Berücksichtigung der örtlichen Verhältnisse ist über die Unterkunft der in den Seebetriebsrat gewählten Besatzungsmitglieder eine Regelung zwischen dem Seebetriebsrat und dem Arbeitgeber zu treffen, wenn der Arbeitsplatz sich nicht am Wohnort befindet. Kommt eine Einigung nicht zustande, so entscheidet die Einigungsstelle. Der Spruch der Einigungsstelle ersetzt die Einigung zwischen Arbeitgeber und Seebetriebsrat. 5.Der Seebetriebsrat hat das Recht, jedes zum Seebetrieb gehörende Schiff zu betreten, dort im Rahmen seiner Aufgaben tätig zu werden sowie an den Sitzungen der Bordvertretung teilzunehmen. § 115 Abs. 7 Nr. 5 Satz 1 gilt entsprechend. 6.Liegt ein Schiff in einem Hafen innerhalb des Geltungsbereichs dieses Gesetzes, so kann der Seebetriebsrat nach Unterrichtung des Kapitäns Sprechstunden an Bord abhalten und Bordversammlungen der Besatzungsmitglieder durchführen. 7.Läuft ein Schiff innerhalb eines Kalenderjahres keinen Hafen im Geltungsbereich dieses Gesetzes an, so gelten die Nummern 5 und 6 für europäische Häfen. Die Schleusen des Nordostseekanals gelten nicht als Häfen. 8.Im Einvernehmen mit dem Arbeitgeber können Sprechstunden und Bordversammlungen, abweichend von den Nummern 6 und 7, auch in anderen Liegehäfen des Schiffes durchgeführt werden, wenn ein dringendes Bedürfnis hierfür besteht. Kommt eine Einigung nicht zustande, so entscheidet die Einigungsstelle. Der Spruch der Einigungsstelle ersetzt die Einigung zwischen Arbeitgeber und Seebetriebsrat. 
 (4) Die §§ 42 bis 46 über die Betriebsversammlung finden auf den Seebetrieb keine Anwendung.
 (5) Für den Seebetrieb nimmt der Seebetriebsrat die in den §§ 47 bis 59 dem Betriebsrat übertragenen Aufgaben, Befugnisse und Pflichten wahr.
 (6) Die §§ 74 bis 113 über die Mitwirkung und Mitbestimmung der Arbeitnehmer finden auf den Seebetriebsrat mit folgender Maßgabe Anwendung: 1.Der Seebetriebsrat ist zuständig für die Behandlung derjenigen nach diesem Gesetz der Mitwirkung oder Mitbestimmung des Betriebsrats unterliegenden Angelegenheiten,a)die alle oder mehrere Schiffe des Seebetriebs oder die Besatzungsmitglieder aller oder mehrerer Schiffe des Seebetriebs betreffen, b)die nach § 115 Abs. 7 Nr. 2 von der Bordvertretung abgegeben worden sind oder c)für die nicht die Zuständigkeit der Bordvertretung nach § 115 Abs. 7 Nr. 1 gegeben ist. 2.Der Seebetriebsrat ist regelmäßig und umfassend über den Schiffsbetrieb des Seeschifffahrtsunternehmens zu unterrichten. Die erforderlichen Unterlagen sind ihm vorzulegen.
@@ -882,17 +907,17 @@ aus fünf Mitgliedern.
 
 ## § 122
 
-(Änderung des Bürgerlichen Gesetzbuchs)
+(Änderung des Bürgerlichen Gesetzbuchs) 
 (gegenstandslos)
 
 ## § 123
 
-(Änderung des Kündigungsschutzgesetzes)
+(Änderung des Kündigungsschutzgesetzes) 
 (gegenstandslos)
 
 ## § 124
 
-(Änderung des Arbeitsgerichtsgesetzes)
+(Änderung des Arbeitsgerichtsgesetzes) 
 (gegenstandslos)
 
 ## § 125 — Erstmalige Wahlen nach diesem Gesetz

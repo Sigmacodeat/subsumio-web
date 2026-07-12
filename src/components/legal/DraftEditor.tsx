@@ -34,6 +34,11 @@ export interface DraftInfo {
   frontmatter?: Record<string, unknown>;
 }
 
+/** Returns true if the draft requires attorney review but hasn't been reviewed yet. */
+function isReviewBlocked(draft: DraftInfo): boolean {
+  return draft.attorneyReviewRequired && draft.status !== "reviewed";
+}
+
 interface DraftEditorProps {
   draft: DraftInfo;
   caseSlug: string;
@@ -67,6 +72,7 @@ export function DraftEditor({
   const [emailBody, setEmailBody] = useState("");
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [showReview, setShowReview] = useState(false);
+  const reviewBlocked = isReviewBlocked(draft);
 
   useEffect(() => {
     setContent(draft.content);
@@ -278,7 +284,8 @@ export function DraftEditor({
             variant="secondary"
             size="sm"
             className="gap-1.5 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)]"
-            disabled={exporting}
+            disabled={exporting || reviewBlocked}
+            title={reviewBlocked ? "Bitte zuerst den Schriftsatz prüfen" : undefined}
             onClick={handleExportPdf}
           >
             {exporting ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
@@ -288,6 +295,8 @@ export function DraftEditor({
             variant="secondary"
             size="sm"
             className="gap-1.5 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)]"
+            disabled={reviewBlocked}
+            title={reviewBlocked ? "Bitte zuerst den Schriftsatz prüfen" : undefined}
             onClick={() => {
               setEmailSubject(draft.title);
               setShowEmailDialog(true);
@@ -398,15 +407,15 @@ export function DraftEditor({
               </div>
             </div>
 
-            {draft.attorneyReviewRequired && (
+            {reviewBlocked && (
               <div className="flex items-start gap-2 rounded-lg border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] px-3 py-2">
                 <AlertTriangle
                   size={14}
                   className="mt-0.5 shrink-0 text-[color:var(--ds-attention-text)]"
                 />
                 <p className="text-xs text-[color:var(--ds-attention-text)]">
-                  Dieser Schriftsatz wurde noch nicht von einem Anwalt geprüft. Bitte prüfe den
-                  Inhalt vor dem Versand.
+                  Dieser Schriftsatz wurde noch nicht von einem Anwalt geprüft. Der Versand ist
+                  gesperrt, bis die Prüfung abgeschlossen ist.
                 </p>
               </div>
             )}
@@ -424,7 +433,7 @@ export function DraftEditor({
                 variant="primary"
                 size="sm"
                 className="brand-bg gap-1.5 text-xs text-white"
-                disabled={sendingEmail || !emailTo.trim()}
+                disabled={sendingEmail || !emailTo.trim() || reviewBlocked}
                 onClick={handleSendEmail}
               >
                 {sendingEmail ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}

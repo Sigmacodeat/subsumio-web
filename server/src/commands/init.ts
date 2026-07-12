@@ -30,7 +30,7 @@ export async function runInit(args: string[]) {
   // handler with --help in argv. Without this guard, `gbrain init --help`
   // proceeds into the smart-detection branch below, scans cwd for .md files,
   // and on a directory with 1000+ files (e.g. $HOME for someone whose brain
-  // and notes share a root) silently overwrites the existing Supabase config
+  // and notes share a root) silently overwrites the existing Postgres config
   // with a fresh PGLite brain at ~/.gbrain/brain.pglite. Confirmed in the
   // wild — flipped a working `engine: postgres` config to `engine: pglite`
   // on a brain with 10K+ pages. Help should never mutate state.
@@ -39,7 +39,6 @@ export async function runInit(args: string[]) {
     return;
   }
 
-  const isSupabase = args.includes("--supabase");
   const isPGLite = args.includes("--pglite");
   const isMcpOnly = args.includes("--mcp-only");
   const isForce = args.includes("--force");
@@ -130,29 +129,29 @@ export async function runInit(args: string[]) {
   });
 
   // Explicit PGLite mode
-  if (isPGLite || (!isSupabase && !manualUrl && !isNonInteractive)) {
+  if (isPGLite || (!manualUrl && !isNonInteractive)) {
     // Smart detection: scan for .md files unless --pglite flag forces it
-    if (!isPGLite && !isSupabase) {
+    if (!isPGLite) {
       const fileCount = countMarkdownFiles(process.cwd());
       if (fileCount >= 1000) {
-        console.log(`Found ~${fileCount} .md files. For a brain this size, Supabase gives faster`);
+        console.log(`Found ~${fileCount} .md files. For a brain this size, Postgres gives faster`);
         console.log(
-          "search and remote access ($25/mo). PGLite works too but search will be slower at scale."
+          "search and remote access. PGLite works too but search will be slower at scale."
         );
         console.log("");
         console.log(
-          "  gbrain init --supabase   Set up with Supabase (recommended for large brains)"
+          "  gbrain init --url <URL>  Set up with Postgres (recommended for large brains)"
         );
         console.log("  gbrain init --pglite     Use local PGLite anyway");
         console.log("");
-        // Default to PGLite, let the user choose Supabase if they want
+        // Default to PGLite, let the user choose Postgres if they want
       }
     }
 
     return initPGLite({ jsonOutput, apiKey, customPath, aiOpts, schemaPack, skipEmbedCheck });
   }
 
-  // Supabase/Postgres mode
+  // Postgres mode
   let databaseUrl: string;
   if (manualUrl) {
     databaseUrl = manualUrl;
@@ -167,7 +166,14 @@ export async function runInit(args: string[]) {
       process.exit(1);
     }
   } else {
-    databaseUrl = await supabaseWizard();
+    console.log("\nEnter your Postgres connection URL:");
+    console.log("  Format: postgresql://user:password@host:port/database\n");
+    const url = await readLine("Connection URL: ");
+    if (!url) {
+      console.error("No URL provided.");
+      process.exit(1);
+    }
+    databaseUrl = url;
   }
 
   return initPostgres({ databaseUrl, jsonOutput, apiKey, aiOpts, schemaPack, skipEmbedCheck });
@@ -545,7 +551,7 @@ async function resolveChatByEnv(out: ResolvedAIOptions): Promise<void> {
       );
     }
   }
-  // 0 or >1 → silent: gateway default (`anthropic:claude-sonnet-4-6`) wins.
+  // 0 or >1 → silent: gateway default (TIER_DEFAULTS.reasoning) wins.
   // The subagent enforcement at minions/queue.ts already routes subagent jobs
   // to Anthropic regardless of the chat_model setting (D7 caveat fires from
   // T6's initPGLite post-config branch when chat_model is non-Anthropic and
@@ -1121,7 +1127,7 @@ async function initPGLite(opts: {
         console.log("Next: gbrain import <dir>");
       }
       console.log("");
-      console.log("When you outgrow local: gbrain migrate --to supabase");
+      console.log("When you outgrow local: gbrain migrate --to postgres");
       reportModStatus();
       const { printAdvisoryIfRecommended } =
         await import("../core/skillpack/post-install-advisory.ts");
@@ -1214,34 +1220,12 @@ async function initPostgres(opts: {
     skipFlag: opts.skipEmbedCheck,
   });
 
-  // Detect Supabase direct connection URLs and warn about IPv6
-  if (databaseUrl.match(/db\.[a-z]+\.supabase\.co/) || databaseUrl.includes(".supabase.co:5432")) {
-    console.warn("");
-    console.warn("WARNING: You provided a Supabase direct connection URL (db.*.supabase.co:5432).");
-    console.warn("  Direct connections are IPv6 only and fail in many environments.");
-    console.warn("  Use the Transaction pooler connection string instead (port 6543):");
-    console.warn(
-      "  Supabase Dashboard > Connect (top bar) > Connection String > Transaction pooler"
-    );
-    console.warn("");
-  }
-
   console.log("Connecting to database...");
   const engine = await createEngine({ engine: "postgres" });
   try {
     try {
       await engine.connect({ database_url: databaseUrl });
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (
-        databaseUrl.includes("supabase.co") &&
-        (msg.includes("ECONNREFUSED") || msg.includes("ETIMEDOUT"))
-      ) {
-        console.error(
-          "Connection failed. Supabase direct connections (db.*.supabase.co:5432) are IPv6 only."
-        );
-        console.error("Use the Transaction pooler connection string instead (port 6543).");
-      }
       throw e;
     }
 
@@ -1388,7 +1372,7 @@ async function initPostgres(opts: {
         })
       );
     } else {
-      console.log(`\nBrain ready. ${stats.page_count} pages. Engine: Postgres (Supabase).`);
+      console.log(`\nBrain ready. ${stats.page_count} pages. Engine: Postgres.`);
       if (stats.page_count > 0) {
         console.log("");
         console.log("Existing brain detected. To wire up the v0.10.3 knowledge graph:");
@@ -1450,32 +1434,6 @@ function countMarkdownFiles(dir: string, maxScan = 1500): number {
     /* skip unreadable root */
   }
   return count;
-}
-
-async function supabaseWizard(): Promise<string> {
-  try {
-    execSync("bunx supabase --version", { stdio: "pipe" });
-    console.log("Supabase CLI detected.");
-    console.log("To auto-provision, run: bunx supabase login && bunx supabase projects create");
-    console.log("Then use: gbrain init --url <your-connection-string>");
-  } catch {
-    console.log("Supabase CLI not found.");
-  }
-
-  console.log("\nEnter your Supabase/Postgres connection URL:");
-  console.log(
-    "  Format: postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres"
-  ); /* allow-pg-url-literal */
-  console.log(
-    "  Find it: Supabase Dashboard > Connect (top bar) > Connection String > Transaction pooler\n"
-  );
-
-  const url = await readLine("Connection URL: ");
-  if (!url) {
-    console.error("No URL provided.");
-    process.exit(1);
-  }
-  return url;
 }
 
 function readLine(prompt: string): Promise<string> {
@@ -1658,14 +1616,13 @@ export function reportModStatus(): void {
 function printInitHelp() {
   console.log(
     `
-gbrain init — initialize a brain (PGLite or Supabase Postgres)
+gbrain init — initialize a brain (PGLite or Postgres)
 
 USAGE
   gbrain init [flags]
 
 ENGINE SELECTION (mutually exclusive)
   --pglite              Use embedded PGLite (zero-config, default for <1000 .md files)
-  --supabase            Use Supabase Postgres (recommended for 1000+ files)
   --url <URL>           Use a manual Postgres connection string
   --mcp-only            Thin-client mode: connect to a remote gbrain MCP, no local engine
 
@@ -1676,7 +1633,7 @@ OPTIONS
                         without re-saving config (used by post-upgrade and orchestrators)
   --json                JSON output for status reporting
   --path <DIR>          Override default brain path (PGLite only)
-  --key <APIKEY>        Provide an API key non-interactively (Supabase only)
+  --key <APIKEY>        Provide an API key non-interactively (Postgres only)
   --embedding-model <PROVIDER:MODEL>
                         e.g. openai:text-embedding-3-large, voyage:voyage-multimodal-3
   --model <PROVIDER>    Shorthand: pick recipe default for a provider
@@ -1692,12 +1649,11 @@ OPTIONS
 
 EXAMPLES
   gbrain init --pglite                      # Local-only, no API keys
-  gbrain init --supabase                    # Interactive Supabase setup
   gbrain init --url postgresql://...        # Use a custom Postgres
   gbrain init --mcp-only --url https://...  # Thin-client mode
 
 NOTES
-  - Bare \`gbrain init\` in a directory with 1000+ .md files defaults to Supabase
+  - Bare \`gbrain init\` in a directory with 1000+ .md files defaults to Postgres
     interactive setup. With <1000 files (or with --pglite explicitly), defaults
     to PGLite at ~/.gbrain/brain.pglite.
   - Existing config is preserved unless --force is passed.

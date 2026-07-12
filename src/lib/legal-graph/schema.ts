@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS subsumio_judgements (
   file_number     TEXT,
   court           TEXT NOT NULL,
   court_level     TEXT,
-  jurisdiction    TEXT NOT NULL DEFAULT 'de',
+  jurisdiction    TEXT NOT NULL DEFAULT 'de'
+                  CHECK (jurisdiction IN ('at','de','ch','eu')),
   decision_date   DATE,
   decision_type   TEXT,
   legal_area      TEXT,
@@ -160,7 +161,7 @@ CREATE TRIGGER subsumio_judgement_citation_count_trg
 -- ============================================================
 CREATE TABLE IF NOT EXISTS subsumio_legal_commentaries (
   id              TEXT PRIMARY KEY,
-  jurisdiction    TEXT NOT NULL,
+  jurisdiction    TEXT NOT NULL CHECK (jurisdiction IN ('at','de','ch','eu')),
   statute_abbr    TEXT NOT NULL,
   section_num     TEXT NOT NULL,
   commentary_type TEXT NOT NULL,

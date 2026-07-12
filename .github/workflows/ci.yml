@@ -136,6 +136,41 @@ jobs:
         working-directory: server
         run: bun run release-gate:eval
 
+  legal-corpus-gate:
+    name: Legal Corpus (Jurisdiction + Versioning)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - working-directory: server
+        run: bun install
+      - name: Validate released legal corpus manifest
+        working-directory: server
+        run: bun run check:legal-corpus
+      - name: Verify jurisdiction isolation and historical retrieval
+        working-directory: server
+        run: >-
+          bun test
+          test/legal-jurisdiction.test.ts
+          test/legal-source-schema-contract.test.ts
+          test/legal-corpus-integrity.test.ts
+          test/legal-as-of-selection.test.ts
+          test/legal-at-retrieval-quality.test.ts
+          test/e2e/jurisdiction-isolation-pglite.test.ts
+          test/e2e/legal-as-of-pglite.test.ts
+
+  fristen-benchmark:
+    name: Fristen-Engine Benchmark (CI Release Gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - name: Verify frontend/server fristen engine parity
+        run: cmp -s src/lib/legal/frist-engine.ts server/src/core/legal/frist-engine.ts
+      - name: Run frist-engine benchmark (deterministic deadline calculation)
+        run: bunx vitest run src/lib/legal/frist-engine.benchmark.test.ts src/lib/ai-deadline-detect.frist-engine.test.ts src/lib/llm-deadline-extract.test.ts --reporter=verbose
+
   gitleaks:
     name: Secret Scan (gitleaks)
     runs-on: ubuntu-latest
@@ -191,6 +226,8 @@ jobs:
         check-resolvable,
         server-verify,
         release-gate-eval,
+        legal-corpus-gate,
+        fristen-benchmark,
         gitleaks,
         security-scan,
       ]
@@ -205,10 +242,12 @@ jobs:
                 "${{ needs.typecheck.result }}" != "success" || \
                 "${{ needs.test.result }}" != "success" || \
                 "${{ needs.workflow-simulation.result }}" != "success" || \
-                "${{ needs.playwright-a11y.result }}" != "success" || "
+                "${{ needs.playwright-a11y.result }}" != "success" || \
                 "${{ needs.check-resolvable.result }}" != "success" || \
                 "${{ needs.server-verify.result }}" != "success" || \
                 "${{ needs.release-gate-eval.result }}" != "success" || \
+                "${{ needs.legal-corpus-gate.result }}" != "success" || \
+                "${{ needs.fristen-benchmark.result }}" != "success" || \
                 "${{ needs.gitleaks.result }}" != "success" || \
                 "${{ needs.security-scan.result }}" != "success" ]]; then
             echo "❌ One or more required jobs failed"

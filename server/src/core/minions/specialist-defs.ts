@@ -894,7 +894,7 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn kein Gegenargument gefunden wird: counter_arguments = [] — NICHT erfinden.`,
     allowedTools: ["query", "search", "get_page"],
     maxTurns: 25,
-    modelTier: "reasoning",
+    modelTier: "deep",
   },
 
   {
@@ -1080,7 +1080,7 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn eine Subsumtion nicht geprüft werden kann: verdict = "unsicher".`,
     allowedTools: ["query", "search", "get_page"],
     maxTurns: 25,
-    modelTier: "reasoning",
+    modelTier: "deep",
   },
 
   {

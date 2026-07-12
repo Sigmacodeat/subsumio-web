@@ -32,6 +32,10 @@ interface QuestionResult {
   question_id: string;
   question: string;
   legal_area: string;
+  question_type: string;
+  expected_slug: string;
+  /** One-based rank; 0 means the expected result was not retrieved. */
+  rank: number;
   hit_at_1: boolean;
   hit_at_3: boolean;
   hit_at_5: boolean;
@@ -185,6 +189,12 @@ async function main() {
       const searchResults = await hybridSearch(engine, q.question, {
         limit: opts.topK,
         sourceId: "law-at",
+        embeddingColumn: {
+          name: "embedding",
+          type: "vector" as const,
+          dimensions: 1536,
+          embeddingModel: "openrouter:openai/text-embedding-3-small",
+        },
       });
 
       const rankedSlugs = searchResults.map((r) => r.slug);
@@ -201,6 +211,9 @@ async function main() {
         question_id: q.question_id,
         question: q.question,
         legal_area: q.legal_area,
+        question_type: q.question_type,
+        expected_slug: q.expected_slug,
+        rank: firstHit >= 0 ? firstHit + 1 : 0,
         hit_at_1: hitAt(1),
         hit_at_3: hitAt(3),
         hit_at_5: hitAt(5),
@@ -220,6 +233,9 @@ async function main() {
         question_id: q.question_id,
         question: q.question,
         legal_area: q.legal_area,
+        question_type: q.question_type,
+        expected_slug: q.expected_slug,
+        rank: 0,
         hit_at_1: false,
         hit_at_3: false,
         hit_at_5: false,

@@ -2327,8 +2327,8 @@ USAGE
   gbrain <command> [options]
 
 SETUP
-  init [--pglite|--supabase|--url]   Create brain (PGLite default, no server)
-  migrate --to <supabase|pglite>     Transfer brain between engines
+  init [--pglite|--url]          Create brain (PGLite default, no server)
+  migrate --to <postgres|pglite>  Transfer brain between engines
   upgrade                            Self-update
   check-update [--json]              Check for new versions
   doctor [--json] [--fast]            Health check (resolver, skills, pgvector, RLS, embeddings)
@@ -2351,7 +2351,7 @@ IMPORT/EXPORT
   sync --watch [--interval N]        Continuous sync (loops until stopped)
   sync --install-cron                Install persistent sync daemon
   export [--dir ./out/]              Export to markdown
-  export --restore-only [--repo <p>] Restore missing supabase-only files
+  export --restore-only [--repo <p>] Restore missing db-only files
         [--type T] [--slug-prefix S] With optional filters
 
 FILES
@@ -2450,7 +2450,7 @@ ADMIN
   autopilot [--repo] [--interval N]  Self-maintaining brain daemon
   config [show|get|set] <key> [val]  Brain config
   storage status [--repo <path>]     Storage tier status and health
-        [--json]                     (git-tracked vs supabase-only)
+        [--json]                     (git-tracked vs db-only)
   serve                              MCP server (stdio)
   serve --http [--port N]            HTTP MCP server with OAuth 2.1
     --token-ttl N                    Access token TTL in seconds (default: 3600)

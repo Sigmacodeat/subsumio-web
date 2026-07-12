@@ -1697,6 +1697,11 @@ export class PostgresEngine implements BrainEngine {
       params.push(opts.beforeDate);
       beforeDateClause = `AND COALESCE(p.updated_at, p.created_at) < $${params.length}::timestamptz`;
     }
+    let asOfDateClause = "";
+    if (opts?.asOfDate) {
+      params.push(opts.asOfDate);
+      asOfDateClause = `AND (p.slug NOT LIKE 'legal/statutes/%' OR ((p.frontmatter->>'version_date') ~ '^\\d{4}-\\d{2}-\\d{2}$' AND (p.frontmatter->>'version_date')::date <= $${params.length}::date))`;
+    }
     // v0.34.1 (#861 — P0 leak seal): source-isolation filter. When the
     // caller's auth scope is set, narrow the inner CTE candidate set so
     // an authenticated MCP client cannot see foreign-source pages via
@@ -1746,6 +1751,7 @@ export class PostgresEngine implements BrainEngine {
           ${symbolKindClause}
           ${afterDateClause}
           ${beforeDateClause}
+          ${asOfDateClause}
           ${sourceClause}
           ${hardExcludeClause}
           ${visibilityClause}
@@ -1851,6 +1857,11 @@ export class PostgresEngine implements BrainEngine {
     if (opts?.beforeDate) {
       params.push(opts.beforeDate);
       beforeDateClause = `AND COALESCE(p.updated_at, p.created_at) < $${params.length}::timestamptz`;
+    }
+    let asOfDateClause = "";
+    if (opts?.asOfDate) {
+      params.push(opts.asOfDate);
+      asOfDateClause = `AND (p.slug NOT LIKE 'legal/statutes/%' OR ((p.frontmatter->>'version_date') ~ '^\\d{4}-\\d{2}-\\d{2}$' AND (p.frontmatter->>'version_date')::date <= $${params.length}::date))`;
     }
     // v0.34.1 (#861 — P0 leak seal): source-isolation. Anchor primitive
     // for two-pass retrieval, so cross-source anchors would let the walk
@@ -1980,6 +1991,11 @@ export class PostgresEngine implements BrainEngine {
       params.push(opts.beforeDate);
       beforeDateClause = `AND COALESCE(p.updated_at, p.created_at) < $${params.length}::timestamptz`;
     }
+    let asOfDateClause = "";
+    if (opts?.asOfDate) {
+      params.push(opts.asOfDate);
+      asOfDateClause = `AND (p.slug NOT LIKE 'legal/statutes/%' OR ((p.frontmatter->>'version_date') ~ '^\\d{4}-\\d{2}-\\d{2}$' AND (p.frontmatter->>'version_date')::date <= $${params.length}::date))`;
+    }
     // v0.34.1 (#861, F2 — P0 leak seal): source-isolation in the INNER CTE
     // specifically. Pushing the filter inside narrows the HNSW candidate set
     // before re-rank; pushing it to the outer SELECT would force HNSW to
@@ -2046,6 +2062,7 @@ export class PostgresEngine implements BrainEngine {
           ${symbolKindClause}
           ${afterDateClause}
           ${beforeDateClause}
+          ${asOfDateClause}
           ${sourceClause}
           ${hardExcludeClause}
           ${visibilityClause}

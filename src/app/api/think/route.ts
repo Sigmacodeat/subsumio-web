@@ -1,10 +1,12 @@
 import { z } from "zod";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersWithCaseJurisdiction } from "@/lib/engine";
 import { recordQuery } from "@/lib/usage";
 import { createHandler, apiStream, apiError, recordQuota } from "@/lib/api-handler";
 import { createCitationGateStream } from "@/lib/citation-gate";
+import { interceptGuardrailStream } from "@/lib/guardrail-stream-interceptor";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { mapQueryModeToEngineMode } from "@/lib/matter-context";
+import { createHash } from "node:crypto";
 
 export const maxDuration = 300;
 
@@ -44,9 +46,14 @@ export const POST = createHandler(
         model: body.model,
       };
 
+      const caseScopedHeaders = await engineHeadersWithCaseJurisdiction(
+        ctx.headers,
+        safeBody.case_slug
+      );
+
       const upstream = await fetch(`${ENGINE_URL}/api/think`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...ctx.headers },
+        headers: { "Content-Type": "application/json", ...caseScopedHeaders },
         body: JSON.stringify(payload),
         signal: AbortSignal.timeout(300_000),
       });
@@ -59,7 +66,17 @@ export const POST = createHandler(
         return apiError("engine_error", "Engine returned empty body", 502);
       }
 
-      return apiStream(createCitationGateStream(upstream.body), {
+      // Wrap with guardrail interceptor to capture Tier-0/Tier-1 warnings
+      const jurisdiction = (ctx.user as { jurisdiction?: string } | undefined)?.jurisdiction;
+      const queryHash = createHash("sha256").update(safeBody.query).digest("hex").slice(0, 16);
+      const intercepted = interceptGuardrailStream(upstream.body, {
+        brainId: ctx.brainId,
+        userId: ctx.user.id,
+        jurisdiction,
+        queryHash,
+      });
+
+      return apiStream(createCitationGateStream(intercepted), {
         contentType: upstream.headers.get("Content-Type") || "text/event-stream",
         aiGenerated: true,
       });

@@ -53,7 +53,7 @@ import {
 } from "./types.ts";
 
 const DEFAULT_TOP_K = 5;
-const DEFAULT_JUDGE_MODEL = "openrouter:deepseek/deepseek-chat";
+const DEFAULT_JUDGE_MODEL = "openrouter:xai/grok-4.3";
 const DEFAULT_MAX_PAIR_CHARS = 1500;
 
 /** Caller-supplied judge function signature; defaults to judgeContradiction. */

@@ -119,7 +119,13 @@ Aktuelle Tageszeit: ${timeOfDay} (${hour}:${String(now.getMinutes()).padStart(2,
 - Beantworte Rechtsfragen präzise unter Berücksichtigung des ${jurisdictionLabel} Rechts.
 - Zitiere Gesetze mit § und Absatz.
 - Gib am Ende von Rechtsauskünften an: "Diese Information ersetzt keine anwaltliche Prüfung."
-- Trenne stets zwischen legal information und legal advice.`);
+- Trenne stets zwischen legal information und legal advice.
+- VERWENDE NUR Paragraphen und Gesetze, die wörtlich in den bereitgestellten Rechtsquellen vorkommen.
+- ERFINDE KEINE EU-Richtlinien, Artikel, Verordnungen oder anderen Referenzen.
+- LEITE KEINE Definitionen oder Rechtsbegriffe ab oder her. Wenn eine Definition nicht wörtlich in den Quellen steht, sage dies explizit.
+- SUCHE in ALLEN bereitgestellten Rechtsquellen nach der relevanten Definition oder Regelung. Prüfe jeden Abschnitt sorgfältig.
+- Wenn ein Begriff in den Quellen definiert wird (z.B. "§ 12 — Betriebstätte"), zitiere DIESE Definition wörtlich.
+- Wenn du eine Information nicht in den Quellen findest, sage: "Diese Information ist in den bereitgestellten Rechtsquellen nicht enthalten."`);
 
   // ── User Context ──
   if (userContext) {

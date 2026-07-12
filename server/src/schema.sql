@@ -26,6 +26,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE IF NOT EXISTS sources (
   id              TEXT PRIMARY KEY,
   name            TEXT NOT NULL UNIQUE,
+  jurisdiction    TEXT CHECK (jurisdiction IS NULL OR jurisdiction IN ('at','de','ch','eu')),
   local_path      TEXT,
   last_commit     TEXT,
   last_sync_at    TIMESTAMPTZ,
@@ -56,6 +57,32 @@ CREATE TABLE IF NOT EXISTS sources (
   newest_content_at TIMESTAMPTZ,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE sources ADD COLUMN IF NOT EXISTS jurisdiction TEXT;
+DO $$ BEGIN
+  ALTER TABLE sources ADD CONSTRAINT sources_jurisdiction_check
+    CHECK (jurisdiction IS NULL OR jurisdiction IN ('at','de','ch','eu'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Versioned legal source manifest. One row per retrieved consolidated version.
+CREATE TABLE IF NOT EXISTS legal_source_versions (
+  id              TEXT PRIMARY KEY,
+  source_id       TEXT NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+  jurisdiction    TEXT NOT NULL CHECK (jurisdiction IN ('at','de','ch','eu')),
+  statute_abbr   TEXT NOT NULL,
+  version_date    DATE NOT NULL,
+  retrieved_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  source_url      TEXT,
+  content_hash    TEXT,
+  valid_from      DATE NOT NULL,
+  valid_to        DATE,
+  status          TEXT NOT NULL DEFAULT 'current' CHECK (status IN ('current','superseded','withdrawn')),
+  CHECK (valid_to IS NULL OR valid_to >= valid_from),
+  UNIQUE (source_id, statute_abbr, version_date)
+);
+CREATE INDEX IF NOT EXISTS legal_source_versions_lookup_idx
+  ON legal_source_versions(source_id, statute_abbr, valid_from, valid_to);
 
 -- Seed the default source. 'default' is federated=true for backward compat
 -- (pre-v0.17 brains behave exactly as before — every page appears in search).
@@ -151,6 +178,33 @@ CREATE TABLE IF NOT EXISTS pages (
   generation     BIGINT NOT NULL DEFAULT 1,
   CONSTRAINT pages_source_slug_key UNIQUE (source_id, slug)
 );
+
+-- Legal corpus write fence: a statute page may only enter the source whose
+-- canonical jurisdiction matches the jurisdiction encoded in its slug.
+CREATE OR REPLACE FUNCTION enforce_statute_source_jurisdiction() RETURNS trigger AS $func$
+DECLARE
+  slug_match TEXT[];
+  source_jurisdiction TEXT;
+BEGIN
+  slug_match := regexp_match(NEW.slug, '^legal/statutes/(at|de|ch|eu)/');
+  IF slug_match IS NULL THEN RETURN NEW; END IF;
+
+  SELECT jurisdiction INTO source_jurisdiction FROM sources WHERE id = NEW.source_id;
+  IF source_jurisdiction IS NULL THEN
+    RAISE EXCEPTION 'statute source % has no canonical jurisdiction', NEW.source_id;
+  END IF;
+  IF source_jurisdiction <> slug_match[1] THEN
+    RAISE EXCEPTION 'statute jurisdiction/source mismatch: slug=% source=% jurisdiction=%',
+      NEW.slug, NEW.source_id, source_jurisdiction;
+  END IF;
+  RETURN NEW;
+END;
+$func$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS statute_source_jurisdiction_trg ON pages;
+CREATE TRIGGER statute_source_jurisdiction_trg
+  BEFORE INSERT OR UPDATE OF source_id, slug ON pages
+  FOR EACH ROW EXECUTE FUNCTION enforce_statute_source_jurisdiction();
 
 -- v0.40.3.0 cache invalidation trigger (migration v91; mirrored in
 -- src/core/pglite-schema.ts). BEFORE INSERT OR UPDATE so every write path

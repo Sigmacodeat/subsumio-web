@@ -4,7 +4,7 @@ type: "law"
 jurisdiction: "de"
 abbreviation: "UWG"
 version_date: "2026-06-18"
-retrieved_at: "2026-06-21"
+retrieved_at: "2026-07-10"
 source_url: "https://www.gesetze-im-internet.de/uwg_2004/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
 ---

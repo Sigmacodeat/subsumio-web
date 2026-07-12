@@ -51,6 +51,16 @@ export const DEFAULT_SOURCE_BOOSTS: Record<string, number> = {
   // `dream_generated: true` in their frontmatter; demote here keeps them
   // findable but ranked below all curated user content.
   "extracts/": 0.3,
+  // Legal corpus — statutes, judikatur, and EU law are high-signal
+  // authoritative sources. Boost above user content so legal queries
+  // surface the actual law, not notes about it.
+  "legal/statutes/at/": 1.6,
+  "legal/statutes/de/": 1.6,
+  "legal/statutes/ch/": 1.6,
+  "legal/statutes/eu/": 1.6,
+  "legal/judikatur/at/": 1.3,
+  "legal/judikatur/de/": 1.3,
+  "legal/judikatur/ch/": 1.3,
 };
 
 /**
@@ -63,6 +73,35 @@ export const DEFAULT_SOURCE_BOOSTS: Record<string, number> = {
  * DEFAULT_SOURCE_BOOSTS (`archive/`: 0.5) instead of hidden.
  */
 export const DEFAULT_HARD_EXCLUDES: string[] = ["test/", "attachments/", ".raw/"];
+
+/**
+ * The jurisdictions the statute corpus is partitioned into. A statute page's
+ * slug is `legal/statutes/<jur>/<abbr>/<section>` (see import-statutes-split.ts),
+ * so `<jur>` is the authoritative jurisdiction axis. Keep in lockstep with the
+ * law-corpus/ top-level directories (guarded by legal-corpus-integrity.test.ts).
+ */
+export const STATUTE_JURISDICTIONS = ["at", "de", "ch", "eu"] as const;
+
+/**
+ * Hard jurisdiction isolation helper. Given a target jurisdiction, return the
+ * statute-slug prefixes of every OTHER jurisdiction — the set to hard-exclude
+ * so retrieval can NEVER surface a foreign § (requirement: an Austrian query
+ * must not return a German or Swiss statute). Fed into the hard-exclude set,
+ * so it reuses the exact WHERE clause every other exclude flows through, in
+ * both engines, with no new SQL surface.
+ *
+ * Returns [] for a blank/undefined jurisdiction (no statute filtering) and for
+ * an unknown jurisdiction (nothing to exclude against — the caller decides
+ * whether an unknown jurisdiction is an error). Only the OTHER known
+ * jurisdictions are excluded; a target of "at" therefore leaves at-statutes and
+ * any non-partitioned pages untouched.
+ */
+export function foreignStatutePrefixes(jurisdiction?: string): string[] {
+  if (!jurisdiction) return [];
+  const jur = jurisdiction.toLowerCase();
+  if (!STATUTE_JURISDICTIONS.includes(jur as (typeof STATUTE_JURISDICTIONS)[number])) return [];
+  return STATUTE_JURISDICTIONS.filter((j) => j !== jur).map((j) => `legal/statutes/${j}/`);
+}
 
 /**
  * Parse GBRAIN_SOURCE_BOOST env var.

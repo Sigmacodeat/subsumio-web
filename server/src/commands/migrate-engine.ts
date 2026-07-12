@@ -2,7 +2,7 @@
  * Engine migration: transfer brain data between PGLite and Postgres.
  *
  * Usage:
- *   gbrain migrate --to supabase [--url <connection_string>]
+ *   gbrain migrate --to postgres [--url <connection_string>]
  *   gbrain migrate --to pglite [--path <db_path>]
  *   gbrain migrate --to <engine> --force  (overwrite non-empty target)
  */
@@ -32,14 +32,14 @@ function parseArgs(args: string[]): MigrateOpts {
   const toIdx = args.indexOf("--to");
   if (toIdx === -1 || !args[toIdx + 1]) {
     throw new Error(
-      "Usage: gbrain migrate --to <supabase|pglite> [--url <url>] [--path <path>] [--force]"
+      "Usage: gbrain migrate --to <postgres|pglite> [--url <url>] [--path <path>] [--force]"
     );
   }
 
   const targetRaw = args[toIdx + 1];
-  const targetEngine = targetRaw === "supabase" ? "postgres" : (targetRaw as "postgres" | "pglite");
+  const targetEngine = targetRaw === "postgres" ? "postgres" : (targetRaw as "postgres" | "pglite");
   if (targetEngine !== "postgres" && targetEngine !== "pglite") {
-    throw new Error(`Unknown target engine: "${targetRaw}". Use: supabase or pglite`);
+    throw new Error(`Unknown target engine: "${targetRaw}". Use: postgres or pglite`);
   }
 
   const urlIdx = args.indexOf("--url");
@@ -103,7 +103,7 @@ export async function runMigrateEngine(sourceEngine: BrainEngine, args: string[]
       opts.targetUrl || process.env.GBRAIN_DATABASE_URL || process.env.DATABASE_URL;
     if (!targetConfig.database_url) {
       console.error(
-        "Target is Supabase but no connection string provided. Use: --url <connection_string>"
+        "Target is Postgres but no connection string provided. Use: --url <connection_string>"
       );
       process.exit(1);
     }

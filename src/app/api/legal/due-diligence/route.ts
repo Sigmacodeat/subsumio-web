@@ -24,6 +24,7 @@ export const POST = createEngineProxy({
   stream: true,
   citationGate: true,
   label: "due-diligence",
+  caseSlugField: "case_slug",
   transformBody: (b) => ({
     case_slug: b.case_slug || undefined,
     document_slugs: b.document_slugs.length > 0 ? b.document_slugs : undefined,

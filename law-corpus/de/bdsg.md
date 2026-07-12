@@ -3,8 +3,8 @@ title: "BDSG — Bundesdatenschutzgesetz"
 type: "law"
 jurisdiction: "de"
 abbreviation: "BDSG"
-version_date: "2026-05-18"
-retrieved_at: "2026-06-21"
+version_date: "2026-07-09"
+retrieved_at: "2026-07-10"
 source_url: "https://www.gesetze-im-internet.de/bdsg_2018/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
 ---
@@ -12,57 +12,57 @@ license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de
 ## Inhaltsübersicht
 
 Teil 1Gemeinsame Bestimmungen
-Kapitel 1Anwendungsbereich
+Kapitel 1Anwendungsbereich 
 und Begriffsbestimmungen§  1Anwendungsbereich des Gesetzes§  2Begriffsbestimmungen
-Kapitel 2Rechtsgrundlagen der
+Kapitel 2Rechtsgrundlagen der 
 Verarbeitung personenbezogener Daten§  3Verarbeitung personenbezogener Daten durch öffentliche Stellen§  4Videoüberwachung öffentlich zugänglicher Räume
 Kapitel 3Datenschutzbeauftragte öffentlicher Stellen§  5Benennung§  6Stellung§  7Aufgaben
-Kapitel 4Die oder der
-Bundesbeauftragte für
+Kapitel 4Die oder der 
+Bundesbeauftragte für 
 den Datenschutz und die Informationsfreiheit§  8Errichtung§  9Zuständigkeit§ 10Unabhängigkeit§ 11Ernennung und Amtszeit§ 12Amtsverhältnis§ 13Rechte und Pflichten§ 14Aufgaben§ 15Tätigkeitsbericht§ 16Befugnisse
-Kapitel 5Vertretung im
-Europäischen Datenschutzausschuss,
-zentrale Anlaufstelle, Zusammenarbeit der
-Aufsichtsbehörden des Bundes und der Länder
+Kapitel 5Vertretung im 
+Europäischen Datenschutzausschuss, 
+zentrale Anlaufstelle, Zusammenarbeit der 
+Aufsichtsbehörden des Bundes und der Länder 
 in Angelegenheiten der Europäischen Union§ 17Vertretung im Europäischen Datenschutzausschuss, zentrale Anlaufstelle§ 18Verfahren der Zusammenarbeit der Aufsichtsbehörden des Bundes und der Länder§ 19Zuständigkeiten
 Kapitel 6Rechtsbehelfe§ 20Gerichtlicher Rechtsschutz§ 21Antrag der Aufsichtsbehörde auf gerichtliche Entscheidung bei angenommener Rechtswidrigkeit eines Beschlusses der Europäischen Kommission
-Teil 2Durchführungsbestimmungen
-für Verarbeitungen zu Zwecken
+Teil 2Durchführungsbestimmungen 
+für Verarbeitungen zu Zwecken 
 gemäß Artikel 2 der Verordnung (EU) 2016/679
-Kapitel 1Rechtsgrundlagen der
+Kapitel 1Rechtsgrundlagen der 
 Verarbeitung personenbezogener Daten
-Abschnitt 1Verarbeitung besonderer
-Kategorien personenbezogener
+Abschnitt 1Verarbeitung besonderer 
+Kategorien personenbezogener 
 Daten und Verarbeitung zu anderen Zwecken§ 22Verarbeitung besonderer Kategorien personenbezogener Daten§ 23Verarbeitung zu anderen Zwecken durch öffentliche Stellen§ 24Verarbeitung zu anderen Zwecken durch nichtöffentliche Stellen§ 25Datenübermittlungen durch öffentliche Stellen
 Abschnitt 2Besondere Verarbeitungssituationen§ 26Datenverarbeitung für Zwecke des Beschäftigungsverhältnisses§ 27Datenverarbeitung zu wissenschaftlichen oder historischen Forschungszwecken und zu statistischen Zwecken§ 28Datenverarbeitung zu im öffentlichen Interesse liegenden Archivzwecken§ 29Rechte der betroffenen Person und aufsichtsbehördliche Befugnisse im Fall von Geheimhaltungspflichten§ 30Verbraucherkredite§ 31Schutz des Wirtschaftsverkehrs bei Scoring und Bonitätsauskünften
 Kapitel 2Rechte der betroffenen Person§ 32Informationspflicht bei Erhebung von personenbezogenen Daten bei der betroffenen Person§ 33Informationspflicht, wenn die personenbezogenen Daten nicht bei der betroffenen Person erhoben wurden§ 34Auskunftsrecht der betroffenen Person§ 35Recht auf Löschung§ 36Widerspruchsrecht§ 37Automatisierte Entscheidungen im Einzelfall einschließlich Profiling
-Kapitel 3Pflichten der
+Kapitel 3Pflichten der 
 Verantwortlichen und Auftragsverarbeiter§ 38Datenschutzbeauftragte nichtöffentlicher Stellen§ 39Akkreditierung
-Kapitel 4Aufsichtsbehörde
-für die Datenverarbeitung
+Kapitel 4Aufsichtsbehörde 
+für die Datenverarbeitung 
 durch nichtöffentliche Stellen§ 40Aufsichtsbehörden der Länder
 Kapitel 5Sanktionen§ 41Anwendung der Vorschriften über das Bußgeld- und Strafverfahren§ 42Strafvorschriften§ 43Bußgeldvorschriften
 Kapitel 6Rechtsbehelfe§ 44Klagen gegen den Verantwortlichen oder Auftragsverarbeiter
-Teil 3Bestimmungen für
-Verarbeitungen zu Zwecken
+Teil 3Bestimmungen für 
+Verarbeitungen zu Zwecken 
 gemäß Artikel 1 Absatz 1 der Richtlinie (EU) 2016/680
-Kapitel 1Anwendungsbereich,
-Begriffsbestimmungen
-und allgemeine Grundsätze für die
+Kapitel 1Anwendungsbereich, 
+Begriffsbestimmungen 
+und allgemeine Grundsätze für die 
 Verarbeitung personenbezogener Daten§ 45Anwendungsbereich§ 46Begriffsbestimmungen§ 47Allgemeine Grundsätze für die Verarbeitung personenbezogener Daten
-Kapitel 2Rechtsgrundlagen der
+Kapitel 2Rechtsgrundlagen der 
 Verarbeitung personenbezogener Daten§ 48Verarbeitung besonderer Kategorien personenbezogener Daten§ 49Verarbeitung zu anderen Zwecken§ 50Verarbeitung zu archivarischen, wissenschaftlichen und statistischen Zwecken§ 51Einwilligung§ 52Verarbeitung auf Weisung des Verantwortlichen§ 53Datengeheimnis§ 54Automatisierte Einzelentscheidung
 Kapitel 3Rechte der betroffenen Person§ 55Allgemeine Informationen zu Datenverarbeitungen§ 56Benachrichtigung betroffener Personen§ 57Auskunftsrecht§ 58Rechte auf Berichtigung und Löschung sowie Einschränkung der Verarbeitung§ 59Verfahren für die Ausübung der Rechte der betroffenen Person§ 60Anrufung der oder des Bundesbeauftragten§ 61Rechtsschutz gegen Entscheidungen der oder des Bundesbeauftragten oder bei deren oder dessen Untätigkeit
-Kapitel 4Pflichten der
+Kapitel 4Pflichten der 
 Verantwortlichen und Auftragsverarbeiter§ 62Auftragsverarbeitung§ 63Gemeinsam Verantwortliche§ 64Anforderungen an die Sicherheit der Datenverarbeitung§ 65Meldung von Verletzungen des Schutzes personenbezogener Daten an die oder den Bundesbeauftragten§ 66Benachrichtigung betroffener Personen bei Verletzungen des Schutzes personenbezogener Daten§ 67Durchführung einer Datenschutz-Folgenabschätzung§ 68Zusammenarbeit mit der oder dem Bundesbeauftragten§ 69Anhörung der oder des Bundesbeauftragten§ 70Verzeichnis von Verarbeitungstätigkeiten§ 71Datenschutz durch Technikgestaltung und datenschutzfreundliche Voreinstellungen§ 72Unterscheidung zwischen verschiedenen Kategorien betroffener Personen§ 73Unterscheidung zwischen Tatsachen und persönlichen Einschätzungen§ 74Verfahren bei Übermittlungen§ 75Berichtigung und Löschung personenbezogener Daten sowie Einschränkung der Verarbeitung§ 76Protokollierung§ 77Vertrauliche Meldung von Verstößen
 Kapitel 5Datenübermittlungen
 an Drittstaaten und an
 internationale Organisationen§ 78Allgemeine Voraussetzungen§ 79Datenübermittlung bei geeigneten Garantien§ 80Datenübermittlung ohne geeignete Garantien§ 81Sonstige Datenübermittlung an Empfänger in Drittstaaten
 Kapitel 6Zusammenarbeit der Aufsichtsbehörden§ 82Gegenseitige Amtshilfe
 Kapitel 7Haftung und Sanktionen§ 83Schadensersatz und Entschädigung§ 84Strafvorschriften
-Teil 4Besondere Bestimmungen für
-Verarbeitungen im Rahmen von nicht in die
-Anwendungsbereiche der Verordnung (EU) 2016/679
+Teil 4Besondere Bestimmungen für 
+Verarbeitungen im Rahmen von nicht in die 
+Anwendungsbereiche der Verordnung (EU) 2016/679 
 und der Richtlinie (EU) 2016/680 fallenden Tätigkeiten§ 85Verarbeitung personenbezogener Daten im Rahmen von nicht in die Anwendungsbereiche der Verordnung (EU) 2016/679 und der Richtlinie (EU) 2016/680 fallenden Tätigkeiten§ 86Verarbeitung personenbezogener Daten für Zwecke staatlicher Auszeichnungen und Ehrungen
 
 ## § 1 — Anwendungsbereich des Gesetzes

@@ -103,6 +103,7 @@ import {
   Filter,
   Radar,
   LogOut,
+  FileText,
   ChevronsDownUp,
   BrainCog,
 } from "lucide-react";
@@ -969,6 +970,14 @@ const ADMIN_SECTION: NavSection = {
       keywords: "monitoring uberwachung alerts health",
       tier: "admin",
       audienceTier: "erweitert",
+    },
+    {
+      href: "/dashboard/admin/compliance-export",
+      icon: FileText,
+      labelKey: "nav.compliance_export",
+      keywords: "compliance audit export reasoning traces eu ai act",
+      tier: "admin",
+      audienceTier: "system",
     },
     {
       href: "/dashboard/deep-analysis",

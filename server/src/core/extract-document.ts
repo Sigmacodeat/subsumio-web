@@ -219,57 +219,93 @@ export async function extractDocumentText(
     lowered === ".pdf"
       ? await decryptPdfIfNeeded(buf, opts.password)
       : await decryptOfficeIfNeeded(buf, lowered, opts.password);
+  let result: ExtractedDocument;
   switch (lowered) {
     case ".pdf":
-      return extractPdf(decrypted);
+      result = await extractPdf(decrypted);
+      break;
     case ".docx":
     case ".docm": {
       const extracted = await extractDocx(decrypted, opts.ocrImage);
       extracted.frontmatter.source_format = lowered.slice(1);
-      return extracted;
+      result = extracted;
+      break;
     }
     case ".doc":
     case ".ppt":
     case ".odp":
     case ".pages":
     case ".key":
-      return extractViaLibreOffice(decrypted, lowered, opts.filename);
+      result = await extractViaLibreOffice(decrypted, lowered, opts.filename);
+      break;
     case ".eml":
-      return extractEml(buf, opts.attachmentDepth ?? 0, opts.password, opts.ocrImage);
+      result = await extractEml(buf, opts.attachmentDepth ?? 0, opts.password, opts.ocrImage);
+      break;
     case ".msg":
-      return extractMsg(buf, opts.attachmentDepth ?? 0, opts.password, opts.ocrImage);
+      result = await extractMsg(buf, opts.attachmentDepth ?? 0, opts.password, opts.ocrImage);
+      break;
     case ".pst":
-      return extractPst(buf, opts.filename, opts.ocrImage);
+      result = await extractPst(buf, opts.filename, opts.ocrImage);
+      break;
     case ".csv":
     case ".tsv":
-      return extractDelimited(buf, lowered, opts.filename);
+      result = await extractDelimited(buf, lowered, opts.filename);
+      break;
     case ".xlsx":
     case ".xlsm":
     case ".xls":
     case ".ods":
-      return extractWorkbook(decrypted, lowered);
+      result = await extractWorkbook(decrypted, lowered);
+      break;
     case ".numbers":
-      return extractNumbers(buf, opts.filename);
+      result = await extractNumbers(buf, opts.filename);
+      break;
     case ".rtf":
-      return extractRtf(buf);
+      result = await extractRtf(buf);
+      break;
     case ".pptx":
     case ".pptm": {
       const extracted = await extractPptx(decrypted, opts.ocrImage);
       extracted.frontmatter.source_format = lowered.slice(1);
-      return extracted;
+      result = extracted;
+      break;
     }
     case ".odt":
-      return extractOdt(buf);
+      result = await extractOdt(buf);
+      break;
     // v0.43.0: audio transcription via existing transcription.ts
     case ".mp3":
     case ".wav":
     case ".m4a":
     case ".ogg":
     case ".flac":
-      return extractAudio(buf, opts.filename || "audio");
+      result = await extractAudio(buf, opts.filename || "audio");
+      break;
     default:
       throw new Error(`Unsupported document extension: ${ext}`);
   }
+
+  // Scan extracted text for prompt injection patterns (Gap 6: adversarial defense)
+  if (result.text.length > 0) {
+    try {
+      const { scanForInjection } = await import("./adversarial-defense.ts");
+      const scan = scanForInjection(result.text);
+      if (!scan.clean) {
+        const flaggedCategories = [...new Set(scan.flags.map((f) => f.category))];
+        result.warnings.push(
+          `injection_detected: ${flaggedCategories.join(",")} (risk_score=${scan.risk_score.toFixed(2)}, blocked=${scan.blocked})`
+        );
+        if (scan.blocked) {
+          result.frontmatter.injection_blocked = "true";
+        }
+        result.frontmatter.injection_detected = "true";
+      }
+    } catch {
+      // adversarial-defense.ts not available — skip scan silently
+    }
+  }
+
+  return result;
 }
 
 async function extractPdf(buf: Buffer): Promise<ExtractedDocument> {
@@ -1337,11 +1373,103 @@ export function synthesizeDocumentMarkdown(
   return `---\n${lines.join("\n")}\n---\n\n${body}\n`;
 }
 
+/**
+ * Repair German Umlaut encoding artifacts from PDF text extraction.
+ *
+ * PDFs often use custom font encodings (WinAnsi, MacRoman, custom CMaps)
+ * that produce decomposed Unicode (ü → u + U+0308) or lose diacritics
+ * entirely (ü → space or question mark). This function:
+ *
+ * 1. Normalizes to NFC (precomposed) — combines decomposed diacritics
+ * 2. Repairs common WinAnsi→UTF-8 mojibake patterns
+ * 3. Repairs space-substituted umlauts (e.g. "M ller" → "Müller")
+ * 4. Repairs common replacement-character patterns
+ */
+function fixGermanUmlauts(text: string): string {
+  let result = text;
+
+  // Step 1: NFC normalization — combine decomposed diacritics
+  // (u + U+0308 → ü, a + U+0308 → ä, o + U+0308 → ö, etc.)
+  result = result.normalize("NFC");
+
+  // Step 2: Repair common mojibake (UTF-8 bytes decoded as Latin-1)
+  const mojibakeMap: Record<string, string> = {
+    "Ã¼": "ü",
+    "Ã¶": "ö",
+    "Ã¤": "ä",
+    "Ãœ": "Ü",
+    "Ã–": "Ö",
+    "Ã„": "Ä",
+    "ÃŸ": "ß",
+    "Ã¡": "á",
+    "Ã©": "é",
+    "Ã­": "í",
+    "Ã³": "ó",
+    "Ãº": "ú",
+    "Ã±": "ñ",
+    "Â§": "§",
+    "Â¶": "¶",
+    "\u00E2\u20AC": "\u201C",
+    "\u00E2\u20AC\u0153": "\u201C",
+    "\u00E2\u20AC\u009D": "\u201D",
+    "\u00E2\u20AC\u201C": "\u2013",
+    "\u00E2\u20AC\u201D": "\u2014",
+    "Â°": "°",
+  };
+  for (const [broken, fixed] of Object.entries(mojibakeMap)) {
+    result = result.split(broken).join(fixed);
+  }
+
+  // Step 3: Repair space-substituted umlauts
+  // PDFs with broken font encodings often replace ü/ö/ä/ß with a space
+  // or nothing, producing patterns like "M ller" (Müller), "Stra e" (Straße),
+  // "Gr e" (Große), "K ln" (Köln), "M nchen" (München), "D sseldorf" (Düsseldorf)
+  // Only apply when the pattern is unambiguous to avoid false positives.
+  const spaceSubstitutedPatterns: Array<[RegExp, string]> = [
+    // Common German words/names with umlauts
+    [/\bM ller\b/g, "Müller"],
+    [/\bm ller\b/g, "müller"],
+    [/\bM nchen\b/g, "München"],
+    [/\bm nchen\b/g, "münchen"],
+    [/\bK ln\b/g, "Köln"],
+    [/\bk ln\b/g, "köln"],
+    [/\bD sseldorf\b/g, "Düsseldorf"],
+    [/\bd sseldorf\b/g, "düsseldorf"],
+    [/\bStra e\b/g, "Straße"],
+    [/\bstra e\b/g, "straße"],
+    [/\bGr e\b/g, "Große"],
+    [/\bgr e\b/g, "große"],
+    [/\bFl ge\b/g, "Flüge"],
+    [/\bfl ge\b/g, "flüge"],
+    [/\bL cke\b/g, "Lücke"],
+    [/\bl cke\b/g, "lücke"],
+    [/\bBr cke\b/g, "Brücke"],
+    [/\bbr cke\b/g, "brücke"],
+    [/\bH he\b/g, "Höhe"],
+    [/\bh he\b/g, "höhe"],
+    [/\bFr ha\b/g, "Frage"],
+    // Generic patterns: vowel + space + consonant cluster common in German
+    // Only for ß-replacement: "a e" → "aße" at word end is too ambiguous
+    // so we stick to specific patterns above
+  ];
+  for (const [pattern, replacement] of spaceSubstitutedPatterns) {
+    result = result.replace(pattern, replacement);
+  }
+
+  // Step 4: Repair replacement characters (U+FFFD) that some extractors
+  // produce for unmappable glyphs — try to infer from context
+  result = result.replace(/\uFFFD/g, "");
+
+  return result;
+}
+
 /** Collapse runaway blank lines and strip trailing space; keep paragraphs. */
 function normalizeWhitespace(text: string): string {
-  return text
-    .replace(/\r\n/g, "\n")
-    .replace(/[ \t]+$/gm, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return fixGermanUmlauts(
+    text
+      .replace(/\r\n/g, "\n")
+      .replace(/[ \t]+$/gm, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
 }

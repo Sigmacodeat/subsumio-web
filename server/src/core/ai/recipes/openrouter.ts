@@ -1,4 +1,5 @@
 import type { Recipe } from "../types.ts";
+import { AIConfigError } from "../errors.ts";
 
 /**
  * OpenRouter — single-key fan-out to OpenAI, Anthropic, Google, DeepSeek, and
@@ -6,7 +7,7 @@ import type { Recipe } from "../types.ts";
  * https://openrouter.ai/api/v1.
  *
  * One key, many models. Use `openrouter:<provider>/<model>` strings:
- *   openrouter:openai/gpt-5.2
+ *   openrouter:openai/gpt-5.4
  *   openrouter:anthropic/claude-sonnet-4.6
  *   openrouter:google/gemini-3-flash-preview
  *
@@ -45,8 +46,47 @@ export const openrouter: Recipe = {
   base_url_default: "https://openrouter.ai/api/v1",
   auth_env: {
     required: ["OPENROUTER_API_KEY"],
-    optional: ["OPENROUTER_BASE_URL", "OPENROUTER_REFERER", "OPENROUTER_TITLE"],
+    optional: [
+      "OPENROUTER_API_KEY_FALLBACK",
+      "OPENROUTER_BASE_URL",
+      "OPENROUTER_REFERER",
+      "OPENROUTER_TITLE",
+    ],
     setup_url: "https://openrouter.ai/settings/keys",
+  },
+  resolveAuth(env) {
+    const primary = env.OPENROUTER_API_KEY;
+    const fallback = env.OPENROUTER_API_KEY_FALLBACK;
+    const key = primary || fallback;
+    if (!key) {
+      throw new AIConfigError(
+        `OpenRouter requires OPENROUTER_API_KEY or OPENROUTER_API_KEY_FALLBACK.`,
+        "Get an API key at https://openrouter.ai/settings/keys, then `export OPENROUTER_API_KEY=...` or `export OPENROUTER_API_KEY_FALLBACK=...`"
+      );
+    }
+    return { headerName: "Authorization", token: `Bearer ${key}` };
+  },
+  resolveOpenAICompatConfig(env) {
+    const baseURL = env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1";
+    const primary = env.OPENROUTER_API_KEY;
+    const fallback = env.OPENROUTER_API_KEY_FALLBACK;
+    if (!primary || !fallback || primary === fallback) {
+      return { baseURL };
+    }
+    const retryFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const response = await fetch(input, init);
+      if (response.status === 402 || response.status === 429) {
+        const headers = new Headers(init?.headers);
+        const currentAuth = headers.get("Authorization") ?? "";
+        const currentKey = currentAuth.replace(/^Bearer\s+/, "");
+        const otherKey = currentKey === primary ? fallback : primary;
+        headers.set("Authorization", `Bearer ${otherKey}`);
+        const retryInit: RequestInit = { ...init, headers };
+        return fetch(input, retryInit);
+      }
+      return response;
+    };
+    return { baseURL, fetch: retryFetch as unknown as typeof fetch };
   },
   resolveDefaultHeaders(env) {
     const referer = env.OPENROUTER_REFERER ?? "https://gbrain.ai";
@@ -77,18 +117,19 @@ export const openrouter: Recipe = {
       max_batch_tokens: 300_000,
     },
     chat: {
-      // Curated entry points (verified against OR's catalog 2026-05-20). The
+      // Curated entry points (verified against OR's catalog 2026-07-11). The
       // openai-compat tier does NOT enforce this list at runtime — users can
       // pass any model ID OR routes. Refresh quarterly; see TODOS.md.
       models: [
-        "openai/gpt-5.2",
-        "openai/gpt-5.2-chat",
+        "openai/gpt-5.4",
+        "openai/gpt-5.4-mini",
         "openai/gpt-5.5",
         "anthropic/claude-haiku-4.5",
         "anthropic/claude-sonnet-4.6",
         "anthropic/claude-opus-4.7",
         "google/gemini-3-flash-preview",
         "deepseek/deepseek-chat",
+        "xai/grok-4.3",
       ],
       supports_tools: true,
       // Informational only — real gate is isAnthropicProvider() upstream.
@@ -97,7 +138,7 @@ export const openrouter: Recipe = {
       // No max_context_tokens: catalog spans 128K to 1M+; a single recipe-wide
       // value is either unsafe for smaller models or wasteful for larger ones.
       // Let upstream errors surface per-model.
-      price_last_verified: "2026-05-20",
+      price_last_verified: "2026-07-11",
     },
   },
   setup_hint:

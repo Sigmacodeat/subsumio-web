@@ -415,11 +415,16 @@ export function loadConfig(): GBrainConfig | null {
     ...(process.env.ZEROENTROPY_API_KEY
       ? { zeroentropy_api_key: process.env.ZEROENTROPY_API_KEY }
       : {}),
-    ...(process.env.GBRAIN_EMBEDDING_MODEL
-      ? { embedding_model: process.env.GBRAIN_EMBEDDING_MODEL }
+    ...(process.env.SUBSUMIO_EMBEDDING_MODEL ?? process.env.GBRAIN_EMBEDDING_MODEL
+      ? { embedding_model: (process.env.SUBSUMIO_EMBEDDING_MODEL ?? process.env.GBRAIN_EMBEDDING_MODEL)! }
       : {}),
-    ...(process.env.GBRAIN_EMBEDDING_DIMENSIONS
-      ? { embedding_dimensions: parseInt(process.env.GBRAIN_EMBEDDING_DIMENSIONS, 10) }
+    ...((process.env.SUBSUMIO_EMBEDDING_DIMENSIONS ?? process.env.GBRAIN_EMBEDDING_DIMENSIONS)
+      ? {
+          embedding_dimensions: parseInt(
+            (process.env.SUBSUMIO_EMBEDDING_DIMENSIONS ?? process.env.GBRAIN_EMBEDDING_DIMENSIONS)!,
+            10
+          ),
+        }
       : {}),
     ...(process.env.GBRAIN_EXPANSION_MODEL
       ? { expansion_model: process.env.GBRAIN_EXPANSION_MODEL }
@@ -435,8 +440,12 @@ export function loadConfig(): GBrainConfig | null {
     ...(process.env.GBRAIN_EMBEDDING_MULTIMODAL
       ? { embedding_multimodal: process.env.GBRAIN_EMBEDDING_MULTIMODAL === "true" }
       : {}),
-    ...(process.env.GBRAIN_EMBEDDING_IMAGE_OCR
-      ? { embedding_image_ocr: process.env.GBRAIN_EMBEDDING_IMAGE_OCR === "true" }
+    ...((process.env.SUBSUMIO_EMBEDDING_IMAGE_OCR ?? process.env.GBRAIN_EMBEDDING_IMAGE_OCR)
+      ? {
+          embedding_image_ocr:
+            (process.env.SUBSUMIO_EMBEDDING_IMAGE_OCR ?? process.env.GBRAIN_EMBEDDING_IMAGE_OCR) ===
+            "true",
+        }
       : {}),
     ...(process.env.GBRAIN_EMBEDDING_MULTIMODAL_MODEL
       ? { embedding_multimodal_model: process.env.GBRAIN_EMBEDDING_MULTIMODAL_MODEL }
@@ -820,6 +829,11 @@ export const KNOWN_CONFIG_KEYS: readonly string[] = [
   // Link resolution (issue #972)
   "link_resolution",
   "link_resolution.global_basename",
+  // Legal vertical — hard jurisdiction isolation. When set (at|de|ch|eu), every
+  // `query` hard-excludes foreign-jurisdiction statutes by default so an
+  // Austrian firm never has to remember to pass jurisdiction per call. A
+  // per-call `jurisdiction` param overrides it.
+  "legal.jurisdiction",
 ];
 
 /**
@@ -838,6 +852,7 @@ export const KNOWN_CONFIG_KEY_PREFIXES: readonly string[] = [
   "mcp.", // mcp.publish_skills, mcp.skills_dir (PR1 skill catalog)
   "autopilot.", // autopilot.nightly_quality_probe.*, autopilot.auto_drain.* (#1685)
   "self_upgrade.", // v0.42 self-upgrade (mode, quiet_hours, state)
+  "legal.", // legal.jurisdiction (hard jurisdiction isolation) + future legal.* tunables
 ];
 
 export function saveConfig(config: GBrainConfig): void {

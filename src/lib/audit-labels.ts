@@ -93,8 +93,10 @@ export type AuditAction =
   | "legal.portfolio_insights"
   | "legal.strategy"
   | "legal.research"
+  | "legal.subsumption"
   | "legal.ground"
   | "settings.update"
+  | "settings.jurisdiction"
   | "billing.upgrade"
   | "onboarding.complete"
   | "team.invite"
@@ -161,7 +163,12 @@ export type AuditAction =
   | "rciid.report_downloaded"
   | "rciid.billing_auto"
   | "rciid.wallet_detected"
-  | "submission.review";
+  | "submission.review"
+  | "ai.injection_detected"
+  | "ai.injection_blocked"
+  | "ai.reasoning_trace"
+  | "ai.webhook_escalate"
+  | "ai.webhook_block";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -209,8 +216,10 @@ const ACTION_LABELS: Record<string, string> = {
   "legal.precedent_search": "Präzedenzfall-Suche",
   "legal.portfolio_insights": "Portfolio-Analytics",
   "legal.research": "Deep Research gestartet",
+  "legal.subsumption": "Interaktive Subsumtion",
   "legal.ground": "Citation Grounding",
   "settings.update": "Einstellungen geändert",
+  "settings.jurisdiction": "Rechtsraum geändert",
   "billing.upgrade": "Plan geändert",
   "onboarding.complete": "Onboarding abgeschlossen",
   "team.invite": "Team-Einladung",
@@ -289,6 +298,11 @@ const ACTION_LABELS: Record<string, string> = {
   "bea.retry": "beA-Versand Retry",
   "system.alert": "System-Warnung",
   "system.integrity_check": "Integritätsprüfung (GoBD)",
+  "ai.injection_detected": "AI Prompt-Injection erkannt",
+  "ai.injection_blocked": "AI Prompt-Injection blockiert",
+  "ai.reasoning_trace": "AI Reasoning Trace erstellt",
+  "ai.webhook_escalate": "AI Webhook Escalation gesendet",
+  "ai.webhook_block": "AI Webhook Block-Event gesendet",
 };
 
 export function auditLabel(action: string): string {

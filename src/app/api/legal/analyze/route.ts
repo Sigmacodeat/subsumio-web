@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage, engineHeadersWithCaseJurisdiction } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
 import { apiError } from "@/lib/api-response";
 import { env } from "@/lib/env";
@@ -103,12 +103,18 @@ export const POST = createHandler(
     }
 
     // ── 2. AI analysis (Route A: engine-native, Route B: /api/think) ────
+    // Resolve case jurisdiction from the document's case_slug (if any)
+    // so the engine scopes law corpus to the case's country.
+    const caseScopedHeaders = await engineHeadersWithCaseJurisdiction(
+      engineHeaders,
+      documentCaseSlug
+    );
     let parsed: Record<string, unknown>;
     try {
       if (documentSlug) {
         const analyzeRes = await fetch(`${ENGINE_URL}/api/legal/analyze`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...engineHeaders },
+          headers: { "Content-Type": "application/json", ...caseScopedHeaders },
           body: JSON.stringify({ slug: documentSlug }),
           signal: AbortSignal.timeout(ENGINE_FETCH_TIMEOUT),
         });
@@ -117,7 +123,7 @@ export const POST = createHandler(
       } else {
         const thinkRes = await fetch(`${ENGINE_URL}/api/think`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...engineHeaders },
+          headers: { "Content-Type": "application/json", ...caseScopedHeaders },
           body: JSON.stringify({
             query: buildAnalysisPrompt(text, jurisdiction),
             mode: "balanced",

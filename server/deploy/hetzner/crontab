@@ -2,6 +2,11 @@
 # Each job calls the Next.js /api/cron/* endpoint with CRON_SECRET auth.
 # Times are in UTC (Hetzner default). Adjust for CET/CEST if needed.
 
+# ── 02:45 UTC (04:45 CEST) — Statute currency check ──
+# Checks DB statute version_date against live sources (RIS-OGD, buzer.de, OpenCaseLaw).
+# If outdated laws are found, triggers /api/admin/law-sync to reimport updated corpus.
+45 2 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/statute-currency || true
+
 # ── 03:00 UTC (05:00 CEST) — Law corpus sync ──
 0 3 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/law-sync || true
 

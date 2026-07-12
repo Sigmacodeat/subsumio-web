@@ -33,6 +33,10 @@ export interface User {
   orgId?: string | null;
   /** Industry chosen at signup — drives dashboard personalization (verticals). */
   industry?: string | null;
+  /** Jurisdiction chosen at onboarding — scopes law corpus search to the attorney's country.
+   *  "DE" → law-de + law-eu, "AT" → law-at + law-eu, "CH" → law-ch + law-eu.
+   *  Prevents cross-jurisdiction contamination (e.g. AT attorney getting DE StPO results). */
+  jurisdiction?: "DE" | "AT" | "CH" | null;
   /** TOTP secret (Base32), encrypted at rest in production. */
   twoFactorSecret?: string | null;
   /** Whether 2FA is actively enforced for this user. */
@@ -654,6 +658,7 @@ export async function buildNewUser(opts: {
   locale?: "en" | "de";
   referredBy?: string | null;
   industry?: string | null;
+  jurisdiction?: "DE" | "AT" | "CH" | null;
 }): Promise<User> {
   const s = getStore();
   // first user ever becomes admin — sensible bootstrap for a fresh install
@@ -676,6 +681,7 @@ export async function buildNewUser(opts: {
     emailVerifiedAt: null,
     orgId: null,
     industry: opts.industry ?? null,
+    jurisdiction: opts.jurisdiction ?? null,
     onboardingCompletedAt: null,
     createdAt: new Date().toISOString(),
   };

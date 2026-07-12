@@ -207,10 +207,12 @@ export function splitStatute(markdown: string): SplitStatuteResult {
     const ris = splitStatuteRis(body);
     const inline = splitStatuteInline(body);
     const best = ris.length >= inline.length ? ris : inline;
-    if (best.length > sections.length) return { meta, sections: best };
+    if (best.length > sections.length) {
+      return { meta, sections: repairShortStructuredSections(body, best) };
+    }
   }
 
-  return { meta, sections };
+  return { meta, sections: repairShortStructuredSections(body, sections) };
 }
 
 /** An inline paragraph marker `§ 17a.` in a flowing-text dump. The optional dot
@@ -233,6 +235,56 @@ const INLINE_MAX_STEP = 50;
  *  30-60 chars; real norm text is 200+. Matches below this threshold are only
  *  kept as fallback when no above-threshold candidate exists for that §. */
 const NORM_MIN_SPAN = 100;
+
+/**
+ * Some RIS PDF exports contain markdown-like § headings in their table of
+ * contents, so the structured pass looks healthy overall but individual
+ * sections contain only the short ToC label. Conservatively replace only
+ * suspiciously short structured bodies when the raw document contains a much
+ * longer duplicate `§ N.` span. This fixes isolated ToC captures without
+ * replacing already substantive sections or changing section identities.
+ */
+function repairShortStructuredSections(
+  body: string,
+  sections: StatuteSection[]
+): StatuteSection[] {
+  const shortRefs = new Set(
+    sections
+      .filter((section) => /^\d+[a-z]*$/i.test(section.ref) && section.body.length < 400)
+      .map((section) => section.ref.toLowerCase())
+  );
+  if (shortRefs.size === 0) return sections;
+
+  const matches = [...body.matchAll(INLINE_PARAGRAPH)].map((match) => ({
+    index: match.index ?? 0,
+    ref: `${match[1]}${match[2]}`.toLowerCase(),
+  }));
+  const best = new Map<string, string>();
+  for (let i = 0; i < matches.length; i++) {
+    const match = matches[i]!;
+    if (!shortRefs.has(match.ref)) continue;
+    const end = matches[i + 1]?.index ?? body.length;
+    const candidate = body.slice(match.index, end).trim();
+    // A candidate that crosses another explicit markdown section heading is
+    // not an inline norm span; it is usually a ToC stub absorbing the rest of
+    // an otherwise structured document.
+    if (/\n#{2,3}\s+§/.test(candidate)) continue;
+    const prior = best.get(match.ref);
+    if (!prior || candidate.length > prior.length) best.set(match.ref, candidate);
+  }
+
+  return sections.map((section) => {
+    const candidate = best.get(section.ref.toLowerCase());
+    if (
+      !candidate ||
+      candidate.length < 200 ||
+      candidate.length < Math.max(section.body.length * 3, NORM_MIN_SPAN)
+    ) {
+      return section;
+    }
+    return { ...section, body: candidate };
+  });
+}
 
 /**
  * Recover per-§ sections from an unstructured statute dump (no `## §` headings)

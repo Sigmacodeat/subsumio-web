@@ -4,7 +4,7 @@ type: "law"
 jurisdiction: "de"
 abbreviation: "GG"
 version_date: "2026-05-06"
-retrieved_at: "2026-06-21"
+retrieved_at: "2026-07-10"
 source_url: "https://www.gesetze-im-internet.de/gg/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
 ---
@@ -1146,30 +1146,30 @@ Dieses Grundgesetz, das nach Vollendung der Einheit und Freiheit Deutschlands f�
 
 ## Anhang EV
 
-- EinigVtr v. 31.8.1990 II 889, 890 - 892, -
-  sieht folgende Maßgaben vor:
+- EinigVtr v. 31.8.1990 II 889, 890 - 892, - 
+sieht folgende Maßgaben vor: 
 
-Artikel 3
-Inkrafttreten des Grundgesetzes
-Mit dem Wirksamwerden des Beitritts tritt das Grundgesetz für die Bundesrepublik Deutschland in der im Bundesgesetzblatt Teil III, Gliederungsnummer 100-1, veröffentlichten bereinigten Fassung, zuletzt geändert durch Gesetz vom 21. Dezember 1983 (BGBl. I S. 1481), in den Ländern Brandenburg, Mecklenburg-Vorpommern, Sachsen, Sachsen-Anhalt und Thüringen sowie in dem Teil des Landes Berlin, in dem es bisher nicht galt, mit den sich aus Artikel 4 ergebenden Änderungen in Kraft, soweit in diesem Vertrag nichts anderes bestimmt ist.
+Artikel 3 
+Inkrafttreten des Grundgesetzes 
+Mit dem Wirksamwerden des Beitritts tritt das Grundgesetz für die Bundesrepublik Deutschland in der im Bundesgesetzblatt Teil III, Gliederungsnummer 100-1, veröffentlichten bereinigten Fassung, zuletzt geändert durch Gesetz vom 21. Dezember 1983 (BGBl. I S. 1481), in den Ländern Brandenburg, Mecklenburg-Vorpommern, Sachsen, Sachsen-Anhalt und Thüringen sowie in dem Teil des Landes Berlin, in dem es bisher nicht galt, mit den sich aus Artikel 4 ergebenden Änderungen in Kraft, soweit in diesem Vertrag nichts anderes bestimmt ist. 
 
-Artikel 4
-Beitrittsbedingte Änderungen des Grundgesetzes
-... (betroffen: Präambel, Art. 23, 51, 135a, 143, 146)
+Artikel 4 
+Beitrittsbedingte Änderungen des Grundgesetzes 
+... (betroffen: Präambel, Art. 23, 51, 135a, 143, 146) 
 
-Artikel 5
-Künftige Verfassungsänderungen
+Artikel 5 
+Künftige Verfassungsänderungen 
 Die Regierungen der beiden Vertragsparteien empfehlen den gesetzgebenden Körperschaften des vereinten Deutschlands, sich innerhalb von zwei Jahren mit den im Zusammenhang mit der deutschen Einigung aufgeworfenen Fragen zur Änderung oder Ergänzung des Grundgesetzes zu befassen, insbesondere -in bezug auf das Verhältnis zwischen Bund und Ländern entsprechend dem Gemeinsamen Beschluß der Ministerpräsidenten vom 5. Juli 1990,-in bezug auf die Möglichkeit einer Neugliederung für den Raum Berlin/Brandenburg abweichend von den Vorschriften des Artikels 29 des Grundgesetzes durch Vereinbarung der beteiligten Länder,-mit den Überlegungen zur Aufnahme von Staatszielbestimmungen in das Grundgesetz sowie-mit der Frage der Anwendung des Artikels 146 des Grundgesetzes und in deren Rahmen einer Volksabstimmung.
 
-Artikel 6
-Ausnahmebestimmung
-Artikel 131 des Grundgesetzes wird in dem in Artikel 3 genannten Gebiet vorerst nicht in Kraft gesetzt.
+Artikel 6 
+Ausnahmebestimmung 
+Artikel 131 des Grundgesetzes wird in dem in Artikel 3 genannten Gebiet vorerst nicht in Kraft gesetzt. 
 
-Artikel 7
-Finanzverfassung
+Artikel 7 
+Finanzverfassung 
 (1) Die Finanzverfassung der Bundesrepublik Deutschland wird auf das in Artikel 3 genannte Gebiet erstreckt, soweit in diesem Vertrag nichts anderes bestimmt ist.
 (2) Für die Verteilung des Steueraufkommens auf den Bund sowie auf die Länder und Gemeinden (Gemeindeverbände) in dem in Artikel 3 genannten Gebiet gelten die Bestimmungen des Artikels 106 des Grundgesetzes mit der Maßgabe, daß 1.bis zum 31. Dezember 1994 Absatz 3 Satz 4 und Absatz 4 keine Anwendung finden;2.bis zum 31. Dezember 1996 der Anteil der Gemeinden an dem Aufkommen der Einkommensteuer nach Artikel 106 Abs. 5 des Grundgesetzes von den Ländern an die Gemeinden nicht auf der Grundlage der Einkommensteuerleistung ihrer Einwohner, sondern nach der Einwohnerzahl der Gemeinden weitergeleitet wird;3.bis zum 31. Dezember 1994 abweichend von Artikel 106 Abs. 7 des Grundgesetzes den Gemeinden (Gemeindeverbänden) von dem Länderanteil am Gesamtaufkommen der Gemeinschaftssteuern und dem gesamten Aufkommen der Landessteuern ein jährlicher Anteil von mindestens 20 vom Hundert sowie vom Länderanteil aus den Mitteln des Fonds "Deutsche Einheit" nach Absatz 5 Nr. 1 ein jährlicher Anteil von 40 vom Hundert zufließt.
-(3) Artikel 107 des Grundgesetzes gilt in dem in Artikel 3 genannten Gebiet mit der Maßgabe, daß bis zum 31. Dezember 1994 zwischen den bisherigen Ländern der Bundesrepublik Deutschland und den Ländern in dem in Artikel 3 genannten Gebiet die Regelung des Absatzes 1 Satz 4 nicht angewendet wird und ein gesamtdeutscher Länderfinanzausgleich (Artikel 107 Abs. 2 des Grundgesetzes) nicht stattfindet. Der gesamtdeutsche Länderanteil an der Umsatzsteuer wird so in einen Ost- und Westanteil aufgeteilt, daß im Ergebnis der durchschnittliche Umsatzsteueranteil pro Einwohner in den Ländern Brandenburg, Mecklenburg-Vorpommern, Sachsen, Sachsen-Anhalt und Thüringen in den Jahren
+(3) Artikel 107 des Grundgesetzes gilt in dem in Artikel 3 genannten Gebiet mit der Maßgabe, daß bis zum 31. Dezember 1994 zwischen den bisherigen Ländern der Bundesrepublik Deutschland und den Ländern in dem in Artikel 3 genannten Gebiet die Regelung des Absatzes 1 Satz 4 nicht angewendet wird und ein gesamtdeutscher Länderfinanzausgleich (Artikel 107 Abs. 2 des Grundgesetzes) nicht stattfindet. Der gesamtdeutsche Länderanteil an der Umsatzsteuer wird so in einen Ost- und Westanteil aufgeteilt, daß im Ergebnis der durchschnittliche Umsatzsteueranteil pro Einwohner in den Ländern Brandenburg, Mecklenburg-Vorpommern, Sachsen, Sachsen-Anhalt und Thüringen in den Jahren 
 199155 vom Hundert199260 vom Hundert199365 vom Hundert199470 vom Hundert
 des durchschnittlichen Umsatzsteueranteils pro Einwohner in den Ländern Baden-Württemberg, Bayern, Bremen, Hessen, Hamburg, Niedersachsen, Nordrhein-Westfalen, Rheinland-Pfalz, Saarland und Schleswig-Holstein beträgt. Der Anteil des Landes Berlin wird vorab nach der Einwohnerzahl berechnet. Die Regelungen dieses Absatzes werden für 1993 in Ansehung der dann vorhandenen Gegebenheiten überprüft.
 (4) Das in Artikel 3 genannte Gebiet wird in die Regelungen der Artikel 91a, 91b und 104a Abs. 3 und 4 des Grundgesetzes einschließlich der hierzu ergangenen Ausführungsbestimmungen nach Maßgabe dieses Vertrags mit Wirkung vom 1. Januar 1991 einbezogen.

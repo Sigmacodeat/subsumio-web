@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ENGINE_URL, recordQuota } from "@/lib/engine";
-import { detectDeadlines, resolveRelativeDeadline } from "@/lib/ai-deadline-detect";
+import { detectDeadlines, enrichAllDeadlines, resolveRelativeDeadline } from "@/lib/ai-deadline-detect";
+import { hybridDeadlineDetection, isLLMDeadlineExtractionAvailable } from "@/lib/llm-deadline-extract";
 import { createHandler } from "@/lib/api-handler";
 import { groundAnswerCitations, emptyGroundingMetadata } from "@/lib/citation-gate";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
@@ -26,7 +27,12 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, _req) => {
     const safeText = sanitizeUserInput(body.text);
-    const detected = detectDeadlines(safeText);
+    const rawDetected = detectDeadlines(safeText);
+    const enrichedRegex = enrichAllDeadlines(rawDetected, safeText);
+
+    // LLM Fallback: wenn Regex keine/wenige Fristen findet, rufe LLM an
+    const detected = await hybridDeadlineDetection(safeText, enrichedRegex);
+    const llmUsed = detected.some((d) => d.matchedRule === "llm_fallback");
 
     const createdSlugs: string[] = [];
     if (body.caseSlug) {
@@ -35,6 +41,7 @@ export const POST = createHandler(
           try {
             const dueDate = d.date || resolveRelativeDeadline(d.daysFromNow!);
             const slug = `legal/deadline/${Date.now()}-${createdSlugs.length}`;
+            const fristResult = d.fristResult;
             await fetch(`${ENGINE_URL}/api/pages`, {
               method: "POST",
               headers: { ...ctx.headers, "Content-Type": "application/json" },
@@ -42,16 +49,31 @@ export const POST = createHandler(
                 slug,
                 title: d.description,
                 type: "deadline",
-                content: `Erkannt aus Text:\n${d.sourceSnippet}\n\nKonfidenz: ${d.confidence}`,
+                content: `Erkannt aus Text:\n${d.sourceSnippet}\n\nKonfidenz: ${d.confidence}${fristResult ? `\n\nDeterministische Berechnung:\n${fristResult.hinweise.join("\n")}` : ""}`,
                 frontmatter: {
                   type: "deadline",
                   case_slug: body.caseSlug,
                   due_date: dueDate,
                   status: "pending",
                   review_status: "unreviewed",
-                  source: "ai_detected",
+                  source: d.matchedRule === "llm_fallback" ? "llm_detected" : "ai_detected",
                   matched_rule: d.matchedRule,
                   ai_confidence: d.confidence,
+                  // Deterministisch berechnete Frist-Daten
+                  ...(fristResult ? {
+                    frist_art: fristResult.art.key,
+                    frist_regime: fristResult.art.regime,
+                    rechtsgrundlage: fristResult.art.rechtsgrundlage,
+                    fristbeginn: fristResult.fristbeginn,
+                    fristende: fristResult.fristende,
+                    vorfrist_date: fristResult.vorfrist,
+                    kalendertage: fristResult.kalendertage,
+                    notfrist: fristResult.art.notfrist,
+                    deterministic: true,
+                  } : {
+                    deterministic: false,
+                  }),
+                  ...(d.zustellungsdatum ? { zustellungsdatum: d.zustellungsdatum } : {}),
                 },
                 signal: AbortSignal.timeout(30_000),
               }),
@@ -70,6 +92,8 @@ export const POST = createHandler(
     const response: Record<string, unknown> = {
       detected,
       created: createdSlugs.length > 0 ? createdSlugs : undefined,
+      llm_fallback_used: llmUsed,
+      llm_available: isLLMDeadlineExtractionAvailable(),
     };
 
     try {

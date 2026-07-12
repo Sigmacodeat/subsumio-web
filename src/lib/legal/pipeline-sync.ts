@@ -19,6 +19,7 @@
  */
 
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { berechneFristAuto, type FristAutoErgebnis } from "@/lib/legal/frist-engine";
 import { computeVorfrist } from "@/lib/legal/vorfrist";
 
 interface DeadlineCalendarPage {
@@ -99,6 +100,40 @@ function parseDeadlineTable(markdown: string): ParsedDeadlineRow[] {
 
 function dedupeKey(caseSlug: string, datum: string, frist: string): string {
   return `${caseSlug}|${datum}|${frist.toLowerCase().slice(0, 60)}`;
+}
+
+/**
+ * Mappt eine Pipeline-Fristbeschreibung + Rechtsgrundlage auf einen
+ * FRISTEN_REGISTRY Key für die deterministische Berechnung.
+ */
+function guessFristKey(frist: string, rechtsgrundlage: string): string | null {
+  const f = frist.toLowerCase();
+  const r = rechtsgrundlage.toLowerCase();
+
+  // ZPO Fristen
+  if (f.includes("klagebeantwortung") || f.includes("klageerwiderung")) return "klagebeantwortung";
+  if (f.includes("berufung") && !f.includes("straf")) return "berufung";
+  if (f.includes("revision") && !r.includes("vwgh") && !r.includes("verwaltungsgericht")) return "revision";
+  if (f.includes("rekurs")) return "rekurs";
+  if (f.includes("wiedereinsetzung")) return "wiedereinsetzung";
+  if (f.includes("einspruch") && f.includes("zahlungsbefehl")) return "einspruch_zahlungsbefehl";
+
+  // StPO Fristen
+  if (f.includes("beschwerde") && (r.includes("stpo") || f.includes("straf"))) return "beschwerde_stpo";
+  if (f.includes("berufung") && (r.includes("stpo") || f.includes("straf"))) return "berufungsanmeldung_stpo";
+
+  // Verwaltungsverfahren
+  if (f.includes("bescheidbeschwerde") || (f.includes("beschwerde") && r.includes("vwgvg"))) return "beschwerde_vwgvg";
+  if (f.includes("vorstellung")) return "vorstellung_avg";
+  if (f.includes("revision") && (r.includes("vwgh") || r.includes("verwaltungsgericht"))) return "revision_vwgh";
+  if (f.includes("beschwerde") && (r.includes("vfgh") || r.includes("verfassungsgericht"))) return "beschwerde_vfgh";
+
+  // Materiellrechtliche Fristen
+  if (f.includes("verjährung") && (f.includes("3 jahr") || f.includes("drei jahr"))) return "verjaehrung_kurz";
+  if (f.includes("verjährung") && (f.includes("30 jahr") || f.includes("dreißig jahr"))) return "verjaehrung_lang";
+  if (f.includes("verjährung")) return "verjaehrung_kurz"; // default: kurz
+
+  return null;
 }
 
 async function fetchDeadlineCalendarPages(brainId: string): Promise<DeadlineCalendarPage[]> {
@@ -203,16 +238,34 @@ export async function syncPipelineDeadlines(brainId: string): Promise<SyncResult
         .replace(/^-|-$/g, "")
         .slice(0, 48);
       const slug = `legal/deadlines/${iso}-${titlePart || "pipeline"}-${Date.now().toString(36)}`;
-      const vorfrist = computeVorfrist(iso);
+
+      // Versuche deterministische Berechnung via frist-engine
+      // Mappe die Pipeline-Fristbeschreibung auf einen Registry-Key
+      const fristKey = guessFristKey(row.frist, row.rechtsgrundlage);
+      let fristResult: FristAutoErgebnis | null = null;
+      let vorfrist: string | null = null;
+
+      if (fristKey) {
+        try {
+          // Nutze das extrahierte Datum als Zustellungsdatum/Auslöser
+          fristResult = berechneFristAuto(fristKey, iso);
+          vorfrist = fristResult.vorfrist;
+        } catch {
+          // Fallback auf einfache Vorfrist-Berechnung
+          vorfrist = computeVorfrist(iso);
+        }
+      } else {
+        vorfrist = computeVorfrist(iso);
+      }
 
       const ok = await createDeadlinePage(brainId, {
         slug,
         title: row.frist,
-        content: `Pipeline-extrahierte Frist.\n\nRechtsgrundlage: ${row.rechtsgrundlage}\nFolge bei Versäumnis: ${row.folge}\nBeleg: ${row.beleg}`,
+        content: `Pipeline-extrahierte Frist.\n\nRechtsgrundlage: ${row.rechtsgrundlage}\nFolge bei Versäumnis: ${row.folge}\nBeleg: ${row.beleg}${fristResult ? `\n\nDeterministische Berechnung:\n${fristResult.hinweise.join("\n")}` : ""}`,
         frontmatter: {
           type: "legal_deadline",
           event_type: "deadline",
-          due_date: iso,
+          due_date: fristResult?.fristende ?? iso,
           vorfrist_date: vorfrist,
           description: row.frist,
           status: "pending",
@@ -224,6 +277,19 @@ export async function syncPipelineDeadlines(brainId: string): Promise<SyncResult
           pipeline_beleg: row.beleg,
           pipeline_folge: row.folge,
           created_at: new Date().toISOString(),
+          // Deterministisch berechnete Frist-Daten
+          ...(fristResult ? {
+            frist_art: fristResult.art.key,
+            frist_regime: fristResult.art.regime,
+            rechtsgrundlage: fristResult.art.rechtsgrundlage,
+            fristbeginn: fristResult.fristbeginn,
+            fristende: fristResult.fristende,
+            kalendertage: fristResult.kalendertage,
+            notfrist: fristResult.art.notfrist,
+            deterministic: true,
+          } : {
+            deterministic: false,
+          }),
         },
       });
 

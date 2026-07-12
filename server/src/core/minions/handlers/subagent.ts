@@ -57,7 +57,7 @@ import { resolveSpecialist } from "../specialist-defs.ts";
 
 // ── Defaults ────────────────────────────────────────────────
 
-const DEFAULT_MODEL = "claude-sonnet-4-6";
+const DEFAULT_MODEL = TIER_DEFAULTS.subagent;
 const DEFAULT_MAX_TURNS = 20;
 const DEFAULT_RATE_KEY = "anthropic:messages";
 
@@ -303,6 +303,12 @@ export function makeSubagentHandler(deps: SubagentDeps) {
         // scope every brain tool to the tenant's source.
         sourceId:
           typeof data._source_id === "string" && data._source_id ? data._source_id : undefined,
+        // Federated READ sources (law corpus) scoped by jurisdiction.
+        // Threaded into ctx.auth.allowedSources for sourceScopeOpts().
+        sourceIds:
+          Array.isArray(data._source_ids) && data._source_ids.length > 0
+            ? data._source_ids
+            : undefined,
       });
     const toolDefs =
       data.allowed_tools && data.allowed_tools.length > 0

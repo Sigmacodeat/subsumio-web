@@ -28,7 +28,7 @@ export const GET = createHandler(
       mediaStorageProvider: "local",
       mediaStorageDir: process.env.WHATSAPP_MEDIA_STORAGE_DIR || ".data/whatsapp-media",
       mediaMaxBytes: Number(process.env.WHATSAPP_MEDIA_MAX_BYTES || 25 * 1024 * 1024),
-      transcriptionEnabled: Boolean(process.env.OPENAI_API_KEY),
+      transcriptionEnabled: Boolean(process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY_FALLBACK),
       transcriptionModel: process.env.WHATSAPP_TRANSCRIPTION_MODEL || "whisper-1",
       transcriptionLanguage: process.env.WHATSAPP_TRANSCRIPTION_LANGUAGE || "de",
       dedupProvider: Boolean(process.env.AUTH_DB_URL) ? "postgres" : "memory",

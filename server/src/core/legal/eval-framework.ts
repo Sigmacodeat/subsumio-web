@@ -66,6 +66,80 @@ export interface RunEvalOpts {
   threshold?: number;
   /** Leave-one-out mode: skip one case and run the rest, then check the skipped one */
   leaveOneOut?: boolean;
+  /** Wall-clock limit for one specialist job (default: 5 minutes). */
+  caseTimeoutMs?: number;
+  /** Queue polling interval (default: 500ms). Primarily useful for tests. */
+  pollIntervalMs?: number;
+}
+
+type EvalJobStatus =
+  | "waiting"
+  | "active"
+  | "completed"
+  | "failed"
+  | "delayed"
+  | "dead"
+  | "cancelled"
+  | "waiting-children"
+  | "paused";
+
+interface EvalJob {
+  id: number;
+  status: EvalJobStatus;
+  result: Record<string, unknown> | null;
+  error_text: string | null;
+}
+
+interface EvalQueue {
+  add(
+    name: string,
+    data?: Record<string, unknown>,
+    opts?: Record<string, unknown>
+  ): Promise<EvalJob>;
+  getJob(id: number): Promise<EvalJob | null>;
+}
+
+const TERMINAL_EVAL_STATUSES = new Set<EvalJobStatus>([
+  "completed",
+  "failed",
+  "dead",
+  "cancelled",
+]);
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Normalize the subagent's final text into the value expected by an eval case. */
+export function parseEvalOutput(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const text = value.trim();
+  if (!text) return text;
+
+  const fenced = text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  const candidate = fenced?.[1]?.trim() ?? text;
+  try {
+    return JSON.parse(candidate);
+  } catch {
+    return text;
+  }
+}
+
+function extractCompletedOutput(job: EvalJob): unknown {
+  const result = job.result;
+  if (!result) {
+    throw new Error(`Eval job ${job.id} completed without a result`);
+  }
+
+  // The subagent handler returns { result: finalText, ...metadata }.
+  if (Object.prototype.hasOwnProperty.call(result, "result")) {
+    return parseEvalOutput(result.result);
+  }
+  // Keep compatibility with handlers that return a direct `output` field.
+  if (Object.prototype.hasOwnProperty.call(result, "output")) {
+    return parseEvalOutput(result.output);
+  }
+  return result;
 }
 
 /**
@@ -117,53 +191,83 @@ function compareOutput(
 async function runEvalCase(
   caseData: EvalCase,
   specialistName: string,
-  engine: unknown,
-  queue: unknown
+  queue: EvalQueue,
+  timeoutMs: number,
+  pollIntervalMs: number
 ): Promise<{ actual: unknown; duration_ms: number }> {
   const start = Date.now();
-  // This would call the specialist via the queue
-  // For now, we provide the interface — actual implementation
-  // would submit a subagent job and wait for result
-  const queueObj = queue as {
-    add: (
-      name: string,
-      data: Record<string, unknown>,
-      opts?: Record<string, unknown>
-    ) => Promise<{ id: number }>;
-  };
-  const ctx = { id: 0 } as unknown; // Mock context for eval
-
-  // Submit subagent job
-  const child = await queueObj.add(
+  const child = await queue.add(
     "subagent",
     {
       prompt: caseData.input,
       subagent_def: specialistName,
       max_turns: 15,
     },
-    { parent_job_id: 0, on_child_fail: "continue" }
+    {
+      timeout_ms: timeoutMs,
+      remove_on_complete: false,
+      remove_on_fail: false,
+    }
   );
 
-  // Wait for result (simplified — real impl would use waitForChild)
-  const result = await new Promise((resolve) => {
-    setTimeout(() => resolve({ output: "eval-result-placeholder" }), 100);
-  });
+  while (Date.now() - start < timeoutMs) {
+    const job = await queue.getJob(child.id);
+    if (!job) throw new Error(`Eval job ${child.id} disappeared from the queue`);
 
-  return { actual: result, duration_ms: Date.now() - start };
+    if (job.status === "completed") {
+      return { actual: extractCompletedOutput(job), duration_ms: Date.now() - start };
+    }
+    if (TERMINAL_EVAL_STATUSES.has(job.status)) {
+      throw new Error(
+        `Eval job ${job.id} ended with status ${job.status}: ${job.error_text ?? "no error detail"}`
+      );
+    }
+    await sleep(pollIntervalMs);
+  }
+
+  throw new Error(`Eval job ${child.id} timed out after ${timeoutMs}ms`);
 }
 
 /**
  * Run eval for a specialist against a dataset.
  */
 export async function runEval(opts: RunEvalOpts): Promise<EvalRunResult> {
-  const { specialistName, dataset, engine, queue, threshold = 0.8, leaveOneOut = false } = opts;
+  const {
+    specialistName,
+    dataset,
+    queue,
+    threshold = 0.8,
+    caseTimeoutMs = 5 * 60_000,
+    pollIntervalMs = 500,
+  } = opts;
   const start = Date.now();
   const results: EvalResult[] = [];
+
+  if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) {
+    throw new Error(`threshold must be between 0 and 1, got ${threshold}`);
+  }
+  if (!Number.isFinite(caseTimeoutMs) || caseTimeoutMs <= 0) {
+    throw new Error(`caseTimeoutMs must be greater than 0, got ${caseTimeoutMs}`);
+  }
+  if (!Number.isFinite(pollIntervalMs) || pollIntervalMs < 0) {
+    throw new Error(`pollIntervalMs must be at least 0, got ${pollIntervalMs}`);
+  }
+
+  const evalQueue = queue as EvalQueue;
+  if (!evalQueue || typeof evalQueue.add !== "function" || typeof evalQueue.getJob !== "function") {
+    throw new Error("runEval requires a queue with add() and getJob() methods");
+  }
 
   for (const caseData of dataset.cases) {
     const caseStart = Date.now();
     try {
-      const { actual, duration_ms } = await runEvalCase(caseData, specialistName, engine, queue);
+      const { actual, duration_ms } = await runEvalCase(
+        caseData,
+        specialistName,
+        evalQueue,
+        caseTimeoutMs,
+        pollIntervalMs
+      );
       const { score, errors } = compareOutput(actual, caseData.expected, caseData.checkFields);
       results.push({
         case_id: caseData.id,

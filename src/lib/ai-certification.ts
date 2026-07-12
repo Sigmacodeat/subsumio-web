@@ -70,6 +70,85 @@ export interface AICertification {
   jurisdiction?: string;
   /** Version of the pipeline/specialist that generated this */
   version?: string;
+  /** Per-claim confidence scores (Gap 1) */
+  documentConfidence?: {
+    overall_confidence: number;
+    confidence_level: "high" | "medium" | "low";
+    claim_count: number;
+    claims: Array<{
+      claim_text: string;
+      claim_index: number;
+      confidence: number;
+      level: "high" | "medium" | "low";
+      factors: {
+        has_citation: boolean;
+        citation_grounded: boolean;
+        citation_verified: boolean;
+        hedging_detected: boolean;
+        guardrail_flags: number;
+        cross_verify_flags: number;
+      };
+      supporting_passages: string[];
+    }>;
+    calibration: {
+      ece: number;
+      sample_count: number;
+      last_updated: string;
+    };
+  };
+  /** Provenance chain linking claims to source passages (Gap 2) */
+  provenanceChain?: Array<{
+    claim_index: number;
+    claim_text: string;
+    source_slug: string;
+    source_passage: string;
+    relevance: string;
+  }>;
+  /** Hierarchical legal knowledge graph metadata (Gap 4) */
+  graphMetadata?: {
+    total_nodes: number;
+    total_edges: number;
+    by_type: Record<string, number>;
+    by_edge_type: Record<string, number>;
+    by_jurisdiction: Record<string, number>;
+    max_degree: number;
+    avg_degree: number;
+  };
+  /** Multi-model ensemble citation verification method (Gap 5) */
+  verificationMethod?: string;
+  /** Ensemble verification details per citation (Gap 5) */
+  ensembleVerification?: Array<{
+    citation: string;
+    verified: boolean;
+    verified_by: number[];
+    confidence: number;
+    flags: Array<{
+      stage: number;
+      type: string;
+      detail: string;
+      severity: string;
+    }>;
+  }>;
+  /** Adversarial injection scan result (Gap 6) */
+  adversarialScan?: {
+    blocked: boolean;
+    flags: Array<{
+      pattern: string;
+      severity: string;
+      match: string;
+    }>;
+    sanitized: boolean;
+  };
+  /** EU AI Act Art. 12 reasoning trace reference (Gap 7) */
+  reasoningTrace?: {
+    trace_id: string;
+    trace_hash: string;
+    timestamp: string;
+    model_used: string;
+    guardrail_passed: boolean | null;
+    injection_detected: boolean;
+    confidence_level: string | null;
+  };
 }
 
 /**

@@ -383,18 +383,19 @@ export async function runPhaseLegalPrecedentLinkage(
     const sourceFilter = opts.sourceId ? `AND source_id = $1` : "";
     const sourceParams = opts.sourceId ? [opts.sourceId] : [];
 
-    // Find legal_case pages with frontmatter for entity linking
+    // Find legal_case + court_decision pages (case law) for statute linking.
+    // court_decision covers AT/DE/CH Judikatur imports (type set by frontmatter).
     const cases = await engine.executeRaw<{
       slug: string;
       body: string;
       frontmatter: Record<string, unknown> | null;
     }>(
       `SELECT slug, compiled_truth as body, frontmatter FROM pages
-       WHERE type = 'legal_case'
+       WHERE type IN ('legal_case', 'court_decision', 'eu_court_decision')
          AND deleted_at IS NULL
          ${sourceFilter}
        ORDER BY slug
-       LIMIT 500`,
+       LIMIT 2000`,
       sourceParams
     );
 
@@ -434,11 +435,11 @@ export async function runPhaseLegalPrecedentLinkage(
         : undefined;
 
       // ── 1. Case → Statute typed edges (case_to_statute) ──
-      // Extract statute references from case body (e.g., "§ 823 BGB", "Art. 41 OR")
-      const refs = caseRow.body.match(/§\s*\d+\s*[A-Z]+|Art\.\s*\d+\s*[A-Z]+/g) ?? [];
+      // Extract statute references from case body (e.g., "§ 823 BGB", "§ 1295 ABGB", "Art. 41 OR")
+      const refs = caseRow.body.match(/§\s*\d+[a-z]?\s*[A-Z]+|Art\.\s*\d+[a-z]?\s*[A-Z]+/g) ?? [];
 
       for (const ref of refs) {
-        const match = ref.match(/(?:§\s*(\d+)\s*|Art\.\s*(\d+)\s*)([A-Z]+)/);
+        const match = ref.match(/(?:§\s*(\d+[a-z]?)\s*|Art\.\s*(\d+[a-z]?)\s*)([A-Z]+)/);
         if (!match) continue;
         const sectionNum = match[1] ?? match[2];
         const abbr = match[3].toLowerCase();

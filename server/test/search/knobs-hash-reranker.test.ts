@@ -43,7 +43,7 @@ function baseKnobs(): ResolvedSearchKnobs {
 }
 
 describe("KNOBS_HASH_VERSION + version invariants", () => {
-  test("version is 10 (…; 7→8 autocut; 8→9 archive-demote #1777; 9→10 relational recall)", () => {
+  test("version is 13 (…; 10→11 cognitive tier; 11→12 jurisdiction; 12→13 as-of-date)", () => {
     // v0.35.0.0: 1→2 to fold reranker fields. v0.35.6.0: 2→3 to fold
     // floor_ratio. v0.36 wave: piggybacks on v=3 with 7 cross-modal knobs
     // (D2) PLUS column + provider context (D8/CDX-2 cross-column isolation).
@@ -59,7 +59,10 @@ describe("KNOBS_HASH_VERSION + version invariants", () => {
     // isn't in the hash, so the bump invalidates archive-excluded cache rows).
     // v0.43: 9→10 relational recall arm (rel=/reld=).
     // v0.46: 10→11 cognitive tier cascade (ct=/ct3=/ct2=/ct1=/ct0=).
-    expect(KNOBS_HASH_VERSION).toBe(11);
+    // Hard jurisdiction isolation: 11→12 folds the statute jurisdiction scope
+    // (jur=) so an at-scoped read is never served a de/unscoped cache row.
+    // 12→13 folds the as-of-date (asof=) for historical legal cutoff isolation.
+    expect(KNOBS_HASH_VERSION).toBe(13);
   });
 
   test("hash is 16 hex chars regardless of reranker config", () => {
@@ -75,6 +78,16 @@ describe("Each reranker field flips the hash (cache-row separation)", () => {
     const off = knobsHash({ ...baseKnobs(), reranker_enabled: false });
     const on = knobsHash({ ...baseKnobs(), reranker_enabled: true });
     expect(off).not.toBe(on);
+  });
+
+  test("jurisdiction scope differs → different hash (hard isolation, v=12)", () => {
+    const unscoped = knobsHash(baseKnobs());
+    const at = knobsHash(baseKnobs(), { jurisdiction: "at" });
+    const de = knobsHash(baseKnobs(), { jurisdiction: "de" });
+    // An at-scoped read must never collide with an unscoped or de-scoped row.
+    expect(at).not.toBe(unscoped);
+    expect(at).not.toBe(de);
+    expect(de).not.toBe(unscoped);
   });
 
   test("reranker_model differs → different hash", () => {
