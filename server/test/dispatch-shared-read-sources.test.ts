@@ -36,8 +36,11 @@ beforeEach(async () => {
   await engine.executeRaw(
     `INSERT INTO sources (id, name) VALUES ('firm-a','firm-a') ON CONFLICT (id) DO NOTHING`
   );
+  // law-at is a STATUTE source: the enforce_statute_source_jurisdiction fence
+  // requires its canonical jurisdiction to match the slug (legal/statutes/at/…),
+  // so it must be stamped 'at' or the write is (correctly) rejected.
   await engine.executeRaw(
-    `INSERT INTO sources (id, name) VALUES ('law-at','law-at') ON CONFLICT (id) DO NOTHING`
+    `INSERT INTO sources (id, name, jurisdiction) VALUES ('law-at','law-at','at') ON CONFLICT (id) DO NOTHING`
   );
   await engine.putPage(
     "legal/statutes/at/abgb/p-1295",

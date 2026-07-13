@@ -48,6 +48,13 @@ mock.module("../../src/core/embedding.ts", () => ({
   estimateEmbeddingCostUsd: (tokens: number) => (tokens / 1000) * 0.00013,
   // v0.41.31: embed phase reads the current signature to stamp provenance.
   currentEmbeddingSignature: () => "text-embedding-3-large:1536",
+  // Sync-embed cost gating (imported by commands/sync.ts). The mock MUST keep
+  // parity with embedding.ts's exports or Bun's linker fails-fast when a
+  // downstream consumer imports a missing symbol — that stale-mock gap is
+  // exactly what broke this test's dry-run cycle load.
+  shouldBlockSync: () => false,
+  willEmbedSynchronously: () => false,
+  currentEmbeddingPricePerMTok: () => 0.13,
 }));
 
 const { runCycle, ALL_PHASES } = await import("../../src/core/cycle.ts");
