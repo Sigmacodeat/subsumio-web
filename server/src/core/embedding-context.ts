@@ -186,3 +186,69 @@ export function modeRequiresHaiku(mode: CRMode): boolean {
 export function modeRequiresWrapper(mode: CRMode): boolean {
   return mode !== "none";
 }
+
+/**
+ * Legal-specific contextual prefix builder — enriches the wrapper with
+ * jurisdiction + statute abbreviation + paragraph number extracted from
+ * page frontmatter. This addresses Document-Level Retrieval Mismatch (DRM)
+ * as described by Reuter et al. (2025): legal corpora have repetitive
+ * boilerplate across laws, and injecting document-level identity
+ * (jurisdiction + law name + § number) into each chunk's embedding helps
+ * the retriever distinguish between similar paragraphs from different
+ * laws (e.g., § 138 BGB vs § 138 ABGB).
+ *
+ * Output shape:
+ *   <context>DE BGB § 138 — Sittenwidrigkeit | Bürgerliches Gesetzbuch\n</context>\n
+ *
+ * Falls back to `buildContextualPrefix` when frontmatter lacks legal keys.
+ */
+export function buildLegalContextualPrefix(
+  title: string | null | undefined,
+  frontmatter: Record<string, unknown>,
+  synopsis: string | null | undefined
+): string | null {
+  const jurisdiction = typeof frontmatter.jurisdiction === "string" ? frontmatter.jurisdiction : null;
+  const abbreviation = typeof frontmatter.abbreviation === "string" ? frontmatter.abbreviation : null;
+  const statute = typeof frontmatter.statute === "string" ? frontmatter.statute : null;
+  const paragraph = typeof frontmatter.paragraph === "string" ? frontmatter.paragraph : null;
+
+  if (!jurisdiction && !abbreviation && !statute && !paragraph) {
+    return buildContextualPrefix(title, synopsis);
+  }
+
+  const parts: string[] = [];
+  if (jurisdiction) parts.push(jurisdiction.toUpperCase());
+  if (abbreviation) parts.push(abbreviation.toUpperCase());
+  if (paragraph) parts.push(`§ ${paragraph}`);
+
+  const header = sanitizeTitle(parts.join(" "));
+  const safeTitle = sanitizeTitle(title ?? "");
+  const safeSynopsis = sanitizeSynopsis(synopsis ?? "");
+
+  const contextLines: string[] = [];
+  if (header) contextLines.push(header);
+  if (safeTitle && safeTitle !== header) contextLines.push(safeTitle);
+  if (statute) {
+    const safeStatute = sanitizeTitle(statute);
+    if (safeStatute && safeStatute !== safeTitle) contextLines.push(safeStatute);
+  }
+  if (safeSynopsis) contextLines.push(safeSynopsis);
+
+  if (contextLines.length === 0) return null;
+
+  const first = contextLines[0]!;
+  const rest = contextLines.slice(1).join(" | ");
+  const body = rest ? `${first} | ${rest}` : first;
+
+  return `<context>${body}\n</context>\n`;
+}
+
+/**
+ * Detect whether a page is a legal statute page (has `type: "law"` in
+ * frontmatter). Used by the import/embed pipeline to decide whether to
+ * use `buildLegalContextualPrefix` instead of the generic
+ * `buildContextualPrefix`.
+ */
+export function isLegalPage(frontmatter: Record<string, unknown>): boolean {
+  return frontmatter?.type === "law" || frontmatter?.type === "statute";
+}

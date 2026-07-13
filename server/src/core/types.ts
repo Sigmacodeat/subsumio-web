@@ -814,6 +814,36 @@ export interface SearchResult {
    */
   title_match_boost?: number;
   /**
+   * v0.44 — multiplier applied by applyLegalParagraphBoost when the query
+   * mentions a specific § number and this result's title/slug contains
+   * that same paragraph identifier. Floor-ratio-gated like other boosts.
+   */
+  legal_para_boost?: number;
+  /**
+   * v0.44 — multiplier applied by applyStatuteAreaBoost when the query
+   * contains terms matching a known statute area and the result's slug
+   * starts with that statute's prefix. Floor-ratio-gated.
+   */
+  statute_area_boost?: number;
+  /**
+   * v0.44 — multiplier applied by applyDefinitionQuestionBoost when the query
+   * is a definitional question and the result is a low-numbered paragraph.
+   * Floor-ratio-gated.
+   */
+  definition_question_boost?: number;
+  /**
+   * v0.45 — multiplier applied by applyLegalAuthorityBoost. Demotes archived
+   * statute versions (×0.85) and boosts jurisdiction-matched results (×1.05).
+   * Floor-ratio-gated like other post-fusion stages.
+   */
+  legal_authority_boost?: number;
+  /**
+   * v0.44 — relevance score assigned by the LLM re-ranker (DeepSeek cross-encoder).
+   * Set when llmRerank is enabled in SearchOpts. Doesn't replace `score` —
+   * downstream consumers may depend on the RRF score.
+   */
+  llm_rerank_score?: number;
+  /**
    * v0.46 — multiplier applied by applyCognitiveTierBoost (1.0 = unchanged).
    * Fires when the cognitive_tier mode-bundle knob is on. Boosts Mental
    * Models (synthesis/concept/analysis/guide) over Observations (meeting/
@@ -1139,6 +1169,22 @@ export interface SearchOpts {
       signal?: AbortSignal;
       timeoutMs?: number;
     }) => Promise<{ index: number; relevanceScore: number }[]>;
+  };
+  /**
+   * v0.44 — LLM-based re-ranker for paragraph-level precision. When enabled,
+   * sends the query + chunk snippets to an LLM (default: DeepSeek via
+   * OpenRouter) and re-orders results by LLM-judged relevance. Slots after
+   * the cross-encoder reranker and before alias-hop. Fail-open: any error
+   * returns results in pre-LLM-rerank order.
+   */
+  llmRerank?: {
+    enabled: boolean;
+    /** How many of the top results to send to the LLM (default 25). */
+    topNIn?: number;
+    /** LLM model to use (default: openrouter:deepseek/deepseek-chat). */
+    model?: string;
+    /** Per-call timeout in ms (default 15000). */
+    timeoutMs?: number;
   };
   /**
    * v0.35.6.0 — floor-ratio gate for metadata-axis boost stages.

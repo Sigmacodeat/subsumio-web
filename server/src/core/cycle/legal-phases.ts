@@ -7,8 +7,10 @@
  * 1. legal_statute_currency — checks if statute versions in the brain
  *    are current vs the law-corpus reference files. Flags outdated
  *    statutes in the cycle report.
- * 2. legal_deadline_monitor — scans legal_deadline pages for
- *    upcoming/overdue deadlines and emits warnings.
+ * 2. legal_deadline_monitor — scans the real deadline pages (deadline_calendar
+ *    tables + deadline/legal_deadline frontmatter) and classifies every date
+ *    with the deterministic frist-engine (klassifiziereFrist: Werktage +
+ *    Vorfrist), emitting warnings for überfällige/kritische Fristen.
  * 3. legal_case_progression — tracks case status changes since last
  *    cycle and generates progression summaries.
  * 4. legal_precedent_linkage — links legal_case pages to relevant
@@ -22,11 +24,19 @@
 
 import type { BrainEngine } from "../engine.ts";
 import type { PhaseResult, PhaseStatus } from "../cycle.ts";
+import { parseDeadlineTable, parseDeadlineDate } from "../legal/fristenbuch.ts";
+import { klassifiziereFrist, type FristStatus } from "../legal/frist-engine.ts";
 
 export interface LegalPhaseOpts {
   dryRun?: boolean;
   sourceId?: string;
   signal?: AbortSignal;
+  /**
+   * Reference date (ISO `YYYY-MM-DD`) for deadline classification. Defaults to
+   * the real today. The dream cycle passes the real date; tests pass a fixed
+   * date so the deterministic Werktag/Vorfrist classification is reproducible.
+   */
+  today?: string;
 }
 
 // ─── Phase 1: Statute Currency Check ──────────────────────────────
@@ -185,17 +195,28 @@ export async function runPhaseLegalDeadlineMonitor(
   opts: LegalPhaseOpts
 ): Promise<PhaseResult> {
   try {
-    const today = new Date().toISOString().split("T")[0];
+    const today = opts.today ?? new Date().toISOString().split("T")[0];
 
+    // Scan the REAL deadline pages the pipeline + API actually produce:
+    //   deadline_calendar — one page per case, holding a markdown deadline
+    //     TABLE (written by legal-pipeline Layer 5, read by the Fristenbuch).
+    //   deadline / legal_deadline — frontmatter-shaped single-deadline pages
+    //     (ai-deadlines API route; legal_deadline kept for forward-compat).
+    // Every date is classified with the DETERMINISTIC frist-engine
+    // (klassifiziereFrist: Werktage + Vorfrist), the same authority the
+    // Fristenbuch uses — so the dream monitor and the Fristenbuch can never
+    // disagree on whether a deadline is critical.
     const rows = await engine.executeRaw<{
       slug: string;
       title: string;
+      type: string;
+      compiled_truth: string | null;
       frontmatter: Record<string, unknown> | null;
     }>(
-      `SELECT slug, frontmatter,
+      `SELECT slug, type, compiled_truth, frontmatter,
               COALESCE(frontmatter->>'title', slug) as title
        FROM pages
-       WHERE type = 'legal_deadline'
+       WHERE type IN ('deadline_calendar', 'deadline', 'legal_deadline')
          AND deleted_at IS NULL
          ${opts.sourceId ? `AND source_id = $1` : ""}
        ORDER BY slug
@@ -203,75 +224,81 @@ export async function runPhaseLegalDeadlineMonitor(
       opts.sourceId ? [opts.sourceId] : []
     );
 
-    let overdue = 0;
-    let critical = 0; // ≤3 days
-    let warning = 0; // ≤7 days
-    let pending = 0;
-    let done = 0;
+    // Deterministic Ampel classes from klassifiziereFrist.
+    let ueberfaellig = 0; // overdue
+    let kritisch = 0; // ≤2 Werktage
+    let vorfrist = 0; // within the Vorfrist window (default 7 days)
+    let ok = 0; // beyond the Vorfrist window
+    let done = 0; // explicitly marked done
+    let undated = 0; // no parseable date → can't classify
 
-    const flagged: Array<{ slug: string; title: string; due_date: string; status: string }> = [];
+    const flagged: Array<{ slug: string; title: string; due_date: string; status: FristStatus }> = [];
+
+    const tally = (
+      slug: string,
+      label: string,
+      iso: string | null,
+      markedDone: boolean
+    ): void => {
+      if (markedDone) {
+        done++;
+        return;
+      }
+      if (!iso) {
+        undated++;
+        return;
+      }
+      const status = klassifiziereFrist(iso, today);
+      if (status === "ueberfaellig") ueberfaellig++;
+      else if (status === "kritisch") kritisch++;
+      else if (status === "vorfrist") vorfrist++;
+      else ok++;
+      if (status !== "ok") {
+        flagged.push({ slug, title: label, due_date: iso, status });
+      }
+    };
 
     for (const row of rows) {
-      const fm = row.frontmatter ?? {};
-      const dueDate = typeof fm.due_date === "string" ? fm.due_date : null;
-      const status = typeof fm.status === "string" ? fm.status : "pending";
-
-      if (status === "done") {
-        done++;
-        continue;
-      }
-
-      if (!dueDate) {
-        pending++;
-        continue;
-      }
-
-      const target = new Date(dueDate);
-      target.setUTCHours(0, 0, 0, 0);
-      const now = new Date();
-      now.setUTCHours(0, 0, 0, 0);
-      const diff = target.getTime() - now.getTime();
-      const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-
-      let deadlineStatus: string;
-      if (days < 0) {
-        overdue++;
-        deadlineStatus = "overdue";
-      } else if (days <= 3) {
-        critical++;
-        deadlineStatus = "critical";
-      } else if (days <= 7) {
-        warning++;
-        deadlineStatus = "warning";
+      if (row.type === "deadline_calendar") {
+        // One page → many deadline rows in a markdown table.
+        for (const dr of parseDeadlineTable(row.compiled_truth ?? "")) {
+          const iso = parseDeadlineDate(dr.datum);
+          const label = dr.frist || row.title;
+          tally(row.slug, label, iso, false);
+        }
       } else {
-        pending++;
-        deadlineStatus = "pending";
-      }
-
-      if (days <= 7) {
-        flagged.push({
-          slug: row.slug,
-          title: row.title,
-          due_date: dueDate,
-          status: deadlineStatus,
-        });
+        // Single deadline described in frontmatter.
+        const fm = row.frontmatter ?? {};
+        const status = typeof fm.status === "string" ? fm.status : "pending";
+        const dueRaw = typeof fm.due_date === "string" ? fm.due_date : null;
+        const iso = dueRaw ? parseDeadlineDate(dueRaw) : null;
+        tally(row.slug, row.title, iso, status === "done");
       }
     }
 
-    const phaseStatus: PhaseStatus = overdue > 0 ? "warn" : critical > 0 ? "warn" : "ok";
+    const totalDeadlines = ueberfaellig + kritisch + vorfrist + ok + done + undated;
+    const phaseStatus: PhaseStatus = ueberfaellig > 0 || kritisch > 0 ? "warn" : "ok";
 
     return {
       phase: "legal_deadline_monitor",
       status: phaseStatus,
       duration_ms: 0,
-      summary: `${rows.length} deadline(s): ${overdue} overdue, ${critical} critical (≤3d), ${warning} warning (≤7d), ${pending} pending, ${done} done`,
+      summary: `${totalDeadlines} deadline(s) across ${rows.length} page(s): ${ueberfaellig} überfällig, ${kritisch} kritisch, ${vorfrist} Vorfrist, ${ok} ok, ${done} done, ${undated} ohne Datum`,
       details: {
-        total: rows.length,
-        overdue,
-        critical,
-        warning,
-        pending,
+        pages: rows.length,
+        total: totalDeadlines,
+        ueberfaellig,
+        kritisch,
+        vorfrist,
+        ok,
         done,
+        undated,
+        // Legacy aliases so any older consumer keeps reading (overdue==überfällig,
+        // critical==kritisch, warning==Vorfrist). New code should use the
+        // deterministic names above.
+        overdue: ueberfaellig,
+        critical: kritisch,
+        warning: vorfrist,
         flagged: flagged.sort((a, b) => a.due_date.localeCompare(b.due_date)),
         checked_at: today,
       },

@@ -45,7 +45,9 @@ import { embedBatch } from "./embedding.ts";
 import { resolveContextualRetrievalMode } from "./contextual-retrieval-resolver.ts";
 import {
   buildContextualPrefix,
+  buildLegalContextualPrefix,
   extractFirstTwoSentences,
+  isLegalPage,
   modeRequiresHaiku,
   modeRequiresWrapper,
   sanitizeTitle,
@@ -387,7 +389,10 @@ async function tryBuildPhase1(opts: {
     // the title tier wants slightly more context — but per D2 the
     // balanced default is title-only without summary. Keep it pure for
     // now; the title block alone is what 'balanced' ships.
-    const prefix = buildContextualPrefix(safeTitle, null);
+    const legalPage = isLegalPage(page.frontmatter ?? {});
+    const prefix = legalPage
+      ? buildLegalContextualPrefix(safeTitle, page.frontmatter ?? {}, null)
+      : buildContextualPrefix(safeTitle, null);
     const wrappedTexts = chunks.map((c) =>
       modeRequiresWrapper(attemptMode)
         ? wrapChunkForEmbedding(c.chunk_text, prefix, c.chunk_source)
@@ -456,7 +461,10 @@ async function tryBuildPhase1(opts: {
     }
 
     if (synopsisResult.kind === "success") {
-      const prefix = buildContextualPrefix(safeTitle, synopsisResult.synopsis);
+      const legalPage = isLegalPage(page.frontmatter ?? {});
+      const prefix = legalPage
+        ? buildLegalContextualPrefix(safeTitle, page.frontmatter ?? {}, synopsisResult.synopsis)
+        : buildContextualPrefix(safeTitle, synopsisResult.synopsis);
       wrappedTexts.push(wrapChunkForEmbedding(c.chunk_text, prefix, c.chunk_source));
       continue;
     }

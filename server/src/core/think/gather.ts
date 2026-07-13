@@ -20,6 +20,9 @@ import { hybridSearch } from "../search/hybrid.ts";
 import type { SearchResult } from "../types.ts";
 import { sanitizeQueryForPrompt } from "../search/expansion.ts";
 import { expandLegalQuery } from "./legal-query-expand.ts";
+import { expandConceptQuery } from "../legal/concept-map.ts";
+import { agenticRetrieval } from "./agentic-retrieval.ts";
+import { planAndExecute } from "./query-planner.ts";
 
 export interface ThinkGatherOpts {
   question: string;
@@ -46,6 +49,31 @@ export interface ThinkGatherOpts {
    * Set false to disable (e.g. non-legal mode, or to save latency).
    */
   legalGraphEnabled?: boolean;
+  /**
+   * Attorney's jurisdiction ("AT", "DE", "CH", "EU"). Propagated to
+   * hybridSearch for foreign-statute exclusion filtering.
+   */
+  jurisdiction?: string;
+  /**
+   * When true, enables LLM-based re-ranking of hybrid search results for
+   * paragraph-level precision. Adds ~1-2s latency per query. Default false.
+   * Recommended for legal queries where exact paragraph ranking matters.
+   */
+  llmRerankEnabled?: boolean;
+  /**
+   * When true, enables agentic multi-round retrieval with completeness
+   * checking. Round 2 refines the query with missing §-numbers if
+   * round 1 didn't find them. Adds ~1-3s latency. Default false.
+   * Recommended for legal queries where paragraph precision matters.
+   */
+  agenticRetrievalEnabled?: boolean;
+  /**
+   * When true, enables LLM-based query planning that decomposes the
+   * question into targeted sub-queries routed to the appropriate
+   * source types (statutes, internal docs, all). Adds ~0.3s latency.
+   * Default false. Recommended for legal queries with mixed intent.
+   */
+  queryPlanningEnabled?: boolean;
 }
 
 export interface ThinkGatherResult {
@@ -114,19 +142,54 @@ export async function runGather(
   // (Direct DB search is fine — those are parameterized queries.)
   const sanitizedQuestion = sanitizeQueryForPrompt(opts.question);
 
-  // Expand the query with legal synonyms so hybrid search finds statutes
-  // even when the user uses colloquial terms (e.g. "Hund" → "Tier Tierhalter").
+  // Expand the query with legal synonyms AND concept-map §-hints so hybrid
+  // search finds the right statutes and paragraphs.
   // The original question is still sent to the LLM verbatim; this only
   // affects the retrieval/search phase.
-  const searchQuery = expandLegalQuery(opts.question);
+  const searchQuery = expandConceptQuery(
+    expandLegalQuery(opts.question),
+    opts.jurisdiction as "de" | "at" | undefined,
+  );
 
-  // Stream 1: hybrid page search (existing primitive).
-  const pagesPromise = hybridSearch(engine, searchQuery, {
-    limit: gatherLimit,
-    expansion: false, // think provides its own anchor + graph context; no need for re-expansion
-    sourceId: opts.sourceId,
-    sourceIds: opts.sourceIds,
-  }).catch((e) => {
+  // Stream 1: hybrid page search.
+  // Priority: query planning (LLM decomposes + routes) > agentic retrieval
+  // (multi-round with completeness check) > standard hybrid search.
+  const pagesPromise = (
+    opts.queryPlanningEnabled
+      ? planAndExecute(engine, {
+          question: opts.question,
+          jurisdiction: opts.jurisdiction,
+          sourceId: opts.sourceId,
+          sourceIds: opts.sourceIds,
+          limit: gatherLimit,
+        }).then(r => r.results)
+      : opts.agenticRetrievalEnabled
+        ? agenticRetrieval(engine, {
+            question: opts.question,
+            jurisdiction: opts.jurisdiction,
+            sourceId: opts.sourceId,
+            sourceIds: opts.sourceIds,
+            limit: gatherLimit,
+            maxRounds: 2,
+          }).then(r => r.results)
+        : hybridSearch(engine, searchQuery, {
+            limit: gatherLimit,
+            expansion: false,
+            sourceId: opts.sourceId,
+            sourceIds: opts.sourceIds,
+            jurisdiction: opts.jurisdiction,
+            ...(opts.llmRerankEnabled
+              ? {
+                  llmRerank: {
+                    enabled: true,
+                    topNIn: 25,
+                    model: "openrouter:deepseek/deepseek-chat",
+                    timeoutMs: 15000,
+                  },
+                }
+              : {}),
+          })
+  ).catch((e) => {
     process.stderr.write(`[think.gather] hybrid stream failed: ${(e as Error).message}\n`);
     return [] as SearchResult[];
   });

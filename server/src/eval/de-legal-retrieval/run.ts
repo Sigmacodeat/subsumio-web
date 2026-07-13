@@ -86,6 +86,7 @@ interface ParsedArgs {
   outputPath?: string;
   append: boolean;
   byType: boolean;
+  llmRerank: boolean;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
@@ -94,6 +95,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     topK: 5,
     append: false,
     byType: false,
+    llmRerank: false,
   };
   const args = argv.slice(2);
   for (let i = 0; i < args.length; i++) {
@@ -114,13 +116,18 @@ function parseArgs(argv: string[]): ParsedArgs {
       out.byType = true;
       continue;
     }
+    if (a === "--llm-rerank") {
+      out.llmRerank = true;
+      continue;
+    }
     if (a === "--help" || a === "-h") {
       process.stderr.write(
         `Usage: bun run src/eval/de-legal-retrieval/run.ts <fixture.jsonl> [options]\n` +
           `  --top-k N        Top-K results to retrieve (default: 5)\n` +
           `  --output PATH    Write JSONL results to PATH\n` +
           `  --append         Append to output file instead of overwriting\n` +
-          `  --by-type        Break down results by legal_area\n`
+          `  --by-type        Break down results by legal_area\n` +
+          `  --llm-rerank     Re-rank top results with LLM (DeepSeek) for paragraph-level precision\n`
       );
       process.exit(0);
     }
@@ -206,6 +213,9 @@ async function main() {
     `[de-legal-retrieval] loaded ${questions.length} questions, ${corpusFiles.length} corpus files\n`
   );
   process.stderr.write(`[de-legal-retrieval] top-k=${opts.topK}\n`);
+  if (opts.llmRerank) {
+    process.stderr.write(`[de-legal-retrieval] LLM re-ranker: ENABLED (deepseek-chat)\n`);
+  }
 
   // Increase query embed timeout for OpenRouter latency (default 6s is too tight)
   // Must be set BEFORE importing hybrid.ts which reads it at module load time
@@ -269,12 +279,23 @@ async function main() {
       const searchResults = await hybridSearch(engine, question, {
         limit: 8,
         autocut: false,
+        jurisdiction: "de",
         embeddingColumn: {
           name: "embedding",
           type: "vector" as const,
           dimensions: 1536,
           embeddingModel: "openrouter:openai/text-embedding-3-small",
         },
+        ...(opts.llmRerank
+          ? {
+              llmRerank: {
+                enabled: true,
+                topNIn: 25,
+                model: "openrouter:deepseek/deepseek-chat",
+                timeoutMs: 30000,
+              },
+            }
+          : {}),
       });
 
       const rankedSlugs = searchResults.map((r) => r.slug);

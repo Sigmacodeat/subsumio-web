@@ -37,6 +37,9 @@ import { recordSearchTelemetry } from "./telemetry.ts";
 import { weightsForIntent, effectiveRrfK, applyExactMatchBoost } from "./intent-weights.ts";
 import { SemanticQueryCache, loadCacheConfig } from "./query-cache.ts";
 import { foreignStatutePrefixes } from "./source-boost.ts";
+import { expandLegalQuery } from "../think/legal-query-expand.ts";
+import { expandConceptQuery, extractSectionNumbers } from "../legal/concept-map.ts";
+import { chat as gatewayChat } from "../ai/gateway.ts";
 
 export const RRF_K = 60;
 const COMPILED_TRUTH_BOOST = 2.0;
@@ -65,7 +68,7 @@ export function buildRelaxedLegalKeywordQuery(query: string): string | null {
 }
 
 function isLikelyLegalQuery(query: string): boolean {
-  return /(?:§|\b(?:abgb|bgb|mrg|gmbhg|stgb|stpo|zpo|io|insolvenz|verjähr|gewähr|schadenersatz|vertrag|kündigung|stammkapital|diebstahl|mord|berufung|klage|frist)\w*)/iu.test(query);
+  return /(?:§|\b(?:abgb|bgb|mrg|gmbhg|stgb|stpo|zpo|io|insolvenz|verjähr|gewähr|schadenersatz|vertrag|kündigung|stammkapital|diebstahl|mord|berufung|klage|frist|gewo|dsg|avg|asvg|eheg|kartg|asylg|mschg|vkgg|buag|jn|ugb|estg|ustg|bao|arbvg|aktg|bescheid|mutterschutz|karenz|pension|scheidung|gewerbe|datenschutz|asyl|zusammenschluss|verwaltungsverfahren|parteienstellung|rechtsschutz|urlaubsentgelt|abfertigung|krankenversicherung|sozialversicherung|entlassung|unterhalt|ehegatt|ehewohnung|schuldhaft|verschulden|zuständigkeit|gerichtsstand|gericht|prozess|versäumnisurteil|einstweilige|widerklage|streitwert|streitgegenstand|kaufmann|handelsgewerbe|handelsregister|pflichtverletzung|sittenwidrigkeit|geschäftsfähigkeit|notwehr|notstand|freiheitsstrafe|gelstrafe|vorsatz|schuldunfähig|ermittlungsverfahren|staatsanwaltschaft|untersuchungshaft|verwaltungsgericht|verwaltungsrecht|grundgesetz|verfassung|grundrecht|baugenehmigung|bebauungsplan|wettbewerb|irreführend|anwaltskosten|rechtsanwalt|prozesskosten|insolvenzplan|sanierung)\w*)/iu.test(query);
 }
 
 /**
@@ -366,6 +369,220 @@ export function applyTitleBoost(
 export const DEFAULT_TITLE_BOOST = 1.25;
 
 /**
+ * v0.44 — Legal paragraph-number boost. When the query mentions a specific
+ * paragraph number (e.g. "§ 1295" or "§1295 ABGB"), boost results whose
+ * title or slug contains that same paragraph identifier. This helps when
+ * the user explicitly cites a § number but the semantic/keyword match is
+ * weak due to surrounding query terms.
+ *
+ * Extracts § patterns from the query: `§\s*\d+[a-z]?` (e.g. § 1295, § 75, § 8a)
+ * Then checks each result's title and slug for the same number.
+ * Floor-ratio-gated like other post-fusion stages.
+ */
+export function applyLegalParagraphBoost(
+  results: SearchResult[],
+  query: string,
+  factor: number,
+  floorThreshold?: number
+): void {
+  if (!query || !Number.isFinite(factor) || factor <= 1.0) return;
+  // Extract all § numbers from the query
+  const paraMatches = query.match(/§\s*(\d+[a-z]?)/gi);
+  if (!paraMatches || paraMatches.length === 0) return;
+  const paraNumbers = new Set(
+    paraMatches.map((m) => m.replace(/§\s*/i, "").toLowerCase())
+  );
+  if (paraNumbers.size === 0) return;
+
+  for (const r of results) {
+    if (!Number.isFinite(r.score)) continue;
+    if (floorThreshold !== undefined && r.score < floorThreshold) continue;
+    const titleLower = (r.title ?? "").toLowerCase();
+    const slugLower = (r.slug ?? "").toLowerCase();
+    // Check if any of the queried paragraph numbers appear in title or slug
+    let matched = false;
+    for (const num of paraNumbers) {
+      // Match in title (e.g. "§ 1295 ABGB") or slug (e.g. "p-1295")
+      if (titleLower.includes(`§ ${num}`) || titleLower.includes(`§${num}`) ||
+          slugLower.includes(`p-${num}`) || slugLower.includes(`/p-${num}/`)) {
+        matched = true;
+        break;
+      }
+    }
+    if (matched) {
+      r.score *= factor;
+      r.legal_para_boost = factor;
+    }
+  }
+}
+
+/** Default legal paragraph-number boost multiplier. */
+export const DEFAULT_LEGAL_PARA_BOOST = 1.15;
+
+/**
+ * v0.44 — Statute-area boost. When the query contains terms that match
+ * a known statute area (e.g. "Scheidung" → EheG, "Insolvenz" → IO,
+ * "Gewerbe" → GewO), boost results whose slug starts with that statute's
+ * prefix. This helps when the user's question is about a specific legal
+ * area but doesn't cite a § number — the statute-area match is a signal
+ * that the result is from the right law.
+ *
+ * Floor-ratio-gated like other post-fusion stages.
+ */
+const STATUTE_AREA_MAP: { keywords: string[]; slugPrefix: string }[] = [
+  { keywords: ["scheidung", "ehe", "eheschließung", "unterhalt", "ehewohnung", "vermögensauseinandersetzung", "verschulden"], slugPrefix: "legal/statutes/at/eheg/" },
+  { keywords: ["insolvenz", "konkurs", "sanierung", "sanierungsplan", "insolvenzverfahren"], slugPrefix: "legal/statutes/at/io/" },
+  { keywords: ["gewerbe", "gewerbeberechtigung", "gewerbeerteilung", "gewerbeuntersagung", "gewerberecht"], slugPrefix: "legal/statutes/at/gewo/" },
+  { keywords: ["datenschutz", "personenbezogene", "datenverarbeitung", "betroffen", "auskunft"], slugPrefix: "legal/statutes/at/dsg/" },
+  { keywords: ["kartell", "zusammenschluss", "fusion", "marktbeherrsch", "wettbewerbsrecht"], slugPrefix: "legal/statutes/at/kartg/" },
+  { keywords: ["asyl", "asylwerber", "asylverfahren", "asylantrag"], slugPrefix: "legal/statutes/at/asylg/" },
+  { keywords: ["verwaltungsverfahren", "bescheid", "verwaltungsgericht", "parteienstellung"], slugPrefix: "legal/statutes/at/avg/" },
+  { keywords: ["straf", "mord", "diebstahl", "betrug", "körperverletzung", "tötung"], slugPrefix: "legal/statutes/at/stgb/" },
+  { keywords: ["zivilverfahren", "klage", "berufung", "gerichtsstand", "zuständigkeit", "prozess"], slugPrefix: "legal/statutes/at/zpo/" },
+  { keywords: ["gerichtsstand", "örtliche zuständigkeit", "sachliche zuständigkeit", "jurisdiktion"], slugPrefix: "legal/statutes/at/jn/" },
+  { keywords: ["gesellschaft", "gmbh", "geschäftsführer", "mindesteinlage", "stammkapital"], slugPrefix: "legal/statutes/at/gmbhg/" },
+  { keywords: ["aktiengesellschaft", "vorstand", "grundkapital", "aktionär"], slugPrefix: "legal/statutes/at/aktg/" },
+  { keywords: ["unternehmensgesetzbuch", "ugb", "firma", "rechnungslegung", "buchführung"], slugPrefix: "legal/statutes/at/ugb/" },
+  { keywords: ["arbeitsverhältnis", "kündigung", "dienstnehmer", "arbeitnehmer"], slugPrefix: "legal/statutes/at/arbvg/" },
+  { keywords: ["ungerechtfertigt", "entlassung", "avrag"], slugPrefix: "legal/statutes/at/avrag/" },
+  { keywords: ["karenz", "elternkarenz", "karenzzeit"], slugPrefix: "legal/statutes/at/vkgg/" },
+  { keywords: ["mutterschutz", "schutzfrist", "wochenhilfe"], slugPrefix: "legal/statutes/at/mschg-at/" },
+  { keywords: ["urlaubsentgelt", "urlaubsgeld", "abfertigung", "urlaub"], slugPrefix: "legal/statutes/at/buag/" },
+  { keywords: ["sozialversicherung", "krankenversicherung", "pension", "pensionsanspruch"], slugPrefix: "legal/statutes/at/asvg/" },
+  { keywords: ["einkommensteuer", "einkommen", "einkünfte", "gewerbebetrieb"], slugPrefix: "legal/statutes/at/estg/" },
+  { keywords: ["umsatzsteuer", "ustg"], slugPrefix: "legal/statutes/at/ustg/" },
+  { keywords: ["abgaben", "bundesabgabenordnung", "bao", "verjährung"], slugPrefix: "legal/statutes/at/bao/" },
+  { keywords: ["außerstreit", "rekurs", "austrg"], slugPrefix: "legal/statutes/at/au-strg/" },
+  { keywords: ["schadenersatz", "verjährung", "gewährleistung", "vertrag", "irrtum", "liegenschaft", "kaufvertrag"], slugPrefix: "legal/statutes/at/abgb/" },
+  // ── DE statute-area entries (slug prefix: law/de/<law>/) ──
+  { keywords: ["zivilverfahren", "klage", "berufung", "gerichtsstand", "zuständigkeit", "prozess", "versäumnisurteil", "einstweilige verfügung", "widerklage", "streitwert", "streitgegenstand", "sachliche zuständigkeit", "örtliche zuständigkeit", "gericht"], slugPrefix: "law/de/zpo" },
+  { keywords: ["straf", "mord", "diebstahl", "betrug", "körperverletzung", "tötung", "raub", "unterschlagung", "brandstiftung", "widerstand", "hausfriedensbruch", "falschaussage", "strafvereitelung", "vorsatz", "schuldunfähig", "notwehr", "notstand", "gelstrafe", "freiheitsstrafe"], slugPrefix: "law/de/stgb" },
+  { keywords: ["abgaben", "steuer", "finanzbehörde", "steuergeheimnis", "betriebsstätte", "geschäftsleitung", "wohnsitz", "aufenthalt", "wirtschaftlicher geschäftsbetrieb", "angehörige", "vertreter"], slugPrefix: "law/de/ao" },
+  { keywords: ["kaufmann", "handelsgewerbe", "handelsregister", "firma", "prokura"], slugPrefix: "law/de/hgb" },
+  { keywords: ["schuldverhältnis", "pflichtverletzung", "käufer", "mangel", "verjährung", "schadensersatz", "sittenwidrigkeit", "geschäftsfähigkeit", "täuschung", "rücktritt", "verkäufer", "miete", "mietmängel", "kündigung", "arbeitsverhältnis"], slugPrefix: "law/de/bgb" },
+  { keywords: ["baugenehmigung", "bebauungsplan", "bauvorhaben", "bauplan"], slugPrefix: "law/de/baugb" },
+  { keywords: ["datenschutz", "personenbezogene", "datenverarbeitung", "betroffen", "auskunft", "datenlöschung", "dsgvo"], slugPrefix: "law/de/bdsg" },
+  { keywords: ["wettbewerb", "irreführend", "geschäftliche handlung", "vergleichende werbung", "unternehmen"], slugPrefix: "law/de/uwg" },
+  { keywords: ["insolvenz", "konkurs", "sanierung", "insolvenzplan", "insolvenzverfahren"], slugPrefix: "law/de/inso" },
+  { keywords: ["anwaltskosten", "rechtsanwalt", "beiordnung", "prozesskosten"], slugPrefix: "law/de/rvg" },
+  { keywords: ["ermittlungsverfahren", "staatsanwaltschaft", "festnahme", "untersuchungshaft", "beschuldigter"], slugPrefix: "law/de/stpo" },
+  { keywords: ["verwaltungsgericht", "verwaltungsrecht", "rechtsschutz", "anfechtungsklage"], slugPrefix: "law/de/vwgo" },
+  { keywords: ["grundgesetz", "verfassung", "grundrecht"], slugPrefix: "law/de/gg" },
+];
+
+export function applyStatuteAreaBoost(
+  results: SearchResult[],
+  query: string,
+  factor: number,
+  floorThreshold?: number
+): void {
+  if (!query || !Number.isFinite(factor) || factor <= 1.0) return;
+  const lowerQuery = query.toLowerCase();
+  const matchedPrefixes = new Set<string>();
+  for (const entry of STATUTE_AREA_MAP) {
+    for (const kw of entry.keywords) {
+      if (lowerQuery.includes(kw)) {
+        matchedPrefixes.add(entry.slugPrefix);
+        break;
+      }
+    }
+  }
+  if (matchedPrefixes.size === 0) return;
+
+  for (const r of results) {
+    if (!Number.isFinite(r.score)) continue;
+    if (floorThreshold !== undefined && r.score < floorThreshold) continue;
+    for (const prefix of matchedPrefixes) {
+      if (r.slug.startsWith(prefix)) {
+        r.score *= factor;
+        r.statute_area_boost = factor;
+        break;
+      }
+    }
+  }
+}
+
+/** Default statute-area boost multiplier. */
+export const DEFAULT_STATUTE_AREA_BOOST = 1.15;
+
+/**
+ * v0.44 — Definition-question boost. When the query is a definitional question
+ * ("Was ist...", "Welche Rechte...", "Wie wird..."), boost low-numbered
+ * paragraphs (p-1 through p-10) within matched statutes. Legal definitions
+ * tend to appear in the opening paragraphs of a statute.
+ *
+ * Floor-ratio-gated like other post-fusion stages.
+ */
+export function applyDefinitionQuestionBoost(
+  results: SearchResult[],
+  query: string,
+  factor: number,
+  floorThreshold?: number
+): void {
+  if (!query || !Number.isFinite(factor) || factor <= 1.0) return;
+  // Only fire for definitional questions
+  if (!/^(was ist|welche rechte|wie wird|wie lange|was regelt|welche leistungen|welche voraussetzungen|welche fristen|welche formvorschriften|wie hoch|wie ist|welches gericht|was muss|was unterliegt|innerhalb welcher)/i.test(query.trim())) return;
+
+  for (const r of results) {
+    if (!Number.isFinite(r.score)) continue;
+    if (floorThreshold !== undefined && r.score < floorThreshold) continue;
+    // Extract paragraph number from slug (e.g. "legal/statutes/at/avg/p-8" → 8)
+    const match = r.slug.match(/\/p-(\d+)[a-z]?(?:[-/]|$)/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num >= 1 && num <= 10) {
+        r.score *= factor;
+        r.definition_question_boost = factor;
+      }
+    }
+  }
+}
+
+/** Default definition-question boost multiplier. */
+export const DEFAULT_DEFINITION_QUESTION_BOOST = 1.12;
+
+/**
+ * v0.45 — Legal authority/recency boost. Two signals:
+ *
+ * 1. **Archived version demotion**: statute pages with `--v-YYYY-MM-DD` slug
+ *    suffix are archived versions of a superseded law. They get a mild demotion
+ *    (×0.85) so the current version ranks higher when both match a query.
+ *    Without `asOfDate` set, both versions can appear — this ensures the
+ *    current one wins.
+ *
+ * 2. **Jurisdiction match boost**: when the caller passes `jurisdiction` (e.g.
+ *    "de"), results whose slug contains that jurisdiction get a mild boost
+ *    (×1.05). The hard jurisdiction filter already excludes foreign statutes,
+ *    but this gives an extra nudge to jurisdiction-matched results over
+ *    non-statute results (notes, matters) that might semantically overlap.
+ *
+ * Floor-ratio-gated like other post-fusion stages.
+ */
+export function applyLegalAuthorityBoost(
+  results: SearchResult[],
+  jurisdiction: string | undefined,
+  floorThreshold?: number
+): void {
+  for (const r of results) {
+    if (!Number.isFinite(r.score)) continue;
+    if (floorThreshold !== undefined && r.score < floorThreshold) continue;
+
+    // Archived version demotion
+    if (/--v-\d{4}-\d{2}-\d{2}$/.test(r.slug)) {
+      r.score *= 0.85;
+      r.legal_authority_boost = 0.85;
+      continue;
+    }
+
+    // Jurisdiction match boost (only for statute pages)
+    if (jurisdiction && r.slug.startsWith(`legal/statutes/${jurisdiction}/`)) {
+      r.score *= 1.05;
+      r.legal_authority_boost = 1.05;
+    }
+  }
+}
+
+/**
  * v0.29.1 — runPostFusionStages: wrap backlink + salience + recency in a
  * single stage that fires from EVERY hybridSearch return path (codex
  * pass-1 #2 + pass-2 #4: keyword-only, embed-fail-fallback, full-hybrid).
@@ -432,6 +649,30 @@ export interface PostFusionOpts {
    * metadata stages so a title hit can't bury a strong semantic match.
    */
   titleBoost?: number;
+  /**
+   * v0.44 — legal paragraph-number boost multiplier. When > 1.0 and the
+   * query contains a § number, results whose title/slug contains the same
+   * paragraph identifier get boosted. Floor-ratio-gated.
+   */
+  legalParaBoost?: number;
+  /**
+   * v0.44 — statute-area boost multiplier. When > 1.0 and the query
+   * contains terms matching a known statute area, results from that
+   * statute get boosted. Floor-ratio-gated.
+   */
+  statuteAreaBoost?: number;
+  /**
+   * v0.44 — definition-question boost multiplier. When > 1.0 and the query
+   * is a definitional question, low-numbered paragraphs get boosted.
+   * Floor-ratio-gated.
+   */
+  definitionQuestionBoost?: number;
+  /**
+   * v0.45 — legal authority/recency boost. When set, archived statute
+   * versions are demoted and jurisdiction-matched results are boosted.
+   * Pass the query's jurisdiction (e.g. "de") to enable. Undefined = off.
+   */
+  legalAuthorityJurisdiction?: string;
   /**
    * v0.46 — cognitive tier priority cascade. When true, applyCognitiveTierBoost
    * fires as the last post-fusion stage, nudging Mental Models above
@@ -530,6 +771,50 @@ export async function runPostFusionStages(
   if (opts.query && opts.titleBoost && opts.titleBoost > 1.0) {
     try {
       applyTitleBoost(results, opts.query, opts.titleBoost, floorThreshold);
+    } catch {
+      // Non-fatal; preserves the per-stage contract.
+    }
+  }
+
+  // v0.44 — legal paragraph-number boost. Runs after title-phrase boost,
+  // before graph signals. When the query mentions a specific § number,
+  // results whose title/slug contains that number get a mild boost.
+  if (opts.query && opts.legalParaBoost && opts.legalParaBoost > 1.0) {
+    try {
+      applyLegalParagraphBoost(results, opts.query, opts.legalParaBoost, floorThreshold);
+    } catch {
+      // Non-fatal; preserves the per-stage contract.
+    }
+  }
+
+  // v0.44 — statute-area boost. Runs after paragraph-number boost,
+  // before graph signals. When the query mentions terms from a known
+  // legal area, results from the matching statute get a mild boost.
+  if (opts.query && opts.statuteAreaBoost && opts.statuteAreaBoost > 1.0) {
+    try {
+      applyStatuteAreaBoost(results, opts.query, opts.statuteAreaBoost, floorThreshold);
+    } catch {
+      // Non-fatal; preserves the per-stage contract.
+    }
+  }
+
+  // v0.44 — definition-question boost. Runs after statute-area boost,
+  // before graph signals. When the query is a definitional question,
+  // low-numbered paragraphs get a mild boost.
+  if (opts.query && opts.definitionQuestionBoost && opts.definitionQuestionBoost > 1.0) {
+    try {
+      applyDefinitionQuestionBoost(results, opts.query, opts.definitionQuestionBoost, floorThreshold);
+    } catch {
+      // Non-fatal; preserves the per-stage contract.
+    }
+  }
+
+  // v0.45 — legal authority/recency boost. Runs after definition-question
+  // boost, before graph signals. Demotes archived versions and boosts
+  // jurisdiction-matched statute pages.
+  if (opts.legalAuthorityJurisdiction !== undefined) {
+    try {
+      applyLegalAuthorityBoost(results, opts.legalAuthorityJurisdiction, floorThreshold);
     } catch {
       // Non-fatal; preserves the per-stage contract.
     }
@@ -783,6 +1068,25 @@ export interface HybridSearchOpts extends SearchOpts {
    * a fresh per-call deadline. Not part of the public contract.
    */
   _queryEmbedDeadline?: QueryEmbedDeadline;
+  /**
+   * v0.44 — legal paragraph-number boost multiplier. When > 1.0 and the
+   * query contains a § number, results whose title/slug contains that
+   * number get boosted. Auto-enabled for legal/jurisdiction-scoped queries
+   * via DEFAULT_LEGAL_PARA_BOOST when undefined.
+   */
+  legalParaBoost?: number;
+  /**
+   * v0.44 — statute-area boost multiplier. When > 1.0 and the query
+   * contains terms matching a known statute area, results from that
+   * statute get boosted. Floor-ratio-gated.
+   */
+  statuteAreaBoost?: number;
+  /**
+   * v0.44 — definition-question boost multiplier. When > 1.0 and the query
+   * is a definitional question, low-numbered paragraphs get boosted.
+   * Floor-ratio-gated.
+   */
+  definitionQuestionBoost?: number;
 }
 
 /** Keep only the newest available version per statute section for as-of reads. */
@@ -884,6 +1188,93 @@ export async function embedQueryBounded(
   } finally {
     if (timer) clearTimeout(timer);
   }
+}
+
+const DEFAULT_LLM_RERANK_MODEL = "openrouter:deepseek/deepseek-chat";
+const DEFAULT_LLM_RERANK_TOP_N_IN = 25;
+const DEFAULT_LLM_RERANK_TIMEOUT_MS = 15000;
+
+/**
+ * v0.44 — LLM-based re-ranker for paragraph-level precision. Sends the query +
+ * chunk snippets to an LLM (default: DeepSeek via OpenRouter) and re-orders
+ * results by LLM-judged relevance. Fail-open: any error returns results
+ * in their original order. Never throws.
+ */
+export async function applyLLMReranker(
+  query: string,
+  results: SearchResult[],
+  opts: {
+    enabled: boolean;
+    topNIn?: number;
+    model?: string;
+    timeoutMs?: number;
+  }
+): Promise<SearchResult[]> {
+  if (!opts.enabled || results.length <= 1) return results;
+
+  const topNIn = opts.topNIn ?? DEFAULT_LLM_RERANK_TOP_N_IN;
+  const model = opts.model ?? DEFAULT_LLM_RERANK_MODEL;
+  const timeoutMs = opts.timeoutMs ?? DEFAULT_LLM_RERANK_TIMEOUT_MS;
+
+  const head = results.slice(0, topNIn);
+  const tail = results.slice(topNIn);
+
+  if (head.length <= 1) return results;
+
+  const SNIPPET_LEN = 300;
+  const snippets = head.map((r, i) => {
+    const text = (r.chunk_text || r.title || "").slice(0, SNIPPET_LEN).replace(/\n/g, " ");
+    return `[${i}] ${r.slug}\n${text}`;
+  });
+
+  const system =
+    "Du bist ein juristischer Re-Ranker. Ordne die folgenden Gesetzestext-Snippets nach Relevanz für die gestellte Frage. Antworte NUR mit einer kommagetrennten Liste von Indizes (0-basiert), relevanteste zuerst. Keine Erklärung.";
+
+  const user = `Frage: ${query}\n\nSnippets:\n${snippets.join("\n\n")}\n\nAntworte mit einer kommagetrennten Liste von Indizes (0-basiert), relevanteste zuerst:`;
+
+  let response: string;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(new Error("llm-rerank timed out")), timeoutMs);
+    try {
+      const result = await gatewayChat({
+        system,
+        messages: [{ role: "user", content: user }],
+        maxTokens: 256,
+        model,
+        abortSignal: ctrl.signal,
+      });
+      response = result.text;
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch {
+    return results;
+  }
+
+  const indices = response
+    .trim()
+    .split(/[,\s]+/)
+    .map((s) => parseInt(s, 10))
+    .filter((n) => Number.isFinite(n) && n >= 0 && n < head.length);
+
+  if (indices.length === 0) return results;
+
+  const seen = new Set<number>();
+  const reorderedHead: SearchResult[] = [];
+  for (const idx of indices) {
+    if (!seen.has(idx)) {
+      seen.add(idx);
+      const item = head[idx]!;
+      item.llm_rerank_score = 1 - reorderedHead.length * 0.01;
+      reorderedHead.push(item);
+    }
+  }
+  for (let i = 0; i < head.length; i++) {
+    if (!seen.has(i)) reorderedHead.push(head[i]!);
+  }
+
+  return [...reorderedHead, ...tail];
 }
 
 export async function hybridSearch(
@@ -1059,18 +1450,33 @@ export async function hybridSearch(
   // We classify modality early (it's also computed after for the modality
   // branch). The classification is pure regex via classifyQuery; running it
   // here is cheap.
+  //
+  // v0.44: Expand the query with legal synonyms when the query looks legal
+  // or a jurisdiction is set. This improves keyword recall for colloquial
+  // terms (e.g. "Karenzzeit" → "Karenz VkgG Elternkarenz"). The gather phase
+  // already does this, but direct hybridSearch callers (benchmarks, CLI) skip
+  // gather. We expand here so all paths benefit. The expanded query is used
+  // for both keyword and vector search to maximize recall.
+  const legalExpanded = (() => {
+    if (!opts?.jurisdiction && !isLikelyLegalQuery(query)) return query;
+    // Step 1: synonym expansion (colloquial → legal terms)
+    let expanded = expandLegalQuery(query);
+    // Step 2: concept-map §-hints (concept → "§ 138 BGB")
+    expanded = expandConceptQuery(expanded, opts?.jurisdiction as "de" | "at" | undefined);
+    return expanded;
+  })();
   const earlyModality =
     opts?.crossModal && opts.crossModal !== "auto"
       ? opts.crossModal
       : (suggestions.suggestedModality ?? "text");
   let keywordResults: SearchResult[] =
-    earlyModality === "image" ? [] : await engine.searchKeyword(query, searchOpts);
+    earlyModality === "image" ? [] : await engine.searchKeyword(legalExpanded, searchOpts);
   if (
     earlyModality !== "image" &&
     (opts?.jurisdiction || isLikelyLegalQuery(query)) &&
     keywordResults.length < Math.min(3, limit)
   ) {
-    const relaxedQuery = buildRelaxedLegalKeywordQuery(query);
+    const relaxedQuery = buildRelaxedLegalKeywordQuery(legalExpanded);
     if (relaxedQuery) {
       const relaxedResults = await engine.searchKeyword(relaxedQuery, searchOpts);
       const merged = new Map<string, SearchResult>();
@@ -1133,6 +1539,34 @@ export async function hybridSearch(
     // The raw query drives the matcher; default factor when the knob is unset.
     query,
     titleBoost: resolvedMode.title_boost,
+    // v0.44 — legal paragraph-number boost. Active when jurisdiction is set
+    // or the query looks legal. Uses the default factor; can be overridden
+    // via opts.legalParaBoost (future mode-bundle knob).
+    legalParaBoost:
+      opts?.legalParaBoost ??
+      (opts?.jurisdiction || isLikelyLegalQuery(query)
+        ? DEFAULT_LEGAL_PARA_BOOST
+        : undefined),
+    // v0.44 — statute-area boost. Auto-enabled for legal/jurisdiction-scoped
+    // queries via DEFAULT_STATUTE_AREA_BOOST when undefined.
+    statuteAreaBoost:
+      opts?.statuteAreaBoost ??
+      (opts?.jurisdiction || isLikelyLegalQuery(query)
+        ? DEFAULT_STATUTE_AREA_BOOST
+        : undefined),
+    // v0.44 — definition-question boost. Auto-enabled for legal/jurisdiction-scoped queries.
+    definitionQuestionBoost:
+      opts?.definitionQuestionBoost ??
+      (opts?.jurisdiction || isLikelyLegalQuery(query)
+        ? DEFAULT_DEFINITION_QUESTION_BOOST
+        : undefined),
+    // v0.45 — legal authority/recency boost. Auto-enabled for
+    // jurisdiction-scoped queries. Demotes archived versions and boosts
+    // jurisdiction-matched statute pages.
+    legalAuthorityJurisdiction:
+      opts?.jurisdiction || isLikelyLegalQuery(query)
+        ? opts?.jurisdiction
+        : undefined,
     // v0.46 — cognitive tier priority cascade threaded from resolved mode.
     // Defaults per ModeBundle (conservative=false, balanced/tokenmax=true).
     // Per-call SearchOpts.cognitive_tier overrides through resolveSearchMode.
@@ -1271,12 +1705,12 @@ export async function hybridSearch(
   // SearchOpts.expansion still wins via resolveSearchMode's chain.
   //
   // D9: image-modality skips expansion regardless of mode bundle.
-  let queries = [query];
+  let queries = [legalExpanded];
   const expansionAllowed = resolvedMode.expansion && effectiveModality !== "image";
   if (expansionAllowed && opts?.expandFn) {
     try {
-      queries = await opts.expandFn(query);
-      if (queries.length === 0) queries = [query];
+      queries = await opts.expandFn(legalExpanded);
+      if (queries.length === 0) queries = [legalExpanded];
       // "Applied" = produced variants beyond the original, not just called.
       expansionApplied = queries.length > 1;
     } catch {
@@ -1603,10 +2037,17 @@ export async function hybridSearch(
     ? await applyReranker(query, deduped, rerankerOpts as any)
     : deduped;
 
+  // v0.44 — LLM-based re-ranker for paragraph-level precision. Slots after
+  // the cross-encoder reranker and before alias-hop. Fail-open: any error
+  // returns reranked results in original order.
+  const llmReranked = opts?.llmRerank?.enabled
+    ? await applyLLMReranker(query, reranked, opts.llmRerank)
+    : reranked;
+
   // T3 — free-text alias hop. Runs AFTER rerank so a query that is a page's
   // declared chosen name reliably surfaces that page regardless of how the
   // reranker scored body chunks. Fail-open on pre-v110 brains.
-  const aliasHopped = await applyAliasHop(engine, reranked, query, {
+  const aliasHopped = await applyAliasHop(engine, llmReranked, query, {
     sourceId: opts?.sourceId,
     sourceIds: opts?.sourceIds,
   });

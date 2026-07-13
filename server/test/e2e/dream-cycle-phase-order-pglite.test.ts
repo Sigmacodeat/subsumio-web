@@ -138,6 +138,13 @@ const EXPECTED_PHASES: CyclePhase[] = [
   "conversation_facts_backfill", // v0.41.11.0 — opt-in conversation backfill
   "enrich_thin", // v0.41.39 (#1700) — brain-internal stub enrichment (default OFF)
   "skillopt", // v0.42.0.0 — self-evolving skills (default OFF)
+  "legal_statute_currency", // v0.43 — legal dream phases (default OFF, source-scoped)
+  "legal_deadline_monitor",
+  "legal_case_progression",
+  "legal_precedent_linkage",
+  "legal_commentary_synthesis",
+  "engram_maturation",
+  "reconsolidation_sweep",
   "embed",
   "orphans",
   "schema-suggest", // v0.39.0.0 — passive schema-suggest after orphans

@@ -48,3 +48,53 @@
 {"question_id":"de-048","question":"Was ist eine Finanzbehörde?","answer_slug":"ao","expected_section":"§ 6","legal_area":"ao","question_type":"definition"}
 {"question_id":"de-049","question":"Was gilt als wirtschaftlicher Geschäftsbetrieb?","answer_slug":"ao","expected_section":"§ 14","legal_area":"ao","question_type":"definition"}
 {"question_id":"de-050","question":"Was ist ein ständiger Vertreter im Steuerrecht?","answer_slug":"ao","expected_section":"§ 13","legal_area":"ao","question_type":"definition"}
+{"question_id":"de-051","question":"Welche Gerichte sind sachlich für streitige Zivilsachen zuständig?","answer_slug":"zpo","expected_section":"§ 1","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-052","question":"Am welchen Gericht kann der Kläger bei einer unerlaubten Handlung klagen?","answer_slug":"zpo","expected_section":"§ 32","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-053","question":"Welcher Gerichtsstand gilt für Streitigkeiten aus einem Vertrag?","answer_slug":"zpo","expected_section":"§ 29","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-054","question":"Wie wird der Streitwert bei einer Widerklage berechnet?","answer_slug":"zpo","expected_section":"§ 5","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-055","question":"Was ist der Gerichtsstand der Widerklage?","answer_slug":"zpo","expected_section":"§ 33","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-056","question":"Wann ist eine Widerklage zulässig?","answer_slug":"zpo","expected_section":"§ 33","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-057","question":"Was regelt § 13 ZPO über den allgemeinen Gerichtsstand?","answer_slug":"zpo","expected_section":"§ 13","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-058","question":"Welche Voraussetzungen müssen für ein Versäumnisurteil vorliegen?","answer_slug":"zpo","expected_section":"§ 330","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-059","question":"Wie wird ein Urteil zugestellt?","answer_slug":"zpo","expected_section":"§ 317","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-060","question":"Was ist eine einstweilige Verfügung?","answer_slug":"zpo","expected_section":"§ 935","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-061","question":"Wie entsteht ein Schuldverhältnis durch Vertrag?","answer_slug":"bgb","expected_section":"§ 311","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-062","question":"Wann liegt eine Pflichtverletzung im Schuldrecht vor?","answer_slug":"bgb","expected_section":"§ 280","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-063","question":"Welche Rechte hat der Käufer bei einem Mangel der Kaufsache?","answer_slug":"bgb","expected_section":"§ 437","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-064","question":"Wie lange beträgt die Verjährungsfrist für regelmäßige Leistungen?","answer_slug":"bgb","expected_section":"§ 195","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-065","question":"Was ist der Schadensersatz statt der Leistung?","answer_slug":"bgb","expected_section":"§ 281","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-066","question":"Wann ist ein Rechtsgeschäft nichtig wegen Sittenwidrigkeit?","answer_slug":"bgb","expected_section":"§ 138","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-067","question":"Was ist die Geschäftsfähigkeit einer volljährigen Person?","answer_slug":"bgb","expected_section":"§ 2","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-068","question":"Wann kann ein Vertrag wegen arglistiger Täuschung angefochten werden?","answer_slug":"bgb","expected_section":"§ 123","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-069","question":"Was ist der Rücktritt vom Vertrag wegen Nichtleistung?","answer_slug":"bgb","expected_section":"§ 323","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-070","question":"Welche Pflichten hat der Verkäufer beim Kaufvertrag?","answer_slug":"bgb","expected_section":"§ 433","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-071","question":"Was ist der Tatbestand des Totschlags?","answer_slug":"stgb","expected_section":"§ 211","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-072","question":"Was ist die gefährliche Körperverletzung?","answer_slug":"stgb","expected_section":"§ 224","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-073","question":"Welche Strafe droht auf Raub?","answer_slug":"stgb","expected_section":"§ 249","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-074","question":"Was ist der Betrugstatbestand?","answer_slug":"stgb","expected_section":"§ 263","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-075","question":"Was ist die Unterschlagung?","answer_slug":"stgb","expected_section":"§ 246","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-076","question":"Was ist die Brandstiftung?","answer_slug":"stgb","expected_section":"§ 306","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-077","question":"Was ist der Widerstand gegen Vollstreckungsbeamte?","answer_slug":"stgb","expected_section":"§ 113","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-078","question":"Was ist die Straftat des Hausfriedensbruchs?","answer_slug":"stgb","expected_section":"§ 123","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-079","question":"Was ist die Verleitung zur Falschaussage?","answer_slug":"stgb","expected_section":"§ 160","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-080","question":"Was ist die Strafvereitelung?","answer_slug":"stgb","expected_section":"§ 258","legal_area":"stgb","question_type":"definition"}
+{"question_id":"de-081","question":"Welche Rechte hat ein Mieter bei Mietmängeln?","answer_slug":"bgb","expected_section":"§ 536","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-082","question":"Wie kann ein Arbeitsverhältnis durch ordentliche Kündigung beendet werden?","answer_slug":"bgb","expected_section":"§ 622","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-083","question":"Was ist die Voraussetzung für einen Anspruch auf Schadensersatz?","answer_slug":"bgb","expected_section":"§ 823","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-084","question":"Was regelt das Baugesetzbuch über die Zulässigkeit von Bauvorhaben?","answer_slug":"baugb","expected_section":"§ 34","legal_area":"baugb","question_type":"definition"}
+{"question_id":"de-085","question":"Was ist der Bebauungsplan?","answer_slug":"baugb","expected_section":"§ 30","legal_area":"baugb","question_type":"definition"}
+{"question_id":"de-086","question":"Welche Rechte haben Betroffene nach der Datenschutz-Grundverordnung?","answer_slug":"bdsg","expected_section":"Art 15","legal_area":"bdsg","question_type":"definition"}
+{"question_id":"de-087","question":"Was ist die Pflicht zur Datenlöschung nach der DSGVO?","answer_slug":"bdsg","expected_section":"Art 17","legal_area":"bdsg","question_type":"definition"}
+{"question_id":"de-088","question":"Was ist der Begriff des Unternehmens im Wettbewerbsrecht?","answer_slug":"uwg","expected_section":"§ 2","legal_area":"uwg","question_type":"definition"}
+{"question_id":"de-089","question":"Wann liegt eine irreführende geschäftliche Handlung vor?","answer_slug":"uwg","expected_section":"§ 5","legal_area":"uwg","question_type":"definition"}
+{"question_id":"de-090","question":"Was ist ein unlauterer Wettbewerb durch vergleichende Werbung?","answer_slug":"uwg","expected_section":"§ 6","legal_area":"uwg","question_type":"definition"}
+{"question_id":"de-091","question":"Welche Voraussetzungen müssen für die Eröffnung eines Insolvenzverfahrens vorliegen?","answer_slug":"inso","expected_section":"§ 13","legal_area":"inso","question_type":"procedural"}
+{"question_id":"de-092","question":"Was ist das Insolvenzverfahren und wie wird es durchgeführt?","answer_slug":"inso","expected_section":"§ 1","legal_area":"inso","question_type":"procedural"}
+{"question_id":"de-093","question":"Was ist der Insolvenzplan?","answer_slug":"inso","expected_section":"§ 217","legal_area":"inso","question_type":"procedural"}
+{"question_id":"de-094","question":"Wie werden die Kosten des Rechtsstreits im gerichtlichen Verfahren berechnet?","answer_slug":"zpo","expected_section":"§ 91","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-095","question":"Was sind die Voraussetzungen für die Beiordnung eines Rechtsanwalts?","answer_slug":"rvg","expected_section":"§ 48","legal_area":"rvg","question_type":"procedural"}
+{"question_id":"de-096","question":"Welche Befugnisse hat die Staatsanwaltschaft im Ermittlungsverfahren?","answer_slug":"stpo","expected_section":"§ 161","legal_area":"stpo","question_type":"procedural"}
+{"question_id":"de-097","question":"Wann kann ein Beschuldigter festgenommen werden?","answer_slug":"stpo","expected_section":"§ 127","legal_area":"stpo","question_type":"procedural"}
+{"question_id":"de-098","question":"Was ist die Untersuchungshaft und wann wird sie angeordnet?","answer_slug":"stpo","expected_section":"§ 112","legal_area":"stpo","question_type":"procedural"}
+{"question_id":"de-099","question":"Welche Rechtsschutzmöglichkeiten gibt es im Verwaltungsrecht?","answer_slug":"vwgo","expected_section":"§ 40","legal_area":"vwgo","question_type":"procedural"}
+{"question_id":"de-100","question":"Was ist der verwaltungsgerichtliche Rechtsweg?","answer_slug":"vwgo","expected_section":"§ 40","legal_area":"vwgo","question_type":"procedural"}

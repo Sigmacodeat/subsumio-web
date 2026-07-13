@@ -41,6 +41,8 @@ import {
 import { loadConfig, loadConfigWithEngine } from "./config.ts";
 import {
   buildContextualPrefix,
+  buildLegalContextualPrefix,
+  isLegalPage,
   modeRequiresHaiku,
   modeRequiresWrapper,
   sanitizeTitle,
@@ -745,9 +747,12 @@ export async function importFromContent(
 
   if (!opts.noEmbed && chunks.length > 0) {
     const safeTitle = sanitizeTitle(parsed.title);
+    const legalPage = isLegalPage(parsed.frontmatter);
     const prefix =
       modeRequiresWrapper(effectiveCRMode) && !modeRequiresHaiku(effectiveCRMode)
-        ? buildContextualPrefix(safeTitle, null)
+        ? legalPage
+          ? buildLegalContextualPrefix(safeTitle, parsed.frontmatter, null)
+          : buildContextualPrefix(safeTitle, null)
         : null;
     const wrappedTexts = prefix
       ? chunks.map((c) => wrapChunkForEmbedding(c.chunk_text, prefix, c.chunk_source))

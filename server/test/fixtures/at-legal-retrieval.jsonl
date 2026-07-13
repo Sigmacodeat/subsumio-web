@@ -3,7 +3,7 @@
 {"question_id":"at-003","question":"Wie lange ist die Gewährleistungsfrist bei beweglichen Sachen?","expected_slug":"legal/statutes/at/abgb/p-933","legal_area":"abgb","question_type":"gewaehrleistung"}
 {"question_id":"at-004","question":"Was sind die Voraussetzungen für einen gültigen Vertragsabschluss durch Willensübereinstimmung?","expected_slug":"legal/statutes/at/abgb/p-861","legal_area":"abgb","question_type":"vertragsrecht"}
 {"question_id":"at-005","question":"Wann ist ein Vertrag wegen Irrtums anfechtbar?","expected_slug":"legal/statutes/at/abgb/p-871","legal_area":"abgb","question_type":"vertragsrecht"}
-{"question_id":"at-006","question":"Welche Formvorschriften gelten für den Kaufvertrag über eine Liegenschaft?","expected_slug":"legal/statutes/at/abgb/p-434","legal_area":"abgb","question_type":"vertragsrecht"}
+{"question_id":"at-006","question":"Welche Formvorschriften gelten für den Kaufvertrag über eine Liegenschaft?","expected_slug":"legal/statutes/at/abgb/p-432","legal_area":"abgb","question_type":"vertragsrecht"}
 {"question_id":"at-007","question":"Wie wird der Mordtatbestand im österreichischen Strafrecht definiert?","expected_slug":"legal/statutes/at/stgb/p-75","legal_area":"stgb_at","question_type":"straftatbestand"}
 {"question_id":"at-008","question":"Was ist der Straftatbestand des schweren Diebstahls?","expected_slug":"legal/statutes/at/stgb/p-128","legal_area":"stgb_at","question_type":"straftatbestand"}
 {"question_id":"at-009","question":"Welche Strafe droht bei Betrug?","expected_slug":"legal/statutes/at/stgb/p-146","legal_area":"stgb_at","question_type":"straftatbestand"}
@@ -28,3 +28,33 @@
 {"question_id":"at-028","question":"Welche Einkünfte gelten als Einkünfte aus Gewerbebetrieb?","expected_slug":"legal/statutes/at/estg/p-23","legal_area":"estg_at","question_type":"steuerrecht"}
 {"question_id":"at-029","question":"Was unterliegt der Umsatzsteuer in Österreich?","expected_slug":"legal/statutes/at/ustg/p-1","legal_area":"ustg_at","question_type":"steuerrecht"}
 {"question_id":"at-030","question":"Welche Verjährungsfrist gilt für Abgabenansprüche nach der Bundesabgabenordnung?","expected_slug":"legal/statutes/at/bao/p-207","legal_area":"bao","question_type":"steuerrecht"}
+{"question_id":"at-031","question":"Was ist der Kündigungsgrund eines Arbeitnehmers im Arbeitsverhältnis?","expected_slug":"legal/statutes/at/arbvg/p-105","legal_area":"arbvg","question_type":"arbeitsrecht"}
+{"question_id":"at-032","question":"Welche Rechte hat ein Arbeitnehmer bei ungerechtfertigter Entlassung?","expected_slug":"legal/statutes/at/avrag/p-15","legal_area":"avrag","question_type":"arbeitsrecht"}
+{"question_id":"at-033","question":"Wie lange ist die Karenzzeit nach der Geburt eines Kindes?","expected_slug":"legal/statutes/at/vkgg/p-2","legal_area":"vkgg","question_type":"arbeitsrecht"}
+{"question_id":"at-034","question":"Was ist der Anspruch auf Urlaubsentgelt im Arbeitsrecht?","expected_slug":"legal/statutes/at/buag/p-12","legal_area":"buag","question_type":"arbeitsrecht"}
+{"question_id":"at-035","question":"Welche Voraussetzungen müssen für eine wirksame Kündigung vorliegen?","expected_slug":"legal/statutes/at/arbvg/p-105","legal_area":"arbvg","question_type":"arbeitsrecht"}
+{"question_id":"at-036","question":"Was regelt das Allgemeine Sozialversicherungsgesetz über den Krankenversicherungsschutz?","expected_slug":"legal/statutes/at/asvg/p-116","legal_area":"asvg","question_type":"sozialrecht"}
+{"question_id":"at-037","question":"Welche Leistungen umfasst die Krankenversicherung?","expected_slug":"legal/statutes/at/asvg/p-116","legal_area":"asvg","question_type":"sozialrecht"}
+{"question_id":"at-038","question":"Wie lange dauert der Mutterschutz im österreichischen Recht?","expected_slug":"legal/statutes/at/mschg-at/p-5","legal_area":"mschg_at","question_type":"sozialrecht"}
+{"question_id":"at-039","question":"Was ist der Pensionsanspruch in der gesetzlichen Pensionsversicherung?","expected_slug":"legal/statutes/at/asvg/p-253","legal_area":"asvg","question_type":"sozialrecht"}
+{"question_id":"at-040","question":"Welche Voraussetzungen müssen für einen Pensionsanspruch erfüllt sein?","expected_slug":"legal/statutes/at/asvg/p-253","legal_area":"asvg","question_type":"sozialrecht"}
+{"question_id":"at-041","question":"Was ist die Zuständigkeit des Verwaltungsgerichts im AVG?","expected_slug":"legal/statutes/at/avg/p-1","legal_area":"avg","question_type":"verwaltungsrecht"}
+{"question_id":"at-042","question":"Welche Fristen gelten für die Einbringung eines Antrags im Verwaltungsverfahren?","expected_slug":"legal/statutes/at/avg/p-73","legal_area":"avg","question_type":"verwaltungsrecht"}
+{"question_id":"at-043","question":"Was ist der Bescheid im Verwaltungsverfahren?","expected_slug":"legal/statutes/at/avg/p-56","legal_area":"avg","question_type":"verwaltungsrecht"}
+{"question_id":"at-044","question":"Welche Rechtsschutzmöglichkeiten gibt es gegen einen Bescheid?","expected_slug":"legal/statutes/at/avg/p-62","legal_area":"avg","question_type":"verwaltungsrecht"}
+{"question_id":"at-045","question":"Was ist die Parteienstellung im Verwaltungsverfahren?","expected_slug":"legal/statutes/at/avg/p-8","legal_area":"avg","question_type":"verwaltungsrecht"}
+{"question_id":"at-046","question":"Welche Voraussetzungen müssen für die Scheidung durch Verschulden vorliegen?","expected_slug":"legal/statutes/at/eheg/p-55","legal_area":"eheg","question_type":"familienrecht"}
+{"question_id":"at-047","question":"Was ist der Unterhaltsanspruch eines Ehegatten nach der Scheidung?","expected_slug":"legal/statutes/at/eheg/p-66","legal_area":"eheg","question_type":"familienrecht"}
+{"question_id":"at-048","question":"Wie wird das Ehewohnungsrecht bei Trennung geregelt?","expected_slug":"legal/statutes/at/eheg/p-87","legal_area":"eheg","question_type":"familienrecht"}
+{"question_id":"at-049","question":"Welche Voraussetzungen gelten für die Eheschließung?","expected_slug":"legal/statutes/at/eheg/p-1","legal_area":"eheg","question_type":"familienrecht"}
+{"question_id":"at-050","question":"Was ist die Vermögensauseinandersetzung nach einer Scheidung?","expected_slug":"legal/statutes/at/eheg/p-81","legal_area":"eheg","question_type":"familienrecht"}
+{"question_id":"at-051","question":"Welche Voraussetzungen müssen für einen Kartellrechtsverstoß vorliegen?","expected_slug":"legal/statutes/at/kartg/p-1","legal_area":"kartg","question_type":"wirtschaftsrecht"}
+{"question_id":"at-052","question":"Was ist der Missbrauch einer marktbeherrschenden Stellung?","expected_slug":"legal/statutes/at/kartg/p-5","legal_area":"kartg","question_type":"wirtschaftsrecht"}
+{"question_id":"at-053","question":"Welche Zusammenschlusskontrolle gibt es im Kartellrecht?","expected_slug":"legal/statutes/at/kartg/p-7","legal_area":"kartg","question_type":"wirtschaftsrecht"}
+{"question_id":"at-054","question":"Was ist die Gewerbeberechtigung im österreichischen Gewerberecht?","expected_slug":"legal/statutes/at/gewo/p-1","legal_area":"gewo","question_type":"gewerberecht"}
+{"question_id":"at-055","question":"Welche Voraussetzungen müssen für die Gewerbeerteilung vorliegen?","expected_slug":"legal/statutes/at/gewo/p-15","legal_area":"gewo","question_type":"gewerberecht"}
+{"question_id":"at-056","question":"Was ist die Gewerbeuntersagung und wann wird sie verhängt?","expected_slug":"legal/statutes/at/gewo/p-87","legal_area":"gewo","question_type":"gewerberecht"}
+{"question_id":"at-057","question":"Welche Rechte haben Betroffene nach dem Datenschutzgesetz?","expected_slug":"legal/statutes/at/dsg/art-2-21","legal_area":"dsg","question_type":"datenschutzrecht"}
+{"question_id":"at-058","question":"Was ist die Verarbeitung personenbezogener Daten im Sinne des Datenschutzgesetzes?","expected_slug":"legal/statutes/at/dsg/art-2-4","legal_area":"dsg","question_type":"datenschutzrecht"}
+{"question_id":"at-059","question":"Welche Rechte haben Asylwerber im österreichischen Asylverfahren?","expected_slug":"legal/statutes/at/asylg/p-1","legal_area":"asylg","question_type":"asylrecht"}
+{"question_id":"at-060","question":"Was ist der Asylantrag und wie wird er gestellt?","expected_slug":"legal/statutes/at/asylg/p-1","legal_area":"asylg","question_type":"asylrecht"}

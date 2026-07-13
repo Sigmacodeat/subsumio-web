@@ -478,6 +478,10 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     sourceId: opts.sourceId,
     sourceIds: opts.allowedSources,
     legalGraphEnabled: true,
+    jurisdiction: opts.jurisdiction,
+    llmRerankEnabled: opts.legalMode === true,
+    agenticRetrievalEnabled: opts.legalMode === true,
+    queryPlanningEnabled: opts.legalMode === true,
   });
 
   // P0-SECR-002: Filter gathered evidence by verified matter scope. Uploaded
