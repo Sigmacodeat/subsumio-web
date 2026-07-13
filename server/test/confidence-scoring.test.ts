@@ -32,11 +32,12 @@ const GUARDRAIL_PASSED: GuardrailResult = {
   fabricated_references: [],
   hedging_phrases: [],
   cross_law_contamination: [],
+  unsubstantiated_uncertainty_phrases: [],
   context_citations: ["§ 433 BGB"],
   retrieved_laws: ["bgb"],
   answer_length: 100,
   context_length: 500,
-  check_count: 5,
+  check_count: 6,
 };
 
 const GUARDRAIL_FAILED: GuardrailResult = {
@@ -55,11 +56,12 @@ const GUARDRAIL_FAILED: GuardrailResult = {
   fabricated_references: [],
   hedging_phrases: [],
   cross_law_contamination: [],
+  unsubstantiated_uncertainty_phrases: [],
   context_citations: ["§ 433 BGB"],
   retrieved_laws: ["bgb"],
   answer_length: 100,
   context_length: 500,
-  check_count: 5,
+  check_count: 6,
 };
 
 const CROSS_VERIFY_CLEAN: CrossVerifyResult = {
@@ -101,7 +103,8 @@ describe("decomposeClaims", () => {
   });
 
   test("deduplicates overlapping sentences", () => {
-    const answer = "Der Verkäufer ist verpflichtet, die Sache zu übergeben. Der Verkäufer ist verpflichtet, die Sache zu übergeben.";
+    const answer =
+      "Der Verkäufer ist verpflichtet, die Sache zu übergeben. Der Verkäufer ist verpflichtet, die Sache zu übergeben.";
     const claims = decomposeClaims(answer);
     expect(claims.length).toBe(1);
   });
@@ -134,7 +137,8 @@ describe("computeDocumentConfidence", () => {
   });
 
   test("returns high confidence for well-grounded answer with clean guardrail + cross-verify", () => {
-    const answer = "Der Verkäufer ist verpflichtet, dem Käufer die Sache zu übergeben. § 433 BGB regelt die Vertragspflichten.";
+    const answer =
+      "Der Verkäufer ist verpflichtet, dem Käufer die Sache zu übergeben. § 433 BGB regelt die Vertragspflichten.";
     const result = computeDocumentConfidence({
       answer,
       context: CONTEXT_WITH_BGB,
@@ -168,7 +172,8 @@ describe("computeDocumentConfidence", () => {
   });
 
   test("returns lower confidence when cross-verify flags are present", () => {
-    const answer = "Der Verkäufer ist verpflichtet, die Sache zu übergeben. § 434 BGB definiert den Sachmangel.";
+    const answer =
+      "Der Verkäufer ist verpflichtet, die Sache zu übergeben. § 434 BGB definiert den Sachmangel.";
     const result = computeDocumentConfidence({
       answer,
       context: CONTEXT_WITH_BGB,
@@ -183,7 +188,8 @@ describe("computeDocumentConfidence", () => {
   });
 
   test("detects hedging language and reduces confidence", () => {
-    const answer = "Der Verkäufer ist verpflichtet, die Sache zu übergeben. Diese Pflicht ist nicht explizit in den Quellen genannt.";
+    const answer =
+      "Der Verkäufer ist verpflichtet, die Sache zu übergeben. Diese Pflicht ist nicht explizit in den Quellen genannt.";
     const result = computeDocumentConfidence({
       answer,
       context: CONTEXT_WITH_BGB,
@@ -207,7 +213,8 @@ describe("computeDocumentConfidence", () => {
   });
 
   test("supporting_passages populated for grounded claims with slug info", () => {
-    const answer = "Der Verkäufer ist verpflichtet, dem Käufer die Sache zu übergeben. § 433 BGB regelt dies.";
+    const answer =
+      "Der Verkäufer ist verpflichtet, dem Käufer die Sache zu übergeben. § 433 BGB regelt dies.";
     const result = computeDocumentConfidence({
       answer,
       context: CONTEXT_WITH_BGB,
@@ -279,9 +286,7 @@ describe("computeECE", () => {
   });
 
   test("handles single sample", () => {
-    const samples: CalibrationSample[] = [
-      { predicted_confidence: 0.7, actual_correctness: 1 },
-    ];
+    const samples: CalibrationSample[] = [{ predicted_confidence: 0.7, actual_correctness: 1 }];
     const ece = computeECE(samples);
     expect(ece).toBeGreaterThanOrEqual(0);
     expect(ece).toBeLessThanOrEqual(1);
@@ -361,7 +366,8 @@ describe("edge cases", () => {
   });
 
   test("multiple claims with mixed grounding", () => {
-    const answer = "Der Verkäufer muss die Sache übergeben. § 433 BGB regelt dies. § 999 BGB definiert Sonderregeln.";
+    const answer =
+      "Der Verkäufer muss die Sache übergeben. § 433 BGB regelt dies. § 999 BGB definiert Sonderregeln.";
     const result = computeDocumentConfidence({
       answer,
       context: CONTEXT_WITH_BGB,

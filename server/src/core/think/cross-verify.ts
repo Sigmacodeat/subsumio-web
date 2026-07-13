@@ -30,6 +30,9 @@ export interface CrossVerifyResult {
   flags: CrossVerifyFlag[];
   verified_citations: string[];
   flagged_citations: string[];
+  /** True when the verifier itself failed (technical error, no model, parse failure).
+   *  Callers MUST treat this as NEEDS_HUMAN_REVIEW, never as VERIFIED. */
+  verifier_error?: boolean;
 }
 
 const VERIFY_SYSTEM_PROMPT = `Du bist ein juristischer Zitations-Verifier. Du prüfst, ob jede §-Zitat in einer Antwort tatsächlich durch den Kontext gedeckt ist.
@@ -64,11 +67,22 @@ export async function crossVerifyCitations(
   jurisdiction?: string,
   engine?: BrainEngine | null
 ): Promise<CrossVerifyResult> {
-  const fallback: CrossVerifyResult = {
-    clean: true,
-    flags: [],
+  // Fail-closed: when the verifier itself fails (no model, no output, parse
+  // error, exception), we return clean=false with a verifier_error flag.
+  // This forces callers to route the output to NEEDS_HUMAN_REVIEW instead
+  // of silently treating it as verified.
+  const verifierErrorFallback: CrossVerifyResult = {
+    clean: false,
+    flags: [
+      {
+        type: "verifier_error",
+        detail: "Cross-verify failed (technical error) — human review required",
+        severity: "high",
+      },
+    ],
     verified_citations: [],
     flagged_citations: [],
+    verifier_error: true,
   };
 
   try {
@@ -76,7 +90,7 @@ export async function crossVerifyCitations(
       tier: "deep",
       fallback: "x-ai:grok-4-3",
     });
-    if (!model) return fallback;
+    if (!model) return verifierErrorFallback;
 
     const userPrompt = [
       `## JURISDIKTION: ${jurisdiction ?? "unbekannt"}`,
@@ -92,9 +106,7 @@ export async function crossVerifyCitations(
       "Wenn alle Zitate korrekt sind: clean=true, flags=[].",
     ].join("\n");
 
-    const messages: ChatMessage[] = [
-      { role: "user", content: userPrompt },
-    ];
+    const messages: ChatMessage[] = [{ role: "user", content: userPrompt }];
     const result = await gatewayChat({
       model,
       system: VERIFY_SYSTEM_PROMPT,
@@ -102,24 +114,20 @@ export async function crossVerifyCitations(
       maxTokens: 1500,
     });
 
-    if (!result.text) return fallback;
+    if (!result.text) return verifierErrorFallback;
 
     const jsonMatch = result.text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return fallback;
+    if (!jsonMatch) return verifierErrorFallback;
 
     const parsed = JSON.parse(jsonMatch[0]) as Partial<CrossVerifyResult>;
     return {
       clean: Boolean(parsed.clean),
       flags: Array.isArray(parsed.flags) ? parsed.flags : [],
-      verified_citations: Array.isArray(parsed.verified_citations)
-        ? parsed.verified_citations
-        : [],
-      flagged_citations: Array.isArray(parsed.flagged_citations)
-        ? parsed.flagged_citations
-        : [],
+      verified_citations: Array.isArray(parsed.verified_citations) ? parsed.verified_citations : [],
+      flagged_citations: Array.isArray(parsed.flagged_citations) ? parsed.flagged_citations : [],
     };
   } catch {
-    return fallback;
+    return verifierErrorFallback;
   }
 }
 
@@ -128,10 +136,7 @@ export function buildCrossVerifyRegenerationPrompt(
   verifyResult: CrossVerifyResult
 ): string {
   const flagList = verifyResult.flags
-    .map(
-      (f) =>
-        `- ${f.citation ?? "(kein §)"}: ${f.detail} [${f.severity}]`
-    )
+    .map((f) => `- ${f.citation ?? "(kein §)"}: ${f.detail} [${f.severity}]`)
     .join("\n");
 
   return (

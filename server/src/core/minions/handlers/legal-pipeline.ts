@@ -80,6 +80,8 @@ import {
 } from "../../legal/draft-packages.ts";
 import { runContradictionProbe } from "../../eval-contradictions/runner.ts";
 import { writeRunRow } from "../../eval-contradictions/trends.ts";
+import { FileSystemCorpusLookupAdapter } from "../../legal/corpus-lookup-adapter.ts";
+import { GroundingMapValidator } from "../../legal/grounding-map-validator.ts";
 import {
   checkCitationGrounding,
   buildRegenerationPrompt,
@@ -91,6 +93,14 @@ import {
   buildCrossVerifyRegenerationPrompt,
   type CrossVerifyResult,
 } from "../../think/cross-verify.ts";
+import {
+  resolveVerificationState,
+  classifyOutputRisk,
+  canPublish,
+  needsHumanReview,
+  type VerificationState,
+  type VerificationContext,
+} from "../../verification/states.ts";
 
 // ── Facts Fence Builder ─────────────────────────────────────
 // Generates a ## Facts fence compatible with GBrain's parseFactsFence.
@@ -278,6 +288,10 @@ interface PipelineState {
   cost_cap_usd?: number;
   /** Warnings accumulated during pipeline execution (e.g. state persistence failures) */
   warnings?: string[];
+  /** Risk-based verification state from guardrail + cross-verify (Phase 0A) */
+  verification_state?: VerificationState;
+  /** Verification details: blocking flags and reason */
+  verification_reason?: string;
   /** Contradiction probe auto-trigger result (Layer 8, non-blocking) */
   contradiction_run_id?: string;
   contradiction_findings?: number;
@@ -304,13 +318,16 @@ interface PipelineState {
   snapshot_id?: string;
   import_session_id?: string;
   /** Per-layer citation guardrail results (Tier 0 deterministic checks) */
-  guardrail_results?: Record<number, {
-    passed: boolean;
-    flags_count: number;
-    flag_types: string[];
-    regenerated: boolean;
-    regen_passed?: boolean;
-  }>;
+  guardrail_results?: Record<
+    number,
+    {
+      passed: boolean;
+      flags_count: number;
+      flag_types: string[];
+      regenerated: boolean;
+      regen_passed?: boolean;
+    }
+  >;
   /** Cross-model verification results for draft layer (Tier 1 semantic checks) */
   cross_verify_results?: {
     clean: boolean;
@@ -318,6 +335,8 @@ interface PipelineState {
     flag_types: string[];
     regenerated: boolean;
     regen_clean?: boolean;
+    /** True when the verifier itself failed (technical error) — Phase 0A */
+    verifier_error?: boolean;
   };
 }
 
@@ -578,7 +597,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             allTexts,
             batchSize: HAIKU_BATCH_SIZE,
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
             contextJson: JSON.stringify({ jurisdiction: data.jurisdiction ?? "at" }),
             retryFeedback: "KORREKTUR ERFORDERLICH:\n" + errors.join("\n"),
           });
@@ -599,7 +618,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
 
           if (errors.length > 0) {
             console.warn(
-              `[legal-pipeline] Layer 1 retry still has ${errors.length} validation errors — proceeding with best effort`
+              `[legal-pipeline] Layer 1 retry still has ${errors.length} validation errors — logged for review`
             );
             // If GZ validation still has fehler after retry, flag for human review
             const gzFehlerPersist =
@@ -652,7 +671,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               );
             }
           } catch {
-            // best effort — don't fail the pipeline for case frontmatter update
+            // case frontmatter update failed; pipeline continues
           }
         }
 
@@ -699,7 +718,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               }
             }
           } catch {
-            // best effort — ERV cross-check is non-blocking
+            // ERV cross-check mismatch is non-blocking; continue pipeline
           }
         }
 
@@ -747,7 +766,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             allTexts,
             batchSize: HAIKU_BATCH_SIZE,
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
             contextJson: JSON.stringify({
               on_table: onTable,
               jurisdiction: data.jurisdiction ?? "at",
@@ -761,7 +780,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
           errors = await validateEntityEntries(entities, allText);
           if (errors.length > 0) {
             console.warn(
-              `[legal-pipeline] Layer 2 retry still has ${errors.length} validation errors — proceeding with best effort`
+              `[legal-pipeline] Layer 2 retry still has ${errors.length} validation errors — logged for review`
             );
           }
         }
@@ -851,7 +870,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             allTexts,
             batchSize: SONNET_BATCH_SIZE,
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
             contextJson,
             retryFeedback: "KORREKTUR ERFORDERLICH:\n" + errors.join("\n"),
           });
@@ -859,7 +878,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
           errors = await validateForensicReport(forensicReport, onTable, entities, allText);
           if (errors.length > 0) {
             console.warn(
-              `[legal-pipeline] Layer 3 retry still has ${errors.length} validation errors — proceeding with best effort`
+              `[legal-pipeline] Layer 3 retry still has ${errors.length} validation errors — logged for review`
             );
           }
         }
@@ -867,11 +886,15 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
         // ── Tier 0 Citation Guardrail (deterministic, zero-cost) ──
         const forensicText = JSON.stringify(forensicReport);
         const forensicGuard = runCitationGuardrailForLayer(
-          state, 3, forensicText, allText, data.part_slugs
+          state,
+          3,
+          forensicText,
+          allText,
+          data.part_slugs
         );
         if (!forensicGuard.passed && forensicGuard.flags.some((f) => f.severity === "high")) {
           const highCount = forensicGuard.flags.filter((f) => f.severity === "high").length;
-          console.warn(`[legal-pipeline] Layer 3 guardrail flagged — proceeding with best effort (guardrail warnings in state)`);
+          // Phase 0A: fail-closed — enforceGuardrailHardBlock throws
           enforceGuardrailHardBlock(3, "forensic-analyst", highCount);
         }
 
@@ -912,18 +935,22 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
 
         if (errors.length > 0) {
           console.warn(
-            `[legal-pipeline] Layer 4 validation: ${errors.length} errors — proceeding with best effort (non-blocking)`
+            `[legal-pipeline] Layer 4 validation: ${errors.length} errors — non-blocking, logged for review`
           );
         }
 
         // ── Tier 0 Citation Guardrail (deterministic, zero-cost) ──
         const groundingText = JSON.stringify(legalGroundingMap);
         const groundingGuard = runCitationGuardrailForLayer(
-          state, 4, groundingText, allText, data.part_slugs
+          state,
+          4,
+          groundingText,
+          allText,
+          data.part_slugs
         );
         if (!groundingGuard.passed && groundingGuard.flags.some((f) => f.severity === "high")) {
           const highCount = groundingGuard.flags.filter((f) => f.severity === "high").length;
-          console.warn(`[legal-pipeline] Layer 4 guardrail flagged — proceeding with best effort`);
+          // Phase 0A: fail-closed — enforceGuardrailHardBlock throws
           enforceGuardrailHardBlock(4, "legal-grounding", highCount);
         }
 
@@ -955,7 +982,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (precedentSlug) {
             state.layers[4]!.output_slugs = [
@@ -986,7 +1013,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (burdenSlug) {
             state.layers[4]!.output_slugs = [...(state.layers[4]!.output_slugs ?? []), burdenSlug];
@@ -1018,7 +1045,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (admissibilitySlug) {
             state.layers[4]!.output_slugs = [
@@ -1052,7 +1079,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (factGapSlug) {
             state.layers[4]!.output_slugs = [...(state.layers[4]!.output_slugs ?? []), factGapSlug];
@@ -1161,7 +1188,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             allTexts,
             batchSize: SONNET_BATCH_SIZE,
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
             contextJson: damageContextJson,
             retryFeedback: "KORREKTUR ERFORDERLICH:\n" + errors.join("\n"),
           });
@@ -1173,25 +1200,33 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
           errors = [...dmgErrors, ...dlnErrors];
           if (errors.length > 0) {
             console.warn(
-              `[legal-pipeline] Layer 5 retry still has ${errors.length} validation errors — proceeding with best effort`
+              `[legal-pipeline] Layer 5 retry still has ${errors.length} validation errors — logged for review`
             );
           }
         }
 
         // ── Tier 0 Citation Guardrail (deterministic, zero-cost) ──
-        const damageDeadlineText = JSON.stringify({ damage_table: damageTable, deadline_calendar: deadlineCalendar });
+        const damageDeadlineText = JSON.stringify({
+          damage_table: damageTable,
+          deadline_calendar: deadlineCalendar,
+        });
         const damageGuard = runCitationGuardrailForLayer(
-          state, 5, damageDeadlineText, allText, data.part_slugs
+          state,
+          5,
+          damageDeadlineText,
+          allText,
+          data.part_slugs
         );
         if (!damageGuard.passed && damageGuard.flags.some((f) => f.severity === "high")) {
           const highCount = damageGuard.flags.filter((f) => f.severity === "high").length;
-          console.warn(`[legal-pipeline] Layer 5 guardrail flagged — proceeding with best effort`);
+          // Phase 0A: fail-closed — enforceGuardrailHardBlock throws
           enforceGuardrailHardBlock(5, "damage-deadline", highCount);
         }
 
         // ── AP-6: Deterministic deadline statutory cross-check ──
         const deadlineWarnings = crossCheckDeadlineStatutory(
-          deadlineCalendar, data.jurisdiction ?? "at"
+          deadlineCalendar,
+          data.jurisdiction ?? "at"
         );
         if (deadlineWarnings.length > 0) {
           state.warnings = [...(state.warnings ?? []), ...deadlineWarnings];
@@ -1240,7 +1275,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (deadlineValidationSlug) outputSlugs.push(deadlineValidationSlug);
         } catch (err) {
@@ -1266,7 +1301,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (costBenefitSlug) outputSlugs.push(costBenefitSlug);
         } catch (err) {
@@ -1289,7 +1324,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (settlementSlug) outputSlugs.push(settlementSlug);
         } catch (err) {
@@ -1313,7 +1348,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (enforcementSlug) outputSlugs.push(enforcementSlug);
         } catch (err) {
@@ -1336,7 +1371,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (appealRiskSlug) outputSlugs.push(appealRiskSlug);
         } catch (err) {
@@ -1358,7 +1393,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (strategySlug) outputSlugs.push(strategySlug);
         } catch (err) {
@@ -1383,7 +1418,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (insuranceSlug) outputSlugs.push(insuranceSlug);
         } catch (err) {
@@ -1409,7 +1444,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (taxSlug) outputSlugs.push(taxSlug);
         } catch (err) {
@@ -1432,7 +1467,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (counterclaimSlug) outputSlugs.push(counterclaimSlug);
         } catch (err) {
@@ -1455,7 +1490,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (adrSlug) outputSlugs.push(adrSlug);
         } catch (err) {
@@ -1478,7 +1513,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (limitationSlug) {
             outputSlugs.push(limitationSlug);
@@ -1536,7 +1571,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (costAwardSlug) outputSlugs.push(costAwardSlug);
         } catch (err) {
@@ -1629,7 +1664,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           counterArguments = counterResult.counterArguments;
           state.counter_arguments = counterArguments;
@@ -1655,7 +1690,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               additionalOpponents: data.additional_opponents,
               nebenverfahren: data.nebenverfahren,
               sourceStamp,
-          lawSourceIds,
+              lawSourceIds,
             });
             state.layers[6]!.output_slugs = revisedSlugs;
           }
@@ -1733,7 +1768,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               state,
               stateSlug,
               sourceStamp,
-          lawSourceIds,
+              lawSourceIds,
               onTable,
               entities,
               forensicReport,
@@ -1759,7 +1794,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
             retryCount,
           });
           state.ensemble_verdict = ensembleResult.verdict;
@@ -1838,7 +1873,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             currentEntities: entities,
             linkedCases: data.linked_cases,
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (crossCaseFindings.length > 0) {
             state.cross_case_findings = crossCaseFindings;
@@ -1872,7 +1907,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
             relatedCaseSlugs,
             mandateId: data.mandate_id,
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           state.cross_case_matrix_slug = matrixSlug;
           console.warn(`[legal-pipeline] Phase B2: Cross-case matrix generated at ${matrixSlug}`);
@@ -2168,7 +2203,7 @@ async function runLawMatcherLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -2182,7 +2217,13 @@ async function runLawMatcherLayer(opts: {
   );
 
   const result = await waitForChild(ctx, child.id);
-  return extractLegalGroundingMap(result);
+  const claimedEntries = extractLegalGroundingMap(result);
+
+  // Backend-authoritative verification: the LLM only claims; we load the
+  // corpus source ourselves and set verified + provenance fields.
+  const adapter = new FileSystemCorpusLookupAdapter();
+  const validator = new GroundingMapValidator(adapter);
+  return await validator.verify({ jurisdiction, entries: claimedEntries });
 }
 
 // ── Draft Layer (Jurisdiction + Verfahrenstyp + Parteirolle) ──
@@ -2250,7 +2291,7 @@ async function runCounterArgumentLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -2571,7 +2612,7 @@ async function runDeadlineValidationLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -2806,11 +2847,15 @@ async function runDraftLayer(opts: {
     // ── Tier 0 Citation Guardrail on each draft ──
     if (opts.state && opts.allText && opts.partSlugs) {
       const draftGuard = runCitationGuardrailForLayer(
-        opts.state, 6, draftText, opts.allText, opts.partSlugs
+        opts.state,
+        6,
+        draftText,
+        opts.allText,
+        opts.partSlugs
       );
       if (!draftGuard.passed && draftGuard.flags.some((f) => f.severity === "high")) {
         const highCount = draftGuard.flags.filter((f) => f.severity === "high").length;
-        console.warn(`[legal-pipeline] Layer 6 draft ${packages[i]!.type} guardrail flagged — proceeding with best effort`);
+        // Phase 0A: fail-closed — enforceGuardrailHardBlock now always throws
         enforceGuardrailHardBlock(6, `draft-${packages[i]!.type}`, highCount);
       }
     }
@@ -2823,17 +2868,63 @@ async function runDraftLayer(opts: {
   if (opts.state && opts.allText && draftTexts.length > 0) {
     const combinedDraftText = draftTexts.join("\n\n---\n\n");
     const guardContext = opts.allText + "\n" + JSON.stringify(legalGroundingMap);
+    let verifyResult: CrossVerifyResult | null = null;
+    let crossVerifyError = false;
     try {
-      const verifyResult = await runCrossVerifyForDrafts(
-        opts.state, combinedDraftText, guardContext, opts.jurisdiction
+      verifyResult = await runCrossVerifyForDrafts(
+        opts.state,
+        combinedDraftText,
+        guardContext,
+        opts.jurisdiction
       );
-      if (!verifyResult.clean && verifyResult.flags.some((f) => f.severity === "high")) {
-        console.warn(`[legal-pipeline] Layer 6 cross-verify flagged — proceeding with best effort`);
-      }
     } catch (verifyErr) {
       const msg = verifyErr instanceof Error ? verifyErr.message : String(verifyErr);
-      console.warn(`[legal-pipeline] Layer 6 cross-verify failed (non-blocking): ${msg}`);
-      opts.state.warnings = [...(opts.state.warnings ?? []), "CROSS_VERIFY_SKIPPED"];
+      console.error(`[legal-pipeline] Layer 6 cross-verify failed: ${msg}`);
+      crossVerifyError = true;
+      opts.state.warnings = [...(opts.state.warnings ?? []), "CROSS_VERIFY_ERROR"];
+    }
+
+    // ── Phase 0A: Compute verification state ──
+    const draftGuardResult = opts.state.guardrail_results?.[6]
+      ? checkCitationGrounding({
+          answer: combinedDraftText,
+          context: guardContext,
+          topSlugs: opts.partSlugs ?? [],
+        })
+      : null;
+
+    const riskLevel = classifyOutputRisk("draft");
+    const verifyCtx: VerificationContext = {
+      risk_level: riskLevel,
+      guardrail_ran: !!draftGuardResult,
+      cross_verify_ran: !!verifyResult,
+      cross_verify_error: crossVerifyError || verifyResult?.verifier_error,
+      jurisdiction: opts.jurisdiction,
+    };
+
+    const decision = resolveVerificationState(draftGuardResult, verifyResult, verifyCtx);
+    opts.state.verification_state = decision.state;
+    opts.state.verification_reason = decision.reason;
+
+    if (decision.state === "BLOCKED") {
+      console.error(`[legal-pipeline] Layer 6 BLOCKED: ${decision.reason}`);
+      opts.state.status = "needs_human_review";
+      opts.state.warnings = [
+        ...(opts.state.warnings ?? []),
+        `VERIFICATION_BLOCKED: ${decision.reason}`,
+      ];
+      throw new Error(`[legal-pipeline] Layer 6 verification BLOCKED: ${decision.reason}`);
+    }
+
+    if (needsHumanReview(decision.state)) {
+      console.warn(`[legal-pipeline] Layer 6 ${decision.state}: ${decision.reason}`);
+      opts.state.warnings = [
+        ...(opts.state.warnings ?? []),
+        `VERIFICATION_${decision.state}: ${decision.reason}`,
+      ];
+      if (decision.state === "VERIFIER_ERROR") {
+        opts.state.status = "needs_human_review";
+      }
     }
   }
 
@@ -2962,7 +3053,7 @@ async function runSubsumptionCheck(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -3289,7 +3380,7 @@ async function runBurdenOfProofLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -3451,7 +3542,7 @@ async function runCostBenefitLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -3660,7 +3751,7 @@ async function runAdmissibilityCheckLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -3840,7 +3931,7 @@ async function runSettlementAnalysisLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -4042,7 +4133,7 @@ async function runFactGapDetectionLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -4225,7 +4316,7 @@ async function runEnforcementAnalysisLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -4448,7 +4539,7 @@ async function runAppealRiskLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -4646,7 +4737,7 @@ async function runProceduralStrategyLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -4864,7 +4955,7 @@ async function runSpecialistLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -4966,7 +5057,7 @@ async function runInsuranceCoverageLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -5159,7 +5250,7 @@ async function runTaxImpactLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -5368,7 +5459,7 @@ async function runWitnessExpertLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -5564,7 +5655,7 @@ async function runCounterclaimLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -5779,7 +5870,7 @@ async function runEvidenceQualityLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -6917,7 +7008,7 @@ async function rerunSpecificLayer(
     state: PipelineState;
     stateSlug: string;
     sourceStamp?: string;
-  lawSourceIds?: string[];
+    lawSourceIds?: string[];
     onTable: OnEntry[];
     entities: EntityEntry[];
     forensicReport: ForensicReport | null;
@@ -7123,7 +7214,7 @@ async function rerunSpecificLayer(
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (admissibilitySlug) {
             state.layers[4]!.output_slugs = [
@@ -7153,7 +7244,7 @@ async function rerunSpecificLayer(
               data.verfahrenstyp ??
               (onTable.length > 0 ? (onTable[0]?.verfahrenstyp ?? "sonstiges") : "sonstiges"),
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           if (factGapSlug) {
             state.layers[4]!.output_slugs = [...(state.layers[4]!.output_slugs ?? []), factGapSlug];
@@ -7339,7 +7430,7 @@ async function rerunSpecificLayer(
             additionalOpponents: data.additional_opponents,
             nebenverfahren: data.nebenverfahren,
             sourceStamp,
-          lawSourceIds,
+            lawSourceIds,
           });
           state.layers[6]!.output_slugs = revisedSlugs;
         }
@@ -7513,7 +7604,7 @@ async function runCriticLayer(opts: {
   };
   if (def.model) childData.model = def.model;
   if (sourceStamp) childData._source_id = sourceStamp;
-    if (lawSourceIds) childData._source_ids = lawSourceIds;
+  if (lawSourceIds) childData._source_ids = lawSourceIds;
 
   const child = await queue.add(
     "subagent",
@@ -7864,9 +7955,17 @@ interface DeadlineEntry {
 interface MatchedParagraph {
   paragraph: string;
   statute: string;
-  source_text: string;
+  source_text?: string;
   confidence: string;
   verified: boolean;
+  // Backend-authoritative provenance fields (never trusted from the LLM)
+  source_slug?: string;
+  source_url?: string;
+  snapshot_hash?: string;
+  valid_from?: string;
+  valid_to?: string | null;
+  evidence_start?: number;
+  evidence_end?: number;
 }
 
 interface LegalGroundingEntry {
@@ -8301,12 +8400,15 @@ async function validateDeadlineCalendar(
 }
 
 /** Known statutory limitation periods per jurisdiction (AP-6). */
-const STATUTORY_LIMITATION_PERIODS: Record<string, Array<{
-  paragraph: string;
-  law: string;
-  years: number;
-  description: string;
-}>> = {
+const STATUTORY_LIMITATION_PERIODS: Record<
+  string,
+  Array<{
+    paragraph: string;
+    law: string;
+    years: number;
+    description: string;
+  }>
+> = {
   at: [
     { paragraph: "§ 1489", law: "ABGB", years: 3, description: "Allgemeine Verjährung" },
     { paragraph: "§ 1", law: "AHG", years: 3, description: "Amtshaftung" },
@@ -8314,17 +8416,30 @@ const STATUTORY_LIMITATION_PERIODS: Record<string, Array<{
   ],
   de: [
     { paragraph: "§ 195", law: "BGB", years: 3, description: "Regelmäßige Verjährung" },
-    { paragraph: "§ 852", law: "BGB", years: 30, description: "Haftung bei Vorsatz (Schadensersatz)" },
+    {
+      paragraph: "§ 852",
+      law: "BGB",
+      years: 30,
+      description: "Haftung bei Vorsatz (Schadensersatz)",
+    },
     { paragraph: "Art 82", law: "DSGVO", years: 3, description: "Datenschutz Schadensersatz" },
   ],
   ch: [
     { paragraph: "Art 127", law: "OR", years: 5, description: "Allgemeine Verjährung" },
-    { paragraph: "Art 60", law: "OR", years: 10, description: "Schadensersatz aus unerlaubter Handlung" },
-    { paragraph: "Art 82", law: "DSGVO", years: 3, description: "Datenschutz Schadensersatz (falls anwendbar)" },
+    {
+      paragraph: "Art 60",
+      law: "OR",
+      years: 10,
+      description: "Schadensersatz aus unerlaubter Handlung",
+    },
+    {
+      paragraph: "Art 82",
+      law: "DSGVO",
+      years: 3,
+      description: "Datenschutz Schadensersatz (falls anwendbar)",
+    },
   ],
-  eu: [
-    { paragraph: "Art 82", law: "DSGVO", years: 3, description: "Datenschutz Schadensersatz" },
-  ],
+  eu: [{ paragraph: "Art 82", law: "DSGVO", years: 3, description: "Datenschutz Schadensersatz" }],
 };
 
 /**
@@ -8341,10 +8456,7 @@ const STATUTORY_LIMITATION_PERIODS: Record<string, Array<{
  * Returns warnings (not errors) — these are advisory flags that
  * surface in pipeline state for attorney review.
  */
-function crossCheckDeadlineStatutory(
-  entries: DeadlineEntry[],
-  jurisdiction: string
-): string[] {
+function crossCheckDeadlineStatutory(entries: DeadlineEntry[], jurisdiction: string): string[] {
   const warnings: string[] = [];
   const now = new Date();
   const knownLaws = KNOWN_LAWS;
@@ -8360,7 +8472,9 @@ function crossCheckDeadlineStatutory(
         );
       } else {
         // Check 2: extract law abbreviation and verify it's known
-        const lawMatch = e.rechtsgrundlage.match(/§§?\s*\d+[a-z]?\s*(?:Abs\.\s*\d+)?\s*(?:Satz\s*\d+)?\s*([A-Z][A-Za-z]{1,10})\b/);
+        const lawMatch = e.rechtsgrundlage.match(
+          /§§?\s*\d+[a-z]?\s*(?:Abs\.\s*\d+)?\s*(?:Satz\s*\d+)?\s*([A-Z][A-Za-z]{1,10})\b/
+        );
         if (lawMatch) {
           const law = lawMatch[1];
           if (!knownLaws.has(law)) {
@@ -8395,13 +8509,14 @@ function crossCheckDeadlineStatutory(
 
     // Check 5: cross-reference against known statutory limitation periods
     if (e.rechtsgrundlage && knownPeriods.length > 0) {
-      const matchedPeriod = knownPeriods.find((p) =>
-        e.rechtsgrundlage!.includes(p.paragraph) && e.rechtsgrundlage!.includes(p.law)
+      const matchedPeriod = knownPeriods.find(
+        (p) => e.rechtsgrundlage!.includes(p.paragraph) && e.rechtsgrundlage!.includes(p.law)
       );
       if (matchedPeriod && e.datum) {
         const parsed = new Date(e.datum);
         if (!isNaN(parsed.getTime())) {
-          const yearsUntilDeadline = (parsed.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+          const yearsUntilDeadline =
+            (parsed.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
           if (yearsUntilDeadline > matchedPeriod.years + 1) {
             warnings.push(
               `Deadline "${e.frist}": Frist liegt ${yearsUntilDeadline.toFixed(1)} Jahre in der Zukunft, aber ${matchedPeriod.paragraph} ${matchedPeriod.law} beträgt ${matchedPeriod.years} Jahre — möglicher Fristablauf`
@@ -8973,24 +9088,13 @@ async function writeLegalGroundingMapPage(
 // ── Citation Guardrail (Tier 0) Integration ─────────────────
 
 /**
- * AP-8: When `SUBSUMIO_GUARDRAIL_HARD_BLOCK=true`, high-severity guardrail
- * failures halt the pipeline by throwing — forcing `needs_human_review`.
- * Default: false (best-effort mode — proceeds with warnings).
+ * AP-8: High-severity guardrail failures halt the pipeline by throwing —
+ * forcing `needs_human_review`. This is now ALWAYS active (Phase 0A).
+ * Previously gated behind SUBSUMIO_GUARDRAIL_HARD_BLOCK env var which
+ * defaulted to false (fail-open). Now fail-closed by default.
  */
-const GUARDRAIL_HARD_BLOCK = process.env.SUBSUMIO_GUARDRAIL_HARD_BLOCK === "true";
-
-/**
- * AP-8: Check if a guardrail failure should hard-block the pipeline.
- * In hard-block mode, throws an error that sets the pipeline to
- * `needs_human_review`. In default mode, just logs a warning.
- */
-function enforceGuardrailHardBlock(
-  layerNum: number,
-  layerName: string,
-  flagsCount: number
-): void {
-  if (!GUARDRAIL_HARD_BLOCK) return;
-  const msg = `[legal-pipeline] Layer ${layerNum} (${layerName}) guardrail HARD-BLOCK: ${flagsCount} high-severity flags — pipeline halted (SUBSUMIO_GUARDRAIL_HARD_BLOCK=true)`;
+function enforceGuardrailHardBlock(layerNum: number, layerName: string, flagsCount: number): void {
+  const msg = `[legal-pipeline] Layer ${layerNum} (${layerName}) guardrail HARD-BLOCK: ${flagsCount} high-severity flags — pipeline halted (fail-closed, Phase 0A)`;
   console.error(msg);
   throw new Error(msg);
 }
@@ -9035,14 +9139,13 @@ function runCitationGuardrailForLayer(
     if (highSeverityCount > 0) {
       // Build regeneration prompt for the caller to use in a retry
       const regenPrompt = buildRegenerationPrompt("", result, context);
-      state.warnings = [
-        ...(state.warnings ?? []),
-        `GUARDRAIL_REGENERATION_REQUESTED_L${layerNum}`,
-      ];
+      state.warnings = [...(state.warnings ?? []), `GUARDRAIL_REGENERATION_REQUESTED_L${layerNum}`];
       console.warn(
         `[legal-pipeline] Layer ${layerNum} guardrail: ${result.flags.length} flags (${highSeverityCount} high-severity) — types: ${flagTypes.join(", ")}`
       );
-      console.warn(`[legal-pipeline] Layer ${layerNum} regeneration prompt: ${regenPrompt.slice(0, 200)}...`);
+      console.warn(
+        `[legal-pipeline] Layer ${layerNum} regeneration prompt: ${regenPrompt.slice(0, 200)}...`
+      );
     }
   }
 
@@ -9070,9 +9173,18 @@ async function runCrossVerifyForDrafts(
     flags_count: result.flags.length,
     flag_types: flagTypes,
     regenerated: false,
+    verifier_error: result.verifier_error ?? false,
   };
 
-  if (result.clean) {
+  if (result.verifier_error) {
+    state.warnings = [
+      ...(state.warnings ?? []),
+      "CROSS_VERIFY_VERIFIER_ERROR: technical failure — human review required",
+    ];
+    console.error(
+      `[legal-pipeline] Cross-verify VERIFIER_ERROR: ${result.flags.length} flags — technical failure`
+    );
+  } else if (result.clean) {
     state.warnings = [...(state.warnings ?? []), "CROSS_VERIFY_PASSED"];
   } else {
     state.warnings = [
@@ -9082,14 +9194,13 @@ async function runCrossVerifyForDrafts(
     if (highSeverityCount > 0) {
       // Build regeneration prompt for draft retry
       const regenPrompt = buildCrossVerifyRegenerationPrompt("", result);
-      state.warnings = [
-        ...(state.warnings ?? []),
-        "CROSS_VERIFY_REGENERATION_REQUESTED",
-      ];
+      state.warnings = [...(state.warnings ?? []), "CROSS_VERIFY_REGENERATION_REQUESTED"];
       console.warn(
         `[legal-pipeline] Cross-verify: ${result.flags.length} flags (${highSeverityCount} high-severity) — types: ${flagTypes.join(", ")}`
       );
-      console.warn(`[legal-pipeline] Cross-verify regeneration prompt: ${regenPrompt.slice(0, 200)}...`);
+      console.warn(
+        `[legal-pipeline] Cross-verify regeneration prompt: ${regenPrompt.slice(0, 200)}...`
+      );
     }
   }
 
@@ -9719,7 +9830,8 @@ async function runCrossCaseMatrixLayer(opts: {
   sourceStamp?: string;
   lawSourceIds?: string[];
 }): Promise<string> {
-  const { ctx, queue, engine, caseSlug, relatedCaseSlugs, mandateId, sourceStamp, lawSourceIds } = opts;
+  const { ctx, queue, engine, caseSlug, relatedCaseSlugs, mandateId, sourceStamp, lawSourceIds } =
+    opts;
   const allSlugs = [caseSlug, ...relatedCaseSlugs.filter((s) => s !== caseSlug)];
 
   const prompt = [

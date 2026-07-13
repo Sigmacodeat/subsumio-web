@@ -20,31 +20,156 @@
 
 export const KNOWN_LAWS = new Set<string>([
   // German federal laws (from law-corpus/de/)
-  "AO", "BauGB", "BDSG", "BetrVG", "BewG", "BGB", "ErbStG", "EStG",
-  "FamFG", "GewO", "GewStG", "GG", "GmbHG", "GrEStG", "HGB", "InsO",
-  "KStG", "LStDV", "StBerG", "StBVV", "StGB", "StPO", "UrhG", "UStG",
-  "UWG", "VwGO", "ZPO", "ZVG",
+  "AO",
+  "BauGB",
+  "BDSG",
+  "BetrVG",
+  "BewG",
+  "BGB",
+  "ErbStG",
+  "EStG",
+  "FamFG",
+  "GewO",
+  "GewStG",
+  "GG",
+  "GmbHG",
+  "GrEStG",
+  "HGB",
+  "InsO",
+  "KStG",
+  "LStDV",
+  "StBerG",
+  "StBVV",
+  "StGB",
+  "StPO",
+  "UrhG",
+  "UStG",
+  "UWG",
+  "VwGO",
+  "ZPO",
+  "ZVG",
   // Additional common German laws not in corpus
-  "GVG", "BauNVO", "BKrG", "BNotO", "BRAO", "DRiG", "EGBGB",
-  "EGGVB", "EGZPO", "FKKG", "GKG", "JGG", "LPartG", "MietV", "PatG",
-  "RBerG", "RVG", "SchKG", "TPG", "UrhG", "VerkG", "VVG", "ZKDG",
+  "GVG",
+  "BauNVO",
+  "BKrG",
+  "BNotO",
+  "BRAO",
+  "DRiG",
+  "EGBGB",
+  "EGGVB",
+  "EGZPO",
+  "FKKG",
+  "GKG",
+  "JGG",
+  "LPartG",
+  "MietV",
+  "PatG",
+  "RBerG",
+  "RVG",
+  "SchKG",
+  "TPG",
+  "UrhG",
+  "VerkG",
+  "VVG",
+  "ZKDG",
   // Austrian laws (from law-corpus/at/)
-  "ABGB", "AHG", "AktG", "ALVG", "AMG", "AngG", "ArbVG", "ARG",
-  "ASVG", "AsylG", "AufenthG", "AuslBG", "AVG", "AVRAG", "AWG",
-  "AZG", "B-VG", "BAO", "BBG", "BDG", "BewG", "BGFA", "BRAG",
-  "BrusselsIbis", "BuAG", "BVerGG", "BVG", "ChemG", "DSG", "ECG",
-  "EheG", "EIWOG", "EO", "EPiG", "EstG", "EuCO", "ForstG", "FPG",
-  "GebG", "GewO", "GlBG", "GmbHG", "GOG", "GrStG", "GUKG", "GWG",
-  "IO", "JGG", "KAG", "KartG", "KSchG", "KStG", "MedienG", "MRG",
-  "MSchG", "N-G", "OR", "PatG", "PStG", "RAO", "RoMI", "RoMII",
-  "SchKG", "SMG", "SPG", "StBG", "StGB", "StPO", "StRegG", "StVO",
-  "TilGG", "TKG", "TschG", "UGB", "UrhG", "UStG", "UWG", "VBVG",
-  "VKG", "VStG", "VVG", "VwVG", "WaffG", "WEG", "WRG", "ZGB", "ZPO",
+  "ABGB",
+  "AHG",
+  "AktG",
+  "ALVG",
+  "AMG",
+  "AngG",
+  "ArbVG",
+  "ARG",
+  "ASVG",
+  "AsylG",
+  "AufenthG",
+  "AuslBG",
+  "AVG",
+  "AVRAG",
+  "AWG",
+  "AZG",
+  "B-VG",
+  "BAO",
+  "BBG",
+  "BDG",
+  "BewG",
+  "BGFA",
+  "BRAG",
+  "BrusselsIbis",
+  "BuAG",
+  "BVerGG",
+  "BVG",
+  "ChemG",
+  "DSG",
+  "ECG",
+  "EheG",
+  "EIWOG",
+  "EO",
+  "EPiG",
+  "EstG",
+  "EuCO",
+  "ForstG",
+  "FPG",
+  "GebG",
+  "GewO",
+  "GlBG",
+  "GmbHG",
+  "GOG",
+  "GrStG",
+  "GUKG",
+  "GWG",
+  "IO",
+  "JGG",
+  "KAG",
+  "KartG",
+  "KSchG",
+  "KStG",
+  "MedienG",
+  "MRG",
+  "MSchG",
+  "N-G",
+  "OR",
+  "PatG",
+  "PStG",
+  "RAO",
+  "RoMI",
+  "RoMII",
+  "SchKG",
+  "SMG",
+  "SPG",
+  "StBG",
+  "StGB",
+  "StPO",
+  "StRegG",
+  "StVO",
+  "TilGG",
+  "TKG",
+  "TschG",
+  "UGB",
+  "UrhG",
+  "UStG",
+  "UWG",
+  "VBVG",
+  "VKG",
+  "VStG",
+  "VVG",
+  "VwVG",
+  "WaffG",
+  "WEG",
+  "WRG",
+  "ZGB",
+  "ZPO",
   "ZustG",
   // Swiss laws (from law-corpus/ch/)
-  "BDSG", "BVG", "DSG",
+  "BDSG",
+  "BVG",
+  "DSG",
   // EU laws (from law-corpus/eu/)
-  "DSGVO", "DSRL", "ePrivacy", "BrusselsIbis",
+  "DSGVO",
+  "DSRL",
+  "ePrivacy",
+  "BrusselsIbis",
 ]);
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -54,7 +179,8 @@ export type FlagType =
   | "non_existent_law"
   | "fabricated_reference"
   | "hedging"
-  | "cross_law_contamination";
+  | "cross_law_contamination"
+  | "unsubstantiated_uncertainty";
 
 export type Severity = "high" | "medium" | "low";
 
@@ -75,6 +201,7 @@ export interface GuardrailResult {
   fabricated_references: string[];
   hedging_phrases: string[];
   cross_law_contamination: string[];
+  unsubstantiated_uncertainty_phrases: string[];
   // Citations extracted from context (allowed list)
   context_citations: string[];
   // Laws present in retrieved results
@@ -95,7 +222,8 @@ export function extractCitations(text: string): string[] {
   const citations: string[] = [];
 
   // Pattern: § or §§ + number(+optional letter) + optional Abs./Satz + optional law abbreviation
-  const pattern = /§§?\s*(\d+[a-z]?)\s*(?:Abs\.\s*(\d+))?\s*(?:Satz\s*(\d+))?\s*([A-Z][A-Za-z]{1,10})?/g;
+  const pattern =
+    /§§?\s*(\d+[a-z]?)\s*(?:Abs\.\s*(\d+))?\s*(?:Satz\s*(\d+))?\s*([A-Z][A-Za-z]{1,10})?/g;
 
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(text)) !== null) {
@@ -128,7 +256,8 @@ export function extractLawAbbreviations(text: string): string[] {
 
   // Pattern 1: After § citations: "§ 12 BGB" → "BGB"
   // This is the only reliable pattern — law abbreviations after § are unambiguous
-  const afterPara = /§§?\s*\d+[a-z]?\s*(?:Abs\.\s*\d+)?\s*(?:Satz\s*\d+)?\s*([A-Z][A-Za-z]{1,10})\b/g;
+  const afterPara =
+    /§§?\s*\d+[a-z]?\s*(?:Abs\.\s*\d+)?\s*(?:Satz\s*\d+)?\s*([A-Z][A-Za-z]{1,10})\b/g;
   let m: RegExpExecArray | null;
   while ((m = afterPara.exec(text)) !== null) {
     laws.add(m[1]);
@@ -149,12 +278,46 @@ export function extractLawAbbreviations(text: string): string[] {
 
 function isCommonFalsePositive(word: string): boolean {
   const falsePositives = new Set([
-    "Abs", "Satz", "Nr", "Buchstabe", "Alt", "Var", "Halbsatz",
-    "Art", "Teil", "Kapitel", "Abschnitt", "Unterabschnitt",
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
-    "EU", "EUGH", "BGH", "BVerfG", "BFH", "BAG", "BSG", "BVerwG",
-    "OLG", "LG", "AG", "SG", "VG", "FG", "ArbG", "LSG",
+    "Abs",
+    "Satz",
+    "Nr",
+    "Buchstabe",
+    "Alt",
+    "Var",
+    "Halbsatz",
+    "Art",
+    "Teil",
+    "Kapitel",
+    "Abschnitt",
+    "Unterabschnitt",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+    "EU",
+    "EUGH",
+    "BGH",
+    "BVerfG",
+    "BFH",
+    "BAG",
+    "BSG",
+    "BVerwG",
+    "OLG",
+    "LG",
+    "AG",
+    "SG",
+    "VG",
+    "FG",
+    "ArbG",
+    "LSG",
   ]);
   return falsePositives.has(word);
 }
@@ -167,7 +330,8 @@ export function extractNonParagraphReferences(text: string): string[] {
   const refs: string[] = [];
 
   // EU directives
-  const euPattern = /(?:EU[- ]?Richtlinie|Europ[äa]ische\s+Richtlinie|Richtlinie\s+\d+\/\d+\/EU|Richtlinie)/gi;
+  const euPattern =
+    /(?:EU[- ]?Richtlinie|Europ[äa]ische\s+Richtlinie|Richtlinie\s+\d+\/\d+\/EU|Richtlinie)/gi;
   let m: RegExpExecArray | null;
   while ((m = euPattern.exec(text)) !== null) {
     refs.push(m[0]);
@@ -184,19 +348,19 @@ export function extractNonParagraphReferences(text: string): string[] {
   return [...new Set(refs)];
 }
 
-// ─── Hedging Detection ────────────────────────────────────────────────────
+// ─── Hedging & Uncertainty Detection (v2) ─────────────────────────────────
 
 const HEDGING_PATTERNS = [
-  /obwohl\s+ dieser\s+ (?:nicht|kein)/i,
-  /obwohl\s+ dieser\s+ in\s+ den\s+ bereitgestellten\s+ (?:Auszügen|Quellen)\s+ nicht/i,
-  /nicht\s+ vollständig\s+ zitiert/i,
-  /nicht\s+ explizit\s+ (?:in|genannt|aufgeführt)/i,
-  /nicht\s+ direkt\s+ (?:in|genannt|aufgeführt)/i,
-  /nicht\s+ in\s+ den\s+ (?:Quellen|Auszügen|Rechtsquellen)/i,
-  /wird\s+ (?:hier|zwar)\s+ nicht\s+ (?:explizit|direkt)\s+ (?:genannt|aufgeführt|zitiert)/i,
-  /ist\s+ (?:allerdings|zwar)\s+ (?:hier|darin)\s+ nicht\s+ (?:enthalten|genannt)/i,
-  /kann\s+ (?:hier|darin)\s+ nicht\s+ (?:nachgelesen|gefunden)\s+ werden/i,
-  /wird\s+ in\s+ den\s+ Quellen\s+ nicht\s+ (?:genannt|aufgeführt|zitiert)/i,
+  /obwohl\s+dieser\s+(?:nicht|kein)/i,
+  /obwohl\s+dieser\s+in\s+den\s+bereitgestellten\s+(?:Auszügen|Quellen)\s+nicht/i,
+  /nicht\s+vollständig\s+zitiert/i,
+  /nicht\s+explizit\s+(?:in|genannt|aufgeführt)/i,
+  /nicht\s+direkt\s+(?:in|genannt|aufgeführt)/i,
+  /nicht\s+in\s+den\s+(?:Quellen|Auszügen|Rechtsquellen)/i,
+  /wird\s+(?:hier|zwar)\s+nicht\s+(?:explizit|direkt)\s+(?:genannt|aufgeführt|zitiert)/i,
+  /ist\s+(?:allerdings|zwar)\s+(?:hier|darin)\s+nicht\s+(?:enthalten|genannt)/i,
+  /kann\s+(?:hier|darin)\s+nicht\s+(?:nachgelesen|gefunden)\s+werden/i,
+  /wird\s+in\s+den\s+Quellen\s+nicht\s+(?:genannt|aufgeführt|zitiert)/i,
 ];
 
 export function detectHedging(text: string): string[] {
@@ -206,6 +370,67 @@ export function detectHedging(text: string): string[] {
     if (m) found.push(m[0]);
   }
   return found;
+}
+
+// ── v2: Substantiated uncertainty check ──
+// Uncertainty is acceptable when the model provides a specific legal reason
+// (e.g. "§ X Abs. 1 und Abs. 2 sind widersprüchlich" or "die Rechtsprechung
+// ist zu dieser Frage nicht eindeutig, OGH 5 Ob 123/23 vs. 7 Ob 456/22").
+// Vague uncertainty without reasoning ("kann nicht bestimmt werden") is flagged.
+
+const SUBSTANTIATED_PATTERNS = [
+  /§\s*\d+\s*(?:Abs\.\s*\d+)?\s*(?:BGB|ABGB|StGB|ZPO|HGB|AO|UWG|StPO)/i,
+  /\d+\s*Ob\s*\d+\/\d+/i, // OGH judgment reference
+  /\d+\s*Gs\s*\d+\/\d+/i, // OGH GZ
+  /BGH\s*,?\s*Urteil\s*vom/i,
+  /BVerfG/i,
+  /Rechtsprechung\s+ist\s+(?:nicht\s+)?eindeutig/i,
+  /strittig\s+(?:in\s+der\s+)?Rechtsprechung/i,
+  /umstritten/i,
+  /kontrovers/i,
+  /differenziert/i,
+];
+
+const VAGUE_UNCERTAINTY_PATTERNS = [
+  /kann\s+nicht\s+(?:bestimmt|beurteilt|abgeschätzt|mit\s+Sicherheit\s+gesagt)\s+werden/i,
+  /lässt\s+sich\s+nicht\s+(?:mit\s+Sicherheit|eindeutig|abschließend)\s+(?:sagen|beurteilen|klären)/i,
+  /ist\s+unklar\b/i,
+  /kann\s+nicht\s+abschließend\s+(?:beantwortet|geklärt)\s+werden/i,
+];
+
+/**
+ * v2: Check if hedging phrases are substantiated (have legal reasoning) or vague.
+ * Returns { hedging: string[], unsubstantiated: string[] }.
+ */
+export function detectUncertaintyQuality(text: string): {
+  hedging: string[];
+  unsubstantiated: string[];
+} {
+  const hedging = detectHedging(text);
+  const unsubstantiated: string[] = [];
+
+  // Check if the text near each hedging phrase has substantiation
+  const hasSubstantiation = SUBSTANTIATED_PATTERNS.some((p) => p.test(text));
+
+  // Check for vague uncertainty patterns
+  const vagueMatches: string[] = [];
+  for (const pattern of VAGUE_UNCERTAINTY_PATTERNS) {
+    const m = text.match(pattern);
+    if (m) vagueMatches.push(m[0]);
+  }
+
+  // If there's hedging but no substantiation anywhere in the text,
+  // flag as unsubstantiated uncertainty
+  if (hedging.length > 0 && !hasSubstantiation) {
+    unsubstantiated.push(...hedging);
+  }
+
+  // Vague uncertainty is always flagged (even without hedging)
+  if (vagueMatches.length > 0 && !hasSubstantiation) {
+    unsubstantiated.push(...vagueMatches);
+  }
+
+  return { hedging, unsubstantiated };
 }
 
 // ─── Context Citation Extraction ──────────────────────────────────────────
@@ -224,39 +449,80 @@ export function extractContextCitations(contextText: string): string[] {
  */
 function citationInContext(citation: string, contextText: string): boolean {
   // Parse the citation
-  const match = citation.match(/§\s*(\d+[a-z]?)\s*(?:Abs\.\s*(\d+))?\s*(?:Satz\s*(\d+))?\s*([A-Z][A-Za-z]{1,10})?/);
+  const match = citation.match(
+    /§\s*(\d+[a-z]?)\s*(?:Abs\.\s*(\d+))?\s*(?:Satz\s*(\d+))?\s*([A-Z][A-Za-z]{1,10})?/
+  );
   if (!match) return false;
 
   const [, num, abs, satz, law] = match;
 
-  // Strategy: check if "§ <num>" appears in context (with or without law suffix)
-  // The context chunks may or may not include the law abbreviation inline
+  // ── v2: When Abs/Satz is specified, require precise match ──
+  // Previously, "§ 823 Abs. 1" would match context with just "§ 823" via
+  // the loose checks. Now, if Abs is specified, we require the Abs to appear
+  // in context. This prevents false negatives where the model cites the
+  // wrong Absatz of a paragraph that exists in context.
 
-  // Check 1: Exact citation in context
+  // Check 1: Exact citation in context (always sufficient)
   if (contextText.includes(citation)) return true;
 
-  // Check 2: "§ <num>" without law abbreviation (common in law text chunks)
-  const paraOnly = `§ ${num}`;
-  if (contextText.includes(paraOnly)) return true;
-
-  // Check 3: "§<num>" without space (some formatting)
-  const paraNoSpace = `§${num}`;
-  if (contextText.includes(paraNoSpace)) return true;
-
-  // Check 4: "§§ <num>" (plural form)
-  const paraPlural = `§§ ${num}`;
-  if (contextText.includes(paraPlural)) return true;
-
-  // Check 5: If Abs. is specified, check that too
+  // Check 2: If Abs. is specified, require Abs match in context
   if (abs) {
     const withAbs = `§ ${num} Abs. ${abs}`;
     if (contextText.includes(withAbs)) return true;
     const withAbsNoSpace = `§${num} Abs. ${abs}`;
     if (contextText.includes(withAbsNoSpace)) return true;
+    // Also check without space after Abs.
+    const withAbsNoDotSpace = `§ ${num} Abs.${abs}`;
+    if (contextText.includes(withAbsNoDotSpace)) return true;
+
+    // If Satz is also specified, check that too
+    if (satz) {
+      const withAbsSatz = `§ ${num} Abs. ${abs} Satz ${satz}`;
+      if (contextText.includes(withAbsSatz)) return true;
+      // When Satz is specified, the (N) format check is not sufficient
+      // (it only confirms the Absatz exists, not the specific Satz)
+      return false;
+    }
+
+    // v2: Also check for (N) format — legal corpus often uses:
+    //   "§ 823 BGB\n(1) Wer vorsätzlich..."
+    //   instead of "§ 823 Abs. 1 BGB"
+    // Look for § <num> followed by (N) within 500 chars (some Absätze are long)
+    const paraStart = contextText.indexOf(`§ ${num}`);
+    if (paraStart !== -1) {
+      const window = contextText.slice(paraStart, paraStart + 500);
+      const absInParens = new RegExp(`\\(${abs}\\)`);
+      if (absInParens.test(window)) return true;
+    }
+    // Also check §<num> variant
+    const paraStartNoSpace = contextText.indexOf(`§${num}`);
+    if (paraStartNoSpace !== -1) {
+      const window = contextText.slice(paraStartNoSpace, paraStartNoSpace + 500);
+      const absInParens = new RegExp(`\\(${abs}\\)`);
+      if (absInParens.test(window)) return true;
+    }
+
+    // v2: When Abs is specified, do NOT fall through to loose §-only checks.
+    // The citation claims a specific Absatz — if that Absatz isn't in context,
+    // the citation is ungrounded even if the § number exists in a different Absatz.
+    return false;
   }
 
+  // ── No Abs specified: loose checks are acceptable ──
+
+  // Check 3: "§ <num>" without law abbreviation (common in law text chunks)
+  const paraOnly = `§ ${num}`;
+  if (contextText.includes(paraOnly)) return true;
+
+  // Check 4: "§<num>" without space (some formatting)
+  const paraNoSpace = `§${num}`;
+  if (contextText.includes(paraNoSpace)) return true;
+
+  // Check 5: "§§ <num>" (plural form)
+  const paraPlural = `§§ ${num}`;
+  if (contextText.includes(paraPlural)) return true;
+
   // Check 6: Number appears in a § context in the text
-  // This is a looser check — look for the number near a § symbol
   const paraRegex = new RegExp(`§§?\\s*${num}\\b`, "i");
   if (paraRegex.test(contextText)) return true;
 
@@ -276,7 +542,12 @@ export function checkCitationGrounding(input: GuardrailInput): GuardrailResult {
 
   // Extract retrieved law abbreviations from slugs
   const retrievedLaws = topSlugs
-    .map((s) => s.replace(/^law\/de\//, "").replace(/^law\/at\//, "").replace(/^law\/eu\//, ""))
+    .map((s) =>
+      s
+        .replace(/^law\/de\//, "")
+        .replace(/^law\/at\//, "")
+        .replace(/^law\/eu\//, "")
+    )
     .filter(Boolean);
 
   // Extract all citations from answer and context
@@ -284,7 +555,8 @@ export function checkCitationGrounding(input: GuardrailInput): GuardrailResult {
   const contextCitations = extractContextCitations(context);
   const answerLaws = extractLawAbbreviations(answer);
   const nonParaRefs = extractNonParagraphReferences(answer);
-  const hedgingPhrases = detectHedging(answer);
+  const { hedging: hedgingPhrases, unsubstantiated: unsubstantiatedPhrases } =
+    detectUncertaintyQuality(answer);
 
   // ── Check 1: Citation Presence ──
   const ungroundedCitations: string[] = [];
@@ -337,8 +609,10 @@ export function checkCitationGrounding(input: GuardrailInput): GuardrailResult {
     }
   }
 
-  // ── Check 4: Hedging Detection ──
-  // (already extracted above)
+  // ── Check 4: Hedging & Uncertainty Quality (v2) ──
+  // hedgingPhrases and unsubstantiatedPhrases already extracted above.
+  // Substantiated uncertainty (with § or judgment reference) is NOT flagged.
+  // Only unsubstantiated/vague uncertainty is flagged.
 
   // ── Check 5: Cross-Law Contamination ──
   const crossLawContamination: string[] = [];
@@ -347,11 +621,10 @@ export function checkCitationGrounding(input: GuardrailInput): GuardrailResult {
     if (!KNOWN_LAWS.has(law)) continue;
 
     // Check if this law appears in retrieved results
-    // Match case-insensitively against retrieved law slugs
+    // v2: Use exact case-insensitive match, not substring.
+    // Previously "ABGB".includes("BGB") was true → false negative.
     const lawLower = law.toLowerCase();
-    const isInRetrieved = retrievedLaws.some(
-      (rl) => rl.toLowerCase() === lawLower || rl.toLowerCase().includes(lawLower) || lawLower.includes(rl.toLowerCase())
-    );
+    const isInRetrieved = retrievedLaws.some((rl) => rl.toLowerCase() === lawLower);
 
     if (!isInRetrieved) {
       // Special case: GG (Grundgesetz) articles are often cited alongside other laws
@@ -408,6 +681,15 @@ export function checkCitationGrounding(input: GuardrailInput): GuardrailResult {
     });
   }
 
+  for (const phrase of unsubstantiatedPhrases) {
+    flags.push({
+      type: "unsubstantiated_uncertainty",
+      detail: `Vague or unsubstantiated uncertainty: "${phrase}" — provide specific legal reasoning or remove`,
+      citation: phrase,
+      severity: "medium" as Severity,
+    });
+  }
+
   for (const law of crossLawContamination) {
     flags.push({
       type: "cross_law_contamination",
@@ -429,11 +711,12 @@ export function checkCitationGrounding(input: GuardrailInput): GuardrailResult {
     fabricated_references: fabricatedReferences,
     hedging_phrases: hedgingPhrases,
     cross_law_contamination: crossLawContamination,
+    unsubstantiated_uncertainty_phrases: unsubstantiatedPhrases,
     context_citations: contextCitations,
     retrieved_laws: retrievedLaws,
     answer_length: answer.length,
     context_length: context.length,
-    check_count: 5,
+    check_count: 6,
   };
 }
 

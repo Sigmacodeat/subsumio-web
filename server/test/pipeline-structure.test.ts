@@ -13,10 +13,7 @@
  */
 
 import { describe, it, expect } from "bun:test";
-import {
-  EMBEDDED_SPECIALISTS,
-  resolveSpecialist,
-} from "../src/core/minions/specialist-defs.ts";
+import { EMBEDDED_SPECIALISTS, resolveSpecialist } from "../src/core/minions/specialist-defs.ts";
 import { TIER_DEFAULTS } from "../src/core/model-config.ts";
 
 // ── Pipeline layer → specialist mapping (from legal-pipeline.ts) ──────────
@@ -28,33 +25,47 @@ interface LayerSpec {
 }
 
 const PIPELINE_LAYERS: Record<string, LayerSpec> = {
-  "1":   { specialist: "on-scanner", tier: "utility", output: "on_index", mapReduce: true },
-  "2":   { specialist: "entity-extractor", tier: "utility", output: "entities", mapReduce: true },
-  "3":   { specialist: "forensic-analyst", tier: "reasoning", output: "forensic_report", mapReduce: true },
-  "3c":  { specialist: "fact-gap-detector", tier: "reasoning", output: "fact_gap" },
-  "4":   { specialist: "law-matcher", tier: "utility", output: "legal_grounding_map" },
-  "4b":  { specialist: "precedent-matcher", tier: "reasoning", output: "precedent_match" },
-  "4c":  { specialist: "burden-of-proof-analyzer", tier: "reasoning", output: "burden_of_proof" },
-  "4d":  { specialist: "admissibility-checker", tier: "reasoning", output: "admissibility_check" },
-  "4f":  { specialist: "evidence-quality-assessor", tier: "reasoning", output: "evidence_quality" },
-  "4g":  { specialist: "witness-expert-analyzer", tier: "reasoning", output: "witness_expert" },
-  "5":   { specialist: "damage-extractor", tier: "reasoning", output: "damage_table + deadline_calendar", mapReduce: true },
-  "5b":  { specialist: "deadline-validator", tier: "reasoning", output: "deadline_validation" },
-  "5c":  { specialist: "cost-benefit-analyzer", tier: "reasoning", output: "cost_benefit" },
-  "5d":  { specialist: "settlement-analyzer", tier: "reasoning", output: "settlement_analysis" },
-  "5e":  { specialist: "enforcement-analyzer", tier: "reasoning", output: "enforcement_analysis" },
-  "5f":  { specialist: "appeal-risk-analyzer", tier: "reasoning", output: "appeal_risk" },
-  "5g":  { specialist: "procedural-strategist", tier: "reasoning", output: "procedural_strategy" },
-  "5h":  { specialist: "insurance-coverage-analyzer", tier: "reasoning", output: "insurance_coverage" },
-  "5i":  { specialist: "tax-impact-analyzer", tier: "reasoning", output: "tax_impact" },
-  "5j":  { specialist: "counterclaim-analyzer", tier: "reasoning", output: "counterclaim_risk" },
-  "5k":  { specialist: "mediation-adr-analyzer", tier: "reasoning", output: "mediation_adr" },
-  "5l":  { specialist: "limitation-scanner", tier: "reasoning", output: "limitation_scan" },
-  "5m":  { specialist: "cost-award-predictor", tier: "reasoning", output: "cost_award" },
-  "6":   { specialist: "legal-drafter", tier: "reasoning", output: "legal_draft" },
+  "1": { specialist: "on-scanner", tier: "utility", output: "on_index", mapReduce: true },
+  "2": { specialist: "entity-extractor", tier: "utility", output: "entities", mapReduce: true },
+  "3": {
+    specialist: "forensic-analyst",
+    tier: "reasoning",
+    output: "forensic_report",
+    mapReduce: true,
+  },
+  "3c": { specialist: "fact-gap-detector", tier: "reasoning", output: "fact_gap" },
+  "4": { specialist: "law-matcher", tier: "utility", output: "legal_grounding_map" },
+  "4b": { specialist: "precedent-matcher", tier: "reasoning", output: "precedent_match" },
+  "4c": { specialist: "burden-of-proof-analyzer", tier: "reasoning", output: "burden_of_proof" },
+  "4d": { specialist: "admissibility-checker", tier: "reasoning", output: "admissibility_check" },
+  "4f": { specialist: "evidence-quality-assessor", tier: "reasoning", output: "evidence_quality" },
+  "4g": { specialist: "witness-expert-analyzer", tier: "reasoning", output: "witness_expert" },
+  "5": {
+    specialist: "damage-extractor",
+    tier: "reasoning",
+    output: "damage_table + deadline_calendar",
+    mapReduce: true,
+  },
+  "5b": { specialist: "deadline-validator", tier: "reasoning", output: "deadline_validation" },
+  "5c": { specialist: "cost-benefit-analyzer", tier: "reasoning", output: "cost_benefit" },
+  "5d": { specialist: "settlement-analyzer", tier: "reasoning", output: "settlement_analysis" },
+  "5e": { specialist: "enforcement-analyzer", tier: "reasoning", output: "enforcement_analysis" },
+  "5f": { specialist: "appeal-risk-analyzer", tier: "reasoning", output: "appeal_risk" },
+  "5g": { specialist: "procedural-strategist", tier: "reasoning", output: "procedural_strategy" },
+  "5h": {
+    specialist: "insurance-coverage-analyzer",
+    tier: "reasoning",
+    output: "insurance_coverage",
+  },
+  "5i": { specialist: "tax-impact-analyzer", tier: "reasoning", output: "tax_impact" },
+  "5j": { specialist: "counterclaim-analyzer", tier: "reasoning", output: "counterclaim_risk" },
+  "5k": { specialist: "mediation-adr-analyzer", tier: "reasoning", output: "mediation_adr" },
+  "5l": { specialist: "limitation-scanner", tier: "reasoning", output: "limitation_scan" },
+  "5m": { specialist: "cost-award-predictor", tier: "reasoning", output: "cost_award" },
+  "6": { specialist: "legal-drafter", tier: "reasoning", output: "legal_draft" },
   "6.5": { specialist: "opponent-simulator", tier: "deep", output: "counter_arguments" },
-  "7":   { specialist: "subsumption-checker", tier: "deep", output: "quality_audit" },
-  "7e":  { specialist: "legal-critic", tier: "deep", output: "ensemble_critic" },
+  "7": { specialist: "subsumption-checker", tier: "deep", output: "quality_audit" },
+  "7e": { specialist: "legal-critic", tier: "deep", output: "ensemble_critic" },
 };
 
 // Specialists that MUST have search + get_page tools (§-retrieval capability)
@@ -166,7 +177,7 @@ describe("Pipeline cost estimation", () => {
   });
 
   it("deep-tier specialists (Grok 4.3) are used sparingly", () => {
-    const deepCount = Object.values(PIPELINE_LAYERS).filter(s => s.tier === "deep").length;
+    const deepCount = Object.values(PIPELINE_LAYERS).filter((s) => s.tier === "deep").length;
     const totalCount = Object.keys(PIPELINE_LAYERS).length;
     const deepRatio = deepCount / totalCount;
     expect(deepRatio).toBeLessThan(0.15);
@@ -199,42 +210,42 @@ describe("Pipeline layer ordering", () => {
 
 describe("Pipeline guardrail integration (AP-1/AP-2)", () => {
   it("legal-pipeline.ts imports checkCitationGrounding from citation-guardrail", async () => {
-    const source = await Bun.file("./src/core/minions/handlers/legal-pipeline.ts").text();
+    const source = await Bun.file("./server/src/core/minions/handlers/legal-pipeline.ts").text();
     expect(source).toContain("checkCitationGrounding");
     expect(source).toContain("citation-guardrail");
   });
 
   it("legal-pipeline.ts imports crossVerifyCitations from cross-verify", async () => {
-    const source = await Bun.file("./src/core/minions/handlers/legal-pipeline.ts").text();
+    const source = await Bun.file("./server/src/core/minions/handlers/legal-pipeline.ts").text();
     expect(source).toContain("crossVerifyCitations");
     expect(source).toContain("cross-verify");
   });
 
   it("legal-pipeline.ts imports buildRegenerationPrompt and buildCrossVerifyRegenerationPrompt", async () => {
-    const source = await Bun.file("./src/core/minions/handlers/legal-pipeline.ts").text();
+    const source = await Bun.file("./server/src/core/minions/handlers/legal-pipeline.ts").text();
     expect(source).toContain("buildRegenerationPrompt");
     expect(source).toContain("buildCrossVerifyRegenerationPrompt");
   });
 
   it("legal-pipeline.ts has runCitationGuardrailForLayer function", async () => {
-    const source = await Bun.file("./src/core/minions/handlers/legal-pipeline.ts").text();
+    const source = await Bun.file("./server/src/core/minions/handlers/legal-pipeline.ts").text();
     expect(source).toContain("function runCitationGuardrailForLayer");
   });
 
   it("legal-pipeline.ts has crossCheckDeadlineStatutory function (AP-6)", async () => {
-    const source = await Bun.file("./src/core/minions/handlers/legal-pipeline.ts").text();
+    const source = await Bun.file("./server/src/core/minions/handlers/legal-pipeline.ts").text();
     expect(source).toContain("function crossCheckDeadlineStatutory");
     expect(source).toContain("STATUTORY_LIMITATION_PERIODS");
   });
 
   it("legal-pipeline.ts has configurable ensemble critic models (AP-5)", async () => {
-    const source = await Bun.file("./src/core/minions/handlers/legal-pipeline.ts").text();
+    const source = await Bun.file("./server/src/core/minions/handlers/legal-pipeline.ts").text();
     expect(source).toContain("SUBSUMIO_ENSEMBLE_CRITIC_MODELS");
     expect(source).toContain("resolveEnsembleCriticModels");
   });
 
   it("legal-pipeline.ts has hard-block config option (AP-8)", async () => {
-    const source = await Bun.file("./src/core/minions/handlers/legal-pipeline.ts").text();
+    const source = await Bun.file("./server/src/core/minions/handlers/legal-pipeline.ts").text();
     expect(source).toContain("SUBSUMIO_GUARDRAIL_HARD_BLOCK");
     expect(source).toContain("enforceGuardrailHardBlock");
   });
