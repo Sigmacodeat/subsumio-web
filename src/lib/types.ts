@@ -415,3 +415,42 @@ export interface WhatsAppDocumentMapping {
   mapped_at: string;
   mapped_by: "system" | "user";
 }
+
+// ── Claim Provenance & Confidence Types ──────────────────────────────
+
+export interface ProvenanceLink {
+  claim_index: number;
+  claim_text: string;
+  source_slug: string;
+  source_passage: string;
+  passage_start: number;
+  passage_end: number;
+  relevance: "direct" | "paraphrase" | "background";
+}
+
+export interface ProvenanceResult {
+  links: ProvenanceLink[];
+  unsupported_claims: string[];
+}
+
+export interface ClaimConfidence {
+  claim_text: string;
+  claim_index: number;
+  confidence: number;
+  level: "high" | "medium" | "low";
+  factors: {
+    has_citation: boolean;
+    citation_grounded: boolean;
+    citation_verified: boolean;
+    hedging_detected: boolean;
+    guardrail_flags: number;
+    cross_verify_flags: number;
+  };
+  supporting_passages: string[];
+}
+
+export interface DocumentConfidence {
+  overall_confidence: number;
+  confidence_level: "high" | "medium" | "low";
+  claim_confidences: ClaimConfidence[];
+}

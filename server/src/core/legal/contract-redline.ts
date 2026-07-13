@@ -15,6 +15,11 @@ import {
   normalizeForMatch,
   tryParseJSON,
 } from "./llm-util.ts";
+import {
+  type WorkProductReceipt,
+  buildWorkProductReceipt,
+  type BuildReceiptOptions,
+} from "@/lib/work-product-receipts.ts";
 
 export type RedlineChange = "add" | "remove" | "modify";
 
@@ -45,6 +50,8 @@ export interface ContractRedlineResult {
   attorney_review_required: true;
   warnings: string[];
   playbook_deviations?: PlaybookDeviation[];
+  /** Verification receipt, present when the caller supplied brain_id. */
+  receipt?: WorkProductReceipt;
 }
 
 export interface ContractRedlineOpts {
@@ -59,6 +66,10 @@ export interface ContractRedlineOpts {
   sourceIds?: string[];
   llm?: LegalLLM;
   maxChars?: number;
+  /** Receipt context. If brain_id is provided, a WorkProductReceipt is built. */
+  brain_id?: string;
+  user_id?: string;
+  model_id?: string;
 }
 
 interface ParsedPlaybookRule {
@@ -228,19 +239,22 @@ export async function redlineContract(
   }
   if (playbook) parts.push(`<playbook>\n${clipText(playbook, 12000).clipped}\n</playbook>`);
 
+  const systemPrompt = buildSystem(
+    contractType,
+    jurisdiction,
+    perspective,
+    language,
+    Boolean(opts.counterparty_text?.trim()),
+    Boolean(playbook),
+    playbookRules
+  );
+  const userPrompt = parts.join("\n\n");
+
   let raw: string;
   try {
     raw = await llm({
-      system: buildSystem(
-        contractType,
-        jurisdiction,
-        perspective,
-        language,
-        Boolean(opts.counterparty_text?.trim()),
-        Boolean(playbook),
-        playbookRules
-      ),
-      user: parts.join("\n\n"),
+      system: systemPrompt,
+      user: userPrompt,
       maxTokens: 4000,
     });
   } catch (e) {
@@ -289,7 +303,7 @@ export async function redlineContract(
     if (dev) r.playbook_deviation = dev;
   }
 
-  return {
+  const result: ContractRedlineResult = {
     redlines,
     summary: typeof parsed.summary === "string" ? parsed.summary : "",
     accepted_count: 0,
@@ -298,4 +312,70 @@ export async function redlineContract(
     warnings,
     ...(playbookDeviations.length > 0 ? { playbook_deviations: playbookDeviations } : {}),
   };
+
+  if (opts.brain_id) {
+    const highRiskCount = redlines.filter((r) => r.risk_level === "high").length;
+    const hasDroppedUngrounded = warnings.some((w) => w.startsWith("DROPPED_"));
+    const checks: BuildReceiptOptions["checks"] = [
+      {
+        name: "original_text_present",
+        description: "Original contract text was provided",
+        passed: true,
+        severity: "info",
+      },
+      {
+        name: "llm_available",
+        description: "An LLM was available to perform the redlining",
+        passed: !warnings.includes("NO_LLM_AVAILABLE"),
+        severity: "error",
+      },
+      {
+        name: "json_output_valid",
+        description: "LLM returned parseable JSON",
+        passed: !warnings.includes("LLM_OUTPUT_NOT_JSON"),
+        severity: "error",
+      },
+      {
+        name: "redlines_grounded",
+        description: "All modify/remove redlines are grounded in the original text",
+        passed: !hasDroppedUngrounded,
+        severity: hasDroppedUngrounded ? "error" : "info",
+      },
+      {
+        name: "high_risk_review",
+        description: "High-risk changes require attorney review",
+        passed: highRiskCount === 0,
+        severity: highRiskCount > 0 ? "warning" : "info",
+      },
+      {
+        name: "attorney_review_required",
+        description: "Redline output always requires attorney review",
+        passed: false,
+        severity: "error",
+      },
+    ];
+
+    result.receipt = buildWorkProductReceipt({
+      product_type: "redline",
+      product_ref: opts.brain_id,
+      output: result,
+      brain_id: opts.brain_id,
+      user_id: opts.user_id,
+      jurisdiction: opts.jurisdiction ?? "all",
+      models: [opts.model_id ?? "default-chat"],
+      prompts: [{ system: systemPrompt, user: userPrompt }],
+      source_snapshot_hashes: opts.playbook_slug ? [opts.playbook_slug] : [],
+      checks,
+      flags: warnings,
+      metadata: {
+        contract_type: contractType,
+        perspective,
+        language,
+        has_counterparty: Boolean(opts.counterparty_text?.trim()),
+        has_playbook: Boolean(playbook),
+      },
+    });
+  }
+
+  return result;
 }

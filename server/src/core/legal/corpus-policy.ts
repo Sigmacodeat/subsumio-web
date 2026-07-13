@@ -19,6 +19,7 @@ export const QUARANTINED_LEGAL_SOURCES = new Set<string>([
   "at/n-g.md",
   "at/tilgg.md",
   "at/ahg.md",
+  "at/uwg.md",
   "at/vvg.md",
   "eu/romi.md",
   "eu/brusselsibis.md",

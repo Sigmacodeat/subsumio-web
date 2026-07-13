@@ -21,6 +21,7 @@ import type {
 } from "./types";
 import type { SourceRegistryResponse } from "./source-registry";
 import type { QueryMode } from "./matter-context-types";
+import type { WorkProductReceipt } from "./work-product-receipts";
 import { csrfFetch, getCsrfToken } from "./csrf";
 import { consumeSSEStream } from "./sse-stream";
 
@@ -708,7 +709,7 @@ export const api = {
       perspective?: "client" | "counterparty" | "neutral";
       language?: "de" | "en";
       onChunk?: (chunk: string) => void;
-    }): Promise<{ redline: string }> {
+    }): Promise<{ redline: string; receipt?: WorkProductReceipt }> {
       const res = await csrfFetch(`${BASE_URL}/api/legal/contract-redline`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -739,7 +740,10 @@ export const api = {
         const text = await res.text();
         if (!text) return { redline: "" };
         try {
-          return { redline: JSON.stringify(await Promise.resolve(JSON.parse(text))) };
+          const parsed = JSON.parse(text);
+          const receipt = parsed.receipt as WorkProductReceipt | undefined;
+          const redline = JSON.stringify(parsed);
+          return { redline, receipt };
         } catch {
           return { redline: text };
         }

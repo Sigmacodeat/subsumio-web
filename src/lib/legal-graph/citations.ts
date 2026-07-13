@@ -30,6 +30,94 @@ const STATUTE_CITATION_PATTERNS: RegExp[] = [
   /§+\s*(\d+[a-zA-Z]?)\s+Abs\.\s*\d+\s*(?:Nr\.\s*\d+\s*)?(BGB|HGB|StGB|ZPO|StPO|GG|AO|EStG|UStG|GmbHG|AktG|InsO|FamFG|UWG)/g,
 ];
 
+// T1.4 — Jurisdiction-specific statute patterns
+// These are used to validate that a citation belongs to the correct jurisdiction.
+// Abbreviations that exist in multiple jurisdictions (KSchG, StGB, ZPO, etc.)
+// are tagged with their jurisdiction for collision detection.
+
+const DE_SPECIFIC_STATUTES =
+  "BGB|HGB|AO|EStG|UStG|GmbHG|AktG|InsO|FamFG|BetrVG|BUrlG|BVerfGG|TzBfG|AGG|MuSchG|NachwG|ArbGG|SGB|VwVfG|BauGB|GWB|ZVG|ErbStG|EGZPO|EGStGB|EUStB";
+
+const AT_SPECIFIC_STATUTES =
+  "ABGB|UGB|AngG|ArbVG|AZG|ASVG|AVG|AuslBG|AVRAG|GlBG|MSchG|MRG|WEG|EO|AHG|KartG|GewO|GOG|IO|BAO|BewG|KStG|FamFG|EKStG|BVG|DSG|StGB|StPO|ZPO|KSchG|UWG|EO|EkStG|ErbStG";
+
+const CH_SPECIFIC_STATUTES =
+  "OR|ZGB|SchKG|BVG|UVG|ArG|GlG|MWSTG|DBG|StGB|StPO|ZPO|DSG|VWVG|BGFA|UWG";
+
+const EU_SPECIFIC_STATUTES =
+  "DSGVO|DSRL|EUV|AEUV|EMRK|EuInsVO|EuZVO|BrüsselIbis|RomI|RomII|Grundrechtecharta";
+
+// Jurisdiction-tagged statute set: maps abbreviation → jurisdiction(s)
+const STATUTE_JURISDICTION_MAP: Record<string, string[]> = {
+  // DE-only
+  BGB: ["DE"], HGB: ["DE"], AO: ["DE"], InsO: ["DE"], FamFG: ["DE"],
+  BetrVG: ["DE"], BUrlG: ["DE"], BVerfGG: ["DE"], TzBfG: ["DE"], AGG: ["DE"],
+  MuSchG: ["DE"], NachwG: ["DE"], ArbGG: ["DE"], SGB: ["DE"], VwVfG: ["DE"],
+  BauGB: ["DE"], GWB: ["DE"], ZVG: ["DE"], ErbStG: ["DE"],
+  // AT-only
+  ABGB: ["AT"], UGB: ["AT"], AngG: ["AT"], ArbVG: ["AT"], AZG: ["AT"],
+  ASVG: ["AT"], AVG: ["AT"], AuslBG: ["AT"], AVRAG: ["AT"], GlBG: ["AT"],
+  MSchG: ["AT"], MRG: ["AT"], WEG: ["AT"], EO: ["AT"], AHG: ["AT"],
+  KartG: ["AT"], GewO: ["AT"], GOG: ["AT"], IO: ["AT"], BAO: ["AT"],
+  BewG: ["AT"], DSG: ["AT", "CH"],
+  // CH-only
+  OR: ["CH"], ZGB: ["CH"], SchKG: ["CH"], UVG: ["CH"],
+  ArG: ["CH"], GlG: ["CH"], MWSTG: ["CH"], DBG: ["CH"], VWVG: ["CH"],
+  BGFA: ["CH"],
+  // EU
+  DSGVO: ["EU"], DSRL: ["EU"], EUV: ["EU"], AEUV: ["EU"], EMRK: ["EU"],
+  EuInsVO: ["EU"], EuZVO: ["EU"],
+  // Collisions (exist in multiple jurisdictions)
+  KSchG: ["AT", "DE"], StGB: ["DE", "AT", "CH"], ZPO: ["DE", "AT", "CH"],
+  StPO: ["DE", "AT", "CH"], GmbHG: ["DE", "AT"], AktG: ["DE", "AT"],
+  EStG: ["DE", "AT"], UStG: ["DE", "AT"], UWG: ["DE", "AT", "CH"],
+  GG: ["DE"], KStG: ["DE", "AT"], BVG: ["AT", "CH"],
+};
+
+// ── Jurisdiction-aware statute validation ─────────────────────────────
+
+// Build uppercase index for case-insensitive lookup
+const STATUTE_JURISDICTION_INDEX: Record<string, string[]> = {};
+for (const [key, value] of Object.entries(STATUTE_JURISDICTION_MAP)) {
+  STATUTE_JURISDICTION_INDEX[key.toUpperCase()] = value;
+}
+
+/**
+ * Check if a statute abbreviation is valid for the given jurisdiction.
+ * EU statutes are always valid (they apply to all DACH jurisdictions).
+ */
+export function isStatuteValidForJurisdiction(
+  abbr: string,
+  jurisdiction: string
+): boolean {
+  const jur = jurisdiction.toUpperCase();
+  const jurisdictions = STATUTE_JURISDICTION_INDEX[abbr.toUpperCase()];
+  if (!jurisdictions) return false;
+  // EU law is always allowed
+  if (jurisdictions.includes("EU")) return true;
+  // Check if the statute is valid for the requested jurisdiction
+  if (jurisdictions.includes(jur)) return true;
+  // EU jurisdiction can access all EU-specific statutes
+  if (jur === "EU" && jurisdictions.includes("EU")) return true;
+  return false;
+}
+
+/**
+ * Get the jurisdiction(s) for a statute abbreviation.
+ * Returns empty array for unknown statutes.
+ */
+export function getStatuteJurisdictions(abbr: string): string[] {
+  return STATUTE_JURISDICTION_INDEX[abbr.toUpperCase()] ?? [];
+}
+
+/**
+ * Check if a statute abbreviation has a collision across jurisdictions.
+ */
+export function hasStatuteCollision(abbr: string): boolean {
+  const jurisdictions = STATUTE_JURISDICTION_INDEX[abbr.toUpperCase()];
+  return jurisdictions !== undefined && jurisdictions.length > 1;
+}
+
 // ── Citation extraction ───────────────────────────────────────────────
 
 export interface ExtractedCitation {

@@ -11,6 +11,12 @@ import {
 import { buildXJustizXml, type XJustizMetadata } from "@/lib/xjustiz";
 import { logAudit } from "@/lib/audit";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
+import {
+  assertOutputActionAllowed,
+  VerificationPolicyError,
+  buildPolicyOutput,
+  type AttorneyOverride,
+} from "@/lib/verification-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +44,27 @@ const beaSendSchema = z.object({
     )
     .min(1)
     .max(20),
+  verification: z
+    .object({
+      state: z.enum([
+        "VERIFIED",
+        "VERIFIED_WITH_WARNINGS",
+        "NEEDS_HUMAN_REVIEW",
+        "BLOCKED",
+        "VERIFIER_ERROR",
+      ]),
+      content_hash: z.string().length(64),
+      receipt_hash: z.string().length(64).optional(),
+      override: z
+        .object({
+          user_id: z.string().min(1),
+          reason: z.string().min(10),
+          timestamp: z.string().min(1),
+          output_hash: z.string().length(64),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 interface MiddlewareConfig {
@@ -116,6 +143,29 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
+    // ── Verification policy check (file_court) ──
+    if (body.verification) {
+      const output = buildPolicyOutput(
+        body.filing_slug,
+        body.verification.state,
+        body.verification.content_hash,
+        { receipt_hash: body.verification.receipt_hash, title: body.subject }
+      );
+      try {
+        await assertOutputActionAllowed(
+          output,
+          "file_court",
+          { user_id: ctx.user.id, user_email: ctx.user.email, brain_id: ctx.brainId },
+          body.verification.override as AttorneyOverride | undefined
+        );
+      } catch (err) {
+        if (err instanceof VerificationPolicyError) {
+          return apiError("verification_denied", err.decision.reason, 403);
+        }
+        throw err;
+      }
+    }
+
     const config = getMiddlewareConfig();
 
     // 1. Fetch existing filing package

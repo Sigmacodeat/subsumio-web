@@ -10,6 +10,7 @@ import { logAudit } from "@/lib/audit";
 import { naturalWhatsAppReply } from "@/lib/whatsapp-natural-chat";
 import { calculateRvg } from "@/lib/rvg";
 import { calculateDeadline, DEADLINE_RULES, type Bundesland } from "@/lib/legal-deadlines";
+import { expandRelativeDates, hasRelativeDates } from "@/lib/whatsapp/relative-date";
 
 interface ChatContext {
   sender: WhatsAppIdentity;
@@ -22,7 +23,7 @@ interface MediaChatContext extends Omit<ChatContext, "text"> {
   caption?: string;
 }
 
-type ParsedIntent =
+export type ParsedIntent =
   | { kind: "help" }
   | { kind: "confirm" }
   | { kind: "cancel" }
@@ -1989,7 +1990,10 @@ async function getRecentContext(brainId: string, fromPhone: string): Promise<str
 }
 
 export async function handleLegalChatMessage(ctx: ChatContext): Promise<string> {
-  const intent = parseIntent(ctx.text);
+  // Expand relative dates ("morgen" → "2026-07-14", "freitag" → "2026-07-17")
+  // so the regex-based parseIntent can match them
+  const expandedText = hasRelativeDates(ctx.text) ? expandRelativeDates(ctx.text) : ctx.text;
+  const intent = parseIntent(expandedText);
   await createInboxPage(ctx, intent).catch((err) => {
     console.warn(
       "[legal-chat] inbox write failed:",

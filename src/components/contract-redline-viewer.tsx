@@ -26,6 +26,8 @@ import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import { diffWords, buildAcceptedText, diffStats, type DiffToken } from "@/lib/word-diff";
+import { ReceiptBadge } from "@/components/receipt-badge";
+import type { WorkProductReceipt } from "@/lib/work-product-receipts";
 
 interface RedlineClause {
   original: string;
@@ -152,6 +154,7 @@ export function ContractRedlineViewer({
   const [error, setError] = useState<string | null>(null);
   const [redlineText, setRedlineText] = useState("");
   const [clauses, setClauses] = useState<RedlineClause[]>([]);
+  const [receipt, setReceipt] = useState<WorkProductReceipt | null>(null);
   const [perspective, setPerspective] = useState<"client" | "counterparty" | "neutral">("client");
   const [copied, setCopied] = useState(false);
   const [activeClause, setActiveClause] = useState(0);
@@ -196,9 +199,10 @@ export function ContractRedlineViewer({
     setError(null);
     setRedlineText("");
     setClauses([]);
+    setReceipt(null);
 
     try {
-      const { redline } = await api.legal.contractRedline({
+      const { redline, receipt: rcpt } = await api.legal.contractRedline({
         original_text: originalText,
         counterparty_text: counterpartyText,
         playbook_slug: playbookSlug,
@@ -214,6 +218,7 @@ export function ContractRedlineViewer({
       const parsed = parseRedlineResponse(redline);
       setClauses(parsed);
       setActiveClause(0);
+      if (rcpt) setReceipt(rcpt);
       addToast({ type: "success", title: `${parsed.length} Klauseln analysiert` });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Redline-Analyse fehlgeschlagen";
@@ -301,10 +306,13 @@ export function ContractRedlineViewer({
             <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
               Contract Redline
             </h2>
-            <p className="text-xs text-[color:var(--ds-text-muted)]">
-              Assistentengestützte Klauselanalyse und Überarbeitung
-              {contractType && ` · ${contractType}`}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                Assistentengestützte Klauselanalyse und Überarbeitung
+                {contractType && ` · ${contractType}`}
+              </p>
+              {receipt && <ReceiptBadge receipt={receipt} />}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">

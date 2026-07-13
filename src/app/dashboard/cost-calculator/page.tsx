@@ -20,33 +20,7 @@ import { caseFrontmatter, type ExpenseEntry } from "@/lib/legal-types";
 import type { BrainPage } from "@/lib/types";
 import { useMe } from "@/lib/queries/auth";
 import { calculateStBVV, STBVV_ACTIVITIES, type StBVVActivity } from "@/lib/stbvv";
-
-// RVG § 13 Abs. 1 i.d.F. KostBRÄG 2025 (Deutschland, gültig ab 01.06.2025).
-// Die einfache (1,0) Gebühr wird per Stufenformel berechnet, nicht aus einer
-// hartkodierten Tabelle: Grundgebühr 51,50 € bis 500 € Gegenstandswert,
-// danach feste Schritte je angefangenem Stufenbetrag.
-const RVG_STUFEN: Array<{ bis: number; schritt: number; je: number }> = [
-  { bis: 2_000, schritt: 41.5, je: 500 },
-  { bis: 10_000, schritt: 59.5, je: 1_000 },
-  { bis: 25_000, schritt: 55, je: 3_000 },
-  { bis: 50_000, schritt: 86, je: 5_000 },
-  { bis: 200_000, schritt: 99.5, je: 15_000 },
-  { bis: 500_000, schritt: 140, je: 30_000 },
-  { bis: Infinity, schritt: 175, je: 50_000 },
-];
-
-function rvgGebuehr(streitwert: number): number {
-  let gebuehr = 51.5;
-  let grenze = 500;
-  for (const stufe of RVG_STUFEN) {
-    while (grenze < streitwert && grenze < stufe.bis) {
-      gebuehr += stufe.schritt;
-      grenze += stufe.je;
-    }
-    if (grenze >= streitwert) break;
-  }
-  return gebuehr;
-}
+import { rvgGebuehr } from "@/lib/rvg";
 
 // RATG (Österreich) — NÄHERUNGSWERTE auf Basis TP3A. Das österreichische
 // Tarifrecht (Bemessungsgrundlage, Einheitssatz, ERV-Zuschläge) ist deutlich

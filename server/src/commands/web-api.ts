@@ -1568,9 +1568,7 @@ function readSourcesFor(req: Request): string[] | undefined {
   const userJur = userJurHeader?.toUpperCase();
   const jur = caseJur ?? userJur;
   if (jur && JURISDICTION_LAW_SOURCES[jur]) {
-    const scoped = JURISDICTION_LAW_SOURCES[jur].filter((s) =>
-      SHARED_READ_SOURCES.includes(s)
-    );
+    const scoped = JURISDICTION_LAW_SOURCES[jur].filter((s) => SHARED_READ_SOURCES.includes(s));
     return [...new Set([own, ...scoped])];
   }
   // Fail-closed: no jurisdiction determined → no law corpus access.
@@ -2915,7 +2913,22 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               return !gSlug || isMatterScoped(matterScope, gSlug);
             })
           : (result.gaps ?? []);
-      res.write(`data: ${JSON.stringify({ citations, gaps })}\n\n`);
+      const provenance = result.provenance
+        ? {
+            links: result.provenance.links,
+            unsupported_claims: result.provenance.unsupported_claims,
+          }
+        : undefined;
+      const documentConfidence = result.documentConfidence
+        ? {
+            overall_confidence: result.documentConfidence.overall_confidence,
+            confidence_level: result.documentConfidence.confidence_level,
+            claim_confidences: result.documentConfidence.claim_confidences,
+          }
+        : undefined;
+      res.write(
+        `data: ${JSON.stringify({ citations, gaps, provenance, documentConfidence })}\n\n`
+      );
       res.write("data: [DONE]\n\n");
       res.end();
     } catch (e) {
@@ -3193,6 +3206,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             ? b.perspective
             : "client") as "client" | "counterparty" | "neutral",
           language: b.language === "en" ? "en" : "de",
+          brain_id: requestSourceId(req),
+          user_id: req.userId,
         });
         res.json(result);
       } catch (e) {
@@ -7489,7 +7504,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   };
 
   async function ensureSharedSource(sourceId: string): Promise<void> {
-    const jurisdiction = Object.entries(LAW_SOURCE_MAP).find(([, id]) => id === sourceId)?.[0] ?? null;
+    const jurisdiction =
+      Object.entries(LAW_SOURCE_MAP).find(([, id]) => id === sourceId)?.[0] ?? null;
     await engine.executeRaw(
       `INSERT INTO sources (id, name, jurisdiction, config)
        VALUES ($1, $1, $2, jsonb_build_object('federated', true, 'legal_reference', true, 'jurisdiction', $2))
@@ -7504,7 +7520,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   function sectionPage(
     jur: string,
     abbr: string,
-    meta: { abbreviation?: string; title?: string; version_date?: string; source_url?: string; license?: string },
+    meta: {
+      abbreviation?: string;
+      title?: string;
+      version_date?: string;
+      source_url?: string;
+      license?: string;
+    },
     section: { marker: "§" | "Art."; ref: string; title: string; body: string }
   ): string {
     const abbrUpper = meta.abbreviation || abbr.toUpperCase();

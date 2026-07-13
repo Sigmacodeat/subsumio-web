@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { ENGINE_URL, engineHeadersWithCaseJurisdiction } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
 import { trustedLegalJurisdiction } from "@/lib/legal-jurisdiction";
+import { getJurisdictionConfig, normalizeJurisdiction } from "@/lib/legal-jurisdiction-config";
 
 export const maxDuration = 60;
 
@@ -33,12 +34,10 @@ function buildSubsumptionPrompt(
   followUp?: string,
   previousResult?: string
 ): string {
-  const jurisdictionLabel: Record<string, string> = {
-    at: "österreichisches Recht (ABGB, StGB, ZPO, UGB, KSchG, ArbVG, AHG, etc.)",
-    de: "deutsches Recht (BGB, StGB, ZPO, HGB, etc.)",
-    ch: "Schweizer Recht (OR, ZGB, StGB, etc.)",
-  };
-  const jurLabel = jurisdictionLabel[jurisdiction] ?? "DACH-Rechtsraum";
+  const jurCode = normalizeJurisdiction(jurisdiction);
+  const jurLabel = jurCode
+    ? getJurisdictionConfig(jurCode).longLabel
+    : "DACH-Rechtsraum (Jurisdiktion unklar — Rechtsauskunft blockiert)";
 
   const followUpSection = followUp
     ? `\n\n## FOLLOW-UP\nDer Nutzer hat folgende Ergänzung/Frage gestellt:\n${followUp}\n\nBerücksichtige dies und aktualisiere die Subsumtion entsprechend. Behalte bereits gefundene §§ bei, wenn sie weiterhin relevant sind.`
@@ -201,6 +200,8 @@ export const POST = createHandler(
       answer?: string;
       citations?: unknown[];
       warnings?: string[];
+      provenance?: unknown;
+      documentConfidence?: unknown;
     };
 
     void req;
@@ -210,6 +211,8 @@ export const POST = createHandler(
       answer: data.answer ?? "",
       citations: Array.isArray(data.citations) ? data.citations : [],
       warnings: Array.isArray(data.warnings) ? data.warnings : [],
+      provenance: data.provenance,
+      documentConfidence: data.documentConfidence,
     });
   }
 );

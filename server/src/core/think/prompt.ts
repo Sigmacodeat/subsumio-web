@@ -42,6 +42,13 @@ export interface ThinkSystemPromptOpts {
    * legal confidentiality discipline.
    */
   legalMode?: boolean;
+  /**
+   * T1.4 — jurisdiction code for legal mode. When provided, injects
+   * jurisdiction-specific collision warnings (e.g. KSchG AT vs DE),
+   * allowed/forbidden statute lists, and labor law separation.
+   * If missing in legalMode, a fail-closed warning is emitted.
+   */
+  jurisdiction?: string;
 }
 
 export const THINK_SYSTEM_PROMPT_BASE = `You are gbrain's synthesis engine. You answer questions by reasoning across the user's personal knowledge brain. Your inputs are wrapped in structural tags:
@@ -78,6 +85,91 @@ Output schema:
 }
 
 The "row_num" field is required for take citations and MUST be null for page-only citations.`;
+
+// T1.4 — Jurisdiction-specific collision warnings (server-side mirror of
+// src/lib/legal-jurisdiction-config.ts). Kept inline because the engine
+// cannot import from the frontend src/ tree.
+
+const JURISDICTION_COLLISION_WARNINGS: Record<string, string[]> = {
+  DE: [
+    "KSchG = Kündigungsschutzgesetz (DE) — NICHT: AT: Konsumentenschutzgesetz; CH: kein Äquivalent",
+    "StGB = Strafgesetzbuch (Deutschland) — NICHT: AT: Strafgesetzbuch (Österreich); CH: Schweizerisches Strafgesetzbuch",
+    "ZPO = Zivilprozessordnung (Deutschland) — NICHT: AT: Zivilprozessordnung (Österreich); CH: Schweizerische Zivilprozessordnung",
+    "StPO = Strafprozessordnung (Deutschland) — NICHT: AT: Strafprozessordnung (Österreich); CH: Schweizerische Strafprozessordnung",
+    "GmbHG = Gesetz betreffend die Gesellschaften mit beschränkter Haftung (DE) — NICHT: AT: GmbH-Gesetz (Österreich); CH: OR regelt GmbH",
+    "AktG = Aktiengesetz (Deutschland) — NICHT: AT: Aktiengesetz (Österreich); CH: OR regelt Aktiengesellschaft",
+    "UStG = Umsatzsteuergesetz (Deutschland) — NICHT: AT: Umsatzsteuergesetz (Österreich); CH: MWSTG (nicht UStG)",
+    "EStG = Einkommensteuergesetz (Deutschland) — NICHT: AT: Einkommensteuergesetz (Österreich); CH: DBG (nicht EStG)",
+    "InsO = Insolvenzordnung (Deutschland) — NICHT: AT: IO (nicht InsO); CH: SchKG (nicht InsO); EU: EuInsVO",
+  ],
+  AT: [
+    "KSchG = Konsumentenschutzgesetz (AT) — NICHT: DE: Kündigungsschutzgesetz; CH: kein Äquivalent",
+    "StGB = Strafgesetzbuch (Österreich) — NICHT: DE: Strafgesetzbuch (Deutschland); CH: Schweizerisches Strafgesetzbuch",
+    "ZPO = Zivilprozessordnung (Österreich) — NICHT: DE: Zivilprozessordnung (Deutschland); CH: Schweizerische Zivilprozessordnung",
+    "StPO = Strafprozessordnung (Österreich) — NICHT: DE: Strafprozessordnung (Deutschland); CH: Schweizerische Strafprozessordnung",
+    "GmbHH = GmbH-Gesetz (Österreich) — NICHT: DE: GmbH-Gesetz (Deutschland); CH: OR regelt GmbH",
+    "AktG = Aktiengesetz (Österreich) — NICHT: DE: Aktiengesetz (Deutschland); CH: OR regelt Aktiengesellschaft",
+    "UStG = Umsatzsteuergesetz (Österreich) — NICHT: DE: Umsatzsteuergesetz (Deutschland); CH: MWSTG (nicht UStG)",
+    "EStG = Einkommensteuergesetz (Österreich) — NICHT: DE: Einkommensteuergesetz (Deutschland); CH: DBG (nicht EStG)",
+    "DSG = Datenschutzgesetz (Österreich) — NICHT: DE: BDSG (nicht DSG); CH: Datenschutzgesetz (Schweiz); EU: DSGVO (nicht DSG)",
+  ],
+  CH: [
+    "StGB = Schweizerisches Strafgesetzbuch — NICHT: DE: Strafgesetzbuch (Deutschland); AT: Strafgesetzbuch (Österreich)",
+    "ZPO = Schweizerische Zivilprozessordnung — NICHT: DE: Zivilprozessordnung (Deutschland); AT: Zivilprozessordnung (Österreich)",
+    "StPO = Schweizerische Strafprozessordnung — NICHT: DE: Strafprozessordnung (Deutschland); AT: Strafprozessordnung (Österreich)",
+    "UStG = MWSTG (Schweiz, nicht UStG) — NICHT: DE: Umsatzsteuergesetz; AT: Umsatzsteuergesetz",
+    "EStG = DBG (Schweiz, nicht EStG) — NICHT: DE: Einkommensteuergesetz; AT: Einkommensteuergesetz",
+    "DSG = Datenschutzgesetz (Schweiz) — NICHT: DE: BDSG (nicht DSG); AT: Datenschutzgesetz (Österreich); EU: DSGVO (nicht DSG)",
+    "InsO = SchKG (Schweiz, nicht InsO) — NICHT: DE: InsO; AT: IO; EU: EuInsVO",
+  ],
+  EU: [],
+};
+
+const JURISDICTION_LABOR_LAW: Record<string, string> = {
+  DE: `## ARBEITSRECHT (DEUTSCHLAND)
+Deutsches Arbeitsrecht basiert auf:
+- BGB (§§ 611-630 BGB) — Dienstvertrag, Arbeitsvertrag
+- KSchG (Kündigungsschutzgesetz) — Kündigungsschutz (§ 1 KSchG: soziale Rechtfertigung)
+- BetrVG (Betriebsverfassungsgesetz) — Betriebsrat, Mitbestimmung
+- BUrlG (Bundesurlaubsgesetz) — Urlaubsanspruch
+- SGB (Sozialgesetzbuch) — Sozialversicherung
+- TzBfG (Teilzeit- und Befristungsgesetz) — Teilzeit, Befristung
+- AGG (Allgemeines Gleichbehandlungsgesetz) — Diskriminierungsschutz
+- MuSchG (Mutterschutzgesetz) — Mutterschutz
+- NachwG (Nachweisgesetz) — Schriftlicher Arbeitsvertrag
+- ArbGG (Arbeitsgerichtsgesetz) — Arbeitsgerichtsbarkeit
+
+WICHTIG: KSchG in DE = Kündigungsschutzgesetz (§ 1 KSchG: soziale Rechtfertigung).
+Verwende NIEMALS AT-AngG, ArbVG (AT), ASVG oder AT-KSchG (Konsumentenschutz) in einem DE-Arbeitsrechtsfall.`,
+  AT: `## ARBEITSRECHT (ÖSTERREICH)
+Österreichisches Arbeitsrecht basiert auf:
+- AngG (Angestelltengesetz) — Kündigung, Urlaub, Entgelt
+- ArbVG (Arbeitsverfassungsgesetz) — Betriebsrat, Mitbestimmung
+- AZG (Arbeitszeitgesetz) — Arbeits- und Ruhezeiten
+- ASVG (Allgemeines Sozialversicherungsgesetz) — Sozialversicherung
+- AVG (Allgemeines Verwaltungsverfahrensgesetz) — Verfahrensrecht
+- BAG (Bundes-Arbeitsgerichtsgesetz) — Arbeitsgerichtsbarkeit
+- AuslBG (Ausländerbeschäftigungsgesetz) — Ausländerbeschäftigung
+- AVRAG (Arbeitsvertragsrechts-Anpassungsgesetz) — EU-Rechtsanpassung
+- GlBG (Gleichbehandlungsgesetz) — Diskriminierungsschutz
+- MSchG (Mutterschutzgesetz) — Mutterschutz
+- KSchG (Konsumentenschutzgesetz) — VERWIRKUNG: KSchG in AT = Konsumentenschutz, NICHT Kündigungsschutz!
+
+WICHTIG: In Österreich gibt es KEIN Kündigungsschutzgesetz (KSchG DE).
+Kündigungsschutz im Arbeitsrecht wird über AngG, ArbVG und GlBG geregelt.
+Verwende NIEMALS § 1 KSchG (DE) in einem AT-Arbeitsrechtsfall.`,
+  CH: `## ARBEITSRECHT (SCHWEIZ)
+Schweizerisches Arbeitsrecht basiert auf:
+- OR (Obligationenrecht) — Arbeitsvertrag (Art. 319-362 OR)
+- ArG (Arbeitsgesetz) — Arbeits- und Ruhezeit
+- BVG (Berufliche Vorsorge) — Pensionskasse
+- UVG (Unfallversicherungsgesetz) — Unfallversicherung
+- AVG (Arbeitslosenversicherungsgesetz) — Arbeitslosenversicherung
+- GlG (Gleichstellungsgesetz) — Gleichstellung von Frau und Mann
+
+WICHTIG: Schweiz hat kein KSchG. Kündigungsschutz über OR Art. 335-338.
+Verwende NIEMALS BGB, KSchG (DE/AT) oder BetrVG in einem CH-Arbeitsrechtsfall.`,
+};
 
 export function buildThinkSystemPrompt(opts: ThinkSystemPromptOpts = {}): string {
   const lines = [THINK_SYSTEM_PROMPT_BASE];
@@ -158,6 +250,44 @@ export function buildThinkSystemPrompt(opts: ThinkSystemPromptOpts = {}): string
     lines.push(
       `- Wenn du eine Information nicht in den Quellen findest, sage: "Diese Information ist in den bereitgestellten Rechtsquellen nicht enthalten."`
     );
+
+    // T1.4 — Jurisdiction-specific collision warnings and source rules
+    const jur = opts.jurisdiction?.trim().toUpperCase();
+    if (jur && (jur === "DE" || jur === "AT" || jur === "CH" || jur === "EU")) {
+      lines.push("");
+      lines.push(`## JURISDIKTION: ${jur}`);
+      lines.push(
+        `- Du antwortest NUR nach ${jur === "DE" ? "deutschem" : jur === "AT" ? "österreichischem" : jur === "CH" ? "schweizerischem" : "EU-"} Recht.`
+      );
+      lines.push(
+        `- Zitiere KEINE Gesetze aus anderen Jurisdiktionen ohne expliziten Cross-Border-Bezug.`
+      );
+      lines.push(
+        `- EU-Verordnungen (DSGVO, Rom I, Rom II, Brüssel Ibis) sind in allen DACH-Jurisdiktionen zulässig.`
+      );
+
+      // Collision warnings
+      const collisions = JURISDICTION_COLLISION_WARNINGS[jur];
+      if (collisions && collisions.length > 0) {
+        lines.push("");
+        lines.push("## ABKÜRZUNGSKOLLISIONEN — VORSICHT:");
+        for (const w of collisions) {
+          lines.push(`- ${w}`);
+        }
+      }
+
+      // Labor law separation
+      if (jur === "DE" || jur === "AT" || jur === "CH") {
+        lines.push("");
+        lines.push(JURISDICTION_LABOR_LAW[jur]);
+      }
+    } else {
+      // Fail-closed: no jurisdiction determined
+      lines.push("");
+      lines.push(
+        "## WARNUNG: Keine Jurisdiktion bestimmt. Verwende NUR die bereitgestellten Rechtsquellen. Zitiere KEINE Gesetze ohne eindeutige Zuordnung zu einer Jurisdiktion."
+      );
+    }
   }
   return lines.join("\n");
 }

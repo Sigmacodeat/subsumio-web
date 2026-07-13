@@ -87,12 +87,15 @@ export type AuditAction =
   | "legal.contradictions"
   | "legal.retrieval_feedback"
   | "legal.translate"
+  | "legal.receipt"
   | "legal.obligation_extract"
   | "legal.case_scanner"
   | "legal.precedent_search"
   | "legal.portfolio_insights"
   | "legal.strategy"
   | "legal.research"
+  | "legal.schriftsatz"
+  | "legal.fristenreport"
   | "legal.subsumption"
   | "legal.ground"
   | "settings.update"
@@ -168,7 +171,11 @@ export type AuditAction =
   | "ai.injection_blocked"
   | "ai.reasoning_trace"
   | "ai.webhook_escalate"
-  | "ai.webhook_block";
+  | "ai.webhook_block"
+  | "verification.policy_allowed"
+  | "verification.policy_denied"
+  | "verification.override_granted"
+  | "verification.receipt_invalidated";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -211,11 +218,14 @@ const ACTION_LABELS: Record<string, string> = {
   "legal.retrieval_feedback": "Retrieval-Feedback",
   "legal.strategy": "Strategie generiert",
   "legal.translate": "Übersetzung",
+  "legal.receipt": "Verification Receipt",
   "legal.obligation_extract": "Verpflichtungen extrahiert",
   "legal.case_scanner": "Case Scanner",
   "legal.precedent_search": "Präzedenzfall-Suche",
   "legal.portfolio_insights": "Portfolio-Analytics",
   "legal.research": "Deep Research gestartet",
+  "legal.schriftsatz": "Schriftsatz generiert",
+  "legal.fristenreport": "Fristenreport generiert",
   "legal.subsumption": "Interaktive Subsumtion",
   "legal.ground": "Citation Grounding",
   "settings.update": "Einstellungen geändert",
@@ -303,6 +313,10 @@ const ACTION_LABELS: Record<string, string> = {
   "ai.reasoning_trace": "AI Reasoning Trace erstellt",
   "ai.webhook_escalate": "AI Webhook Escalation gesendet",
   "ai.webhook_block": "AI Webhook Block-Event gesendet",
+  "verification.policy_allowed": "Verifikations-Policy: Aktion erlaubt",
+  "verification.policy_denied": "Verifikations-Policy: Aktion verweigert",
+  "verification.override_granted": "Verifikations-Policy: Anwaltlicher Override erteilt",
+  "verification.receipt_invalidated": "Verifikations-Policy: Receipt invalidiert (Inhaltsänderung)",
 };
 
 export function auditLabel(action: string): string {

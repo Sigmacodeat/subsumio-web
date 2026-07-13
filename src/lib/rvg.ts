@@ -15,7 +15,7 @@ const RVG_STUFEN: Array<{ bis: number; schritt: number; je: number }> = [
   { bis: Infinity, schritt: 175, je: 50_000 },
 ];
 
-function rvgGebuehr(streitwert: number): number {
+export function rvgGebuehr(streitwert: number): number {
   if (!Number.isFinite(streitwert) || streitwert <= 0) return 0;
   let gebuehr = 51.5;
   let grenze = 500;

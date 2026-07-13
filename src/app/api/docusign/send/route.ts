@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { createEnvelopeAsUser, createEnvelope } from "@/lib/docusign";
+import {
+  assertOutputActionAllowed,
+  VerificationPolicyError,
+  buildPolicyOutput,
+  type AttorneyOverride,
+} from "@/lib/verification-policy";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -28,6 +34,27 @@ const sendEnvelopeSchema = z.object({
   status: z.enum(["sent", "created"]).default("sent"),
   caseSlug: z.string().optional(),
   caseTitle: z.string().optional(),
+  verification: z
+    .object({
+      state: z.enum([
+        "VERIFIED",
+        "VERIFIED_WITH_WARNINGS",
+        "NEEDS_HUMAN_REVIEW",
+        "BLOCKED",
+        "VERIFIER_ERROR",
+      ]),
+      content_hash: z.string().length(64),
+      receipt_hash: z.string().length(64).optional(),
+      override: z
+        .object({
+          user_id: z.string().min(1),
+          reason: z.string().min(10),
+          timestamp: z.string().min(1),
+          output_hash: z.string().length(64),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 export const POST = createHandler(
@@ -47,6 +74,29 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
+    // ── Verification policy check (sign) ──
+    if (body.verification) {
+      const output = buildPolicyOutput(
+        body.caseSlug || body.emailSubject || "docusign",
+        body.verification.state,
+        body.verification.content_hash,
+        { receipt_hash: body.verification.receipt_hash, title: body.caseTitle }
+      );
+      try {
+        await assertOutputActionAllowed(
+          output,
+          "sign",
+          { user_id: ctx.user.id, user_email: ctx.user.email, brain_id: ctx.brainId },
+          body.verification.override as AttorneyOverride | undefined
+        );
+      } catch (err) {
+        if (err instanceof VerificationPolicyError) {
+          return apiError("verification_denied", err.decision.reason, 403);
+        }
+        throw err;
+      }
+    }
+
     const req = {
       emailSubject: body.emailSubject,
       emailBlurb: body.emailBlurb || "",

@@ -2,14 +2,41 @@ import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { generateDocx } from "@/lib/docx-export";
+import {
+  assertOutputActionAllowed,
+  VerificationPolicyError,
+  buildPolicyOutput,
+  type AttorneyOverride,
+} from "@/lib/verification-policy";
 
 export const maxDuration = 60;
+
+const overrideSchema = z.object({
+  user_id: z.string().min(1),
+  reason: z.string().min(10),
+  timestamp: z.string().min(1),
+  output_hash: z.string().length(64),
+});
+
+const verificationSchema = z.object({
+  state: z.enum([
+    "VERIFIED",
+    "VERIFIED_WITH_WARNINGS",
+    "NEEDS_HUMAN_REVIEW",
+    "BLOCKED",
+    "VERIFIER_ERROR",
+  ]),
+  content_hash: z.string().length(64),
+  receipt_hash: z.string().length(64).optional(),
+  override: overrideSchema.optional(),
+});
 
 const postSchema = z.object({
   slug: z.string().optional(),
   title: z.string().optional(),
   markdown: z.string().max(500_000).optional(),
   formData: z.record(z.unknown()).optional(),
+  verification: verificationSchema.optional(),
 });
 
 function buildMarkdownFromDraft(
@@ -37,6 +64,32 @@ export const POST = createHandler(
     body: postSchema,
   },
   async (ctx, body) => {
+    // ── Verification policy check (export_docx) ──
+    if (body.verification) {
+      const output = buildPolicyOutput(
+        body.slug || body.title || "docx-export",
+        body.verification.state,
+        body.verification.content_hash,
+        { receipt_hash: body.verification.receipt_hash, title: body.title }
+      );
+      try {
+        await assertOutputActionAllowed(
+          output,
+          "export_docx",
+          { user_id: ctx.user.id, user_email: ctx.user.email, brain_id: ctx.brainId },
+          body.verification.override as AttorneyOverride | undefined
+        );
+      } catch (err) {
+        if (err instanceof VerificationPolicyError) {
+          return Response.json(
+            { error: "verification_denied", reason: err.decision.reason },
+            { status: 403 }
+          );
+        }
+        throw err;
+      }
+    }
+
     let md: string;
     let caseRef = "";
 

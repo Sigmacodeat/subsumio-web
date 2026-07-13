@@ -3,7 +3,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { renderMarkdown } from "@/lib/markdown";
 import { formatCitationTitle } from "@/lib/ogh-format";
-import { Copy, Check, Download, ChevronRight, Save, FolderOpen, Trash2 } from "lucide-react";
+import { Copy, Check, Download, ChevronRight, Save, FolderOpen, Trash2, ShieldCheck, ShieldAlert, ShieldQuestion, FileText } from "lucide-react";
+import type { ProvenanceResult, DocumentConfidence } from "@/lib/types";
 
 const STORAGE_KEY = "subsumio:subsumption-sessions";
 
@@ -39,6 +40,8 @@ interface SubsumptionResult {
   answer: string;
   citations: Array<{ title: string; slug?: string }>;
   warnings?: string[];
+  provenance?: ProvenanceResult;
+  documentConfidence?: DocumentConfidence;
 }
 
 interface SubsumptionPanelProps {
@@ -52,6 +55,8 @@ interface Message {
   content: string;
   citations?: Array<{ title: string; slug?: string }>;
   isStreaming?: boolean;
+  provenance?: ProvenanceResult;
+  documentConfidence?: DocumentConfidence;
 }
 
 /** Detect structured subsumption sections in the answer */
@@ -78,6 +83,201 @@ function parseSubsumptionSections(content: string): Array<{ title: string; body:
   }
 
   return sections;
+}
+
+function confidenceBadgeProps(level: "high" | "medium" | "low") {
+  switch (level) {
+    case "high":
+      return {
+        icon: ShieldCheck,
+        label: "Hoch",
+        color: "text-emerald-600",
+        bgColor: "bg-emerald-500/10",
+        borderColor: "border-emerald-500/20",
+      };
+    case "medium":
+      return {
+        icon: ShieldAlert,
+        label: "Mittel",
+        color: "text-amber-600",
+        bgColor: "bg-amber-500/10",
+        borderColor: "border-amber-500/20",
+      };
+    case "low":
+      return {
+        icon: ShieldQuestion,
+        label: "Niedrig",
+        color: "text-red-600",
+        bgColor: "bg-red-500/10",
+        borderColor: "border-red-500/20",
+      };
+  }
+}
+
+function relevanceLabel(relevance: "direct" | "paraphrase" | "background"): string {
+  switch (relevance) {
+    case "direct":
+      return "Direkt";
+    case "paraphrase":
+      return "Paraphrasiert";
+    case "background":
+      return "Hintergrund";
+  }
+}
+
+function ClaimProvenanceDisplay({
+  provenance,
+  documentConfidence,
+}: {
+  provenance?: ProvenanceResult;
+  documentConfidence?: DocumentConfidence;
+}) {
+  const [expandedClaims, setExpandedClaims] = useState<Set<number>>(new Set());
+  const [showAll, setShowAll] = useState(false);
+
+  if (!provenance && !documentConfidence) return null;
+
+  const claims = documentConfidence?.claim_confidences ?? [];
+  const links = provenance?.links ?? [];
+  const unsupported = provenance?.unsupported_claims ?? [];
+
+  const toggleClaim = (idx: number) => {
+    setExpandedClaims((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
+
+  const overall = documentConfidence
+    ? confidenceBadgeProps(documentConfidence.confidence_level)
+    : null;
+
+  const visibleClaims = showAll ? claims : claims.slice(0, 5);
+
+  return (
+    <div className="mt-3 border-t border-[var(--ds-border)] pt-3">
+      {/* Overall confidence header */}
+      {overall && documentConfidence && (
+        <div className="mb-2 flex items-center gap-2">
+          <overall.icon className={`h-4 w-4 ${overall.color}`} />
+          <span className="text-xs font-semibold text-[var(--ds-text-muted)]">
+            Vertrauensniveau:
+          </span>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${overall.bgColor} ${overall.color}`}>
+            {overall.label} ({Math.round(documentConfidence.overall_confidence * 100)}%)
+          </span>
+          <span className="text-xs text-[var(--ds-text-muted)]">
+            · {claims.length} Aussagen
+          </span>
+          {unsupported.length > 0 && (
+            <span className="text-xs text-amber-600">
+              · {unsupported.length} ohne Beleg
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Per-claim cards */}
+      {visibleClaims.length > 0 && (
+        <div className="space-y-1.5">
+          {visibleClaims.map((claim) => {
+            const badge = confidenceBadgeProps(claim.level);
+            const claimLinks = links.filter(
+              (l) => l.claim_index === claim.claim_index
+            );
+            const isExpanded = expandedClaims.has(claim.claim_index);
+            const hasEvidence = claimLinks.length > 0;
+
+            return (
+              <div
+                key={claim.claim_index}
+                className={`rounded-lg border ${badge.borderColor} ${badge.bgColor} px-2.5 py-2`}
+              >
+                <button
+                  onClick={() => hasEvidence && toggleClaim(claim.claim_index)}
+                  className="flex w-full items-start gap-2 text-left"
+                  disabled={!hasEvidence}
+                >
+                  <badge.icon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${badge.color}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs leading-relaxed text-[var(--ds-text)] line-clamp-2">
+                      {claim.claim_text}
+                    </p>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <span className={`text-[10px] font-medium ${badge.color}`}>
+                        {badge.label}
+                      </span>
+                      {hasEvidence ? (
+                        <span className="text-[10px] text-[var(--ds-text-muted)]">
+                          · {claimLinks.length} Beleg{claimLinks.length > 1 ? "e" : ""} ·
+                          {isExpanded ? " ausblenden" : " anzeigen"}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-amber-600">
+                          · kein Beleg
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+
+                {/* Expanded source passages */}
+                {isExpanded && hasEvidence && (
+                  <div className="mt-2 space-y-1.5 pl-5">
+                    {claimLinks.map((link, li) => (
+                      <div
+                        key={li}
+                        className="rounded border border-[var(--ds-border)] bg-[var(--ds-surface-1)] px-2 py-1.5"
+                      >
+                        <div className="mb-1 flex items-center gap-1.5">
+                          <FileText className="h-3 w-3 text-[var(--ds-text-muted)]" />
+                          <span className="text-[10px] font-medium text-[var(--ds-text-muted)]">
+                            {link.source_slug}
+                          </span>
+                          <span className="rounded-full bg-[var(--ds-surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--ds-text-muted)]">
+                            {relevanceLabel(link.relevance)}
+                          </span>
+                        </div>
+                        <p className="text-xs leading-relaxed text-[var(--ds-text-muted)] italic">
+                          &ldquo;{link.source_passage}&rdquo;
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Show more / less button */}
+      {claims.length > 5 && (
+        <button
+          onClick={() => setShowAll((v) => !v)}
+          className="mt-1.5 text-xs text-[var(--brand-primary)] hover:underline"
+        >
+          {showAll
+            ? "Weniger anzeigen"
+            : `${claims.length - 5} weitere Aussagen anzeigen`}
+        </button>
+      )}
+
+      {/* Unsupported claims warning */}
+      {unsupported.length > 0 && !showAll && claims.length <= 5 && (
+        <div className="mt-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-2.5 py-1.5">
+          <div className="flex items-center gap-1.5">
+            <ShieldAlert className="h-3.5 w-3.5 text-amber-600" />
+            <span className="text-xs font-medium text-amber-600">
+              {unsupported.length} Aussage{unsupported.length > 1 ? "n" : ""} ohne Quellenbeleg
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: SubsumptionPanelProps) {
@@ -190,6 +390,8 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                     chunk?: string;
                     answer?: string;
                     citations?: unknown[];
+                    provenance?: ProvenanceResult;
+                    documentConfidence?: DocumentConfidence;
                   };
                   if (parsed.chunk) {
                     accumulated += parsed.chunk;
@@ -215,16 +417,39 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                       },
                     ]);
                   }
+                  if (parsed.provenance || parsed.documentConfidence) {
+                    setMessages((m) => [
+                      ...m.slice(0, -1),
+                      {
+                        role: "assistant",
+                        content: accumulated,
+                        isStreaming: false,
+                        citations: Array.isArray(parsed.citations)
+                          ? (parsed.citations as Array<{ title: string; slug?: string }>)
+                          : [],
+                        provenance: parsed.provenance,
+                        documentConfidence: parsed.documentConfidence,
+                      },
+                    ]);
+                  }
                 } catch {
                   // skip malformed chunks
                 }
               }
             }
           }
-          setMessages((m) => [
-            ...m.slice(0, -1),
-            { role: "assistant", content: accumulated, isStreaming: false },
-          ]);
+          // Fallback: ensure streaming is marked done, but preserve
+          // provenance/confidence if the final SSE event already set them.
+          setMessages((m) => {
+            const last = m[m.length - 1];
+            if (last && last.role === "assistant" && !last.isStreaming) {
+              return m;
+            }
+            return [
+              ...m.slice(0, -1),
+              { role: "assistant" as const, content: accumulated, isStreaming: false },
+            ];
+          });
         } else {
           const data = (await res.json()) as SubsumptionResult;
           setMessages((m) => [
@@ -234,6 +459,8 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
               content: data.answer,
               citations: data.citations,
               isStreaming: false,
+              provenance: data.provenance,
+              documentConfidence: data.documentConfidence,
             },
           ]);
         }
@@ -313,7 +540,12 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
             for (const line of lines) {
               if (line.startsWith("data: ")) {
                 try {
-                  const parsed = JSON.parse(line.slice(6)) as { chunk?: string };
+                  const parsed = JSON.parse(line.slice(6)) as {
+                    chunk?: string;
+                    provenance?: ProvenanceResult;
+                    documentConfidence?: DocumentConfidence;
+                    citations?: unknown[];
+                  };
                   if (parsed.chunk) {
                     accumulated += parsed.chunk;
                     setMessages((m) => [
@@ -325,16 +557,39 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                       },
                     ]);
                   }
+                  if (parsed.provenance || parsed.documentConfidence) {
+                    setMessages((m) => [
+                      ...m.slice(0, -1),
+                      {
+                        role: "assistant",
+                        content: accumulated,
+                        isStreaming: false,
+                        citations: Array.isArray(parsed.citations)
+                          ? (parsed.citations as Array<{ title: string; slug?: string }>)
+                          : [],
+                        provenance: parsed.provenance,
+                        documentConfidence: parsed.documentConfidence,
+                      },
+                    ]);
+                  }
                 } catch {
                   // skip
                 }
               }
             }
           }
-          setMessages((m) => [
-            ...m.slice(0, -1),
-            { role: "assistant", content: accumulated, isStreaming: false },
-          ]);
+          // Fallback: ensure streaming is marked done, but preserve
+          // provenance/confidence if the final SSE event already set them.
+          setMessages((m) => {
+            const last = m[m.length - 1];
+            if (last && last.role === "assistant" && !last.isStreaming) {
+              return m;
+            }
+            return [
+              ...m.slice(0, -1),
+              { role: "assistant" as const, content: accumulated, isStreaming: false },
+            ];
+          });
         } else {
           const data = (await res.json()) as SubsumptionResult;
           setMessages((m) => [
@@ -344,6 +599,8 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
               content: data.answer,
               citations: data.citations,
               isStreaming: false,
+              provenance: data.provenance,
+              documentConfidence: data.documentConfidence,
             },
           ]);
         }
@@ -634,6 +891,14 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                       ))}
                     </div>
                   </div>
+                )}
+
+                {/* Claim-level provenance + confidence */}
+                {isAssistant && !msg.isStreaming && (
+                  <ClaimProvenanceDisplay
+                    provenance={msg.provenance}
+                    documentConfidence={msg.documentConfidence}
+                  />
                 )}
 
                 {/* Action buttons for completed assistant messages */}

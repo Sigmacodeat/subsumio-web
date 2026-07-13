@@ -709,6 +709,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     willSave: opts.save,
     withCalibration: !!calibrationBlockOpts,
     ...(legalMode ? { legalMode: true } : {}),
+    ...(legalMode && opts.jurisdiction ? { jurisdiction: opts.jurisdiction } : {}),
   }) + (adversarialScan.flags.length > 0 ? ANTI_INJECTION_PROMPT : "");
   const userMessage = buildThinkUserMessage({
     question: opts.question,

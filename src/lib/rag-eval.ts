@@ -263,7 +263,10 @@ export const EVAL_FIXTURES: EvalQuery[] = [
   {
     id: "bulk-arbeitsvertrag-kuendigung",
     query: "Arbeitsvertrag Kündigungsschutz Kündigung Frist",
-    expectedSlugs: ["legal/norms/kschg-1", "legal/norms/bgb-622"],
+    // KSchG in DE = Kündigungsschutzgesetz (§ 1 KSchG: soziale Rechtfertigung)
+    // KSchG in AT = Konsumentenschutzgesetz — NOT applicable here
+    // BGB § 622 = Kündigungsfristen im Arbeitsvertrag
+    expectedSlugs: ["legal/norms/de/kschg/1", "legal/norms/de/bgb/622"],
     category: "bulk_review",
     jurisdiction: "DE",
   },

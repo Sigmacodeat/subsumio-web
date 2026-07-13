@@ -79,6 +79,8 @@ export type RouteAction =
   | "legal.risk_analysis"
   | "legal.memo"
   | "legal.redline"
+  | "legal.schriftsatz"
+  | "legal.fristenreport"
   | "legal.playbook"
   | "legal.rvg"
   | "legal.statute"
@@ -92,6 +94,7 @@ export type RouteAction =
   | "legal.obligation_extract"
   | "legal.precedent_search"
   | "legal.translate"
+  | "legal.receipt"
   | "tax.stbvv"
   | "tax.analyze"
   | "tax.summarize"
@@ -159,6 +162,8 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.risk_analysis": ["admin", "lawyer", "assistant"],
   "legal.memo": ["admin", "lawyer", "assistant"],
   "legal.redline": ["admin", "lawyer"],
+  "legal.schriftsatz": ["admin", "lawyer"],
+  "legal.fristenreport": ["admin", "lawyer", "assistant"],
   "legal.playbook": ["admin", "lawyer"],
   "legal.rvg": ["admin", "lawyer", "assistant"],
   "tax.stbvv": ["admin", "lawyer", "assistant"],
@@ -187,6 +192,7 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.subsumption": ["admin", "lawyer"],
   "legal.ground": ["admin", "lawyer", "assistant"],
   "legal.translate": ["admin", "lawyer", "assistant"],
+  "legal.receipt": ["admin", "lawyer", "assistant"],
   "legal.obligation_extract": ["admin", "lawyer", "assistant"],
   "legal.case_scanner": ["admin", "lawyer", "assistant"],
   "legal.precedent_search": ["admin", "lawyer", "assistant"],
@@ -260,6 +266,8 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "legal.risk_analysis": "legal.risk_analysis",
     "legal.memo": "legal.memo",
     "legal.redline": "legal.redline",
+    "legal.schriftsatz": "legal.schriftsatz",
+    "legal.fristenreport": "legal.fristenreport",
     "legal.playbook": "legal.playbook",
     "legal.rvg": "legal.rvg",
     "tax.stbvv": "tax.stbvv",
@@ -279,6 +287,7 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "legal.subsumption": "legal.subsumption",
     "legal.ground": "legal.ground",
     "legal.translate": "legal.translate",
+    "legal.receipt": "legal.receipt",
     "legal.obligation_extract": "legal.obligation_extract",
     "legal.case_scanner": "legal.case_scanner",
     "legal.precedent_search": "legal.precedent_search",

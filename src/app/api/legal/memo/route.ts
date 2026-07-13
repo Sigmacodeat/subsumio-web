@@ -20,6 +20,7 @@ export const POST = createEngineProxy({
   quota: "queries",
   stream: true,
   citationGate: true,
+  receiptProductType: "memo",
   label: "memo",
   caseSlugField: "case_slug",
   transformBody: (b) => ({

@@ -4,6 +4,7 @@ import { createHandler, apiStream, apiError, recordQuota } from "@/lib/api-handl
 import { groundRedlineCitations } from "@/lib/citation-gate";
 import { createCitationGateStream } from "@/lib/citation-gate";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
+import { storeReceipt, type WorkProductReceipt } from "@/lib/work-product-receipt-store";
 
 export const maxDuration = 300;
 
@@ -15,6 +16,8 @@ const contractRedlineSchema = z.object({
   jurisdiction: z.enum(["at", "de", "ch", "all"]).default("all"),
   perspective: z.enum(["client", "counterparty", "neutral"]).default("client"),
   language: z.enum(["de", "en"]).default("de"),
+  case_slug: z.string().optional(),
+  document_slug: z.string().optional(),
 });
 
 export const POST = createHandler(
@@ -45,6 +48,8 @@ export const POST = createHandler(
       jurisdiction: body.jurisdiction,
       perspective: body.perspective,
       language: body.language,
+      case_slug: body.case_slug || undefined,
+      document_slug: body.document_slug || undefined,
     });
 
     try {
@@ -74,10 +79,37 @@ export const POST = createHandler(
       }
 
       // Engine returns JSON — parse, ground statute citations, inject _grounding
-      const result = (await upstream.json()) as Record<string, unknown>;
+      const result = (await upstream.json()) as Record<string, unknown> & {
+        receipt?: WorkProductReceipt;
+      };
       const redlines = Array.isArray(result.redlines)
         ? (result.redlines as Array<{ legal_basis?: string; reason?: string }>)
         : [];
+
+      // Persist the verification receipt if the engine produced one.
+      // Override product_ref with a unique document/matter reference instead
+      // of the default brain_id, ensuring receipts are scoped per-document.
+      if (result.receipt) {
+        try {
+          const productRef =
+            body.document_slug ||
+            (body.case_slug ? `${body.case_slug}/redline` : undefined) ||
+            `redline/${ctx.brainId}/${Date.now()}`;
+          const scopedReceipt: WorkProductReceipt = {
+            ...(result.receipt as WorkProductReceipt),
+            product_type: "redline",
+            product_ref: productRef,
+            brain_id: ctx.brainId,
+            user_id: (result.receipt as WorkProductReceipt).user_id ?? ctx.user.id,
+          };
+          await storeReceipt(scopedReceipt);
+        } catch (err) {
+          console.error(
+            "[contract-redline] receipt store failed:",
+            err instanceof Error ? err.message : String(err)
+          );
+        }
+      }
 
       try {
         const grounding = await groundRedlineCitations(

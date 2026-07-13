@@ -62,6 +62,8 @@ import { timingSafeCompare } from "@/lib/crypto-utils";
 import { env } from "@/lib/env";
 import { verifyApiKey } from "@/lib/auth/api-key-auth";
 import { hit } from "@/lib/auth/rate-limit";
+import { storeReceipt, type WorkProductReceipt } from "@/lib/work-product-receipt-store";
+import type { WorkProductType } from "@/lib/work-product-receipts";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -660,6 +662,69 @@ export function createCronHandler(
  * });
  * ```
  */
+/**
+ * Creates a pass-through TransformStream that intercepts `receipt` fields
+ * from SSE data events and calls onReceipt. The stream content is forwarded
+ * unchanged — receipt extraction is non-blocking side-effect only.
+ */
+function createReceiptExtractingStream(
+  upstream: ReadableStream<Uint8Array>,
+  onReceipt: (receipt: WorkProductReceipt) => void
+): ReadableStream<Uint8Array> {
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let buffer = "";
+
+  return upstream.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        const text = decoder.decode(chunk, { stream: true });
+        buffer += text;
+
+        const events = buffer.split("\n\n");
+        buffer = events.pop() ?? "";
+
+        for (const event of events) {
+          const lines = event.split("\n");
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const data = line.slice(6);
+            if (data === "[DONE]") continue;
+            try {
+              const parsed = JSON.parse(data) as Record<string, unknown>;
+              if (parsed.receipt) {
+                onReceipt(parsed.receipt as WorkProductReceipt);
+              }
+            } catch {
+              // Not JSON — skip
+            }
+          }
+        }
+
+        controller.enqueue(encoder.encode(text));
+      },
+      flush() {
+        if (buffer) {
+          const lines = buffer.split("\n");
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const data = line.slice(6);
+            if (data === "[DONE]") continue;
+            try {
+              const parsed = JSON.parse(data) as Record<string, unknown>;
+              if (parsed.receipt) {
+                onReceipt(parsed.receipt as WorkProductReceipt);
+              }
+            } catch {
+              // Not JSON — skip
+            }
+          }
+        }
+      },
+    })
+  );
+}
+
 export function createEngineProxy<B extends z.ZodTypeAny>(options: {
   action: RouteAction;
   enginePath: string;
@@ -685,6 +750,20 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
   audit?: (ctx: HandlerContext, body: z.infer<B>) => AuditSpec | AuditSpec[];
   /** Cache-Control max-age for GET responses (seconds). */
   cacheMaxAge?: number;
+  /**
+   * When set, the proxy extracts any receipt from the engine response and
+   * persists it with the given product type, ensuring brain_id is set to
+   * ctx.brainId. For JSON responses, the receipt is extracted from
+   * `result.receipt`. For SSE streams, a `receipt` field in any SSE data
+   * event is intercepted and stored.
+   */
+  receiptProductType?: WorkProductType | ((body: z.infer<B>) => WorkProductType);
+  /**
+   * When set, overrides the product_ref on the receipt (instead of using
+   * whatever the engine returned). Useful for redline where the engine
+   * defaults to brain_id.
+   */
+  receiptProductRef?: (body: z.infer<B>) => string;
 }): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
   const label = options.label ?? options.enginePath;
   return createHandler(
@@ -732,14 +811,51 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
           void recordQuota(ctx, options.quota, amount);
         }
 
+        const resolveProductType = (): WorkProductType | undefined => {
+          if (!options.receiptProductType) return undefined;
+          return typeof options.receiptProductType === "function"
+            ? options.receiptProductType(body as z.infer<B>)
+            : options.receiptProductType;
+        };
+
+        const resolveProductRef = (): string | undefined => {
+          if (!options.receiptProductRef) return undefined;
+          return options.receiptProductRef(body as z.infer<B>);
+        };
+
+        const persistReceipt = (receipt: WorkProductReceipt) => {
+          const productType = resolveProductType();
+          if (!productType) return;
+          const productRef = resolveProductRef();
+          const scoped: WorkProductReceipt = {
+            ...receipt,
+            brain_id: ctx.brainId,
+            product_type: productType,
+            ...(productRef ? { product_ref: productRef } : {}),
+            user_id: receipt.user_id ?? ctx.user.id,
+          };
+          try {
+            void storeReceipt(scoped);
+          } catch (err) {
+            console.error(
+              `[${label}] receipt store failed:`,
+              err instanceof Error ? err.message : String(err)
+            );
+          }
+        };
+
         if (options.stream) {
           if (!upstream.body) {
             return apiError("engine_error", "Engine returned empty body", 502);
           }
-          const streamBody = options.citationGate
-            ? createCitationGateStream(upstream.body)
-            : upstream.body;
-          return apiStream(streamBody, {
+          let baseStream: ReadableStream<Uint8Array> = upstream.body as ReadableStream<Uint8Array>;
+          if (options.citationGate) {
+            baseStream = createCitationGateStream(baseStream);
+          }
+          if (options.receiptProductType) {
+            baseStream = createReceiptExtractingStream(baseStream, persistReceipt);
+          }
+          return apiStream(baseStream, {
             contentType: upstream.headers.get("Content-Type") || "text/event-stream",
             aiGenerated: true,
           });
@@ -764,6 +880,10 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
             );
             result._grounding = emptyGroundingMetadata();
           }
+        }
+
+        if (options.receiptProductType && result.receipt) {
+          persistReceipt(result.receipt as WorkProductReceipt);
         }
 
         return Response.json(result);

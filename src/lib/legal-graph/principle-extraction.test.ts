@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vitest";
 import {
   parsePrincipleOutput,
   extractPrinciples,
@@ -50,7 +50,13 @@ describe("parsePrincipleOutput", () => {
 
   test("filters out items without title or statement", () => {
     const raw = JSON.stringify([
-      { title: "Valid", statement: "Valid principle", legal_area: "civil", citations: [], confidence: 0.7 },
+      {
+        title: "Valid",
+        statement: "Valid principle",
+        legal_area: "civil",
+        citations: [],
+        confidence: 0.7,
+      },
       { title: "", statement: "No title" },
       { title: "No statement", statement: "" },
       { legal_area: "civil" },

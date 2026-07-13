@@ -657,7 +657,7 @@ REGELN:
   1. Extrahiere die rechtlichen Kernbegriffe (z.B. "Kontosperre", "Festnahme", "Durchsuchung")
   2. Suche im Brain nach relevanten §§ mit search/query (law-at, law-de, law-ch, law-eu Quellen)
   3. Lese die gefundenen §§ mit get_page und prüfe Relevanz für den Befund
-  4. Wenn der § im Text bestätigt wurde: verified = true, source_text = wörtlicher Text
+  4. Liefere source_text als wörtlichen Claim aus dem Brain; setze verified NICHT selbst — das Backend prüft Jurisdiktion, Gesetz, Paragraph, Fassung und Evidence-Span und setzt verified.
 
 - Für NICHT VERONMMENE PERSONEN: Suche §§ über Zeugenpflicht, Vernehmungspflicht
 - Für GELDFLUSS: Suche §§ über Sicherstellung, Kontosperre, Vermögensbeschlagnahme
@@ -936,9 +936,9 @@ DEINE AUFGABE: Für jede extrahierte Frist im Fristenkalender, prüfe:
 4. Fehlt eine wichtige Frist, die im Akt NICHT erwähnt wird?
 
 PRÜFE GEGEN FOLGENDE VERJÄHRUNGSREGELN (je nach Jurisdiktion):
-- AT: § 1489 ABGB (3 Jahre ab Kenntnis), § 1 AHG (3 Jahre), § 32 EStG (Verwirkung)
+- AT: § 1489 ABGB (3 Jahre ab Kenntnis), § 6 AHG (3 Jahre ab Kenntnis), § 32 EStG (Verwirkung)
 - DE: § 195 BGB (3 Jahre), § 199 BGB (10 Jahre Max), § 852 BGB (30 Jahre)
-- CH: Art 60 OR (10 Jahre), Art 127 OR (5 Jahre)
+- CH: Art 60 OR (3 Jahre ab Kenntnis, max. 10 Jahre), Art 127 OR (10 Jahre), Art 128 OR (5 Jahre)
 - EU: Art 82 DSGVO (3 Jahre ab Kenntnis), Art 77 DSGVO (Beschwerde)
 
 WICHTIG: Verwende die Fristenregeln die zum Verfahrenstyp passen (siehe oben).
@@ -1430,9 +1430,9 @@ DEINE AUFGABE: Für jeden geplanten Rechtsbehelf (Klage, Antrag, Beschwerde), pr
    - CH: Vorverfahren bei Verwaltungsakten (Art 55 VwVG)
 
 3. VERJÄHRUNG: Ist der Anspruch noch nicht verjährt?
-   - AT: § 1489 ABGB (3 Jahre), § 1 AHG (3 Jahre ab Kenntnis)
+   - AT: § 1489 ABGB (3 Jahre), § 6 AHG (3 Jahre ab Kenntnis)
    - DE: § 195 BGB (3 Jahre), § 199 BGB (max. 10 Jahre)
-   - CH: Art 60 OR (10 Jahre), Art 127 OR (5 Jahre)
+   - CH: Art 60 OR (3 Jahre ab Kenntnis, max. 10 Jahre), Art 127 OR (10 Jahre), Art 128 OR (5 Jahre)
 
 4. KLAGEFRISTEN: Sind gesetzliche Fristen eingehalten?
    - AT: § 28 StPO (6 Monate Strafantrag), § 106 StPO (1 Woche Einspruch)
@@ -2739,27 +2739,27 @@ PASSE DIE VERJÄHRUNGSPRÜFUNG AN DEN VERFAHRENSTYP AN:
 - KEINE zivilrechtliche Verjährung — strafrechtliche Verfolgungsverjährung
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
-- AT: § 1489 ABGB (3 Jahre ab Kenntnis), § 1491 ABGB (10 Jahre absolut), § 1501 ABGB (30 Jahre)
+- AT: § 1489 ABGB (3 Jahre ab Kenntnis), § 1489 Satz 2 ABGB (30 Jahre max bei Unkenntnis)
 - DE: § 195 BGB (3 Jahre), § 199 BGB (10 Jahre Max), § 197 BGB (30 Jahre)
-- CH: Art 127 OR (5 Jahre), Art 128 OR (10 Jahre)
+- CH: Art 127 OR (10 Jahre), Art 128 OR (5 Jahre)
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
-- AT: § 39 ArbVG (Kündigungsschutz 6 Monate), § 3 AHG (3 Jahre)
+- AT: § 39 ArbVG (Kündigungsschutz 6 Monate), § 6 AHG (3 Jahre ab Kenntnis)
 - DE: § 4 KSchG (3 Wochen — keine Verjährung, sondern Ausschlussfrist)
 - Abfindung: § 118 BetrVG (Verfallfrist)
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
 - AT: § 34 AVG (4 Wochen Bescheidbeschwerde — prozessuale Frist)
-- Materielle Verjährung: AT § 1 AHG (3 Jahre Amtshaftung)
+- Materielle Verjährung: AT § 6 AHG (3 Jahre Amtshaftung, ab Kenntnis)
 - DE: § 70 VwGO (1 Monat Widerspruch — prozessuale Frist)
 
 DEINE AUFGABE: Der Deadline-Validator prüft prozessuale Fristen (Berufungsfrist, etc.) — aber Verjährung ist materiellrechtlich. Jeder Anspruch hat seine eigene Verjährungsfrist. Eine verjährte Forderung ist durch Einrede vernichtet.
 
 1. VERJÄHRUNGSFRISTEN (AT):
-   - § 1489 ABGB: 30 Jahre (allgemeine Verjährung)
    - § 1489 ABGB: 3 Jahre (relative Verjährung — fällige Forderungen, Schadensersatz)
    - § 1489 ABGB: 3 Jahre ab Kenntnis (Schadensersatz bei Personenschaden)
-   - AHG: 3 Jahre (Amtshaftung)
+   - § 1489 Satz 2 ABGB: 30 Jahre (absolute Verjährung bei Unkenntnis oder vorsätzlicher Straftat)
+   - § 6 AHG: 3 Jahre ab Kenntnis (Amtshaftung)
    - EKHG: 3 Jahre (Eisenbahn- und Kraftfahrzeughaftung)
    - PHG: 3 Jahre (Produkthaftung)
    - KSchG: 3 Jahre (Verbraucherschutz)

@@ -104,7 +104,8 @@ export function hashPerParagraph(text: string): Record<string, string> {
  */
 export function detectAmendments(
   current: StatuteSnapshot,
-  previous: StatuteSnapshot | null
+  previous: StatuteSnapshot | null,
+  sourceUrl = ""
 ): StatuteAmendment[] {
   if (!previous) {
     // First run — all paragraphs are "added"
@@ -115,7 +116,7 @@ export function detectAmendments(
       change_type: "added" as const,
       new_hash: hash,
       detected_at: new Date().toISOString(),
-      source_url: "",
+      source_url: sourceUrl,
     }));
   }
 
@@ -133,7 +134,7 @@ export function detectAmendments(
         change_type: "added",
         new_hash: hash,
         detected_at: now,
-        source_url: "",
+        source_url: sourceUrl,
       });
     } else if (prevHash !== hash) {
       amendments.push({
@@ -144,7 +145,7 @@ export function detectAmendments(
         old_hash: prevHash,
         new_hash: hash,
         detected_at: now,
-        source_url: "",
+        source_url: sourceUrl,
       });
     }
   }
@@ -159,7 +160,7 @@ export function detectAmendments(
         change_type: "removed",
         old_hash: hash,
         detected_at: now,
-        source_url: "",
+        source_url: sourceUrl,
       });
     }
   }
@@ -246,7 +247,7 @@ export async function fetchAtStatute(
   try {
     const res = await fetchFn(url);
     if (!res.ok) return null;
-    const json = await res.json() as { results?: Array<{ content?: string; datum?: string }> };
+    const json = (await res.json()) as { results?: Array<{ content?: string; datum?: string }> };
     const first = json.results?.[0];
     if (!first?.content) return null;
     return {
@@ -274,7 +275,7 @@ export async function fetchChStatute(
   try {
     const res = await fetchFn(url);
     if (!res.ok) return null;
-    const json = await res.json() as { results?: Array<{ text?: string; date?: string }> };
+    const json = (await res.json()) as { results?: Array<{ text?: string; date?: string }> };
     const first = json.results?.[0];
     if (!first?.text) return null;
     return {
@@ -362,6 +363,7 @@ export async function checkStatuteAmendments(
   }
 
   if (!fetchResult) {
+    recordConnectorHealth(jurisdiction, false, `Failed to fetch ${statuteCode}`);
     return {
       amendments: [],
       snapshot: null,
@@ -371,6 +373,7 @@ export async function checkStatuteAmendments(
 
   const paragraphHashes = hashPerParagraph(fetchResult.text);
   const fullHash = hashText(fetchResult.text);
+  recordConnectorHealth(jurisdiction, true);
   const snapshot: StatuteSnapshot = {
     statute_code: statuteCode,
     jurisdiction,
@@ -380,11 +383,10 @@ export async function checkStatuteAmendments(
   };
 
   const previous = loadSnapshot(jurisdiction, statuteCode);
-  const amendments = detectAmendments(snapshot, previous);
+  const amendments = detectAmendments(snapshot, previous, fetchResult.sourceUrl);
 
-  // Add source URL to amendments
+  // Add announcement date to amendments
   for (const a of amendments) {
-    a.source_url = fetchResult.sourceUrl;
     if (fetchResult.announcementDate) {
       a.announcement_date = fetchResult.announcementDate;
     }
@@ -511,13 +513,16 @@ export interface FreshnessSummary {
   last_check: string | null;
   amendments_detected: number;
   stale_citations: number;
-  by_jurisdiction: Record<Jurisdiction, {
-    total: number;
-    fresh: number;
-    stale: number;
-    error: number;
-    amendments: number;
-  }>;
+  by_jurisdiction: Record<
+    Jurisdiction,
+    {
+      total: number;
+      fresh: number;
+      stale: number;
+      error: number;
+      amendments: number;
+    }
+  >;
 }
 
 /**
@@ -547,7 +552,8 @@ export function buildFreshnessSummary(
     byJurisdiction[jur].amendments = report.total_amendments;
     byJurisdiction[jur].error = report.errors.length;
     byJurisdiction[jur].stale = report.total_amendments > 0 ? 1 : 0; // At least one amendment → stale
-    byJurisdiction[jur].fresh = report.total_statutes_checked - report.errors.length - (report.total_amendments > 0 ? 1 : 0);
+    byJurisdiction[jur].fresh =
+      report.total_statutes_checked - report.errors.length - (report.total_amendments > 0 ? 1 : 0);
 
     totalStatutes += report.total_statutes_checked;
     totalError += report.errors.length;
@@ -570,4 +576,82 @@ export function buildFreshnessSummary(
     stale_citations: staleAlerts.length,
     by_jurisdiction: byJurisdiction,
   };
+}
+
+// ── Connector Health Monitoring ───────────────────────────────────────
+
+export interface ConnectorHealth {
+  jurisdiction: Jurisdiction;
+  status: "healthy" | "degraded" | "down";
+  last_success: string | null;
+  last_failure: string | null;
+  consecutive_failures: number;
+  total_checks: number;
+  total_failures: number;
+  error_message?: string;
+}
+
+const connectorHealthMap = new Map<Jurisdiction, ConnectorHealth>();
+
+/**
+ * Record a connector health check result.
+ */
+export function recordConnectorHealth(
+  jurisdiction: Jurisdiction,
+  success: boolean,
+  errorMessage?: string
+): void {
+  const existing = connectorHealthMap.get(jurisdiction);
+  const now = new Date().toISOString();
+
+  if (!existing) {
+    connectorHealthMap.set(jurisdiction, {
+      jurisdiction,
+      status: success ? "healthy" : "down",
+      last_success: success ? now : null,
+      last_failure: success ? null : now,
+      consecutive_failures: success ? 0 : 1,
+      total_checks: 1,
+      total_failures: success ? 0 : 1,
+      error_message: success ? undefined : errorMessage,
+    });
+    return;
+  }
+
+  existing.total_checks++;
+  if (success) {
+    existing.last_success = now;
+    existing.consecutive_failures = 0;
+    existing.error_message = undefined;
+    existing.status = "healthy";
+  } else {
+    existing.last_failure = now;
+    existing.consecutive_failures++;
+    existing.total_failures++;
+    existing.error_message = errorMessage;
+    existing.status = existing.consecutive_failures >= 3 ? "down" : "degraded";
+  }
+}
+
+/**
+ * Get connector health for a jurisdiction.
+ */
+export function getConnectorHealth(jurisdiction: Jurisdiction): ConnectorHealth | null {
+  return connectorHealthMap.get(jurisdiction) ?? null;
+}
+
+/**
+ * Get health status for all connectors.
+ */
+export function getAllConnectorHealth(): ConnectorHealth[] {
+  return Array.from(connectorHealthMap.values());
+}
+
+/**
+ * Check if a connector is operational (healthy or degraded, not down).
+ */
+export function isConnectorOperational(jurisdiction: Jurisdiction): boolean {
+  const health = connectorHealthMap.get(jurisdiction);
+  if (!health) return true; // No data yet — assume operational
+  return health.status !== "down";
 }

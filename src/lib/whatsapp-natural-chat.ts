@@ -1,8 +1,19 @@
 import { listPages, think } from "@/lib/engine-client";
-import { parseIntent, processIntent } from "@/lib/legal-chat/actions";
+import { parseIntent, processIntent, type ParsedIntent } from "@/lib/legal-chat/actions";
 import type { BrainPage } from "@/lib/types";
 import type { WhatsAppIdentity } from "@/lib/whatsapp/types";
 import { phoneHash } from "@/lib/whatsapp/verify";
+import { expandRelativeDates, hasRelativeDates } from "@/lib/whatsapp/relative-date";
+import { parseIntentWithLLM, isLLMIntentParserAvailable } from "@/lib/whatsapp/llm-intent";
+import {
+  getConversationState,
+  saveConversationState,
+  clearConversationState,
+  missingFieldsForIntent,
+  buildClarifyingQuestion,
+  mergePartialIntent,
+  type ConversationState,
+} from "@/lib/whatsapp/conversation-state";
 
 interface NaturalChatContext {
   sender: WhatsAppIdentity;
@@ -332,23 +343,98 @@ export async function naturalWhatsAppReply(ctx: NaturalChatContext): Promise<str
 
   // Natural command router: turn everyday language into structured actions and execute them
   if (intent === "daily_ops") {
-    const structuredIntent = parseIntent(ctx.text);
+    const chatCtx = {
+      sender: ctx.sender,
+      fromPhone: ctx.fromPhone,
+      messageId: ctx.messageId,
+      text: ctx.text,
+    };
+
+    // Step 1: Expand relative dates ("morgen" → "2026-07-14", "freitag" → "2026-07-17")
+    const expandedText = hasRelativeDates(ctx.text) ? expandRelativeDates(ctx.text) : ctx.text;
+
+    // Step 2: Check for existing conversation state (multi-step interaction)
+    const existingState = await getConversationState(ctx.sender, ctx.fromPhone).catch(() => null);
+    if (existingState) {
+      // If user sends a clear command (cancel/help/confirm), abort the conversation state
+      const trimmed = ctx.text.trim().toLowerCase();
+      if (/^(?:nein|no|abbrechen|verwerfen|stopp|stop|abbruch)$/i.test(trimmed)) {
+        await clearConversationState(ctx.sender, ctx.fromPhone).catch(() => {});
+        return "Verstanden, die Eingabe wurde abgebrochen. Was kann ich sonst für dich tun?";
+      }
+      if (/^(?:hilfe|help)$/i.test(trimmed)) {
+        await clearConversationState(ctx.sender, ctx.fromPhone).catch(() => {});
+        // Fall through to normal help processing
+      } else {
+        // Try to complete the pending conversation
+        const followUpIntent = parseIntent(expandedText);
+        const llmIntent =
+          followUpIntent.kind === "free_text" && isLLMIntentParserAvailable()
+            ? await parseIntentWithLLM(expandedText).catch(() => null)
+            : null;
+        const effectiveIntent = llmIntent ?? followUpIntent;
+
+        const { merged, stillMissing } = mergePartialIntent(existingState, effectiveIntent);
+
+        if (stillMissing.length === 0) {
+          // All fields collected — build the complete intent and execute
+          await clearConversationState(ctx.sender, ctx.fromPhone).catch(() => {});
+          const completeIntent = buildCompleteIntent(existingState.expectedKind, merged);
+          if (completeIntent) {
+            try {
+              return await processIntent(chatCtx, completeIntent);
+            } catch (err) {
+              console.warn("[whatsapp-natural-chat] multi-step action failed:", err);
+            }
+          }
+        } else {
+          // Still missing some fields — ask again and update state
+          await saveConversationState(ctx.sender, ctx.fromPhone, {
+            ...existingState,
+            partial: merged,
+            missingFields: stillMissing,
+            createdAt: existingState.createdAt,
+          }).catch(() => {});
+          return buildClarifyingQuestion(existingState.expectedKind, stillMissing);
+        }
+      }
+    }
+
+    // Step 3: Try regex-based parseIntent first (fast path)
+    let structuredIntent: ParsedIntent = parseIntent(expandedText);
+
+    // Step 4: If regex returns free_text, try LLM-based intent parsing
+    if (structuredIntent.kind === "free_text" && isLLMIntentParserAvailable()) {
+      const llmIntent = await parseIntentWithLLM(expandedText).catch(() => null);
+      if (llmIntent && llmIntent.kind !== "free_text") {
+        structuredIntent = llmIntent;
+      }
+    }
+
+    // Step 5: Execute the structured intent if it's actionable
     if (structuredIntent.kind !== "free_text" && structuredIntent.kind !== "unknown") {
+      // Check if the intent has all required fields
+      const missing = missingFieldsForIntent(structuredIntent);
+      if (missing.length > 0) {
+        // Save conversation state and ask clarifying question
+        await saveConversationState(ctx.sender, ctx.fromPhone, {
+          expectedKind: structuredIntent.kind,
+          missingFields: missing,
+          partial: intentToPartial(structuredIntent),
+          createdAt: new Date().toISOString(),
+          originalText: ctx.text,
+        }).catch(() => {});
+        return buildClarifyingQuestion(structuredIntent.kind, missing);
+      }
+
       try {
-        return await processIntent(
-          {
-            sender: ctx.sender,
-            fromPhone: ctx.fromPhone,
-            messageId: ctx.messageId,
-            text: ctx.text,
-          },
-          structuredIntent
-        );
+        return await processIntent(chatCtx, structuredIntent);
       } catch (err) {
         console.warn("[whatsapp-natural-chat] daily ops action failed:", err);
       }
     }
-    // Fallback: could not structure the daily ops request → ask clarifying question
+
+    // Step 6: Final fallback — could not structure the request → ask clarifying question
     return [
       `Ich habe verstanden, dass es um einen Kanzlei-Alltag-Vorgang geht.`,
       `Damit ich dir helfen kann, bitte präziser formulieren, z.B.:`,
@@ -395,3 +481,117 @@ export async function naturalWhatsAppReply(ctx: NaturalChatContext): Promise<str
 
 export { classifyIntent };
 export type { NaturalChatContext, ChatIntent };
+
+/**
+ * Convert a ParsedIntent into a partial record for conversation state storage.
+ */
+function intentToPartial(intent: ParsedIntent): Record<string, unknown> {
+  switch (intent.kind) {
+    case "appointment":
+      return {
+        caseRef: intent.caseRef,
+        title: intent.title,
+        date: intent.date,
+        time: intent.time,
+        location: intent.location,
+        reminderHours: intent.reminderHours,
+      };
+    case "deadline":
+      return {
+        caseRef: intent.caseRef,
+        title: intent.title,
+        dueDate: intent.dueDate,
+      };
+    case "task":
+      return {
+        caseRef: intent.caseRef,
+        title: intent.title,
+        dueDate: intent.dueDate,
+      };
+    case "time_entry":
+      return {
+        minutes: intent.minutes,
+        caseRef: intent.caseRef,
+        description: intent.description,
+        billable: intent.billable,
+      };
+    case "expense":
+      return {
+        amount: intent.amount,
+        caseRef: intent.caseRef,
+        description: intent.description,
+        billable: intent.billable,
+      };
+    case "case_note":
+      return {
+        caseRef: intent.caseRef,
+        note: intent.note,
+      };
+    default:
+      return {};
+  }
+}
+
+/**
+ * Build a complete ParsedIntent from a merged partial state.
+ * Returns null if the kind is not supported or required fields are still missing.
+ */
+function buildCompleteIntent(kind: string, partial: Record<string, unknown>): ParsedIntent | null {
+  const str = (v: unknown): string => (typeof v === "string" ? v : v != null ? String(v) : "");
+  const num = (v: unknown): number => {
+    const n = typeof v === "number" ? v : parseFloat(String(v).replace(",", "."));
+    return Number.isFinite(n) ? n : 0;
+  };
+  const bool = (v: unknown): boolean => (typeof v === "boolean" ? v : true);
+
+  switch (kind) {
+    case "appointment":
+      return {
+        kind: "appointment",
+        caseRef: str(partial.caseRef),
+        title: str(partial.title) || "Termin",
+        date: str(partial.date),
+        time: str(partial.time),
+        location: partial.location ? str(partial.location) : undefined,
+        reminderHours: num(partial.reminderHours) || 24,
+      };
+    case "deadline":
+      return {
+        kind: "deadline",
+        caseRef: str(partial.caseRef),
+        title: str(partial.title) || "Frist",
+        dueDate: str(partial.dueDate),
+      };
+    case "task":
+      return {
+        kind: "task",
+        caseRef: str(partial.caseRef),
+        title: str(partial.title),
+        dueDate: partial.dueDate ? str(partial.dueDate) : undefined,
+      };
+    case "time_entry":
+      return {
+        kind: "time_entry",
+        minutes: Math.max(1, Math.round(num(partial.minutes))),
+        caseRef: str(partial.caseRef),
+        description: str(partial.description) || "Zeiterfassung via WhatsApp",
+        billable: bool(partial.billable),
+      };
+    case "expense":
+      return {
+        kind: "expense",
+        amount: Math.max(0, num(partial.amount)),
+        caseRef: str(partial.caseRef),
+        description: str(partial.description) || "Auslage via WhatsApp",
+        billable: bool(partial.billable),
+      };
+    case "case_note":
+      return {
+        kind: "case_note",
+        caseRef: str(partial.caseRef),
+        note: str(partial.note),
+      };
+    default:
+      return null;
+  }
+}
