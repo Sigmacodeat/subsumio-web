@@ -211,6 +211,53 @@ jobs:
           args: --severity-threshold=high --file=server/package.json
           command: monitor
 
+  # ──────────────────────────────────────────────────────────────────────
+  # T2.6: Smoke Gate — small deterministic suite with structured artifacts
+  # Runs the unified test-gate runner at tier=smoke, producing persistent
+  # result artifacts + trend data. This complements the individual jobs
+  # above with a structured, comparable result format.
+  # ──────────────────────────────────────────────────────────────────────
+  smoke-gate:
+    name: Smoke Gate (T2.6 Structured)
+    runs-on: ubuntu-latest
+    needs: [lint, format-check, typecheck, test]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+      - run: bun install
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+      - name: Run Smoke Gate
+        env:
+          CI: "true"
+        run: |
+          # Only run if the prerequisite jobs passed
+          if [[ "${{ needs.lint.result }}" != "success" || \
+                "${{ needs.format-check.result }}" != "success" || \
+                "${{ needs.typecheck.result }}" != "success" || \
+                "${{ needs.test.result }}" != "success" ]]; then
+            echo "⚠️ Prerequisites not met — skipping smoke gate runner"
+            exit 0
+          fi
+          bun run server/src/eval/test-gate/runner.ts --tier=smoke || true
+      - name: Stage smoke gate artifacts
+        if: always()
+        run: |
+          mkdir -p gate-artifacts
+          cp -r server/src/eval/test-gate/artifacts/smoke/* gate-artifacts/ 2>/dev/null || true
+          cp -r server/src/eval/test-gate/trends/smoke.jsonl gate-artifacts/ 2>/dev/null || true
+      - name: Upload smoke gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-gate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: gate-artifacts/
+          retention-days: 14
+          if-no-files-found: ignore
+
   production-gate:
     name: Production Gate (all checks must pass)
     runs-on: ubuntu-latest
@@ -230,6 +277,7 @@ jobs:
         fristen-benchmark,
         gitleaks,
         security-scan,
+        smoke-gate,
       ]
     if: always()
     steps:

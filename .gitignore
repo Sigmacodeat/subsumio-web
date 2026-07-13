@@ -33,6 +33,10 @@ test/fixtures/pglite-snapshot.tar
 test/fixtures/pglite-snapshot.version
 server/test/fixtures/longmemeval-full/
 
+# T2.6 Test Gate artifacts (persisted via CI upload-artifact, not in repo)
+server/src/eval/test-gate/artifacts/
+server/src/eval/test-gate/trends/
+
 # Transient artifacts
 tmp-legal-repo/
 bulk-import-cursor.json
