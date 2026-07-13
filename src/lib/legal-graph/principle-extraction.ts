@@ -109,9 +109,10 @@ export async function extractPrinciples(
 
   // Truncate judgement text to avoid token overflow (keep first 8000 chars — usually enough for principle extraction)
   const truncatedText = opts.judgementText.slice(0, 8000);
-  const userPrompt = PRINCIPLE_EXTRACTION_USER_TEMPLATE
-    .replace("{jurisdiction}", opts.jurisdiction)
-    .replace("{judgement_text}", truncatedText);
+  const userPrompt = PRINCIPLE_EXTRACTION_USER_TEMPLATE.replace(
+    "{jurisdiction}",
+    opts.jurisdiction
+  ).replace("{judgement_text}", truncatedText);
 
   const generate = opts.generate ?? defaultGenerate;
   let modelUsed = "unknown";
@@ -137,20 +138,43 @@ export async function extractPrinciples(
 }
 
 /**
- * Default generate function — uses the engine's AI gateway.
- * Lazy-imported to avoid pulling AI SDKs at module load.
+ * Default generate function — calls the engine's HTTP AI gateway.
+ * This keeps the web bundle independent from the separate engine service.
  */
 async function defaultGenerate(prompt: string, systemPrompt: string): Promise<string> {
-  const { isAvailable, chat } = await import("../../../server/src/core/ai/gateway");
-  if (!isAvailable("chat")) {
-    throw new Error("No LLM model available for principle extraction");
-  }
-  const result = await chat({
-    system: systemPrompt,
-    messages: [{ role: "user", content: prompt }],
-    maxTokens: 2048,
+  // Keep the web bundle independent from the engine source tree. The engine
+  // is a separate Docker service and is the single AI gateway for production.
+  const engineUrl = process.env.SUBSUMIO_API_URL ?? "http://localhost:3001";
+  const apiKey = process.env.SUBSUMIO_WEB_API_KEY;
+  const response = await fetch(`${engineUrl}/api/think`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "text/event-stream",
+      ...(apiKey ? { "x-subsumio-api-key": apiKey } : {}),
+    },
+    body: JSON.stringify({
+      query: `${systemPrompt}\n\n${prompt}`,
+      mode: "balanced",
+      legal_mode: true,
+    }),
+    signal: AbortSignal.timeout(60_000),
   });
-  return result.text;
+  if (!response.ok) throw new Error(`Engine principle extraction failed: ${response.status}`);
+
+  const raw = await response.text();
+  let answer = "";
+  for (const line of raw.split("\n")) {
+    if (!line.startsWith("data: ") || line === "data: [DONE]") continue;
+    try {
+      const event = JSON.parse(line.slice(6)) as { chunk?: string };
+      if (event.chunk) answer += event.chunk;
+    } catch {
+      // Ignore malformed/non-data SSE lines; the parser will report empty output.
+    }
+  }
+  if (!answer) throw new Error("Engine returned no principle extraction output");
+  return answer;
 }
 
 // ── Output Parser ─────────────────────────────────────────────────────
@@ -201,10 +225,7 @@ export function parsePrincipleOutput(
 /**
  * Normalize and validate parsed principle objects.
  */
-function normalizePrinciples(
-  raw: unknown[],
-  sourceJudgementId: string
-): ExtractedPrinciple[] {
+function normalizePrinciples(raw: unknown[], sourceJudgementId: string): ExtractedPrinciple[] {
   return raw
     .filter((item) => typeof item === "object" && item !== null)
     .map((item) => {
@@ -213,14 +234,15 @@ function normalizePrinciples(
       const statement = String(obj.statement ?? "").trim();
       if (!title || !statement) return null;
 
-      const legalArea = String(obj.legal_area ?? "civil").trim().toLowerCase();
+      const legalArea = String(obj.legal_area ?? "civil")
+        .trim()
+        .toLowerCase();
       const validAreas = ["civil", "criminal", "public", "tax", "eu"];
       const citations = Array.isArray(obj.citations)
         ? obj.citations.map((c) => String(c)).filter(Boolean)
         : [];
-      const confidence = typeof obj.confidence === "number"
-        ? Math.max(0, Math.min(1, obj.confidence))
-        : 0.5;
+      const confidence =
+        typeof obj.confidence === "number" ? Math.max(0, Math.min(1, obj.confidence)) : 0.5;
 
       return {
         title,
