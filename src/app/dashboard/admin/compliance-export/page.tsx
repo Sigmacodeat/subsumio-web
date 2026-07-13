@@ -19,7 +19,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { exportTracesHTML, type ReasoningTrace as TraceData } from "@/lib/ai-reasoning-trace";
+import { type ReasoningTrace as TraceData } from "@/lib/ai-reasoning-trace";
+import { exportTracesHTML } from "@/lib/ai-reasoning-trace-export";
 
 interface ReasoningTrace {
   trace_id: string;
@@ -106,12 +107,16 @@ export default function ComplianceExportPage() {
     injectionDetected: traces.filter((t) => t.injection_detected).length,
     injectionBlocked: traces.filter((t) => t.injection_blocked).length,
     ensembleClean: traces.filter((t) => t.ensemble_clean === true).length,
-    avgConfidence: traces.length > 0
-      ? (traces.reduce((sum, t) => sum + (t.overall_confidence ?? 0), 0) / traces.length).toFixed(2)
-      : "—",
-    avgLatency: traces.length > 0
-      ? Math.round(traces.reduce((sum, t) => sum + (t.latency_ms ?? 0), 0) / traces.length)
-      : 0,
+    avgConfidence:
+      traces.length > 0
+        ? (traces.reduce((sum, t) => sum + (t.overall_confidence ?? 0), 0) / traces.length).toFixed(
+            2
+          )
+        : "—",
+    avgLatency:
+      traces.length > 0
+        ? Math.round(traces.reduce((sum, t) => sum + (t.latency_ms ?? 0), 0) / traces.length)
+        : 0,
     regenerations: traces.reduce((sum, t) => sum + (t.regeneration_count ?? 0), 0),
   };
 
@@ -147,11 +152,11 @@ export default function ComplianceExportPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Traces</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <FileText className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">AI outputs logged</p>
+            <p className="text-muted-foreground text-xs">AI outputs logged</p>
           </CardContent>
         </Card>
 
@@ -162,9 +167,7 @@ export default function ComplianceExportPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{stats.guardrailPassed}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.guardrailFailed} failed
-            </p>
+            <p className="text-muted-foreground text-xs">{stats.guardrailFailed} failed</p>
           </CardContent>
         </Card>
 
@@ -175,22 +178,18 @@ export default function ComplianceExportPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">{stats.injectionDetected}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.injectionBlocked} blocked
-            </p>
+            <p className="text-muted-foreground text-xs">{stats.injectionBlocked} blocked</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Avg Confidence</CardTitle>
-            <Hash className="h-4 w-4 text-muted-foreground" />
+            <Hash className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.avgConfidence}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.regenerations} regenerations
-            </p>
+            <p className="text-muted-foreground text-xs">{stats.regenerations} regenerations</p>
           </CardContent>
         </Card>
       </div>
@@ -200,11 +199,11 @@ export default function ComplianceExportPage() {
         <CardHeader>
           <CardTitle className="text-base">EU AI Act Art. 12 Compliance</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
+        <CardContent className="text-muted-foreground space-y-2 text-sm">
           <p>
-            Every AI output is captured as an immutable, hash-chained reasoning trace.
-            Traces include retrieval context, guardrail results, ensemble verification,
-            adversarial defense scans, and confidence scores.
+            Every AI output is captured as an immutable, hash-chained reasoning trace. Traces
+            include retrieval context, guardrail results, ensemble verification, adversarial defense
+            scans, and confidence scores.
           </p>
           <div className="flex flex-wrap gap-2 pt-2">
             <Badge variant="default" className="text-xs">
@@ -234,12 +233,12 @@ export default function ComplianceExportPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex items-center justify-center py-8 text-muted-foreground">
+            <div className="text-muted-foreground flex items-center justify-center py-8">
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
               Loading traces...
             </div>
           ) : traces.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+            <div className="text-muted-foreground flex flex-col items-center justify-center py-8">
               <FileText className="mb-2 h-8 w-8" />
               <p>No reasoning traces found.</p>
               <p className="text-xs">Traces are created when AI outputs are generated.</p>
@@ -267,24 +266,24 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
 
   return (
     <div
-      className="rounded-lg border p-3 hover:bg-muted/50 cursor-pointer transition-colors"
+      className="hover:bg-muted/50 cursor-pointer rounded-lg border p-3 transition-colors"
       onClick={() => setExpanded(!expanded)}
     >
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex min-w-0 items-center gap-3">
           <ChevronRight
-            className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${
+            className={`text-muted-foreground h-4 w-4 shrink-0 transition-transform ${
               expanded ? "rotate-90" : ""
             }`}
           />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-muted-foreground truncate max-w-[120px]">
+              <span className="text-muted-foreground max-w-[120px] truncate font-mono text-xs">
                 {trace.trace_id.slice(0, 8)}...
               </span>
-              <span className="text-xs text-muted-foreground">{time}</span>
+              <span className="text-muted-foreground text-xs">{time}</span>
             </div>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="mt-1 flex items-center gap-2">
               {trace.guardrail_passed === true && (
                 <Badge variant="success" className="text-xs">
                   <CheckCircle2 className="mr-1 h-3 w-3" />
@@ -323,7 +322,7 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-4 text-xs text-muted-foreground shrink-0">
+        <div className="text-muted-foreground flex shrink-0 items-center gap-4 text-xs">
           <span className="flex items-center gap-1">
             <Cpu className="h-3 w-3" />
             {trace.model_used.split(":").pop()}
@@ -338,7 +337,7 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
       </div>
 
       {expanded && (
-        <div className="mt-3 pt-3 border-t space-y-2 text-xs">
+        <div className="mt-3 space-y-2 border-t pt-3 text-xs">
           <div className="grid grid-cols-2 gap-x-4 gap-y-1">
             <div>
               <span className="text-muted-foreground">Trace ID:</span>{" "}
@@ -367,10 +366,12 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
               </code>
             </div>
             <div>
-              <span className="text-muted-foreground">Answer Length:</span> {trace.answer_length} chars
+              <span className="text-muted-foreground">Answer Length:</span> {trace.answer_length}{" "}
+              chars
             </div>
             <div>
-              <span className="text-muted-foreground">Regenerations:</span> {trace.regeneration_count}
+              <span className="text-muted-foreground">Regenerations:</span>{" "}
+              {trace.regeneration_count}
             </div>
             <div>
               <span className="text-muted-foreground">Pages Gathered:</span> {trace.pages_gathered}
@@ -384,7 +385,7 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
               <span className="text-muted-foreground">Warnings:</span>
               <div className="mt-1 flex flex-wrap gap-1">
                 {trace.warnings.map((w, i) => (
-                  <Badge key={i} variant="default" className="text-xs font-mono">
+                  <Badge key={i} variant="default" className="font-mono text-xs">
                     {w}
                   </Badge>
                 ))}
