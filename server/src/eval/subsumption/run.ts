@@ -48,6 +48,11 @@ interface CaseResult {
   keyword_misses: string[];
   keyword_match_rate: number;
   mentions_expected_law: boolean;
+  // Section + Conclusion evaluation (T2.2 audit)
+  expected_section: string;
+  section_hit: boolean;
+  expected_conclusion: string;
+  conclusion_hit: boolean;
   // Overall
   pass: boolean;
   error?: string;
@@ -63,6 +68,8 @@ interface BenchmarkReport {
     avg_hallucination_rate: number;
     avg_keyword_match_rate: number;
     pass_rate: number;
+    section_hit_rate: number;
+    conclusion_hit_rate: number;
     grounded_answers: number;
   };
   cases: CaseResult[];
@@ -279,8 +286,21 @@ ${context}`;
       const mentionsExpectedLaw = answerLower.includes(c.expected_law.toLowerCase()) ||
         retrievedSlugs.some((s) => s.startsWith(expectedLawPrefix));
 
+      // Step 4b: Section + Conclusion evaluation (T2.2 audit)
+      const sectionNum = (c.expected_section ?? "").replace(/§\s*/, "");
+      const sectionHit = !c.expected_section ||
+        answerLower.includes(c.expected_section.toLowerCase()) ||
+        answerLower.includes(`§ ${sectionNum}`) ||
+        answerLower.includes(`§${sectionNum}`);
+      const conclusionLower = c.expected_conclusion.toLowerCase();
+      const conclusionKeyTerms = conclusionLower
+        .match(/[\p{L}]{4,}/gu)?.filter(t => !["nach","ist","kann","wird","hat","haben","nicht","auch","sich","wenn","dann","oder","und","als","den","des","dem","der","die","das","ein","eine","einer","eines","einem","mit","zu","von","für","auf","bei","dies","diese","dieser","dieses"].includes(t)) ?? [];
+      const conclusionMatchedTerms = conclusionKeyTerms.filter(t => answerLower.includes(t));
+      const conclusionHit = conclusionKeyTerms.length > 0 &&
+        conclusionMatchedTerms.length / conclusionKeyTerms.length >= 0.5;
+
       // Step 5: Overall pass
-      const pass = lawHit && hallucinationRate <= 0.3 && keywordMatchRate >= 0.4;
+      const pass = lawHit && hallucinationRate <= 0.3 && keywordMatchRate >= 0.4 && sectionHit;
 
       const result: CaseResult = {
         case_id: c.case_id,
@@ -298,6 +318,10 @@ ${context}`;
         keyword_misses: keywordMisses,
         keyword_match_rate: keywordMatchRate,
         mentions_expected_law: mentionsExpectedLaw,
+        expected_section: c.expected_section ?? "",
+        section_hit: sectionHit,
+        expected_conclusion: c.expected_conclusion,
+        conclusion_hit: conclusionHit,
         pass,
       };
       results.push(result);
@@ -323,6 +347,10 @@ ${context}`;
         keyword_misses: c.expected_keywords,
         keyword_match_rate: 0,
         mentions_expected_law: false,
+        expected_section: c.expected_section ?? "",
+        section_hit: false,
+        expected_conclusion: c.expected_conclusion,
+        conclusion_hit: false,
         pass: false,
         error: String(err?.message ?? err),
       });
@@ -343,6 +371,8 @@ ${context}`;
       avg_hallucination_rate: results.reduce((s, r) => s + r.hallucination_rate, 0) / n,
       avg_keyword_match_rate: results.reduce((s, r) => s + r.keyword_match_rate, 0) / n,
       pass_rate: results.filter((r) => r.pass).length / n,
+      section_hit_rate: results.filter((r) => r.section_hit).length / n,
+      conclusion_hit_rate: results.filter((r) => r.conclusion_hit).length / n,
       grounded_answers: results.filter((r) => r.hallucination_rate <= 0.3).length,
     },
     cases: results,
@@ -354,6 +384,8 @@ ${context}`;
     `  Avg Hallucination Rate: ${(report.aggregate.avg_hallucination_rate * 100).toFixed(1)}%\n` +
     `  Avg Keyword Match:      ${(report.aggregate.avg_keyword_match_rate * 100).toFixed(1)}%\n` +
     `  Grounded Answers:       ${report.aggregate.grounded_answers}/${n}\n` +
+    `  Section Hit Rate:       ${(report.aggregate.section_hit_rate * 100).toFixed(1)}%\n` +
+    `  Conclusion Hit Rate:    ${(report.aggregate.conclusion_hit_rate * 100).toFixed(1)}%\n` +
     `  Pass Rate:              ${(report.aggregate.pass_rate * 100).toFixed(1)}%\n`
   );
 

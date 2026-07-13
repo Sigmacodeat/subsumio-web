@@ -1,0 +1,1148 @@
+{
+  "audit_date": "2026-07-13T12:26:38.940Z",
+  "total_cases": 105,
+  "by_jurisdiction": {
+    "de": {
+      "total": 70,
+      "valid": 70,
+      "corrected": 0,
+      "removed": 0,
+      "disputed": 0
+    },
+    "at": {
+      "total": 35,
+      "valid": 27,
+      "corrected": 6,
+      "removed": 0,
+      "disputed": 2
+    }
+  },
+  "by_status": {
+    "valid": 97,
+    "corrected": 6,
+    "removed": 0,
+    "disputed": 2
+  },
+  "cases": [
+    {
+      "case_id": "sub-de-031",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 543",
+      "expected_conclusion": "Nach § 543 BGB ist eine fristlose Kündigung möglich bei Zahlungsverzug von 2 Monatsmieten.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-032",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 434",
+      "expected_conclusion": "Ja, nach § 434 BGB liegt ein Sachmangel vor, da die Ist-Beschaffenheit von der versprochenen Soll-Beschaffenheit abweicht.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-033",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 528",
+      "expected_conclusion": "Nach § 528 BGB kann A die Schenkung zurückfordern, wenn er außerstande ist, seinen angemessenen Unterhalt zu bestreiten.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-034",
+      "jurisdiction": "de",
+      "expected_law": "hgb",
+      "expected_section": "§ 128",
+      "expected_conclusion": "Nach § 128 HGB haften die Gesellschafter einer OHG persönlich und unbeschränkt für die Gesellschaftsschulden.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-035",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 164",
+      "expected_conclusion": "Nach § 164 BGB ist der Verkauf wirksam, wenn B Vertretungsmacht hatte. Das Geschäft wirkt direkt für und gegen A.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-036",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 240",
+      "expected_conclusion": "Ja, nach § 240 StGB liegt eine Nötigung vor durch Drohung mit einem empfindlichen Übel.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-037",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 316",
+      "expected_conclusion": "Nach § 316 StGB ist Trunkenheit im Verkehr strafbar, wenn die Fahrtüchtigkeit beeinträchtigt ist. Bei 0,3 Promille mit Ausfallerscheinungen liegt eine Straftat vor.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-038",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 303a",
+      "expected_conclusion": "Nach § 303a StGB liegt eine Datenveränderung vor, wenn A Daten löscht, unterdrückt, verändert oder unbrauchbar macht.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-039",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 370",
+      "expected_conclusion": "Nach § 370 StGB liegt eine Steuerhinterziehung vor durch unrichtige Angaben in der Steuererklärung.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-040",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 323c",
+      "expected_conclusion": "Nach § 323c StGB macht sich A der unterlassenen Hilfeleistung strafbar, da er bei einem Unglücksfall nicht Hilfe leistet.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-041",
+      "jurisdiction": "de",
+      "expected_law": "zpo",
+      "expected_section": "§ 23",
+      "expected_conclusion": "Nach § 23 ZPO ist der Gerichtsstand des Vermögens am Ort gegeben, wo sich das Vermögen des Beklagten befindet.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-042",
+      "jurisdiction": "de",
+      "expected_law": "zpo",
+      "expected_section": "§ 688",
+      "expected_conclusion": "Nach § 688 ZPO kann A einen Mahnbescheid beim Amtsgericht beantragen, ohne dass eine Begründung erforderlich ist.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-043",
+      "jurisdiction": "de",
+      "expected_law": "zpo",
+      "expected_section": "§ 704",
+      "expected_conclusion": "Nach § 704 ZPO benötigt A einen Vollstreckungstitel (z.B. ein Urteil) mit Vollstreckungsklausel, um die Zwangsvollstreckung durchzuführen.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-044",
+      "jurisdiction": "de",
+      "expected_law": "zpo",
+      "expected_section": "§ 233",
+      "expected_conclusion": "Nach § 233 ZPO kann A Wiedereinsetzung in den vorigen Stand beantragen, wenn er ohne sein Verschulden an der Frist gehindert war.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-045",
+      "jurisdiction": "de",
+      "expected_law": "hgb",
+      "expected_section": "§ 1",
+      "expected_conclusion": "Nach § 1 HGB ist Kaufmann, wer ein Handelsgewerbe betreibt. Die Eintragung ins Handelsregister hat deklaratorische Wirkung.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-046",
+      "jurisdiction": "de",
+      "expected_law": "hgb",
+      "expected_section": "§ 49",
+      "expected_conclusion": "Nach § 49 HGB ermächtigt die Prokura zu allen Arten von gerichtlichen und außergerichtlichen Geschäften und Rechtshandlungen.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-047",
+      "jurisdiction": "de",
+      "expected_law": "ao",
+      "expected_section": "§ 12",
+      "expected_conclusion": "Nach § 12 AO ist eine Betriebstätte jede feste Geschäftseinrichtung oder Anlage, die dem Unternehmen dient.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-048",
+      "jurisdiction": "de",
+      "expected_law": "ao",
+      "expected_section": "§ 108",
+      "expected_conclusion": "Nach § 108 AO beginnt die Frist mit der Bekanntgabe des Verwaltungsaktes und endet am letzten Tag des Monats.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-049",
+      "jurisdiction": "de",
+      "expected_law": "ao",
+      "expected_section": "§ 110",
+      "expected_conclusion": "Nach § 110 AO kann A Wiedereinsetzung beantragen, wenn er ohne Verschulden an der Einhaltung der Frist gehindert war.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-050",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 929",
+      "expected_conclusion": "Nach § 929 BGB erfordert die Eigentumsübertragung an einem Grundstück die Einigung (Auflassung) und die Eintragung ins Grundbuch.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-051",
+      "jurisdiction": "de",
+      "expected_law": "zpo",
+      "expected_section": "§ 253",
+      "expected_conclusion": "Nach § 253 ZPO muss A eine Klageschrift beim zuständigen Gericht einreichen, die den Streitgegenstand und den Klageantrag enthält.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-052",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 823",
+      "expected_conclusion": "Nach § 823 BGB haftet der Geschäftsinhaber für die Verletzung der Verkehrssicherungspflicht, da das Regal unsicher montiert war.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-053",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 1566",
+      "expected_conclusion": "Nach § 1566 BGB ist eine Scheidung nach 1 Jahr Trennung möglich, wenn beide Ehegatten zustimmen oder die Fortsetzung der Ehe unzumutbar ist.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-054",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 2303",
+      "expected_conclusion": "Nach § 2303 BGB haben die Kinder einen Pflichtteilsanspruch, auch wenn sie im Testament enterbt wurden.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-055",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 823",
+      "expected_conclusion": "Nach § 823 BGB hat B Schadensersatzansprüche gegen A wegen der fahrlässig herbeigeführten Körperverletzung.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-056",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 634",
+      "expected_conclusion": "Nach § 634 BGB kann A Nachbesserung verlangen, den Preis mindern oder vom Vertrag zurücktreten, wenn das Werk mangelhaft ist.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-057",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 488",
+      "expected_conclusion": "Nach § 488 BGB hat A einen Anspruch auf Rückzahlung des Darlehens gemäß den vereinbarten Bedingungen.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-058",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 965",
+      "expected_conclusion": "Nach § 965 BGB muss A den Fund unverzüglich dem Verlierer oder dem Fundamt anzeigen.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-059",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 1113",
+      "expected_conclusion": "Nach § 1113 BGB kann der Gläubiger aus der Hypothek die Zwangsvollstreckung in das Grundstück betreiben.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-060",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 985",
+      "expected_conclusion": "Nach § 985 BGB hat A als Eigentümer einen Herausgabeanspruch gegen B, der die Sache ohne Rechtgrund besitzt.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-061",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 119",
+      "expected_conclusion": "Nach § 119 BGB kann B die Willenserklärung wegen Irrtums anfechten, wenn er über den Inhalt der Erklärung irrte.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-062",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 104",
+      "expected_conclusion": "Nach § 104 BGB ist der Kaufvertrag nichtig, da A unter 7 Jahre alt ist und geschäftsunfähig ist.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-063",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 223",
+      "expected_conclusion": "Nach § 223 StGB liegt eine einfache Körperverletzung vor durch vorsätzliche Misshandlung.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-064",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 186",
+      "expected_conclusion": "Nach § 186 StGB liegt eine üble Nachrede vor, da A eine ehrenrührige Tatsache behauptet hat, die nicht erweislich wahr ist.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-065",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 306",
+      "expected_conclusion": "Nach § 306 StGB liegt eine Brandstiftung vor, da A eine fremde Sache in Brand gesetzt hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-066",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 266",
+      "expected_conclusion": "Nach § 266 StGB liegt Untreue vor, da A seine Vermögensbetreuungspflicht missbraucht und der Bank einen Schaden zugefügt hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-067",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 267",
+      "expected_conclusion": "Nach § 267 StGB liegt Urkundenfälschung vor, da A eine unechte Urkunde hergestellt hat, um im Rechtsverkehr zu täuschen.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-068",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 331",
+      "expected_conclusion": "Nach § 331 StGB liegt Bestechung vor, da A einem Amtsträger einen Vorteil angeboten hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-069",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 153",
+      "expected_conclusion": "Nach § 153 StGB liegt eine Falschaussage vor, da A vor Gericht eine unwahre Aussage gemacht hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-070",
+      "jurisdiction": "de",
+      "expected_law": "inso",
+      "expected_section": "§ 286",
+      "expected_conclusion": "Nach § 286 InsO kann A Restschuldbefreiung erlangen, wenn er ein Insolvenzverfahren durchläuft und die Wohlverhaltenspflichten einhält.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-071",
+      "jurisdiction": "de",
+      "expected_law": "zpo",
+      "expected_section": "§ 694",
+      "expected_conclusion": "Nach § 694 ZPO kann A einen Mahnbescheid beantragen. Wenn B nicht widerspricht, erlässt das Gericht einen Vollstreckungsbescheid.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-072",
+      "jurisdiction": "de",
+      "expected_law": "zpo",
+      "expected_section": "§ 542",
+      "expected_conclusion": "Nach § 542 ZPO ist die Revision nur zulässig, wenn sie vom Berufungsgericht zugelassen wurde oder der Streitwert 600 € übersteigt.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-073",
+      "jurisdiction": "de",
+      "expected_law": "zpo",
+      "expected_section": "§ 940",
+      "expected_conclusion": "Nach § 940 ZPO kann A eine einstweilige Verfügung erwirken, wenn ein Verfügungsgrund (Dringlichkeit) vorliegt.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-074",
+      "jurisdiction": "de",
+      "expected_law": "hgb",
+      "expected_section": "§ 171",
+      "expected_conclusion": "Nach § 171 HGB haftet A den Gläubigern direkt bis zur Höhe seiner Einlage, solange er diese nicht erbracht hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-075",
+      "jurisdiction": "de",
+      "expected_law": "hgb",
+      "expected_section": "§ 87",
+      "expected_conclusion": "Nach § 87 HGB hat A einen Provisionsanspruch, wenn das vermittelte Geschäft zustande gekommen ist.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-076",
+      "jurisdiction": "de",
+      "expected_law": "ao",
+      "expected_section": "§ 200",
+      "expected_conclusion": "Nach § 200 AO muss A während der Außenprüfung die erforderlichen Unterlagen vorlegen und Auskünfte erteilen.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-077",
+      "jurisdiction": "de",
+      "expected_law": "ao",
+      "expected_section": "§ 249",
+      "expected_conclusion": "Nach § 249 AO kann das Finanzamt Zwangsvollstreckung nach den Vorschriften der Abgabenordnung durchführen.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-078",
+      "jurisdiction": "de",
+      "expected_law": "vwgo",
+      "expected_section": "§ 42",
+      "expected_conclusion": "Nach § 42 VwGO kann A Anfechtungsklage vor dem Verwaltungsgericht erheben gegen den Ablehnungsbescheid.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-079",
+      "jurisdiction": "de",
+      "expected_law": "uwg",
+      "expected_section": "§ 5",
+      "expected_conclusion": "Nach § 5 UWG liegt eine irreführende geschäftliche Handlung vor, da die Aussage nicht belegbar ist und den Verbraucher täuscht.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-080",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 32",
+      "expected_conclusion": "Nach § 32 StGB ist A nicht strafbar, da die Verletzung in Notwehr erfolgte zur Abwehr eines gegenwärtigen rechtswidrigen Angriffs.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-081",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 34",
+      "expected_conclusion": "Nach § 34 StGB ist A nicht strafbar, wenn die Handlung zur Abwehr einer gegenwärtigen Gefahr erforderlich war und das geschützte Interesse das beeinträchtigte überwiegt.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-082",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 22",
+      "expected_conclusion": "Nach § 22 StGB ist A strafbar, wenn er nach seiner Vorstellung von der Tat zur Verwirklichung des Tatbestands unmittelbar angesetzt hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-083",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 27",
+      "expected_conclusion": "Nach § 27 StGB wird A als Gehilfe bestraft, wenn er vorsätzlich einem anderen zu dessen vorsätzlicher Tat Hilfe geleistet hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-084",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 26",
+      "expected_conclusion": "Nach § 26 StGB wird A als Anstifter bestraft, wenn er einen anderen zu dessen vorsätzlicher Tat bestimmt hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-085",
+      "jurisdiction": "de",
+      "expected_law": "stgb",
+      "expected_section": "§ 19",
+      "expected_conclusion": "Nach § 19 StGB ist A schuldunfähig, wenn er unter 14 Jahre alt ist. Mit 17 Jahren ist A schuldfähig, aber es gilt das Jugendstrafrecht.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-086",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 323",
+      "expected_conclusion": "Nach § 323 BGB kann A vom Vertrag zurücktreten, wenn B die Leistung nicht erbracht hat und A eine Frist gesetzt hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-087",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 280",
+      "expected_conclusion": "Nach § 280 BGB haftet A für die Pflichtverletzung, wenn die Auskunft unrichtig war und A dies zu vertreten hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-088",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 280",
+      "expected_conclusion": "Nach § 280 BGB hat A Schadensersatzanspruch gegen B wegen der Pflichtverletzung, die Mietsache schonend zu behandeln.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-089",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 812",
+      "expected_conclusion": "Nach § 812 BGB kann A das Geld zurückfordern, da die Leistung ohne rechtlichen Grund erbracht wurde.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-090",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 434",
+      "expected_conclusion": "Nach § 434 BGB liegt ein Sachmangel vor, wenn das Grundstück mit einer nicht vereinbarten Dienstbarkeit belastet ist. B kann Gewährleistungsrechte geltend machen.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-091",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 622",
+      "expected_conclusion": "Nach § 622 BGB und dem Mutterschutzgesetz ist die Kündigung einer schwangeren Arbeitnehmerin grundsätzlich unwirksam.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-092",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 280",
+      "expected_conclusion": "Nach § 280 BGB hat A Schadensersatzanspruch gegen B wegen der Pflichtverletzung im Rahmen des Dienstvertrags.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-093",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 525",
+      "expected_conclusion": "Nach § 525 BGB kann A die Schenkung widerrufen, wenn B die Auflage nicht erfüllt und die Erfüllung der Auflage ein Schenkungsmotiv war.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-094",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 168",
+      "expected_conclusion": "Nach § 168 BGB erlischt die Vollmacht durch Widerruf. Das Innenverhältnis bleibt hiervon unberührt.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-095",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 280",
+      "expected_conclusion": "Nach § 280 BGB hat A einen Schadensersatzanspruch gegen B, wenn B die Mietsache beschädigt hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-096",
+      "jurisdiction": "de",
+      "expected_law": "zpo",
+      "expected_section": "§ 253",
+      "expected_conclusion": "Nach § 253 ZPO muss A eine Klageschrift beim zuständigen Gericht einreichen, die den Streitgegenstand und den Klageantrag enthält.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-097",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 488",
+      "expected_conclusion": "Nach § 488 BGB kann A das Darlehen kündigen, wenn B mit der Rückzahlung in Verzug gerät.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-098",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 323",
+      "expected_conclusion": "Nach § 323 BGB kann A vom Vertrag zurücktreten, wenn B den Kaufpreis nicht zahlt und A eine Frist gesetzt hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-099",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 603",
+      "expected_conclusion": "Nach § 603 BGB kann A die Sache zurückfordern, wenn B die Pflichten aus dem Leihvertrag verletzt.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-de-100",
+      "jurisdiction": "de",
+      "expected_law": "bgb",
+      "expected_section": "§ 985",
+      "expected_conclusion": "Nach § 985 BGB hat A als Eigentümer einen Herausgabeanspruch gegen B, der die Urkunde ohne Rechtgrund besitzt.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-016",
+      "jurisdiction": "at",
+      "expected_law": "abgb",
+      "expected_section": "§ 1096",
+      "expected_conclusion": "Nach § 1096 ABGB ist eine fristlose Kündigung möglich bei erheblichem Zahlungsverzug.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-017",
+      "jurisdiction": "at",
+      "expected_law": "abgb",
+      "expected_section": "§ 922",
+      "expected_conclusion": "Ja, nach § 922 ABGB liegt ein Mangel vor, da die Ist-Beschaffenheit von der vereinbarten Soll-Beschaffenheit abweicht.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-018",
+      "jurisdiction": "at",
+      "expected_law": "abgb",
+      "expected_section": "§ 948",
+      "expected_conclusion": "Nach § 948 ABGB kann A die Schenkung zurückfordern, wenn er außerstande ist, seinen angemessenen Unterhalt zu bestreiten.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-019",
+      "jurisdiction": "at",
+      "expected_law": "ugb",
+      "expected_section": "§ 105",
+      "expected_conclusion": "Nach § 105 UGB haften die Gesellschafter einer OG persönlich und unbeschränkt für die Gesellschaftsschulden.",
+      "status": "corrected",
+      "issues": [
+        "expected_section § 105 UGB defines the OHG, not personal liability",
+        "Personal unlimited liability of partners is in § 128 UGB"
+      ],
+      "corrections": {
+        "expected_section": "§ 128",
+        "expected_conclusion": "Nach § 128 UGB haften die Gesellschafter einer OHG persönlich und unbeschränkt für die Gesellschaftsschulden."
+      },
+      "notes": "Juristische Freigabe erforderlich. § 105 UGB definiert die OHG, § 128 UGB regelt die Haftung."
+    },
+    {
+      "case_id": "sub-at-020",
+      "jurisdiction": "at",
+      "expected_law": "abgb",
+      "expected_section": "§ 1002",
+      "expected_conclusion": "Nach § 1002 ABGB ist der Verkauf wirksam, wenn B Vertretungsmacht hatte. Das Geschäft wirkt direkt für und gegen A.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-021",
+      "jurisdiction": "at",
+      "expected_law": "stgb",
+      "expected_section": "§ 105",
+      "expected_conclusion": "Ja, nach § 105 StGB liegt eine Nötigung vor durch Drohung mit einem empfindlichen Übel.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-022",
+      "jurisdiction": "at",
+      "expected_law": "stgb",
+      "expected_section": "§ 81",
+      "expected_conclusion": "Nach § 81 StGB ist Trunkenheit im Verkehr strafbar, wenn die Fahrtüchtigkeit beeinträchtigt ist.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-023",
+      "jurisdiction": "at",
+      "expected_law": "stgb",
+      "expected_section": "§ 95",
+      "expected_conclusion": "Nach § 95 StGB macht sich A der unterlassenen Hilfeleistung strafbar, da er bei einem Unglücksfall nicht Hilfe leistet.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-024",
+      "jurisdiction": "at",
+      "expected_law": "zpo",
+      "expected_section": "§ 27",
+      "expected_conclusion": "Nach § 27 ZPO ist das Bezirksgericht zuständig für Streitwerte bis 5.000 €.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-025",
+      "jurisdiction": "at",
+      "expected_law": "zpo",
+      "expected_section": "§ 309",
+      "expected_conclusion": "Nach § 309 ZPO benötigt A einen Vollstreckungstitel (z.B. ein Urteil) mit Exekutionsklausel, um die Zwangsvollstreckung durchzuführen.",
+      "status": "corrected",
+      "issues": [
+        "expected_section '§ 309' not found in zpo-at.md",
+        "expected_section § 309 ZPO does not exist in the AT ZPO corpus",
+        "Exekutionsvoraussetzungen (Vollstreckungstitel) are in § 291 ZPO"
+      ],
+      "corrections": {
+        "expected_section": "§ 291",
+        "expected_conclusion": "Nach § 291 ZPO benötigt A einen Vollstreckungstitel (z.B. ein Urteil) mit Exekutionsklausel, um die Zwangsvollstreckung durchzuführen."
+      },
+      "notes": "Juristische Freigabe erforderlich. § 309 existiert nicht in der österreichischen ZPO."
+    },
+    {
+      "case_id": "sub-at-026",
+      "jurisdiction": "at",
+      "expected_law": "zpo",
+      "expected_section": "§ 146",
+      "expected_conclusion": "Nach § 146 ZPO kann A Wiedereinsetzung in den vorigen Stand beantragen, wenn er ohne sein Verschulden an der Frist gehindert war.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-027",
+      "jurisdiction": "at",
+      "expected_law": "ugb",
+      "expected_section": "§ 1",
+      "expected_conclusion": "Nach § 1 UGB ist Unternehmer, wer ein Unternehmen betreibt. Die Eintragung im Firmenbuch hat deklaratorische Wirkung.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-028",
+      "jurisdiction": "at",
+      "expected_law": "ugb",
+      "expected_section": "§ 49",
+      "expected_conclusion": "Nach § 49 UGB ermächtigt die Prokura zu allen Arten von gerichtlichen und außergerichtlichen Geschäften und Rechtshandlungen.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-029",
+      "jurisdiction": "at",
+      "expected_law": "bao",
+      "expected_section": "§ 27",
+      "expected_conclusion": "Nach § 27 BAO ist eine Betriebstätte eine feste Niederlassung, die dem Unternehmen dient.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-030",
+      "jurisdiction": "at",
+      "expected_law": "bao",
+      "expected_section": "§ 78",
+      "expected_conclusion": "Nach § 78 BAO beginnt die Frist mit der Bekanntgabe des Bescheids und endet am letzten Tag des Monats.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-031",
+      "jurisdiction": "at",
+      "expected_law": "bao",
+      "expected_section": "§ 80",
+      "expected_conclusion": "Nach § 80 BAO kann A Wiedereinsetzung beantragen, wenn er ohne Verschulden an der Einhaltung der Frist gehindert war.",
+      "status": "corrected",
+      "issues": [
+        "expected_section § 80 BAO is not about Wiedereinsetzung",
+        "Wiedereinsetzung in den vorigen Stand is regulated in § 145 BAO"
+      ],
+      "corrections": {
+        "expected_section": "§ 145",
+        "expected_conclusion": "Nach § 145 BAO kann A Wiedereinsetzung in den vorigen Stand beantragen, wenn er ohne sein Verschulden an der Einhaltung einer Frist gehindert war."
+      },
+      "notes": "Juristische Freigabe erforderlich. § 80 BAO regelt nicht die Wiedereinsetzung."
+    },
+    {
+      "case_id": "sub-at-032",
+      "jurisdiction": "at",
+      "expected_law": "abgb",
+      "expected_section": "§ 380",
+      "expected_conclusion": "Nach § 380 ABGB erfordert die Eigentumsübertragung an einem Grundstück die Einigung und die Eintragung im Grundbuch.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-033",
+      "jurisdiction": "at",
+      "expected_law": "zpo",
+      "expected_section": "§ 236",
+      "expected_conclusion": "Nach § 236 ZPO muss A eine Klageschrift beim zuständigen Gericht einreichen, die den Streitgegenstand und den Klageantrag enthält.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-034",
+      "jurisdiction": "at",
+      "expected_law": "abgb",
+      "expected_section": "§ 1311",
+      "expected_conclusion": "Nach § 1311 ABGB haftet der Geschäftsinhaber für die Verletzung der Verkehrssicherungspflicht, da das Regal unsicher montiert war.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-035",
+      "jurisdiction": "at",
+      "expected_law": "eheg",
+      "expected_section": "§ 43",
+      "expected_conclusion": "Nach § 43 EheG ist eine Scheidung wegen Verschuldens möglich, wenn die Ehe zerrüttet ist und ein Verschulden vorliegt.",
+      "status": "corrected",
+      "issues": [
+        "expected_section § 43 EheG is about Wiederverheiratung nach Todeserklärung, not divorce",
+        "Divorce is in § 46 EheG; separation-based divorce in § 55 EheG"
+      ],
+      "corrections": {
+        "expected_section": "§ 55",
+        "expected_conclusion": "Nach § 55 EheG ist eine Scheidung nach Aufhebung der häuslichen Gemeinschaft möglich, wenn die Wiederherstellung der Lebensgemeinschaft nicht erwartet werden kann."
+      },
+      "notes": "Juristische Freigabe erforderlich. § 43 EheG betrifft Wiederverheiratung nach Todeserklärung."
+    },
+    {
+      "case_id": "sub-at-036",
+      "jurisdiction": "at",
+      "expected_law": "abgb",
+      "expected_section": "§ 762",
+      "expected_conclusion": "Nach § 762 ABGB haben die Kinder einen Pflichtteilsanspruch, auch wenn sie im Testament enterbt wurden.",
+      "status": "disputed",
+      "issues": [
+        "expected_section § 762 ABGB is about 'Bedingungen und Belastungen' of Pflichtteil, not existence",
+        "Existence of Pflichtteilsanspruch is in § 761 ABGB"
+      ],
+      "corrections": {
+        "expected_section": "§ 761",
+        "expected_conclusion": "Nach § 761 ABGB haben die Kinder einen Pflichtteilsanspruch, auch wenn sie im Testament enterbt wurden."
+      },
+      "notes": "DISPUTED: § 762 im Pflichtteil-Kontext, aber regelt Bedingungen. Juristische Freigabe erforderlich."
+    },
+    {
+      "case_id": "sub-at-037",
+      "jurisdiction": "at",
+      "expected_law": "abgb",
+      "expected_section": "§ 1311",
+      "expected_conclusion": "Nach § 1311 ABGB hat B Schadenersatzansprüche gegen A wegen der fahrlässig herbeigeführten Körperverletzung.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-038",
+      "jurisdiction": "at",
+      "expected_law": "abgb",
+      "expected_section": "§ 1166",
+      "expected_conclusion": "Nach § 1166 ABGB kann A Nachbesserung verlangen, den Preis mindern oder vom Vertrag zurücktreten, wenn das Werk mangelhaft ist.",
+      "status": "corrected",
+      "issues": [
+        "expected_section § 1166 ABGB defines Werkvertrag, warranty rights are in § 1167 ABGB",
+        "Question asks about defective work rights (Gewährleistung), not definition"
+      ],
+      "corrections": {
+        "expected_section": "§ 1167",
+        "expected_conclusion": "Nach § 1167 ABGB kann A Gewährleistung geltend machen: Nachbesserung, Preisminderung oder Wandlung bei mangelhaftem Werk."
+      },
+      "notes": "Juristische Freigabe erforderlich. § 1166 definiert den Werkvertrag, § 1167 regelt die Gewährleistung."
+    },
+    {
+      "case_id": "sub-at-039",
+      "jurisdiction": "at",
+      "expected_law": "abgb",
+      "expected_section": "§ 1235",
+      "expected_conclusion": "Nach § 1235 ABGB hat A einen Anspruch auf Rückzahlung des Darlehens gemäß den vereinbarten Bedingungen.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-040",
+      "jurisdiction": "at",
+      "expected_law": "abgb",
+      "expected_section": "§ 399",
+      "expected_conclusion": "Nach § 399 ABGB muss A den Fund unverzüglich dem Verlierer oder der Fundbehörde anzeigen.",
+      "status": "corrected",
+      "issues": [
+        "expected_section § 399 ABGB is about Schatzteilung (treasure trove), not finder's duties",
+        "Finder's duties are in § 390 ABGB (Anzeigepflicht, Verwahrungspflicht)"
+      ],
+      "corrections": {
+        "expected_section": "§ 390",
+        "expected_conclusion": "Nach § 390 ABGB muss A den Fund unverzüglich dem Verlierer oder der zuständigen Behörde anzeigen und die Sache verwahren."
+      },
+      "notes": "Juristische Freigabe erforderlich. § 399 regelt die Teilung eines Schatzes, nicht die Finderpflichten."
+    },
+    {
+      "case_id": "sub-at-041",
+      "jurisdiction": "at",
+      "expected_law": "abgb",
+      "expected_section": "§ 366",
+      "expected_conclusion": "Nach § 366 ABGB hat A als Eigentümer einen Herausgabeanspruch gegen B, der die Sache ohne Rechtgrund besitzt.",
+      "status": "disputed",
+      "issues": [
+        "expected_law 'abgb' is wrong — question is about debt collection procedure (ZPO)",
+        "expected_section § 366 ABGB is about Eigenthumsklage (rei vindicatio), not debt collection",
+        "DE equivalent (sub-de-051) correctly uses zpo § 253"
+      ],
+      "corrections": {
+        "expected_law": "zpo",
+        "expected_section": "§ 236",
+        "expected_conclusion": "Nach § 236 ZPO muss A eine Klageschrift beim zuständigen Gericht einreichen, die den Streitgegenstand und den Klageantrag enthält."
+      },
+      "notes": "DISPUTED: Juristische Freigabe erforderlich. Frage ist prozessualer Natur."
+    },
+    {
+      "case_id": "sub-at-042",
+      "jurisdiction": "at",
+      "expected_law": "abgb",
+      "expected_section": "§ 871",
+      "expected_conclusion": "Nach § 871 ABGB kann B die Willenserklärung wegen Irrtums oder Täuschung anfechten.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-043",
+      "jurisdiction": "at",
+      "expected_law": "abgb",
+      "expected_section": "§ 21",
+      "expected_conclusion": "Nach § 21 ABGB ist der Kaufvertrag nichtig, da A unter 7 Jahre alt ist und geschäftsunfähig ist.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-044",
+      "jurisdiction": "at",
+      "expected_law": "stgb",
+      "expected_section": "§ 83",
+      "expected_conclusion": "Nach § 83 StGB liegt eine Körperverletzung vor durch vorsätzliche Misshandlung.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-045",
+      "jurisdiction": "at",
+      "expected_law": "stgb",
+      "expected_section": "§ 169",
+      "expected_conclusion": "Nach § 169 StGB liegt eine Brandstiftung vor, da A eine fremde Sache in Brand gesetzt hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-046",
+      "jurisdiction": "at",
+      "expected_law": "stgb",
+      "expected_section": "§ 153",
+      "expected_conclusion": "Nach § 153 StGB liegt Untreue vor, da A seine Vermögensbetreuungspflicht missbraucht und der Bank einen Schaden zugefügt hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-047",
+      "jurisdiction": "at",
+      "expected_law": "stgb",
+      "expected_section": "§ 223",
+      "expected_conclusion": "Nach § 223 StGB liegt Urkundenfälschung vor, da A eine unechte Urkunde hergestellt hat, um im Rechtsverkehr zu täuschen.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-048",
+      "jurisdiction": "at",
+      "expected_law": "stgb",
+      "expected_section": "§ 304",
+      "expected_conclusion": "Nach § 304 StGB liegt Bestechung vor, da A einem Amtsträger einen Vorteil angeboten hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-049",
+      "jurisdiction": "at",
+      "expected_law": "stgb",
+      "expected_section": "§ 3",
+      "expected_conclusion": "Nach § 3 StGB ist A nicht strafbar, da die Verletzung in Notwehr erfolgte zur Abwehr eines gegenwärtigen rechtswidrigen Angriffs.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    },
+    {
+      "case_id": "sub-at-050",
+      "jurisdiction": "at",
+      "expected_law": "stgb",
+      "expected_section": "§ 12",
+      "expected_conclusion": "Nach § 12 StGB wird A als Anstifter bestraft, wenn er einen anderen zu dessen vorsätzlicher Tat bestimmt hat.",
+      "status": "valid",
+      "issues": [],
+      "notes": "No issues found."
+    }
+  ],
+  "known_at_errors": [
+    "sub-at-035",
+    "sub-at-031",
+    "sub-at-019",
+    "sub-at-038",
+    "sub-at-040",
+    "sub-at-041",
+    "sub-at-036",
+    "sub-at-025"
+  ],
+  "superseded_metric": "95,2% Pass Rate (E2E Subsumption Benchmark v3) — superseded by this audit. Do not display as quality number until re-validated."
+}

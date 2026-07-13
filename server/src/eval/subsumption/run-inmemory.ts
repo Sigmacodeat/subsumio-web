@@ -50,6 +50,11 @@ interface CaseResult {
   keyword_misses: string[];
   keyword_match_rate: number;
   mentions_expected_law: boolean;
+  // Section + Conclusion evaluation (T2.2 audit)
+  expected_section: string;
+  section_hit: boolean;
+  expected_conclusion: string;
+  conclusion_hit: boolean;
   guardrail_passed: boolean;
   guardrail_regenerated: boolean;
   guardrail_flags: string[];
@@ -447,7 +452,20 @@ ${context}`;
         answerLower.includes(c.expected_law.toLowerCase()) ||
         retrievedSlugs.some((s) => s.startsWith(expectedLawPrefix));
 
-      const pass = lawHit && hallucinationRate <= 0.3 && keywordMatchRate >= 0.4;
+      // Section + Conclusion evaluation (T2.2 audit)
+      const sectionNum = (c.expected_section ?? "").replace(/§\s*/, "");
+      const sectionHit = !c.expected_section ||
+        answerLower.includes(c.expected_section.toLowerCase()) ||
+        answerLower.includes(`§ ${sectionNum}`) ||
+        answerLower.includes(`§${sectionNum}`);
+      const conclusionLower = c.expected_conclusion.toLowerCase();
+      const conclusionKeyTerms = conclusionLower
+        .match(/[\p{L}]{4,}/gu)?.filter(t => !["nach","ist","kann","wird","hat","haben","nicht","auch","sich","wenn","dann","oder","und","als","den","des","dem","der","die","das","ein","eine","einer","eines","einem","mit","zu","von","für","auf","bei","dies","diese","dieser","dieses"].includes(t)) ?? [];
+      const conclusionMatchedTerms = conclusionKeyTerms.filter(t => answerLower.includes(t));
+      const conclusionHit = conclusionKeyTerms.length > 0 &&
+        conclusionMatchedTerms.length / conclusionKeyTerms.length >= 0.5;
+
+      const pass = lawHit && hallucinationRate <= 0.3 && keywordMatchRate >= 0.4 && sectionHit;
 
       const result: CaseResult = {
         case_id: c.case_id,
@@ -464,6 +482,10 @@ ${context}`;
         keyword_misses: keywordMisses,
         keyword_match_rate: keywordMatchRate,
         mentions_expected_law: mentionsExpectedLaw,
+        expected_section: c.expected_section ?? "",
+        section_hit: sectionHit,
+        expected_conclusion: c.expected_conclusion,
+        conclusion_hit: conclusionHit,
         guardrail_passed: guardrailPassed,
         guardrail_regenerated: guardrailRegenerated,
         guardrail_flags: guardrailFlags,
@@ -491,6 +513,10 @@ ${context}`;
         keyword_misses: c.expected_keywords,
         keyword_match_rate: 0,
         mentions_expected_law: false,
+        expected_section: c.expected_section ?? "",
+        section_hit: false,
+        expected_conclusion: c.expected_conclusion,
+        conclusion_hit: false,
         guardrail_passed: false,
         guardrail_regenerated: false,
         guardrail_flags: [],
@@ -508,6 +534,8 @@ ${context}`;
   const avgHallucinationRate = results.reduce((s, r) => s + r.hallucination_rate, 0) / n;
   const avgKeywordMatchRate = results.reduce((s, r) => s + r.keyword_match_rate, 0) / n;
   const passRate = results.filter((r) => r.pass).length / n;
+  const sectionHitRate = results.filter((r) => r.section_hit).length / n;
+  const conclusionHitRate = results.filter((r) => r.conclusion_hit).length / n;
   const groundedAnswers = results.filter((r) => r.hallucination_rate <= 0.3).length;
   const guardrailPassCount = results.filter((r) => r.guardrail_passed).length;
   const guardrailRegenCount = results.filter((r) => r.guardrail_regenerated).length;
@@ -522,7 +550,9 @@ ${context}`;
       `  Grounded Answers:       ${groundedAnswers}/${n}\n` +
       `  Guardrail Pass:         ${guardrailPassCount}/${n} (${((guardrailPassCount / n) * 100).toFixed(1)}%)\n` +
       `  Guardrail Regenerated:  ${guardrailRegenCount}/${n} (${((guardrailRegenCount / n) * 100).toFixed(1)}%)\n` +
-      `  Pass Rate:              ${(passRate * 100).toFixed(1)}%\n`
+      `  Pass Rate:              ${(passRate * 100).toFixed(1)}%\n` +
+    `  Section Hit Rate:       ${(sectionHitRate * 100).toFixed(1)}%\n` +
+    `  Conclusion Hit Rate:    ${(conclusionHitRate * 100).toFixed(1)}%\n`
   );
 
   if (opts.outputPath) {
@@ -537,6 +567,8 @@ ${context}`;
         avg_hallucination_rate: avgHallucinationRate,
         avg_keyword_match_rate: avgKeywordMatchRate,
         pass_rate: passRate,
+        section_hit_rate: sectionHitRate,
+        conclusion_hit_rate: conclusionHitRate,
         grounded_answers: groundedAnswers,
       },
       cases: results,
