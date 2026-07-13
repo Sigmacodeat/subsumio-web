@@ -23,6 +23,11 @@ import {
 } from "./sandbox.ts";
 import { join } from "node:path";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import {
+  berechneFristAuto,
+  resolveFristArt,
+  FRISTEN_REGISTRY,
+} from "../../core/legal/frist-engine.ts";
 
 // ── Tool Types ────────────────────────────────────────────────────────
 
@@ -69,11 +74,15 @@ export interface SearchResult {
 
 export interface FristResult {
   frist_key: string;
+  fristbeginn: string;
   fristende: string;
-  notfrist?: string;
-  tage?: number;
-  regime?: string;
-  hemmung?: string[];
+  vorfrist: string;
+  notfrist: boolean;
+  tage: number;
+  regime: string;
+  hemmung: boolean;
+  hinweise: string[];
+  rechtsgrundlage: string;
 }
 
 export interface ToolResult {
@@ -266,15 +275,16 @@ export async function toolReadLaw(ctx: ToolContext, args: { slug: string }): Pro
     return { success: false, error: `Invalid slug format: ${slug}` };
   }
 
-  const filePath = join(ctx.corpusRoot, slug + ".md");
+  const relativeSlug = slug.replace(/^law\//, "");
+  const filePath = join(ctx.corpusRoot, relativeSlug + ".md");
   // Double-check no traversal
-  const normalized = validateSandboxPath(ctx.corpusRoot, slug + ".md");
+  const normalized = validateSandboxPath(ctx.corpusRoot, relativeSlug + ".md");
   if (!normalized || !filePath.startsWith(ctx.corpusRoot)) {
     return { success: false, error: "Path traversal detected" };
   }
 
   if (!existsSync(filePath)) {
-    return { success: false, error: `Law file not found: ${slug}` };
+    return { success: false, error: `Law file not found: ${slug} (looked at ${filePath})` };
   }
 
   const stat = statSync(filePath);
@@ -382,7 +392,35 @@ export async function toolCalculateFrist(
     return { success: true, data: result };
   }
 
-  return { success: false, error: "Frist engine not available" };
+  // Offline fallback: use the deterministic frist-engine
+  const art = resolveFristArt(fristKey);
+  if (!art) {
+    return {
+      success: false,
+      error: `Unknown frist key: ${fristKey} (known: ${FRISTEN_REGISTRY.map((f) => f.key).join(", ")})`,
+    };
+  }
+
+  try {
+    const result = berechneFristAuto(fristKey, startDate);
+    return {
+      success: true,
+      data: {
+        frist_key: fristKey,
+        fristbeginn: result.fristbeginn,
+        fristende: result.fristende,
+        vorfrist: result.vorfrist,
+        notfrist: result.art.notfrist,
+        tage: result.kalendertage,
+        regime: result.art.regime,
+        hemmung: result.art.gehemmtInVhfz,
+        hinweise: result.hinweise,
+        rechtsgrundlage: result.art.rechtsgrundlage,
+      } satisfies FristResult,
+    };
+  } catch (err) {
+    return { success: false, error: `Frist engine error: ${(err as Error).message}` };
+  }
 }
 
 // ── Tool Dispatcher ───────────────────────────────────────────────────

@@ -278,7 +278,7 @@ export async function listAuditLogs(opts: {
 
       const { rows } = await pool.query(
         `SELECT id::text, action, entity_type, entity_id, user_id, user_email, details, ip,
-                created_at::text as timestamp
+                hash, prev_hash, created_at::text as timestamp
          FROM subsumio_audit_log
          ${where}
          ORDER BY created_at DESC
@@ -295,6 +295,8 @@ export async function listAuditLogs(opts: {
         userEmail: r.user_email ?? undefined,
         details: r.details ?? undefined,
         ip: r.ip ?? undefined,
+        hash: r.hash ?? undefined,
+        prev_hash: r.prev_hash ?? undefined,
         timestamp: r.timestamp,
       }));
     } catch (err) {
@@ -324,6 +326,8 @@ export async function listAuditLogs(opts: {
         entityType: String(fm.entity_type || ""),
         entityId: fm.entity_id ? String(fm.entity_id) : undefined,
         timestamp: String(fm.timestamp || p.created_at || ""),
+        hash: fm.hash ? String(fm.hash) : undefined,
+        prev_hash: fm.prev_hash ? String(fm.prev_hash) : undefined,
         details,
       };
     });

@@ -8,9 +8,25 @@ export type TreatmentLabel =
   | "neutral"
   | "distinguishing"
   | "overruled"
+  | "limited" // eingeschränkt — judgment is confirmed but its scope is limited
   | "unknown";
 
 export type OverallStatus = "good_law" | "bad_law" | "at_risk" | "mixed" | "unknown";
+
+export interface BadLawSignal {
+  /** The judgement ID that emits the bad-law signal. */
+  source_judgement_id: string;
+  /** The court that issued the negative treatment. */
+  court: string;
+  /** The treatment label that triggered the signal. */
+  treatment: TreatmentLabel;
+  /** Human-readable explanation. */
+  explanation: string;
+  /** Date of the negative citation. */
+  date?: string;
+  /** Severity: "critical" (overruled), "high" (negative by supreme court), "medium" (limited). */
+  severity: "critical" | "high" | "medium";
+}
 
 export interface TreatmentClassification {
   treatment: TreatmentLabel;
@@ -26,11 +42,13 @@ export interface TreatmentAggregation {
   neutral_count: number;
   distinguishing_count: number;
   overruled_count: number;
+  limited_count: number;
   unknown_count: number;
   total_citations: number;
   time_weighted_score: number;
   court_hierarchy: Record<string, { positive: number; negative: number; neutral: number }>;
   at_risk_reasons: string[];
+  bad_law_signals: BadLawSignal[];
   last_citation_date: string | null;
 }
 
@@ -145,6 +163,7 @@ function validateTreatmentLabel(label: string): TreatmentLabel {
     "neutral",
     "distinguishing",
     "overruled",
+    "limited",
     "unknown",
   ];
   const normalized = label.toLowerCase().trim() as TreatmentLabel;
@@ -178,12 +197,28 @@ function heuristicClassification(input: LLMClassificationInput): TreatmentClassi
     "anderer sachverhalt",
   ];
   const overruledSignals = ["overruled", "aufgehoben durch", "nicht mehr anwendbar"];
+  const limitedSignals = [
+    "eingeschränkt",
+    "einschränkend",
+    "nur eingeschränkt",
+    "mit einschränkung",
+    "teilweise überholt",
+    "insoweit aufgehoben",
+    "jedenfalls insoweit nicht",
+  ];
 
   if (overruledSignals.some((s) => ctx.includes(s))) {
     return {
       treatment: "overruled",
       confidence: 0.7,
       explanation: "Heuristic: overruled signal detected",
+    };
+  }
+  if (limitedSignals.some((s) => ctx.includes(s))) {
+    return {
+      treatment: "limited",
+      confidence: 0.65,
+      explanation: "Heuristic: limited (eingeschränkt) signal detected",
     };
   }
   if (negativeSignals.some((s) => ctx.includes(s))) {
@@ -269,12 +304,13 @@ export async function aggregateTreatments(
     [judgementId]
   );
 
-  const counts = {
+  const counts: Record<TreatmentLabel, number> = {
     positive: 0,
     negative: 0,
     neutral: 0,
     distinguishing: 0,
     overruled: 0,
+    limited: 0,
     unknown: 0,
   };
 
@@ -282,6 +318,7 @@ export async function aggregateTreatments(
   const courtHierarchy: Record<string, { positive: number; negative: number; neutral: number }> =
     {};
   const atRiskReasons: string[] = [];
+  const badLawSignals: BadLawSignal[] = [];
   let lastCitationDate: Date | null = null;
 
   for (const row of result.rows) {
@@ -298,6 +335,8 @@ export async function aggregateTreatments(
         timeWeightedScore += tw * courtWeight;
       } else if (treatment === "negative" || treatment === "overruled") {
         timeWeightedScore -= tw * courtWeight * 1.5; // Negative signals weigh 1.5x
+      } else if (treatment === "limited") {
+        timeWeightedScore -= tw * courtWeight * 0.5; // Limited signals weigh 0.5x (less severe)
       }
 
       if (!lastCitationDate || citeDate > lastCitationDate) {
@@ -318,9 +357,36 @@ export async function aggregateTreatments(
     // At-risk detection: if a supreme court says negative
     if (treatment === "negative" && row.citing_court_level === "supreme") {
       atRiskReasons.push(`Negativ behandelt durch ${row.citing_court} (Obergericht)`);
+      badLawSignals.push({
+        source_judgement_id: row.citing_id ?? judgementId,
+        court: row.citing_court ?? "unknown",
+        treatment: "negative",
+        explanation: `Negativ behandelt durch ${row.citing_court} (Obergericht)`,
+        date: row.citing_date ? new Date(row.citing_date).toISOString().split("T")[0] : undefined,
+        severity: "high",
+      });
     }
     if (treatment === "overruled") {
       atRiskReasons.push(`Als überholt erklärt durch ${row.citing_court}`);
+      badLawSignals.push({
+        source_judgement_id: row.citing_id ?? judgementId,
+        court: row.citing_court ?? "unknown",
+        treatment: "overruled",
+        explanation: `Als überholt erklärt durch ${row.citing_court}`,
+        date: row.citing_date ? new Date(row.citing_date).toISOString().split("T")[0] : undefined,
+        severity: "critical",
+      });
+    }
+    if (treatment === "limited" && row.citing_court_level === "supreme") {
+      atRiskReasons.push(`Eingeschränkt durch ${row.citing_court} (Obergericht)`);
+      badLawSignals.push({
+        source_judgement_id: row.citing_id ?? judgementId,
+        court: row.citing_court ?? "unknown",
+        treatment: "limited",
+        explanation: `Eingeschränkt durch ${row.citing_court} (Obergericht)`,
+        date: row.citing_date ? new Date(row.citing_date).toISOString().split("T")[0] : undefined,
+        severity: "medium",
+      });
     }
   }
 
@@ -336,6 +402,12 @@ export async function aggregateTreatments(
     overallStatus = "bad_law";
   } else if (counts.negative > 0 && counts.positive > 0) {
     overallStatus = "mixed";
+  } else if (counts.limited > 0 && counts.positive > 0 && counts.negative === 0) {
+    // Limited + positive (no negative) → at_risk (scope narrowed but not overturned)
+    overallStatus = "at_risk";
+  } else if (counts.limited > 0 && counts.positive === 0 && counts.negative === 0) {
+    // Only limited citations → at_risk
+    overallStatus = "at_risk";
   } else if (counts.positive > 0 && counts.negative === 0) {
     // Check at-risk: positive citations that cite an overruled case
     if (atRiskReasons.length > 0) {
@@ -355,11 +427,13 @@ export async function aggregateTreatments(
     neutral_count: counts.neutral,
     distinguishing_count: counts.distinguishing,
     overruled_count: counts.overruled,
+    limited_count: counts.limited,
     unknown_count: counts.unknown,
     total_citations: total,
     time_weighted_score: Math.round(timeWeightedScore * 100) / 100,
     court_hierarchy: courtHierarchy,
     at_risk_reasons: [...new Set(atRiskReasons)],
+    bad_law_signals: badLawSignals,
     last_citation_date: lastCitationDate?.toISOString().split("T")[0] ?? null,
   };
 
@@ -367,9 +441,9 @@ export async function aggregateTreatments(
   await pool.query(
     `INSERT INTO subsumio_judgement_treatments
       (judgement_id, overall_status, positive_count, negative_count, neutral_count,
-       distinguishing_count, overruled_count, unknown_count, total_citations,
-       time_weighted_score, court_hierarchy, at_risk_reasons, last_citation_date, computed_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now())
+       distinguishing_count, overruled_count, limited_count, unknown_count, total_citations,
+       time_weighted_score, court_hierarchy, at_risk_reasons, bad_law_signals, last_citation_date, computed_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, now())
      ON CONFLICT (judgement_id) DO UPDATE SET
        overall_status = EXCLUDED.overall_status,
        positive_count = EXCLUDED.positive_count,
@@ -377,11 +451,13 @@ export async function aggregateTreatments(
        neutral_count = EXCLUDED.neutral_count,
        distinguishing_count = EXCLUDED.distinguishing_count,
        overruled_count = EXCLUDED.overruled_count,
+       limited_count = EXCLUDED.limited_count,
        unknown_count = EXCLUDED.unknown_count,
        total_citations = EXCLUDED.total_citations,
        time_weighted_score = EXCLUDED.time_weighted_score,
        court_hierarchy = EXCLUDED.court_hierarchy,
        at_risk_reasons = EXCLUDED.at_risk_reasons,
+       bad_law_signals = EXCLUDED.bad_law_signals,
        last_citation_date = EXCLUDED.last_citation_date,
        computed_at = now()`,
     [
@@ -392,11 +468,13 @@ export async function aggregateTreatments(
       aggregation.neutral_count,
       aggregation.distinguishing_count,
       aggregation.overruled_count,
+      aggregation.limited_count,
       aggregation.unknown_count,
       aggregation.total_citations,
       aggregation.time_weighted_score,
       JSON.stringify(aggregation.court_hierarchy),
       aggregation.at_risk_reasons,
+      JSON.stringify(aggregation.bad_law_signals),
       aggregation.last_citation_date,
     ]
   );
@@ -507,4 +585,216 @@ export async function batchValidateCitations(
   }
 
   return { processed, classified, errors };
+}
+
+// ── Active Negative Authority Search ──────────────────────────────────
+//
+// Given a judgement, actively search for cases that might have negatively
+// treated it (overruled, limited, or contradicted). This is the "negative
+// authority" or "red flag" search — the complement of Shepard's/Signal.
+//
+// Instead of passively waiting for citation graph data, this function
+// actively searches the corpus for known negative treatment patterns.
+
+export interface NegativeAuthorityResult {
+  /** The judgement that might be negatively treated. */
+  judgementId: string;
+  /** Potential negative treatments found. */
+  findings: NegativeAuthorityFinding[];
+  /** Whether any critical signals were found. */
+  hasCriticalSignals: boolean;
+  /** Summary for display. */
+  summary: string;
+}
+
+export interface NegativeAuthorityFinding {
+  /** The citing judgement that might treat the target negatively. */
+  citingJudgementId?: string;
+  /** The court of the citing judgement. */
+  court?: string;
+  /** The date of the citing judgement. */
+  date?: string;
+  /** The detected treatment type. */
+  treatment: TreatmentLabel;
+  /** The context snippet showing the treatment. */
+  context: string;
+  /** Confidence in the finding (0-1). */
+  confidence: number;
+  /** Whether this was verified via citation graph or heuristic. */
+  verified: boolean;
+}
+
+/**
+ * Actively search for negative authority (overruling, limitation, or contradiction)
+ * for a given judgement.
+ *
+ * This function:
+ * 1. Checks the existing citation graph for negative treatments
+ * 2. Searches for the judgement's reference in other judgements' content
+ *    using keyword patterns like "überholt", "aufgehoben", "eingeschränkt"
+ * 3. Returns findings sorted by severity (critical > high > medium)
+ */
+export async function findNegativeAuthority(
+  pool: Pool,
+  judgementId: string
+): Promise<NegativeAuthorityResult> {
+  const findings: NegativeAuthorityFinding[] = [];
+
+  // 1. Check existing citation graph for negative treatments
+  const citationResult = await pool.query(
+    `SELECT c.treatment, c.treatment_confidence, c.context_snippet,
+            j_citing.id as citing_id, j_citing.court as citing_court,
+            j_citing.decision_date as citing_date
+     FROM subsumio_judgement_citations c
+     JOIN subsumio_judgements j_citing ON c.citing_id = j_citing.id
+     WHERE c.cited_id = $1
+       AND c.treatment IN ('negative', 'overruled', 'limited', 'distinguishing')
+     ORDER BY
+       CASE c.treatment
+         WHEN 'overruled' THEN 1
+         WHEN 'negative' THEN 2
+         WHEN 'limited' THEN 3
+         WHEN 'distinguishing' THEN 4
+       END,
+       j_citing.decision_date DESC`,
+    [judgementId]
+  );
+
+  for (const row of citationResult.rows) {
+    findings.push({
+      citingJudgementId: row.citing_id,
+      court: row.citing_court,
+      date: row.citing_date ? new Date(row.citing_date).toISOString().split("T")[0] : undefined,
+      treatment: row.treatment as TreatmentLabel,
+      context: row.context_snippet ?? "",
+      confidence: row.treatment_confidence ?? 0.5,
+      verified: true,
+    });
+  }
+
+  // 2. Get the judgement's own reference (court + file number) for text search
+  const judgementResult = await pool.query(
+    "SELECT court, file_number, title, content FROM subsumio_judgements WHERE id = $1",
+    [judgementId]
+  );
+
+  const judgement = judgementResult.rows[0];
+  if (judgement?.file_number) {
+    // Search for other judgements that mention this file number alongside negative signals
+    const negativeKeywords = ["überholt", "aufgehoben", "eingeschränkt", "nicht mehr", "revidiert"];
+    for (const keyword of negativeKeywords) {
+      try {
+        const searchResult = await pool.query(
+          `SELECT id, court, decision_date, content
+           FROM subsumio_judgements
+           WHERE content ILIKE $1
+             AND id != $2
+           LIMIT 5`,
+          [`%${judgement.file_number}%${keyword}%`]
+        );
+
+        for (const row of searchResult.rows) {
+          // Extract context around the keyword
+          const content = row.content as string;
+          const idx = content.toLowerCase().indexOf(keyword);
+          if (idx === -1) continue;
+
+          const start = Math.max(0, idx - 200);
+          const end = Math.min(content.length, idx + keyword.length + 200);
+          const context = content.slice(start, end).trim();
+
+          // Skip if already found via citation graph
+          if (findings.some((f) => f.citingJudgementId === row.id)) continue;
+
+          findings.push({
+            citingJudgementId: row.id,
+            court: row.court,
+            date: row.decision_date
+              ? new Date(row.decision_date).toISOString().split("T")[0]
+              : undefined,
+            treatment:
+              keyword === "überholt" || keyword === "aufgehoben" || keyword === "nicht mehr"
+                ? "overruled"
+                : keyword === "eingeschränkt"
+                  ? "limited"
+                  : "negative",
+            context,
+            confidence: 0.5, // heuristic — not verified via citation graph
+            verified: false,
+          });
+        }
+      } catch {
+        // fail-open
+      }
+    }
+  }
+
+  // Sort by severity: overruled > negative > limited > distinguishing
+  const severityOrder: Record<TreatmentLabel, number> = {
+    overruled: 0,
+    negative: 1,
+    limited: 2,
+    distinguishing: 3,
+    positive: 4,
+    neutral: 5,
+    unknown: 6,
+  };
+  findings.sort((a, b) => {
+    const sevDiff = severityOrder[a.treatment] - severityOrder[b.treatment];
+    if (sevDiff !== 0) return sevDiff;
+    return b.confidence - a.confidence;
+  });
+
+  const hasCriticalSignals = findings.some(
+    (f) => f.treatment === "overruled" || (f.treatment === "negative" && f.confidence > 0.7)
+  );
+
+  const criticalCount = findings.filter((f) => f.treatment === "overruled").length;
+  const negativeCount = findings.filter((f) => f.treatment === "negative").length;
+  const limitedCount = findings.filter((f) => f.treatment === "limited").length;
+
+  let summary: string;
+  if (findings.length === 0) {
+    summary = "Keine negativen Behandlungen gefunden (Red Flag Check: negativ)";
+  } else if (hasCriticalSignals) {
+    summary = `KRITISCH: ${criticalCount} überholt, ${negativeCount} negativ, ${limitedCount} eingeschränkt — Red Flag!`;
+  } else {
+    summary = `${findings.length} Hinweise gefunden (${criticalCount} überholt, ${negativeCount} negativ, ${limitedCount} eingeschränkt)`;
+  }
+
+  return {
+    judgementId,
+    findings,
+    hasCriticalSignals,
+    summary,
+  };
+}
+
+/**
+ * Get bad-law signals for a judgement — convenience function that
+ * extracts just the bad-law signals from the treatment aggregation.
+ *
+ * This is the "signal propagation" function: it takes the aggregated
+ * treatment data and produces a clean signal list that can be attached
+ * to retrieval results.
+ */
+export async function getBadLawSignals(pool: Pool, judgementId: string): Promise<BadLawSignal[]> {
+  const result = await pool.query(
+    `SELECT bad_law_signals FROM subsumio_judgement_treatments WHERE judgement_id = $1`,
+    [judgementId]
+  );
+
+  const signals = result.rows[0]?.bad_law_signals;
+  if (!signals) return [];
+
+  if (typeof signals === "string") {
+    try {
+      return JSON.parse(signals) as BadLawSignal[];
+    } catch {
+      return [];
+    }
+  }
+
+  if (Array.isArray(signals)) return signals as BadLawSignal[];
+  return [];
 }

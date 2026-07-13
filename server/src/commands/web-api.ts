@@ -1088,8 +1088,12 @@ export async function runExtractionAndImport(
           part_slugs: pipelineSlugs,
           ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
           trigger: "post_upload",
-          ...(jurisdiction !== "at" ? { jurisdiction } : {}),
-          ...(uploadFrontmatter.pause_for_review ? { pause_for_review: true } : {}),
+          // Jurisdiction is mandatory at handler entry. AT must be explicit as
+          // well; omitting it relied on the removed implicit-AT default.
+          jurisdiction,
+          ...(uploadFrontmatter.pause_for_review || jurResult.unverified
+            ? { pause_for_review: true }
+            : {}),
         },
         {
           timeout_ms: 60 * 60 * 1000,
@@ -2176,6 +2180,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               // E2: Trigger legal-pipeline for beA XML imports — same as
               // regular upload path does via runExtractionAndImport.
               try {
+                const beaJurisdiction = detectJurisdiction(
+                  (beaPage?.frontmatter ?? {}) as Record<string, unknown>,
+                  event.content
+                ).jurisdiction;
                 const beaQueue = new MinionQueue(engine);
                 await beaQueue.add(
                   "legal-pipeline",
@@ -2184,6 +2192,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                     part_slugs: [beaSlug],
                     ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
                     trigger: "bea_import",
+                    jurisdiction: beaJurisdiction,
+                    as_of_date: new Date().toISOString().slice(0, 10),
                   },
                   {
                     timeout_ms: 60 * 60 * 1000,
@@ -2926,9 +2936,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             claim_confidences: result.documentConfidence.claim_confidences,
           }
         : undefined;
-      res.write(
-        `data: ${JSON.stringify({ citations, gaps, provenance, documentConfidence })}\n\n`
-      );
+      res.write(`data: ${JSON.stringify({ citations, gaps, provenance, documentConfidence })}\n\n`);
       res.write("data: [DONE]\n\n");
       res.end();
     } catch (e) {
@@ -4355,6 +4363,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             const beaPage = await engine.getPage(beaSlug, { sourceId: opCtx.sourceId });
             // E2: Trigger legal-pipeline for beA XML imports
             try {
+              const beaJurisdiction = detectJurisdiction(
+                (beaPage?.frontmatter ?? {}) as Record<string, unknown>,
+                event.content
+              ).jurisdiction;
               const beaQueue2 = new MinionQueue(engine);
               await beaQueue2.add(
                 "legal-pipeline",
@@ -4363,6 +4375,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                   part_slugs: [beaSlug],
                   ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
                   trigger: "bea_import",
+                  jurisdiction: beaJurisdiction,
+                  as_of_date: new Date().toISOString().slice(0, 10),
                 },
                 {
                   timeout_ms: 60 * 60 * 1000,
@@ -5895,6 +5909,30 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           _source_id: requestSourceId(req),
         };
 
+        let jurisdictionCandidate =
+          typeof body.jurisdiction === "string" ? body.jurisdiction.toLowerCase() : "";
+        if (!["at", "de", "ch", "eu"].includes(jurisdictionCandidate)) {
+          const sourceId = requestSourceId(req);
+          const casePage = await engine.getPage(
+            caseSlug,
+            sourceId !== "default" ? { sourceId } : undefined
+          );
+          const frontmatter = (casePage?.frontmatter ?? {}) as Record<string, unknown>;
+          jurisdictionCandidate = String(frontmatter.jurisdiction ?? "").toLowerCase();
+        }
+        if (!["at", "de", "ch", "eu"].includes(jurisdictionCandidate)) {
+          res.status(400).json({
+            error: "jurisdiction_required",
+            message: "Jurisdiction must be confirmed before the legal pipeline is queued.",
+          });
+          return;
+        }
+        pipelineData.jurisdiction = jurisdictionCandidate;
+        pipelineData.as_of_date =
+          typeof body.as_of_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.as_of_date)
+            ? body.as_of_date
+            : new Date().toISOString().slice(0, 10);
+
         if (typeof body.resume_from_layer === "number" && body.resume_from_layer >= 3) {
           pipelineData.resume_from_layer = body.resume_from_layer;
         }
@@ -5905,13 +5943,6 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           !Array.isArray(body.manual_overrides)
         ) {
           pipelineData.manual_overrides = body.manual_overrides;
-        }
-
-        if (typeof body.jurisdiction === "string") {
-          const j = body.jurisdiction.toLowerCase();
-          if (j === "at" || j === "de" || j === "ch" || j === "eu") {
-            pipelineData.jurisdiction = j;
-          }
         }
 
         if (typeof body.verfahrenstyp === "string") {

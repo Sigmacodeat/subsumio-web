@@ -30,19 +30,18 @@ CREATE TABLE IF NOT EXISTS corpus_snapshots (
   paragraph_count INTEGER,
   receipt_json    TEXT,                        -- full serialized CorpusReceipt
 
-  -- One active version per slug (valid_to IS NULL)
-  UNIQUE (slug, valid_from),
-
-  -- Index for looking up current version
-  CREATE INDEX IF NOT EXISTS idx_corpus_snapshots_slug_current
-    ON corpus_snapshots (slug) WHERE valid_to IS NULL,
-
-  CREATE INDEX IF NOT EXISTS idx_corpus_snapshots_jurisdiction
-    ON corpus_snapshots (jurisdiction),
-
-  CREATE INDEX IF NOT EXISTS idx_corpus_snapshots_hash
-    ON corpus_snapshots (content_hash)
+  -- One version per slug and effective date.
+  UNIQUE (slug, valid_from)
 );
+
+CREATE INDEX IF NOT EXISTS idx_corpus_snapshots_slug_current
+  ON corpus_snapshots (slug) WHERE valid_to IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_corpus_snapshots_jurisdiction
+  ON corpus_snapshots (jurisdiction);
+
+CREATE INDEX IF NOT EXISTS idx_corpus_snapshots_hash
+  ON corpus_snapshots (content_hash);
 
 -- ============================================================
 -- corpus_amendments: Per-§ changes between snapshots
@@ -58,17 +57,17 @@ CREATE TABLE IF NOT EXISTS corpus_amendments (
   new_hash        TEXT,                        -- new content hash (16 chars)
   detected_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   source_url      TEXT,                        -- official URL
-  announcement_date DATE,
-
-  CREATE INDEX IF NOT EXISTS idx_corpus_amendments_slug
-    ON corpus_amendments (slug),
-
-  CREATE INDEX IF NOT EXISTS idx_corpus_amendments_paragraph
-    ON corpus_amendments (slug, paragraph),
-
-  CREATE INDEX IF NOT EXISTS idx_corpus_amendments_detected
-    ON corpus_amendments (detected_at DESC)
+  announcement_date DATE
 );
+
+CREATE INDEX IF NOT EXISTS idx_corpus_amendments_slug
+  ON corpus_amendments (slug);
+
+CREATE INDEX IF NOT EXISTS idx_corpus_amendments_paragraph
+  ON corpus_amendments (slug, paragraph);
+
+CREATE INDEX IF NOT EXISTS idx_corpus_amendments_detected
+  ON corpus_amendments (detected_at DESC);
 
 -- ============================================================
 -- stale_outputs: Outputs that may be affected by law changes
@@ -82,14 +81,14 @@ CREATE TABLE IF NOT EXISTS stale_outputs (
   amendment_id    BIGINT REFERENCES corpus_amendments(id),
   marked_stale_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   resolved_at     TIMESTAMPTZ,                 -- when attorney reviewed and resolved
-  resolved_by     TEXT,                        -- user ID who resolved
-
-  CREATE INDEX IF NOT EXISTS idx_stale_outputs_output
-    ON stale_outputs (output_id),
-
-  CREATE INDEX IF NOT EXISTS idx_stale_outputs_unresolved
-    ON stale_outputs (output_id) WHERE resolved_at IS NULL,
-
-  CREATE INDEX IF NOT EXISTS idx_stale_outputs_slug
-    ON stale_outputs (cited_slug, cited_paragraph)
+  resolved_by     TEXT                         -- user ID who resolved
 );
+
+CREATE INDEX IF NOT EXISTS idx_stale_outputs_output
+  ON stale_outputs (output_id);
+
+CREATE INDEX IF NOT EXISTS idx_stale_outputs_unresolved
+  ON stale_outputs (output_id) WHERE resolved_at IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_stale_outputs_slug
+  ON stale_outputs (cited_slug, cited_paragraph);

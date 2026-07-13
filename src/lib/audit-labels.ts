@@ -7,6 +7,8 @@ export interface AuditEntry {
   userEmail?: string;
   details?: Record<string, unknown>;
   ip?: string;
+  hash?: string;
+  prev_hash?: string;
   timestamp: string;
 }
 
@@ -133,6 +135,9 @@ export type AuditAction =
   | "time.auto_extract"
   | "admin.user_update"
   | "admin.user_deactivate"
+  | "admin.data_delete"
+  | "admin.data_export"
+  | "admin.audit_export"
   | "acl.add_member"
   | "acl.remove_member"
   | "acl.delete_group"
@@ -262,6 +267,9 @@ const ACTION_LABELS: Record<string, string> = {
   "feedback.submit": "Retrieval-Feedback",
   "admin.user_update": "Admin: Benutzer aktualisiert",
   "admin.user_deactivate": "Admin: Benutzer deaktiviert",
+  "admin.data_delete": "Admin: Benutzerdaten gelöscht",
+  "admin.data_export": "Admin: Benutzerdaten exportiert",
+  "admin.audit_export": "Admin: Audit-Log exportiert",
   "dms.push": "Dokument an DMS gepusht",
   "space.update": "Shared Space aktualisiert",
   "space.delete": "Shared Space gelöscht",

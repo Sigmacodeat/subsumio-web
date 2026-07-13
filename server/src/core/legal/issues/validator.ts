@@ -23,6 +23,15 @@ import type {
   IssueValidationResult,
 } from "./types.ts";
 
+export type {
+  LegalIssue,
+  ElementAssessment,
+  EvidenceSpan,
+  FactReference,
+  IssueConclusion,
+  Assumption,
+} from "./types.ts";
+
 import { computeContentHash, type Jurisdiction } from "../corpus-receipt.ts";
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -57,10 +66,7 @@ export function isVerifiedEvidence(span: EvidenceSpan): boolean {
 
 // ── Sub-Validators ────────────────────────────────────────────────────
 
-function validateEvidenceSpan(
-  span: EvidenceSpan,
-  fieldPrefix: string
-): IssueValidationError[] {
+function validateEvidenceSpan(span: EvidenceSpan, fieldPrefix: string): IssueValidationError[] {
   const errors: IssueValidationError[] = [];
 
   if (!isNonEmpty(span.id)) {
@@ -70,37 +76,55 @@ function validateEvidenceSpan(
     errors.push({ field: `${fieldPrefix}.source_slug`, message: "source_slug must not be empty" });
   }
   if (!VALID_JURISDICTIONS.includes(span.jurisdiction)) {
-    errors.push({ field: `${fieldPrefix}.jurisdiction`, message: `jurisdiction must be one of ${VALID_JURISDICTIONS.join(", ")}` });
+    errors.push({
+      field: `${fieldPrefix}.jurisdiction`,
+      message: `jurisdiction must be one of ${VALID_JURISDICTIONS.join(", ")}`,
+    });
   }
   if (span.start_offset < 0 || !Number.isInteger(span.start_offset)) {
-    errors.push({ field: `${fieldPrefix}.start_offset`, message: "start_offset must be a non-negative integer" });
+    errors.push({
+      field: `${fieldPrefix}.start_offset`,
+      message: "start_offset must be a non-negative integer",
+    });
   }
   if (span.end_offset < 0 || !Number.isInteger(span.end_offset)) {
-    errors.push({ field: `${fieldPrefix}.end_offset`, message: "end_offset must be a non-negative integer" });
+    errors.push({
+      field: `${fieldPrefix}.end_offset`,
+      message: "end_offset must be a non-negative integer",
+    });
   }
   if (span.end_offset <= span.start_offset) {
-    errors.push({ field: `${fieldPrefix}.end_offset`, message: "end_offset must be greater than start_offset" });
+    errors.push({
+      field: `${fieldPrefix}.end_offset`,
+      message: "end_offset must be greater than start_offset",
+    });
   }
   if (!isNonEmpty(span.text)) {
     errors.push({ field: `${fieldPrefix}.text`, message: "text must not be empty" });
   }
   if (!/^[a-f0-9]{64}$/.test(span.content_hash)) {
-    errors.push({ field: `${fieldPrefix}.content_hash`, message: "content_hash must be a 64-char hex SHA-256 hash" });
+    errors.push({
+      field: `${fieldPrefix}.content_hash`,
+      message: "content_hash must be a 64-char hex SHA-256 hash",
+    });
   }
   if (!["verified", "unverified", "stale", "failed"].includes(span.verification)) {
-    errors.push({ field: `${fieldPrefix}.verification`, message: "verification must be verified|unverified|stale|failed" });
+    errors.push({
+      field: `${fieldPrefix}.verification`,
+      message: "verification must be verified|unverified|stale|failed",
+    });
   }
   if (!isValidISOTimestamp(span.extracted_at)) {
-    errors.push({ field: `${fieldPrefix}.extracted_at`, message: "extracted_at must be a valid ISO timestamp" });
+    errors.push({
+      field: `${fieldPrefix}.extracted_at`,
+      message: "extracted_at must be a valid ISO timestamp",
+    });
   }
 
   return errors;
 }
 
-function validateFactReference(
-  fact: FactReference,
-  fieldPrefix: string
-): IssueValidationError[] {
+function validateFactReference(fact: FactReference, fieldPrefix: string): IssueValidationError[] {
   const errors: IssueValidationError[] = [];
 
   if (!isNonEmpty(fact.id)) {
@@ -109,21 +133,30 @@ function validateFactReference(
   if (!isNonEmpty(fact.description)) {
     errors.push({ field: `${fieldPrefix}.description`, message: "description must not be empty" });
   }
-  if (!["case_file", "statute", "judikatur", "agent_inferred", "user_provided"].includes(fact.source)) {
+  if (
+    !["case_file", "statute", "judikatur", "agent_inferred", "user_provided"].includes(fact.source)
+  ) {
     errors.push({ field: `${fieldPrefix}.source`, message: "invalid fact source" });
   }
   if (!["supporting", "opposing", "neutral"].includes(fact.role)) {
-    errors.push({ field: `${fieldPrefix}.role`, message: "role must be supporting|opposing|neutral" });
+    errors.push({
+      field: `${fieldPrefix}.role`,
+      message: "role must be supporting|opposing|neutral",
+    });
   }
   if (fact.confidence < 0 || fact.confidence > 1) {
-    errors.push({ field: `${fieldPrefix}.confidence`, message: "confidence must be between 0 and 1" });
+    errors.push({
+      field: `${fieldPrefix}.confidence`,
+      message: "confidence must be between 0 and 1",
+    });
   }
 
   // I4: agent_inferred facts should have confidence ≤ 0.5
   if (fact.source === "agent_inferred" && fact.confidence > 0.5) {
     errors.push({
       field: `${fieldPrefix}.confidence`,
-      message: "agent_inferred facts must have confidence ≤ 0.5 (I4: free agent text is not canonical truth)",
+      message:
+        "agent_inferred facts must have confidence ≤ 0.5 (I4: free agent text is not canonical truth)",
       invariant: "I4",
     });
   }
@@ -143,7 +176,10 @@ function validateFactReference(
   }
 
   if (fact.established_at && !isValidISODate(fact.established_at)) {
-    errors.push({ field: `${fieldPrefix}.established_at`, message: "established_at must be a valid ISO date" });
+    errors.push({
+      field: `${fieldPrefix}.established_at`,
+      message: "established_at must be a valid ISO date",
+    });
   }
 
   return errors;
@@ -165,7 +201,10 @@ function validateElementAssessment(
     errors.push({ field: `${fieldPrefix}.reasoning`, message: "reasoning must not be empty" });
   }
   if (!isValidISOTimestamp(assessment.assessed_at)) {
-    errors.push({ field: `${fieldPrefix}.assessed_at`, message: "assessed_at must be a valid ISO timestamp" });
+    errors.push({
+      field: `${fieldPrefix}.assessed_at`,
+      message: "assessed_at must be a valid ISO timestamp",
+    });
   }
 
   // Validate evidence spans
@@ -174,7 +213,12 @@ function validateElementAssessment(
   }
   if (assessment.conflicting_evidence) {
     for (let i = 0; i < assessment.conflicting_evidence.length; i++) {
-      errors.push(...validateEvidenceSpan(assessment.conflicting_evidence[i]!, `${fieldPrefix}.conflicting_evidence[${i}]`));
+      errors.push(
+        ...validateEvidenceSpan(
+          assessment.conflicting_evidence[i]!,
+          `${fieldPrefix}.conflicting_evidence[${i}]`
+        )
+      );
     }
   }
 
@@ -193,10 +237,7 @@ function validateElementAssessment(
   return errors;
 }
 
-function validateApplicableRule(
-  rule: ApplicableRule,
-  fieldPrefix: string
-): IssueValidationError[] {
+function validateApplicableRule(rule: ApplicableRule, fieldPrefix: string): IssueValidationError[] {
   const errors: IssueValidationError[] = [];
 
   if (!isNonEmpty(rule.id)) {
@@ -218,16 +259,25 @@ function validateApplicableRule(
     errors.push({ field: `${fieldPrefix}.source_slug`, message: "source_slug must not be empty" });
   }
   if (rule.required_elements.length === 0) {
-    errors.push({ field: `${fieldPrefix}.required_elements`, message: "rule must have at least one required element" });
+    errors.push({
+      field: `${fieldPrefix}.required_elements`,
+      message: "rule must have at least one required element",
+    });
   }
 
   for (let i = 0; i < rule.required_elements.length; i++) {
     const el = rule.required_elements[i]!;
     if (!isNonEmpty(el.id)) {
-      errors.push({ field: `${fieldPrefix}.required_elements[${i}].id`, message: "id must not be empty" });
+      errors.push({
+        field: `${fieldPrefix}.required_elements[${i}].id`,
+        message: "id must not be empty",
+      });
     }
     if (!isNonEmpty(el.label)) {
-      errors.push({ field: `${fieldPrefix}.required_elements[${i}].label`, message: "label must not be empty" });
+      errors.push({
+        field: `${fieldPrefix}.required_elements[${i}].label`,
+        message: "label must not be empty",
+      });
     }
   }
 
@@ -280,10 +330,7 @@ function validateSourceSnapshot(
   return errors;
 }
 
-function validateAssumption(
-  assumption: Assumption,
-  fieldPrefix: string
-): IssueValidationError[] {
+function validateAssumption(assumption: Assumption, fieldPrefix: string): IssueValidationError[] {
   const errors: IssueValidationError[] = [];
 
   if (!isNonEmpty(assumption.id)) {
@@ -293,10 +340,16 @@ function validateAssumption(
     errors.push({ field: `${fieldPrefix}.description`, message: "description must not be empty" });
   }
   if (!isNonEmpty(assumption.justification)) {
-    errors.push({ field: `${fieldPrefix}.justification`, message: "justification must not be empty" });
+    errors.push({
+      field: `${fieldPrefix}.justification`,
+      message: "justification must not be empty",
+    });
   }
   if (!isValidISOTimestamp(assumption.created_at)) {
-    errors.push({ field: `${fieldPrefix}.created_at`, message: "created_at must be a valid ISO timestamp" });
+    errors.push({
+      field: `${fieldPrefix}.created_at`,
+      message: "created_at must be a valid ISO timestamp",
+    });
   }
 
   return errors;
@@ -315,10 +368,16 @@ function validateConclusion(
     errors.push({ field: `${fieldPrefix}.summary`, message: "summary must not be empty" });
   }
   if (!isValidISOTimestamp(conclusion.concluded_at)) {
-    errors.push({ field: `${fieldPrefix}.concluded_at`, message: "concluded_at must be a valid ISO timestamp" });
+    errors.push({
+      field: `${fieldPrefix}.concluded_at`,
+      message: "concluded_at must be a valid ISO timestamp",
+    });
   }
 
-  if (conclusion.outcome === "conditional" && (!conclusion.conditions || conclusion.conditions.length === 0)) {
+  if (
+    conclusion.outcome === "conditional" &&
+    (!conclusion.conditions || conclusion.conditions.length === 0)
+  ) {
     errors.push({
       field: `${fieldPrefix}.conditions`,
       message: "conditional outcome must have at least one condition",
@@ -333,10 +392,7 @@ function validateConclusion(
 /**
  * Check Invariant I2: unknown/disputed elements must not produce a definitive conclusion.
  */
-function checkI2(
-  issue: LegalIssue,
-  errors: IssueValidationError[]
-): void {
+function checkI2(issue: LegalIssue, errors: IssueValidationError[]): void {
   if (issue.status !== "concluded" || !issue.conclusion) return;
 
   const hasUncertain = issue.element_assessments.some(
@@ -346,7 +402,8 @@ function checkI2(
   if (hasUncertain && issue.conclusion.is_definitive) {
     errors.push({
       field: "conclusion.is_definitive",
-      message: "conclusion cannot be definitive when element_assessments contain unknown/disputed statuses (I2)",
+      message:
+        "conclusion cannot be definitive when element_assessments contain unknown/disputed statuses (I2)",
       invariant: "I2",
     });
   }
@@ -355,7 +412,8 @@ function checkI2(
   if (issue.assumptions.length > 0 && issue.conclusion.is_definitive) {
     errors.push({
       field: "conclusion.is_definitive",
-      message: "conclusion cannot be definitive when assumptions exist (I2: assumptions are not canonical truth)",
+      message:
+        "conclusion cannot be definitive when assumptions exist (I2: assumptions are not canonical truth)",
       invariant: "I2",
     });
   }
@@ -364,16 +422,14 @@ function checkI2(
 /**
  * Check Invariant I4: agent-generated conclusions are not definitive.
  */
-function checkI4(
-  issue: LegalIssue,
-  errors: IssueValidationError[]
-): void {
+function checkI4(issue: LegalIssue, errors: IssueValidationError[]): void {
   if (issue.status !== "concluded" || !issue.conclusion) return;
 
   if (issue.conclusion.agent_generated && issue.conclusion.is_definitive) {
     errors.push({
       field: "conclusion.is_definitive",
-      message: "agent-generated conclusion cannot be definitive without human confirmation (I4: free agent text is not canonical truth)",
+      message:
+        "agent-generated conclusion cannot be definitive without human confirmation (I4: free agent text is not canonical truth)",
       invariant: "I4",
     });
   }
@@ -382,10 +438,7 @@ function checkI4(
 /**
  * Check that all element_assessments reference valid required_elements.
  */
-function checkElementReferences(
-  issue: LegalIssue,
-  errors: IssueValidationError[]
-): void {
+function checkElementReferences(issue: LegalIssue, errors: IssueValidationError[]): void {
   const elementIds = new Set(issue.required_elements.map((e) => e.id));
   // Also include elements from applicable_rules
   for (const rule of issue.applicable_rules) {
@@ -408,10 +461,7 @@ function checkElementReferences(
 /**
  * Check jurisdiction consistency across the issue.
  */
-function checkJurisdictionConsistency(
-  issue: LegalIssue,
-  errors: IssueValidationError[]
-): void {
+function checkJurisdictionConsistency(issue: LegalIssue, errors: IssueValidationError[]): void {
   // Issue jurisdiction must match source_snapshot jurisdiction
   if (issue.jurisdiction !== issue.source_snapshot.jurisdiction) {
     errors.push({
@@ -503,7 +553,9 @@ export function validateIssue(issue: LegalIssue): IssueValidationError[] {
 
   // ── Element assessments ──
   for (let i = 0; i < issue.element_assessments.length; i++) {
-    errors.push(...validateElementAssessment(issue.element_assessments[i]!, `element_assessments[${i}]`));
+    errors.push(
+      ...validateElementAssessment(issue.element_assessments[i]!, `element_assessments[${i}]`)
+    );
   }
 
   // ── Facts ──

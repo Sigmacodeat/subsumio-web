@@ -914,7 +914,7 @@ PASSE DIE FRISTENREGELN AN DEN VERFAHRENSTYP AN:
 - Wiederaufnahme: AT § 364 StPO, DE § 363 StPO
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
-- Verjährung: AT § 1489 ABGB (3 Jahre ab Kenntnis), DE § 195 BGB (3 Jahre), CH Art 127 OR (5 Jahre)
+- Verjährung: AT § 1489 ABGB (3 Jahre ab Kenntnis), DE § 195 BGB (3 Jahre), CH Art 127 OR (10 Jahre)
 - Mahnklage-Frist: AT § 244 ZPO (bis € 75.000 zwingend)
 - Klagebeantwortung: AT § 230 ZPO (4 Wochen), DE § 276 ZPO (2 Wochen + 2 Wochen)
 - Berufungsfrist: AT § 402 ZPO (4 Wochen), DE § 519 ZPO (1 Monat), CH Art 314 OR (30 Tage)
@@ -970,12 +970,12 @@ OUTPUT-FORMAT: JSON mit:
   ],
   "missing_deadlines": [
     {
-      "frist": "Verjährung Amtshaftung (§ 1 AHG)",
-      "rechtsgrundlage": "§ 1 AHG",
+      "frist": "Verjährung Amtshaftung (§ 6 AHG)",
+      "rechtsgrundlage": "§ 6 AHG",
       "frist_jahre": 3,
       "warnung": "Diese Frist fehlt im extrahierten Kalender — möglicher Haftungsfall",
       "gefundener_paragraph": {
-        "paragraph": "§ 1 AHG",
+        "paragraph": "§ 6 AHG",
         "source_text": "...",
         "verified": true
       }

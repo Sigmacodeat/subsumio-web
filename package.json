@@ -24,6 +24,7 @@
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:lab": "npx vitest run --config vitest.config.lab.ts",
+    "test:identity": "npx vitest run --config vitest.config.identity.ts",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test tests/e2e-playwright/smoke.spec.ts",
     "test:e2e:ui": "playwright test --ui",

@@ -99,9 +99,9 @@ describe("validateTask", () => {
     expect(errors.some((e) => e.field === "prompt")).toBe(true);
   });
 
-  it("flags CH jurisdiction (not yet supported)", () => {
+  it("accepts CH jurisdiction (supported in LAB-DACH v3)", () => {
     const errors = validateTask(makeValidTask({ jurisdiction: "CH" }));
-    expect(errors.some((e) => e.field === "jurisdiction")).toBe(true);
+    expect(errors.some((e) => e.field === "jurisdiction")).toBe(false);
   });
 
   it("flags no deliverables", () => {

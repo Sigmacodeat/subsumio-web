@@ -11,7 +11,7 @@
  *   search_law → analyze claim → draft Schriftsatz → guardrail → cross-verify → BLOCKED if high-severity
  */
 
-import type { Task, CriterionResult, RubricResult } from "./types.ts";
+import type { Task, CriterionResult, RubricResult, JudgeStatus } from "./types.ts";
 import type { TaskSandbox } from "./sandbox.ts";
 import type { ToolContext, ToolResult } from "./agent-tools.ts";
 import { dispatchTool } from "./agent-tools.ts";
@@ -628,6 +628,8 @@ async function evaluateCriteria(
     task_id: task.id,
     criteria: allResults,
     all_pass: allPass,
+    strict_all_pass: allResults.every((r) => r.passed),
+    critical_all_pass: allPass,
     criterion_pass_rate: allResults.length > 0 ? criteriaPassed / allResults.length : 0,
     criteria_passed: criteriaPassed,
     criteria_total: allResults.length,
@@ -635,6 +637,7 @@ async function evaluateCriteria(
     critical_total: criticalResults.length,
     weighted_score: weightedScore,
     verification_state: verificationState as RubricResult["verification_state"],
+    judge_status_counts: computeJudgeStatusCounts(allResults),
   };
 }
 
@@ -643,13 +646,32 @@ function emptyRubric(taskId: string): RubricResult {
     task_id: taskId,
     criteria: [],
     all_pass: false,
+    strict_all_pass: false,
+    critical_all_pass: false,
     criterion_pass_rate: 0,
     criteria_passed: 0,
     criteria_total: 0,
     critical_passed: 0,
     critical_total: 0,
     weighted_score: 0,
+    judge_status_counts: { pass: 0, fail: 0, uncertain: 0, not_judgeable: 0, judge_error: 0 },
   };
+}
+
+function computeJudgeStatusCounts(results: CriterionResult[]): Record<JudgeStatus, number> {
+  const counts: Record<JudgeStatus, number> = {
+    pass: 0,
+    fail: 0,
+    uncertain: 0,
+    not_judgeable: 0,
+    judge_error: 0,
+  };
+  for (const r of results) {
+    if (r.judge_status) {
+      counts[r.judge_status]++;
+    }
+  }
+  return counts;
 }
 
 function estimateCost(inputChars: number, outputChars: number): number {

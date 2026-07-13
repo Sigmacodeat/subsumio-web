@@ -24,6 +24,7 @@ import { rowToMinionJob, rowToInboxMessage, rowToAttachment } from "./types.ts";
 import { validateAttachment } from "./attachments.ts";
 import { isProtectedJobName } from "./protected-names.ts";
 import { defaultTimeoutMsFor } from "./handler-timeouts.ts";
+import { validateMandatorySubmission } from "./mandatory-validator.ts";
 import {
   withRetry,
   BULK_RETRY_OPTS,
@@ -136,6 +137,20 @@ export class MinionQueue {
         // dispatch. 'ok' passes through silently.
       }
     }
+
+    // EPIC 8 T8.4 — Mandatory validator enforcement at submission time.
+    // Reject mandatory jobs that don't have a parent or don't use fail_parent.
+    if (opts?.mandatory) {
+      const result = validateMandatorySubmission({
+        mandatory: true,
+        parent_job_id: opts.parent_job_id ?? undefined,
+        on_child_fail: opts.on_child_fail ?? "ignore",
+      });
+      if (!result.valid) {
+        throw new Error(`Mandatory job submission rejected: ${result.error}`);
+      }
+    }
+
     await this.ensureSchema();
 
     const childStatus: MinionJobStatus = opts?.delay ? "delayed" : "waiting";

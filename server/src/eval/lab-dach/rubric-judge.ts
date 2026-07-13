@@ -1,18 +1,18 @@
 /**
- * LAB-DACH v3 — Cross-Family Rubric Judge
+ * LAB-DACH v3 — Unified Blinded Rubric Judge
  *
- * LLM-based judge for semantic criteria evaluation.
- * Cross-family design:
- *   - DeepSeek agent → Opus 4.8 as primary judge
- *   - Opus agent → DeepSeek V4-Flash + independent second judge
+ * T2.4: All agent candidates are evaluated with the SAME judge stack.
+ * The judge never learns which agent model produced the output.
  *
- * Judge config:
- *   - Opus 4.8: thinking: { type: "adaptive" }, effort: "high", no sampling params
- *   - DeepSeek V4-Flash: non-thinking, temperature=0
- *   - 5-strategy JSON parser for robust response extraction
+ * Design:
+ *   - Same primary + secondary judge for ALL candidates (blinded)
+ *   - Verdict status: pass | fail | uncertain | not_judgeable | judge_error
+ *   - Evidence quotes required in every verdict
+ *   - Strict 2-strategy JSON parser — parse failures are fail-closed (judge_error)
+ *   - No creative JSON recovery attempts
  */
 
-import type { Criterion, CriterionResult, Task } from "./types.ts";
+import type { Criterion, CriterionResult, JudgeStatus, Task } from "./types.ts";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -45,13 +45,17 @@ export interface JudgeInput {
   criterion: Criterion;
 }
 
-export interface JudgeResponse {
-  /** Whether the criterion passed */
+export interface JudgeVerdict {
+  /** Unified verdict status */
+  status: JudgeStatus;
+  /** Derived boolean: true only if status === "pass" */
   passed: boolean;
   /** Detailed explanation */
   reasoning: string;
   /** Confidence 0-1 */
   confidence: number;
+  /** Evidence quotes from output/context supporting the verdict */
+  evidence_quotes: string[];
   /** Raw LLM response */
   raw_response: string;
   /** Model used */
@@ -93,34 +97,34 @@ export const JUDGE_CONFIGS: Record<JudgeModel, JudgeConfig> = {
 };
 
 /**
- * Get cross-family judge configuration.
- * If the agent was DeepSeek, use Opus as judge (and vice versa).
+ * Get unified blinded judge configuration.
+ *
+ * T2.4: The SAME primary + secondary judge is used for ALL agent candidates.
+ * The judge model is NOT selected based on the agent model — the judge
+ * never knows which agent produced the output.
+ *
+ * Primary: Opus (strongest reasoning, with thinking mode)
+ * Secondary: DeepSeek (independent cross-family verification)
  */
-export function getCrossFamilyJudgeConfig(agentModel: string): {
+export function getUnifiedJudgeConfig(): {
   primary: JudgeConfig;
-  secondary?: JudgeConfig;
+  secondary: JudgeConfig;
 } {
-  const isDeepSeekAgent = agentModel.toLowerCase().includes("deepseek");
-  const isOpusAgent =
-    agentModel.toLowerCase().includes("opus") || agentModel.toLowerCase().includes("claude");
-
-  if (isDeepSeekAgent) {
-    // DeepSeek agent → Opus as primary judge
-    return {
-      primary: JUDGE_CONFIGS.opus,
-      secondary: JUDGE_CONFIGS.grok, // Independent second judge
-    };
-  } else if (isOpusAgent) {
-    // Opus agent → DeepSeek as primary + Grok as secondary
-    return {
-      primary: JUDGE_CONFIGS.deepseek,
-      secondary: JUDGE_CONFIGS.grok,
-    };
-  }
-  // Default: DeepSeek as judge
   return {
-    primary: JUDGE_CONFIGS.deepseek,
+    primary: JUDGE_CONFIGS.opus,
+    secondary: JUDGE_CONFIGS.deepseek,
   };
+}
+
+/**
+ * @deprecated Use getUnifiedJudgeConfig() instead.
+ * Kept for backward compatibility — delegates to getUnifiedJudgeConfig().
+ */
+export function getCrossFamilyJudgeConfig(_agentModel: string): {
+  primary: JudgeConfig;
+  secondary: JudgeConfig;
+} {
+  return getUnifiedJudgeConfig();
 }
 
 // ── Judge Prompt ──────────────────────────────────────────────────────
@@ -131,7 +135,9 @@ export function getCrossFamilyJudgeConfig(agentModel: string): {
 export function buildJudgeSystemPrompt(task: Task): string {
   return `Du bist ein strenger rechtlicher Gutachter (Judge) für den LAB-DACH Benchmark.
 
-Du bewertest die Ausgabe eines KI-Agenten anhand eines einzelnen Kriteriums.
+Du bewertest eine KI-Ausgabe anhand eines einzelnen Kriteriums.
+Du kennst das Modell, das die Ausgabe produziert hat, NICHT.
+Bewerte ausschliesslich die Qualität der Ausgabe.
 
 ## Aufgabe
 - Task: ${task.title}
@@ -140,24 +146,32 @@ Du bewertest die Ausgabe eines KI-Agenten anhand eines einzelnen Kriteriums.
 
 ## Bewertungsregeln
 1. Bewerte NUR das angegebene Kriterium — nicht andere Aspekte
-2. Sei streng aber fair: "passed" nur wenn das Kriterium eindeutig erfüllt ist
-3. Bei unklaren Fällen: "passed: false" mit Begründung
+2. Sei streng aber fair
+3. Status-Werte:
+   - "pass": Kriterium ist eindeutig erfüllt
+   - "fail": Kriterium ist eindeutig NICHT erfüllt
+   - "uncertain": Judge kann nicht mit Sicherheit entscheiden (Grenzfall)
+   - "not_judgeable": Ausgabe ist zu kurz, leer oder unleserlich zur Bewertung
 4. Confidence: 1.0 = sehr sicher, 0.5 = unsicher, 0.0 = gar nicht sicher
-5. Antworte IMMER in folgendem JSON-Format:
+5. evidence_quotes: Zitiere 1-3 Textstellen aus der Ausgabe oder dem Kontext,
+   die deine Bewertung stützen. Jedes Zitat als separater String im Array.
+6. Antworte IMMER in folgendem JSON-Format:
 
 \`\`\`json
 {
-  "passed": true|false,
+  "status": "pass" | "fail" | "uncertain" | "not_judgeable",
   "reasoning": "Detaillierte Begründung auf Deutsch",
-  "confidence": 0.0-1.0
+  "confidence": 0.0-1.0,
+  "evidence_quotes": ["Zitat 1...", "Zitat 2..."]
 }
 \`\`\`
 
 ## Wichtig
-- Du siehst den Kontext (retrieved law chunks) UND die Agent-Ausgabe
+- Du siehst den Kontext (retrieved law chunks) UND die KI-Ausgabe
 - Prüfe ob die Ausgabe das Kriterium aufgrund des Kontexts erfüllt
 - Erfundene Zitate oder ungestützte Behauptungen = FAIL
-- Vage Antworten ohne rechtliche Substanz = FAIL`;
+- Vage Antworten ohne rechtliche Substanz = FAIL
+- IMMER mindestens ein evidence_quotes-Element angeben`;
 }
 
 /**
@@ -178,28 +192,35 @@ ${criterion.expected_answer ? `Erwartete Antwort: ${criterion.expected_answer}` 
 ${context.slice(0, 8000)}
 ---
 
-## Agent-Ausgabe
+## KI-Ausgabe
 ---
 ${output.slice(0, 8000)}
 ---
 
-Bewerte dieses Kriterium. Antworte im JSON-Format.`;
+Bewerte dieses Kriterium. Antworte im JSON-Format mit status, reasoning, confidence und evidence_quotes.`;
 }
 
-// ── JSON Parser (5-Strategy) ──────────────────────────────────────────
+// ── JSON Parser (Strict 2-Strategy, Fail-Closed) ─────────────────────
 
 /**
- * Robust 5-strategy JSON parser for judge responses.
+ * Strict 2-strategy JSON parser for judge responses.
+ *
+ * T2.4: No creative JSON recovery. Parse failures are fail-closed.
+ *
  * Strategies:
  *   1. Code block extraction (```json ... ```)
- *   2. Brace extraction (first { to last })
- *   3. Direct JSON.parse
- *   4. Fix common issues (trailing commas, single quotes)
- *   5. Regex fallback
+ *   2. Direct JSON.parse
+ *
+ * If both fail → return null (caller sets judge_error).
  */
 export function parseJudgeJSON(
   raw: string
-): { passed: boolean; reasoning: string; confidence: number } | null {
+): {
+  status: JudgeStatus;
+  reasoning: string;
+  confidence: number;
+  evidence_quotes: string[];
+} | null {
   if (!raw || raw.trim() === "") return null;
 
   // Strategy 1: Code block extraction
@@ -209,56 +230,50 @@ export function parseJudgeJSON(
     if (parsed) return parsed;
   }
 
-  // Strategy 2: Brace extraction
-  const firstBrace = raw.indexOf("{");
-  const lastBrace = raw.lastIndexOf("}");
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    const extracted = raw.slice(firstBrace, lastBrace + 1);
-    const parsed = tryParse(extracted);
-    if (parsed) return parsed;
-  }
-
-  // Strategy 3: Direct parse
+  // Strategy 2: Direct parse
   const directParsed = tryParse(raw);
   if (directParsed) return directParsed;
 
-  // Strategy 4: Fix common issues
-  const fixed = raw
-    .replace(/,\s*}/g, "}")
-    .replace(/,\s*]/g, "]")
-    .replace(/'/g, '"')
-    .replace(/(\w+):/g, '"$1":');
-  const fixedParsed = tryParse(fixed);
-  if (fixedParsed) return fixedParsed;
-
-  // Strategy 5: Regex fallback
-  const passedMatch = raw.match(/"passed"\s*:\s*(true|false)/i);
-  const reasoningMatch = raw.match(/"reasoning"\s*:\s*"([^"]*)"/i);
-  const confidenceMatch = raw.match(/"confidence"\s*:\s*([\d.]+)/i);
-
-  if (passedMatch) {
-    return {
-      passed: passedMatch[1]!.toLowerCase() === "true",
-      reasoning: reasoningMatch?.[1] ?? "No reasoning provided",
-      confidence: confidenceMatch ? parseFloat(confidenceMatch[1]!) : 0.5,
-    };
-  }
-
+  // Fail-closed: no creative recovery attempts
   return null;
 }
 
-function tryParse(s: string): { passed: boolean; reasoning: string; confidence: number } | null {
+function tryParse(s: string): {
+  status: JudgeStatus;
+  reasoning: string;
+  confidence: number;
+  evidence_quotes: string[];
+} | null {
   try {
-    const obj = JSON.parse(s);
-    if (typeof obj.passed === "boolean" && typeof obj.reasoning === "string") {
+    const obj = JSON.parse(s.trim());
+    const validStatuses: JudgeStatus[] = ["pass", "fail", "uncertain", "not_judgeable"];
+    if (
+      typeof obj.status === "string" &&
+      validStatuses.includes(obj.status) &&
+      typeof obj.reasoning === "string"
+    ) {
       return {
-        passed: obj.passed,
+        status: obj.status as JudgeStatus,
         reasoning: obj.reasoning,
         confidence: typeof obj.confidence === "number" ? obj.confidence : 0.5,
+        evidence_quotes: Array.isArray(obj.evidence_quotes)
+          ? obj.evidence_quotes.filter((q: unknown) => typeof q === "string")
+          : [],
+      };
+    }
+    // Backward compat: if old format with "passed" field, convert
+    if (typeof obj.passed === "boolean" && typeof obj.reasoning === "string") {
+      return {
+        status: obj.passed ? "pass" : "fail",
+        reasoning: obj.reasoning,
+        confidence: typeof obj.confidence === "number" ? obj.confidence : 0.5,
+        evidence_quotes: Array.isArray(obj.evidence_quotes)
+          ? obj.evidence_quotes.filter((q: unknown) => typeof q === "string")
+          : [],
       };
     }
   } catch {
-    // ignore
+    // ignore — fail-closed
   }
   return null;
 }
@@ -268,15 +283,15 @@ function tryParse(s: string): { passed: boolean; reasoning: string; confidence: 
 /**
  * Run a single criterion through the LLM judge.
  *
- * @param input - Judge input (task, output, context, criterion)
- * @param config - Judge configuration
- * @param chatFn - Injected chat function (uses gatewayChat in production)
+ * Returns a JudgeVerdict with unified status, evidence quotes, and fail-closed behavior.
+ * Parse failures → judge_error (no creative recovery).
+ * LLM call failures → judge_error.
  */
 export async function judgeCriterion(
   input: JudgeInput,
   config: JudgeConfig,
   chatFn: (opts: ChatOpts) => Promise<ChatResult>
-): Promise<JudgeResponse> {
+): Promise<JudgeVerdict> {
   const system = buildJudgeSystemPrompt(input.task);
   const userPrompt = buildJudgeUserPrompt(input);
 
@@ -298,27 +313,35 @@ export async function judgeCriterion(
     const parsed = parseJudgeJSON(result.text);
 
     if (!parsed) {
+      // Fail-closed: parse error → judge_error
       return {
+        status: "judge_error",
         passed: false,
-        reasoning: `Failed to parse judge response: ${result.text.slice(0, 200)}`,
+        reasoning: `Parsefehler: Judge-Antwort nicht parsebar. Fail-closed. Erste 200 Zeichen: ${result.text.slice(0, 200)}`,
         confidence: 0,
+        evidence_quotes: [],
         raw_response: result.text,
         model: config.primary_model,
       };
     }
 
     return {
-      passed: parsed.passed,
+      status: parsed.status,
+      passed: parsed.status === "pass",
       reasoning: parsed.reasoning,
       confidence: parsed.confidence,
+      evidence_quotes: parsed.evidence_quotes,
       raw_response: result.text,
       model: config.primary_model,
     };
   } catch (err) {
+    // Fail-closed: LLM error → judge_error
     return {
+      status: "judge_error",
       passed: false,
-      reasoning: `Judge error: ${(err as Error).message}`,
+      reasoning: `Judge-Fehler: ${(err as Error).message}`,
       confidence: 0,
+      evidence_quotes: [],
       raw_response: "",
       model: config.primary_model,
     };
@@ -328,6 +351,7 @@ export async function judgeCriterion(
 /**
  * Run all LLM judge criteria for a task.
  * Returns CriterionResult[] for each llm_judge criterion.
+ * Each result includes judge_status, evidence_quotes, and judge_model.
  */
 export async function judgeAllCriteria(
   task: Task,
@@ -352,6 +376,9 @@ export async function judgeAllCriteria(
       score: response.passed ? 1.0 : 0.0,
       judge_raw_response: response.raw_response,
       confidence: response.confidence,
+      judge_status: response.status,
+      evidence_quotes: response.evidence_quotes,
+      judge_model: response.model,
     });
   }
 
@@ -359,9 +386,12 @@ export async function judgeAllCriteria(
 }
 
 /**
- * Run cross-family verification: primary judge + secondary judge.
+ * Run unified blinded verification: primary judge + secondary judge.
+ *
+ * Both judges evaluate the same output without knowing the agent model.
  * If both agree → use that result.
  * If they disagree → use the more conservative (fail) result with lower confidence.
+ * If either returns judge_error → final verdict is judge_error.
  */
 export async function crossFamilyJudge(
   input: JudgeInput,
@@ -369,22 +399,57 @@ export async function crossFamilyJudge(
   secondaryConfig: JudgeConfig | undefined,
   chatFn: (opts: ChatOpts) => Promise<ChatResult>
 ): Promise<{
-  primary: JudgeResponse;
-  secondary?: JudgeResponse;
+  primary: JudgeVerdict;
+  secondary?: JudgeVerdict;
+  finalVerdict: JudgeVerdict;
   finalPassed: boolean;
   agreement: boolean;
 }> {
   const primary = await judgeCriterion(input, primaryConfig, chatFn);
 
   if (!secondaryConfig) {
-    return { primary, finalPassed: primary.passed, agreement: true };
+    return {
+      primary,
+      finalVerdict: primary,
+      finalPassed: primary.passed,
+      agreement: true,
+    };
   }
 
   const secondary = await judgeCriterion(input, secondaryConfig, chatFn);
-  const agreement = primary.passed === secondary.passed;
 
-  // If disagreement: use the more conservative result (fail)
+  // If either judge errored, the final verdict is judge_error
+  if (primary.status === "judge_error" || secondary.status === "judge_error") {
+    const errorVerdict: JudgeVerdict = primary.status === "judge_error" ? primary : secondary;
+    return {
+      primary,
+      secondary,
+      finalVerdict: errorVerdict,
+      finalPassed: false,
+      agreement: false,
+    };
+  }
+
+  const agreement = primary.status === secondary.status;
+
+  // If disagreement: use the more conservative result
+  // Conservative priority: fail > uncertain > not_judgeable > pass
+  const statusOrder: Record<JudgeStatus, number> = {
+    judge_error: 0,
+    fail: 1,
+    uncertain: 2,
+    not_judgeable: 3,
+    pass: 4,
+  };
+
+  const finalVerdict = agreement
+    ? primary
+    : statusOrder[primary.status] <= statusOrder[secondary.status]
+      ? primary
+      : secondary;
+
+  // On disagreement, final is fail (conservative)
   const finalPassed = agreement ? primary.passed : false;
 
-  return { primary, secondary, finalPassed, agreement };
+  return { primary, secondary, finalVerdict, finalPassed, agreement };
 }

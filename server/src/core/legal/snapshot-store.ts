@@ -12,7 +12,7 @@
  *   corpus_snapshots, corpus_amendments, stale_outputs
  */
 
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import { createHash } from "node:crypto";
 import {
   type CorpusReceipt,
@@ -352,7 +352,7 @@ export class SnapshotStore {
   // ── Internal Helpers ──
 
   private async getParagraphHashes(
-    client: Pool["client"],
+    client: PoolClient,
     slug: string
   ): Promise<Record<string, string>> {
     // We store paragraph hashes in a separate lightweight table or
@@ -368,7 +368,7 @@ export class SnapshotStore {
   }
 
   private async storeParagraphHashes(
-    client: Pool["client"],
+    client: PoolClient,
     slug: string,
     hashes: Record<string, string>
   ): Promise<void> {

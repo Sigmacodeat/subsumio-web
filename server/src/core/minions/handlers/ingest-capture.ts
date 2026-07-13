@@ -232,24 +232,42 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
           );
         }
 
-        // Enqueue legal-pipeline with the ingested slug
-        const queue = new MinionQueue(engine);
-        await queue.add(
-          "legal-pipeline",
-          {
-            case_slug: slug,
-            part_slugs: [slug],
-            ...(targetSource !== "default" ? { source_id: targetSource } : {}),
-            trigger: "ingest_capture",
-          },
-          {
-            timeout_ms: 60 * 60 * 1000,
-            max_attempts: 3,
-            idempotency_key: legalPipelineIdempotencyKey(targetSource, slug, [slug]),
-          },
-          { allowProtectedSubmit: true }
-        );
-        pipeline_queued = true;
+        // Enqueue only after intake has an explicit jurisdiction. Connector
+        // payloads without it remain imported but are blocked for legal
+        // analysis instead of silently becoming Austrian matters.
+        const currentPage = await engine.getPage(slug);
+        const currentFrontmatter = (currentPage?.frontmatter ?? {}) as Record<string, unknown>;
+        const jurisdiction = String(currentFrontmatter.jurisdiction ?? "").toLowerCase();
+        if (
+          jurisdiction === "at" ||
+          jurisdiction === "de" ||
+          jurisdiction === "ch" ||
+          jurisdiction === "eu"
+        ) {
+          const queue = new MinionQueue(engine);
+          await queue.add(
+            "legal-pipeline",
+            {
+              case_slug: slug,
+              part_slugs: [slug],
+              ...(targetSource !== "default" ? { source_id: targetSource } : {}),
+              trigger: "ingest_capture",
+              jurisdiction,
+              as_of_date: new Date().toISOString().slice(0, 10),
+            },
+            {
+              timeout_ms: 60 * 60 * 1000,
+              max_attempts: 3,
+              idempotency_key: legalPipelineIdempotencyKey(targetSource, slug, [slug]),
+            },
+            { allowProtectedSubmit: true }
+          );
+          pipeline_queued = true;
+        } else {
+          console.warn(
+            `[ingest_capture] legal-pipeline not queued for ${slug}: jurisdiction requires intake confirmation`
+          );
+        }
       }
     } catch (pipelineErr) {
       console.error(

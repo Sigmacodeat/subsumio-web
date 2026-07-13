@@ -118,7 +118,10 @@ export type RouteAction =
   | "presence.list" // GET /api/realtime/presence — all authenticated roles
   | "admin.*" // nur admin
   | "admin.user_update"
-  | "admin.user_deactivate"; // nur admin
+  | "admin.user_deactivate"
+  | "admin.data_delete"
+  | "admin.data_export"
+  | "admin.audit_export"; // nur admin
 
 const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   // Auth endpoints are public (no auth required), but we still declare them for audit consistency
@@ -185,6 +188,9 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "admin.*": ["admin"],
   "admin.user_update": ["admin"],
   "admin.user_deactivate": ["admin"],
+  "admin.data_delete": ["admin"],
+  "admin.data_export": ["admin"],
+  "admin.audit_export": ["admin"],
   "legal.contradictions": ["admin", "lawyer"],
   "legal.retrieval_feedback": ["admin", "lawyer", "assistant"],
   "legal.strategy": ["admin", "lawyer"],
@@ -306,6 +312,9 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "admin.*": "settings.update",
     "admin.user_update": "admin.user_update",
     "admin.user_deactivate": "admin.user_deactivate",
+    "admin.data_delete": "admin.data_delete",
+    "admin.data_export": "admin.data_export",
+    "admin.audit_export": "admin.audit_export",
   };
   return map[routeAction] ?? "settings.update";
 }

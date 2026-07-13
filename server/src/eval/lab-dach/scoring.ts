@@ -10,7 +10,14 @@
  *   - Token/cost/latency from receipts
  */
 
-import type { RubricResult, RunReceipt, Task, CriterionResult, Jurisdiction } from "./types.ts";
+import type {
+  RubricResult,
+  RunReceipt,
+  Task,
+  CriterionResult,
+  Jurisdiction,
+  JudgeStatus,
+} from "./types.ts";
 import type { VerificationState } from "../../core/verification/states.ts";
 
 // ── Aggregate Score ───────────────────────────────────────────────────
@@ -22,6 +29,14 @@ export interface AggregateScore {
   all_pass_count: number;
   /** All-pass rate (0-1) */
   all_pass_rate: number;
+  /** Strict all-pass count: ALL criteria (critical AND non-critical) passed */
+  strict_all_pass_count: number;
+  /** Strict all-pass rate (0-1) */
+  strict_all_pass_rate: number;
+  /** Critical all-pass count (same as all_pass_count for backward compat) */
+  critical_all_pass_count: number;
+  /** Critical all-pass rate (0-1) */
+  critical_all_pass_rate: number;
   /** Total criteria evaluated */
   total_criteria: number;
   /** Criteria passed */
@@ -38,6 +53,8 @@ export interface AggregateScore {
   weighted_avg_score: number;
   /** Verification state distribution */
   verification_state_distribution: Record<VerificationState, number>;
+  /** Judge status distribution (for llm_judge criteria only) */
+  judge_status_distribution: Record<JudgeStatus, number>;
   /** Per-jurisdiction breakdown */
   by_jurisdiction: Record<string, JurisdictionBreakdown>;
   /** Per-legal-area breakdown */
@@ -48,6 +65,8 @@ export interface AggregateScore {
   by_difficulty: Record<string, DifficultyBreakdown>;
   /** Token/cost/latency aggregates */
   cost_metrics: CostMetrics;
+  /** Confidence intervals (Wilson) for key metrics */
+  confidence_intervals: ConfidenceIntervals;
 }
 
 export interface JurisdictionBreakdown {
@@ -89,6 +108,45 @@ export interface CostMetrics {
   total_latency_ms: number;
 }
 
+export interface ConfidenceIntervals {
+  /** Wilson CI for strict_all_pass_rate */
+  strict_all_pass: WilsonCI;
+  /** Wilson CI for critical_all_pass_rate */
+  critical_all_pass: WilsonCI;
+  /** Wilson CI for criterion_pass_rate */
+  criterion_pass: WilsonCI;
+}
+
+export interface WilsonCI {
+  /** Lower bound (0-1) */
+  lower: number;
+  /** Upper bound (0-1) */
+  upper: number;
+  /** Point estimate (0-1) */
+  point: number;
+  /** Sample size */
+  n: number;
+  /** Z-score used (default 1.96 for 95% CI) */
+  z: number;
+}
+
+export interface PrecisionRecall {
+  /** Precision for FAIL: of all judge-FAIL, how many are truly FAIL */
+  precision: number;
+  /** Recall for FAIL: of all truly-FAIL, how many did the judge catch */
+  recall: number;
+  /** F1 score */
+  f1: number;
+  /** True positives (judge=FAIL, human=FAIL) */
+  tp: number;
+  /** False positives (judge=FAIL, human=PASS) */
+  fp: number;
+  /** False negatives (judge=PASS, human=FAIL) */
+  fn: number;
+  /** True negatives (judge=PASS, human=PASS) */
+  tn: number;
+}
+
 // ── Scoring Functions ─────────────────────────────────────────────────
 
 /**
@@ -103,6 +161,7 @@ export function computeAggregateScore(
   const receiptMap = new Map(receipts.map((r) => [r.task_id, r]));
 
   let allPassCount = 0;
+  let strictAllPassCount = 0;
   let totalCriteria = 0;
   let criteriaPassed = 0;
   let criticalTotal = 0;
@@ -110,6 +169,13 @@ export function computeAggregateScore(
   let weightedScoreSum = 0;
 
   const verificationDist: Record<string, number> = {};
+  const judgeStatusDist: Record<string, number> = {
+    pass: 0,
+    fail: 0,
+    uncertain: 0,
+    not_judgeable: 0,
+    judge_error: 0,
+  };
   const byJurisdiction: Record<string, JurisdictionBreakdown> = {};
   const byLegalArea: Record<string, AreaBreakdown> = {};
   const byWorkflow: Record<string, WorkflowBreakdown> = {};
@@ -127,6 +193,7 @@ export function computeAggregateScore(
     const receipt = receiptMap.get(result.task_id);
 
     if (result.all_pass) allPassCount++;
+    if (result.strict_all_pass) strictAllPassCount++;
     totalCriteria += result.criteria_total;
     criteriaPassed += result.criteria_passed;
     criticalTotal += result.critical_total;
@@ -136,6 +203,20 @@ export function computeAggregateScore(
     if (result.verification_state) {
       verificationDist[result.verification_state] =
         (verificationDist[result.verification_state] ?? 0) + 1;
+    }
+
+    // Aggregate judge status distribution
+    if (result.judge_status_counts) {
+      for (const [status, count] of Object.entries(result.judge_status_counts)) {
+        judgeStatusDist[status] = (judgeStatusDist[status] ?? 0) + count;
+      }
+    } else {
+      // Fallback: derive from criteria results
+      for (const cr of result.criteria) {
+        if (cr.judge_status) {
+          judgeStatusDist[cr.judge_status] = (judgeStatusDist[cr.judge_status] ?? 0) + 1;
+        }
+      }
     }
 
     // Per-jurisdiction
@@ -205,19 +286,27 @@ export function computeAggregateScore(
   }
 
   const totalTasks = results.length;
+  const strictAllPassRate = totalTasks > 0 ? strictAllPassCount / totalTasks : 0;
+  const criticalAllPassRate = totalTasks > 0 ? allPassCount / totalTasks : 0;
+  const criterionPassRate = totalCriteria > 0 ? criteriaPassed / totalCriteria : 0;
 
   return {
     total_tasks: totalTasks,
     all_pass_count: allPassCount,
-    all_pass_rate: totalTasks > 0 ? allPassCount / totalTasks : 0,
+    all_pass_rate: criticalAllPassRate,
+    strict_all_pass_count: strictAllPassCount,
+    strict_all_pass_rate: strictAllPassRate,
+    critical_all_pass_count: allPassCount,
+    critical_all_pass_rate: criticalAllPassRate,
     total_criteria: totalCriteria,
     criteria_passed: criteriaPassed,
-    criterion_pass_rate: totalCriteria > 0 ? criteriaPassed / totalCriteria : 0,
+    criterion_pass_rate: criterionPassRate,
     critical_total: criticalTotal,
     critical_passed: criticalPassed,
     critical_pass_rate: criticalTotal > 0 ? criticalPassed / criticalTotal : 0,
     weighted_avg_score: totalTasks > 0 ? weightedScoreSum / totalTasks : 0,
     verification_state_distribution: verificationDist as Record<VerificationState, number>,
+    judge_status_distribution: judgeStatusDist as Record<JudgeStatus, number>,
     by_jurisdiction: byJurisdiction,
     by_legal_area: byLegalArea,
     by_workflow: byWorkflow,
@@ -231,7 +320,84 @@ export function computeAggregateScore(
       avg_latency_ms: totalTasks > 0 ? totalLatency / totalTasks : 0,
       total_latency_ms: totalLatency,
     },
+    confidence_intervals: {
+      strict_all_pass: wilsonCI(strictAllPassCount, totalTasks),
+      critical_all_pass: wilsonCI(allPassCount, totalTasks),
+      criterion_pass: wilsonCI(criteriaPassed, totalCriteria),
+    },
   };
+}
+
+// ── Wilson Confidence Interval ────────────────────────────────────────
+
+/**
+ * Compute Wilson score confidence interval for a proportion.
+ *
+ * @param successes - Number of successes
+ * @param total - Total trials
+ * @param z - Z-score (default 1.96 for 95% CI)
+ * @returns Wilson CI with lower, upper, point estimate, n, z
+ */
+export function wilsonCI(successes: number, total: number, z: number = 1.96): WilsonCI {
+  if (total === 0) {
+    return { lower: 0, upper: 0, point: 0, n: 0, z };
+  }
+  const p = successes / total;
+  const z2 = z * z;
+  const denominator = 1 + z2 / total;
+  const centre = (p + z2 / (2 * total)) / denominator;
+  const margin = (z * Math.sqrt((p * (1 - p) + z2 / (4 * total)) / total)) / denominator;
+  return {
+    lower: Math.max(0, centre - margin),
+    upper: Math.min(1, centre + margin),
+    point: p,
+    n: total,
+    z,
+  };
+}
+
+// ── Precision / Recall for FAIL ───────────────────────────────────────
+
+/**
+ * Compute precision and recall for FAIL predictions.
+ *
+ * Treats FAIL as the positive class:
+ *   - TP: judge says FAIL, human says FAIL (correctly identified failure)
+ *   - FP: judge says FAIL, human says PASS (false alarm)
+ *   - FN: judge says PASS, human says FAIL (missed failure)
+ *   - TN: judge says PASS, human says PASS (correctly identified pass)
+ *
+ * @param judgeResults - Pass/fail from LLM judge (true=PASS, false=FAIL)
+ * @param humanResults - Pass/fail from human reviewer (true=PASS, false=FAIL)
+ * @returns Precision, recall, F1, and confusion matrix counts
+ */
+export function computePrecisionRecallForFail(
+  judgeResults: boolean[],
+  humanResults: boolean[]
+): PrecisionRecall {
+  if (judgeResults.length !== humanResults.length || judgeResults.length === 0) {
+    return { precision: 0, recall: 0, f1: 0, tp: 0, fp: 0, fn: 0, tn: 0 };
+  }
+
+  let tp = 0,
+    fp = 0,
+    fn = 0,
+    tn = 0;
+
+  for (let i = 0; i < judgeResults.length; i++) {
+    const judgeFail = !judgeResults[i];
+    const humanFail = !humanResults[i];
+    if (judgeFail && humanFail) tp++;
+    else if (judgeFail && !humanFail) fp++;
+    else if (!judgeFail && humanFail) fn++;
+    else tn++;
+  }
+
+  const precision = tp + fp > 0 ? tp / (tp + fp) : 0;
+  const recall = tp + fn > 0 ? tp / (tp + fn) : 0;
+  const f1 = precision + recall > 0 ? (2 * precision * recall) / (precision + recall) : 0;
+
+  return { precision, recall, f1, tp, fp, fn, tn };
 }
 
 // ── Cohen's Kappa ─────────────────────────────────────────────────────
@@ -312,11 +478,22 @@ export function generateReport(score: AggregateScore): string {
   lines.push("");
   lines.push(`Total Tasks: ${score.total_tasks}`);
   lines.push(
-    `All-Pass: ${score.all_pass_count}/${score.total_tasks} (${(score.all_pass_rate * 100).toFixed(1)}%)`
+    `Strict All-Pass: ${score.strict_all_pass_count}/${score.total_tasks} (${(score.strict_all_pass_rate * 100).toFixed(1)}%) [CI: ${(score.confidence_intervals.strict_all_pass.lower * 100).toFixed(1)}%–${(score.confidence_intervals.strict_all_pass.upper * 100).toFixed(1)}%]`
   );
-  lines.push(`Criterion Pass Rate: ${(score.criterion_pass_rate * 100).toFixed(1)}%`);
+  lines.push(
+    `Critical All-Pass: ${score.critical_all_pass_count}/${score.total_tasks} (${(score.critical_all_pass_rate * 100).toFixed(1)}%) [CI: ${(score.confidence_intervals.critical_all_pass.lower * 100).toFixed(1)}%–${(score.confidence_intervals.critical_all_pass.upper * 100).toFixed(1)}%]`
+  );
+  lines.push(
+    `Criterion Pass Rate: ${(score.criterion_pass_rate * 100).toFixed(1)}% [CI: ${(score.confidence_intervals.criterion_pass.lower * 100).toFixed(1)}%–${(score.confidence_intervals.criterion_pass.upper * 100).toFixed(1)}%]`
+  );
   lines.push(`Critical Pass Rate: ${(score.critical_pass_rate * 100).toFixed(1)}%`);
   lines.push(`Weighted Avg Score: ${score.weighted_avg_score.toFixed(3)}`);
+  lines.push("");
+
+  lines.push("--- Judge Status Distribution ---");
+  for (const [status, count] of Object.entries(score.judge_status_distribution)) {
+    lines.push(`  ${status}: ${count}`);
+  }
   lines.push("");
 
   lines.push("--- Verification States ---");

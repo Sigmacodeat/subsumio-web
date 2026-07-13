@@ -695,7 +695,7 @@ export function checkCitationGrounding(input: GuardrailInput): GuardrailResult {
       type: "cross_law_contamination",
       detail: `Law "${law}" cited but not in retrieved results (${retrievedLaws.join(", ")})`,
       citation: law,
-      severity: "medium" as Severity,
+      severity: "high" as Severity,
     });
   }
 

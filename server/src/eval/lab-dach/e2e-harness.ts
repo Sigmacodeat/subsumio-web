@@ -19,15 +19,15 @@
 import { validateTask, type Task, type RubricResult, type RunReceipt } from "./types.ts";
 import { ALL_SAMPLE_TASKS } from "./sample-tasks.ts";
 import { createSandbox, cleanupSandbox, writeInputDocument, type TaskSandbox } from "./sandbox.ts";
-import { runWorkflow, type WorkflowResult, computePromptHash } from "./workflows.ts";
+import { runWorkflow, type WorkflowResult } from "./workflows.ts";
 import {
-  getCrossFamilyJudgeConfig,
+  getUnifiedJudgeConfig,
   type JudgeConfig,
   type ChatOpts,
   type ChatResult,
 } from "./rubric-judge.ts";
 import { computeAggregateScore, generateReport, type AggregateScore } from "./scoring.ts";
-import { createHash } from "node:crypto";
+import { buildRunReceipt } from "./receipt.ts";
 
 // ── Mock Chat Function ────────────────────────────────────────────────
 
@@ -39,6 +39,9 @@ function mockChatFn(opts: ChatOpts): Promise<ChatResult> {
   const userContent = opts.messages[0]?.content ?? "";
 
   // Detect what kind of output is expected
+  // Judge prompts include "## Kriterium" and "Bewerte dieses Kriterium" — detect first
+  const isJudge =
+    userContent.includes("## Kriterium") || userContent.includes("Bewerte dieses Kriterium");
   const isMemo = userContent.includes("Kurzmemorandum") || userContent.includes("Rechtsfrage");
   const isFristen = userContent.includes("Fristen") || userContent.includes("Gerichtsakt");
   const isSchriftsatz =
@@ -46,7 +49,10 @@ function mockChatFn(opts: ChatOpts): Promise<ChatResult> {
 
   let text: string;
 
-  if (isMemo) {
+  if (isJudge) {
+    text =
+      '{"status": "pass", "reasoning": "Das Kriterium wurde erfüllt. Die rechtliche Darstellung ist korrekt und mit dem Kontext abgeglichen.", "confidence": 0.85, "evidence_quotes": ["Zitat aus der Ausgabe"] }';
+  } else if (isMemo) {
     text = `# Kurzmemorandum
 
 ## 1. Sachverhalt
@@ -134,8 +140,18 @@ export async function runE2E(opts: {
   tasks?: Task[];
   mockMode?: boolean;
   corpusRoot?: string;
+  modelId?: string;
+  provider?: string;
+  /** Real provider adapter. Required when mockMode is false. */
+  chatFn?: (opts: ChatOpts) => Promise<ChatResult>;
 }): Promise<E2ERunResult> {
   const tasks = opts.tasks ?? ALL_SAMPLE_TASKS;
+  if (!opts.mockMode && !opts.chatFn) {
+    throw new Error(
+      "LAB-DACH live run refused: no real chatFn/provider adapter supplied. " +
+        "Use --mock for offline tests or inject a configured gateway adapter."
+    );
+  }
   const runId = `e2e-${Date.now()}`;
   const startedAt = new Date().toISOString();
 
@@ -171,14 +187,14 @@ export async function runE2E(opts: {
     }
 
     // Determine agent model
-    const agentModel = "deepseek/deepseek-v4-flash";
-    const agentProvider = "openrouter";
+    const agentModel = opts.modelId ?? "deepseek/deepseek-v4-flash";
+    const agentProvider = opts.provider ?? "openrouter";
 
-    // Get cross-family judge config
-    const judgeConfig = getCrossFamilyJudgeConfig(agentModel).primary;
+    // Get unified blinded judge config (same for all agent candidates)
+    const judgeConfig = getUnifiedJudgeConfig().primary;
 
     // Chat function (mock or real)
-    const chatFn = opts.mockMode ? mockChatFn : mockChatFn; // TODO: wire real chatFn
+    const chatFn = opts.mockMode ? mockChatFn : opts.chatFn!;
 
     // Tool context
     const toolCtx = {
@@ -202,29 +218,14 @@ export async function runE2E(opts: {
     rubricResults.push(result.rubric);
 
     // Build run receipt
-    const promptHash = computePromptHash(task.prompt, result.context.slice(0, 1000));
-    const receipt: RunReceipt = {
-      run_id: `${runId}-${task.id}`,
-      task_id: task.id,
+    const receipt = buildRunReceipt(result, task, {
+      runId,
+      corpusRoot,
+      startedAt,
+      completedAt: new Date().toISOString(),
       model_id: agentModel,
       provider: agentProvider,
-      prompt_hash: promptHash,
-      tool_versions: {
-        sandbox: "1.0.0",
-        guardrail: "2.0.0",
-        workflows: "1.0.0",
-      },
-      token_counts: {
-        input: result.token_count.input,
-        output: result.token_count.output,
-      },
-      latency_ms: result.latency_ms,
-      cost_usd: result.cost_usd,
-      started_at: startedAt,
-      completed_at: new Date().toISOString(),
-      verification_state: result.verification_state as RunReceipt["verification_state"],
-      warnings: result.guardrail_flags.map((f) => `${f.type}: ${f.detail}`),
-    };
+    });
     runReceipts.push(receipt);
 
     console.log(`  Verification: ${result.verification_state}`);

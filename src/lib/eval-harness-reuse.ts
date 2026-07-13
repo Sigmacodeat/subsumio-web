@@ -33,7 +33,8 @@ export type HarnessId =
   | "functional_area"
   | "legal_rag"
   | "skillopt_judge"
-  | "skillopt_reflect";
+  | "skillopt_reflect"
+  | "retrieval_t25";
 
 export type HarnessStatus = "pass" | "warn" | "fail" | "not_run" | "skipped";
 
@@ -83,6 +84,10 @@ export interface AggregatedMetrics {
   source_leakage_rate?: number;
   entity_resolution_precision?: number;
   freshness_accuracy?: number;
+  // T2.5 Retrieval-only metrics (passage-level, separate from generation)
+  passage_support_rate?: number;
+  source_type_coverage?: number;
+  negative_authority_recall?: number;
 }
 
 // ── Harness Registry ──────────────────────────────────────────────────
@@ -114,6 +119,15 @@ export const HARNESS_REGISTRY: HarnessDefinition[] = [
     name: "RAG Eval",
     description: "Retrieval Quality — Precision@K, Recall@K, MRR, NDCG gegen Legal Fixtures",
     source: "src/lib/rag-eval.ts",
+    enabled: true,
+    blocking: true,
+  },
+  {
+    id: "retrieval_t25",
+    name: "T2.5 Retrieval Evaluation",
+    description:
+      "Passage-level Retrieval Metrics — Recall@k, Precision@k, MRR, nDCG, Source-type Coverage, Passage Support Rate, Negative-Authority Recall (retrieval-only, separate from generation)",
+    source: "src/lib/retrieval-eval.ts",
     enabled: true,
     blocking: true,
   },

@@ -143,6 +143,14 @@ export interface MinionJobInput {
    * their claim order is decorrelated by hash-based minute-offset. Optional.
    */
   stagger_key?: string;
+
+  // EPIC 8 T8.4: Mandatory validator enforcement
+  /**
+   * When true, this job is a mandatory check that MUST fail its parent if it
+   * fails. Submission is rejected unless on_child_fail is "fail_parent" and
+   * parent_job_id is set. Mandatory jobs cannot be cancelled independently.
+   */
+  mandatory?: boolean;
 }
 
 /** Constructor options for MinionQueue (v7). */

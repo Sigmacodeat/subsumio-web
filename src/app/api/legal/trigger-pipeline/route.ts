@@ -7,6 +7,11 @@ export const maxDuration = 30;
 const triggerSchema = z.object({
   case_slug: z.string().min(1, "case_slug_required"),
   part_slugs: z.array(z.string()).optional(),
+  jurisdiction: z.enum(["at", "de", "ch", "eu"]).optional(),
+  as_of_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   resume_from_layer: z.number().int().min(1).max(6).optional(),
   manual_overrides: z
     .object({
@@ -28,19 +33,22 @@ export const POST = createHandler(
     if (!headers) return apiError("unauthorized", "Nicht authentifiziert", 401);
 
     try {
+      // The case page is also the authoritative intake context for explicit
+      // jurisdiction. The pipeline no longer assumes AT when it is absent.
+      const casePath = body.case_slug.split("/").map(encodeURIComponent).join("/");
+      const casePageRes = await fetch(`${ENGINE_URL}/api/pages/${casePath}`, {
+        headers,
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (!casePageRes.ok) {
+        return apiError("case_not_found", "Akte nicht gefunden", 404);
+      }
+      const casePage = await casePageRes.json();
+      const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
+
       // If part_slugs not provided, fetch case documents
       let partSlugs = body.part_slugs ?? [];
       if (partSlugs.length === 0 && !body.resume_from_layer) {
-        const casePath = body.case_slug.split("/").map(encodeURIComponent).join("/");
-        const casePageRes = await fetch(`${ENGINE_URL}/api/pages/${casePath}`, {
-          headers,
-          signal: AbortSignal.timeout(30_000),
-        });
-        if (!casePageRes.ok) {
-          return apiError("case_not_found", "Akte nicht gefunden", 404);
-        }
-        const casePage = await casePageRes.json();
-        const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
         const documents = (fm.documents as Array<Record<string, unknown>>) ?? [];
         partSlugs = documents.map((d) => String(d.slug ?? "")).filter(Boolean);
       }
@@ -61,6 +69,23 @@ export const POST = createHandler(
         case_slug: body.case_slug,
         part_slugs: partSlugs,
       };
+
+      const jurisdictionCandidate = String(
+        body.jurisdiction ?? fm.jurisdiction ?? ""
+      ).toLowerCase();
+      if (!["at", "de", "ch", "eu"].includes(jurisdictionCandidate)) {
+        return apiError(
+          "jurisdiction_required",
+          "Die Jurisdiktion der Akte muss vor dem Pipeline-Start bestätigt werden.",
+          400
+        );
+      }
+      triggerPayload.jurisdiction = jurisdictionCandidate;
+      triggerPayload.as_of_date =
+        body.as_of_date ??
+        (typeof fm.as_of_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(fm.as_of_date)
+          ? fm.as_of_date
+          : new Date().toISOString().slice(0, 10));
 
       if (body.resume_from_layer) {
         triggerPayload.resume_from_layer = body.resume_from_layer;

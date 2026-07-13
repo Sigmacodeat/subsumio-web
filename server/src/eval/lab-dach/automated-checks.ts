@@ -11,7 +11,7 @@
  *   - Corpus receipt validation (source_provenance)
  */
 
-import { checkCitationGrounding, extractCitations } from "../../core/citation-guardrail.ts";
+import { checkCitationGrounding, extractLawAbbreviations } from "../../core/citation-guardrail.ts";
 import { isOfficialSource, type CorpusReceipt } from "../../core/legal/corpus-receipt.ts";
 import type { Jurisdiction } from "../../core/legal/corpus-receipt.ts";
 import type { AutomatedCheckId, CriterionResult } from "./types.ts";
@@ -179,8 +179,8 @@ export function checkLanguageGerman(ctx: CheckContext): AutomatedCheckResult {
  */
 export function checkMinCitations(ctx: CheckContext): AutomatedCheckResult {
   const min = ctx.minCitations ?? 1;
-  const citations = extractCitations(ctx.output);
-  const uniqueLaws = new Set(citations.map((c) => c.law).filter(Boolean));
+  const laws = extractLawAbbreviations(ctx.output);
+  const uniqueLaws = new Set(laws);
 
   return {
     passed: uniqueLaws.size >= min,
@@ -222,8 +222,7 @@ export function checkJurisdictionCorrect(ctx: CheckContext): AutomatedCheckResul
  * Cited laws must have valid corpus receipts with source_url.
  */
 export function checkSourceProvenance(ctx: CheckContext): AutomatedCheckResult {
-  const citations = extractCitations(ctx.output);
-  const citedLaws = new Set(citations.map((c) => c.law).filter(Boolean));
+  const citedLaws = new Set(extractLawAbbreviations(ctx.output));
   const receipts = ctx.corpusReceipts ?? [];
 
   const missing: string[] = [];
