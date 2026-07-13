@@ -2937,18 +2937,26 @@ export class PGLiteEngine implements BrainEngine {
     // {sourceIds} takes precedence over scalar {sourceId}; neither = unscoped.
     // v0.43.0: only current bi-temporal edges.
     const params: unknown[] = [];
-    let where = "WHERE l.valid_to IS NULL";
+    let from = "FROM links l";
+    const where = "WHERE l.valid_to IS NULL";
     if (opts?.sourceIds && opts.sourceIds.length > 0) {
       params.push(opts.sourceIds);
-      where += ` JOIN pages f ON f.id = l.from_page_id AND f.source_id = ANY($${params.length}::text[])`;
+      from += ` JOIN pages f ON f.id = l.from_page_id`;
     } else if (opts?.sourceId) {
       params.push(opts.sourceId);
-      where += ` JOIN pages f ON f.id = l.from_page_id AND f.source_id = $${params.length}`;
+      from += ` JOIN pages f ON f.id = l.from_page_id`;
     }
+    const sourceFilter =
+      opts?.sourceIds && opts.sourceIds.length > 0
+        ? ` AND f.source_id = ANY($${params.length}::text[])`
+        : opts?.sourceId
+          ? ` AND f.source_id = $${params.length}`
+          : "";
     const { rows } = await this.db.query(
       `SELECT l.link_source, COUNT(*)::int AS count
-       FROM links l
+       ${from}
        ${where}
+       ${sourceFilter}
        GROUP BY l.link_source
        ORDER BY count DESC, l.link_source ASC NULLS LAST`,
       params

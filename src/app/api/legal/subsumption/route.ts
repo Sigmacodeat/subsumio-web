@@ -2,6 +2,7 @@ import { z } from "zod";
 import { NextRequest } from "next/server";
 import { ENGINE_URL, engineHeadersWithCaseJurisdiction } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
+import { trustedLegalJurisdiction } from "@/lib/legal-jurisdiction";
 
 export const maxDuration = 60;
 
@@ -102,32 +103,41 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body, _query, req: NextRequest) => {
-    const { scenario, jurisdiction, follow_up, previous_result, case_slug } = body;
-    const prompt = buildSubsumptionPrompt(
+    const {
       scenario,
-      jurisdiction,
+      jurisdiction: requestedJurisdiction,
       follow_up,
-      previous_result
-    );
+      previous_result,
+      case_slug,
+    } = body;
 
     // Case jurisdiction takes priority over body jurisdiction (Case > User > Fail-Closed).
     // When case_slug is provided, resolve the case's jurisdiction from its frontmatter
     // and inject x-subsumio-case-jurisdiction so readSourcesFor() scopes the law corpus.
-    const caseScopedHeaders = await engineHeadersWithCaseJurisdiction(
-      ctx.headers,
-      case_slug
-    );
+    const caseScopedHeaders = await engineHeadersWithCaseJurisdiction(ctx.headers, case_slug);
+    const jurisdiction = trustedLegalJurisdiction(caseScopedHeaders, requestedJurisdiction);
+    const promptJurisdiction = jurisdiction ?? requestedJurisdiction;
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...caseScopedHeaders,
-      "x-subsumio-jurisdiction": jurisdiction.toUpperCase(),
     };
+    // Never let the request body widen or switch the engine's law-corpus
+    // scope. The session/case headers are server-controlled; with neither
+    // present, the engine remains fail-closed and can only search tenant data.
+    if (jurisdiction) headers["x-subsumio-jurisdiction"] = jurisdiction.toUpperCase();
+
+    const trustedPrompt = buildSubsumptionPrompt(
+      scenario,
+      promptJurisdiction,
+      follow_up,
+      previous_result
+    );
 
     const res = await fetch(`${ENGINE_URL}/api/think`, {
       method: "POST",
       headers,
       body: JSON.stringify({
-        query: prompt,
+        query: trustedPrompt,
         mode: "tokenmax",
         legal_mode: true,
         ...(case_slug ? { case_slug } : {}),

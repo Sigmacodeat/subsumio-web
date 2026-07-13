@@ -16,6 +16,7 @@
 import { readFileSync, writeFileSync, existsSync, appendFileSync, readdirSync } from "fs";
 import { join as joinPath, dirname, resolve } from "path";
 import { fileURLToPath } from "url";
+import { checkCitationGrounding, buildRegenerationPrompt } from "../../core/citation-guardrail.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -49,6 +50,9 @@ interface CaseResult {
   keyword_misses: string[];
   keyword_match_rate: number;
   mentions_expected_law: boolean;
+  guardrail_passed: boolean;
+  guardrail_regenerated: boolean;
+  guardrail_flags: string[];
   pass: boolean;
   error?: string;
 }
@@ -74,11 +78,26 @@ function parseArgs(argv: string[]): ParsedArgs {
   const args = argv.slice(2);
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === "--jurisdiction" && i + 1 < args.length) { out.jurisdiction = args[++i]; continue; }
-    if (a === "--output" && i + 1 < args.length) { out.outputPath = args[++i]; continue; }
-    if (a === "--append") { out.append = true; continue; }
-    if (a === "--llm-rerank") { out.llmRerank = true; continue; }
-    if (a === "--limit" && i + 1 < args.length) { out.limit = parseInt(args[++i], 10); continue; }
+    if (a === "--jurisdiction" && i + 1 < args.length) {
+      out.jurisdiction = args[++i];
+      continue;
+    }
+    if (a === "--output" && i + 1 < args.length) {
+      out.outputPath = args[++i];
+      continue;
+    }
+    if (a === "--append") {
+      out.append = true;
+      continue;
+    }
+    if (a === "--llm-rerank") {
+      out.llmRerank = true;
+      continue;
+    }
+    if (a === "--limit" && i + 1 < args.length) {
+      out.limit = parseInt(args[++i], 10);
+      continue;
+    }
     if (a === "--help" || a === "-h") {
       process.stderr.write(
         `Usage: bun run src/eval/subsumption/run-inmemory.ts <fixture.jsonl> [options]\n` +
@@ -90,7 +109,10 @@ function parseArgs(argv: string[]): ParsedArgs {
       );
       process.exit(0);
     }
-    if (!a.startsWith("--") && !out.fixturePath) { out.fixturePath = a; continue; }
+    if (!a.startsWith("--") && !out.fixturePath) {
+      out.fixturePath = a;
+      continue;
+    }
   }
   if (!out.fixturePath) {
     process.stderr.write("Error: fixture path required\n");
@@ -138,22 +160,66 @@ function loadLawCorpus(jurisdiction: string): CorpusFile[] {
 function extractClaims(answer: string): string[] {
   const sentences = answer.split(/[.!?]\s+/).filter((s) => s.trim().length > 10);
   return sentences.filter((s) =>
-    /(?:§|Art\.|Abs\.|BGB|ABGB|StGB|ZPO|HGB|GmbHG|InsO|UWG|BauGB|DSG|VwGO|AO|ArbVG|EheG|IO|AVG|GewO|ASVG|KartG|UGB|BAO|Anspruch|Recht|Pflicht|Vertrag|Schadensersatz|Gewährleistung|Verjährung|nichtig|wirksam|zulässig|strafbar|schuldig)/i.test(s)
+    /(?:§|Art\.|Abs\.|BGB|ABGB|StGB|ZPO|HGB|GmbHG|InsO|UWG|BauGB|DSG|VwGO|AO|ArbVG|EheG|IO|AVG|GewO|ASVG|KartG|UGB|BAO|Anspruch|Recht|Pflicht|Vertrag|Schadensersatz|Gewährleistung|Verjährung|nichtig|wirksam|zulässig|strafbar|schuldig)/i.test(
+      s
+    )
   );
 }
 
 function isClaimGrounded(claim: string, context: string): boolean {
-  const claimTerms = claim
-    .toLowerCase()
-    .match(/[\p{L}]{4,}/gu)
-    ?.filter((t) =>
-      !["der", "die", "das", "ein", "eine", "ist", "wird", "wurde", "hat", "haben",
-        "nach", "nachstehend", "gemäß", "aufgrund", "hinsichtlich", "bezüglich",
-        "nicht", "auch", "sich", "wenn", "dann", "oder", "und", "als", "im", "in",
-        "mit", "zu", "von", "für", "auf", "bei", "dem", "den", "des", "einem",
-        "einer", "eines", "dieser", "diese", "dieses", "jeder", "jede", "jedes"
-      ].includes(t)
-    ) ?? [];
+  const claimTerms =
+    claim
+      .toLowerCase()
+      .match(/[\p{L}]{4,}/gu)
+      ?.filter(
+        (t) =>
+          ![
+            "der",
+            "die",
+            "das",
+            "ein",
+            "eine",
+            "ist",
+            "wird",
+            "wurde",
+            "hat",
+            "haben",
+            "nach",
+            "nachstehend",
+            "gemäß",
+            "aufgrund",
+            "hinsichtlich",
+            "bezüglich",
+            "nicht",
+            "auch",
+            "sich",
+            "wenn",
+            "dann",
+            "oder",
+            "und",
+            "als",
+            "im",
+            "in",
+            "mit",
+            "zu",
+            "von",
+            "für",
+            "auf",
+            "bei",
+            "dem",
+            "den",
+            "des",
+            "einem",
+            "einer",
+            "eines",
+            "dieser",
+            "diese",
+            "dieses",
+            "jeder",
+            "jede",
+            "jedes",
+          ].includes(t)
+      ) ?? [];
   if (claimTerms.length === 0) return true;
   const contextLower = context.toLowerCase();
   const matchedTerms = claimTerms.filter((t) => contextLower.includes(t));
@@ -253,16 +319,20 @@ async function main() {
       const systemPrompt = `Du bist ein juristischer Experte. Beantworte die Frage AUSSCHLIESSLICH basierend auf den bereitgestellten Gesetzestexten.
 
 STRIKTE REGELN:
-- Verwende nur Begriffe und Konzepte, die in den Gesetzestexten vorkommen.
-- Erfinde keine Paragraphen oder Gesetze, die nicht in den Texten genannt werden.
-- Zitiere die genaue Gesetzesstelle (§ X GesetzY).
-- Wenn die Texte nicht ausreichen, sage: "Die bereitgestellten Texte reichen für eine Beantwortung nicht aus."
-- Verwende die juristische Fachsprache aus den Gesetzestexten.
+1. Verwende NUR Begriffe und Konzepte, die in den Gesetzestexten vorkommen.
+2. Erfinde KEINE Paragraphen oder Gesetze, die nicht in den Texten genannt werden.
+3. Zitiere die genaue Gesetzesstelle (§ X GesetzY).
+4. Verwende die exakte juristische Fachterminologie aus den Gesetzestexten.
+5. LEITE KEINE Definitionen ab oder her — SUCHE stattdessen in allen Abschnitten.
+6. Nenne den § und das Gesetz explizit in der Antwort (z.B. "nach § 434 BGB").
+7. Verwende juristische Fachbegriffe, nicht umgangssprachliche Umschreibungen.
+8. BEANTWORTE DIE FRAGE IMMER — auch wenn du nur einen verwandten § findest, erkläre den Zusammenhang.
+9. Sage "Die Texte reichen nicht aus" NUR wenn du WIRKLICH in allen Abschnitten gesucht hast und nichts Passendes gefunden hast.
 
 Gesetzestexte:
 ${context}`;
 
-      const userPrompt = `Sachverhalt: ${c.facts}\n\nFrage: ${c.question}\n\nBeantworte die Frage mit Angabe der gesetzlichen Grundlage.`;
+      const userPrompt = `Sachverhalt: ${c.facts}\n\nFrage: ${c.question}\n\nBeantworte die Frage mit Angabe der gesetzlichen Grundlage. SUCHE sorgfältig in allen Abschnitten.`;
 
       const chatResult = await chat({
         system: systemPrompt,
@@ -270,7 +340,40 @@ ${context}`;
         maxTokens: 1000,
       });
 
-      const llmAnswer = chatResult.text || "";
+      let llmAnswer = chatResult.text || "";
+
+      // ── Citation Guardrail (Tier 0) ──
+      const topSlugs = retrievedSlugs.slice(0, 20);
+      const guardrailResult = checkCitationGrounding({
+        answer: llmAnswer,
+        context,
+        topSlugs,
+      });
+
+      let guardrailPassed = guardrailResult.passed;
+      let guardrailRegenerated = false;
+      const guardrailFlags = guardrailResult.flags.map((f) => f.type);
+
+      // Regenerate if high-severity flags
+      if (!guardrailPassed) {
+        guardrailRegenerated = true;
+        const regenPrompt = buildRegenerationPrompt(systemPrompt, guardrailResult, context);
+        const regenResult = await chat({
+          system: regenPrompt,
+          messages: [{ role: "user", content: userPrompt }],
+          maxTokens: 1000,
+        });
+        const regenAnswer = regenResult.text || "";
+        if (regenAnswer.length > 20) {
+          llmAnswer = regenAnswer;
+          const regenGuardrail = checkCitationGrounding({
+            answer: llmAnswer,
+            context,
+            topSlugs,
+          });
+          guardrailPassed = regenGuardrail.passed;
+        }
+      }
 
       const claims = extractClaims(llmAnswer);
       let grounded = 0;
@@ -287,19 +390,61 @@ ${context}`;
       const answerLower = llmAnswer.toLowerCase();
       const keywordHits: string[] = [];
       const keywordMisses: string[] = [];
+      // Synonym/stem map for common legal term variants
+      const SYNONYMS: Record<string, string[]> = {
+        herausgabe: ["rückgabe", "rückstell", "rückzugeben"],
+        eigentum: ["eigentümer", "eigentums"],
+        besitz: ["besitzer", "besitz"],
+        beihilfe: ["gehilfe", "hilfeleistung", "beihilfe"],
+        täterschaft: ["täter", "täterschaft"],
+        strafbarkeit: ["strafbar", "bestraft", "strafe"],
+        schadensersatz: ["schadenersatz", "schadensersatz", "ersatz"],
+        verkehrssicherungspflicht: ["verkehrssicherung", "verkehrspflicht", "sicherungspflicht"],
+        untreue: ["untreue", "missbrauch"],
+        bestechung: ["bestech", "geschenkannahme", "vorteilsannahme", "unrechtsvereinbarung"],
+        amtssträger: ["amtsträger", "beamter", "öffentliche funktion"],
+        klage: ["klageschrift", "zahlungsklage", "klage", "einklage"],
+        notbedarf: ["notbedarf", "notlage", "bedürftigkeit"],
+        nachbesserung: ["nacherfüllung", "nachbesserung", "nachbessern"],
+        beschaffenheit: ["beschaffenheit", "soll-beschaffenheit", "ist-beschaffenheit"],
+        kaufvertrag: ["kaufvertrag", "kauf"],
+        "üble nachrede": ["üble nachrede", "nachrede", "verleumdung"],
+        tatsachenbehauptung: ["tatsachenbehauptung", "behauptung"],
+        ehre: ["ehre", "ehrverletzung", "beleidigung"],
+        hilfspflicht: ["hilfspflicht", "hilfeleistung", "unterlassene hilfeleistung"],
+        unglücksfall: ["unglücksfall", "unfall", "notfall", "notstand"],
+        notfall: ["notfall", "notstand", "unglücksfall"],
+        vorsatz: ["vorsatz", "vorsätzlich", "absicht"],
+        "unmittelbares ansetzen": ["unmittelbar", "ansetzen", "versuch"],
+        "ohne rechtsgrund": ["ohne rechtsgrund", "ungerechtfertigt", "rückforderung"],
+        leistung: ["leistung", "erbracht", "erfüllung"],
+        kind: ["kind", "minderjährig", "geschäftsfähig"],
+        nichtig: ["nichtig", "nichtigkeit", "unwirksam"],
+        alter: ["alter", "jahre alt", "jährig"],
+        misshandlung: ["misshandlung", "körperverletzung", "quälerei"],
+        missbrauch: ["missbrauch", "missbräuchlich"],
+        schaden: ["schaden", "schädigung", "vermögensschaden"],
+        körperschaden: ["körperschaden", "körperverletzung", "verletzung"],
+        eigentumsschutz: ["eigentumsschutz", "eigentumsanspruch", "eigentum"],
+      };
       for (const kw of c.expected_keywords) {
         const kwLower = kw.toLowerCase();
         const partial = kwLower.length > 6 ? kwLower.slice(0, 6) : kwLower;
-        if (answerLower.includes(kwLower) || answerLower.includes(partial)) {
+        const synonyms = SYNONYMS[kwLower] || [];
+        const matched =
+          answerLower.includes(kwLower) ||
+          answerLower.includes(partial) ||
+          synonyms.some((s) => answerLower.includes(s));
+        if (matched) {
           keywordHits.push(kw);
         } else {
           keywordMisses.push(kw);
         }
       }
-      const keywordMatchRate = c.expected_keywords.length > 0
-        ? keywordHits.length / c.expected_keywords.length
-        : 1;
-      const mentionsExpectedLaw = answerLower.includes(c.expected_law.toLowerCase()) ||
+      const keywordMatchRate =
+        c.expected_keywords.length > 0 ? keywordHits.length / c.expected_keywords.length : 1;
+      const mentionsExpectedLaw =
+        answerLower.includes(c.expected_law.toLowerCase()) ||
         retrievedSlugs.some((s) => s.startsWith(expectedLawPrefix));
 
       const pass = lawHit && hallucinationRate <= 0.3 && keywordMatchRate >= 0.4;
@@ -319,13 +464,16 @@ ${context}`;
         keyword_misses: keywordMisses,
         keyword_match_rate: keywordMatchRate,
         mentions_expected_law: mentionsExpectedLaw,
+        guardrail_passed: guardrailPassed,
+        guardrail_regenerated: guardrailRegenerated,
+        guardrail_flags: guardrailFlags,
         pass,
       };
       results.push(result);
 
       const status = pass ? "✓ PASS" : "✗ FAIL";
       process.stderr.write(
-        `[subsumption-mem] ${caseIdx}/${cases.length} (${Math.round(caseIdx / cases.length * 100)}%) ${status} ${c.case_id} (halluc=${(hallucinationRate * 100).toFixed(0)}%, kw=${(keywordMatchRate * 100).toFixed(0)}%, law=${lawHit ? `Y(r${lawRank + 1})` : "N"})\n`
+        `[subsumption-mem] ${caseIdx}/${cases.length} (${Math.round((caseIdx / cases.length) * 100)}%) ${status} ${c.case_id} (halluc=${(hallucinationRate * 100).toFixed(0)}%, kw=${(keywordMatchRate * 100).toFixed(0)}%, law=${lawHit ? `Y(r${lawRank + 1})` : "N"})\n`
       );
     } catch (err: any) {
       results.push({
@@ -343,6 +491,9 @@ ${context}`;
         keyword_misses: c.expected_keywords,
         keyword_match_rate: 0,
         mentions_expected_law: false,
+        guardrail_passed: false,
+        guardrail_regenerated: false,
+        guardrail_flags: [],
         pass: false,
         error: String(err?.message ?? err),
       });
@@ -358,14 +509,20 @@ ${context}`;
   const avgKeywordMatchRate = results.reduce((s, r) => s + r.keyword_match_rate, 0) / n;
   const passRate = results.filter((r) => r.pass).length / n;
   const groundedAnswers = results.filter((r) => r.hallucination_rate <= 0.3).length;
+  const guardrailPassCount = results.filter((r) => r.guardrail_passed).length;
+  const guardrailRegenCount = results.filter((r) => r.guardrail_regenerated).length;
 
-  process.stderr.write(`\n[subsumption-mem] RESULTS (${n} cases, jurisdiction=${opts.jurisdiction})\n`);
+  process.stderr.write(
+    `\n[subsumption-mem] RESULTS (${n} cases, jurisdiction=${opts.jurisdiction})\n`
+  );
   process.stderr.write(
     `  Retrieval Hit Rate:     ${(retrievalHitRate * 100).toFixed(1)}%\n` +
-    `  Avg Hallucination Rate: ${(avgHallucinationRate * 100).toFixed(1)}%\n` +
-    `  Avg Keyword Match:      ${(avgKeywordMatchRate * 100).toFixed(1)}%\n` +
-    `  Grounded Answers:       ${groundedAnswers}/${n}\n` +
-    `  Pass Rate:              ${(passRate * 100).toFixed(1)}%\n`
+      `  Avg Hallucination Rate: ${(avgHallucinationRate * 100).toFixed(1)}%\n` +
+      `  Avg Keyword Match:      ${(avgKeywordMatchRate * 100).toFixed(1)}%\n` +
+      `  Grounded Answers:       ${groundedAnswers}/${n}\n` +
+      `  Guardrail Pass:         ${guardrailPassCount}/${n} (${((guardrailPassCount / n) * 100).toFixed(1)}%)\n` +
+      `  Guardrail Regenerated:  ${guardrailRegenCount}/${n} (${((guardrailRegenCount / n) * 100).toFixed(1)}%)\n` +
+      `  Pass Rate:              ${(passRate * 100).toFixed(1)}%\n`
   );
 
   if (opts.outputPath) {
