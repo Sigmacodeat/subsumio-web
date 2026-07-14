@@ -13,8 +13,11 @@ server/deploy/hetzner/.env
 *.log
 tsconfig.tsbuildinfo
 
-# Server/engine code is not needed by the Next.js web build
-server/
+# Heavy server dirs not needed by the Next.js web build
+server/node_modules/
+server/data/
+server/dist/
+server/.pglite/
 
 # Law corpus is only needed by the engine container, not the web build
 law-corpus/
