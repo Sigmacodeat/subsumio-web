@@ -223,8 +223,8 @@ export interface ReviewerInfo {
   name: string;
   /** Professional role (e.g. "Rechtsanwalt", "Richter", "Jurist") */
   role: string;
-  /** ISO timestamp of the review */
-  reviewed_at: string;
+  /** ISO timestamp of the review, or null if not yet reviewed */
+  reviewed_at: string | null;
 }
 
 export interface TaskQrels {
@@ -343,6 +343,14 @@ export interface RunReceipt {
   verification_state?: VerificationState;
   /** Any warnings during the run */
   warnings?: string[];
+  /** Whether this receipt was produced by a live LLM call or a mock */
+  mode: "live" | "mock";
+  /** Provider errors encountered during the run (live mode only) */
+  provider_errors?: string[];
+  /** p50 latency across all LLM calls within this task (ms) */
+  latency_p50_ms?: number;
+  /** p95 latency across all LLM calls within this task (ms) */
+  latency_p95_ms?: number;
 }
 
 // ── Run Configuration ─────────────────────────────────────────────────
@@ -491,8 +499,10 @@ export function validateTask(task: Task): TaskValidationError[] {
  *   - as_of_date is required and must be a valid ISO date
  *   - official_sources is required with at least 1 entry
  *   - reference_output is required (non-empty)
- *   - reviewer is required with name, role, reviewed_at
- *   - review_status must be "approved"
+ *   - reviewer is required with name, role
+ *   - review_status must be "draft" or "approved"
+ *   - if review_status is "approved", reviewer.reviewed_at must be set
+ *   - if review_status is "draft", reviewer.reviewed_at may be null
  */
 export function validateGoldTask(task: Task): TaskValidationError[] {
   const errors = validateTask(task);
@@ -529,18 +539,24 @@ export function validateGoldTask(task: Task): TaskValidationError[] {
   if (!task.reviewer) {
     errors.push({ field: "reviewer", message: "gold task requires reviewer metadata" });
   } else {
-    if (!task.reviewer.name || !task.reviewer.role || !task.reviewer.reviewed_at) {
+    if (!task.reviewer.name || !task.reviewer.role) {
       errors.push({
         field: "reviewer",
-        message: "reviewer must have name, role, and reviewed_at",
+        message: "reviewer must have name and role",
+      });
+    }
+    if (task.review_status === "approved" && !task.reviewer.reviewed_at) {
+      errors.push({
+        field: "reviewer",
+        message: "approved gold task must have reviewer.reviewed_at set",
       });
     }
   }
 
-  if (task.review_status !== "approved") {
+  if (task.review_status !== "approved" && task.review_status !== "draft") {
     errors.push({
       field: "review_status",
-      message: "gold task must have review_status 'approved'",
+      message: "gold task must have review_status 'draft' or 'approved'",
     });
   }
 

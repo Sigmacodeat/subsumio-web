@@ -1,0 +1,32 @@
+{
+  "run_id": "e2e-1784019909371-gold-at-lit-003",
+  "task_id": "gold-at-lit-003",
+  "model_id": "openrouter:deepseek/deepseek-chat",
+  "provider": "openrouter",
+  "prompt_hash": "6b87eefaf4156d4e0a9e59d583ffed6b35d0521e2b4484db04e206741dd87e54",
+  "corpus_hash": "898e61a1848b6846134f7055bb35eefbbab81bef660655c05489dc4b9e446a95",
+  "output_hash": "92b434efc683fe8ad60713e8cab3ac72987a2397b05c4747673599cbf0e6188d",
+  "tool_versions": {
+    "sandbox": "1.0.0",
+    "guardrail": "2.0.0",
+    "workflows": "1.0.0",
+    "automated_checks": "2.0.0",
+    "rubric_judge": "1.0.0",
+    "agent_tools": "1.0.0"
+  },
+  "token_counts": {
+    "input": 1757,
+    "output": 370
+  },
+  "latency_ms": 74980,
+  "cost_usd": 0.00035,
+  "started_at": "2026-07-14T09:05:09.371Z",
+  "completed_at": "2026-07-14T09:09:28.912Z",
+  "verification_state": "NEEDS_HUMAN_REVIEW",
+  "warnings": [
+    "ungrounded_citation: Citation \"§ 335 BDG\" not found in retrieved context"
+  ],
+  "mode": "live",
+  "latency_p50_ms": 42321,
+  "latency_p95_ms": 42321
+}

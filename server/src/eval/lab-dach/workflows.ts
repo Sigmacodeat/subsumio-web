@@ -21,6 +21,7 @@ import type { JudgeConfig } from "./rubric-judge.ts";
 import { judgeAllCriteria, type ChatOpts, type ChatResult } from "./rubric-judge.ts";
 import { computeAggregateScore } from "./scoring.ts";
 import { checkCitationGrounding } from "../../core/citation-guardrail.ts";
+import { computeTurnCost } from "../../core/cost-ledger.ts";
 import { createHash } from "node:crypto";
 import {
   type WorkProductReceipt,
@@ -45,6 +46,24 @@ export interface WorkflowRunOpts {
   provider: string;
 }
 
+/**
+ * Wrap a chatFn to track per-call latency. Returns the wrapped fn and
+ * an array of latencies that workflow functions can include in their result.
+ */
+function withLatencyTracking(chatFn: (opts: ChatOpts) => Promise<ChatResult>): {
+  fn: (opts: ChatOpts) => Promise<ChatResult>;
+  latencies: number[];
+} {
+  const latencies: number[] = [];
+  const fn = async (opts: ChatOpts): Promise<ChatResult> => {
+    const start = Date.now();
+    const result = await chatFn(opts);
+    latencies.push(Date.now() - start);
+    return result;
+  };
+  return { fn, latencies };
+}
+
 export interface WorkflowResult {
   task_id: string;
   workflow: string;
@@ -61,6 +80,8 @@ export interface WorkflowResult {
   /** Verification receipt for the work product. */
   receipt?: WorkProductReceipt;
   error?: string;
+  /** Per-LLM-call latencies in ms (for p50/p95 computation in receipts) */
+  llm_latencies_ms?: number[];
 }
 
 export interface ToolCallRecord {
@@ -133,7 +154,8 @@ function buildWorkflowReceipt(
 // ── Workflow 1: Rechtsfrage → Kurzmemorandum ──────────────────────────
 
 export async function runWorkflow1_Memorandum(opts: WorkflowRunOpts): Promise<WorkflowResult> {
-  const { task, sandbox, toolCtx, chatFn } = opts;
+  const { task, sandbox, toolCtx } = opts;
+  const { fn: chatFn, latencies: llmLatencies } = withLatencyTracking(opts.chatFn);
   const startedAt = Date.now();
   const toolCalls: ToolCallRecord[] = [];
 
@@ -213,7 +235,8 @@ Regeln:
     output,
     context,
     guardrailFlags,
-    verificationDecision.state
+    verificationDecision.state,
+    lawResults.map((r) => r.slug)
   );
 
   // Step 8: Build verification receipt
@@ -231,6 +254,9 @@ Regeln:
     opts
   );
 
+  const inputTokens1 = chatResult.usage?.input_tokens ?? Math.round(context.length / 4);
+  const outputTokens1 = chatResult.usage?.output_tokens ?? Math.round(output.length / 4);
+
   return {
     task_id: task.id,
     workflow: "rechtsfrage_memorandum",
@@ -242,16 +268,18 @@ Regeln:
     verification_state: verificationDecision.state,
     rubric,
     latency_ms: Date.now() - startedAt,
-    token_count: { input: context.length / 4, output: output.length / 4 },
-    cost_usd: estimateCost(context.length, output.length),
+    token_count: { input: inputTokens1, output: outputTokens1 },
+    cost_usd: computeWorkflowCost(opts.modelId, inputTokens1, outputTokens1),
     receipt,
+    llm_latencies_ms: llmLatencies,
   };
 }
 
 // ── Workflow 2: Gerichtsakt → Fristen/Risiken ────────────────────────
 
 export async function runWorkflow2_Fristen(opts: WorkflowRunOpts): Promise<WorkflowResult> {
-  const { task, sandbox, toolCtx, chatFn } = opts;
+  const { task, sandbox, toolCtx } = opts;
+  const { fn: chatFn, latencies: llmLatencies } = withLatencyTracking(opts.chatFn);
   const startedAt = Date.now();
   const toolCalls: ToolCallRecord[] = [];
 
@@ -345,7 +373,8 @@ Regeln:
     output,
     context,
     guardrailFlags,
-    verificationDecision.state
+    verificationDecision.state,
+    lawResults.map((r) => (r as { slug?: string }).slug ?? "").filter(Boolean)
   );
 
   // Step 8: Build verification receipt
@@ -363,6 +392,9 @@ Regeln:
     opts
   );
 
+  const inputTokens2 = chatResult.usage?.input_tokens ?? Math.round(context.length / 4);
+  const outputTokens2 = chatResult.usage?.output_tokens ?? Math.round(output.length / 4);
+
   return {
     task_id: task.id,
     workflow: "gerichtsakt_fristen",
@@ -374,16 +406,18 @@ Regeln:
     verification_state: verificationDecision.state,
     rubric,
     latency_ms: Date.now() - startedAt,
-    token_count: { input: context.length / 4, output: output.length / 4 },
-    cost_usd: estimateCost(context.length, output.length),
+    token_count: { input: inputTokens2, output: outputTokens2 },
+    cost_usd: computeWorkflowCost(opts.modelId, inputTokens2, outputTokens2),
     receipt,
+    llm_latencies_ms: llmLatencies,
   };
 }
 
 // ── Workflow 3: Schriftsatzentwurf ────────────────────────────────────
 
 export async function runWorkflow3_Schriftsatz(opts: WorkflowRunOpts): Promise<WorkflowResult> {
-  const { task, sandbox, toolCtx, chatFn } = opts;
+  const { task, sandbox, toolCtx } = opts;
+  const { fn: chatFn, latencies: llmLatencies } = withLatencyTracking(opts.chatFn);
   const startedAt = Date.now();
   const toolCalls: ToolCallRecord[] = [];
 
@@ -450,8 +484,9 @@ Regeln:
 
   // Step 5: If high-severity flags → regenerate with stricter prompt
   const highSeverityFlags = guardrailResult.flags.filter((f) => f.severity === "high");
+  let regenResult: ChatResult | null = null;
   if (highSeverityFlags.length > 0) {
-    const regenResult = await chatFn({
+    regenResult = await chatFn({
       system:
         systemPrompt +
         "\n\nWICHTIG: Deine vorherige Antwort hatte ungestützte Zitate. Zitiere NUR §§ die wörtlich im Kontext vorkommen.",
@@ -502,7 +537,8 @@ Regeln:
     output,
     context,
     guardrailFlags,
-    verificationDecision.state
+    verificationDecision.state,
+    lawResults.map((r) => r.slug)
   );
 
   // Step 9: Build verification receipt
@@ -520,6 +556,11 @@ Regeln:
     opts
   );
 
+  const inputTokens3 = (chatResult.usage?.input_tokens ?? Math.round(context.length / 4)) +
+    (regenResult ? (regenResult.usage?.input_tokens ?? Math.round(context.length / 4)) : 0);
+  const outputTokens3 = (chatResult.usage?.output_tokens ?? Math.round(output.length / 4)) +
+    (regenResult ? (regenResult.usage?.output_tokens ?? Math.round(output.length / 4)) : 0);
+
   return {
     task_id: task.id,
     workflow: "schriftsatz_entwurf",
@@ -531,9 +572,10 @@ Regeln:
     verification_state: verificationDecision.state,
     rubric,
     latency_ms: Date.now() - startedAt,
-    token_count: { input: context.length / 4, output: output.length / 4 },
-    cost_usd: estimateCost(context.length, output.length),
+    token_count: { input: inputTokens3, output: outputTokens3 },
+    cost_usd: computeWorkflowCost(opts.modelId, inputTokens3, outputTokens3),
     receipt,
+    llm_latencies_ms: llmLatencies,
   };
 }
 
@@ -592,16 +634,21 @@ async function evaluateCriteria(
   output: string,
   context: string,
   guardrailFlags: GuardrailFlagSummary[],
-  verificationState: string
+  verificationState: string,
+  topSlugs: string[]
 ): Promise<RubricResult> {
   const { task, toolCtx, judgeConfig, chatFn } = opts;
 
-  // Run automated checks
+  // Run automated checks. topSlugs (the retrieved law slugs) MUST be threaded
+  // through: the jurisdiction_correct / cross-law-contamination check derives
+  // its "retrieved laws" set from these slugs. Without them, every cited law is
+  // falsely flagged as contamination (the live-003 0/7 root cause).
   const checkCtx: CheckContext = {
     output,
     context,
     jurisdiction: toolCtx.jurisdiction,
     minCitations: task.min_citations,
+    topSlugs,
   };
 
   const automatedCriteria = task.criteria.filter((c) => c.check_type === "automated");
@@ -674,11 +721,12 @@ function computeJudgeStatusCounts(results: CriterionResult[]): Record<JudgeStatu
   return counts;
 }
 
-function estimateCost(inputChars: number, outputChars: number): number {
-  // Rough estimate: $0.14/1M input tokens, $0.28/1M output tokens (DeepSeek V4 Flash)
-  const inputTokens = inputChars / 4;
-  const outputTokens = outputChars / 4;
-  return (inputTokens * 0.14 + outputTokens * 0.28) / 1_000_000;
+function computeWorkflowCost(
+  modelId: string,
+  inputTokens: number,
+  outputTokens: number
+): number {
+  return computeTurnCost(modelId, { input: inputTokens, output: outputTokens });
 }
 
 /**

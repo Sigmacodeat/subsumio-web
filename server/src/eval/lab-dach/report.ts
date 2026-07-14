@@ -18,9 +18,19 @@ export function generateFullReport(run: E2ERunResult): string {
   lines.push("# LAB-DACH v3 Run Report");
   lines.push("");
   lines.push(`- **Run ID**: ${run.run_id}`);
+  lines.push(`- **Mode**: ${run.mode === "live" ? "LIVE ⚠️" : "MOCK (offline)"}`);
   lines.push(`- **Started**: ${run.started_at}`);
   lines.push(`- **Completed**: ${run.completed_at}`);
   lines.push(`- **Tasks**: ${run.tasks.length}`);
+  if (run.total_cost_usd !== undefined && run.total_cost_usd > 0) {
+    lines.push(`- **Total cost**: $${run.total_cost_usd.toFixed(4)}`);
+  }
+  if (run.total_tokens) {
+    lines.push(`- **Total tokens**: ${run.total_tokens.input.toLocaleString()} in / ${run.total_tokens.output.toLocaleString()} out`);
+  }
+  if (run.provider_errors && run.provider_errors.length > 0) {
+    lines.push(`- **Provider errors**: ${run.provider_errors.length}`);
+  }
   lines.push("");
 
   lines.push(generateReport(run.aggregate_score));
@@ -34,9 +44,9 @@ export function generateFullReport(run: E2ERunResult): string {
     const task = run.tasks[i];
     const receipt = run.run_receipts[i];
 
-    lines.push(`## ${task.id} — ${task.title}`);
+    lines.push(`## ${task.id} — ${task.title}${task.review_status === "draft" ? " [DRAFT]" : ""}`);
     lines.push(`- **Workflow**: ${task.workflow}`);
-    lines.push(`- **Jurisdiction**: ${task.jurisdiction}`);
+    lines.push(`- **Jurisdiction**: ${task.jurisdiction}${task.review_status === "draft" ? " (draft — excluded from aggregates)" : ""}`);
     lines.push(`- **All-pass**: ${rubric.all_pass ? "✅" : "❌"}`);
     lines.push(`- **Strict all-pass**: ${rubric.strict_all_pass ? "✅" : "❌"}`);
     lines.push(`- **Critical all-pass**: ${rubric.critical_all_pass ? "✅" : "❌"}`);
@@ -67,9 +77,13 @@ export function generateFullReport(run: E2ERunResult): string {
 export function generateRunJSON(run: E2ERunResult): unknown {
   return {
     run_id: run.run_id,
+    mode: run.mode,
     started_at: run.started_at,
     completed_at: run.completed_at,
     tasks: run.tasks.map((t) => t.id),
+    total_cost_usd: run.total_cost_usd,
+    total_tokens: run.total_tokens,
+    provider_errors: run.provider_errors,
     aggregate_score: run.aggregate_score,
     rubric_results: run.rubric_results,
     run_receipts: run.run_receipts,

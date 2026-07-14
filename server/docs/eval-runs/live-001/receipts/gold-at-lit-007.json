@@ -1,0 +1,33 @@
+{
+  "run_id": "e2e-1784019909371-gold-at-lit-007",
+  "task_id": "gold-at-lit-007",
+  "model_id": "openrouter:deepseek/deepseek-chat",
+  "provider": "openrouter",
+  "prompt_hash": "c091c109cf4c70da08d70342cdbcf6159ad2866f6c1641bddce2d0f2448a62c4",
+  "corpus_hash": "898e61a1848b6846134f7055bb35eefbbab81bef660655c05489dc4b9e446a95",
+  "output_hash": "fd38bf2dac052e45dd08e238bdf212270d4402b5ae0489d44ba6026755f340a7",
+  "tool_versions": {
+    "sandbox": "1.0.0",
+    "guardrail": "2.0.0",
+    "workflows": "1.0.0",
+    "automated_checks": "2.0.0",
+    "rubric_judge": "1.0.0",
+    "agent_tools": "1.0.0"
+  },
+  "token_counts": {
+    "input": 1775,
+    "output": 662
+  },
+  "latency_ms": 80978,
+  "cost_usd": 0.000434,
+  "started_at": "2026-07-14T09:05:09.371Z",
+  "completed_at": "2026-07-14T09:14:27.610Z",
+  "verification_state": "NEEDS_HUMAN_REVIEW",
+  "warnings": [
+    "ungrounded_citation: Citation \"§ 633 BGB\" not found in retrieved context",
+    "cross_law_contamination: Law \"BGB\" cited but not in retrieved results (asvg, tkg, adn-verordnung, bdg, abkommen-uber-eine-umfassende-und-verstarkte-partnerschaft-zwischen-der-eu-euratom-und-ihren-mitgliedstaaten-armenien, gewo-at, bvergg, estg-at)"
+  ],
+  "mode": "live",
+  "latency_p50_ms": 19319,
+  "latency_p95_ms": 19319
+}

@@ -81,16 +81,27 @@ export function buildRunReceipt(
     completedAt?: string;
     model_id?: string;
     provider?: string;
+    mode: "live" | "mock";
+    provider_errors?: string[];
   }
 ): RunReceipt {
   const promptHash = computePromptHash(task.prompt, workflowResult.context.slice(0, 12000));
   const outputHash = computeOutputHash(workflowResult.output);
   const corpusHash = computeCorpusHash(opts.corpusRoot, workflowResult.tool_calls);
 
+  // Compute p50/p95 from per-LLM-call latencies
+  let latencyP50: number | undefined;
+  let latencyP95: number | undefined;
+  if (workflowResult.llm_latencies_ms && workflowResult.llm_latencies_ms.length > 0) {
+    const sorted = [...workflowResult.llm_latencies_ms].sort((a, b) => a - b);
+    latencyP50 = sorted[Math.floor(sorted.length * 0.5)];
+    latencyP95 = sorted[Math.min(Math.floor(sorted.length * 0.95), sorted.length - 1)];
+  }
+
   return {
     run_id: `${opts.runId}-${workflowResult.task_id}`,
     task_id: workflowResult.task_id,
-    model_id: opts.model_id ?? "deepseek/deepseek-v4-flash",
+    model_id: opts.model_id ?? "openrouter:deepseek/deepseek-chat",
     provider: opts.provider ?? "openrouter",
     prompt_hash: promptHash,
     corpus_hash: corpusHash,
@@ -106,6 +117,10 @@ export function buildRunReceipt(
     completed_at: opts.completedAt ?? new Date().toISOString(),
     verification_state: workflowResult.verification_state as RunReceipt["verification_state"],
     warnings: workflowResult.guardrail_flags.map((f) => `${f.type}: ${f.detail}`),
+    mode: opts.mode,
+    provider_errors: opts.provider_errors,
+    latency_p50_ms: latencyP50,
+    latency_p95_ms: latencyP95,
   };
 }
 

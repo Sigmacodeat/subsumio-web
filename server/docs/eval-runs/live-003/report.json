@@ -1,0 +1,1247 @@
+{
+  "run_id": "e2e-1784022935475",
+  "mode": "live",
+  "started_at": "2026-07-14T09:55:35.475Z",
+  "completed_at": "2026-07-14T10:05:16.912Z",
+  "tasks": [
+    "gold-at-lit-001",
+    "gold-at-lit-002",
+    "gold-at-lit-003",
+    "gold-at-lit-004",
+    "gold-at-lit-005",
+    "gold-at-lit-006",
+    "gold-at-lit-007"
+  ],
+  "total_cost_usd": 0.005872000000000001,
+  "total_tokens": {
+    "input": 30704,
+    "output": 5617
+  },
+  "aggregate_score": {
+    "total_tasks": 7,
+    "all_pass_count": 0,
+    "all_pass_rate": 0,
+    "strict_all_pass_count": 0,
+    "strict_all_pass_rate": 0,
+    "critical_all_pass_count": 0,
+    "critical_all_pass_rate": 0,
+    "total_criteria": 0,
+    "criteria_passed": 0,
+    "criterion_pass_rate": 0,
+    "critical_total": 0,
+    "critical_passed": 0,
+    "critical_pass_rate": 0,
+    "weighted_avg_score": 0,
+    "verification_state_distribution": {},
+    "judge_status_distribution": {
+      "pass": 0,
+      "fail": 0,
+      "uncertain": 0,
+      "not_judgeable": 0,
+      "judge_error": 0
+    },
+    "by_jurisdiction": {
+      "AT": {
+        "jurisdiction": "AT",
+        "total": 7,
+        "all_pass": 0,
+        "criterion_pass_rate": 0,
+        "critical_pass_rate": 0
+      }
+    },
+    "by_legal_area": {},
+    "by_workflow": {},
+    "by_difficulty": {},
+    "cost_metrics": {
+      "total_tokens": 36321,
+      "total_input_tokens": 30704,
+      "total_output_tokens": 5617,
+      "total_cache_hits": 0,
+      "total_cost_usd": 0.005872000000000001,
+      "avg_latency_ms": 83060.85714285714,
+      "total_latency_ms": 581426
+    },
+    "confidence_intervals": {
+      "strict_all_pass": {
+        "lower": 0,
+        "upper": 0.35433884297520657,
+        "point": 0,
+        "n": 7,
+        "z": 1.96
+      },
+      "critical_all_pass": {
+        "lower": 0,
+        "upper": 0.35433884297520657,
+        "point": 0,
+        "n": 7,
+        "z": 1.96
+      },
+      "criterion_pass": {
+        "lower": 0,
+        "upper": 0,
+        "point": 0,
+        "n": 0,
+        "z": 1.96
+      }
+    },
+    "excluded_draft_count": 7,
+    "excluded_draft_tasks": [
+      "gold-at-lit-001",
+      "gold-at-lit-002",
+      "gold-at-lit-003",
+      "gold-at-lit-004",
+      "gold-at-lit-005",
+      "gold-at-lit-006",
+      "gold-at-lit-007"
+    ]
+  },
+  "rubric_results": [
+    {
+      "task_id": "gold-at-lit-001",
+      "criteria": [
+        {
+          "criterion_id": "auto-citation_grounded_v2",
+          "passed": true,
+          "details": "All § citations are grounded in context",
+          "critical": true,
+          "score": 1,
+          "automated_check": "citation_grounded_v2"
+        },
+        {
+          "criterion_id": "auto-law_valid",
+          "passed": true,
+          "details": "All law abbreviations are valid",
+          "critical": true,
+          "score": 1,
+          "automated_check": "law_valid"
+        },
+        {
+          "criterion_id": "auto-language_german",
+          "passed": true,
+          "details": "Output is in German (73 German function words detected)",
+          "critical": false,
+          "score": 1,
+          "automated_check": "language_german"
+        },
+        {
+          "criterion_id": "auto-jurisdiction_correct",
+          "passed": false,
+          "details": "1 cross-law contamination(s): Law \"ZPO\" cited but not in retrieved results ()",
+          "critical": true,
+          "score": 0,
+          "automated_check": "jurisdiction_correct"
+        },
+        {
+          "criterion_id": "auto-min_citations",
+          "passed": false,
+          "details": "Output cites only 1 law(s), expected at least 2",
+          "critical": true,
+          "score": 0,
+          "automated_check": "min_citations"
+        },
+        {
+          "criterion_id": "auto-substantiated_uncertainty",
+          "passed": true,
+          "details": "No unsubstantiated uncertainty detected",
+          "critical": false,
+          "score": 1,
+          "automated_check": "substantiated_uncertainty"
+        },
+        {
+          "criterion_id": "crit-007",
+          "passed": false,
+          "details": "Die Antwort nennt nicht korrekt die Berufungsfrist von vier Wochen nach § 401 ZPO. Stattdessen wird fälschlicherweise eine Frist von vierzehn Tagen gemäß § 461 Abs. 2 ZPO-AT zitiert, die nicht für den gegebenen Sachverhalt gilt. Dies stellt eine Fehlinformation dar und erfüllt das Kriterium nicht.",
+          "critical": true,
+          "score": 0,
+          "judge_raw_response": "```json\n{\n  \"status\": \"fail\",\n  \"reasoning\": \"Die Antwort nennt nicht korrekt die Berufungsfrist von vier Wochen nach § 401 ZPO. Stattdessen wird fälschlicherweise eine Frist von vierzehn Tagen gemäß § 461 Abs. 2 ZPO-AT zitiert, die nicht für den gegebenen Sachverhalt gilt. Dies stellt eine Fehlinformation dar und erfüllt das Kriterium nicht.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Gemäß § 461 Abs. 2 ZPO-AT kann Berufung binnen vierzehn Tagen ab der Zustellung der Protokollsabschrift über die Tagsatzung, in der das Urteil verkündet worden ist, angemeldet werden.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "fail",
+          "evidence_quotes": [
+            "Gemäß § 461 Abs. 2 ZPO-AT kann Berufung binnen vierzehn Tagen ab der Zustellung der Protokollsabschrift über die Tagsatzung, in der das Urteil verkündet worden ist, angemeldet werden."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-008",
+          "passed": true,
+          "details": "Die Fristberechnung wurde korrekt durchgeführt. Die Ausgabe berücksichtigt sowohl die grundsätzliche Frist von 14 Tagen ab Zustellung am 01.07.2026 als auch die Hemmung der Frist gemäß § 222 Abs. 1 ZPO-AT zwischen dem 15.07. und dem 17.08.2026. Die Frist endet daher nicht am 15.07.2026, sondern wird korrekt bis zum 17.08.2026 verlängert. Die Berufungseinreichung am 28.07.2026 liegt somit innerhalb der verlängerten Frist.",
+          "critical": true,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Die Fristberechnung wurde korrekt durchgeführt. Die Ausgabe berücksichtigt sowohl die grundsätzliche Frist von 14 Tagen ab Zustellung am 01.07.2026 als auch die Hemmung der Frist gemäß § 222 Abs. 1 ZPO-AT zwischen dem 15.07. und dem 17.08.2026. Die Frist endet daher nicht am 15.07.2026, sondern wird korrekt bis zum 17.08.2026 verlängert. Die Berufungseinreichung am 28.07.2026 liegt somit innerhalb der verlängerten Frist.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Die Frist von vierzehn Tagen gemäß § 461 Abs. 2 ZPO-AT beginnt mit der Zustellung am 01.07.2026 zu laufen. Somit endet die Frist am 15.07.2026.\",\n    \"Da die Frist für die Berufungseinlegung am 15.07.2026 endet und dieser Tag in den gehemmten Zeitraum fällt, wird die Frist gemäß § 222 Abs. 1 ZPO-AT um die Dauer des gehemmten Zeitraums verlängert. Der gehemmte Zeitraum beginnt am 15.07.2026 und endet am 17.08.2026. Somit verlängert sich die Frist bis zum 17.08.2026.\",\n    \"K hat die Berufung am 28.07.2026 eingereicht, was innerhalb der verlängerten Frist liegt.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "Die Frist von vierzehn Tagen gemäß § 461 Abs. 2 ZPO-AT beginnt mit der Zustellung am 01.07.2026 zu laufen. Somit endet die Frist am 15.07.2026.",
+            "Da die Frist für die Berufungseinlegung am 15.07.2026 endet und dieser Tag in den gehemmten Zeitraum fällt, wird die Frist gemäß § 222 Abs. 1 ZPO-AT um die Dauer des gehemmten Zeitraums verlängert. Der gehemmte Zeitraum beginnt am 15.07.2026 und endet am 17.08.2026. Somit verlängert sich die Frist bis zum 17.08.2026.",
+            "K hat die Berufung am 28.07.2026 eingereicht, was innerhalb der verlängerten Frist liegt."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-009",
+          "passed": true,
+          "details": "Die Ausgabe berücksichtigt korrekt die Hemmung der Frist durch die Sommer-vhfZ gemäß § 222 ZPO-AT. Es wird deutlich dargelegt, dass die Frist für die Berufungseinlegung aufgrund des Beginns der Hemmungsperiode am 15.07.2026 verlängert wird und die Berufung somit fristgerecht eingebracht wurde.",
+          "critical": false,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Die Ausgabe berücksichtigt korrekt die Hemmung der Frist durch die Sommer-vhfZ gemäß § 222 ZPO-AT. Es wird deutlich dargelegt, dass die Frist für die Berufungseinlegung aufgrund des Beginns der Hemmungsperiode am 15.07.2026 verlängert wird und die Berufung somit fristgerecht eingebracht wurde.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Jedoch ist gemäß § 222 Abs. 1 ZPO-AT zu beachten, dass zwischen dem 15.07. und dem 17.08. die Notfristen im Berufungsverfahren gehemmt sind.\",\n    \"Da die Frist für die Berufungseinlegung am 15.07.2026 endet und dieser Tag in den gehemmten Zeitraum fällt, wird die Frist gemäß § 222 Abs. 1 ZPO-AT um die Dauer des gehemmten Zeitraums verlängert.\",\n    \"K hat die Berufung am 28.07.2026 eingereicht, was innerhalb der verlängerten Frist liegt.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "Jedoch ist gemäß § 222 Abs. 1 ZPO-AT zu beachten, dass zwischen dem 15.07. und dem 17.08. die Notfristen im Berufungsverfahren gehemmt sind.",
+            "Da die Frist für die Berufungseinlegung am 15.07.2026 endet und dieser Tag in den gehemmten Zeitraum fällt, wird die Frist gemäß § 222 Abs. 1 ZPO-AT um die Dauer des gehemmten Zeitraums verlängert.",
+            "K hat die Berufung am 28.07.2026 eingereicht, was innerhalb der verlängerten Frist liegt."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-010",
+          "passed": true,
+          "details": "Das Memorandum kommt korrekt zum Ergebnis, dass die Berufung fristgerecht eingebracht wurde. Es berücksichtigt sowohl die reguläre Frist gemäß § 461 Abs. 2 ZPO-AT als auch die Hemmung der Frist gemäß § 222 Abs. 1 ZPO-AT während des Zeitraums vom 15.07. bis 17.08. Die Berechnung der Fristverlängerung ist korrekt dargestellt und führt zu dem Schluss, dass die Berufung innerhalb der verlängerten Frist eingereicht wurde.",
+          "critical": false,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Das Memorandum kommt korrekt zum Ergebnis, dass die Berufung fristgerecht eingebracht wurde. Es berücksichtigt sowohl die reguläre Frist gemäß § 461 Abs. 2 ZPO-AT als auch die Hemmung der Frist gemäß § 222 Abs. 1 ZPO-AT während des Zeitraums vom 15.07. bis 17.08. Die Berechnung der Fristverlängerung ist korrekt dargestellt und führt zu dem Schluss, dass die Berufung innerhalb der verlängerten Frist eingereicht wurde.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Gemäß § 461 Abs. 2 ZPO-AT kann Berufung binnen vierzehn Tagen ab der Zustellung der Protokollsabschrift über die Tagsatzung, in der das Urteil verkündet worden ist, angemeldet werden.\",\n    \"Jedoch ist gemäß § 222 Abs. 1 ZPO-AT zu beachten, dass zwischen dem 15.07. und dem 17.08. die Notfristen im Berufungsverfahren gehemmt sind.\",\n    \"Da die Frist für die Berufungseinlegung am 15.07.2026 endet und dieser Tag in den gehemmten Zeitraum fällt, wird die Frist gemäß § 222 Abs. 1 ZPO-AT um die Dauer des gehemmten Zeitraums verlängert.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "Gemäß § 461 Abs. 2 ZPO-AT kann Berufung binnen vierzehn Tagen ab der Zustellung der Protokollsabschrift über die Tagsatzung, in der das Urteil verkündet worden ist, angemeldet werden.",
+            "Jedoch ist gemäß § 222 Abs. 1 ZPO-AT zu beachten, dass zwischen dem 15.07. und dem 17.08. die Notfristen im Berufungsverfahren gehemmt sind.",
+            "Da die Frist für die Berufungseinlegung am 15.07.2026 endet und dieser Tag in den gehemmten Zeitraum fällt, wird die Frist gemäß § 222 Abs. 1 ZPO-AT um die Dauer des gehemmten Zeitraums verlängert."
+          ],
+          "judge_model": "opus"
+        }
+      ],
+      "all_pass": false,
+      "strict_all_pass": false,
+      "critical_all_pass": false,
+      "criterion_pass_rate": 0.7,
+      "criteria_passed": 7,
+      "criteria_total": 10,
+      "critical_passed": 3,
+      "critical_total": 6,
+      "weighted_score": 0.625,
+      "verification_state": "NEEDS_HUMAN_REVIEW",
+      "judge_status_counts": {
+        "pass": 3,
+        "fail": 1,
+        "uncertain": 0,
+        "not_judgeable": 0,
+        "judge_error": 0
+      }
+    },
+    {
+      "task_id": "gold-at-lit-002",
+      "criteria": [
+        {
+          "criterion_id": "auto-citation_grounded_v2",
+          "passed": true,
+          "details": "All § citations are grounded in context",
+          "critical": true,
+          "score": 1,
+          "automated_check": "citation_grounded_v2"
+        },
+        {
+          "criterion_id": "auto-law_valid",
+          "passed": true,
+          "details": "All law abbreviations are valid",
+          "critical": true,
+          "score": 1,
+          "automated_check": "law_valid"
+        },
+        {
+          "criterion_id": "auto-language_german",
+          "passed": true,
+          "details": "Output is in German (63 German function words detected)",
+          "critical": false,
+          "score": 1,
+          "automated_check": "language_german"
+        },
+        {
+          "criterion_id": "auto-jurisdiction_correct",
+          "passed": false,
+          "details": "1 cross-law contamination(s): Law \"ZPO\" cited but not in retrieved results ()",
+          "critical": true,
+          "score": 0,
+          "automated_check": "jurisdiction_correct"
+        },
+        {
+          "criterion_id": "auto-min_citations",
+          "passed": false,
+          "details": "Output cites only 1 law(s), expected at least 2",
+          "critical": true,
+          "score": 0,
+          "automated_check": "min_citations"
+        },
+        {
+          "criterion_id": "auto-substantiated_uncertainty",
+          "passed": true,
+          "details": "No unsubstantiated uncertainty detected",
+          "critical": false,
+          "score": 1,
+          "automated_check": "substantiated_uncertainty"
+        },
+        {
+          "criterion_id": "crit-007",
+          "passed": false,
+          "details": "Die Ausgabe nennt zwar die Klagebeantwortungsfrist von vier Wochen, aber nicht unter Verweis auf § 243 ZPO-AT, sondern fälschlicherweise auf § 239 ZPO-AT. Dies entspricht nicht der geforderten korrekten Identifizierung der Frist nach § 243 ZPO-AT.",
+          "critical": true,
+          "score": 0,
+          "judge_raw_response": "```json\n{\n  \"status\": \"fail\",\n  \"reasoning\": \"Die Ausgabe nennt zwar die Klagebeantwortungsfrist von vier Wochen, aber nicht unter Verweis auf § 243 ZPO-AT, sondern fälschlicherweise auf § 239 ZPO-AT. Dies entspricht nicht der geforderten korrekten Identifizierung der Frist nach § 243 ZPO-AT.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Die Frist zur Klagebeantwortung beträgt gemäß **§ 239 ZPO-AT** grundsätzlich vier Wochen ab Zustellung, sofern keine abweichende gerichtliche Anordnung vorliegt.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "fail",
+          "evidence_quotes": [
+            "Die Frist zur Klagebeantwortung beträgt gemäß **§ 239 ZPO-AT** grundsätzlich vier Wochen ab Zustellung, sofern keine abweichende gerichtliche Anordnung vorliegt."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-008",
+          "passed": true,
+          "details": "Die KI-Ausgabe stellt korrekt dar, dass die Klagebeantwortung Anträge und eine Begründung (Bestreiten) enthalten muss. Die Ausgabe enthält sowohl spezifische Anträge (Abweisung der Klage, Kostenübernahme durch den Kläger) als auch eine detaillierte Begründung, die das Bestreiten der Forderung und die fehlende Schlüssigkeit der Klage umfasst. Dies entspricht den Anforderungen von § 239 ZPO-AT.",
+          "critical": true,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Die KI-Ausgabe stellt korrekt dar, dass die Klagebeantwortung Anträge und eine Begründung (Bestreiten) enthalten muss. Die Ausgabe enthält sowohl spezifische Anträge (Abweisung der Klage, Kostenübernahme durch den Kläger) als auch eine detaillierte Begründung, die das Bestreiten der Forderung und die fehlende Schlüssigkeit der Klage umfasst. Dies entspricht den Anforderungen von § 239 ZPO-AT.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"1. Die Klage wird in vollem Umfang abgewiesen. 2. Der Kläger wird verurteilt, die Kosten des Rechtsstreits zu tragen.\",\n    \"Der Beklagte bestreitet die vom Kläger geltend gemachte Forderung in Höhe von 5.000 € in vollem Umfang.\",\n    \"Die Klage erfüllt nicht die Anforderungen des § 226 ZPO-AT, da sie keine ausreichende Substantiierung der behaupteten Forderung enthält.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "1. Die Klage wird in vollem Umfang abgewiesen. 2. Der Kläger wird verurteilt, die Kosten des Rechtsstreits zu tragen.",
+            "Der Beklagte bestreitet die vom Kläger geltend gemachte Forderung in Höhe von 5.000 € in vollem Umfang.",
+            "Die Klage erfüllt nicht die Anforderungen des § 226 ZPO-AT, da sie keine ausreichende Substantiierung der behaupteten Forderung enthält."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-009",
+          "passed": true,
+          "details": "Die Ausgabe erfüllt die formellen Anforderungen eines Schriftsatzes gemäß § 239 ZPO-AT. Sie enthält ein Rubrum, klare Anträge, eine ausführliche Begründung mit Verweis auf relevante Rechtsgrundlagen (§ 226 ZPO-AT, § 239 ZPO-AT, § 244 ZPO-AT) sowie ein Beweisangebot. Die Struktur ist klar und entspricht den gesetzlichen Vorgaben.",
+          "critical": false,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Die Ausgabe erfüllt die formellen Anforderungen eines Schriftsatzes gemäß § 239 ZPO-AT. Sie enthält ein Rubrum, klare Anträge, eine ausführliche Begründung mit Verweis auf relevante Rechtsgrundlagen (§ 226 ZPO-AT, § 239 ZPO-AT, § 244 ZPO-AT) sowie ein Beweisangebot. Die Struktur ist klar und entspricht den gesetzlichen Vorgaben.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"### **1. Rubrum**\\nBeklagter: K\\nVertreten durch: [Name des Rechtsanwalts]\\nGegenpartei: KL\",\n    \"### **2. Anträge**\\n1. Die Klage wird in vollem Umfang abgewiesen.\\n2. Der Kläger wird verurteilt, die Kosten des Rechtsstreits zu tragen.\",\n    \"### **3. Begründung**\\nDer Beklagte bestreitet die vom Kläger geltend gemachte Forderung in Höhe von 5.000 € in vollem Umfang.\\n\\n#### **A. Fehlende Schlüssigkeit der Klage**\\nDie Klage erfüllt nicht die Anforderungen des **§ 226 ZPO-AT**, da sie keine ausreichende Substantiierung der behaupteten Forderung enthält.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "### **1. Rubrum**\nBeklagter: K\nVertreten durch: [Name des Rechtsanwalts]\nGegenpartei: KL",
+            "### **2. Anträge**\n1. Die Klage wird in vollem Umfang abgewiesen.\n2. Der Kläger wird verurteilt, die Kosten des Rechtsstreits zu tragen.",
+            "### **3. Begründung**\nDer Beklagte bestreitet die vom Kläger geltend gemachte Forderung in Höhe von 5.000 € in vollem Umfang.\n\n#### **A. Fehlende Schlüssigkeit der Klage**\nDie Klage erfüllt nicht die Anforderungen des **§ 226 ZPO-AT**, da sie keine ausreichende Substantiierung der behaupteten Forderung enthält."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-010",
+          "passed": true,
+          "details": "Die Ausgabe formuliert das Bestreiten der Forderung substantiiert und nicht pauschal. Es werden konkrete Gründe für das Bestreiten angeführt, wie die fehlende Schlüssigkeit der Klage gemäß § 226 ZPO-AT und das vollumfängliche Bestreiten der Forderung gemäß § 239 ZPO-AT. Zudem werden Beweismittel angeboten, um das Bestreiten zu untermauern.",
+          "critical": false,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Die Ausgabe formuliert das Bestreiten der Forderung substantiiert und nicht pauschal. Es werden konkrete Gründe für das Bestreiten angeführt, wie die fehlende Schlüssigkeit der Klage gemäß § 226 ZPO-AT und das vollumfängliche Bestreiten der Forderung gemäß § 239 ZPO-AT. Zudem werden Beweismittel angeboten, um das Bestreiten zu untermauern.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Der Beklagte bestreitet die vom Kläger geltend gemachte Forderung in Höhe von 5.000 € in vollem Umfang.\",\n    \"Die Klage erfüllt nicht die Anforderungen des **§ 226 ZPO-AT**, da sie keine ausreichende Substantiierung der behaupteten Forderung enthält.\",\n    \"Zum Nachweis des Bestreitens der Forderung werden folgende Beweismittel angeboten: 1. Schriftverkehr zwischen den Parteien (falls vorhanden) 2. Zeugenaussagen (z. B. [Name des Zeugen], falls relevant) 3. Sachverständigengutachten (falls erforderlich).\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "Der Beklagte bestreitet die vom Kläger geltend gemachte Forderung in Höhe von 5.000 € in vollem Umfang.",
+            "Die Klage erfüllt nicht die Anforderungen des **§ 226 ZPO-AT**, da sie keine ausreichende Substantiierung der behaupteten Forderung enthält.",
+            "Zum Nachweis des Bestreitens der Forderung werden folgende Beweismittel angeboten: 1. Schriftverkehr zwischen den Parteien (falls vorhanden) 2. Zeugenaussagen (z. B. [Name des Zeugen], falls relevant) 3. Sachverständigengutachten (falls erforderlich)."
+          ],
+          "judge_model": "opus"
+        }
+      ],
+      "all_pass": false,
+      "strict_all_pass": false,
+      "critical_all_pass": false,
+      "criterion_pass_rate": 0.7,
+      "criteria_passed": 7,
+      "criteria_total": 10,
+      "critical_passed": 3,
+      "critical_total": 6,
+      "weighted_score": 0.625,
+      "verification_state": "NEEDS_HUMAN_REVIEW",
+      "judge_status_counts": {
+        "pass": 3,
+        "fail": 1,
+        "uncertain": 0,
+        "not_judgeable": 0,
+        "judge_error": 0
+      }
+    },
+    {
+      "task_id": "gold-at-lit-003",
+      "criteria": [
+        {
+          "criterion_id": "auto-citation_grounded_v2",
+          "passed": true,
+          "details": "All § citations are grounded in context",
+          "critical": true,
+          "score": 1,
+          "automated_check": "citation_grounded_v2"
+        },
+        {
+          "criterion_id": "auto-law_valid",
+          "passed": true,
+          "details": "All law abbreviations are valid",
+          "critical": true,
+          "score": 1,
+          "automated_check": "law_valid"
+        },
+        {
+          "criterion_id": "auto-language_german",
+          "passed": true,
+          "details": "Output is in German (81 German function words detected)",
+          "critical": false,
+          "score": 1,
+          "automated_check": "language_german"
+        },
+        {
+          "criterion_id": "auto-jurisdiction_correct",
+          "passed": false,
+          "details": "1 cross-law contamination(s): Law \"ABGB\" cited but not in retrieved results ()",
+          "critical": true,
+          "score": 0,
+          "automated_check": "jurisdiction_correct"
+        },
+        {
+          "criterion_id": "auto-min_citations",
+          "passed": false,
+          "details": "Output cites only 1 law(s), expected at least 2",
+          "critical": true,
+          "score": 0,
+          "automated_check": "min_citations"
+        },
+        {
+          "criterion_id": "auto-substantiated_uncertainty",
+          "passed": true,
+          "details": "No unsubstantiated uncertainty detected",
+          "critical": false,
+          "score": 1,
+          "automated_check": "substantiated_uncertainty"
+        },
+        {
+          "criterion_id": "crit-007",
+          "passed": false,
+          "details": "Die Ausgabe identifiziert § 1294 ABGB als Anspruchsgrundlage, jedoch wird § 1 AHG (Amtshaftung) nicht korrekt genannt oder erwähnt. Die Amtshaftung ist jedoch die spezifische Anspruchsgrundlage für Schäden durch Amtswalterhandlungen, die hier relevant wäre. Die Ausgabe bezieht sich stattdessen auf allgemeine schadenersatzrechtliche Bestimmungen des ABGB, was nicht der spezifischen Anspruchsgrundlage für Amtshaftung entspricht.",
+          "critical": true,
+          "score": 0,
+          "judge_raw_response": "```json\n{\n  \"status\": \"fail\",\n  \"reasoning\": \"Die Ausgabe identifiziert § 1294 ABGB als Anspruchsgrundlage, jedoch wird § 1 AHG (Amtshaftung) nicht korrekt genannt oder erwähnt. Die Amtshaftung ist jedoch die spezifische Anspruchsgrundlage für Schäden durch Amtswalterhandlungen, die hier relevant wäre. Die Ausgabe bezieht sich stattdessen auf allgemeine schadenersatzrechtliche Bestimmungen des ABGB, was nicht der spezifischen Anspruchsgrundlage für Amtshaftung entspricht.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Ein Schadenersatzanspruch könnte sich aus § 1294 ABGB ergeben, der Schäden aus widerrechtlichen Handlungen regelt.\",\n    \"B hat gegen die Gemeinde G einen Schadenersatzanspruch gemäß § 1294 iVm § 1332 ABGB.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "fail",
+          "evidence_quotes": [
+            "Ein Schadenersatzanspruch könnte sich aus § 1294 ABGB ergeben, der Schäden aus widerrechtlichen Handlungen regelt.",
+            "B hat gegen die Gemeinde G einen Schadenersatzanspruch gemäß § 1294 iVm § 1332 ABGB."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-008",
+          "passed": true,
+          "details": "Die KI-Ausgabe stellt klar dar, dass der Beamte als Amtswalter in Vollziehung der Gesetze gehandelt hat, indem sie die Amtshandlung (Bauaufsicht) als Grundlage für die Haftung der Gemeinde G benennt. Die Ausführung, dass das Verschulden des Beamten der Gemeinde zuzurechnen ist, da er in Ausübung seiner Amtstätigkeit gehandelt hat, erfüllt das Kriterium der korrekten Subsumtion der Amtswaltereigenschaft.",
+          "critical": true,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Die KI-Ausgabe stellt klar dar, dass der Beamte als Amtswalter in Vollziehung der Gesetze gehandelt hat, indem sie die Amtshandlung (Bauaufsicht) als Grundlage für die Haftung der Gemeinde G benennt. Die Ausführung, dass das Verschulden des Beamten der Gemeinde zuzurechnen ist, da er in Ausübung seiner Amtstätigkeit gehandelt hat, erfüllt das Kriterium der korrekten Subsumtion der Amtswaltereigenschaft.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Der Beamte hat bei der Bauaufsicht fahrlässig gehandelt, was ein Verschulden iSd § 1294 ABGB begründet.\",\n    \"Das Verschulden des Beamten ist der Gemeinde G zuzurechnen, da er in Ausübung seiner Amtstätigkeit gehandelt hat. Die Gemeinde haftet für das Verschulden ihrer Organe.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "Der Beamte hat bei der Bauaufsicht fahrlässig gehandelt, was ein Verschulden iSd § 1294 ABGB begründet.",
+            "Das Verschulden des Beamten ist der Gemeinde G zuzurechnen, da er in Ausübung seiner Amtstätigkeit gehandelt hat. Die Gemeinde haftet für das Verschulden ihrer Organe."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-009",
+          "passed": true,
+          "details": "Die Ausgabe prüft das Verschulden (Fahrlässigkeit) des Amtswalters korrekt und stellt es als Voraussetzung für den Schadenersatzanspruch dar. Sie zitiert relevante Paragraphen (§ 1294 ABGB und § 1332 ABGB) und erläutert, dass Fahrlässigkeit vorliegt, wenn der Schaden durch schuldbare Unwissenheit oder mangelnde Aufmerksamkeit verursacht wurde. Zudem wird die Zurechnung des Verschuldens zur Gemeinde dargestellt.",
+          "critical": false,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Die Ausgabe prüft das Verschulden (Fahrlässigkeit) des Amtswalters korrekt und stellt es als Voraussetzung für den Schadenersatzanspruch dar. Sie zitiert relevante Paragraphen (§ 1294 ABGB und § 1332 ABGB) und erläutert, dass Fahrlässigkeit vorliegt, wenn der Schaden durch schuldbare Unwissenheit oder mangelnde Aufmerksamkeit verursacht wurde. Zudem wird die Zurechnung des Verschuldens zur Gemeinde dargestellt.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Fahrlässigkeit liegt vor, wenn der Schaden 'aus schuldbarer Unwissenheit, oder aus Mangel der gehörigen Aufmerksamkeit, oder des gehörigen Fleißes verursachet worden ist' (§ 1294 ABGB).\",\n    \"Gemäß § 1332 ABGB ist der Schaden, der aus einem 'minderen Grade des Versehens oder der Nachlässigkeit' verursacht wurde, nach dem gemeinen Wert der Sache zu ersetzen.\",\n    \"Der Beamte hat bei der Bauaufsicht fahrlässig gehandelt, was ein Verschulden iSd § 1294 ABGB begründet.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "Fahrlässigkeit liegt vor, wenn der Schaden 'aus schuldbarer Unwissenheit, oder aus Mangel der gehörigen Aufmerksamkeit, oder des gehörigen Fleißes verursachet worden ist' (§ 1294 ABGB).",
+            "Gemäß § 1332 ABGB ist der Schaden, der aus einem 'minderen Grade des Versehens oder der Nachlässigkeit' verursacht wurde, nach dem gemeinen Wert der Sache zu ersetzen.",
+            "Der Beamte hat bei der Bauaufsicht fahrlässig gehandelt, was ein Verschulden iSd § 1294 ABGB begründet."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-010",
+          "passed": true,
+          "details": "Das Memorandum kommt zum korrekten Ergebnis, dass die Gemeinde G nach § 1 AHG schadenersatzpflichtig ist. Die Ausführung basiert auf den relevanten Bestimmungen des ABGB (§ 1294, § 1332) und zeigt eine klare rechtliche Argumentation auf, die das Verschulden des Beamten, die Zurechnung zur Gemeinde, die Rechtswidrigkeit, Kausalität und den ersatzfähigen Schaden behandelt.",
+          "critical": false,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Das Memorandum kommt zum korrekten Ergebnis, dass die Gemeinde G nach § 1 AHG schadenersatzpflichtig ist. Die Ausführung basiert auf den relevanten Bestimmungen des ABGB (§ 1294, § 1332) und zeigt eine klare rechtliche Argumentation auf, die das Verschulden des Beamten, die Zurechnung zur Gemeinde, die Rechtswidrigkeit, Kausalität und den ersatzfähigen Schaden behandelt.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Im vorliegenden Fall hat der Beamte der Gemeinde G fahrlässig gehandelt, was ein Verschulden iSd § 1294 ABGB darstellt.\",\n    \"Das Verschulden des Beamten ist der Gemeinde G zuzurechnen, da er in Ausübung seiner Amtstätigkeit gehandelt hat. Die Gemeinde haftet für das Verschulden ihrer Organe.\",\n    \"B hat gegen die Gemeinde G einen Schadenersatzanspruch gemäß § 1294 iVm § 1332 ABGB. Die Gemeinde ist zum Ersatz des durch ihren Beamten fahrlässig verursachten Wasserschadens verpflichtet.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "Im vorliegenden Fall hat der Beamte der Gemeinde G fahrlässig gehandelt, was ein Verschulden iSd § 1294 ABGB darstellt.",
+            "Das Verschulden des Beamten ist der Gemeinde G zuzurechnen, da er in Ausübung seiner Amtstätigkeit gehandelt hat. Die Gemeinde haftet für das Verschulden ihrer Organe.",
+            "B hat gegen die Gemeinde G einen Schadenersatzanspruch gemäß § 1294 iVm § 1332 ABGB. Die Gemeinde ist zum Ersatz des durch ihren Beamten fahrlässig verursachten Wasserschadens verpflichtet."
+          ],
+          "judge_model": "opus"
+        }
+      ],
+      "all_pass": false,
+      "strict_all_pass": false,
+      "critical_all_pass": false,
+      "criterion_pass_rate": 0.7,
+      "criteria_passed": 7,
+      "criteria_total": 10,
+      "critical_passed": 3,
+      "critical_total": 6,
+      "weighted_score": 0.625,
+      "verification_state": "NEEDS_HUMAN_REVIEW",
+      "judge_status_counts": {
+        "pass": 3,
+        "fail": 1,
+        "uncertain": 0,
+        "not_judgeable": 0,
+        "judge_error": 0
+      }
+    },
+    {
+      "task_id": "gold-at-lit-004",
+      "criteria": [
+        {
+          "criterion_id": "auto-citation_grounded_v2",
+          "passed": true,
+          "details": "All § citations are grounded in context",
+          "critical": true,
+          "score": 1,
+          "automated_check": "citation_grounded_v2"
+        },
+        {
+          "criterion_id": "auto-law_valid",
+          "passed": true,
+          "details": "All law abbreviations are valid",
+          "critical": true,
+          "score": 1,
+          "automated_check": "law_valid"
+        },
+        {
+          "criterion_id": "auto-language_german",
+          "passed": true,
+          "details": "Output is in German (85 German function words detected)",
+          "critical": false,
+          "score": 1,
+          "automated_check": "language_german"
+        },
+        {
+          "criterion_id": "auto-jurisdiction_correct",
+          "passed": false,
+          "details": "1 cross-law contamination(s): Law \"ABGB\" cited but not in retrieved results ()",
+          "critical": true,
+          "score": 0,
+          "automated_check": "jurisdiction_correct"
+        },
+        {
+          "criterion_id": "auto-min_citations",
+          "passed": false,
+          "details": "Output cites only 1 law(s), expected at least 2",
+          "critical": true,
+          "score": 0,
+          "automated_check": "min_citations"
+        },
+        {
+          "criterion_id": "auto-substantiated_uncertainty",
+          "passed": true,
+          "details": "No unsubstantiated uncertainty detected",
+          "critical": false,
+          "score": 1,
+          "automated_check": "substantiated_uncertainty"
+        },
+        {
+          "criterion_id": "crit-007",
+          "passed": false,
+          "details": "Die KI-Ausgabe identifiziert § 1489 ABGB nicht korrekt als maßgebliche Norm. Stattdessen wird fälschlicherweise die regelmäßige Verjährungsfrist von 30 Jahren gemäß § 1478 ABGB zitiert, obwohl der Kontext § 1486 ABGB (dreijährige Verjährung) enthält. Die Ausgabe ignoriert die spezifischen Verjährungsfristen, die im Kontext angegeben sind.",
+          "critical": true,
+          "score": 0,
+          "judge_raw_response": "```json\n{\n  \"status\": \"fail\",\n  \"reasoning\": \"Die KI-Ausgabe identifiziert § 1489 ABGB nicht korrekt als maßgebliche Norm. Stattdessen wird fälschlicherweise die regelmäßige Verjährungsfrist von 30 Jahren gemäß § 1478 ABGB zitiert, obwohl der Kontext § 1486 ABGB (dreijährige Verjährung) enthält. Die Ausgabe ignoriert die spezifischen Verjährungsfristen, die im Kontext angegeben sind.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Die hier relevante Forderung des K gegen B fällt nicht unter die in § 1486 ABGB genannten speziellen Forderungskategorien (z.B. gewerbliche Leistungen, Mietzinsen, Honorarforderungen von Ärzten/Anwälten etc.).\",\n    \"Für allgemeine Forderungen (wie die vorliegende) gilt die regelmäßige Verjährungsfrist von dreißig Jahren nach § 1478 ABGB, sofern keine kürzere Frist (wie in § 1486 ABGB) eingreift.\",\n    \"Die regelmäßige Verjährungsfrist von 30 Jahren (§ 1478 ABGB) ist noch nicht abgelaufen.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "fail",
+          "evidence_quotes": [
+            "Die hier relevante Forderung des K gegen B fällt nicht unter die in § 1486 ABGB genannten speziellen Forderungskategorien (z.B. gewerbliche Leistungen, Mietzinsen, Honorarforderungen von Ärzten/Anwälten etc.).",
+            "Für allgemeine Forderungen (wie die vorliegende) gilt die regelmäßige Verjährungsfrist von dreißig Jahren nach § 1478 ABGB, sofern keine kürzere Frist (wie in § 1486 ABGB) eingreift.",
+            "Die regelmäßige Verjährungsfrist von 30 Jahren (§ 1478 ABGB) ist noch nicht abgelaufen."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-008",
+          "passed": false,
+          "details": "Die Ausgabe behandelt zwar allgemein die Verjährung, aber sie stellt nicht korrekt dar, dass die Verjährung mit Kenntniserlangung von Schaden und Schädiger beginnt (§ 1489 ABGB). Stattdessen wird fälschlicherweise auf § 1479 ABGB und die Fälligkeit der Forderung als Verjährungsbeginn verwiesen, ohne § 1489 ABGB zu erwähnen. Dies ist eine wesentliche Fehldarstellung des Verjährungsbeginns im Kontext von Schadensersatzansprüchen.",
+          "critical": true,
+          "score": 0,
+          "judge_raw_response": "```json\n{\n  \"status\": \"fail\",\n  \"reasoning\": \"Die Ausgabe behandelt zwar allgemein die Verjährung, aber sie stellt nicht korrekt dar, dass die Verjährung mit Kenntniserlangung von Schaden und Schädiger beginnt (§ 1489 ABGB). Stattdessen wird fälschlicherweise auf § 1479 ABGB und die Fälligkeit der Forderung als Verjährungsbeginn verwiesen, ohne § 1489 ABGB zu erwähnen. Dies ist eine wesentliche Fehldarstellung des Verjährungsbeginns im Kontext von Schadensersatzansprüchen.\",\n  \"confidence\": 0.9,\n  \"evidence_quotes\": [\n    \"Die Verjährung beginnt gemäß § 1479 ABGB mit der Fälligkeit der Forderung.\",\n    \"Für allgemeine Forderungen (wie die vorliegende) gilt die regelmäßige Verjährungsfrist von **dreißig Jahren** nach § 1478 ABGB, sofern keine kürzere Frist (wie in § 1486 ABGB) eingreift.\"\n  ]\n}\n```",
+          "confidence": 0.9,
+          "judge_status": "fail",
+          "evidence_quotes": [
+            "Die Verjährung beginnt gemäß § 1479 ABGB mit der Fälligkeit der Forderung.",
+            "Für allgemeine Forderungen (wie die vorliegende) gilt die regelmäßige Verjährungsfrist von **dreißig Jahren** nach § 1478 ABGB, sofern keine kürzere Frist (wie in § 1486 ABGB) eingreift."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-009",
+          "passed": false,
+          "details": "Die KI-Ausgabe behandelt die Verjährungsfrist von 30 Jahren nach § 1478 ABGB und nicht die dreijährige Verjährungsfrist nach § 1489 ABGB, welches das spezifische Kriterium ist. Daher kann die Korrektheit der Fristberechnung für die dreijährige Verjährung nicht bewertet werden.",
+          "critical": false,
+          "score": 0,
+          "judge_raw_response": "```json\n{\n  \"status\": \"not_judgeable\",\n  \"reasoning\": \"Die KI-Ausgabe behandelt die Verjährungsfrist von 30 Jahren nach § 1478 ABGB und nicht die dreijährige Verjährungsfrist nach § 1489 ABGB, welches das spezifische Kriterium ist. Daher kann die Korrektheit der Fristberechnung für die dreijährige Verjährung nicht bewertet werden.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\"Die Verjährungsfrist von 30 Jahren begann am 01.03.2023 zu laufen. Die erste Zahlungsaufforderung erfolgte am 15.06.2026, also nach etwas mehr als drei Jahren. Da die regelmäßige Verjährungsfrist 30 Jahre beträgt, war die Forderung zu diesem Zeitpunkt noch nicht verjährt.\"]\n}\n```",
+          "confidence": 1,
+          "judge_status": "not_judgeable",
+          "evidence_quotes": [
+            "Die Verjährungsfrist von 30 Jahren begann am 01.03.2023 zu laufen. Die erste Zahlungsaufforderung erfolgte am 15.06.2026, also nach etwas mehr als drei Jahren. Da die regelmäßige Verjährungsfrist 30 Jahre beträgt, war die Forderung zu diesem Zeitpunkt noch nicht verjährt."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-010",
+          "passed": false,
+          "details": "Die KI-Ausgabe kommt zum Ergebnis, dass die Forderung nicht verjährt ist, da die regelmäßige Verjährungsfrist von 30 Jahren gilt. Jedoch ist das Kriterium spezifisch darauf ausgerichtet, ob die Forderung gemäß der dreijährigen Verjährung nach § 1489 ABGB verjährt ist, was nicht der Fall ist. Die Ausgabe erkennt nicht, dass die Frage auf die dreijährige Verjährung abzielt und kommt daher zu einem falschen Ergebnis.",
+          "critical": false,
+          "score": 0,
+          "judge_raw_response": "```json\n{\n  \"status\": \"fail\",\n  \"reasoning\": \"Die KI-Ausgabe kommt zum Ergebnis, dass die Forderung nicht verjährt ist, da die regelmäßige Verjährungsfrist von 30 Jahren gilt. Jedoch ist das Kriterium spezifisch darauf ausgerichtet, ob die Forderung gemäß der dreijährigen Verjährung nach § 1489 ABGB verjährt ist, was nicht der Fall ist. Die Ausgabe erkennt nicht, dass die Frage auf die dreijährige Verjährung abzielt und kommt daher zu einem falschen Ergebnis.\",\n  \"confidence\": 0.9,\n  \"evidence_quotes\": [\n    \"Die hier relevante Forderung des K gegen B fällt nicht unter die in § 1486 ABGB genannten speziellen Forderungskategorien (z.B. gewerbliche Leistungen, Mietzinsen, Honorarforderungen von Ärzten/Anwälten etc.).\",\n    \"Für allgemeine Forderungen (wie die vorliegende) gilt die regelmäßige Verjährungsfrist von dreißig Jahren nach § 1478 ABGB, sofern keine kürzere Frist (wie in § 1486 ABGB) eingreift.\",\n    \"Die Forderung des K gegen B ist nicht verjährt und somit noch durchsetzbar. Die regelmäßige Verjährungsfrist von 30 Jahren (§ 1478 ABGB) ist noch nicht abgelaufen.\"\n  ]\n}\n```",
+          "confidence": 0.9,
+          "judge_status": "fail",
+          "evidence_quotes": [
+            "Die hier relevante Forderung des K gegen B fällt nicht unter die in § 1486 ABGB genannten speziellen Forderungskategorien (z.B. gewerbliche Leistungen, Mietzinsen, Honorarforderungen von Ärzten/Anwälten etc.).",
+            "Für allgemeine Forderungen (wie die vorliegende) gilt die regelmäßige Verjährungsfrist von dreißig Jahren nach § 1478 ABGB, sofern keine kürzere Frist (wie in § 1486 ABGB) eingreift.",
+            "Die Forderung des K gegen B ist nicht verjährt und somit noch durchsetzbar. Die regelmäßige Verjährungsfrist von 30 Jahren (§ 1478 ABGB) ist noch nicht abgelaufen."
+          ],
+          "judge_model": "opus"
+        }
+      ],
+      "all_pass": false,
+      "strict_all_pass": false,
+      "critical_all_pass": false,
+      "criterion_pass_rate": 0.4,
+      "criteria_passed": 4,
+      "criteria_total": 10,
+      "critical_passed": 2,
+      "critical_total": 6,
+      "weighted_score": 0.375,
+      "verification_state": "NEEDS_HUMAN_REVIEW",
+      "judge_status_counts": {
+        "pass": 0,
+        "fail": 3,
+        "uncertain": 0,
+        "not_judgeable": 1,
+        "judge_error": 0
+      }
+    },
+    {
+      "task_id": "gold-at-lit-005",
+      "criteria": [
+        {
+          "criterion_id": "auto-citation_grounded_v2",
+          "passed": true,
+          "details": "All § citations are grounded in context",
+          "critical": true,
+          "score": 1,
+          "automated_check": "citation_grounded_v2"
+        },
+        {
+          "criterion_id": "auto-law_valid",
+          "passed": true,
+          "details": "All law abbreviations are valid",
+          "critical": true,
+          "score": 1,
+          "automated_check": "law_valid"
+        },
+        {
+          "criterion_id": "auto-language_german",
+          "passed": true,
+          "details": "Output is in German (63 German function words detected)",
+          "critical": false,
+          "score": 1,
+          "automated_check": "language_german"
+        },
+        {
+          "criterion_id": "auto-jurisdiction_correct",
+          "passed": false,
+          "details": "1 cross-law contamination(s): Law \"ABGB\" cited but not in retrieved results ()",
+          "critical": true,
+          "score": 0,
+          "automated_check": "jurisdiction_correct"
+        },
+        {
+          "criterion_id": "auto-min_citations",
+          "passed": true,
+          "details": "Output cites 2 unique law(s): ABGB, Abs",
+          "critical": true,
+          "score": 1,
+          "automated_check": "min_citations"
+        },
+        {
+          "criterion_id": "auto-substantiated_uncertainty",
+          "passed": true,
+          "details": "No unsubstantiated uncertainty detected",
+          "critical": false,
+          "score": 1,
+          "automated_check": "substantiated_uncertainty"
+        },
+        {
+          "criterion_id": "crit-007",
+          "passed": false,
+          "details": "Die Ausgabe nennt § 1295 ABGB als Hauptanspruchsgrundlage, während § 1311 ABGB, der speziell für Schadenersatz bei Personenverletzung gilt, nicht korrekt identifiziert oder erwähnt wird. Dies ist ein kritisches Kriterium, das nicht erfüllt wurde.",
+          "critical": true,
+          "score": 0,
+          "judge_raw_response": "```json\n{\n  \"status\": \"fail\",\n  \"reasoning\": \"Die Ausgabe nennt § 1295 ABGB als Hauptanspruchsgrundlage, während § 1311 ABGB, der speziell für Schadenersatz bei Personenverletzung gilt, nicht korrekt identifiziert oder erwähnt wird. Dies ist ein kritisches Kriterium, das nicht erfüllt wurde.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"F könnte gegen A einen Schadenersatzanspruch gemäß § 1295 ABGB haben.\",\n    \"F hat gegen A einen Schadenersatzanspruch gemäß § 1295 iVm § 1325 ABGB in Höhe der Heilungskosten (3.000 €), des entgangenen Verdienstes und gegebenenfalls eines angemessenen Schmerzensgeldes.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "fail",
+          "evidence_quotes": [
+            "F könnte gegen A einen Schadenersatzanspruch gemäß § 1295 ABGB haben.",
+            "F hat gegen A einen Schadenersatzanspruch gemäß § 1295 iVm § 1325 ABGB in Höhe der Heilungskosten (3.000 €), des entgangenen Verdienstes und gegebenenfalls eines angemessenen Schmerzensgeldes."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-008",
+          "passed": false,
+          "details": "Die Ausgabe zitiert nicht § 1293 ABGB als Grundnorm für den Schadenersatzanspruch. Stattdessen wird § 1295 ABGB genannt, der sich auf Verschuldenshaftung konzentriert. Das Kriterium verlangt jedoch explizit die korrekte Bezugnahme auf § 1293 ABGB als Grundnorm.",
+          "critical": true,
+          "score": 0,
+          "judge_raw_response": "```json\n{\n  \"status\": \"fail\",\n  \"reasoning\": \"Die Ausgabe zitiert nicht § 1293 ABGB als Grundnorm für den Schadenersatzanspruch. Stattdessen wird § 1295 ABGB genannt, der sich auf Verschuldenshaftung konzentriert. Das Kriterium verlangt jedoch explizit die korrekte Bezugnahme auf § 1293 ABGB als Grundnorm.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"F könnte gegen A einen Schadenersatzanspruch gemäß § 1295 ABGB haben.\",\n    \"Dieser normiert, dass jeder, der einem anderen aus Verschulden einen Schaden zufügt, zum Ersatz verpflichtet ist.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "fail",
+          "evidence_quotes": [
+            "F könnte gegen A einen Schadenersatzanspruch gemäß § 1295 ABGB haben.",
+            "Dieser normiert, dass jeder, der einem anderen aus Verschulden einen Schaden zufügt, zum Ersatz verpflichtet ist."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-009",
+          "passed": true,
+          "details": "Die KI-Ausgabe stellt den Schadensumfang korrekt dar, indem sie explizit die Heilungskosten (3.000 €) und den Verdienstentgang (6 Wochen) erwähnt, die F geltend machen kann. Die Darstellung ist klar und basiert auf den relevanten gesetzlichen Bestimmungen (§ 1325 ABGB).",
+          "critical": false,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Die KI-Ausgabe stellt den Schadensumfang korrekt dar, indem sie explizit die Heilungskosten (3.000 €) und den Verdienstentgang (6 Wochen) erwähnt, die F geltend machen kann. Die Darstellung ist klar und basiert auf den relevanten gesetzlichen Bestimmungen (§ 1325 ABGB).\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"F hat einen Beinbruch erlitten, war sechs Wochen arbeitsunfähig und hat Heilungskosten von 3.000 €. Damit liegt ein ersatzfähiger Schaden vor.\",\n    \"Gemäß § 1325 ABGB umfasst der Ersatzanspruch: - Heilungskosten (3.000 €), - entgangenen Verdienst (sechs Wochen Arbeitsunfähigkeit), - gegebenenfalls Schmerzensgeld.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "F hat einen Beinbruch erlitten, war sechs Wochen arbeitsunfähig und hat Heilungskosten von 3.000 €. Damit liegt ein ersatzfähiger Schaden vor.",
+            "Gemäß § 1325 ABGB umfasst der Ersatzanspruch: - Heilungskosten (3.000 €), - entgangenen Verdienst (sechs Wochen Arbeitsunfähigkeit), - gegebenenfalls Schmerzensgeld."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-010",
+          "passed": true,
+          "details": "Die Ausgabe stellt das Verschulden des A korrekt dar, indem sie den Rotlichtverstoß gemäß § 38 Abs 5 StVO als Verstoß gegen die gebotene Sorgfalt und damit als Verschulden iSd § 1295 ABGB qualifiziert. Die rechtliche Begründung ist klar und stützt sich auf die relevanten Gesetzesstellen und die Rechtsprechung des OGH.",
+          "critical": false,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Die Ausgabe stellt das Verschulden des A korrekt dar, indem sie den Rotlichtverstoß gemäß § 38 Abs 5 StVO als Verstoß gegen die gebotene Sorgfalt und damit als Verschulden iSd § 1295 ABGB qualifiziert. Die rechtliche Begründung ist klar und stützt sich auf die relevanten Gesetzesstellen und die Rechtsprechung des OGH.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"A hat bei Rotlicht die Kreuzung überfahren, was einen klaren Verstoß gegen § 38 Abs 5 StVO darstellt. Dies begründet ein Verschulden iSd § 1295 ABGB, da A die gebotene Sorgfalt außer Acht gelassen hat.\",\n    \"Nach OGH 2Ob130/83 kann ein krasses Verschulden eines Beteiligten (hier: A) ein geringfügiges Fehlverhalten des anderen (F) überwiegen.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "A hat bei Rotlicht die Kreuzung überfahren, was einen klaren Verstoß gegen § 38 Abs 5 StVO darstellt. Dies begründet ein Verschulden iSd § 1295 ABGB, da A die gebotene Sorgfalt außer Acht gelassen hat.",
+            "Nach OGH 2Ob130/83 kann ein krasses Verschulden eines Beteiligten (hier: A) ein geringfügiges Fehlverhalten des anderen (F) überwiegen."
+          ],
+          "judge_model": "opus"
+        }
+      ],
+      "all_pass": false,
+      "strict_all_pass": false,
+      "critical_all_pass": false,
+      "criterion_pass_rate": 0.7,
+      "criteria_passed": 7,
+      "criteria_total": 10,
+      "critical_passed": 3,
+      "critical_total": 6,
+      "weighted_score": 0.625,
+      "verification_state": "NEEDS_HUMAN_REVIEW",
+      "judge_status_counts": {
+        "pass": 2,
+        "fail": 2,
+        "uncertain": 0,
+        "not_judgeable": 0,
+        "judge_error": 0
+      }
+    },
+    {
+      "task_id": "gold-at-lit-006",
+      "criteria": [
+        {
+          "criterion_id": "auto-citation_grounded_v2",
+          "passed": true,
+          "details": "All § citations are grounded in context",
+          "critical": true,
+          "score": 1,
+          "automated_check": "citation_grounded_v2"
+        },
+        {
+          "criterion_id": "auto-law_valid",
+          "passed": true,
+          "details": "All law abbreviations are valid",
+          "critical": true,
+          "score": 1,
+          "automated_check": "law_valid"
+        },
+        {
+          "criterion_id": "auto-language_german",
+          "passed": true,
+          "details": "Output is in German (86 German function words detected)",
+          "critical": false,
+          "score": 1,
+          "automated_check": "language_german"
+        },
+        {
+          "criterion_id": "auto-jurisdiction_correct",
+          "passed": false,
+          "details": "1 cross-law contamination(s): Law \"ABGB\" cited but not in retrieved results ()",
+          "critical": true,
+          "score": 0,
+          "automated_check": "jurisdiction_correct"
+        },
+        {
+          "criterion_id": "auto-min_citations",
+          "passed": true,
+          "details": "Output cites 2 unique law(s): ABGB, Abs",
+          "critical": true,
+          "score": 1,
+          "automated_check": "min_citations"
+        },
+        {
+          "criterion_id": "auto-substantiated_uncertainty",
+          "passed": true,
+          "details": "No unsubstantiated uncertainty detected",
+          "critical": false,
+          "score": 1,
+          "automated_check": "substantiated_uncertainty"
+        },
+        {
+          "criterion_id": "crit-007",
+          "passed": true,
+          "details": "Die KI-Ausgabe identifiziert § 366 ABGB als Anspruchsgrundlage für den Herausgabeanspruch des Eigentümers korrekt. Die Ausführung bezieht sich explizit auf die gesetzliche Grundlage und erläutert die Voraussetzungen und Ausnahmen gemäß § 366 ABGB. Die Argumentation ist klar und stützt sich auf den Kontext.",
+          "critical": true,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Die KI-Ausgabe identifiziert § 366 ABGB als Anspruchsgrundlage für den Herausgabeanspruch des Eigentümers korrekt. Die Ausführung bezieht sich explizit auf die gesetzliche Grundlage und erläutert die Voraussetzungen und Ausnahmen gemäß § 366 ABGB. Die Argumentation ist klar und stützt sich auf den Kontext.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Gemäß § 366 ABGB hat der Eigentümer einer Sache das Recht, seine Sache von jedem Inhaber durch die Eigentumsklage gerichtlich zu fordern.\",\n    \"Somit besteht grundsätzlich ein Herausgabeanspruch des E gegen B.\",\n    \"E hat einen Herausgabeanspruch gegen B gemäß § 366 ABGB.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "Gemäß § 366 ABGB hat der Eigentümer einer Sache das Recht, seine Sache von jedem Inhaber durch die Eigentumsklage gerichtlich zu fordern.",
+            "Somit besteht grundsätzlich ein Herausgabeanspruch des E gegen B.",
+            "E hat einen Herausgabeanspruch gegen B gemäß § 366 ABGB."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-008",
+          "passed": true,
+          "details": "Die Ausgabe stellt klar dar, dass E Eigentümer des Fahrrads ist und klageberechtigt nach § 366 ABGB ist. Es wird explizit erwähnt, dass E das Fahrrad bereits als Eigentümer erworben hat und somit ein Herausgabeanspruch besteht. Die rechtliche Grundlage für diesen Anspruch wird korrekt mit Verweis auf § 366 ABGB dargelegt.",
+          "critical": true,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Die Ausgabe stellt klar dar, dass E Eigentümer des Fahrrads ist und klageberechtigt nach § 366 ABGB ist. Es wird explizit erwähnt, dass E das Fahrrad bereits als Eigentümer erworben hat und somit ein Herausgabeanspruch besteht. Die rechtliche Grundlage für diesen Anspruch wird korrekt mit Verweis auf § 366 ABGB dargelegt.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Gemäß § 366 ABGB hat der Eigentümer einer Sache das Recht, seine Sache von jedem Inhaber durch die Eigentumsklage gerichtlich zu fordern.\",\n    \"Im vorliegenden Fall hat E das Fahrrad bereits als Eigentümer erworben, bevor B es ohne Zustimmung an sich nahm. Somit besteht grundsätzlich ein Herausgabeanspruch des E gegen B.\",\n    \"E hat einen Herausgabeanspruch gegen B gemäß § 366 ABGB.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "Gemäß § 366 ABGB hat der Eigentümer einer Sache das Recht, seine Sache von jedem Inhaber durch die Eigentumsklage gerichtlich zu fordern.",
+            "Im vorliegenden Fall hat E das Fahrrad bereits als Eigentümer erworben, bevor B es ohne Zustimmung an sich nahm. Somit besteht grundsätzlich ein Herausgabeanspruch des E gegen B.",
+            "E hat einen Herausgabeanspruch gegen B gemäß § 366 ABGB."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-009",
+          "passed": true,
+          "details": "Die Ausgabe stellt klar dar, dass B Besitzer des Fahrrads ist, aber kein Recht zum Besitz hat, da seine Kaufbehauptung unwahr ist. Dies wird durch die Analyse der relevanten Paragraphen (§ 366, § 368 und § 367 ABGB) unterstützt, wonach B nicht als redlicher Besitzer angesehen werden kann und kein rechtmäßiger Erwerb vorliegt. Die Darstellung ist präzise und rechtlich fundiert.",
+          "critical": false,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Die Ausgabe stellt klar dar, dass B Besitzer des Fahrrads ist, aber kein Recht zum Besitz hat, da seine Kaufbehauptung unwahr ist. Dies wird durch die Analyse der relevanten Paragraphen (§ 366, § 368 und § 367 ABGB) unterstützt, wonach B nicht als redlicher Besitzer angesehen werden kann und kein rechtmäßiger Erwerb vorliegt. Die Darstellung ist präzise und rechtlich fundiert.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"B hat das Fahrrad ohne Zustimmung des E an sich genommen und in seiner Garage verwahrt.\",\n    \"B behauptet, er habe das Fahrrad gekauft, was jedoch nicht der Wahrheit entspricht.\",\n    \"Da B keine rechtliche Grundlage für seinen Besitz nachweisen kann, ist seine Behauptung, das Fahrrad gekauft zu haben, irrelevant.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "B hat das Fahrrad ohne Zustimmung des E an sich genommen und in seiner Garage verwahrt.",
+            "B behauptet, er habe das Fahrrad gekauft, was jedoch nicht der Wahrheit entspricht.",
+            "Da B keine rechtliche Grundlage für seinen Besitz nachweisen kann, ist seine Behauptung, das Fahrrad gekauft zu haben, irrelevant."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-010",
+          "passed": false,
+          "details": "Das Memorandum kommt zwar formal zum Ergebnis, dass E einen Herausgabeanspruch gegen B hat, jedoch wird dieses Ergebnis nicht korrekt auf der Grundlage des Kontexts begründet. Insbesondere wird § 366 ABGB zwar zitiert, jedoch wird § 366 ABGB falsch angewendet. Gemäß § 366 ABGB steht das Recht zur Herausgabe demjenigen nicht zu, der eine Sache zur Zeit, da er noch nicht Eigentümer war, in seinem eigenen Namen veräußert, in der Folge aber das Eigentum derselben erlangt hat. Dies ist jedoch hier nicht der Fall. Die Ausgabe führt diese Regelung nicht korrekt aus. Die Ausgabe berücksichtigt auch nicht vollständig die Parallelregelungen insbesondere von § 367 ABGB.",
+          "critical": false,
+          "score": 0,
+          "judge_raw_response": "```json\n{\n  \"status\": \"fail\",\n  \"reasoning\": \"Das Memorandum kommt zwar formal zum Ergebnis, dass E einen Herausgabeanspruch gegen B hat, jedoch wird dieses Ergebnis nicht korrekt auf der Grundlage des Kontexts begründet. Insbesondere wird § 366 ABGB zwar zitiert, jedoch wird § 366 ABGB falsch angewendet. Gemäß § 366 ABGB steht das Recht zur Herausgabe demjenigen nicht zu, der eine Sache zur Zeit, da er noch nicht Eigentümer war, in seinem eigenen Namen veräußert, in der Folge aber das Eigentum derselben erlangt hat. Dies ist jedoch hier nicht der Fall. Die Ausgabe führt diese Regelung nicht korrekt aus. Die Ausgabe berücksichtigt auch nicht vollständig die Parallelregelungen insbesondere von § 367 ABGB.\",\n  \"confidence\": 0.9,\n  \"evidence_quotes\": [\n    \"Dieses Recht steht dem Eigentümer zu, es sei denn, er hat die Sache zur Zeit, da er noch nicht Eigentümer war, in seinem eigenen Namen veräußert und später das Eigentum erlangt.\",\n    \"Da B das Fahrrad ohne Zustimmung des E an sich genommen hat und keine rechtmäßige Übertragung des Eigentums erfolgte, kann B nicht als redlicher Besitzer angesehen werden.\",\n    \"Gemäß § 367 ABGB wäre die Eigentumsklage gegen einen rechtmäßigen und redlichen Besitzer abzuweisen, wenn dieser die Sache gegen Entgelt erworben hat.\"\n  ]\n}\n```",
+          "confidence": 0.9,
+          "judge_status": "fail",
+          "evidence_quotes": [
+            "Dieses Recht steht dem Eigentümer zu, es sei denn, er hat die Sache zur Zeit, da er noch nicht Eigentümer war, in seinem eigenen Namen veräußert und später das Eigentum erlangt.",
+            "Da B das Fahrrad ohne Zustimmung des E an sich genommen hat und keine rechtmäßige Übertragung des Eigentums erfolgte, kann B nicht als redlicher Besitzer angesehen werden.",
+            "Gemäß § 367 ABGB wäre die Eigentumsklage gegen einen rechtmäßigen und redlichen Besitzer abzuweisen, wenn dieser die Sache gegen Entgelt erworben hat."
+          ],
+          "judge_model": "opus"
+        }
+      ],
+      "all_pass": false,
+      "strict_all_pass": false,
+      "critical_all_pass": false,
+      "criterion_pass_rate": 0.8,
+      "criteria_passed": 8,
+      "criteria_total": 10,
+      "critical_passed": 5,
+      "critical_total": 6,
+      "weighted_score": 0.8125,
+      "verification_state": "NEEDS_HUMAN_REVIEW",
+      "judge_status_counts": {
+        "pass": 3,
+        "fail": 1,
+        "uncertain": 0,
+        "not_judgeable": 0,
+        "judge_error": 0
+      }
+    },
+    {
+      "task_id": "gold-at-lit-007",
+      "criteria": [
+        {
+          "criterion_id": "auto-citation_grounded_v2",
+          "passed": false,
+          "details": "4 ungrounded citation(s): Citation \"§ 1151 ABGB\" not found in retrieved context; Citation \"§ 922 ABGB\" not found in retrieved context; Citation \"§ 933 ABGB\" not found in retrieved context; Citation \"§ 932 ABGB\" not found in retrieved context",
+          "critical": true,
+          "score": 0,
+          "automated_check": "citation_grounded_v2"
+        },
+        {
+          "criterion_id": "auto-law_valid",
+          "passed": true,
+          "details": "All law abbreviations are valid",
+          "critical": true,
+          "score": 1,
+          "automated_check": "law_valid"
+        },
+        {
+          "criterion_id": "auto-language_german",
+          "passed": true,
+          "details": "Output is in German (78 German function words detected)",
+          "critical": false,
+          "score": 1,
+          "automated_check": "language_german"
+        },
+        {
+          "criterion_id": "auto-jurisdiction_correct",
+          "passed": false,
+          "details": "1 cross-law contamination(s): Law \"ABGB\" cited but not in retrieved results ()",
+          "critical": true,
+          "score": 0,
+          "automated_check": "jurisdiction_correct"
+        },
+        {
+          "criterion_id": "auto-min_citations",
+          "passed": false,
+          "details": "Output cites only 1 law(s), expected at least 2",
+          "critical": true,
+          "score": 0,
+          "automated_check": "min_citations"
+        },
+        {
+          "criterion_id": "auto-substantiated_uncertainty",
+          "passed": true,
+          "details": "No unsubstantiated uncertainty detected",
+          "critical": false,
+          "score": 1,
+          "automated_check": "substantiated_uncertainty"
+        },
+        {
+          "criterion_id": "crit-007",
+          "passed": false,
+          "details": "Die Ausgabe identifiziert § 1151 ABGB statt § 1165 ABGB als Grundnorm für den Werkvertrag. Dies entspricht nicht dem Kriterium, das korrekt die Pflicht zur ordnungsgemäßen Herstellung gemäß § 1165 ABGB identifiziert. Der § 1165 ABGB wird nicht erwähnt oder verwendet, obwohl er für die Frage der Mängelgewährleistung relevant wäre.",
+          "critical": true,
+          "score": 0,
+          "judge_raw_response": "```json\n{\n  \"status\": \"fail\",\n  \"reasoning\": \"Die Ausgabe identifiziert § 1151 ABGB statt § 1165 ABGB als Grundnorm für den Werkvertrag. Dies entspricht nicht dem Kriterium, das korrekt die Pflicht zur ordnungsgemäßen Herstellung gemäß § 1165 ABGB identifiziert. Der § 1165 ABGB wird nicht erwähnt oder verwendet, obwohl er für die Frage der Mängelgewährleistung relevant wäre.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Der Vertrag zwischen B und T ist als Werkvertrag gemäß § 1151 ABGB (nicht im Kontext zitiert, aber grundsätzlich anwendbar) zu qualifizieren.\",\n    \"- **§ 922 ABGB**: Der Unternehmer (T) hat das Werk mangelfrei zu erbringen.\",\n    \"- **§ 933 ABGB**: Bei Mängeln hat der Besteller (B) zunächst das Recht auf **Nachbesserung**, sofern dies nicht unzumutbar ist.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "fail",
+          "evidence_quotes": [
+            "Der Vertrag zwischen B und T ist als Werkvertrag gemäß § 1151 ABGB (nicht im Kontext zitiert, aber grundsätzlich anwendbar) zu qualifizieren.",
+            "- **§ 922 ABGB**: Der Unternehmer (T) hat das Werk mangelfrei zu erbringen.",
+            "- **§ 933 ABGB**: Bei Mängeln hat der Besteller (B) zunächst das Recht auf **Nachbesserung**, sofern dies nicht unzumutbar ist."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-008",
+          "passed": true,
+          "details": "Die KI-Ausgabe stellt korrekt dar, dass B bei mangelhafter Leistung Nachbesserung verlangen kann. Die Ausgabe bezieht sich auf § 933 ABGB, welches das Recht auf Nachbesserung bei Mängeln vorsieht. Zudem werden die Alternativen Minderung und Wandlung erwähnt, falls die Nachbesserung verweigert wird. Die Ausgabe ist klar und rechtlich fundiert.",
+          "critical": true,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Die KI-Ausgabe stellt korrekt dar, dass B bei mangelhafter Leistung Nachbesserung verlangen kann. Die Ausgabe bezieht sich auf § 933 ABGB, welches das Recht auf Nachbesserung bei Mängeln vorsieht. Zudem werden die Alternativen Minderung und Wandlung erwähnt, falls die Nachbesserung verweigert wird. Die Ausgabe ist klar und rechtlich fundiert.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Gemäß den Normen zur Holzverarbeitung (z. B. B 3020 T 11, B 3021, B 3022) müssen Massivholzplatten bestimmten Qualitätsanforderungen genügen. Risse und schlechte Verarbeitung stellen offensichtliche Mängel dar, die den Tisch unbrauchbar oder mindestens erheblich minderwertig machen.\",\n    \"§ 933 ABGB: Bei Mängeln hat der Besteller (B) zunächst das Recht auf Nachbesserung, sofern dies nicht unzumutbar ist.\",\n    \"B hat gegen T folgende Ansprüche: 1. Primäranspruch auf Nachbesserung (§ 933 ABGB), 2. Alternativ: Minderung des Kaufpreises oder Wandlung (§ 932 ABGB), da T die Nachbesserung verweigert.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "Gemäß den Normen zur Holzverarbeitung (z. B. B 3020 T 11, B 3021, B 3022) müssen Massivholzplatten bestimmten Qualitätsanforderungen genügen. Risse und schlechte Verarbeitung stellen offensichtliche Mängel dar, die den Tisch unbrauchbar oder mindestens erheblich minderwertig machen.",
+            "§ 933 ABGB: Bei Mängeln hat der Besteller (B) zunächst das Recht auf Nachbesserung, sofern dies nicht unzumutbar ist.",
+            "B hat gegen T folgende Ansprüche: 1. Primäranspruch auf Nachbesserung (§ 933 ABGB), 2. Alternativ: Minderung des Kaufpreises oder Wandlung (§ 932 ABGB), da T die Nachbesserung verweigert."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-009",
+          "passed": false,
+          "details": "Die Ausgabe zitiert nicht § 1170 ABGB, obwohl dies für die Gewährleistungsfrist bei einem Werkvertrag relevant wäre. Stattdessen werden andere Paragraphen wie § 922, § 933 und § 932 ABGB erwähnt, die zwar relevant sind, aber nicht das spezifische Kriterium erfüllen.",
+          "critical": false,
+          "score": 0,
+          "judge_raw_response": "```json\n{\n  \"status\": \"fail\",\n  \"reasoning\": \"Die Ausgabe zitiert nicht § 1170 ABGB, obwohl dies für die Gewährleistungsfrist bei einem Werkvertrag relevant wäre. Stattdessen werden andere Paragraphen wie § 922, § 933 und § 932 ABGB erwähnt, die zwar relevant sind, aber nicht das spezifische Kriterium erfüllen.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"Gemäß den Normen zur Holzverarbeitung (z. B. B 3020 T 11, B 3021, B 3022) müssen Massivholzplatten bestimmten Qualitätsanforderungen genügen.\",\n    \"- **§ 922 ABGB**: Der Unternehmer (T) hat das Werk mangelfrei zu erbringen.\",\n    \"- **§ 933 ABGB**: Bei Mängeln hat der Besteller (B) zunächst das Recht auf **Nachbesserung**, sofern dies nicht unzumutbar ist.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "fail",
+          "evidence_quotes": [
+            "Gemäß den Normen zur Holzverarbeitung (z. B. B 3020 T 11, B 3021, B 3022) müssen Massivholzplatten bestimmten Qualitätsanforderungen genügen.",
+            "- **§ 922 ABGB**: Der Unternehmer (T) hat das Werk mangelfrei zu erbringen.",
+            "- **§ 933 ABGB**: Bei Mängeln hat der Besteller (B) zunächst das Recht auf **Nachbesserung**, sofern dies nicht unzumutbar ist."
+          ],
+          "judge_model": "opus"
+        },
+        {
+          "criterion_id": "crit-010",
+          "passed": true,
+          "details": "Die KI-Ausgabe kommt klar zum Ergebnis, dass B Nachbesserung verlangen kann und T zur Mängelbehebung verpflichtet ist. Dies wird durch die korrekte Anwendung der §§ 922, 932, 933 ABGB sowie durch die Bezugnahme auf Normen zur Holzqualität (B 3020 T 11, B 3021, B 3022) gestützt. Die Ausführung ist rechtlich fundiert und bezieht sich auf spezifische rechtliche Normen und Vertragstypen.",
+          "critical": false,
+          "score": 1,
+          "judge_raw_response": "```json\n{\n  \"status\": \"pass\",\n  \"reasoning\": \"Die KI-Ausgabe kommt klar zum Ergebnis, dass B Nachbesserung verlangen kann und T zur Mängelbehebung verpflichtet ist. Dies wird durch die korrekte Anwendung der §§ 922, 932, 933 ABGB sowie durch die Bezugnahme auf Normen zur Holzqualität (B 3020 T 11, B 3021, B 3022) gestützt. Die Ausführung ist rechtlich fundiert und bezieht sich auf spezifische rechtliche Normen und Vertragstypen.\",\n  \"confidence\": 1.0,\n  \"evidence_quotes\": [\n    \"B hat gegen T folgende Ansprüche: 1. **Primäranspruch auf Nachbesserung** (§ 933 ABGB), 2. **Alternativ: Minderung des Kaufpreises oder Wandlung** (§ 932 ABGB), da T die Nachbesserung verweigert.\",\n    \"Gemäß den Normen zur Holzverarbeitung (z. B. **B 3020 T 11, B 3021, B 3022**) müssen Massivholzplatten bestimmten Qualitätsanforderungen genügen. Risse und schlechte Verarbeitung stellen offensichtliche Mängel dar, die den Tisch unbrauchbar oder mindestens erheblich minderwertig machen.\"\n  ]\n}\n```",
+          "confidence": 1,
+          "judge_status": "pass",
+          "evidence_quotes": [
+            "B hat gegen T folgende Ansprüche: 1. **Primäranspruch auf Nachbesserung** (§ 933 ABGB), 2. **Alternativ: Minderung des Kaufpreises oder Wandlung** (§ 932 ABGB), da T die Nachbesserung verweigert.",
+            "Gemäß den Normen zur Holzverarbeitung (z. B. **B 3020 T 11, B 3021, B 3022**) müssen Massivholzplatten bestimmten Qualitätsanforderungen genügen. Risse und schlechte Verarbeitung stellen offensichtliche Mängel dar, die den Tisch unbrauchbar oder mindestens erheblich minderwertig machen."
+          ],
+          "judge_model": "opus"
+        }
+      ],
+      "all_pass": false,
+      "strict_all_pass": false,
+      "critical_all_pass": false,
+      "criterion_pass_rate": 0.5,
+      "criteria_passed": 5,
+      "criteria_total": 10,
+      "critical_passed": 2,
+      "critical_total": 6,
+      "weighted_score": 0.4375,
+      "verification_state": "NEEDS_HUMAN_REVIEW",
+      "judge_status_counts": {
+        "pass": 2,
+        "fail": 2,
+        "uncertain": 0,
+        "not_judgeable": 0,
+        "judge_error": 0
+      }
+    }
+  ],
+  "run_receipts": [
+    {
+      "run_id": "e2e-1784022935475-gold-at-lit-001",
+      "task_id": "gold-at-lit-001",
+      "model_id": "openrouter:deepseek/deepseek-chat",
+      "provider": "openrouter",
+      "prompt_hash": "6296785404332c10989c6a6e3d3fc07bbcf52800e19454b58067417775cac5d9",
+      "output_hash": "e9a7251926582955738008eb81c3558a2d4c84b01aae09e3554fb5a5d32d2c4b",
+      "tool_versions": {
+        "sandbox": "1.0.0",
+        "guardrail": "2.0.0",
+        "workflows": "1.0.0",
+        "automated_checks": "2.0.0",
+        "rubric_judge": "1.0.0",
+        "agent_tools": "1.0.0"
+      },
+      "token_counts": {
+        "input": 3655,
+        "output": 601
+      },
+      "latency_ms": 96824,
+      "cost_usd": 0.00068,
+      "started_at": "2026-07-14T09:55:35.475Z",
+      "completed_at": "2026-07-14T09:57:12.301Z",
+      "verification_state": "NEEDS_HUMAN_REVIEW",
+      "warnings": [
+        "cross_law_contamination: Law \"ZPO\" cited but not in retrieved results (legal/statutes/at/zpo/p-461, legal/statutes/at/stpo/p-466, legal/statutes/at/stpo/p-294, legal/statutes/at/stpo/p-478, legal/statutes/at/zpo/p-222, legal/statutes/at/zpo/p-466, legal/statutes/at/zpo/p-468, legal/statutes/at/avg/p-64a)"
+      ],
+      "mode": "live",
+      "latency_p50_ms": 45881,
+      "latency_p95_ms": 45881
+    },
+    {
+      "run_id": "e2e-1784022935475-gold-at-lit-002",
+      "task_id": "gold-at-lit-002",
+      "model_id": "openrouter:deepseek/deepseek-chat",
+      "provider": "openrouter",
+      "prompt_hash": "f2810904b1735a30d2280ad2ea7a61e1b9bc5bb5197a9401d2c26801b500d676",
+      "output_hash": "18f59e5d3784b262768404d313f3e0aed2843bb70437cae8eacd32350bb9c6f0",
+      "tool_versions": {
+        "sandbox": "1.0.0",
+        "guardrail": "2.0.0",
+        "workflows": "1.0.0",
+        "automated_checks": "2.0.0",
+        "rubric_judge": "1.0.0",
+        "agent_tools": "1.0.0"
+      },
+      "token_counts": {
+        "input": 7348,
+        "output": 1333
+      },
+      "latency_ms": 84072,
+      "cost_usd": 0.001402,
+      "started_at": "2026-07-14T09:55:35.475Z",
+      "completed_at": "2026-07-14T09:58:36.374Z",
+      "verification_state": "NEEDS_HUMAN_REVIEW",
+      "warnings": [
+        "cross_law_contamination: Law \"ZPO\" cited but not in retrieved results (legal/statutes/at/zpo/p-239, legal/statutes/at/zpo/p-226, legal/statutes/at/zpo/p-556, legal/statutes/at/zpo/p-244, legal/statutes/at/zpo/p-438, legal/statutes/at/zpo/p-433a, legal/statutes/at/zpo/p-222, legal/statutes/at/zpo/p-22)"
+      ],
+      "mode": "live",
+      "latency_p50_ms": 23046,
+      "latency_p95_ms": 23046
+    },
+    {
+      "run_id": "e2e-1784022935475-gold-at-lit-003",
+      "task_id": "gold-at-lit-003",
+      "model_id": "openrouter:deepseek/deepseek-chat",
+      "provider": "openrouter",
+      "prompt_hash": "970a3479bfd35e679e3218abe178aa3d7bde9d17f0bc8cf35258040bad073d52",
+      "output_hash": "e2c09c1a544093eb8c7790822400c37af0e1e4949a1c82d902c858523077180b",
+      "tool_versions": {
+        "sandbox": "1.0.0",
+        "guardrail": "2.0.0",
+        "workflows": "1.0.0",
+        "automated_checks": "2.0.0",
+        "rubric_judge": "1.0.0",
+        "agent_tools": "1.0.0"
+      },
+      "token_counts": {
+        "input": 4105,
+        "output": 695
+      },
+      "latency_ms": 71447,
+      "cost_usd": 0.000769,
+      "started_at": "2026-07-14T09:55:35.475Z",
+      "completed_at": "2026-07-14T09:59:47.823Z",
+      "verification_state": "NEEDS_HUMAN_REVIEW",
+      "warnings": [
+        "cross_law_contamination: Law \"ABGB\" cited but not in retrieved results (legal/statutes/at/abgb/p-1324, legal/statutes/at/wrg/p-26, legal/statutes/at/abgb/p-1318, legal/statutes/at/abgb/p-1294, legal/statutes/at/abgb/p-1306, legal/statutes/at/abgb/p-1332, legal/statutes/at/abgb/p-1306a, legal/statutes/at/abgb/p-1319)"
+      ],
+      "mode": "live",
+      "latency_p50_ms": 19352,
+      "latency_p95_ms": 19352
+    },
+    {
+      "run_id": "e2e-1784022935475-gold-at-lit-004",
+      "task_id": "gold-at-lit-004",
+      "model_id": "openrouter:deepseek/deepseek-chat",
+      "provider": "openrouter",
+      "prompt_hash": "5db20131f54eb369b40919ee6ac06432f339f30f153a8b3f90cf70602a762de6",
+      "output_hash": "52ceb0d65e533e0a174a72ff444560baa8807fe3381971b376fbbbc9f2fe2005",
+      "tool_versions": {
+        "sandbox": "1.0.0",
+        "guardrail": "2.0.0",
+        "workflows": "1.0.0",
+        "automated_checks": "2.0.0",
+        "rubric_judge": "1.0.0",
+        "agent_tools": "1.0.0"
+      },
+      "token_counts": {
+        "input": 3788,
+        "output": 769
+      },
+      "latency_ms": 76502,
+      "cost_usd": 0.000746,
+      "started_at": "2026-07-14T09:55:35.475Z",
+      "completed_at": "2026-07-14T10:01:04.327Z",
+      "verification_state": "NEEDS_HUMAN_REVIEW",
+      "warnings": [
+        "cross_law_contamination: Law \"ABGB\" cited but not in retrieved results (legal/statutes/at/abgb/p-1486, legal/statutes/at/abgb/p-1480, legal/judikatur/at/2020-06-24-1ob41-86, legal/statutes/at/eo/p-321, legal/statutes/at/eo/p-444, legal/statutes/at/bao/p-238, legal/statutes/at/abgb/p-1364, legal/statutes/at/abgb/p-1355)"
+      ],
+      "mode": "live",
+      "latency_p50_ms": 21685,
+      "latency_p95_ms": 21685
+    },
+    {
+      "run_id": "e2e-1784022935475-gold-at-lit-005",
+      "task_id": "gold-at-lit-005",
+      "model_id": "openrouter:deepseek/deepseek-chat",
+      "provider": "openrouter",
+      "prompt_hash": "cc0623e9e9e066d6d51241a7b25de88b96edb4e5cc3dddb176e6a4a1e3cf508a",
+      "output_hash": "38cc1499f587a53d64d374a4b2701572339e0811e6ddb13bdcb9b5462325e09b",
+      "tool_versions": {
+        "sandbox": "1.0.0",
+        "guardrail": "2.0.0",
+        "workflows": "1.0.0",
+        "automated_checks": "2.0.0",
+        "rubric_judge": "1.0.0",
+        "agent_tools": "1.0.0"
+      },
+      "token_counts": {
+        "input": 4005,
+        "output": 808
+      },
+      "latency_ms": 75060,
+      "cost_usd": 0.000787,
+      "started_at": "2026-07-14T09:55:35.475Z",
+      "completed_at": "2026-07-14T10:02:19.388Z",
+      "verification_state": "NEEDS_HUMAN_REVIEW",
+      "warnings": [
+        "cross_law_contamination: Law \"ABGB\" cited but not in retrieved results (legal/statutes/at/abgb/p-1295, legal/statutes/at/abgb/p-1325, legal/statutes/at/abgb/p-1310, legal/judikatur/at/2026-02-26-2ob130-83-2ob131-83, legal/statutes/at/abgb/p-1324, legal/statutes/at/stvo/p-38, legal/statutes/at/stvo/p-99, legal/statutes/at/stvo/p-37)"
+      ],
+      "mode": "live",
+      "latency_p50_ms": 23784,
+      "latency_p95_ms": 23784
+    },
+    {
+      "run_id": "e2e-1784022935475-gold-at-lit-006",
+      "task_id": "gold-at-lit-006",
+      "model_id": "openrouter:deepseek/deepseek-chat",
+      "provider": "openrouter",
+      "prompt_hash": "392967a5d63055839cbe29bbdfe260d1ad539322fa83484881b0a57de9d13e9c",
+      "output_hash": "acc4c41c1447bdc5f6e380b007a66a90a554aaacbf05b0901abe0718a9d1667f",
+      "tool_versions": {
+        "sandbox": "1.0.0",
+        "guardrail": "2.0.0",
+        "workflows": "1.0.0",
+        "automated_checks": "2.0.0",
+        "rubric_judge": "1.0.0",
+        "agent_tools": "1.0.0"
+      },
+      "token_counts": {
+        "input": 4155,
+        "output": 636
+      },
+      "latency_ms": 90589,
+      "cost_usd": 0.00076,
+      "started_at": "2026-07-14T09:55:35.475Z",
+      "completed_at": "2026-07-14T10:03:49.978Z",
+      "verification_state": "NEEDS_HUMAN_REVIEW",
+      "warnings": [
+        "cross_law_contamination: Law \"ABGB\" cited but not in retrieved results (legal/statutes/at/abgb/p-366, legal/statutes/at/abgb/p-368, legal/statutes/at/abgb/p-367, legal/statutes/at/abgb/p-1088, legal/statutes/at/abgb/p-346, legal/statutes/at/abgb/p-372, legal/statutes/at/abgb/p-378, legal/statutes/at/abgb/p-377)"
+      ],
+      "mode": "live",
+      "latency_p50_ms": 22641,
+      "latency_p95_ms": 22641
+    },
+    {
+      "run_id": "e2e-1784022935475-gold-at-lit-007",
+      "task_id": "gold-at-lit-007",
+      "model_id": "openrouter:deepseek/deepseek-chat",
+      "provider": "openrouter",
+      "prompt_hash": "45d75dc366deabdf6bffcd6dfca1ecbfd3109cc539a4c07d76acb41e42644d56",
+      "output_hash": "b40bc0f0ba5f4779e33d71b344bef4c79dfb21c99375ce05460250282449532a",
+      "tool_versions": {
+        "sandbox": "1.0.0",
+        "guardrail": "2.0.0",
+        "workflows": "1.0.0",
+        "automated_checks": "2.0.0",
+        "rubric_judge": "1.0.0",
+        "agent_tools": "1.0.0"
+      },
+      "token_counts": {
+        "input": 3648,
+        "output": 775
+      },
+      "latency_ms": 86932,
+      "cost_usd": 0.000728,
+      "started_at": "2026-07-14T09:55:35.475Z",
+      "completed_at": "2026-07-14T10:05:16.911Z",
+      "verification_state": "NEEDS_HUMAN_REVIEW",
+      "warnings": [
+        "ungrounded_citation: Citation \"§ 1151 ABGB\" not found in retrieved context",
+        "ungrounded_citation: Citation \"§ 922 ABGB\" not found in retrieved context",
+        "ungrounded_citation: Citation \"§ 933 ABGB\" not found in retrieved context",
+        "ungrounded_citation: Citation \"§ 932 ABGB\" not found in retrieved context",
+        "cross_law_contamination: Law \"ABGB\" cited but not in retrieved results (legal/judikatur/at/bvwg/2026-06-07-w602-2305051-1, legal/statutes/at/akkreditierung-des-osterreichischen-normungsinstitutes/full, legal/judikatur/at/bvwg/2021-07-07-w211-2225445-1, legal/judikatur/at/bvwg/2026-04-29-w298-2322178-1, legal/judikatur/at/bvwg/2026-06-23-w254-2317409-1, legal/judikatur/at/bvwg/2026-05-27-w176-2296117-1, legal/statutes/at/abfallverbrennungsverordnung-2024/p-23-anhang, legal/judikatur/at/bvwg/2026-07-07-w254-2319180-2)"
+      ],
+      "mode": "live",
+      "latency_p50_ms": 21669,
+      "latency_p95_ms": 21669
+    }
+  ]
+}

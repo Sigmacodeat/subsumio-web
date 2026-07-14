@@ -1,0 +1,34 @@
+{
+  "run_id": "e2e-1784019909371-gold-at-lit-002",
+  "task_id": "gold-at-lit-002",
+  "model_id": "openrouter:deepseek/deepseek-chat",
+  "provider": "openrouter",
+  "prompt_hash": "0827f0495930e6d4855082addce58341bc28c17fc0a2a4eb63d08ce3b749d055",
+  "corpus_hash": "898e61a1848b6846134f7055bb35eefbbab81bef660655c05489dc4b9e446a95",
+  "output_hash": "b8288694446857788c8d2558a817ffac21be7707726231ba69a2343e0175c69c",
+  "tool_versions": {
+    "sandbox": "1.0.0",
+    "guardrail": "2.0.0",
+    "workflows": "1.0.0",
+    "automated_checks": "2.0.0",
+    "rubric_judge": "1.0.0",
+    "agent_tools": "1.0.0"
+  },
+  "token_counts": {
+    "input": 3648,
+    "output": 1326
+  },
+  "latency_ms": 117907,
+  "cost_usd": 0.000882,
+  "started_at": "2026-07-14T09:05:09.371Z",
+  "completed_at": "2026-07-14T09:08:13.898Z",
+  "verification_state": "NEEDS_HUMAN_REVIEW",
+  "warnings": [
+    "ungrounded_citation: Citation \"§ 239 ZPO\" not found in retrieved context",
+    "hedging: Model admits ungrounded citation: \"nicht explizit aufgeführt\"",
+    "cross_law_contamination: Law \"ZPO\" cited but not in retrieved results (asvg, tkg, adn-verordnung, bdg, abkommen-uber-eine-umfassende-und-verstarkte-partnerschaft-zwischen-der-eu-euratom-und-ihren-mitgliedstaaten-armenien, gewo-at, bvergg, estg-at)"
+  ],
+  "mode": "live",
+  "latency_p50_ms": 26582,
+  "latency_p95_ms": 26582
+}

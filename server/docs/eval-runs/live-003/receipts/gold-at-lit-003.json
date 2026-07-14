@@ -1,0 +1,31 @@
+{
+  "run_id": "e2e-1784022935475-gold-at-lit-003",
+  "task_id": "gold-at-lit-003",
+  "model_id": "openrouter:deepseek/deepseek-chat",
+  "provider": "openrouter",
+  "prompt_hash": "970a3479bfd35e679e3218abe178aa3d7bde9d17f0bc8cf35258040bad073d52",
+  "output_hash": "e2c09c1a544093eb8c7790822400c37af0e1e4949a1c82d902c858523077180b",
+  "tool_versions": {
+    "sandbox": "1.0.0",
+    "guardrail": "2.0.0",
+    "workflows": "1.0.0",
+    "automated_checks": "2.0.0",
+    "rubric_judge": "1.0.0",
+    "agent_tools": "1.0.0"
+  },
+  "token_counts": {
+    "input": 4105,
+    "output": 695
+  },
+  "latency_ms": 71447,
+  "cost_usd": 0.000769,
+  "started_at": "2026-07-14T09:55:35.475Z",
+  "completed_at": "2026-07-14T09:59:47.823Z",
+  "verification_state": "NEEDS_HUMAN_REVIEW",
+  "warnings": [
+    "cross_law_contamination: Law \"ABGB\" cited but not in retrieved results (legal/statutes/at/abgb/p-1324, legal/statutes/at/wrg/p-26, legal/statutes/at/abgb/p-1318, legal/statutes/at/abgb/p-1294, legal/statutes/at/abgb/p-1306, legal/statutes/at/abgb/p-1332, legal/statutes/at/abgb/p-1306a, legal/statutes/at/abgb/p-1319)"
+  ],
+  "mode": "live",
+  "latency_p50_ms": 19352,
+  "latency_p95_ms": 19352
+}

@@ -1,0 +1,31 @@
+{
+  "run_id": "e2e-1784022935475-gold-at-lit-001",
+  "task_id": "gold-at-lit-001",
+  "model_id": "openrouter:deepseek/deepseek-chat",
+  "provider": "openrouter",
+  "prompt_hash": "6296785404332c10989c6a6e3d3fc07bbcf52800e19454b58067417775cac5d9",
+  "output_hash": "e9a7251926582955738008eb81c3558a2d4c84b01aae09e3554fb5a5d32d2c4b",
+  "tool_versions": {
+    "sandbox": "1.0.0",
+    "guardrail": "2.0.0",
+    "workflows": "1.0.0",
+    "automated_checks": "2.0.0",
+    "rubric_judge": "1.0.0",
+    "agent_tools": "1.0.0"
+  },
+  "token_counts": {
+    "input": 3655,
+    "output": 601
+  },
+  "latency_ms": 96824,
+  "cost_usd": 0.00068,
+  "started_at": "2026-07-14T09:55:35.475Z",
+  "completed_at": "2026-07-14T09:57:12.301Z",
+  "verification_state": "NEEDS_HUMAN_REVIEW",
+  "warnings": [
+    "cross_law_contamination: Law \"ZPO\" cited but not in retrieved results (legal/statutes/at/zpo/p-461, legal/statutes/at/stpo/p-466, legal/statutes/at/stpo/p-294, legal/statutes/at/stpo/p-478, legal/statutes/at/zpo/p-222, legal/statutes/at/zpo/p-466, legal/statutes/at/zpo/p-468, legal/statutes/at/avg/p-64a)"
+  ],
+  "mode": "live",
+  "latency_p50_ms": 45881,
+  "latency_p95_ms": 45881
+}

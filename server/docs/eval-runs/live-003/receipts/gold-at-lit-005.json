@@ -1,0 +1,31 @@
+{
+  "run_id": "e2e-1784022935475-gold-at-lit-005",
+  "task_id": "gold-at-lit-005",
+  "model_id": "openrouter:deepseek/deepseek-chat",
+  "provider": "openrouter",
+  "prompt_hash": "cc0623e9e9e066d6d51241a7b25de88b96edb4e5cc3dddb176e6a4a1e3cf508a",
+  "output_hash": "38cc1499f587a53d64d374a4b2701572339e0811e6ddb13bdcb9b5462325e09b",
+  "tool_versions": {
+    "sandbox": "1.0.0",
+    "guardrail": "2.0.0",
+    "workflows": "1.0.0",
+    "automated_checks": "2.0.0",
+    "rubric_judge": "1.0.0",
+    "agent_tools": "1.0.0"
+  },
+  "token_counts": {
+    "input": 4005,
+    "output": 808
+  },
+  "latency_ms": 75060,
+  "cost_usd": 0.000787,
+  "started_at": "2026-07-14T09:55:35.475Z",
+  "completed_at": "2026-07-14T10:02:19.388Z",
+  "verification_state": "NEEDS_HUMAN_REVIEW",
+  "warnings": [
+    "cross_law_contamination: Law \"ABGB\" cited but not in retrieved results (legal/statutes/at/abgb/p-1295, legal/statutes/at/abgb/p-1325, legal/statutes/at/abgb/p-1310, legal/judikatur/at/2026-02-26-2ob130-83-2ob131-83, legal/statutes/at/abgb/p-1324, legal/statutes/at/stvo/p-38, legal/statutes/at/stvo/p-99, legal/statutes/at/stvo/p-37)"
+  ],
+  "mode": "live",
+  "latency_p50_ms": 23784,
+  "latency_p95_ms": 23784
+}

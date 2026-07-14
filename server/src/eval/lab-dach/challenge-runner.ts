@@ -20,7 +20,14 @@ import {
   type FlagType,
 } from "../../core/citation-guardrail.ts";
 import { CHALLENGE_SET } from "./challenge-set.ts";
+import { CH_CHALLENGE_SET } from "./ch-challenge-set.ts";
 import type { ChallengeEntry, ManipulationType } from "./types.ts";
+
+/** Combined challenge set: DE/AT (100) + CH (26+) */
+export const ALL_CHALLENGE_ENTRIES: ChallengeEntry[] = [
+  ...CHALLENGE_SET,
+  ...CH_CHALLENGE_SET,
+];
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -212,14 +219,15 @@ async function main() {
   const jsonMode = args.includes("--json");
   const verbose = args.includes("--verbose");
 
-  // Build task ID → reference output map from gold tasks
+  // Build task ID → reference output map from gold tasks (DE/AT + CH)
   const { GOLD_DE_LITIGATION } = await import("./gold-tasks-de-litigation.ts");
   const { GOLD_DE_CRIMINAL } = await import("./gold-tasks-de-criminal.ts");
   const { GOLD_AT_LITIGATION } = await import("./gold-tasks-at-litigation.ts");
+  const { ALL_GOLD_CH } = await import("./gold-tasks-ch.ts");
 
   const taskMap = new Map<string, string>();
   const slugMap = new Map<string, string[]>();
-  for (const t of [...GOLD_DE_LITIGATION, ...GOLD_DE_CRIMINAL, ...GOLD_AT_LITIGATION]) {
+  for (const t of [...GOLD_DE_LITIGATION, ...GOLD_DE_CRIMINAL, ...GOLD_AT_LITIGATION, ...ALL_GOLD_CH]) {
     if (t.reference_output) {
       taskMap.set(t.id, t.reference_output);
     }
@@ -238,7 +246,7 @@ async function main() {
   }
 
   const report = runChallengeSet(
-    CHALLENGE_SET,
+    ALL_CHALLENGE_ENTRIES,
     (taskId) => taskMap.get(taskId),
     (taskId) => slugMap.get(taskId) ?? []
   );

@@ -128,12 +128,16 @@ export interface E2ERunResult {
   run_id: string;
   started_at: string;
   completed_at: string;
+  mode: "live" | "mock";
   tasks: Task[];
   workflow_results: WorkflowResult[];
   rubric_results: RubricResult[];
   run_receipts: RunReceipt[];
   aggregate_score: AggregateScore;
   report: string;
+  total_cost_usd?: number;
+  total_tokens?: { input: number; output: number };
+  provider_errors?: string[];
 }
 
 export async function runE2E(opts: {
@@ -144,9 +148,31 @@ export async function runE2E(opts: {
   provider?: string;
   /** Real provider adapter. Required when mockMode is false. */
   chatFn?: (opts: ChatOpts) => Promise<ChatResult>;
+  /** Maximum cumulative cost in USD — aborts run if exceeded (live mode only) */
+  maxCostUsd?: number;
+  /** Judge model ID (live mode only) */
+  judgeModelId?: string;
+  /** Judge provider (live mode only) */
+  judgeProvider?: string;
+  /** External path to load holdout tasks from (requires holdout-manifest.json verification) */
+  holdoutPath?: string;
+  /**
+   * Real retrieval function backed by the hybrid search engine. When supplied,
+   * search_law / search_judikatur use production retrieval (jurisdiction-isolated
+   * + LLM reranked) instead of the naive file-based fallback. Built via
+   * retrieval-adapter.ts (createEngineSearchFn / createLiveEngineSearch).
+   */
+  searchFn?: import("./agent-tools.ts").ToolContext["searchFn"];
 }): Promise<E2ERunResult> {
-  const tasks = opts.tasks ?? ALL_SAMPLE_TASKS;
-  if (!opts.mockMode && !opts.chatFn) {
+  let tasks = opts.tasks ?? ALL_SAMPLE_TASKS;
+  if (opts.holdoutPath) {
+    const { loadHoldoutTasksFromPath } = await import("./holdout/gold-tasks-holdout.ts");
+    const holdoutTasks = loadHoldoutTasksFromPath(opts.holdoutPath);
+    tasks = [...tasks, ...holdoutTasks];
+  }
+  const mode: "live" | "mock" = opts.mockMode ? "mock" : "live";
+
+  if (mode === "live" && !opts.chatFn) {
     throw new Error(
       "LAB-DACH live run refused: no real chatFn/provider adapter supplied. " +
         "Use --mock for offline tests or inject a configured gateway adapter."
@@ -164,12 +190,16 @@ export async function runE2E(opts: {
     }
   }
 
-  console.log(`✓ All ${tasks.length} tasks validated`);
+  console.log(`✓ All ${tasks.length} tasks validated (mode: ${mode})`);
 
   const workflowResults: WorkflowResult[] = [];
   const rubricResults: RubricResult[] = [];
   const runReceipts: RunReceipt[] = [];
   const sandboxes: TaskSandbox[] = [];
+  const providerErrors: string[] = [];
+  let cumulativeCostUsd = 0;
+  let cumulativeInputTokens = 0;
+  let cumulativeOutputTokens = 0;
 
   const corpusRoot = opts.corpusRoot ?? "/Users/msc/subsumio-web/law-corpus";
 
@@ -186,8 +216,8 @@ export async function runE2E(opts: {
       writeInputDocument(sandbox, "sachverhalt.txt", task.case_facts);
     }
 
-    // Determine agent model
-    const agentModel = opts.modelId ?? "deepseek/deepseek-v4-flash";
+    // Determine agent model — must be a registry-resolvable ID for cost lookup
+    const agentModel = opts.modelId ?? "openrouter:deepseek/deepseek-chat";
     const agentProvider = opts.provider ?? "openrouter";
 
     // Get unified blinded judge config (same for all agent candidates)
@@ -196,11 +226,14 @@ export async function runE2E(opts: {
     // Chat function (mock or real)
     const chatFn = opts.mockMode ? mockChatFn : opts.chatFn!;
 
-    // Tool context
+    // Tool context — inject the real hybrid-search retrieval when provided,
+    // so search_law / search_judikatur use production retrieval instead of the
+    // naive file-based fallback (the live-001 0/7 root cause).
     const toolCtx = {
       sandbox,
       corpusRoot,
       jurisdiction: task.jurisdiction,
+      searchFn: opts.searchFn,
     };
 
     // Run workflow
@@ -225,14 +258,30 @@ export async function runE2E(opts: {
       completedAt: new Date().toISOString(),
       model_id: agentModel,
       provider: agentProvider,
+      mode,
     });
     runReceipts.push(receipt);
+
+    // Track cumulative cost + tokens (live mode)
+    cumulativeCostUsd += result.cost_usd;
+    cumulativeInputTokens += result.token_count.input;
+    cumulativeOutputTokens += result.token_count.output;
+    if (result.error) providerErrors.push(`${task.id}: ${result.error}`);
 
     console.log(`  Verification: ${result.verification_state}`);
     console.log(`  All-pass: ${result.rubric.all_pass}`);
     console.log(`  Criteria: ${result.rubric.criteria_passed}/${result.rubric.criteria_total}`);
     console.log(`  Critical: ${result.rubric.critical_passed}/${result.rubric.critical_total}`);
+    console.log(`  Cost: $${result.cost_usd.toFixed(4)} (cumulative: $${cumulativeCostUsd.toFixed(4)})`);
     if (result.error) console.log(`  Error: ${result.error}`);
+
+    // Budget guard (live mode only)
+    if (mode === "live" && opts.maxCostUsd !== undefined && cumulativeCostUsd > opts.maxCostUsd) {
+      console.error(
+        `\n⛔ Budget guard: cumulative cost $${cumulativeCostUsd.toFixed(4)} exceeded limit $${opts.maxCostUsd.toFixed(4)}. Aborting run.`
+      );
+      break;
+    }
   }
 
   // 3. Compute aggregate score
@@ -254,12 +303,16 @@ export async function runE2E(opts: {
     run_id: runId,
     started_at: startedAt,
     completed_at: completedAt,
+    mode,
     tasks,
     workflow_results: workflowResults,
     rubric_results: rubricResults,
     run_receipts: runReceipts,
     aggregate_score: aggregateScore,
     report,
+    total_cost_usd: cumulativeCostUsd,
+    total_tokens: { input: cumulativeInputTokens, output: cumulativeOutputTokens },
+    provider_errors: providerErrors.length > 0 ? providerErrors : undefined,
   };
 }
 

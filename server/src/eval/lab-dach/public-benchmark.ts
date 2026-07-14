@@ -22,7 +22,12 @@ import { GOLD_DE_LITIGATION } from "./gold-tasks-de-litigation.ts";
 import { GOLD_DE_CRIMINAL } from "./gold-tasks-de-criminal.ts";
 import { GOLD_AT_LITIGATION } from "./gold-tasks-at-litigation.ts";
 import { ALL_GOLD_CH } from "./gold-tasks-ch.ts";
-import { GOLD_HOLDOUT } from "./holdout/gold-tasks-holdout.ts";
+import {
+  GOLD_HOLDOUT,
+  loadHoldoutTasksFromPath,
+  loadHoldoutManifest,
+  type HoldoutManifest,
+} from "./holdout/gold-tasks-holdout.ts";
 
 // ── Sealed Holdout ────────────────────────────────────────────────────
 
@@ -330,6 +335,8 @@ export interface AggregateMetricsExport {
   false_pass_rate: number;
   false_fail_rate: number;
   judge_kappa: number;
+  excluded_draft_count: number;
+  excluded_draft_tasks: string[];
 }
 
 export interface ConfidenceIntervalExport {
@@ -382,24 +389,32 @@ export function exportRawReceipts(
   });
 
   const totalTasks = taskEntries.length;
-  const allPassCount = taskEntries.filter((t) => t.all_pass).length;
+  const draftTaskEntries = taskEntries.filter((t) => {
+    const task = taskMap.get(t.task_id);
+    return task?.review_status === "draft";
+  });
+  const nonDraftEntries = taskEntries.filter((t) => !draftTaskEntries.some((d) => d.task_id === t.task_id));
+  const nonDraftTotal = nonDraftEntries.length;
+  const allPassCount = nonDraftEntries.filter((t) => t.all_pass).length;
   const meanCriterionPass =
-    taskEntries.reduce((sum, t) => sum + t.criterion_pass_rate, 0) / Math.max(totalTasks, 1);
+    nonDraftEntries.reduce((sum, t) => sum + t.criterion_pass_rate, 0) / Math.max(nonDraftTotal, 1);
   const meanCriticalPass =
-    taskEntries.reduce((sum, t) => sum + t.critical_pass_rate, 0) / Math.max(totalTasks, 1);
+    nonDraftEntries.reduce((sum, t) => sum + t.critical_pass_rate, 0) / Math.max(nonDraftTotal, 1);
 
   const aggregate: AggregateMetricsExport = {
     total_tasks: totalTasks,
-    all_pass_rate: totalTasks > 0 ? allPassCount / totalTasks : 0,
+    all_pass_rate: nonDraftTotal > 0 ? allPassCount / nonDraftTotal : 0,
     strict_all_pass_rate:
-      totalTasks > 0
-        ? taskEntries.filter((t) => t.all_pass && t.critical_pass_rate === 1).length / totalTasks
+      nonDraftTotal > 0
+        ? nonDraftEntries.filter((t) => t.all_pass && t.critical_pass_rate === 1).length / nonDraftTotal
         : 0,
     mean_criterion_pass_rate: meanCriterionPass,
     mean_critical_pass_rate: meanCriticalPass,
     false_pass_rate: 0,
     false_fail_rate: 0,
     judge_kappa: 0,
+    excluded_draft_count: draftTaskEntries.length,
+    excluded_draft_tasks: draftTaskEntries.map((t) => t.task_id),
   };
 
   // Wilson confidence intervals for key metrics
@@ -533,6 +548,11 @@ function generateMarkdownReport(
   lines.push("");
 
   lines.push("## Aggregate Metrics");
+  if (results.aggregate_metrics.excluded_draft_count > 0) {
+    lines.push("");
+    lines.push(`⚠️ ${results.aggregate_metrics.excluded_draft_count} draft task(s) excluded from aggregate metrics: ${results.aggregate_metrics.excluded_draft_tasks.join(", ")}`);
+  }
+  lines.push("");
   lines.push(`- **Total tasks**: ${results.aggregate_metrics.total_tasks}`);
   lines.push(`- **All-pass rate**: ${(results.aggregate_metrics.all_pass_rate * 100).toFixed(1)}%`);
   lines.push(
@@ -578,8 +598,10 @@ function generateMarkdownReport(
   );
   lines.push("|---------|-------------|----------|----------------|---------------|-------------|");
   for (const task of results.task_receipts) {
+    const isDraft = results.aggregate_metrics.excluded_draft_tasks.includes(task.task_id);
+    const draftMarker = isDraft ? " [DRAFT]" : "";
     lines.push(
-      `| ${task.task_id} | ${task.jurisdiction} | ${task.all_pass ? "✅" : "❌"} | ${(task.criterion_pass_rate * 100).toFixed(0)}% | ${(task.critical_pass_rate * 100).toFixed(0)}% | \`${task.output_hash.substring(0, 16)}...\` |`
+      `| ${task.task_id}${draftMarker} | ${task.jurisdiction}${isDraft ? " (draft)" : ""} | ${task.all_pass ? "✅" : "❌"} | ${(task.criterion_pass_rate * 100).toFixed(0)}% | ${(task.critical_pass_rate * 100).toFixed(0)}% | \`${task.output_hash.substring(0, 16)}...\` |`
     );
   }
   lines.push("");
@@ -600,4 +622,12 @@ export function getAllDevTestTasks(): Task[] {
 
 export function getAllHoldoutTasks(): Task[] {
   return GOLD_HOLDOUT;
+}
+
+export function loadHoldoutFromPath(path: string): Task[] {
+  return loadHoldoutTasksFromPath(path);
+}
+
+export function getHoldoutManifest(): HoldoutManifest {
+  return loadHoldoutManifest();
 }

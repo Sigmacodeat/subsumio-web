@@ -1,0 +1,35 @@
+{
+  "run_id": "e2e-1784022935475-gold-at-lit-007",
+  "task_id": "gold-at-lit-007",
+  "model_id": "openrouter:deepseek/deepseek-chat",
+  "provider": "openrouter",
+  "prompt_hash": "45d75dc366deabdf6bffcd6dfca1ecbfd3109cc539a4c07d76acb41e42644d56",
+  "output_hash": "b40bc0f0ba5f4779e33d71b344bef4c79dfb21c99375ce05460250282449532a",
+  "tool_versions": {
+    "sandbox": "1.0.0",
+    "guardrail": "2.0.0",
+    "workflows": "1.0.0",
+    "automated_checks": "2.0.0",
+    "rubric_judge": "1.0.0",
+    "agent_tools": "1.0.0"
+  },
+  "token_counts": {
+    "input": 3648,
+    "output": 775
+  },
+  "latency_ms": 86932,
+  "cost_usd": 0.000728,
+  "started_at": "2026-07-14T09:55:35.475Z",
+  "completed_at": "2026-07-14T10:05:16.911Z",
+  "verification_state": "NEEDS_HUMAN_REVIEW",
+  "warnings": [
+    "ungrounded_citation: Citation \"§ 1151 ABGB\" not found in retrieved context",
+    "ungrounded_citation: Citation \"§ 922 ABGB\" not found in retrieved context",
+    "ungrounded_citation: Citation \"§ 933 ABGB\" not found in retrieved context",
+    "ungrounded_citation: Citation \"§ 932 ABGB\" not found in retrieved context",
+    "cross_law_contamination: Law \"ABGB\" cited but not in retrieved results (legal/judikatur/at/bvwg/2026-06-07-w602-2305051-1, legal/statutes/at/akkreditierung-des-osterreichischen-normungsinstitutes/full, legal/judikatur/at/bvwg/2021-07-07-w211-2225445-1, legal/judikatur/at/bvwg/2026-04-29-w298-2322178-1, legal/judikatur/at/bvwg/2026-06-23-w254-2317409-1, legal/judikatur/at/bvwg/2026-05-27-w176-2296117-1, legal/statutes/at/abfallverbrennungsverordnung-2024/p-23-anhang, legal/judikatur/at/bvwg/2026-07-07-w254-2319180-2)"
+  ],
+  "mode": "live",
+  "latency_p50_ms": 21669,
+  "latency_p95_ms": 21669
+}

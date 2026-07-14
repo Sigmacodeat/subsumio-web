@@ -1,0 +1,33 @@
+{
+  "run_id": "e2e-1784019909371-gold-at-lit-001",
+  "task_id": "gold-at-lit-001",
+  "model_id": "openrouter:deepseek/deepseek-chat",
+  "provider": "openrouter",
+  "prompt_hash": "d0b0f45440370b94ea862ca4a9904963b36895ab8580d0781018135745233368",
+  "corpus_hash": "898e61a1848b6846134f7055bb35eefbbab81bef660655c05489dc4b9e446a95",
+  "output_hash": "bc6e989977c531ed7b35a58d6fbd587f574af0f9b0cc7675e38f3cbdc8820623",
+  "tool_versions": {
+    "sandbox": "1.0.0",
+    "guardrail": "2.0.0",
+    "workflows": "1.0.0",
+    "automated_checks": "2.0.0",
+    "rubric_judge": "1.0.0",
+    "agent_tools": "1.0.0"
+  },
+  "token_counts": {
+    "input": 1788,
+    "output": 573
+  },
+  "latency_ms": 66575,
+  "cost_usd": 0.000411,
+  "started_at": "2026-07-14T09:05:09.371Z",
+  "completed_at": "2026-07-14T09:06:15.947Z",
+  "verification_state": "NEEDS_HUMAN_REVIEW",
+  "warnings": [
+    "ungrounded_citation: Citation \"§ 461 ZPO\" not found in retrieved context",
+    "cross_law_contamination: Law \"ZPO\" cited but not in retrieved results (asvg, tkg, adn-verordnung, bdg, abkommen-uber-eine-umfassende-und-verstarkte-partnerschaft-zwischen-der-eu-euratom-und-ihren-mitgliedstaaten-armenien, gewo-at, bvergg, estg-at)"
+  ],
+  "mode": "live",
+  "latency_p50_ms": 19698,
+  "latency_p95_ms": 19698
+}

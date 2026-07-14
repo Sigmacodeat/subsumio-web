@@ -73,6 +73,13 @@ export interface ChatOpts {
 
 export interface ChatResult {
   text: string;
+  /** Real token usage from provider (live mode only) */
+  usage?: {
+    input_tokens: number;
+    output_tokens: number;
+  };
+  /** Model that actually answered (live mode only) */
+  model?: string;
 }
 
 // ── Default Configs ───────────────────────────────────────────────────

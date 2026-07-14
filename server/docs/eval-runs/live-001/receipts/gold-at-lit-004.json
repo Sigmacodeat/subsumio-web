@@ -1,0 +1,35 @@
+{
+  "run_id": "e2e-1784019909371-gold-at-lit-004",
+  "task_id": "gold-at-lit-004",
+  "model_id": "openrouter:deepseek/deepseek-chat",
+  "provider": "openrouter",
+  "prompt_hash": "ca0100bd8c434dc76284e81c304317b9ac542c107f5a6c7e6a2c8df5a4419277",
+  "corpus_hash": "898e61a1848b6846134f7055bb35eefbbab81bef660655c05489dc4b9e446a95",
+  "output_hash": "c24e68bdf8fcc1b2859413b6861738cc789e33f2efbe4e25ee2251c86578b59e",
+  "tool_versions": {
+    "sandbox": "1.0.0",
+    "guardrail": "2.0.0",
+    "workflows": "1.0.0",
+    "automated_checks": "2.0.0",
+    "rubric_judge": "1.0.0",
+    "agent_tools": "1.0.0"
+  },
+  "token_counts": {
+    "input": 1822,
+    "output": 523
+  },
+  "latency_ms": 75454,
+  "cost_usd": 0.000402,
+  "started_at": "2026-07-14T09:05:09.371Z",
+  "completed_at": "2026-07-14T09:10:44.400Z",
+  "verification_state": "NEEDS_HUMAN_REVIEW",
+  "warnings": [
+    "ungrounded_citation: Citation \"§ 1478 ABGB\" not found in retrieved context",
+    "ungrounded_citation: Citation \"§ 1479 ABGB\" not found in retrieved context",
+    "ungrounded_citation: Citation \"§ 1494\" not found in retrieved context",
+    "cross_law_contamination: Law \"ABGB\" cited but not in retrieved results (tkg, asvg, adn-verordnung, bdg, abkommen-uber-eine-umfassende-und-verstarkte-partnerschaft-zwischen-der-eu-euratom-und-ihren-mitgliedstaaten-armenien, gewo-at, bvergg, estg-at)"
+  ],
+  "mode": "live",
+  "latency_p50_ms": 15244,
+  "latency_p95_ms": 15244
+}

@@ -23,7 +23,12 @@ export type Family =
   | "multi-chunk-dilution"
   | "short-vs-rich"
   | "graph-relationship"
-  | "hard-negative";
+  | "hard-negative"
+  // Legal gold-set families (leakage-free: the query never contains the
+  // answer's § number; "code-scoped" may name the code, never the § ref).
+  | "concept"
+  | "keyword"
+  | "code-scoped";
 
 export interface NamedThingQuestion {
   family: Family;

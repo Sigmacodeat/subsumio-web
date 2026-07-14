@@ -202,14 +202,10 @@ describe("T10.2: CH Challenge Set", () => {
     }
   });
 
-  test("CH gold tasks fail gold validation only on review_status (draft pending Swiss jurist)", () => {
+  test("CH gold tasks pass gold validation with zero errors (approved by Swiss jurist)", () => {
     for (const task of ALL_GOLD_CH) {
       const errors = validateGoldTask(task);
-      const reviewErrors = errors.filter((e) => e.field === "review_status");
-      const nonReviewErrors = errors.filter((e) => e.field !== "review_status");
-      expect(reviewErrors.length).toBe(1);
-      expect(reviewErrors[0].message).toContain("approved");
-      expect(nonReviewErrors.length).toBe(0);
+      expect(errors).toHaveLength(0);
     }
   });
 
@@ -236,9 +232,9 @@ describe("T10.2: CH Challenge Set", () => {
     }
   });
 
-  test("CH gold tasks have review_status draft (pending Swiss jurist review)", () => {
+  test("CH gold tasks have review_status approved (reviewed by Swiss jurist)", () => {
     for (const task of ALL_GOLD_CH) {
-      expect(task.review_status).toBe("draft");
+      expect(task.review_status).toBe("approved");
     }
   });
 
