@@ -15,3 +15,6 @@ tsconfig.tsbuildinfo
 
 # Server/engine code is not needed by the Next.js web build
 server/
+
+# Law corpus is only needed by the engine container, not the web build
+law-corpus/
