@@ -668,9 +668,9 @@ describe("Negative Cases: No Foreign Law Without EU/Cross-Border", () => {
     { description: "WEG in DE context", jurisdiction: "DE", foreignLaw: "WEG" },
     { description: "EO in DE context", jurisdiction: "DE", foreignLaw: "EO" },
     { description: "IO in DE context (AT insolvency)", jurisdiction: "DE", foreignLaw: "IO" },
-    { description: "GewO in DE context", jurisdiction: "DE", foreignLaw: "GewO" },
     { description: "KartG in DE context", jurisdiction: "DE", foreignLaw: "KartG" },
     { description: "GOG in DE context", jurisdiction: "DE", foreignLaw: "GOG" },
+    { description: "GlBG in DE context", jurisdiction: "DE", foreignLaw: "GlBG" },
 
     // AT context should NOT allow DE laws
     { description: "BGB in AT context", jurisdiction: "AT", foreignLaw: "BGB" },

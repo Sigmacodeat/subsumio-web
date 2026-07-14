@@ -108,6 +108,15 @@ describe("lookupCorpusParagraph", () => {
     expect(result).toBeNull();
   });
 
+  it("extracts article-style paragraphs for state treaties (Art. N)", async () => {
+    vi.mocked(fs.readFile).mockResolvedValueOnce(
+      "---\ntype: staatsvertrag\n---\nArt. 5 Vertragsstaaten.\nAlle Vertragsparteien sind verpflichtet, ...\n\nArt. 6 Behörden.\n..."
+    );
+    const result = await lookupCorpusParagraph("alpenkonvention", "Art 5");
+    expect(result).toContain("Vertragsstaaten");
+    expect(result).not.toContain("Behörden");
+  });
+
   it("returns null on file read error", async () => {
     vi.mocked(fs.readFile).mockRejectedValueOnce(new Error("ENOENT"));
     const result = await lookupCorpusParagraph("bgb", "433");
@@ -236,7 +245,7 @@ describe("lookupCorpusParagraph — RIS raw hardening", () => {
 
 describe("CORPUS_META — full AT coverage", () => {
   it("includes the flagship codes that were previously unverifiable", () => {
-    for (const key of ["ugb", "io", "aktg_at", "gmbhg_at", "eheg", "bewg_at", "wrg", "bvergg"]) {
+    for (const key of ["ugb", "io", "aktg_at", "gmbhg_at", "eheg", "bewg", "wrg", "bvergg"]) {
       expect(CORPUS_META[key], `missing CORPUS_META entry: ${key}`).toBeTruthy();
       expect(CORPUS_META[key].jurisdiction).toBe("at");
     }
@@ -264,13 +273,24 @@ describe("findCodeKey", () => {
   });
 
   it("resolves cross-jurisdiction disambiguated labels", () => {
-    expect(findCodeKey("StGB (DE)")).toBe("stgb_de");
-    expect(findCodeKey("StGB (CH)")).toBe("stgb_ch");
-    expect(findCodeKey("ZPO (DE)")).toBe("zpo_de");
+    expect(findCodeKey("StGB (DE)")).toBe("stgb");
+    expect(findCodeKey("StGB (CH)")).toBe("ch_stgb");
+    expect(findCodeKey("ZPO (DE)")).toBe("zpo");
+    expect(findCodeKey("ZPO (CH)")).toBe("ch_zpo");
+    expect(findCodeKey("StGB-AT")).toBe("stgb_at");
+    expect(findCodeKey("ZPO-AT")).toBe("zpo_at");
   });
 
   it("returns null for ambiguous abbreviation (282× ADR)", () => {
     expect(findCodeKey("ADR")).toBeNull();
+  });
+
+  it("tokenizes punctuation and case-insensitive labels", () => {
+    const ataKey =
+      "st_a_t_a_abkommen_zollabkommen_uber_das_carnet_a_t_a_fur_die_vorubergehende_einfuhr_von_waren";
+    expect(findCodeKey("A. T. A.")).toBe(ataKey);
+    expect(findCodeKey("A-T-A Abkommen")).toBe(ataKey);
+    expect(findCodeKey("A. T. A. Abkommen")).toBe(ataKey);
   });
 
   it("returns null for unknown code", () => {
@@ -315,9 +335,16 @@ describe("detectUnverifiableCitation", () => {
 // ---------------------------------------------------------------------------
 
 describe("groundCitations — unverifiable citations", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(fs.readFile).mockReset();
+  });
 
-  it("marks treaty citations as unverifiable with reason", async () => {
+  it("marks treaty citations as unverifiable with reason when paragraph not found", async () => {
+    // split lookup fails, raw corpus has only Art. 1 and Art. 2 — no Art. 5
+    vi.mocked(fs.readFile)
+      .mockRejectedValueOnce(new Error("ENOENT"))
+      .mockResolvedValueOnce("---\ntype: staatsvertrag\n---\nArt. 1 Vertragszweck.\nArt. 2 Begriffsbestimmungen.");
     const result = await groundCitations([
       { code: "Alpenkonvention", paragraph: "Art 5", context: "Staatsvertrag" },
     ]);
@@ -325,19 +352,26 @@ describe("groundCitations — unverifiable citations", () => {
     expect(result[0].verified).toBe(false);
     expect(result[0].unverifiable_reason).toBe("Staatsvertrag");
     expect(result[0].source_text).toBeUndefined();
+    expect(result[0].category).toBe("state_treaty");
+    expect(result[0].jurisdiction).toBe("at");
   });
 
-  it("marks regional law citations as unverifiable with reason", async () => {
+  it("marks regional law citations as unverifiable with reason when paragraph not found", async () => {
+    vi.mocked(fs.readFile)
+      .mockRejectedValueOnce(new Error("ENOENT"))
+      .mockResolvedValueOnce("---\ntype: landesgesetz\n---\n§ 1. Geltungsbereich.\n§ 2. Begriffsbestimmungen.");
     const result = await groundCitations([
-      { code: "Tiroler Baugesetz", paragraph: "§ 12", context: "Landesrecht" },
+      { code: "Bodenseefischereigesetz", paragraph: "§ 12", context: "Landesrecht" },
     ]);
     expect(result).toHaveLength(1);
     expect(result[0].verified).toBe(false);
     expect(result[0].unverifiable_reason).toBe("Landesrecht");
+    expect(result[0].category).toBe("state_law");
+    expect(result[0].jurisdiction).toBe("at");
   });
 
-  it("never silently verifies a treaty citation", async () => {
-    // Even if a file somehow existed, treaty citations must not be verified
+  it("never silently verifies an ambiguous treaty citation", async () => {
+    // "Abkommen" is ambiguous and not in CORPUS_META, so it stays unverifiable
     vi.mocked(fs.readFile).mockResolvedValueOnce("Some text");
     const result = await groundCitations([
       { code: "Abkommen", paragraph: "Art 3", context: "Staatsvertrag" },
@@ -345,6 +379,22 @@ describe("groundCitations — unverifiable citations", () => {
     expect(result).toHaveLength(1);
     expect(result[0].verified).toBe(false);
     expect(result[0].unverifiable_reason).toBe("Staatsvertrag");
+  });
+
+  it("verifies a known treaty article when the article is present in the corpus", async () => {
+    vi.mocked(fs.readFile)
+      .mockRejectedValueOnce(new Error("ENOENT"))
+      .mockResolvedValueOnce(
+        "---\ntype: staatsvertrag\n---\nArt. 5 Vertragsstaaten.\nAlle Vertragsparteien sind verpflichtet, ..."
+      );
+    const result = await groundCitations([
+      { code: "Alpenkonvention", paragraph: "Art 5", context: "Staatsvertrag" },
+    ]);
+    expect(result).toHaveLength(1);
+    expect(result[0].verified).toBe(true);
+    expect(result[0].source_text).toContain("Vertragsstaaten");
+    expect(result[0].category).toBe("state_treaty");
+    expect(result[0].jurisdiction).toBe("at");
   });
 });
 
@@ -358,7 +408,7 @@ describe("groundCitations — fake vs real paragraphs (new AT statutes)", () => 
     vi.mocked(fs.readFile).mockReset();
   });
 
-  it("fake paragraph in AsylG → verified:false", async () => {
+  it("fake paragraph in AsylG → verified:false with explicit reason", async () => {
     // § 9999 does not exist in AsylG — both split and raw lookup must fail
     vi.mocked(fs.readFile).mockRejectedValue(new Error("ENOENT"));
     const result = await groundCitations([
@@ -367,7 +417,9 @@ describe("groundCitations — fake vs real paragraphs (new AT statutes)", () => 
     expect(result).toHaveLength(1);
     expect(result[0].verified).toBe(false);
     expect(result[0].source_text).toBeUndefined();
-    expect(result[0].unverifiable_reason).toBeUndefined();
+    expect(result[0].unverifiable_reason).toBe("Paragraph not found");
+    expect(result[0].category).toBe("statute");
+    expect(result[0].jurisdiction).toBe("at");
   });
 
   it("fake paragraph in SPG → verified:false", async () => {
@@ -388,7 +440,7 @@ describe("groundCitations — fake vs real paragraphs (new AT statutes)", () => 
     expect(result[0].verified).toBe(false);
   });
 
-  it("real paragraph in AsylG → verified:true with source_text", async () => {
+  it("real paragraph in AsylG → verified:true with source_text and category", async () => {
     vi.mocked(fs.readFile).mockResolvedValueOnce(
       "§ 1. (1) Dieses Bundesgesetz regelt die Einreise nach Österreich..."
     );
@@ -399,6 +451,8 @@ describe("groundCitations — fake vs real paragraphs (new AT statutes)", () => 
     expect(result[0].verified).toBe(true);
     expect(result[0].source_text).toBeTruthy();
     expect(result[0].source_text).toContain("Bundesgesetz");
+    expect(result[0].category).toBe("statute");
+    expect(result[0].jurisdiction).toBe("at");
   });
 
   it("real paragraph in SPG → verified:true with source_text", async () => {
@@ -446,15 +500,15 @@ describe("CORPUS_META — CI guard", () => {
       expect(meta.jurisdiction).toMatch(/^(at|de|ch|eu)$/);
       expect(meta.label).toBeTruthy();
       expect(meta.label.length).toBeGreaterThan(0);
-      expect(meta.file).toMatch(/^(at|de|ch|eu)\//);
+      expect(meta.file).toMatch(/^(at|de|ch|eu|at-staatsvertraege|at-landesrecht)\//);
       expect(meta.file).toMatch(/\.md$/);
     }
   });
 
   it("contains flagship AT codes with correct labels", () => {
     expect(CORPUS_META["abgb"].label).toBe("ABGB");
-    expect(CORPUS_META["stgb_at"].label).toBe("StGB (AT)");
-    expect(CORPUS_META["zpo_at"].label).toBe("ZPO (AT)");
+    expect(CORPUS_META["stgb_at"].label).toBe("StGB-AT");
+    expect(CORPUS_META["zpo_at"].label).toBe("ZPO-AT");
   });
 
   it("contains DE flagship codes", () => {

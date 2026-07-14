@@ -348,6 +348,8 @@ export interface GroundedCitation {
   source_text?: string;
   source_file?: string;
   unverifiable_reason?: string;
+  category?: "statute" | "state_treaty" | "state_law";
+  jurisdiction?: "at" | "de" | "ch" | "eu";
 }
 
 export interface ObligationExtractionResult {

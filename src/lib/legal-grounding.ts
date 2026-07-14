@@ -20,19 +20,46 @@ export function normalizeStatuteCode(code: string): string {
     .replace(/_+/g, "_");
 }
 
+function tokenize(s: string): string[] {
+  return s
+    .toUpperCase()
+    .replace(/[^A-Z0-9ÄÖÜß]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length > 0);
+}
+
+function arraysEqual(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
+function startsWithTokens(haystack: string[], needle: string[]): boolean {
+  if (needle.length === 0 || needle.length > haystack.length) return false;
+  return needle.every((t, i) => haystack[i] === t);
+}
+
 // ── Unverifiable citation detection ───────────────────────────────────
 // Citations to treaties (Staatsverträge) and regional laws (Landesrecht)
-// are explicitly marked as unverifiable — never silently verified.
+// are only marked as unverifiable when the statute cannot be identified or
+// the requested paragraph/article cannot be found in the corpus. Known
+// entries are verified against the actual source text — never guessed.
 
-const TREATY_KEYWORDS =
-  /(Staatsvertrag|Abkommen|(?:\w*[Kk]onvention)|Übereinkommen|Übereinkunft|Vertrag)/i;
-const REGIONAL_KEYWORDS =
-  /(Landesrecht|Landesgesetz|LGBl\.?|LGBI\.?|Tiroler|Salzburger|Steirischer|Kärntner|Niederösterreich|Oberösterreich|Burgenländischer|Vorarlberger|Wiener)/i;
+// Word boundary that works with Unicode (Bun's \b doesn't handle Ü, ä, ö, etc.)
+const BOUNDARY = `(?:^|\\s|[.,;:!?()\\[\\]{}'"'/])`;
+const END_BOUNDARY = `(?:$|\\s|[.,;:!?()\\[\\]{}'"'/])`;
+
+const TREATY_RE = new RegExp(
+  `${BOUNDARY}(Staatsvertrag|Abkommen|(?:\\w*[Kk]onvention)|Übereinkommen|Übereinkunft|Vertrag)${END_BOUNDARY}`,
+  "i"
+);
+const REGIONAL_RE = new RegExp(
+  `${BOUNDARY}(Landesrecht|Landesgesetz|LGBl\\.?|LGBI\\.?|Tiroler|Salzburger|Steirischer|Kärntner|Niederösterreich|Oberösterreich|Burgenländischer|Vorarlberger|Wiener)${END_BOUNDARY}`,
+  "i"
+);
 
 export function detectUnverifiableCitation(code: string, context?: string): string | null {
   const fullText = `${code} ${context || ""}`;
-  if (TREATY_KEYWORDS.test(fullText)) return "Staatsvertrag";
-  if (REGIONAL_KEYWORDS.test(fullText)) return "Landesrecht";
+  if (TREATY_RE.test(fullText)) return "Staatsvertrag";
+  if (REGIONAL_RE.test(fullText)) return "Landesrecht";
   return null;
 }
 
@@ -46,22 +73,24 @@ export function findCodeKey(code: string): string | null {
   // 1. Exact slug-key match
   if (CORPUS_META[normalized]) return normalized;
 
-  // 2. Exact label match (case-insensitive)
-  const codeUpper = code.toUpperCase().trim();
-  const exact = Object.entries(CORPUS_META).filter(
-    ([_, m]) => m.label.toUpperCase() === codeUpper
-  );
+  const codeTokens = tokenize(code);
+  if (codeTokens.length === 0) return null;
+
+  // 2. Exact token-label match (case-insensitive, punctuation-insensitive)
+  const exact = Object.entries(CORPUS_META).filter(([_, m]) => {
+    const labelTokens = tokenize(m.label);
+    return arraysEqual(labelTokens, codeTokens);
+  });
   if (exact.length === 1) return exact[0][0];
 
-  // 3. Normalized label match (spaces/dashes/underscores equivalent)
-  const normCode = codeUpper.replace(/[\s\-_]+/g, " ");
-  const normMatches = Object.entries(CORPUS_META).filter(([_, m]) => {
-    const normLabel = m.label.toUpperCase().replace(/[\s\-_]+/g, " ");
-    return normLabel === normCode;
+  // 3. Unique prefix-token match — fail-closed: only if exactly one entry matches
+  const prefixMatches = Object.entries(CORPUS_META).filter(([_, m]) => {
+    const labelTokens = tokenize(m.label);
+    return startsWithTokens(labelTokens, codeTokens);
   });
-  if (normMatches.length === 1) return normMatches[0][0];
+  if (prefixMatches.length === 1) return prefixMatches[0][0];
 
-  // 4. Ambiguous or not found → null (fail-closed)
+  // Ambiguous or not found → null (fail-closed)
   return null;
 }
 
@@ -106,7 +135,9 @@ export async function lookupCorpusParagraph(
 
   try {
     const text = await fs.readFile(path.join(CORPUS_DIR, meta.file), "utf8");
-    const paraNum = paragraph.replace(/^\u00a7\s*/, "").trim();
+    const paraNum = paragraph
+      .replace(/^(\u00a7|Art\.?|Artikel|Article|Abs\.?|Absatz)\s*/i, "")
+      .trim();
     const escapedPara = paraNum.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
     const deMatch = text.match(
@@ -134,7 +165,23 @@ export async function lookupCorpusParagraph(
       const end = nextRel !== -1 ? atIdx + 1 + nextRel : atIdx + 1200;
       const body = normText.slice(atIdx, end).trim();
       // Guard: a bare marker with no substantive text is not a real answer.
-      return body.length > paraNum.length + 3 ? body.slice(0, 800) : null;
+      if (body.length > paraNum.length + 3) return body.slice(0, 800);
+    }
+
+    // Fallback for state treaties and some regional laws that use articles.
+    // We strip the frontmatter so header metadata doesn't match as a false positive.
+    const bodyStart = text.indexOf("---", 3);
+    const bodyText = bodyStart !== -1 ? text.slice(bodyStart + 3).trimStart() : text;
+    const articleIdx = bodyText.search(
+      new RegExp(`(?:Art\\.?|Artikel|Article)\\s*${escapedPara}\\b`, "i")
+    );
+    if (articleIdx !== -1) {
+      const after = bodyText.slice(articleIdx + 1);
+      const nextRel = after.search(/(?:Art\.?|Artikel|Article)\s*\d+[a-z]*\b/i);
+      const end = nextRel !== -1 ? articleIdx + 1 + nextRel : articleIdx + 1200;
+      const body = bodyText.slice(articleIdx, end).trim();
+      // Guard: require a sentence of real text after the article marker.
+      return body.length > paraNum.length + 20 ? body.slice(0, 800) : null;
     }
 
     return null;
@@ -153,35 +200,41 @@ export async function groundCitations(rawCitations: RawCitation[]): Promise<Grou
     const paragraph = String(cite.paragraph).trim();
     const context = String(cite.context || "").trim();
 
-    // Check for explicitly unverifiable citations (treaties, regional laws)
-    const unverifiableReason = detectUnverifiableCitation(code, context);
-    if (unverifiableReason) {
+    const codeKey = findCodeKey(code);
+    const meta = codeKey ? CORPUS_META[codeKey] : null;
+
+    if (!meta) {
       results.push({
         code,
         paragraph,
         context,
         verified: false,
-        unverifiable_reason: unverifiableReason,
+        unverifiable_reason: detectUnverifiableCitation(code, context) || "Unknown statute",
       });
       continue;
     }
 
     let sourceText = await lookupSplitParagraph(code, paragraph);
 
-    if (!sourceText) {
-      const codeKey = findCodeKey(code);
-      if (codeKey) {
-        sourceText = await lookupCorpusParagraph(codeKey, paragraph);
-      }
+    if (!sourceText && codeKey) {
+      sourceText = await lookupCorpusParagraph(codeKey, paragraph);
     }
 
-    results.push({
+    const result: GroundedCitation = {
       code,
       paragraph,
       context,
       verified: sourceText !== null,
       ...(sourceText ? { source_text: sourceText.slice(0, 600) } : {}),
-    });
+      category: meta.type ?? "statute",
+      jurisdiction: meta.jurisdiction,
+    };
+
+    if (!sourceText) {
+      result.unverifiable_reason = detectUnverifiableCitation(code, context) || "Paragraph not found";
+    }
+
+    results.push(result);
   }
 
   return results;

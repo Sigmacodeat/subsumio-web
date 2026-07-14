@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import {
   calculateFreshness,
   hashContent,
@@ -9,6 +9,7 @@ import {
   findSourceForCitation,
   provenanceFromEntry,
   type SourceRegistryEntry,
+  type SourceRegistryResponse,
 } from "@/lib/source-registry";
 
 // ── calculateFreshness ────────────────────────────────────────────────
@@ -245,8 +246,13 @@ describe("buildJudgementApiEntries", () => {
 // ── buildSourceRegistry (integration) ─────────────────────────────────
 
 describe("buildSourceRegistry", () => {
+  let registry: SourceRegistryResponse;
+
+  beforeAll(async () => {
+    registry = await buildSourceRegistry();
+  }, 30000);
+
   it("returns response with sources, total, and counts", async () => {
-    const registry = await buildSourceRegistry();
     expect(registry.sources.length).toBeGreaterThan(0);
     expect(registry.total).toBe(registry.sources.length);
     expect(registry.fresh + registry.stale + registry.error + registry.unknown).toBeLessThanOrEqual(
@@ -256,14 +262,12 @@ describe("buildSourceRegistry", () => {
   });
 
   it("includes both statute_corpus and judgement_api types", async () => {
-    const registry = await buildSourceRegistry();
     const types = new Set(registry.sources.map((s) => s.type));
     expect(types.has("statute_corpus")).toBe(true);
     expect(types.has("judgement_api")).toBe(true);
   });
 
   it("includes DE, AT, and CH jurisdictions", async () => {
-    const registry = await buildSourceRegistry();
     const jurisdictions = new Set(registry.sources.map((s) => s.jurisdiction));
     expect(jurisdictions.has("DE")).toBe(true);
     expect(jurisdictions.has("AT")).toBe(true);
@@ -271,7 +275,6 @@ describe("buildSourceRegistry", () => {
   });
 
   it("statute entries have file_path set", async () => {
-    const registry = await buildSourceRegistry();
     const statutes = registry.sources.filter((s) => s.type === "statute_corpus");
     for (const s of statutes) {
       expect(s.file_path).toBeDefined();
@@ -279,7 +282,6 @@ describe("buildSourceRegistry", () => {
   });
 
   it("judgement entries have api_endpoint set", async () => {
-    const registry = await buildSourceRegistry();
     const apis = registry.sources.filter((s) => s.type === "judgement_api");
     for (const a of apis) {
       expect(a.api_endpoint).toBeDefined();

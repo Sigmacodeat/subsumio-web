@@ -14,13 +14,14 @@
  *   bun scripts/generate-corpus-meta.ts
  */
 
-import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join, basename } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const ROOT = process.cwd();
 const CORPUS_DIR = join(ROOT, "law-corpus");
 const OUTPUT_FILE = join(ROOT, "src", "lib", "corpus-meta.ts");
+const EXCLUDED_REPORT_FILE = join(ROOT, "scripts", "corpus-meta-excluded-report.json");
 
 type Jurisdiction = "at" | "de" | "ch" | "eu";
 type MetaType = "statute" | "state_treaty" | "state_law";
@@ -118,7 +119,29 @@ function parseGesetzesnummer(gn: string | null): number {
  * Returns a map from "jur/file" → final slug key.
  */
 function resolveSlugKeys(entries: StatuteEntry[]): Map<string, string> {
-  // Count how many entries share each base slug within the same jurisdiction
+  // 1. Count how many entries share each base slug globally (across jurisdictions)
+  const slugCounts = new Map<string, number>();
+  for (const e of entries) {
+    slugCounts.set(e.slugKey, (slugCounts.get(e.slugKey) || 0) + 1);
+  }
+
+  // 2. For cross-jurisdiction collisions, pick a canonical jurisdiction to keep the bare slug
+  const jurPreference: Jurisdiction[] = ["at", "de", "ch", "eu"];
+  const slugWinner = new Map<string, Jurisdiction>();
+  for (const [slug, count] of slugCounts) {
+    if (count <= 1) continue;
+    const jurs = new Set(
+      entries.filter((e) => e.slugKey === slug).map((e) => e.jurisdiction)
+    );
+    for (const jur of jurPreference) {
+      if (jurs.has(jur)) {
+        slugWinner.set(slug, jur);
+        break;
+      }
+    }
+  }
+
+  // 3. Count collisions within the same jurisdiction (e.g. multiple state laws with same slug)
   const slugJurCounts = new Map<string, number>();
   for (const e of entries) {
     const key = `${e.jurisdiction}:${e.slugKey}`;
@@ -128,18 +151,23 @@ function resolveSlugKeys(entries: StatuteEntry[]): Map<string, string> {
   const result = new Map<string, string>();
   for (const e of entries) {
     const key = `${e.jurisdiction}:${e.slugKey}`;
-    const needsPrefix = slugJurCounts.get(key)! > 1;
-    if (needsPrefix) {
-      const prefix =
+    const withinCollision = slugJurCounts.get(key)! > 1;
+    const crossCollision =
+      slugWinner.get(e.slugKey) && slugWinner.get(e.slugKey) !== e.jurisdiction;
+
+    let prefix = "";
+    if (withinCollision) {
+      prefix =
         e.type === "state_law"
           ? e.stateCode || e.jurisdiction
           : e.type === "state_treaty"
           ? "st"
           : e.jurisdiction;
-      result.set(`${e.jurisdiction}/${e.file}`, `${prefix}_${e.slugKey}`);
-    } else {
-      result.set(`${e.jurisdiction}/${e.file}`, e.slugKey);
+    } else if (crossCollision) {
+      prefix = e.jurisdiction;
     }
+
+    result.set(`${e.jurisdiction}/${e.file}`, prefix ? `${prefix}_${e.slugKey}` : e.slugKey);
   }
   return result;
 }
@@ -168,10 +196,12 @@ export function collectStatutes(): StatuteEntry[] {
         .filter((f) => f.endsWith(".md") && !f.startsWith("."))
         .map((f) => `${source.dir}/${f}`);
     } else {
-      const subdirs = readdirSync(dir).filter((d) => !d.startsWith("."));
-      for (const sub of subdirs) {
-        const subDir = join(dir, sub);
-        if (!existsSync(subDir)) continue;
+      const subdirs = readdirSync(dir)
+        .filter((d) => !d.startsWith("."))
+        .map((d) => join(dir, d))
+        .filter((d) => statSync(d).isDirectory());
+      for (const subDir of subdirs) {
+        const sub = basename(subDir);
         const subFiles = readdirSync(subDir)
           .filter((f) => f.endsWith(".md") && !f.startsWith("."))
           .map((f) => `${source.dir}/${sub}/${f}`);
@@ -428,9 +458,32 @@ function main() {
 
   const output = generateTypeScript(resolved);
   writeFileSync(OUTPUT_FILE, output, "utf8");
+  writeFileSync(
+    EXCLUDED_REPORT_FILE,
+    JSON.stringify(
+      {
+        generated_at: new Date().toISOString(),
+        total_collected: rawEntries.length,
+        total_resolved: resolved.length,
+        total_excluded: excluded.length,
+        excluded: excluded.map(({ entry, reason }) => ({
+          file: entry.file,
+          label: entry.label,
+          abbreviation: entry.abbr,
+          jurisdiction: entry.jurisdiction,
+          gesetzesnummer: entry.gesetzesnummer,
+          reason,
+        })),
+      },
+      null,
+      2
+    ),
+    "utf8"
+  );
 
   console.log("");
   console.log(`  ✅ Written: ${OUTPUT_FILE}`);
+  console.log(`  ✅ Excluded report: ${EXCLUDED_REPORT_FILE}`);
   console.log(`  Total entries: ${resolved.length}`);
   console.log(`  Jurisdictions: at=${byJurCount(resolved, "at")}, de=${byJurCount(resolved, "de")}, ch=${byJurCount(resolved, "ch")}, eu=${byJurCount(resolved, "eu")}`);
   console.log("");
