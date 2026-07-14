@@ -281,6 +281,13 @@ const _navDe: NavContent = {
           icon: "Calculator",
           badge: "Neu",
         },
+        {
+          label: "Für Betroffene",
+          href: "/nischen",
+          description: "Kostenloser KI-Check: Casino, Krypto, Asyl, Amtshaftung, Impfschaden",
+          icon: "Gavel",
+          badge: "Neu",
+        },
       ],
       ctaBottom: { label: "Lösung finden", href: "/solutions/law-firms" },
       featuredContent: {
