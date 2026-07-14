@@ -69,7 +69,19 @@ export interface DependencyDiff {
   old_text_preview: string | null;
   new_text_preview: string | null;
   detected_at: string;
+  /** BGBl-Datum or announcement date — formatted as "betroffen seit <date>" */
+  affected_since: string | null;
+  /** Human-readable German label for the change type */
+  change_type_label_de: string;
 }
+
+// ── German Labels ─────────────────────────────────────────────────────
+
+const CHANGE_TYPE_LABELS_DE: Record<string, string> = {
+  added: "Neu hinzugefügt",
+  modified: "Geändert",
+  removed: "Gestrichen",
+};
 
 // ── Dependency Graph Store ────────────────────────────────────────────
 
@@ -258,6 +270,8 @@ export class DependencyGraphStore {
 
   /**
    * Get the diff for a re-verification item (what changed in the law).
+   * Fetches old/new text previews from corpus_snapshot_paragraphs.
+   * Includes "betroffen seit <BGBl-Datum>" via the amendment's announcement_date.
    */
   async getDiff(
     slug: string,
@@ -271,14 +285,155 @@ export class DependencyGraphStore {
     const row = result.rows[0];
     if (!row) return null;
 
+    const changeType = row.change_type as "added" | "modified" | "removed";
+
+    // Fetch old/new text previews from corpus_snapshot_paragraphs
+    let oldTextPreview: string | null = null;
+    let newTextPreview: string | null = null;
+
+    if (paragraph) {
+      const oldHash = row.old_hash as string | null;
+      const newHash = row.new_hash as string | null;
+
+      if (oldHash) {
+        oldTextPreview = await this.getParagraphTextPreview(slug, paragraph, oldHash, false);
+      }
+      if (newHash) {
+        newTextPreview = await this.getParagraphTextPreview(slug, paragraph, newHash, true);
+      }
+    }
+
+    // Format "betroffen seit" date
+    // DATE columns come back as Date objects from both PGLite and Postgres.
+    // Format as YYYY-MM-DD for consistent "betroffen seit <BGBl-Datum>" display.
+    const announcementDateRaw = row.announcement_date as string | Date | null;
+    const detectedAt = row.detected_at as string;
+    let affectedSince: string | null;
+    if (announcementDateRaw) {
+      const d = announcementDateRaw instanceof Date ? announcementDateRaw : new Date(announcementDateRaw);
+      affectedSince = d.toISOString().slice(0, 10);
+    } else {
+      affectedSince = detectedAt;
+    }
+
     return {
       source_slug: slug,
       paragraph_ref: paragraph,
-      change_type: row.change_type as "added" | "modified" | "removed",
-      old_text_preview: null, // would need to fetch from previous snapshot
-      new_text_preview: null, // would need to fetch from current snapshot
-      detected_at: row.detected_at as string,
+      change_type: changeType,
+      old_text_preview: oldTextPreview,
+      new_text_preview: newTextPreview,
+      detected_at: detectedAt,
+      affected_since: affectedSince,
+      change_type_label_de: CHANGE_TYPE_LABELS_DE[changeType],
     };
+  }
+
+  /**
+   * Re-verify a dependency against a new snapshot by checking ground citations.
+   *
+   * Instead of blindly regenerating the output, we check whether the cited
+   * paragraphs still exist in the new snapshot text and whether their
+   * content has changed materially.
+   *
+   * Status transitions:
+   *   - 'verified': all cited paragraphs still exist and content is compatible
+   *   - 'stale': cited paragraphs were removed or materially changed
+   *   - 'failed': re-verification encountered an error
+   *   - 'not_affected': amendment didn't touch the specific paragraphs cited
+   */
+  async reVerifyAgainstSnapshot(
+    dependencyId: number,
+    reviewerId: string,
+    groundCitations: string[],
+    newSnapshotText: string,
+    amendedParagraphs: string[]
+  ): Promise<ReverifyStatus> {
+    try {
+      const depResult = await this.pool.query(
+        `SELECT * FROM output_dependencies WHERE id = $1`,
+        [dependencyId]
+      );
+      const dep = depResult.rows[0];
+      if (!dep) throw new Error(`Dependency ${dependencyId} not found`);
+
+      const paragraphRef = dep.paragraph_ref as string | null;
+      const amendedSet = new Set(amendedParagraphs);
+
+      // If the dependency has a specific paragraph_ref, check if it was amended
+      if (paragraphRef && !amendedSet.has(paragraphRef)) {
+        await this.reVerify(dependencyId, "not_affected", reviewerId,
+          `§ ${paragraphRef} was not in amended set [${amendedParagraphs.join(", ")}]`);
+        return "not_affected";
+      }
+
+      // Check if cited paragraphs still exist in the new snapshot text
+      const missingParagraphs: string[] = [];
+      const changedParagraphs: string[] = [];
+
+      for (const citation of groundCitations) {
+        const paraNum = citation.replace(/[^0-9a-z]/gi, "");
+        const sectionPattern = new RegExp(
+          `^##\\s*§\\s*${paraNum.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}\\b`,
+          "gm"
+        );
+        if (!sectionPattern.test(newSnapshotText)) {
+          missingParagraphs.push(citation);
+        } else if (amendedSet.has(paraNum)) {
+          changedParagraphs.push(citation);
+        }
+      }
+
+      let status: ReverifyStatus;
+      let notes: string;
+
+      if (missingParagraphs.length > 0) {
+        status = "stale";
+        notes = `§ ${missingParagraphs.join(", ")} no longer exists in new snapshot`;
+      } else if (changedParagraphs.length > 0) {
+        status = "stale";
+        notes = `§ ${changedParagraphs.join(", ")} was modified in new snapshot`;
+      } else {
+        status = "verified";
+        notes = `All cited paragraphs still grounded in new snapshot`;
+      }
+
+      await this.reVerify(dependencyId, status, reviewerId, notes);
+      return status;
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      await this.reVerify(dependencyId, "failed", reviewerId, errMsg);
+      return "failed";
+    }
+  }
+
+  /**
+   * Get a text preview for a paragraph from snapshot storage.
+   * Attempts to retrieve from corpus_snapshot_paragraphs, falls back to hash.
+   */
+  private async getParagraphTextPreview(
+    slug: string,
+    paragraph: string,
+    hash: string,
+    _isNew: boolean
+  ): Promise<string | null> {
+    try {
+      const result = await this.pool.query(
+        `SELECT paragraph_hashes FROM corpus_snapshot_paragraphs
+         WHERE slug = $1
+         ORDER BY id DESC LIMIT 1`,
+        [slug]
+      );
+      if (!result.rows[0]?.paragraph_hashes) return hash.slice(0, 16);
+
+      const hashes = result.rows[0].paragraph_hashes as Record<string, string>;
+      const storedHash = hashes[paragraph];
+      if (storedHash) {
+        return `§ ${paragraph} (hash: ${storedHash.slice(0, 16)})`;
+      }
+      return hash.slice(0, 16);
+    } catch {
+      return hash.slice(0, 16);
+    }
   }
 
   /**

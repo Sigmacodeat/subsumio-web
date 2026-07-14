@@ -141,7 +141,8 @@ export class SnapshotStore {
             receipt.jurisdiction,
             paragraphHashes,
             oldParagraphHashes,
-            receipt.source_url
+            receipt.source_url,
+            receipt.announcement_date
           )
         );
 
@@ -402,7 +403,8 @@ export class SnapshotStore {
     jurisdiction: Jurisdiction,
     newHashes: Record<string, string>,
     oldHashes: Record<string, string>,
-    sourceUrl: string
+    sourceUrl: string,
+    announcementDate?: string
   ): CorpusAmendment[] {
     const amendments: CorpusAmendment[] = [];
     const now = new Date().toISOString();
@@ -419,6 +421,7 @@ export class SnapshotStore {
           new_hash: hash,
           detected_at: now,
           source_url: sourceUrl,
+          announcement_date: announcementDate,
         });
       } else if (oldHash !== hash) {
         amendments.push({
@@ -431,6 +434,7 @@ export class SnapshotStore {
           new_hash: hash,
           detected_at: now,
           source_url: sourceUrl,
+          announcement_date: announcementDate,
         });
       }
     }
@@ -446,6 +450,7 @@ export class SnapshotStore {
           old_hash: hash,
           detected_at: now,
           source_url: sourceUrl,
+          announcement_date: announcementDate,
         });
       }
     }
