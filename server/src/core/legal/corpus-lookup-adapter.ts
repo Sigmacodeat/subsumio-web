@@ -14,7 +14,18 @@
 import path from "node:path";
 import { promises as fs, statSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { CORPUS_META } from "@/lib/legal-grounding";
+// CORPUS_META is defined in the frontend src/lib/corpus-meta.ts and re-exported
+// from src/lib/legal-grounding.ts. The engine Docker container does not include
+// the frontend src/ directory, so we use a dynamic import with a fallback to an
+// empty map. In production, metaMap is typically passed explicitly to the
+// constructor.
+let CORPUS_META: Record<string, { jurisdiction: string; label: string; file: string }> = {};
+try {
+  // @ts-ignore — optional dependency, may not exist in engine-only container
+  CORPUS_META = (await import("@/lib/legal-grounding")).CORPUS_META;
+} catch {
+  // Engine-only container: CORPUS_META not available, use empty map
+}
 
 // ── Types ─────────────────────────────────────────────────────────────
 
