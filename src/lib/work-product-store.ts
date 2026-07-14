@@ -228,13 +228,17 @@ export async function transitionWorkProductStatus(
     params.push(now);
   }
 
+  const expectedStatusIdx = paramIdx++;
+  params.push(current.status);
+  const brainIdIdx = paramIdx++;
   params.push(brainId);
 
-  await p.query(
+  const result = await p.query(
     `UPDATE subsumio_work_products SET ${updates.join(", ")}
-     WHERE id = $1 AND brain_id = $${paramIdx}`,
+     WHERE id = $1 AND status = $${expectedStatusIdx} AND brain_id = $${brainIdIdx}`,
     params
   );
+  if ((result.rowCount ?? 0) !== 1) return null;
 
   return getWorkProduct(id, brainId);
 }
@@ -251,15 +255,31 @@ export async function updateWorkProductContent(
   const p = pool();
   if (!p) return null;
 
+  // Fetch existing to check status — block edits on approved/published
+  const existing = await getWorkProduct(id, brainId);
+  if (!existing) return null;
+  if (existing.status === "approved" || existing.status === "published") {
+    throw new Error(
+      `Cannot edit content of ${existing.status} work product. Revert to draft first.`
+    );
+  }
+
   const now = new Date().toISOString();
   const contentHash = hashContent(content);
 
-  await p.query(
+  // Every content mutation invalidates all evidence tied to the previous hash.
+  // A fresh receipt and a graph for this exact output must be attached again.
+  const result = await p.query(
     `UPDATE subsumio_work_products
-     SET content = $3, content_hash = $4, updated_at = $5
-     WHERE id = $1 AND brain_id = $2`,
-    [id, brainId, content, contentHash, now]
+     SET content = $3, content_hash = $4, updated_at = $5,
+         receipt_id = NULL, claim_evidence_slug = NULL,
+         approved_at = NULL, approved_by = NULL, published_at = NULL,
+         rejected_at = NULL, rejected_by = NULL, rejection_reason = NULL,
+         submitted_at = NULL, status = 'draft'
+     WHERE id = $1 AND brain_id = $2 AND status = $6`,
+    [id, brainId, content, contentHash, now, existing.status]
   );
+  if ((result.rowCount ?? 0) !== 1) return null;
 
   return getWorkProduct(id, brainId);
 }

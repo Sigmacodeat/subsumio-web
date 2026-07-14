@@ -9,25 +9,37 @@ import { z } from "zod";
 import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { listWorkProducts, createAndStoreWorkProduct } from "@/lib/work-product-store";
 
+const productTypeSchema = z.enum([
+  "memo",
+  "draft",
+  "fristenreport",
+  "vertragsreview",
+  "redline",
+  "schriftsatz",
+]);
+
+const listSchema = z.object({
+  case_slug: z.string().min(1).optional(),
+  status: z.enum(["draft", "in_review", "approved", "rejected", "published"]).optional(),
+  product_type: productTypeSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});
+
 export const GET = createHandler(
   {
     action: "legal.memo",
     rateTier: "standard",
+    query: listSchema,
   },
-  async (ctx, _body, req) => {
-    const url = new URL(req.url);
-    const caseSlug = url.searchParams.get("case_slug") ?? undefined;
-    const status = url.searchParams.get("status") ?? undefined;
-    const productType = url.searchParams.get("product_type") ?? undefined;
-    const limit = url.searchParams.get("limit")
-      ? parseInt(url.searchParams.get("limit")!, 10)
-      : undefined;
-
+  async (ctx, _body, query) => {
+    const caseSlug = query.case_slug ?? undefined;
+    const status = query.status ?? undefined;
+    const productType = query.product_type ?? undefined;
     const products = await listWorkProducts(ctx.brainId, {
       caseSlug,
-      status: status as never,
+      status,
       productType,
-      limit,
+      limit: query.limit,
     });
 
     return apiSuccess(products);
@@ -35,14 +47,7 @@ export const GET = createHandler(
 );
 
 const createSchema = z.object({
-  product_type: z.enum([
-    "memo",
-    "draft",
-    "fristenreport",
-    "vertragsreview",
-    "redline",
-    "schriftsatz",
-  ]),
+  product_type: productTypeSchema,
   case_slug: z.string().min(1),
   title: z.string().min(1),
   content: z.string().optional(),
@@ -62,7 +67,7 @@ export const POST = createHandler(
       details: { type: body.product_type, case_slug: body.case_slug, title: body.title },
     }),
   },
-  async (ctx, body, _req) => {
+  async (ctx, body) => {
     const wp = await createAndStoreWorkProduct({
       product_type: body.product_type,
       case_slug: body.case_slug,

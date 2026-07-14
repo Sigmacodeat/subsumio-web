@@ -21,7 +21,7 @@ export const GET = createHandler(
     action: "legal.memo",
     rateTier: "standard",
   },
-  async (ctx, _body, req) => {
+  async (ctx, _body, _query, req) => {
     const id = new URL(req.url).pathname.split("/").pop()!;
     const wp = await getWorkProduct(id, ctx.brainId);
     if (!wp) return apiError("not_found", "Work product not found", 404);
@@ -47,13 +47,23 @@ export const PATCH = createHandler(
       details: { updated: true },
     }),
   },
-  async (ctx, body, req) => {
+  async (ctx, body, _query, req) => {
     const id = new URL(req.url).pathname.split("/").pop()!;
     const existing = await getWorkProduct(id, ctx.brainId);
     if (!existing) return apiError("not_found", "Work product not found", 404);
 
     if (body.content !== undefined) {
-      await updateWorkProductContent(id, ctx.brainId, body.content);
+      if (existing.status === "approved" || existing.status === "published") {
+        return apiError(
+          "content_locked",
+          "Revert an approved or published work product to draft before editing",
+          409
+        );
+      }
+      const contentUpdated = await updateWorkProductContent(id, ctx.brainId, body.content);
+      if (!contentUpdated) {
+        return apiError("update_conflict", "Work product changed concurrently", 409);
+      }
     }
     if (body.receipt_id !== undefined) {
       await attachReceiptToWorkProduct(id, ctx.brainId, body.receipt_id);

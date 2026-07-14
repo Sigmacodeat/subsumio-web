@@ -1,6 +1,6 @@
 /**
  * Memo Generate API — Full product path:
- *   Generate → Create WorkProduct → Link Claim-Evidence → Submit for Review
+ *   Generate → Create WorkProduct → Submit for Review
  *
  * POST /api/work-products/memo/generate
  */
@@ -11,7 +11,6 @@ import { ENGINE_URL } from "@/lib/engine";
 import {
   createAndStoreWorkProduct,
   transitionWorkProductStatus,
-  attachClaimEvidenceToWorkProduct,
   attachReceiptToWorkProduct,
 } from "@/lib/work-product-store";
 import { createAndStoreReceipt } from "@/lib/work-product-receipt-store";
@@ -44,7 +43,7 @@ export const POST = createHandler(
       },
     }),
   },
-  async (ctx, body, _req) => {
+  async (ctx, body) => {
     // 1. Generate memo content via engine
     const engineRes = await fetch(`${ENGINE_URL}/api/legal/memo`, {
       method: "POST",
@@ -70,6 +69,7 @@ export const POST = createHandler(
     }
 
     const engineData = (await engineRes.json()) as {
+      memo_markdown?: string;
       text?: string;
       content?: string;
       answer?: string;
@@ -77,7 +77,8 @@ export const POST = createHandler(
       _grounding?: unknown;
     };
 
-    const memoContent = engineData.text ?? engineData.content ?? engineData.answer ?? "";
+    const memoContent =
+      engineData.memo_markdown ?? engineData.text ?? engineData.content ?? engineData.answer ?? "";
     if (!memoContent) {
       return apiError("empty_output", "Memo generation returned empty content", 502);
     }
@@ -92,19 +93,17 @@ export const POST = createHandler(
       brain_id: ctx.brainId,
       user_id: ctx.user.id,
       jurisdiction: body.jurisdiction,
-      claim_evidence_slug: `claim-evidence/${body.case_slug}`,
       metadata: {
         depth: body.depth,
         legal_area: body.legal_area,
         language: body.language,
         engine_receipt: engineData.receipt ?? null,
+        verification_status: "claim_evidence_required",
       },
     });
 
-    // 3. Link claim-evidence graph
-    await attachClaimEvidenceToWorkProduct(wp.id, ctx.brainId, `claim-evidence/${body.case_slug}`);
-
-    // 4. Build and persist receipt if engine returned one
+    // 3. Build and persist receipt if engine returned one. Do not attach the
+    // case-level graph: it does not prove claims in this newly generated memo.
     if (engineData.receipt) {
       try {
         const receipt = await createAndStoreReceipt({
@@ -129,7 +128,8 @@ export const POST = createHandler(
       }
     }
 
-    // 5. Auto-submit for review
+    // 4. Auto-submit for review. Approval remains blocked until a graph whose
+    // output_id equals this work-product id and a matching receipt exist.
     const submitted = await transitionWorkProductStatus(wp.id, ctx.brainId, "in_review");
 
     return apiSuccess(submitted, undefined, 201);
