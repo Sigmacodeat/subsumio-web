@@ -113,36 +113,8 @@ function loadCorpusIndex(): Map<string, CorpusEntry> {
 // ── Filter: only real Gesetze, no Verordnungen ─────────────────────────
 
 function isRelevantLaw(law: RisLaw): boolean {
-  const title = law.kurztitel.toLowerCase();
-
-  // ── Exclude COVID-specific temporary laws ──
-  if (title.includes("covid")) return false;
-
-  // ── Exclude Nachträge (supplements) ──
-  if (title.includes("nachtrag")) return false;
-
-  // ── Exclude numbered one-off laws (e.g. "1. ...", "2. ...", "10. ...") ──
-  if (/^\d+\.\s/.test(title)) return false;
-
-  // ── Exclude clearly niche/one-off topics ──
-  const nicheKeywords = [
-    "section control", "messstrecke", "fahrverbots-aufhebung",
-    "partnership for peace", "visaerteilung", "bazillenausscheider",
-    "bundesgoldmünze", "goldmünze", "formblatt", "arzneibuch",
-    "geschäftsverteilung", "wohnrechtsänderung", "verstaatlichung",
-    "wiederauffüllung", "zusatzabkommen", "hochwasserschutz",
-    "kunst- und kulturgutbereinigung", "öbb-ü", "schulenversuch",
-    "budgetüberschreitung", "budgetbegleit", "budget",
-    "staatsvertragsdurchführung", "rückstellungsanspruch",
-    "bundesrechenamt", "auflassung",
-  ];
-  for (const kw of nicheKeywords) {
-    if (title.includes(kw)) return false;
-  }
-
-  // ── Exclude very short titles (likely not real laws) ──
-  if (law.kurztitel.trim().length < 10) return false;
-
+  // Keep ALL laws — only exclude empty or trivially broken entries
+  if (!law.kurztitel || law.kurztitel.trim().length < 3) return false;
   return true;
 }
 

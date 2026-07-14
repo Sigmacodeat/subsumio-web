@@ -43,6 +43,13 @@ export interface ThinkSystemPromptOpts {
    */
   legalMode?: boolean;
   /**
+   * TAXUMIO — when true (or auto-detected from gathered page types), the
+   * system prompt gains tax-specific instructions: tax law citations with
+   * version dates, jurisdiction awareness for DE/AT/CH/EU tax law, §203 StGB
+   * AVV compliance disclaimers, and tax advisor review disclaimers.
+   */
+  taxMode?: boolean;
+  /**
    * T1.4 — jurisdiction code for legal mode. When provided, injects
    * jurisdiction-specific collision warnings (e.g. KSchG AT vs DE),
    * allowed/forbidden statute lists, and labor law separation.
@@ -289,6 +296,100 @@ export function buildThinkSystemPrompt(opts: ThinkSystemPromptOpts = {}): string
       );
     }
   }
+
+  // ── TAXUMIO: Tax Mode ──
+  if (opts.taxMode) {
+    lines.push(`\nTAX MODE ACTIVE — Additional rules for tax synthesis:`);
+    lines.push(
+      `- Cite tax statutes with version date when known: "§ 4 Abs. 5 EStG (Fassung vom 2025-01-01)". If the version date is unknown, note: "Fassungsdatum nicht verifiziert".`
+    );
+    lines.push(
+      `- When citing tax case law, include court and date: "BFH, Urteil vom 2024-03-15, Az. VI R 12/21".`
+    );
+    lines.push(
+      `- Flag jurisdiction-specific tax rules: "Hinweis: Dies gilt im deutschen Steuerrecht; in Österreich vgl. § 6 Z 6 EStG."`
+    );
+    lines.push(
+      `- Mark every tax conclusion as assistive: "Diese Einschätzung ersetzt keine steuerberatende Prüfung."`
+    );
+    lines.push(
+      `- If a tax statute citation's currency cannot be verified, note it explicitly in the Gaps section.`
+    );
+    lines.push(
+      `- Never provide definitive tax advice. You are a research tool, not a Steuerberater.`
+    );
+    lines.push(
+      `- VERWENDE NUR Paragraphen und Steuergesetze, die wörtlich in den bereitgestellten Rechtsquellen vorkommen. ERFINDE KEINE Referenzen.`
+    );
+    lines.push(
+      `- LEITE KEINE steuerlichen Definitionen oder Rechtsbegriffe ab oder her. Wenn eine Definition nicht wörtlich in den Quellen steht, sage dies explizit.`
+    );
+    lines.push(
+      `- SUCHE in ALLEN bereitgestellten Rechtsquellen nach der relevanten steuerlichen Definition oder Regelung. Prüfe jeden Abschnitt sorgfältig.`
+    );
+    lines.push(
+      `- Wenn ein Begriff in den Quellen definiert wird, zitiere DIESE Definition wörtlich.`
+    );
+    lines.push(
+      `- Wenn du eine Information nicht in den Quellen findest, sage: "Diese Information ist in den bereitgestellten Rechtsquellen nicht enthalten."`
+    );
+
+    // Tax-specific collision warnings and jurisdiction rules
+    const taxJur = opts.jurisdiction?.trim().toUpperCase();
+    if (taxJur && (taxJur === "DE" || taxJur === "AT" || taxJur === "CH" || taxJur === "EU")) {
+      lines.push("");
+      lines.push(`## STEUER-JURISDIKTION: ${taxJur}`);
+      lines.push(
+        `- Du antwortest NUR nach ${taxJur === "DE" ? "deutschem" : taxJur === "AT" ? "österreichischem" : taxJur === "CH" ? "schweizerischem" : "EU-"} Steuerrecht.`
+      );
+      lines.push(
+        `- Zitiere KEINE Steuergesetze aus anderen Jurisdiktionen ohne expliziten Cross-Border-Bezug.`
+      );
+      lines.push(
+        `- EU-Richtlinien (MwSt-SystemRichtlinie, DAC6) sind in allen DACH-Jurisdiktionen zulässig.`
+      );
+
+      // Tax-specific collision warnings
+      const taxCollisions: Record<string, string[]> = {
+        DE: [
+          "EStG = Einkommensteuergesetz (Deutschland) — NICHT: AT: Einkommensteuergesetz (Österreich); CH: DBG (nicht EStG)",
+          "UStG = Umsatzsteuergesetz (Deutschland) — NICHT: AT: Umsatzsteuergesetz (Österreich); CH: MWSTG (nicht UStG)",
+          "KStG = Körperschaftsteuergesetz (Deutschland) — NICHT: AT: Körperschaftsteuergesetz (Österreich)",
+          "AO = Abgabenordnung (Deutschland) — NICHT: AT: BAO (Bundesabgabenordnung); CH: StHG (nicht AO)",
+          "GewStG = Gewerbesteuergesetz (DE) — NICHT: AT: keine Gewerbesteuer; CH: keine Gewerbesteuer",
+          "ErbStG = Erbschaftsteuer- und Schenkungsteuergesetz (DE) — NICHT: AT: Gebührengesetz; CH: Erbschaftssteuer kantonal",
+        ],
+        AT: [
+          "EStG = Einkommensteuergesetz (Österreich) — NICHT: DE: Einkommensteuergesetz (Deutschland); CH: DBG (nicht EStG)",
+          "UStG = Umsatzsteuergesetz (Österreich) — NICHT: DE: Umsatzsteuergesetz (Deutschland); CH: MWSTG (nicht UStG)",
+          "BAO = Bundesabgabenordnung (AT) — NICHT: DE: AO (Abgabenordnung); CH: StHG (nicht BAO)",
+          "KStG = Körperschaftsteuergesetz (Österreich) — NICHT: DE: Körperschaftsteuergesetz (Deutschland)",
+          "AT hat keine Gewerbesteuer — NICHT DE: GewStG anwenden",
+        ],
+        CH: [
+          "DBG = Bundesgesetz über die direkte Bundessteuer (CH) — NICHT: DE: EStG; AT: EStG",
+          "MWSTG = Mehrwertsteuergesetz (CH) — NICHT: DE: UStG; AT: UStG",
+          "StHG = Steuerharmonisierungsgesetz (CH) — NICHT: DE: AO; AT: BAO",
+          "CH hat keine Gewerbesteuer — NICHT DE: GewStG anwenden",
+          "CH Erbschaftssteuer: kantonal geregelt — NICHT: DE: ErbStG; AT: Gebührengesetz",
+        ],
+        EU: [
+          "MwSt-SystemRichtlinie = Richtlinie 2006/112/EG — gilt in allen EU-Mitgliedstaaten",
+          "DAC6 = Richtlinie (EU) 2018/822 — meldepflichtige Steuergestaltungen",
+          "UZK = Unionszollkodex (Verordnung (EU) 952/2013) — gilt in allen EU-Mitgliedstaaten",
+        ],
+      };
+      const collisions = taxCollisions[taxJur];
+      if (collisions && collisions.length > 0) {
+        lines.push("");
+        lines.push("## STEUER-ABKÜRZUNGSKOLLISIONEN — VORSICHT:");
+        for (const w of collisions) {
+          lines.push(`- ${w}`);
+        }
+      }
+    }
+  }
+
   return lines.join("\n");
 }
 

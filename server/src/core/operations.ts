@@ -2452,6 +2452,11 @@ const think: Operation = {
       description:
         "Activate legal-aware synthesis prompt (statute citations with version dates, jurisdiction awareness, attorney review disclaimers). Auto-detected when gathered pages contain legal page types.",
     },
+    tax_mode: {
+      type: "boolean",
+      description:
+        "Activate tax-aware synthesis prompt (tax statute citations, tax jurisdiction awareness DE/AT/CH/EU, Steuerberater review disclaimers). Auto-detected when gathered pages contain tax law page types.",
+    },
   },
   mutating: true,
   handler: async (ctx, p) => {
@@ -2485,6 +2490,7 @@ const think: Operation = {
       ...(scope.sourceIds !== undefined ? { allowedSources: scope.sourceIds } : {}),
       remote: ctx.remote === true,
       ...(p.legal_mode !== undefined ? { legalMode: Boolean(p.legal_mode) } : {}),
+      ...(p.tax_mode !== undefined ? { taxMode: Boolean(p.tax_mode) } : {}),
       // Subsumio R3: Thread document-level ACL groups
       ...(ctx.aclGroups ? { aclGroups: ctx.aclGroups } : {}),
     });

@@ -347,6 +347,7 @@ export interface GroundedCitation {
   verified: boolean;
   source_text?: string;
   source_file?: string;
+  unverifiable_reason?: string;
 }
 
 export interface ObligationExtractionResult {

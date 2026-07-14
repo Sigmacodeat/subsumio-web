@@ -102,6 +102,18 @@ const DE_LAWS: DeLaw[] = [
   { slug: "urhg", abbr: "UrhG", title: "Gesetz über Urheberrecht und verwandte Schutzrechte" },
   { slug: "kstg_1977", abbr: "KStG", title: "Körperschaftsteuergesetz" },
   { slug: "gewo", abbr: "GewO", title: "Gewerbeordnung" },
+  // ── Tax-specific laws for TAXUMIO ──
+  { slug: "gewstg", abbr: "GewStG", title: "Gewerbesteuergesetz" },
+  { slug: "erbstg_1974", abbr: "ErbStG", title: "Erbschaftsteuer- und Schenkungsteuergesetz" },
+  { slug: "bewg", abbr: "BewG", title: "Bewertungsgesetz" },
+  { slug: "stbgebv", abbr: "StBVV", title: "Steuerberatervergütungsverordnung" },
+  { slug: "stberg", abbr: "StBerG", title: "Steuerberatungsgesetz" },
+  { slug: "lstdv", abbr: "LStDV", title: "Lohnsteuer-Durchführungsverordnung" },
+  { slug: "grestg_1983", abbr: "GrEStG", title: "Grunderwerbsteuergesetz" },
+  { slug: "ustdv_1980", abbr: "UStDV", title: "Umsatzsteuer-Durchführungsverordnung" },
+  { slug: "estdv_1955", abbr: "EStDV", title: "Einkommensteuer-Durchführungsverordnung" },
+  { slug: "solzg_1995", abbr: "SolZG", title: "Solidaritätszuschlaggesetz" },
+  { slug: "astg", abbr: "AStG", title: "Außensteuergesetz" },
 ];
 
 const AT_LAWS: AtLaw[] = [

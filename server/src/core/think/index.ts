@@ -208,6 +208,14 @@ export interface RunThinkOpts {
    */
   legalMode?: boolean;
   /**
+   * TAXUMIO — when true, activates tax-aware system prompt with tax statute
+   * citation discipline, tax jurisdiction awareness (DE/AT/CH/EU), and
+   * Steuerberater review disclaimers. Auto-detected when gathered pages
+   * contain tax law page types (slug starting with 'law/de/' + tax law slug,
+   * 'law/ch/' + tax law slug, 'law/eu/' + tax law slug).
+   */
+  taxMode?: boolean;
+  /**
    * Attorney's jurisdiction ("AT", "DE", "CH", "EU"). Propagated to
    * cross-verify (jurisdiction mismatch detection) and the legal prompt.
    * When absent, cross-verify falls back to "unbekannt" (less precise).
@@ -701,6 +709,21 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     );
   });
   const legalMode = opts.legalMode || autoLegalMode;
+  // TAXUMIO: Auto-detect tax mode from gathered page slugs. Tax law pages
+  // have slugs starting with 'law/de/' + tax law slug (estg, ustg, kstg, etc.),
+  // 'law/ch/' + tax law slug (dbg, mwstg, sthg, zg), or 'law/eu/' + tax law slug.
+  const TAX_SLUG_PREFIXES = [
+    "law/de/estg", "law/de/ustg", "law/de/kstg", "law/de/gewstg", "law/de/erbstg",
+    "law/de/bewg", "law/de/grestg", "law/de/lstdv", "law/de/stbvv", "law/de/stberg",
+    "law/de/solzg", "law/de/astg", "law/de/estdv", "law/de/ustdv", "law/de/ao",
+    "law/ch/dbg", "law/ch/mwstg", "law/ch/sthg", "law/ch/zg",
+    "law/eu/mwst-systemrichtlinie", "law/eu/dac6", "law/eu/uzk",
+  ];
+  const autoTaxMode = gather.pages.some((p) => {
+    const pageSlug = String((p as unknown as { slug?: string }).slug ?? "");
+    return TAX_SLUG_PREFIXES.some((prefix) => pageSlug.startsWith(prefix));
+  });
+  const taxMode = opts.taxMode || autoTaxMode;
   const systemPrompt = buildThinkSystemPrompt({
     intent,
     ...(opts.anchor !== undefined ? { anchor: opts.anchor } : {}),
@@ -710,6 +733,8 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     withCalibration: !!calibrationBlockOpts,
     ...(legalMode ? { legalMode: true } : {}),
     ...(legalMode && opts.jurisdiction ? { jurisdiction: opts.jurisdiction } : {}),
+    ...(taxMode ? { taxMode: true } : {}),
+    ...(taxMode && opts.jurisdiction ? { jurisdiction: opts.jurisdiction } : {}),
   }) + (adversarialScan.flags.length > 0 ? ANTI_INJECTION_PROMPT : "");
   const userMessage = buildThinkUserMessage({
     question: opts.question,

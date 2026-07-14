@@ -108,6 +108,17 @@ const COMPLEX_RX = new RegExp(
     "\\bBerufung\\b",
     "\\bRevision\\b",
     "\\bBeschwerde\\b",
+    // Tax-specific complex signals
+    "\\bDoppelbesteuer\\w*\\b",
+    "\\bverdeckte\\s+Gewinnausschütt\\w*\\b",
+    "\\bVorsteuerabzug\\b",
+    "\\bReverse\\s+Charge\\b",
+    "\\binnergemeinschaftlich\\w*\\b",
+    "\\bSteuerklasse\\b",
+    "\\bSplittingtarif\\b",
+    "\\bGewerbeertrag\\b",
+    "\\bEigenmietwert\\b",
+    "\\bKapitalgewinn\\w*\\b",
   ].join("|"),
   "i"
 );
@@ -118,7 +129,7 @@ const MODERATE_RX = new RegExp(
     "§\\s*\\d+",
     "\\b(?:Absatz|Abs)\\.?\\s*\\d+",
     "\\b(?:Satz|S)\\.?\\s*\\d+",
-    "\\b(?:BGB|ABGB|StGB|HGB|ZPO|AO|OR|ZGB|UWG|GmbHG|StPO|DSG)\\b",
+    "\\b(?:BGB|ABGB|StGB|HGB|ZPO|AO|OR|ZGB|UWG|GmbHG|StPO|DSG|EStG|UStG|KStG|GewStG|ErbStG|BewG|GrEStG|SolZG|AStG|LStDV|DBG|MWSTG|StHG)\\b",
     "\\bFrist\\b",
     "\\bVerjaehrung\\b",
     "\\bVerjährung\\b",

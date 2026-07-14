@@ -468,6 +468,26 @@ const STATUTE_AREA_MAP: { keywords: string[]; slugPrefix: string }[] = [
   { keywords: ["ermittlungsverfahren", "staatsanwaltschaft", "festnahme", "untersuchungshaft", "beschuldigter"], slugPrefix: "law/de/stpo" },
   { keywords: ["verwaltungsgericht", "verwaltungsrecht", "rechtsschutz", "anfechtungsklage"], slugPrefix: "law/de/vwgo" },
   { keywords: ["grundgesetz", "verfassung", "grundrecht"], slugPrefix: "law/de/gg" },
+  // ── DE tax law entries ──
+  { keywords: ["einkommensteuer", "einkommen", "einkünfte", "gewinn", "verlust", "abschreibung", "betriebsausgaben", "werbungskosten", "sonderausgaben", "außergewöhnliche belastung", "kindergeld", "freibetrag", "steuerklasse", "splittingtarif"], slugPrefix: "law/de/estg" },
+  { keywords: ["umsatzsteuer", "vorsteuer", "steuerbarer umsatz", "steuerbefreiung", "kleinunternehmer", "reverse charge", "innergemeinschaftliche lieferung", "ustg"], slugPrefix: "law/de/ustg" },
+  { keywords: ["körperschaftsteuer", "körperschaft", "kstg", "ausschüttung", "betriebsausgaben", "verdeckte gewinnausschüttung"], slugPrefix: "law/de/kstg" },
+  { keywords: ["gewerbesteuer", "gewerbeertrag", "gewstg", "hebesatz", "freibetrag gewerbe"], slugPrefix: "law/de/gewstg" },
+  { keywords: ["erbschaftsteuer", "schenkungsteuer", "erbstg", "freibetrag erbschaft", "steuerklasse erbschaft"], slugPrefix: "law/de/erbstg" },
+  { keywords: ["bewertung", "bewg", "gemeiner wert", "bedarfswert", "grundstückswert", "bewertungseinheit"], slugPrefix: "law/de/bewg" },
+  { keywords: ["grunderwerbsteuer", "grestg", "grundstückskauf", "grundstücksübertragung", "antilsübertragung"], slugPrefix: "law/de/grestg" },
+  { keywords: ["lohnsteuer", "lstdv", "lohnsteuerabzug", "elstam", "lohnsteuerklasse", "freibetrag lohn"], slugPrefix: "law/de/lstdv" },
+  { keywords: ["steuerberatervergütung", "stbvv", "gebühren steuerberater", "gegenstandswert", "wertgebühr"], slugPrefix: "law/de/stbvv" },
+  { keywords: ["steuerberatungsgesetz", "stberg", "steuerberater", "berufsmäßige hilfeleistung", "hilfe in steuersachen"], slugPrefix: "law/de/stberg" },
+  { keywords: ["solidaritätszuschlag", "solzg", "solidarität"], slugPrefix: "law/de/solzg" },
+  { keywords: ["außensteuer", "astg", "auslandsgesellschaft", "verdeckte gewinnausschüttung ausland", "doppelbesteuerung"], slugPrefix: "law/de/astg" },
+  { keywords: ["einkommensteuer-durchführungsverordnung", "estdv", "durchführung einkommensteuer"], slugPrefix: "law/de/estdv" },
+  { keywords: ["umsatzsteuer-durchführungsverordnung", "ustdv", "durchführung umsatzsteuer"], slugPrefix: "law/de/ustdv" },
+  // ── CH tax law entries ──
+  { keywords: ["direkte bundessteuer", "dbg", "einkommenssteuer schweiz", "vermögenssteuer schweiz", "eigenmietwert", "steuerbar einkommen schweiz"], slugPrefix: "law/ch/dbg" },
+  { keywords: ["mehrwertsteuer schweiz", "mwstg", "mwst schweiz", "vorsteuer schweiz", "steuerpflicht schweiz", "normalsatz mwst", "reduzierter satz mwst"], slugPrefix: "law/ch/mwstg" },
+  { keywords: ["steuerharmonisierung", "sthg", "kantonale steuern", "gemeindesteuern", "harmonisierung direkte steuern"], slugPrefix: "law/ch/sthg" },
+  { keywords: ["zoll schweiz", "zollgesetz", "zg", "zolltarif", "zollfreibetrag", "zollanmeldung schweiz", "ezv"], slugPrefix: "law/ch/zg" },
 ];
 
 export function applyStatuteAreaBoost(
