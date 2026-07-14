@@ -21,16 +21,18 @@
  *      deliberately left unmapped — same principle as citation-graph.ts.
  *
  * Usage:
- *   bun run server/scripts/import-judikatur.ts [--source ogh|vfgh|vwgh|bvwg|lvwg|asylgh|uvs] [--dry-run] [--no-embed] [--limit N]
+ *   bun run server/scripts/import-judikatur.ts [--source ogh|vfgh|vwgh|bvwg|lvwg|asylgh|uvs] [--all-sources] [--dry-run] [--no-embed] [--limit N]
  */
 
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { extractAllNormReferences } from "../src/core/legal/judikatur-citations.ts";
+import { createProgress } from "../src/core/progress.ts";
 
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
 const NO_EMBED = args.includes("--no-embed");
+const ALL_SOURCES = args.includes("--all-sources");
 const limitIdx = args.indexOf("--limit");
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : Infinity;
 const sourceIdx = args.indexOf("--source");
@@ -53,14 +55,15 @@ const SOURCE_CONFIGS: Record<string, SourceConfig> = {
   uvs: { dir: "at-judikatur-uvs", sourceId: "law-at-judikatur-uvs", slugPrefix: "legal/judikatur/at/uvs", label: "Uvs" },
 };
 
-const srcCfg = SOURCE_CONFIGS[sourceKey];
-if (!srcCfg) {
-  console.error(`Unknown source: ${sourceKey}. Use ogh, vfgh, vwgh, bvwg, lvwg, asylgh, or uvs.`);
-  process.exit(1);
-}
+const sourcesToRun: string[] = ALL_SOURCES ? Object.keys(SOURCE_CONFIGS) : [sourceKey];
 
-const JUDIKATUR_DIR = join(import.meta.dir, "..", "law-corpus", srcCfg.dir);
-const SOURCE_ID = srcCfg.sourceId;
+if (!ALL_SOURCES) {
+  const srcCfg = SOURCE_CONFIGS[sourceKey];
+  if (!srcCfg) {
+    console.error(`Unknown source: ${sourceKey}. Use ogh, vfgh, vwgh, bvwg, lvwg, asylgh, or uvs.`);
+    process.exit(1);
+  }
+}
 
 /** RIS "Norm" abbreviation → our statute abbr (matches import-statutes-split.ts
  *  / import-citation-graph.ts's `at/<abbr>` file naming). Only codes we hold
@@ -145,6 +148,11 @@ const JUDIKATUR_CODE_MAP: Record<string, string> = {
   VKGG: "vkgg",
   VVG: "vvg",
   WaffG: "waffg",
+  // Synced with import-citation-graph.ts KNOWN_ABBRS_BASE
+  GlbG: "glbg",
+  StbG: "stbg",
+  UWG: "uwg",
+  VKgG: "vkgg",
 };
 
 interface ParsedDecision {
@@ -153,12 +161,13 @@ interface ParsedDecision {
   normRefs: Array<{ code: string; ref: string }>;
 }
 
-function loadDecisions(): ParsedDecision[] {
-  const files = readdirSync(JUDIKATUR_DIR)
+function loadDecisions(srcCfg: SourceConfig): ParsedDecision[] {
+  const dir = join(import.meta.dir, "..", "..", "law-corpus", srcCfg.dir);
+  const files = readdirSync(dir)
     .filter((f) => f.endsWith(".md"))
     .slice(0, LIMIT);
   return files.map((f) => {
-    const content = readFileSync(join(JUDIKATUR_DIR, f), "utf-8");
+    const content = readFileSync(join(dir, f), "utf-8");
     const slug = `${srcCfg.slugPrefix}/${f.replace(/\.md$/, "")}`;
     const normRefs = extractAllNormReferences(content);
     return { slug, content, normRefs };
@@ -166,25 +175,37 @@ function loadDecisions(): ParsedDecision[] {
 }
 
 async function main() {
-  const decisions = loadDecisions();
   console.log("═══════════════════════════════════════════════════════════");
-  console.log(`  Subsumio — Judikatur-Import (${srcCfg.label}-Entscheidungen)`);
+  console.log(`  Subsumio — Judikatur-Import (${sourcesToRun.length} Gericht${sourcesToRun.length > 1 ? "e" : ""})`);
   console.log("═══════════════════════════════════════════════════════════");
   console.log(
     `Mode: ${DRY ? "DRY-RUN (kein DB-Write)" : NO_EMBED ? "import, no-embed" : "import + embed"}`
   );
-  console.log(`Gefunden: ${decisions.length} Entscheidungen`);
+  console.log(`Quellen: ${sourcesToRun.join(", ")}`);
+  console.log("");
+
+  const allDecisions: Array<{ srcCfg: SourceConfig; decisions: ParsedDecision[] }> = [];
+  for (const key of sourcesToRun) {
+    const sc = SOURCE_CONFIGS[key];
+    const decisions = loadDecisions(sc);
+    allDecisions.push({ srcCfg: sc, decisions });
+    console.log(`  ${sc.label}: ${decisions.length} Entscheidungen`);
+  }
+  const totalDecisions = allDecisions.reduce((s, x) => s + x.decisions.length, 0);
+  console.log(`  Gesamt: ${totalDecisions} Entscheidungen`);
   console.log("");
 
   if (DRY) {
-    const totalNorms = decisions.reduce((s, d) => s + d.normRefs.length, 0);
-    const mappable = decisions.reduce(
-      (s, d) => s + d.normRefs.filter((r) => JUDIKATUR_CODE_MAP[r.code]).length,
-      0
-    );
+    let totalNorms = 0;
+    let mappable = 0;
+    for (const { decisions } of allDecisions) {
+      for (const d of decisions) {
+        totalNorms += d.normRefs.length;
+        mappable += d.normRefs.filter((r) => JUDIKATUR_CODE_MAP[r.code]).length;
+      }
+    }
     console.log(`  Norm-Referenzen gesamt: ${totalNorms}`);
     console.log(`  Davon auf bekannte Codes abbildbar: ${mappable}`);
-    console.log(`  Beispiel: ${decisions.find((d) => d.normRefs.length > 0)?.slug}`);
     return;
   }
 
@@ -208,10 +229,15 @@ async function main() {
     // Non-fatal: pre-v39 brains may not have a usable config table.
   }
 
-  await engine.executeRaw(
-    `INSERT INTO sources (id, name) VALUES ($1, $1) ON CONFLICT (id) DO NOTHING`,
-    [SOURCE_ID]
-  );
+  for (const { srcCfg } of allDecisions) {
+    await engine.executeRaw(
+      `INSERT INTO sources (id, name) VALUES ($1, $1) ON CONFLICT (id) DO NOTHING`,
+      [srcCfg.sourceId]
+    );
+  }
+
+  const progress = createProgress({ mode: "auto" });
+  progress.start("judikatur-import", totalDecisions);
 
   let pagesOk = 0;
   let pagesErr = 0;
@@ -219,72 +245,67 @@ async function main() {
   let totalLinks = 0;
   const BATCH_SIZE = 100;
 
-  for (let bi = 0; bi < decisions.length; bi += BATCH_SIZE) {
-    const batch = decisions.slice(bi, bi + BATCH_SIZE);
-    const batchLinks: Array<{
-      from_slug: string;
-      to_slug: string;
-      link_type: string;
-      context: string;
-      link_source: string;
-      from_source_id: string;
-      to_source_id: string;
-    }> = [];
+  for (const { srcCfg, decisions } of allDecisions) {
+    for (let bi = 0; bi < decisions.length; bi += BATCH_SIZE) {
+      const batch = decisions.slice(bi, bi + BATCH_SIZE);
+      const batchLinks: Array<{
+        from_slug: string;
+        to_slug: string;
+        link_type: string;
+        context: string;
+        link_source: string;
+        from_source_id: string;
+        to_source_id: string;
+      }> = [];
 
-    for (const d of batch) {
-      try {
-        const result = await importFromContent(engine, d.slug, d.content, {
-          noEmbed: NO_EMBED,
-          sourceId: SOURCE_ID,
-        });
-        if (result.status === "imported" || result.status === "skipped") pagesOk++;
-        else {
+      for (const d of batch) {
+        try {
+          const result = await importFromContent(engine, d.slug, d.content, {
+            noEmbed: NO_EMBED,
+            sourceId: srcCfg.sourceId,
+          });
+          if (result.status === "imported" || result.status === "skipped") pagesOk++;
+          else {
+            pagesErr++;
+            console.error(`  ❌ ${d.slug}: ${result.error || result.status}`);
+          }
+        } catch (e) {
           pagesErr++;
-          console.error(`  ❌ ${d.slug}: ${result.error || result.status}`);
+          console.error(`  ❌ ${d.slug}: ${e instanceof Error ? e.message : String(e)}`);
+          progress.tick(1, `err`);
+          continue;
         }
-      } catch (e) {
-        pagesErr++;
-        console.error(`  ❌ ${d.slug}: ${e instanceof Error ? e.message : String(e)}`);
-        continue;
+
+        for (const r of d.normRefs) {
+          const abbr = JUDIKATUR_CODE_MAP[r.code];
+          if (!abbr) continue;
+          batchLinks.push({
+            from_slug: d.slug,
+            to_slug: `legal/statutes/at/${abbr}/p-${r.ref}`,
+            link_type: "judikatur-cites",
+            context: `${r.code} § ${r.ref}`,
+            link_source: "citation-graph",
+            from_source_id: srcCfg.sourceId,
+            to_source_id: "law-at",
+          });
+        }
+        progress.tick(1, `${srcCfg.label} ${pagesOk}`);
       }
 
-      for (const r of d.normRefs) {
-        const abbr = JUDIKATUR_CODE_MAP[r.code];
-        if (!abbr) continue;
-        batchLinks.push({
-          from_slug: d.slug,
-          to_slug: `legal/statutes/at/${abbr}/p-${r.ref}`,
-          link_type: "judikatur-cites",
-          context: `${r.code} § ${r.ref}`,
-          link_source: "citation-graph",
-          from_source_id: SOURCE_ID,
-          to_source_id: "law-at",
+      if (batchLinks.length > 0) {
+        const written = await (engine as any).addLinksBatch(batchLinks, {
+          auditSite: "judikatur-import",
         });
+        linksWritten += written;
+        totalLinks += batchLinks.length;
       }
-    }
-
-    if (batchLinks.length > 0) {
-      const written = await (engine as any).addLinksBatch(batchLinks, {
-        auditSite: "judikatur-import",
-      });
-      linksWritten += written;
-      totalLinks += batchLinks.length;
-    }
-
-    const done = Math.min(bi + BATCH_SIZE, decisions.length);
-    if (done % 500 === 0 || done === decisions.length) {
-      console.log(`  ... ${done}/${decisions.length} (pages: ${pagesOk}, links: ${linksWritten}/${totalLinks})`);
     }
   }
-
-  console.log(`  Seiten: ${pagesOk} ok, ${pagesErr} Fehler`);
-  console.log(
-    `  Kanten: ${linksWritten}/${totalLinks} geschrieben (Rest: Ziel-§ existiert nicht / bereits vorhanden)`
-  );
+  progress.finish(`${pagesOk} pages, ${linksWritten} links`);
 
   console.log("");
   console.log("═══════════════════════════════════════════════════════════");
-  console.log(`  GESAMT: ${pagesOk} Entscheidungen, ${linksWritten} Zitier-Kanten`);
+  console.log(`  GESAMT: ${pagesOk} Entscheidungen, ${linksWritten} Zitier-Kanten (${totalLinks} versucht, ${pagesErr} Fehler)`);
   console.log("═══════════════════════════════════════════════════════════");
 
   await engine.disconnect();

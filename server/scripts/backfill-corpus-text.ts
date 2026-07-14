@@ -94,6 +94,11 @@ function extractCourtType(fm: string): string {
   return match ? match[1].trim() : "";
 }
 
+function extractCelex(fm: string): string {
+  const match = fm.match(/celex:\s*"?([^\n"]+)"?/);
+  return match ? match[1].trim() : "";
+}
+
 function isPlaceholder(body: string): boolean {
   return body.includes("Volltext nicht abrufbar") || body.trim().length < 50;
 }
@@ -158,12 +163,80 @@ async function backfillFile(filepath: string): Promise<"ok" | "skip" | "fail"> {
       }
     }
 
+    // Fallback: try EUR-Lex direct URL with CELEX number
+    if (text.length < 50) {
+      const celex = extractCelex(fm);
+      if (celex) {
+        const eurlexUrl = `https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX:${celex}`;
+        const eurlexRes = await fetchWithRetry(eurlexUrl, {
+          "Accept-Language": "de",
+        });
+        if (eurlexRes && eurlexRes.ok) {
+          const html = await eurlexRes.text();
+          // EUR-Lex pages have the text in #textTabContent or .tabContent
+          text = stripHtml(html);
+        }
+      }
+    }
+
     if (text.length < 50) return "fail";
   } else if (isRIS) {
-    // Fetch the RIS page directly
-    const res = await fetchWithRetry(sourceUrl);
-    if (!res || !res.ok) return "fail";
-    text = stripHtml(await res.text());
+    // RIS Dokument.wxe pages are often 503 — use OGD API instead
+    // Extract Abfrage and Dokumentnummer from source_url
+    const abfrageMatch = sourceUrl.match(/Abfrage=([^&]+)/);
+    const dokNrMatch = sourceUrl.match(/Dokumentnummer=([^&]+)/);
+    if (abfrageMatch && dokNrMatch) {
+      const abfrage = abfrageMatch[1];
+      const dokNr = dokNrMatch[1];
+      // Map RIS Abfrage to OGD endpoint
+      const ogdMap: Record<string, string> = {
+        Justiz: "justiz",
+        Vfgh: "vfgh",
+        Vwgh: "vwgh",
+        Bvwg: "bvwg",
+        Lvwg: "lvwg",
+        AsylGH: "asylgh",
+        Uvs: "uvs",
+        Bundesverfassung: "bundesverfassung",
+      };
+      const ogdEndpoint = ogdMap[abfrage] || abfrage.toLowerCase();
+      const ogdUrl = `https://data.bka.gv.at/ris/api/v2.6/judikatur/${ogdEndpoint}?Dokumentnummer=${dokNr}&PageSize=1`;
+
+      const ogdRes = await fetchWithRetry(ogdUrl);
+      if (ogdRes && ogdRes.ok) {
+        try {
+          const ogdData = await ogdRes.json() as any;
+          const docs = ogdData?.OgdSearchResult?.OgdDocumentResults?.OgdDocumentReference;
+          const docArr = Array.isArray(docs) ? docs : docs ? [docs] : [];
+          if (docArr.length > 0) {
+            const contentRef = docArr[0]?.Data?.Dokumentliste?.ContentReference;
+            const urls = contentRef?.Urls?.ContentUrl;
+            const urlArr = Array.isArray(urls) ? urls : urls ? [urls] : [];
+            // Find HTML URL
+            let htmlUrl = "";
+            for (const u of urlArr) {
+              if (u.DataType === "Html") { htmlUrl = String(u.Url); break; }
+            }
+            if (!htmlUrl && urlArr.length > 0) htmlUrl = String(urlArr[0].Url);
+
+            if (htmlUrl) {
+              const htmlRes = await fetchWithRetry(htmlUrl);
+              if (htmlRes && htmlRes.ok) {
+                text = stripHtml(await htmlRes.text());
+              }
+            }
+          }
+        } catch { /* OGD parse failed */ }
+      }
+    }
+
+    // Fallback: try the original source_url directly
+    if (text.length < 50) {
+      const res = await fetchWithRetry(sourceUrl);
+      if (res && res.ok) {
+        text = stripHtml(await res.text());
+      }
+    }
   } else {
     // Generic fetch
     const res = await fetchWithRetry(sourceUrl);
