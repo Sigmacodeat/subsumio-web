@@ -204,6 +204,54 @@ const DE: ConceptMapping[] = [
   { terms: ["gleichheit", "gleichheitsgrundsatz"], law: "GG", jurisdiction: "de", sections: [3] },
   { terms: ["verhältnismäßigkeit"], law: "GG", jurisdiction: "de", sections: [20] },
   { terms: ["bundesverfassungsgericht", "verfassungsgericht"], law: "GG", jurisdiction: "de", sections: [93, 94] },
+  // TAXUMIO — DE Tax Laws
+  // EStG
+  { terms: ["einkommensteuer", "einkommensteuerpflicht"], law: "EStG", jurisdiction: "de", sections: [1, 2] },
+  { terms: ["betriebsausgaben", "betriebsausgabe"], law: "EStG", jurisdiction: "de", sections: [4] },
+  { terms: ["werbungskosten", "werbungskostenpauschale"], law: "EStG", jurisdiction: "de", sections: [9] },
+  { terms: ["sonderausgaben", "sonderausgabe"], law: "EStG", jurisdiction: "de", sections: [10] },
+  { terms: ["außergewöhnliche belastung", "außergewöhnliche belastungen"], law: "EStG", jurisdiction: "de", sections: [33] },
+  { terms: ["steuertarif", "einkommensteuertarif", "splittingtarif"], law: "EStG", jurisdiction: "de", sections: ["32a"] },
+  { terms: ["steuerklasse", "steuerklassen"], law: "EStG", jurisdiction: "de", sections: ["38b"] },
+  { terms: ["kapitalerträge", "kapitalertragsteuer", "abgeltungsteuer"], law: "EStG", jurisdiction: "de", sections: [20, 43] },
+  { terms: ["verlustabzug", "verlustvortrag"], law: "EStG", jurisdiction: "de", sections: ["10d"] },
+  { terms: ["afa", "abschreibung", "absetzung für abnutzung"], law: "EStG", jurisdiction: "de", sections: [7] },
+  { terms: ["rückstellungen", "rückstellung"], law: "EStG", jurisdiction: "de", sections: [5] },
+  { terms: ["gewinnermittlung", "gewinn"], law: "EStG", jurisdiction: "de", sections: [4, 5] },
+  { terms: ["einkünfte", "einkunftsarten"], law: "EStG", jurisdiction: "de", sections: [2] },
+  { terms: ["abfindung", "abfindungsbesteuerung"], law: "EStG", jurisdiction: "de", sections: [3, 24] },
+  { terms: ["entschädigung", "entschädigungsbesteuerung"], law: "EStG", jurisdiction: "de", sections: [24] },
+  { terms: ["schmerzensgeld", "schmerzensersatz"], law: "EStG", jurisdiction: "de", sections: [25] },
+  // UStG
+  { terms: ["umsatzsteuer", "umsatzsteuerpflicht"], law: "UStG", jurisdiction: "de", sections: [1] },
+  { terms: ["vorsteuerabzug", "vorsteuer"], law: "UStG", jurisdiction: "de", sections: [15] },
+  { terms: ["steuerbefreiung", "steuerfrei"], law: "UStG", jurisdiction: "de", sections: [4] },
+  { terms: ["reverse charge", "übergang der steuerschuld"], law: "UStG", jurisdiction: "de", sections: ["13b"] },
+  { terms: ["innergemeinschaftliche lieferung", "igl"], law: "UStG", jurisdiction: "de", sections: [4, "6a"] },
+  { terms: ["umsatzsteuervoranmeldung", "voranmeldung"], law: "UStG", jurisdiction: "de", sections: [18] },
+  // KStG
+  { terms: ["körperschaftsteuer", "körperschaftsteuerpflicht"], law: "KStG", jurisdiction: "de", sections: [1] },
+  { terms: ["verdeckte gewinnausschüttung", "vga"], law: "KStG", jurisdiction: "de", sections: [8] },
+  // GewStG
+  { terms: ["gewerbesteuer", "gewerbeertrag"], law: "GewStG", jurisdiction: "de", sections: [2, 11] },
+  // ErbStG
+  { terms: ["erbschaftsteuer", "schenkungsteuer", "erbschaftssteuer"], law: "ErbStG", jurisdiction: "de", sections: [1, 2] },
+  { terms: ["freibetrag", "freibeträge erbschaftsteuer"], law: "ErbStG", jurisdiction: "de", sections: [16] },
+  // AO
+  { terms: ["abgabenordnung", "steuerfestsetzung"], law: "AO", jurisdiction: "de", sections: [1] },
+  { terms: ["einspruch", "einspruch gegen bescheid"], law: "AO", jurisdiction: "de", sections: [355] },
+  { terms: ["verjährung", "festsetzungsverjährung"], law: "AO", jurisdiction: "de", sections: [169] },
+  { terms: ["steuerhinterziehung"], law: "AO", jurisdiction: "de", sections: [370] },
+  { terms: ["selbstanzeige", "strafbefreiende selbstanzeige"], law: "AO", jurisdiction: "de", sections: [371] },
+  { terms: ["betriebsstätte", "betriebsstätten"], law: "AO", jurisdiction: "de", sections: [12] },
+  // AStG
+  { terms: ["außensteuergesetz", "doppelbesteuerung", "dba"], law: "AStG", jurisdiction: "de", sections: [1] },
+  // SolZG
+  { terms: ["solidaritätszuschlag", "solz"], law: "SolZG", jurisdiction: "de", sections: [1] },
+  // GrEStG
+  { terms: ["grunderwerbsteuer", "grunderwerb"], law: "GrEStG", jurisdiction: "de", sections: [1] },
+  // BewG
+  { terms: ["bewertung", "bewertungsgesetz"], law: "BewG", jurisdiction: "de", sections: [1] },
 ];
 
 const AT: ConceptMapping[] = [
@@ -371,9 +419,62 @@ const AT: ConceptMapping[] = [
   { terms: ["datenschutz", "datenverarbeitung"], law: "DSG", jurisdiction: "at", sections: [1, 2] },
   // AT VStG
   { terms: ["verwaltungsstrafe", "verwaltungsübertretung"], law: "VStG", jurisdiction: "at", sections: [1, 2] },
+  // TAXUMIO — AT Tax Laws
+  // EStG (AT)
+  { terms: ["einkommensteuer", "einkommensteuerpflicht"], law: "EStG", jurisdiction: "at", sections: [1, 2] },
+  { terms: ["betriebsausgaben", "betriebsausgabe"], law: "EStG", jurisdiction: "at", sections: [4] },
+  { terms: ["werbungskosten"], law: "EStG", jurisdiction: "at", sections: [16] },
+  { terms: ["sonderausgaben"], law: "EStG", jurisdiction: "at", sections: [18] },
+  { terms: ["außergewöhnliche belastung"], law: "EStG", jurisdiction: "at", sections: [34] },
+  { terms: ["steuertarif", "einkommensteuertarif"], law: "EStG", jurisdiction: "at", sections: [33] },
+  { terms: ["kapitalerträge", "kapitalertragsteuer"], law: "EStG", jurisdiction: "at", sections: [27] },
+  { terms: ["verlustabzug", "verlustvortrag"], law: "EStG", jurisdiction: "at", sections: [18] },
+  { terms: ["afa", "abschreibung"], law: "EStG", jurisdiction: "at", sections: [7, 8] },
+  { terms: ["abfindung"], law: "EStG", jurisdiction: "at", sections: [3] },
+  { terms: ["schmerzensgeld", "schmerzensersatz"], law: "EStG", jurisdiction: "at", sections: [25] },
+  // UStG (AT)
+  { terms: ["umsatzsteuer", "umsatzsteuerpflicht"], law: "UStG", jurisdiction: "at", sections: [1] },
+  { terms: ["vorsteuerabzug", "vorsteuer"], law: "UStG", jurisdiction: "at", sections: [12] },
+  { terms: ["steuerbefreiung", "steuerfrei"], law: "UStG", jurisdiction: "at", sections: [6] },
+  { terms: ["reverse charge", "übergang der steuerschuld"], law: "UStG", jurisdiction: "at", sections: [19] },
+  // KStG (AT)
+  { terms: ["körperschaftsteuer"], law: "KStG", jurisdiction: "at", sections: [1] },
+  { terms: ["verdeckte gewinnausschüttung", "vga"], law: "KStG", jurisdiction: "at", sections: [8] },
+  // BAO
+  { terms: ["abgabenordnung", "bundesabgabenordnung"], law: "BAO", jurisdiction: "at", sections: [1] },
+  { terms: ["berufung", "berufung gegen bescheid"], law: "BAO", jurisdiction: "at", sections: [245] },
+  { terms: ["verjährung", "festsetzungsverjährung"], law: "BAO", jurisdiction: "at", sections: [207] },
+  { terms: ["steuerhinterziehung", "abgabenhinterziehung"], law: "BAO", jurisdiction: "at", sections: [207] },
+  { terms: ["selbstanzeige", "strafbefreiende selbstanzeige"], law: "FinStrG", jurisdiction: "at", sections: [29] },
+  { terms: ["betriebsstätte", "betriebsstätten"], law: "BAO", jurisdiction: "at", sections: [27] },
 ];
 
-const ALL_CONCEPTS = [...DE, ...AT];
+// TAXUMIO — CH Tax Laws
+const CH_TAX: ConceptMapping[] = [
+  // DBG
+  { terms: ["direkte bundessteuer", "einkommensteuer schweiz"], law: "DBG", jurisdiction: "ch", sections: [1] },
+  { terms: ["steuerpflicht", "steuerpflichtig"], law: "DBG", jurisdiction: "ch", sections: [3] },
+  { terms: ["einkommen", "reines einkommen"], law: "DBG", jurisdiction: "ch", sections: [16] },
+  { terms: ["steuertarif", "steuertarif schweiz"], law: "DBG", jurisdiction: "ch", sections: [34] },
+  { terms: ["abzüge", "berufskosten"], law: "DBG", jurisdiction: "ch", sections: [26, 33] },
+  { terms: ["verlustabzug", "verlustvortrag"], law: "DBG", jurisdiction: "ch", sections: [20] },
+  { terms: ["kapitalgewinne", "kapitalgewinn"], law: "DBG", jurisdiction: "ch", sections: [16, 18] },
+  { terms: ["eigenmietwert", "eigenmiete"], law: "DBG", jurisdiction: "ch", sections: [21] },
+  { terms: ["veranlagung", "steuererklärung schweiz"], law: "DBG", jurisdiction: "ch", sections: [63] },
+  { terms: ["einspruch", "einspruch veranlagung"], law: "DBG", jurisdiction: "ch", sections: [108] },
+  { terms: ["verjährung", "veranlagungsverjährung"], law: "DBG", jurisdiction: "ch", sections: [121] },
+  // MWSTG
+  { terms: ["mehrwertsteuer", "mwst", "umsatzsteuer schweiz"], law: "MWSTG", jurisdiction: "ch", sections: [1] },
+  { terms: ["vorsteuerabzug", "vorsteuer"], law: "MWSTG", jurisdiction: "ch", sections: [38] },
+  { terms: ["steuerbefreiung", "steuerfrei"], law: "MWSTG", jurisdiction: "ch", sections: [21] },
+  { terms: ["steuersatz", "mwst-satz"], law: "MWSTG", jurisdiction: "ch", sections: [25] },
+  // StHG
+  { terms: ["steuerharmonisierung", "harmonisierung"], law: "StHG", jurisdiction: "ch", sections: [1] },
+  // ZG
+  { terms: ["zollgesetz", "zoll", "zollrecht"], law: "ZG", jurisdiction: "ch", sections: [1] },
+];
+
+const ALL_CONCEPTS = [...DE, ...AT, ...CH_TAX];
 
 /**
  * Extract §-numbers mentioned in a query string.
@@ -423,7 +524,7 @@ export function findConceptMappings(
  */
 export function expandConceptQuery(
   query: string,
-  jurisdiction?: "de" | "at"
+  jurisdiction?: "de" | "at" | "ch"
 ): string {
   if (!query || query.length < 3) return query;
   const mappings = findConceptMappings(query, jurisdiction);

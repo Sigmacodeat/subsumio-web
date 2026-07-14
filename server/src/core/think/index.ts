@@ -287,8 +287,8 @@ const DEFAULT_MAX_OUTPUT_TOKENS = 4000;
  * Complex legal questions (subsumption, cross-law) need more room for
  * structured output; simple §-lookups don't waste tokens.
  */
-function computeMaxTokens(question: string, legalMode?: boolean): number {
-  if (!legalMode) return DEFAULT_MAX_OUTPUT_TOKENS;
+function computeMaxTokens(question: string, legalMode?: boolean, taxMode?: boolean): number {
+  if (!legalMode && !taxMode) return DEFAULT_MAX_OUTPUT_TOKENS;
   // Reuse the complexity classifier from intent.ts
   // Inline check to avoid async import overhead on the hot path
   const complexSignals = [
@@ -394,7 +394,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
   // moderate/simple → reasoning tier (cost savings).
   let modelTier: "deep" | "reasoning" = "deep";
   let modelFallback = "opus";
-  if (!opts.model && opts.legalMode) {
+  if (!opts.model && (opts.legalMode || opts.taxMode)) {
     const { classifyLegalComplexity, complexityToTier } = await import("./intent.ts");
     const complexity = classifyLegalComplexity(opts.question);
     modelTier = complexityToTier(complexity);
@@ -413,7 +413,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
 
   // Dynamic max_tokens based on query complexity (legal mode only).
   // Complex questions get more room; simple ones save tokens.
-  const dynamicMaxTokens = computeMaxTokens(opts.question, opts.legalMode);
+  const dynamicMaxTokens = computeMaxTokens(opts.question, opts.legalMode, opts.taxMode);
 
   // ── Adversarial Injection Scan (Gap 6) ──
   // Scan user question for prompt injection / jailbreak patterns before processing.
@@ -487,9 +487,9 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     sourceIds: opts.allowedSources,
     legalGraphEnabled: true,
     jurisdiction: opts.jurisdiction,
-    llmRerankEnabled: opts.legalMode === true,
-    agenticRetrievalEnabled: opts.legalMode === true,
-    queryPlanningEnabled: opts.legalMode === true,
+    llmRerankEnabled: opts.legalMode === true || opts.taxMode === true,
+    agenticRetrievalEnabled: opts.legalMode === true || opts.taxMode === true,
+    queryPlanningEnabled: opts.legalMode === true || opts.taxMode === true,
   });
 
   // P0-SECR-002: Filter gathered evidence by verified matter scope. Uploaded
@@ -805,7 +805,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     // citations) instead of JSON, so tokens can be streamed as they arrive.
     // Citations are extracted post-completion via the existing regex fallback.
     if (opts.onStreamChunk && !opts.stubResponse) {
-      const streamSystemPrompt = buildStreamingSystemPrompt(systemPrompt, legalMode);
+      const streamSystemPrompt = buildStreamingSystemPrompt(systemPrompt, legalMode || taxMode);
       const streamUserMessage = buildStreamingUserMessage({
         question: opts.question,
         pagesBlock,
@@ -902,7 +902,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     // Checks: citation presence in context, law validation, non-§ reference
     // grounding, hedging detection, cross-law contamination.
     // If high-severity flags → regenerate once with stricter prompt.
-    if (legalMode && response.answer && !opts.stubResponse) {
+    if ((legalMode || taxMode) && response.answer && !opts.stubResponse) {
       const guardrailContext = pagesBlock + "\n" + takesBlock;
       const guardrailSlugs = gather.pages.map((p) =>
         String((p as unknown as { slug?: string }).slug ?? "")
@@ -986,7 +986,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     // ── Tier 1 Cross-Model Verification (Grok 4.3, ~$0.003) ──
     // After deterministic guardrail, send answer + context to deep-tier model
     // for semantic hallucination detection (misapplied §§, derived definitions).
-    if (legalMode && response.answer && !opts.stubResponse) {
+    if ((legalMode || taxMode) && response.answer && !opts.stubResponse) {
       try {
         const verifyContext = pagesBlock + "\n" + takesBlock;
         const verifyResult = await crossVerifyCitations(
@@ -1060,7 +1060,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     // Decompose answer into claims, score each claim's confidence based on
     // citation grounding, guardrail flags, cross-verify results, and hedging.
     // Produces per-claim scores + document-level aggregate.
-    if (legalMode && response.answer && !opts.stubResponse) {
+    if ((legalMode || taxMode) && response.answer && !opts.stubResponse) {
       const confContext = pagesBlock + "\n" + takesBlock;
       const confSlugs = gather.pages.map((p) =>
         String((p as unknown as { slug?: string }).slug ?? "")

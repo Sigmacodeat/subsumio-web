@@ -25,9 +25,9 @@ export function normalizeStatuteCode(code: string): string {
 // are explicitly marked as unverifiable — never silently verified.
 
 const TREATY_KEYWORDS =
-  /\b(Staatsvertrag|Abkommen|Konvention|Übereinkommen|Übereinkunft|Vertrag)\b/i;
+  /(Staatsvertrag|Abkommen|(?:\w*[Kk]onvention)|Übereinkommen|Übereinkunft|Vertrag)/i;
 const REGIONAL_KEYWORDS =
-  /\b(Landesrecht|Landesgesetz|LGBl\.?|LGBI\.?|Tiroler|Salzburger|Steirischer|Kärntner|Niederösterreich|Oberösterreich|Burgenländischer|Vorarlberger|Wiener)\b/i;
+  /(Landesrecht|Landesgesetz|LGBl\.?|LGBI\.?|Tiroler|Salzburger|Steirischer|Kärntner|Niederösterreich|Oberösterreich|Burgenländischer|Vorarlberger|Wiener)/i;
 
 export function detectUnverifiableCitation(code: string, context?: string): string | null {
   const fullText = `${code} ${context || ""}`;
