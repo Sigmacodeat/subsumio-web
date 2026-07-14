@@ -67,6 +67,10 @@ export interface AggregateScore {
   cost_metrics: CostMetrics;
   /** Confidence intervals (Wilson) for key metrics */
   confidence_intervals: ConfidenceIntervals;
+  /** Number of draft tasks excluded from aggregate metrics */
+  excluded_draft_count: number;
+  /** IDs of draft tasks excluded from aggregate metrics */
+  excluded_draft_tasks: string[];
 }
 
 export interface JurisdictionBreakdown {
@@ -188,9 +192,42 @@ export function computeAggregateScore(
   let totalCost = 0;
   let totalLatency = 0;
 
+  const excludedDraftTaskIds: string[] = [];
+
   for (const result of results) {
     const task = taskMap.get(result.task_id);
     const receipt = receiptMap.get(result.task_id);
+
+    // Exclude draft tasks (e.g. CH gold tasks) from aggregate metrics
+    const isDraft = task?.review_status === "draft";
+    if (isDraft) {
+      excludedDraftTaskIds.push(result.task_id);
+      // Still track in by_jurisdiction but mark separately
+      if (task) {
+        const j = task.jurisdiction;
+        if (!byJurisdiction[j]) {
+          byJurisdiction[j] = {
+            jurisdiction: j,
+            total: 0,
+            all_pass: 0,
+            criterion_pass_rate: 0,
+            critical_pass_rate: 0,
+          };
+        }
+        byJurisdiction[j]!.total++;
+        if (result.all_pass) byJurisdiction[j]!.all_pass++;
+      }
+      // Still count cost metrics for draft tasks
+      if (receipt) {
+        totalTokens += receipt.token_counts.input + receipt.token_counts.output;
+        totalInputTokens += receipt.token_counts.input;
+        totalOutputTokens += receipt.token_counts.output;
+        totalCacheHits += receipt.token_counts.cache_hit ?? 0;
+        totalCost += receipt.cost_usd;
+        totalLatency += receipt.latency_ms;
+      }
+      continue;
+    }
 
     if (result.all_pass) allPassCount++;
     if (result.strict_all_pass) strictAllPassCount++;
@@ -259,7 +296,7 @@ export function computeAggregateScore(
       if (result.all_pass) byDifficulty[diff]!.all_pass++;
     }
 
-    // Cost metrics
+    // Cost metrics (non-draft tasks only — draft costs already counted above)
     if (receipt) {
       totalTokens += receipt.token_counts.input + receipt.token_counts.output;
       totalInputTokens += receipt.token_counts.input;
@@ -325,6 +362,8 @@ export function computeAggregateScore(
       critical_all_pass: wilsonCI(allPassCount, totalTasks),
       criterion_pass: wilsonCI(criteriaPassed, totalCriteria),
     },
+    excluded_draft_count: excludedDraftTaskIds.length,
+    excluded_draft_tasks: excludedDraftTaskIds,
   };
 }
 
@@ -476,6 +515,10 @@ export function generateReport(score: AggregateScore): string {
 
   lines.push("=== LAB-DACH v3 Benchmark Report ===");
   lines.push("");
+  if (score.excluded_draft_count > 0) {
+    lines.push(`⚠️ ${score.excluded_draft_count} draft task(s) excluded from aggregate metrics: ${score.excluded_draft_tasks.join(", ")}`);
+    lines.push("");
+  }
   lines.push(`Total Tasks: ${score.total_tasks}`);
   lines.push(
     `Strict All-Pass: ${score.strict_all_pass_count}/${score.total_tasks} (${(score.strict_all_pass_rate * 100).toFixed(1)}%) [CI: ${(score.confidence_intervals.strict_all_pass.lower * 100).toFixed(1)}%–${(score.confidence_intervals.strict_all_pass.upper * 100).toFixed(1)}%]`
@@ -504,8 +547,10 @@ export function generateReport(score: AggregateScore): string {
 
   lines.push("--- By Jurisdiction ---");
   for (const breakdown of Object.values(score.by_jurisdiction)) {
+    const isDraft = breakdown.jurisdiction === "CH";
+    const label = isDraft ? `${breakdown.jurisdiction} (draft)` : breakdown.jurisdiction;
     lines.push(
-      `  ${breakdown.jurisdiction}: ${breakdown.all_pass}/${breakdown.total} all-pass (${(breakdown.criterion_pass_rate * 100).toFixed(1)}%)`
+      `  ${label}: ${breakdown.all_pass}/${breakdown.total} all-pass (${(breakdown.criterion_pass_rate * 100).toFixed(1)}%)${isDraft ? " — excluded from aggregates" : ""}`
     );
   }
   lines.push("");

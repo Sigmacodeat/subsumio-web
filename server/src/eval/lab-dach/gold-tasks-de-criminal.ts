@@ -8,7 +8,7 @@
 
 import type { Task } from "./types.ts";
 
-const R = { name: "Dr. Andreas Krenn", role: "Rechtsanwalt", reviewed_at: "2026-07-15T10:00:00Z" };
+const R = { name: "Dr. Andreas Krenn", role: "Rechtsanwalt", reviewed_at: null };
 const A = "2026-07-15";
 
 export const GOLD_DE_CRIM_001: Task = {
@@ -133,7 +133,7 @@ export const GOLD_DE_CRIM_001: Task = {
   expected_paragraphs: ["263"],
   min_citations: 2,
   time_limit_seconds: 300,
-  review_status: "approved",
+  review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Dr. Andreas Krenn",
   reviewed_by: "Dr. Andreas Krenn",
@@ -280,7 +280,7 @@ export const GOLD_DE_CRIM_002: Task = {
   expected_paragraphs: ["242", "243"],
   min_citations: 2,
   time_limit_seconds: 300,
-  review_status: "approved",
+  review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Dr. Andreas Krenn",
   reviewed_by: "Dr. Andreas Krenn",
@@ -435,7 +435,7 @@ export const GOLD_DE_CRIM_003: Task = {
   expected_paragraphs: ["223", "224"],
   min_citations: 2,
   time_limit_seconds: 300,
-  review_status: "approved",
+  review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Dr. Andreas Krenn",
   reviewed_by: "Dr. Andreas Krenn",
@@ -589,7 +589,7 @@ export const GOLD_DE_CRIM_004: Task = {
   expected_paragraphs: ["212", "211", "227"],
   min_citations: 2,
   time_limit_seconds: 300,
-  review_status: "approved",
+  review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Dr. Andreas Krenn",
   reviewed_by: "Dr. Andreas Krenn",
@@ -750,7 +750,7 @@ export const GOLD_DE_CRIM_005: Task = {
   expected_paragraphs: ["32", "223"],
   min_citations: 2,
   time_limit_seconds: 300,
-  review_status: "approved",
+  review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Dr. Andreas Krenn",
   reviewed_by: "Dr. Andreas Krenn",
@@ -904,7 +904,7 @@ export const GOLD_DE_CRIM_006: Task = {
   expected_paragraphs: ["22", "23", "242"],
   min_citations: 2,
   time_limit_seconds: 300,
-  review_status: "approved",
+  review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Dr. Andreas Krenn",
   reviewed_by: "Dr. Andreas Krenn",
@@ -1064,7 +1064,7 @@ export const GOLD_DE_CRIM_007: Task = {
   expected_paragraphs: ["27", "242"],
   min_citations: 2,
   time_limit_seconds: 300,
-  review_status: "approved",
+  review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Dr. Andreas Krenn",
   reviewed_by: "Dr. Andreas Krenn",
@@ -1214,7 +1214,7 @@ export const GOLD_DE_CRIM_008: Task = {
   expected_paragraphs: ["249", "250"],
   min_citations: 2,
   time_limit_seconds: 300,
-  review_status: "approved",
+  review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Dr. Andreas Krenn",
   reviewed_by: "Dr. Andreas Krenn",

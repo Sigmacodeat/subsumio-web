@@ -1,5 +1,5 @@
 import type { Task } from "./types.ts";
-const R = { name: "Dr. Andreas Krenn", role: "Rechtsanwalt", reviewed_at: "2026-07-15T10:00:00Z" };
+const R = { name: "Dr. Andreas Krenn", role: "Rechtsanwalt", reviewed_at: null };
 const A = "2026-07-15";
 
 export const GOLD_AT_LIT_001: Task = {
@@ -124,7 +124,7 @@ export const GOLD_AT_LIT_001: Task = {
   expected_paragraphs: ["401"],
   min_citations: 2,
   time_limit_seconds: 300,
-  review_status: "approved",
+  review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Dr. Andreas Krenn",
   reviewed_by: "Dr. Andreas Krenn",
@@ -272,7 +272,7 @@ export const GOLD_AT_LIT_002: Task = {
   expected_paragraphs: ["243"],
   min_citations: 2,
   time_limit_seconds: 300,
-  review_status: "approved",
+  review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Dr. Andreas Krenn",
   reviewed_by: "Dr. Andreas Krenn",
@@ -421,7 +421,7 @@ export const GOLD_AT_LIT_003: Task = {
   expected_paragraphs: ["1"],
   min_citations: 2,
   time_limit_seconds: 300,
-  review_status: "approved",
+  review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Dr. Andreas Krenn",
   reviewed_by: "Dr. Andreas Krenn",
@@ -575,7 +575,7 @@ export const GOLD_AT_LIT_004: Task = {
   expected_paragraphs: ["1489", "1501"],
   min_citations: 2,
   time_limit_seconds: 300,
-  review_status: "approved",
+  review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Dr. Andreas Krenn",
   reviewed_by: "Dr. Andreas Krenn",
@@ -725,7 +725,7 @@ export const GOLD_AT_LIT_005: Task = {
   expected_paragraphs: ["1311", "1293"],
   min_citations: 2,
   time_limit_seconds: 300,
-  review_status: "approved",
+  review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Dr. Andreas Krenn",
   reviewed_by: "Dr. Andreas Krenn",
@@ -875,7 +875,7 @@ export const GOLD_AT_LIT_006: Task = {
   expected_paragraphs: ["366"],
   min_citations: 2,
   time_limit_seconds: 300,
-  review_status: "approved",
+  review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Dr. Andreas Krenn",
   reviewed_by: "Dr. Andreas Krenn",
@@ -1021,7 +1021,7 @@ export const GOLD_AT_LIT_007: Task = {
   expected_paragraphs: ["1165", "1170"],
   min_citations: 2,
   time_limit_seconds: 300,
-  review_status: "approved",
+  review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Dr. Andreas Krenn",
   reviewed_by: "Dr. Andreas Krenn",

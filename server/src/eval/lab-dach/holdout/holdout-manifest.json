@@ -1,0 +1,56 @@
+{
+  "generated_at": "2026-07-14T09:23:24.885Z",
+  "task_count": 7,
+  "seal_hash": "16951aae957cbd9381eecfe99deda5fe07e29654738b7f6285853580ba18ad11",
+  "tasks": [
+    {
+      "id": "gold-holdout-001",
+      "title": "Rückgewähr nach Rücktritt — Herausgabe des Kaufpreises",
+      "jurisdiction": "DE",
+      "legal_area": "litigation",
+      "hash": "916c89ad79333536c60a72bf6a3a7d9a02bffed652f48f8833b2b18a188e9b48"
+    },
+    {
+      "id": "gold-holdout-002",
+      "title": "Geschäftsführung ohne Auftrag — Notmaßnahme",
+      "jurisdiction": "DE",
+      "legal_area": "litigation",
+      "hash": "fa853c79ceeed960d5091a1634387829807cbb28c8649d3b0133e69367f2f555"
+    },
+    {
+      "id": "gold-holdout-003",
+      "title": "Erpressung — Drohung mit Offenbarung eines Geheimnisses",
+      "jurisdiction": "DE",
+      "legal_area": "criminal",
+      "hash": "5a597d600c73b6f323a65bba6589c3c8aaa8eb744d62d8b11d43b50c7c0022e4"
+    },
+    {
+      "id": "gold-holdout-004",
+      "title": "Brandstiftung — Vorsätzliche Inbrandsetzung eines Gebäudes",
+      "jurisdiction": "DE",
+      "legal_area": "criminal",
+      "hash": "fd3b93e2a2b4fc775ccec00c49934c90dfc91906ac92df6ab7a4a9e4be27b398"
+    },
+    {
+      "id": "gold-holdout-005",
+      "title": "Klagsänderung — Übergang auf einen neuen Streitgegenstand",
+      "jurisdiction": "AT",
+      "legal_area": "litigation",
+      "hash": "3aa96d78069ed737e166d7c3cc38807c7855318924956c614e2c0577f92930e5"
+    },
+    {
+      "id": "gold-holdout-006",
+      "title": "Werkvertrag — Nichterfüllung und Schadenersatz (CH)",
+      "jurisdiction": "CH",
+      "legal_area": "litigation",
+      "hash": "9ffa5e851e0f17a59d98f6f00f92cc22ba8d6ff7c513016736df0403e210e0c3"
+    },
+    {
+      "id": "gold-holdout-007",
+      "title": "Totschlag — Vorsätzliche Tötung im Affekt (CH)",
+      "jurisdiction": "CH",
+      "legal_area": "criminal",
+      "hash": "c92bbba1d386268c40c387e11ad471789390dd700818432d37387ca399b04db8"
+    }
+  ]
+}

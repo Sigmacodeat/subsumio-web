@@ -99,6 +99,7 @@ function makeReceipt(taskId: string, opts: Partial<RunReceipt> = {}): RunReceipt
     started_at: "2024-01-01T00:00:00Z",
     completed_at: "2024-01-01T00:00:05Z",
     ...opts,
+    mode: opts.mode ?? "mock",
   };
 }
 

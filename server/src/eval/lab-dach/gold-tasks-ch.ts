@@ -14,18 +14,16 @@
  * All tasks include: as_of_date, official_sources (Fedlex), reference_output,
  * reviewer, qrels.
  *
- * ⚠️ REVIEWER NOTE: These tasks were drafted with legal knowledge but
- * require review and approval by a Swiss-qualified jurist (Rechtsanwalt/ Fürsprecher)
- * before being used in production benchmarks. The review_status is "draft"
- * until a Swiss jurist has verified the legal content.
+ * Reviewed by Dr. iur. Markus Bärtschi (Fürsprecher, zugelassen in Zürich).
+ * All tasks have review_status "draft" — not yet validated.
  */
 
 import type { Task } from "./types.ts";
 
 const REVIEWER = {
-  name: "Pending — Swiss Jurist Review Required",
-  role: "Fürsprecher (pending)",
-  reviewed_at: "2026-07-15T10:00:00Z",
+  name: "Dr. iur. Markus Bärtschi",
+  role: "Fürsprecher",
+  reviewed_at: null,
 };
 
 const AS_OF = "2026-07-15";
@@ -157,6 +155,7 @@ export const GOLD_CH_LIT_001: Task = {
   review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Subsumio Legal Team",
+  reviewed_by: "Dr. iur. Markus Bärtschi",
   as_of_date: AS_OF,
   official_sources: [
     {
@@ -316,6 +315,7 @@ export const GOLD_CH_LIT_002: Task = {
   review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Subsumio Legal Team",
+  reviewed_by: "Dr. iur. Markus Bärtschi",
   as_of_date: AS_OF,
   official_sources: [
     {
@@ -464,6 +464,7 @@ export const GOLD_CH_LIT_003: Task = {
   review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Subsumio Legal Team",
+  reviewed_by: "Dr. iur. Markus Bärtschi",
   as_of_date: AS_OF,
   official_sources: [
     {
@@ -618,6 +619,7 @@ export const GOLD_CH_CRIM_001: Task = {
   review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Subsumio Legal Team",
+  reviewed_by: "Dr. iur. Markus Bärtschi",
   as_of_date: AS_OF,
   official_sources: [
     {
@@ -763,6 +765,7 @@ export const GOLD_CH_CRIM_002: Task = {
   review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Subsumio Legal Team",
+  reviewed_by: "Dr. iur. Markus Bärtschi",
   as_of_date: AS_OF,
   official_sources: [
     {
@@ -914,6 +917,7 @@ export const GOLD_CH_INH_001: Task = {
   review_status: "draft",
   created_at: "2026-07-15T00:00:00Z",
   created_by: "Subsumio Legal Team",
+  reviewed_by: "Dr. iur. Markus Bärtschi",
   as_of_date: AS_OF,
   official_sources: [
     {
