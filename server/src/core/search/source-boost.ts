@@ -83,24 +83,43 @@ export const DEFAULT_HARD_EXCLUDES: string[] = ["test/", "attachments/", ".raw/"
 export const STATUTE_JURISDICTIONS = ["at", "de", "ch", "eu"] as const;
 
 /**
+ * Every jurisdiction-partitioned legal content class. Slugs are
+ * `legal/<class>/<jur>/...`: statutes (import-statutes-split.ts), judikatur
+ * (import-judikatur.ts), landesrecht + staatsvertraege (import-at-corpus.ts).
+ * Hard jurisdiction isolation must cover ALL of them — excluding only
+ * statutes lets a DE query surface AT case law or AT state law.
+ */
+export const LEGAL_CONTENT_CLASSES = [
+  "statutes",
+  "judikatur",
+  "landesrecht",
+  "staatsvertraege",
+] as const;
+
+/**
  * Hard jurisdiction isolation helper. Given a target jurisdiction, return the
- * statute-slug prefixes of every OTHER jurisdiction — the set to hard-exclude
- * so retrieval can NEVER surface a foreign § (requirement: an Austrian query
- * must not return a German or Swiss statute). Fed into the hard-exclude set,
- * so it reuses the exact WHERE clause every other exclude flows through, in
- * both engines, with no new SQL surface.
+ * legal-content slug prefixes of every OTHER jurisdiction — the set to
+ * hard-exclude so retrieval can NEVER surface foreign legal material
+ * (requirement: an Austrian query must not return a German or Swiss statute,
+ * and symmetrically a German query must not return Austrian case law /
+ * Landesrecht / Staatsverträge). Covers every LEGAL_CONTENT_CLASSES prefix,
+ * not just statutes. Fed into the hard-exclude set, so it reuses the exact
+ * WHERE clause every other exclude flows through, in both engines, with no
+ * new SQL surface.
  *
  * Returns [] for a blank/undefined jurisdiction (no statute filtering) and for
  * an unknown jurisdiction (nothing to exclude against — the caller decides
  * whether an unknown jurisdiction is an error). Only the OTHER known
- * jurisdictions are excluded; a target of "at" therefore leaves at-statutes and
+ * jurisdictions are excluded; a target of "at" therefore leaves at-content and
  * any non-partitioned pages untouched.
  */
 export function foreignStatutePrefixes(jurisdiction?: string): string[] {
   if (!jurisdiction) return [];
   const jur = jurisdiction.toLowerCase();
   if (!STATUTE_JURISDICTIONS.includes(jur as (typeof STATUTE_JURISDICTIONS)[number])) return [];
-  return STATUTE_JURISDICTIONS.filter((j) => j !== jur).map((j) => `legal/statutes/${j}/`);
+  return STATUTE_JURISDICTIONS.filter((j) => j !== jur).flatMap((j) =>
+    LEGAL_CONTENT_CLASSES.map((cls) => `legal/${cls}/${j}/`)
+  );
 }
 
 /**

@@ -274,4 +274,61 @@ describe("jurisdiction isolation (Phase 0 leak probe)", () => {
     }
     expect(leaks, `search-op isolation breached:\n${leaks.join("\n")}`).toEqual([]);
   }, 60_000);
+
+  test("Phase 1b: DE query excludes AT judikatur / landesrecht / staatsvertraege — not just statutes", async () => {
+    // 2026-07-14 audit finding: foreignStatutePrefixes() only covered
+    // legal/statutes/, so a DE-jurisdiction query could surface AT case law,
+    // AT state law, and AT treaties. Seed one page per non-statute content
+    // class whose body matches a shared legal-German query, then prove a
+    // jurisdiction=de search returns none of them.
+    await eng.executeRaw(
+      `INSERT INTO sources (id, name, jurisdiction, config) VALUES
+         ('law-at-judikatur', 'law-at-judikatur', 'at', '{"federated":true,"legal_reference":true}'::jsonb),
+         ('law-at-landesrecht', 'law-at-landesrecht', 'at', '{"federated":true,"legal_reference":true}'::jsonb),
+         ('law-at-staatsvertraege', 'law-at-staatsvertraege', 'at', '{"federated":true,"legal_reference":true}'::jsonb)
+       ON CONFLICT (id) DO NOTHING`
+    );
+    const dim = await probeDim(eng);
+    const QUERY = "Verjährung Schadenersatz drei Jahren";
+    const body =
+      "Die Verjährung des Anspruchs auf Schadenersatz beträgt drei Jahre ab Kenntnis von Schaden und Schädiger.";
+    const atNonStatute = [
+      { slug: "legal/judikatur/at/ogh/2ob123-24x", sourceId: "law-at-judikatur" },
+      { slug: "legal/landesrecht/at/wien/bauordnung-testfall", sourceId: "law-at-landesrecht" },
+      { slug: "legal/staatsvertraege/at/testabkommen-verjaehrung", sourceId: "law-at-staatsvertraege" },
+    ];
+    for (const p of atNonStatute) {
+      await eng.putPage(p.slug, {
+        type: "law" as never,
+        title: p.slug.split("/").slice(-1).join(" "),
+        compiled_truth: body,
+        timeline: "",
+      }, { sourceId: p.sourceId });
+      await eng.upsertChunks(p.slug, [
+        {
+          chunk_index: 0,
+          chunk_text: body,
+          chunk_source: "compiled_truth",
+          embedding: basisEmbedding(p.slug, dim),
+          token_count: body.split(/\s+/).length,
+        },
+      ] satisfies ChunkInput[], { sourceId: p.sourceId });
+    }
+
+    // Probe has teeth: WITHOUT a jurisdiction filter the seeded AT pages are
+    // reachable for this query (otherwise the assertion below proves nothing).
+    const unfiltered = await hybridSearch(eng, QUERY, { limit: 20, expansion: false });
+    const reachable = unfiltered.filter((r) =>
+      atNonStatute.some((p) => r.slug === p.slug)
+    );
+    expect(reachable.length).toBeGreaterThan(0);
+
+    // The actual guarantee: jurisdiction=de must exclude EVERY AT legal
+    // content class, not only legal/statutes/at/.
+    const filtered = await hybridSearch(eng, QUERY, { limit: 20, expansion: false, jurisdiction: "de" });
+    const leakedAt = filtered
+      .map((r) => r.slug)
+      .filter((s) => /^legal\/(statutes|judikatur|landesrecht|staatsvertraege)\/at\//.test(s));
+    expect(leakedAt, `DE query surfaced AT legal content: ${leakedAt.join(", ")}`).toEqual([]);
+  }, 60_000);
 });

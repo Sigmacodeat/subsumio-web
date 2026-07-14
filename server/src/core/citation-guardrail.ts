@@ -540,14 +540,20 @@ export interface GuardrailInput {
 export function checkCitationGrounding(input: GuardrailInput): GuardrailResult {
   const { answer, context, topSlugs } = input;
 
-  // Extract retrieved law abbreviations from slugs
+  // Extract retrieved law abbreviations from slugs. Handles all corpus slug
+  // shapes: the production engine emits `legal/statutes/<jur>/<abbr>/p-<N>`
+  // while older callers pass `law/<jur>/<abbr>[/...]`. Both must resolve to the
+  // bare abbreviation (e.g. "zpo") so cross-law-contamination matches the cited
+  // law. Previously only the `law/<jur>/` prefix was stripped, which left
+  // `legal/statutes/...` and paragraph-level slugs unmatched → false positives.
   const retrievedLaws = topSlugs
-    .map((s) =>
-      s
-        .replace(/^law\/de\//, "")
-        .replace(/^law\/at\//, "")
-        .replace(/^law\/eu\//, "")
-    )
+    .map((s) => {
+      const statute = s.match(/^legal\/statutes\/[a-z]{2}\/([^/]+)/i);
+      if (statute) return statute[1];
+      const law = s.match(/^law\/[a-z]{2}\/([^/]+)/i);
+      if (law) return law[1];
+      return s;
+    })
     .filter(Boolean);
 
   // Extract all citations from answer and context

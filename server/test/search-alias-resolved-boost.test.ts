@@ -124,6 +124,6 @@ describe("alias_resolved boost stage", () => {
 
 describe("KNOBS_HASH_VERSION", () => {
   it("is 11 (10→11 cognitive tier cascade, v0.46)", () => {
-    expect(KNOBS_HASH_VERSION).toBe(11);
+    expect(KNOBS_HASH_VERSION).toBe(14);
   });
 });

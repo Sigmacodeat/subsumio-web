@@ -828,7 +828,13 @@ export function attributeKnob<K extends keyof ModeBundle>(
 // to take effect immediately (one-time global cache cold-miss on upgrade; refills
 // within cache.ttl_seconds). Same cache-key-contamination convention as the
 // autocut / title_boost / graph_signals bumps above.
-export const KNOBS_HASH_VERSION = 13;
+//
+// bump 13→14: foreignStatutePrefixes() widened from statutes-only to every
+// LEGAL_CONTENT_CLASSES prefix (judikatur/landesrecht/staatsvertraege). The
+// hard-exclude set for a given jurisdiction changed, so a pre-widening cached
+// row (which may contain foreign judikatur/landesrecht) must not be served to
+// a post-widening lookup. One-time global cold-miss on upgrade.
+export const KNOBS_HASH_VERSION = 14;
 
 /**
  * v0.36 (D8 / CDX-2) — second-arg context for the cache key. The
