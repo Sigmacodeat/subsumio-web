@@ -221,7 +221,7 @@ function vhfzDauer(z: VhfzZeitraum): number {
 
 // ── Fristberechnung ─────────────────────────────────────────
 
-export type FristRegime = "zpo" | "avg" | "stpo" | "materiell";
+export type FristRegime = "zpo" | "avg" | "stpo" | "materiell" | "verwaltungsrecht";
 
 export interface FristDauer {
   tage?: number;
@@ -616,6 +616,120 @@ export const FRISTEN_REGISTRY: readonly FristArt[] = [
     notfrist: false,
     gehemmtInVhfz: false,
     verfahrenstyp: "zivil",
+  },
+  // ── TAXUMIO: Steuerliche Fristen ──
+  // DE (Deutschland) — AO / FGO
+  {
+    key: "steuer_einspruch_de",
+    bezeichnung: "Einspruch gegen Steuerbescheid (DE)",
+    dauer: { monate: 1 },
+    regime: "verwaltungsrecht",
+    rechtsgrundlage: "§ 355 Abs 1 AO",
+    notfrist: true,
+    gehemmtInVhfz: false,
+    verfahrenstyp: "verwaltungsrecht",
+    hinweis: "Beginnt mit Zustellung des Steuerbescheids. § 355 AO: Einspruch innerhalb eines Monats nach Bekanntgabe.",
+  },
+  {
+    key: "steuer_finanzgericht_klage_de",
+    bezeichnung: "Klage ans Finanzgericht (DE)",
+    dauer: { monate: 1 },
+    regime: "verwaltungsrecht",
+    rechtsgrundlage: "§ 47 FGO",
+    notfrist: true,
+    gehemmtInVhfz: false,
+    verfahrenstyp: "verwaltungsrecht",
+    hinweis: "Nach Ablehnung der Einspruchsentscheidung: Klage innerhalb 1 Monat.",
+  },
+  {
+    key: "steuer_revision_bfh_de",
+    bezeichnung: "Revision an den BFH (DE)",
+    dauer: { monate: 1 },
+    regime: "verwaltungsrecht",
+    rechtsgrundlage: "§ 115 Abs 2 FGO",
+    notfrist: true,
+    gehemmtInVhfz: false,
+    verfahrenstyp: "verwaltungsrecht",
+    hinweis: "Revision gegen FG-Urteil innerhalb 1 Monat nach Zustellung.",
+  },
+  {
+    key: "steuer_festsetzungsverjaehrung_de",
+    bezeichnung: "Festsetzungsverjährung (DE)",
+    dauer: { jahre: 4 },
+    regime: "materiell",
+    rechtsgrundlage: "§ 169 Abs 1 Nr 2 AO",
+    notfrist: false,
+    gehemmtInVhfz: false,
+    verfahrenstyp: "verwaltungsrecht",
+    hinweis: "Regelfall 4 Jahre. Bei Steuerhinterziehung 10 Jahre (§ 169 Abs 2 AO).",
+  },
+  {
+    key: "steuer_hinterziehung_verjaehrung_de",
+    bezeichnung: "Festsetzungsverjährung bei Hinterziehung (DE)",
+    dauer: { jahre: 10 },
+    regime: "materiell",
+    rechtsgrundlage: "§ 169 Abs 2 AO",
+    notfrist: false,
+    gehemmtInVhfz: false,
+    verfahrenstyp: "verwaltungsrecht",
+    hinweis: "Bei Steuerhinterziehung: 10 Jahre Festsetzungsfrist.",
+  },
+  // AT (Österreich) — BAO
+  {
+    key: "steuer_berufung_at",
+    bezeichnung: "Berufung gegen Steuerbescheid (AT)",
+    dauer: { monate: 1 },
+    regime: "verwaltungsrecht",
+    rechtsgrundlage: "§ 245 Abs 1 BAO",
+    notfrist: true,
+    gehemmtInVhfz: false,
+    verfahrenstyp: "verwaltungsrecht",
+    hinweis: "Berufung innerhalb 1 Monat ab Zustellung des Bescheids.",
+  },
+  {
+    key: "steuer_revision_vwgh_at",
+    bezeichnung: "Revision an den VwGH (AT)",
+    dauer: { monate: 2 },
+    regime: "verwaltungsrecht",
+    rechtsgrundlage: "§ 28a Abs 1 VwGG",
+    notfrist: true,
+    gehemmtInVhfz: false,
+    verfahrenstyp: "verwaltungsrecht",
+    hinweis: "Revision gegen BFG-Entscheidung innerhalb 2 Monaten.",
+  },
+  {
+    key: "steuer_festsetzungsverjaehrung_at",
+    bezeichnung: "Festsetzungsverjährung (AT)",
+    dauer: { jahre: 5 },
+    regime: "materiell",
+    rechtsgrundlage: "§ 207 Abs 1 BAO",
+    notfrist: false,
+    gehemmtInVhfz: false,
+    verfahrenstyp: "verwaltungsrecht",
+    hinweis: "Regelfall 5 Jahre. Bei Hinterziehung oder vorsätzlicher Verkürzung 10 Jahre (§ 207 Abs 2 BAO).",
+  },
+  // CH (Schweiz) — DBG
+  {
+    key: "steuer_einspruch_ch",
+    bezeichnung: "Einspruch gegen Veranlagung (CH)",
+    dauer: { tage: 30 },
+    regime: "verwaltungsrecht",
+    rechtsgrundlage: "Art. 108 DBG",
+    notfrist: true,
+    gehemmtInVhfz: false,
+    verfahrenstyp: "verwaltungsrecht",
+    hinweis: "Einspruch innerhalb 30 Tagen nach Zustellung der Veranlagungsverfügung.",
+  },
+  {
+    key: "steuer_veranlagungsverjaehrung_ch",
+    bezeichnung: "Veranlagungsverjährung (CH)",
+    dauer: { jahre: 5 },
+    regime: "materiell",
+    rechtsgrundlage: "Art. 121 DBG",
+    notfrist: false,
+    gehemmtInVhfz: false,
+    verfahrenstyp: "verwaltungsrecht",
+    hinweis: "Regelfall 5 Jahre. Bei Hinterziehung 10 Jahre (Art. 121 Abs 3 DBG).",
   },
 ] as const;
 

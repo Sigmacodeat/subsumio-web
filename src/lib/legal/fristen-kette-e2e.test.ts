@@ -85,7 +85,9 @@ function isoToDe(iso: string): string {
   return iso.replace(/(\d{4})-(\d{2})-(\d{2})/, "$3.$2.$1");
 }
 
-const _urgentDate = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+// Trigger date 11 days ago: StPO-Beschwerde (14 Tage, nicht vhfZ-gehemmt)
+// → Fristende in 3 Tagen = kritisch.
+const _triggerDate = new Date(Date.now() - 11 * 86400000).toISOString().slice(0, 10);
 
 const PIPELINE_CALENDAR_PAGE = {
   slug: "deadline-calendars/urgent-case-2025",
@@ -93,7 +95,7 @@ const PIPELINE_CALENDAR_PAGE = {
 
 | Datum | Ampel | Frist | Rechtsgrundlage | Folge | Beleg |
 |------|-------|-------|-----------------|-------|-------|
-| ${isoToDe(_urgentDate)} | 🔴 | Berufung gegen Ersturteil | § 5 Abs 1 JN | Rechtskraft | Urteil.pdf |
+| ${isoToDe(_triggerDate)} | 🔴 | Sofortige Beschwerde | § 88 Abs 1 StPO | Rechtskraft | Urteil.pdf |
 `,
   frontmatter: null,
 };
@@ -152,14 +154,14 @@ describe("E2: Full Fristen-Kette E2E — Pipeline → Sync → Digest", () => {
 
     // Step 5: The pipeline-extracted deadline must appear in the digest
     expect(digestItems).toHaveLength(1);
-    expect(digestItems[0]!.title).toBe("Berufung gegen Ersturteil");
-    expect(digestItems[0]!.status).toBe("critical"); // 2 days from now = critical (≤3 days)
+    expect(digestItems[0]!.title).toBe("Sofortige Beschwerde");
+    expect(digestItems[0]!.status).toBe("critical"); // 3 days from now = critical (≤3 days)
 
     // Step 6: Verify the digest text would include the deadline
     const digestText = renderDigestText(digestItems);
-    expect(digestText).toContain("Berufung gegen Ersturteil");
+    expect(digestText).toContain("Sofortige Beschwerde");
     expect(digestText).toContain("KRITISCH");
-    expect(digestText).toContain("§ 5 Abs 1 JN");
+    expect(digestText).toContain("§ 88 Abs 1 StPO");
   });
 
   it("synced deadline with vorfrist reaches vorfrist stage in digest", async () => {

@@ -50,14 +50,14 @@ describe("detectDeadlines — legal deadlines with templates", () => {
     const results = detectDeadlines("Die Klageerwiderungsfrist endet bald.");
     const legal = results.find((r) => r.type === "legal_deadline");
     expect(legal).toBeDefined();
-    expect(legal!.suggestedTemplate).toBe("zpo-klageerwiderung");
+    expect(legal!.suggestedTemplate).toBe("klagebeantwortung");
     expect(legal!.confidence).toBe("high");
   });
 
   test("detects Berufung", () => {
     const results = detectDeadlines("Die Berufungsfrist muss gewahrt werden.");
     const legal = results.find(
-      (r) => r.type === "legal_deadline" && r.suggestedTemplate === "zpo-berufung"
+      (r) => r.type === "legal_deadline" && r.suggestedTemplate === "berufung"
     );
     expect(legal).toBeDefined();
   });
@@ -65,7 +65,7 @@ describe("detectDeadlines — legal deadlines with templates", () => {
   test("detects Verjährung", () => {
     const results = detectDeadlines("Die Verjährungsfrist beträgt 3 Jahre.");
     const legal = results.find(
-      (r) => r.type === "legal_deadline" && r.suggestedTemplate === "abgb-verjaehrung"
+      (r) => r.type === "legal_deadline" && r.suggestedTemplate === "verjaehrung_kurz"
     );
     expect(legal).toBeDefined();
   });
@@ -269,7 +269,7 @@ describe("detectDeadlines — Wiedereinsetzung and StPO Beschwerde", () => {
   test("detects Wiedereinsetzung", () => {
     const results = detectDeadlines("Wiedereinsetzung in den vorigen Stand: Frist wird beantragt.");
     const legal = results.find(
-      (r) => r.type === "legal_deadline" && r.suggestedTemplate === "zpo-wiedereinsetzung"
+      (r) => r.type === "legal_deadline" && r.suggestedTemplate === "wiedereinsetzung"
     );
     expect(legal).toBeDefined();
     expect(legal!.confidence).toBe("high");
@@ -278,16 +278,16 @@ describe("detectDeadlines — Wiedereinsetzung and StPO Beschwerde", () => {
   test("detects StPO Beschwerde", () => {
     const results = detectDeadlines("Sofortige Beschwerde: Frist beträgt 1 Woche.");
     const legal = results.find(
-      (r) => r.type === "legal_deadline" && r.suggestedTemplate === "stpo-beschwerde"
+      (r) => r.type === "legal_deadline" && r.suggestedTemplate === "beschwerde_stpo"
     );
     expect(legal).toBeDefined();
     expect(legal!.confidence).toBe("high");
   });
 
-  test("detects Verjährung 10 Jahre", () => {
-    const results = detectDeadlines("Die Verjährungsfrist beträgt 10 Jahre.");
+  test("detects Verjährung 30 Jahre (ausgeschrieben)", () => {
+    const results = detectDeadlines("Die Verjährungsfrist beträgt dreißig Jahre.");
     const legal = results.find(
-      (r) => r.type === "legal_deadline" && r.suggestedTemplate === "abgb-verjaehrung"
+      (r) => r.type === "legal_deadline" && r.suggestedTemplate === "verjaehrung_lang"
     );
     expect(legal).toBeDefined();
   });
@@ -295,7 +295,7 @@ describe("detectDeadlines — Wiedereinsetzung and StPO Beschwerde", () => {
   test("detects Verjährung 30 Jahre", () => {
     const results = detectDeadlines("Die Verjährungsfrist beträgt 30 Jahre.");
     const legal = results.find(
-      (r) => r.type === "legal_deadline" && r.suggestedTemplate === "abgb-verjaehrung"
+      (r) => r.type === "legal_deadline" && r.suggestedTemplate === "verjaehrung_lang"
     );
     expect(legal).toBeDefined();
   });
@@ -347,17 +347,17 @@ describe("detectDeadlines — description content", () => {
 
   test("legal deadline description contains § reference", () => {
     const results = detectDeadlines("Die Klageerwiderungsfrist endet bald.");
-    const legal = results.find((r) => r.suggestedTemplate === "zpo-klageerwiderung");
+    const legal = results.find((r) => r.suggestedTemplate === "klagebeantwortung");
     expect(legal).toBeDefined();
     expect(legal!.description).toContain("§");
     expect(legal!.description).toContain("ZPO");
   });
 
-  test("Berufung description contains § 517 ZPO", () => {
+  test("Berufung description contains § 464 Abs 1 ZPO", () => {
     const results = detectDeadlines("Die Berufungsfrist muss gewahrt werden.");
-    const legal = results.find((r) => r.suggestedTemplate === "zpo-berufung");
+    const legal = results.find((r) => r.suggestedTemplate === "berufung");
     expect(legal).toBeDefined();
-    expect(legal!.description).toContain("§ 517 ZPO");
+    expect(legal!.description).toContain("§ 464 Abs 1 ZPO");
   });
 });
 
