@@ -1,0 +1,7 @@
+{
+  "name": "subsumio-tax",
+  "version": "1.0.0",
+  "plugin_version": "gbrain-plugin-v1",
+  "description": "Subsumio Tax Specialist Subagents — hierarchical agent roles for tax workflows (DE/AT/CH/EU)",
+  "subagents": "subagents"
+}

@@ -84,6 +84,7 @@ export type AuditAction =
   | "tax.appeal_generator"
   | "tax.bfh_feed"
   | "tax.client_letter"
+  | "tax.triage"
   | "legal.statute"
   | "legal.playbook"
   | "legal.contradictions"
@@ -309,6 +310,7 @@ const ACTION_LABELS: Record<string, string> = {
   "tax.appeal_generator": "Einspruchsgenerator",
   "tax.bfh_feed": "BFH-Rechtsprechung-Feed",
   "tax.client_letter": "Mandantenbrief generiert",
+  "tax.triage": "Steuer-Triage klassifiziert",
   "inbox.mark_read": "Nachricht als gelesen markiert",
   "triage.action": "Triage-Aktion ausgeführt",
   "submission.review": "Mandanteneingang geprüft",

@@ -3,6 +3,7 @@ import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { collectSSEChunks } from "@/lib/sse-stream";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
+import { buildTaxRiskAnalysisPrompt, type TaxJurisdiction } from "@/lib/tax-prompts";
 
 export const maxDuration = 120;
 
@@ -10,7 +11,7 @@ const riskSchema = z.object({
   client_slug: z.string().optional(),
   return_slug: z.string().optional(),
   text: z.string().max(512_000).optional(),
-  jurisdiction: z.enum(["de", "at"]).optional().default("de"),
+  jurisdiction: z.enum(["de", "at", "ch"]).optional().default("de"),
 });
 
 function safeParseJson(text: string): Record<string, unknown> {
@@ -89,32 +90,11 @@ export const POST = createHandler(
     }
 
     const safeText = sanitizeUserInput(contextText.slice(0, 80_000));
-    const jurisdictionLabel =
-      body.jurisdiction === "at" ? "AT (Österreich, BAO/BAO)" : "DE (Deutschland, AO)";
 
-    const prompt = `Du bist ein Steuerberater-Risikoanalyst (${jurisdictionLabel}).
-Analysiere die folgenden Steuerdaten auf Risiken.
-
-STEUERDATEN:
----
-${safeText}
----
-
-Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown):
-{
-  "overall_risk_level": "low|medium|high",
-  "risks": [
-    {
-      "category": "Nachzahlung|Verspätungszuschlag|Hinterziehung|Betriebsprüfung|Sonstiges",
-      "description": "Konkrete Risikobeschreibung",
-      "severity": "low|medium|high",
-      "potential_amount": null,
-      "mitigation": "Empfohlene Maßnahme",
-      "legal_basis": "§ XYZ AO"
-    }
-  ],
-  "recommendations": ["Konkrete Empfehlungen"]
-}`;
+    const prompt = buildTaxRiskAnalysisPrompt({
+      text: safeText,
+      jurisdiction: body.jurisdiction.toUpperCase() as TaxJurisdiction,
+    });
 
     let rawResponse = "";
     try {
@@ -124,6 +104,7 @@ Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown):
         body: JSON.stringify({
           query: prompt,
           mode: "balanced",
+          tax_mode: true,
           source_id: ctx.brainId,
         }),
         signal: AbortSignal.timeout(120_000),

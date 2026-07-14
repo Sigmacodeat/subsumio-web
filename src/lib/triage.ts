@@ -109,6 +109,73 @@ const URGENCY_RULES: TriageRule[] = [
     urgency: "high",
     actionType: "konflikt",
   },
+  // ── TAXUMIO: Steuerrechtliche Triage-Regeln ──
+  {
+    pattern: /\b(steuerbescheid|einkommensteuerbescheid|umsatzsteuerbescheid|körperschaftsteuerbescheid|gewerbesteuerbescheid|festsetzungsbescheid)\b/i,
+    urgency: "critical",
+    actionType: "frist",
+    legalArea: "steuerrecht",
+  },
+  {
+    pattern: /\b(einspruch|einspruchseinlegung|einspruchsfrist|rechtsbehelf)\b/i,
+    urgency: "critical",
+    actionType: "frist",
+    legalArea: "steuerrecht",
+  },
+  {
+    pattern: /\b(betriebsprüfung|betriebspruefung|außenprüfung|aussenpruefung|bp-ankündigung|prüfungsanordnung)\b/i,
+    urgency: "critical",
+    actionType: "termin",
+    legalArea: "steuerrecht",
+  },
+  {
+    pattern: /\b(umsatzsteuervoranmeldung|ust-voranmeldung|elster|elster-portal|steuererklärung|steuererklaerung)\b/i,
+    urgency: "high",
+    actionType: "frist",
+    legalArea: "steuerrecht",
+  },
+  {
+    pattern: /\b(festsetzungsverjährung|verjährung|festsetzungsfrist|nachforderung|nachveranlagung)\b/i,
+    urgency: "high",
+    actionType: "frist",
+    legalArea: "steuerrecht",
+  },
+  {
+    pattern: /\b(steuerhinterziehung|hinterziehung|strafverfahren|strafanzeige|selbstanzeige|strafbefreiend)\b/i,
+    urgency: "critical",
+    actionType: "konflikt",
+    legalArea: "steuerrecht",
+  },
+  {
+    pattern: /\b(vorauszahlung|vorauszahlungsbescheid|solz|solidaritätszuschlag|gewerbesteuer-vorauszahlung)\b/i,
+    urgency: "high",
+    actionType: "zahlung",
+    legalArea: "steuerrecht",
+  },
+  {
+    pattern: /\b(datev|datev-import|belegimport|buchhaltung|buchungsstapel|klientenbuchhaltung)\b/i,
+    urgency: "medium",
+    actionType: "dokument",
+    legalArea: "steuerrecht",
+  },
+  {
+    pattern: /\b(spendenbescheinigung|spendenquittung|zuwendungsbestätigung|spendenbescheid)\b/i,
+    urgency: "medium",
+    actionType: "dokument",
+    legalArea: "steuerrecht",
+  },
+  {
+    pattern: /\b(lohnsteuer|lohnsteueranmeldung|lohnsteuerbescheinigung|lohnabrechnung)\b/i,
+    urgency: "high",
+    actionType: "frist",
+    legalArea: "steuerrecht",
+  },
+  {
+    pattern: /\b(finanzamt|finanzverwaltung|abgabenordnung|bao|bundesabgabenordnung)\b/i,
+    urgency: "high",
+    actionType: "info",
+    legalArea: "steuerrecht",
+  },
 ];
 
 const LEGAL_AREA_RULES: Array<{ pattern: RegExp; area: string }> = [
@@ -141,6 +208,16 @@ const LEGAL_AREA_RULES: Array<{ pattern: RegExp; area: string }> = [
     area: "datenschutzrecht",
   },
   { pattern: /\b(steuer|finanzamt|einspruch|steuerrecht)\b/i, area: "steuerrecht" },
+  // TAXUMIO: Detaillierte Steuerrecht-Unterkategorien
+  { pattern: /\b(einkommensteuer|estg|einkünfte|werbungskosten|betriebsausgaben|sonderausgaben)\b/i, area: "einkommensteuer" },
+  { pattern: /\b(umsatzsteuer|ustg|vorsteuer|reverse.charge|innergemeinschaftlich)\b/i, area: "umsatzsteuer" },
+  { pattern: /\b(körperschaftsteuer|kstg|verdeckte.gewinnausschüttung|vga)\b/i, area: "körperschaftsteuer" },
+  { pattern: /\b(gewerbesteuer|gewstg|gewerbeertrag)\b/i, area: "gewerbesteuer" },
+  { pattern: /\b(erbschaftsteuer|erbschaftssteuer|schenkungsteuer|erbstg|freibetrag)\b/i, area: "erbschaftsteuer" },
+  { pattern: /\b(abgabenordnung|ao\b|bao\b|festsetzungsverjährung|betriebsstätte)\b/i, area: "abgabenordnung" },
+  { pattern: /\b(finanzgericht|fgo|bfh|bundesfinanzhof)\b/i, area: "finanzgerichtsbarkeit" },
+  { pattern: /\b(doppelbesteuerung|dba|astg|außensteuergesetz|verrechnungspreis)\b/i, area: "international_steuerrecht" },
+  { pattern: /\b(steuerhinterziehung|selbstanzeige|strafbefreiend|finstrg|steuerstrafrecht)\b/i, area: "steuerstrafrecht" },
   {
     pattern: /\b(vertrag|werkvertrag|kaufvertrag|lieferung|vertragsrecht)\b/i,
     area: "vertragsrecht",
@@ -161,6 +238,11 @@ function extractDeadline(text: string): string | undefined {
     /\bfrist.*?(\d{1,2}\.\d{1,2}\.\d{4})\b/i,
     /\bfrist.*?(\d{4}-\d{2}-\d{2})\b/i,
     /\b(\d{1,2}\.\d{1,2}\.\d{4})\s*(?:uhr|ende)\b/i,
+    // TAXUMIO: Steuerrechtliche Frist-Muster
+    /\b(?:einspruchsfrist|rechtsmittelfrist).*?(?:bis|läuft|abläuft)\s*(?:am\s+)?(\d{1,2}\.\d{1,2}\.\d{4})\b/i,
+    /\b(?:voranmeldung|vorauszahlung).*?(?:fällig|bis)\s*(?:am\s+)?(\d{1,2}\.\d{1,2}\.\d{4})\b/i,
+    /\b(?:betriebsprüfung|außenprüfung).*?(?:am|beginn|ab)\s*(\d{1,2}\.\d{1,2}\.\d{4})\b/i,
+    /\b(?:zahlung|fällig).*?(\d{1,2}\.\d{1,2}\.\d{4})\b/i,
   ];
   for (const p of patterns) {
     const m = text.match(p);

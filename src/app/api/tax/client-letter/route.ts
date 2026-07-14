@@ -3,6 +3,7 @@ import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { collectSSEChunks } from "@/lib/sse-stream";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
+import { buildTaxClientLetterPrompt } from "@/lib/tax-prompts";
 
 export const maxDuration = 120;
 
@@ -116,35 +117,17 @@ export const POST = createHandler(
         ? body.custom_occasion
         : (OCCASION_LABELS[body.occasion] ?? "Anschreiben");
 
-    const langHint = body.language === "en" ? "Antworte auf Englisch." : "Antworte auf Deutsch.";
-
-    const prompt = `Du bist ein Steuerberater-Assistent, der professionelle Mandantenanschreiben verfasst.
-
-MANDANTENDATEN:
-- Name: ${clientName}
-- Typ: ${clientType === "company" ? "Unternehmen" : "Person"}
-- Adresse: ${clientAddress}
-- Steuernummer: ${clientTaxNumber}
-- E-Mail: ${clientEmail}
-- Notizen: ${notes}
-
-ANLASS: ${occasionLabel}
-${keyPoints ? `Wichtige Punkte: ${keyPoints}` : ""}
-
-${langHint}
-Verfasse ein professionelles, persönliches Anschreiben an den Mandanten.
-Der Ton soll professionell aber freundlich sein (Sie-Form).
-Bei Unternehmen: "Sehr geehrte Damen und Herren", bei Personen: "Sehr geehrte(r) Frau/Herr ...".
-
-Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown):
-{
-  "recipient_name": "${clientName}",
-  "recipient_address": "${clientAddress}",
-  "subject": "Betreffzeile",
-  "body": "Vollständiger Brief-Text mit Anrede, Hauptteil und Schluss",
-  "key_points": ["Punkt 1", "Punkt 2"],
-  "call_to_action": "Was der Mandant tun soll"
-}`;
+    const prompt = buildTaxClientLetterPrompt({
+      clientName,
+      clientType,
+      clientAddress,
+      clientTaxNumber,
+      clientEmail,
+      notes,
+      occasionLabel,
+      keyPoints,
+      language: body.language,
+    });
 
     let rawResponse = "";
     try {
@@ -154,6 +137,7 @@ Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown):
         body: JSON.stringify({
           query: prompt,
           mode: "balanced",
+          tax_mode: true,
           source_id: ctx.brainId,
         }),
         signal: AbortSignal.timeout(120_000),

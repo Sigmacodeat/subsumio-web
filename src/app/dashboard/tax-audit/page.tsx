@@ -25,7 +25,7 @@ import {
   ShieldAlert,
   Euro,
 } from "lucide-react";
-import { TaxStatCard, TaxRiskAnalysisPanel, TaxBfhFeedPanel } from "@/components/tax";
+import { TaxStatCard, TaxRiskAnalysisPanel, TaxBfhFeedPanel, TaxTriagePanel } from "@/components/tax";
 import {
   Dialog,
   DialogContent,
@@ -446,11 +446,12 @@ export default function TaxAuditPage() {
         </div>
       )}
 
-      {/* AI Risk Analysis + BFH Feed Panels */}
+      {/* AI Risk Analysis + BFH Feed + Triage Panels */}
       {selectedSlug && (
         <div className="space-y-4">
           <TaxRiskAnalysisPanel returnSlug={selectedSlug} />
           <TaxBfhFeedPanel />
+          <TaxTriagePanel />
         </div>
       )}
 

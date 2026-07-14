@@ -765,6 +765,41 @@ export const D = {
   "tax.letter.copy": { de: "Kopieren", en: "Copy" },
   "tax.letter.copied": { de: "Kopiert!", en: "Copied!" },
 
+  // ── Tax AI: Steuer-Triage ──
+  "tax.triage.title": { de: "Steuer-Triage", en: "Tax Triage" },
+  "tax.triage.desc": {
+    de: "Eingehende Nachrichten steuerrechtlich klassifizieren und priorisieren",
+    en: "Classify and prioritize incoming tax-related messages",
+  },
+  "tax.triage.analyze": { de: "Analysieren", en: "Analyze" },
+  "tax.triage.analyzing": { de: "Wird analysiert...", en: "Analyzing..." },
+  "tax.triage.error": { de: "Triage konnte nicht durchgeführt werden", en: "Triage analysis failed" },
+  "tax.triage.empty": {
+    de: "Nachrichten eingeben und auf 'Analysieren' klicken.",
+    en: "Enter messages and click 'Analyze'.",
+  },
+  "tax.triage.subject": { de: "Betreff", en: "Subject" },
+  "tax.triage.body": { de: "Inhalt", en: "Body" },
+  "tax.triage.source": { de: "Quelle", en: "Source" },
+  "tax.triage.add_message": { de: "Nachricht hinzufügen", en: "Add Message" },
+  "tax.triage.jurisdiction": { de: "Rechtsraum", en: "Jurisdiction" },
+  "tax.triage.use_ai": { de: "KI-Klassifizierung", en: "AI Classification" },
+  "tax.triage.urgency": { de: "Dringlichkeit", en: "Urgency" },
+  "tax.triage.action_type": { de: "Aktionstyp", en: "Action Type" },
+  "tax.triage.legal_area": { de: "Rechtsgebiet", en: "Legal Area" },
+  "tax.triage.deadline": { de: "Frist", en: "Deadline" },
+  "tax.triage.doc_type": { de: "Dokumenttyp", en: "Document Type" },
+  "tax.triage.tax_area": { de: "Steuerbereich", en: "Tax Area" },
+  "tax.triage.risk_level": { de: "Risiko", en: "Risk Level" },
+  "tax.triage.required_actions": { de: "Erforderliche Maßnahmen", en: "Required Actions" },
+  "tax.triage.estimated_amount": { de: "Geschätzter Betrag", en: "Estimated Amount" },
+  "tax.triage.ai_enriched": { de: "KI-klassifiziert", en: "AI-classified" },
+  "tax.triage.summary": { de: "Zusammenfassung", en: "Summary" },
+  "tax.triage.critical": { de: "Kritisch", en: "Critical" },
+  "tax.triage.high": { de: "Hoch", en: "High" },
+  "tax.triage.medium": { de: "Mittel", en: "Medium" },
+  "tax.triage.low": { de: "Niedrig", en: "Low" },
+
   // ── Tax Deadlines page ──
   "tax.deadlines.title": { de: "Steuerfristen", en: "Tax Deadlines" },
   "tax.deadlines.desc": {

@@ -3,12 +3,13 @@ import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { collectSSEChunks } from "@/lib/sse-stream";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
+import { buildTaxCaseStrategyPrompt, type TaxJurisdiction } from "@/lib/tax-prompts";
 
 export const maxDuration = 120;
 
 const strategySchema = z.object({
   return_slug: z.string().min(1, "return_slug_required"),
-  jurisdiction: z.enum(["de", "at"]).optional().default("de"),
+  jurisdiction: z.enum(["de", "at", "ch"]).optional().default("de"),
   language: z.enum(["de", "en"]).optional().default("de"),
 });
 
@@ -100,44 +101,17 @@ export const POST = createHandler(
     const refundAmount = typeof fm.refund_amount === "number" ? fm.refund_amount : undefined;
     const notes = sanitizeUserInput(String(fm.notes ?? returnData.content ?? ""));
 
-    const jurisdictionLabel = body.jurisdiction === "at" ? "AT (Österreich)" : "DE (Deutschland)";
-    const langHint = body.language === "en" ? "Antworte auf Englisch." : "Antworte auf Deutsch.";
-
-    const prompt = `Du bist ein erfahrener Steuerberater-Strategie-Berater (${jurisdictionLabel}).
-Analysiere die folgende Steuererklärung und entwickle eine Strategieempfehlung.
-
-STEUERERKLÄRUNGSDATEN:
-- Mandant: ${clientName}
-- Steuerart: ${taxType}
-- Jahr: ${year}
-- Status: ${status}
-- Festgesetzte Steuer: ${taxAmount ?? "nicht bekannt"}
-- Erstattung: ${refundAmount ?? "keine"}
-- Notizen: ${notes}
-
-${langHint}
-Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown):
-{
-  "summary": "Kurzzusammenfassung der steuerlichen Situation (2-3 Sätze)",
-  "recommended": "Empfohlene Strategie in einem Satz",
-  "recommendedApproach": "Detaillierte Beschreibung des empfohlenen Vorgehens (3-5 Sätze)",
-  "risks": [
-    {
-      "description": "Risikobeschreibung",
-      "probability": "high|medium|low",
-      "impact": "high|medium|low",
-      "mitigation": "Empfohlene Maßnahme zur Risikominimierung"
-    }
-  ],
-  "next_steps": ["Konkrete nächste Schritte"],
-  "cost_estimate": {
-    "min": 0,
-    "max": 0,
-    "currency": "EUR",
-    "basis": "Schätzung basierend auf..."
-  },
-  "success_probability": 0.0
-}`;
+    const prompt = buildTaxCaseStrategyPrompt({
+      clientName,
+      taxType,
+      year,
+      status,
+      taxAmount,
+      refundAmount,
+      notes,
+      jurisdiction: body.jurisdiction.toUpperCase() as TaxJurisdiction,
+      language: body.language,
+    });
 
     let rawResponse = "";
     try {
@@ -147,6 +121,7 @@ Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown):
         body: JSON.stringify({
           query: prompt,
           mode: "balanced",
+          tax_mode: true,
           source_id: ctx.brainId,
         }),
         signal: AbortSignal.timeout(120_000),

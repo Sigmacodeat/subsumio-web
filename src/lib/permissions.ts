@@ -104,6 +104,7 @@ export type RouteAction =
   | "tax.appeal_generator"
   | "tax.bfh_feed"
   | "tax.client_letter"
+  | "tax.triage"
   | "team.role_change"
   | "billing.read"
   | "billing.write"
@@ -208,6 +209,7 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "tax.appeal_generator": ["admin", "lawyer"],
   "tax.bfh_feed": ["admin", "lawyer", "assistant"],
   "tax.client_letter": ["admin", "lawyer", "assistant"],
+  "tax.triage": ["admin", "lawyer", "assistant"],
 };
 
 /** Prüft, ob ein User eine Aktion ausführen darf. */
@@ -285,6 +287,7 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "tax.appeal_generator": "tax.appeal_generator",
     "tax.bfh_feed": "tax.bfh_feed",
     "tax.client_letter": "tax.client_letter",
+    "tax.triage": "tax.triage",
     "legal.statute": "legal.statute",
     "legal.contradictions": "legal.contradictions",
     "legal.retrieval_feedback": "legal.retrieval_feedback",

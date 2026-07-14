@@ -12,3 +12,4 @@ export { TaxPrecedentSearchPanel } from "./tax-precedent-search-panel";
 export { TaxAppealGeneratorPanel } from "./tax-appeal-generator-panel";
 export { TaxBfhFeedPanel } from "./tax-bfh-feed-panel";
 export { TaxClientLetterPanel } from "./tax-client-letter-panel";
+export { TaxTriagePanel } from "./tax-triage-panel";

@@ -3,12 +3,13 @@ import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { collectSSEChunks } from "@/lib/sse-stream";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
+import { buildTaxPrecedentSearchPrompt, type TaxJurisdiction } from "@/lib/tax-prompts";
 
 export const maxDuration = 120;
 
 const searchSchema = z.object({
   query: z.string().min(2, "query_too_short").max(2000),
-  jurisdiction: z.enum(["de", "at"]).optional().default("de"),
+  jurisdiction: z.enum(["de", "at", "ch"]).optional().default("de"),
   limit: z.number().min(1).max(20).optional().default(5),
 });
 
@@ -58,32 +59,12 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, _req) => {
     const safeQuery = sanitizeUserInput(body.query);
-    const jurisdictionLabel =
-      body.jurisdiction === "at" ? "AT (BFH/FG/österreichisch)" : "DE (BFH/FG/deutsch)";
 
-    const prompt = `Du bist ein Steuerrecht-Recherche-Experte (${jurisdictionLabel}).
-Suche relevante BFH-Urteile und Finanzgerichtsurteile zur folgenden Frage.
-
-FRAGE:
-${safeQuery}
-
-Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown), maximal ${body.limit} Ergebnisse:
-{
-  "precedents": [
-    {
-      "court": "BFH | FG <Stadt> | BVerfG",
-      "date": "YYYY-MM-DD",
-      "file_number": "z.B. VI R 42/23",
-      "summary": "Kurzzusammenfassung der Entscheidung (2-3 Sätze)",
-      "relevance": 0.0-1.0,
-      "key_holdings": ["Leitsätze/Kernaussagen"],
-      "legal_basis": ["§ XYZ EStG", "§ XYZ AO"]
-    }
-  ]
-}
-
-WICHTIG: Nenne NUR reale, existierende Urteile. Erfinde KEINE Aktenzeichen oder Daten.
-Wenn du keine relevanten Urteile kennst, gib ein leeres Array zurück.`;
+    const prompt = buildTaxPrecedentSearchPrompt({
+      query: safeQuery,
+      jurisdiction: body.jurisdiction.toUpperCase() as TaxJurisdiction,
+      limit: body.limit,
+    });
 
     let rawResponse = "";
     try {
@@ -93,6 +74,7 @@ Wenn du keine relevanten Urteile kennst, gib ein leeres Array zurück.`;
         body: JSON.stringify({
           query: prompt,
           mode: "balanced",
+          tax_mode: true,
           source_id: ctx.brainId,
         }),
         signal: AbortSignal.timeout(120_000),

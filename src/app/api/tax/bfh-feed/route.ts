@@ -2,13 +2,14 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { collectSSEChunks } from "@/lib/sse-stream";
+import { buildTaxBfhFeedPrompt, type TaxJurisdiction } from "@/lib/tax-prompts";
 
 export const maxDuration = 120;
 
 const feedSchema = z.object({
   topic: z.string().max(500).optional(),
   limit: z.number().min(1).max(20).optional().default(10),
-  jurisdiction: z.enum(["de", "at"]).optional().default("de"),
+  jurisdiction: z.enum(["de", "at", "ch"]).optional().default("de"),
 });
 
 interface BfhDecision {
@@ -61,9 +62,6 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, _req) => {
     const topic = body.topic || "aktuelle steuerrechtliche Entwicklungen";
-    const jurisdictionLabel =
-      body.jurisdiction === "at" ? "Österreich (BFH, VwGH)" : "Deutschland (BFH)";
-
     let corpusResults: Array<{ slug: string; title: string; snippet: string }> = [];
     try {
       const searchRes = await fetch(`${ENGINE_URL}/api/search`, {
@@ -95,27 +93,11 @@ export const POST = createHandler(
       // best-effort search
     }
 
-    const prompt = `Du bist ein Steuerrechtsexperte für ${jurisdictionLabel}.
-Analysiere die aktuelle Rechtsprechung zum Thema: "${topic}".
-
-${corpusResults.length > 0 ? "Verfügbare Corpus-Ergebnisse:\n" + corpusResults.map((r) => `- ${r.title}: ${r.snippet.slice(0, 200)}`).join("\n") : "Keine Corpus-Ergebnisse verfügbar, verwende dein Wissen über aktuelle BFH-Rechtsprechung."}
-
-Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown):
-{
-  "decisions": [
-    {
-      "court": "BFH" oder "FG" etc.,
-      "file_number": "Az. (z.B. VI R 42/23)",
-      "date": "YYYY-MM-DD",
-      "topic": "Thema der Entscheidung",
-      "summary": "Zusammenfassung (3-5 Sätze)",
-      "key_holdings": ["Leitsatz 1", "Leitsatz 2"],
-      "legal_basis": ["§ X Gesetz"],
-      "relevance": "high|medium|low"
-    }
-  ],
-  "topic_summary": "Überblick über die aktuellen Entwicklungen (3-5 Sätze)"
-}`;
+    const prompt = buildTaxBfhFeedPrompt({
+      topic,
+      jurisdiction: body.jurisdiction.toUpperCase() as TaxJurisdiction,
+      corpusResults: corpusResults.map((r) => ({ title: r.title, snippet: r.snippet })),
+    });
 
     let rawResponse = "";
     try {
@@ -125,6 +107,7 @@ Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown):
         body: JSON.stringify({
           query: prompt,
           mode: "balanced",
+          tax_mode: true,
           source_id: ctx.brainId,
         }),
         signal: AbortSignal.timeout(120_000),

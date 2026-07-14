@@ -4,13 +4,14 @@ import { createHandler, apiError } from "@/lib/api-handler";
 import { collectSSEChunks } from "@/lib/sse-stream";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 import { einspruchDeadline } from "@/lib/tax-deadlines";
+import { buildTaxAppealPrompt, type TaxJurisdiction } from "@/lib/tax-prompts";
 
 export const maxDuration = 120;
 
 const appealSchema = z.object({
   assessment_slug: z.string().min(1, "assessment_slug_required"),
   contested_points: z.string().max(10_000).optional(),
-  jurisdiction: z.enum(["de", "at"]).optional().default("de"),
+  jurisdiction: z.enum(["de", "at", "ch"]).optional().default("de"),
   language: z.enum(["de", "en"]).optional().default("de"),
 });
 
@@ -130,51 +131,18 @@ export const POST = createHandler(
       }
     }
 
-    const jurisdictionLabel =
-      body.jurisdiction === "at" ? "AT (Österreich, BAO)" : "DE (Deutschland, AO)";
-    const langHint = body.language === "en" ? "Antworte auf Englisch." : "Antworte auf Deutsch.";
-
-    const prompt = `Du bist ein erfahrener Steuerberater und Fachanwalt für Steuerrecht (${jurisdictionLabel}).
-Analysiere den folgenden Steuerbescheid und generiere einen Einspruchsentwurf.
-
-BESCHEIDDATEN:
-- Mandant: ${clientName}
-- Steuerart: ${taxType}
-- Veranlagungszeitraum: ${year}
-- Bescheidnummer: ${noticeNumber}
-- Bescheiddatum: ${noticeDate}
-- Festgesetzte Steuer: ${amount} EUR
-- Notizen/Inhalt: ${notes}
-${contestedPoints ? `- Vom Mandanten beanstandete Punkte: ${contestedPoints}` : ""}
-
-${langHint}
-Berechne die Einspruchsfrist (§ 355 AO: 1 Monat ab Bekanntgabe/Zustellung).
-Bekanntgabefiktion: 3 Tage nach Aufgabe zur Post (§ 122 AO).
-
-Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown):
-{
-  "assessment_summary": "Kurzzusammenfassung des Bescheids (2-3 Sätze)",
-  "contested_points": [
-    {
-      "position": "Bezeichnung der streitigen Position",
-      "tax_office_view": "Auffassung des Finanzamts",
-      "taxpayer_view": "Auffassung des Steuerpflichtigen",
-      "legal_basis": "§ X Gesetz",
-      "disputed_amount": 0,
-      "success_prospect": "stark|mittel|schwach|keine",
-      "required_evidence": ["Benötigte Nachweise"]
-    }
-  ],
-  "success_prospect_summary": "Gesamtbewertung der Erfolgsaussichten (2-3 Sätze)",
-  "total_disputed_amount": 0,
-  "draft_letter": {
-    "recipient": "Finanzamt ...",
-    "subject": "Einspruch gegen den ...-Bescheid ... vom ...",
-    "body": "Vollständiger Einspruchsschreiben-Text mit rechtlicher Begründung",
-    "requests": ["Antrag 1", "Antrag 2"]
-  },
-  "recommendations": ["Empfohlene Maßnahmen"]
-}`;
+    const prompt = buildTaxAppealPrompt({
+      clientName,
+      taxType,
+      year,
+      noticeNumber,
+      noticeDate,
+      amount,
+      notes,
+      contestedPoints,
+      jurisdiction: body.jurisdiction.toUpperCase() as TaxJurisdiction,
+      language: body.language,
+    });
 
     let rawResponse = "";
     try {
@@ -184,6 +152,7 @@ Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown):
         body: JSON.stringify({
           query: prompt,
           mode: "balanced",
+          tax_mode: true,
           source_id: ctx.brainId,
         }),
         signal: AbortSignal.timeout(120_000),
@@ -230,7 +199,8 @@ Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown):
           }))
         : [],
       deadline: deadlineISO,
-      deadline_legal_basis: body.jurisdiction === "at" ? "§ 248 BAO" : "§ 355 AO",
+      deadline_legal_basis:
+        body.jurisdiction === "at" ? "§ 248 BAO" : body.jurisdiction === "ch" ? "Art. 108 DBG" : "§ 355 AO",
       days_remaining: daysRemaining,
       success_prospect_summary: String(parsed.success_prospect_summary ?? ""),
       total_disputed_amount:

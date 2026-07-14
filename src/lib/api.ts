@@ -1729,6 +1729,67 @@ export const api = {
         }),
       });
     },
+
+    triage(input: {
+      messages: Array<{
+        source: "bea" | "email" | "scan" | "whatsapp" | "portal" | "manual";
+        subject: string;
+        body?: string;
+        sender?: string;
+        date?: string;
+        caseRef?: string;
+        rawSlug?: string;
+        suggestedCaseSlug?: string;
+      }>;
+      jurisdiction?: "de" | "at" | "ch";
+      useAi?: boolean;
+    }): Promise<{
+      results: Array<{
+        card: {
+          id: string;
+          source: string;
+          urgency: string;
+          actionType: string;
+          title: string;
+          summary: string;
+          legalArea?: string;
+          deadline?: string;
+          confidence: string;
+          status: string;
+        };
+        enrichment: {
+          document_type: string;
+          tax_area: string;
+          deadline_type: string | null;
+          deadline_date: string | null;
+          deadline_legal_basis: string | null;
+          required_actions: string[];
+          risk_level: string;
+          estimated_amount: number | null;
+          jurisdiction: string;
+          key_entities: { label: string; value: string }[];
+        } | null;
+        ai_classified: boolean;
+      }>;
+      summary: {
+        total: number;
+        tax_related: number;
+        critical: number;
+        high: number;
+        medium: number;
+        low: number;
+        ai_enriched: number;
+      };
+    }> {
+      return request("/api/tax/triage", {
+        method: "POST",
+        body: JSON.stringify({
+          messages: input.messages,
+          jurisdiction: input.jurisdiction,
+          use_ai: input.useAi,
+        }),
+      });
+    },
   },
 
   whatsapp: {
