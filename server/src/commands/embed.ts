@@ -550,12 +550,20 @@ async function embedAll(
       for (let j = 0; j < toEmbed.length; j++) {
         embeddingMap.set(toEmbed[j].chunk_index, embeddings[j]);
       }
-      // Preserve ALL chunks, only update embeddings for stale ones
+      // Preserve ALL chunks, only update embeddings for stale ones. `model`
+      // must be stamped explicitly here — upsertChunks falls back to the
+      // compiled-in DEFAULT_EMBEDDING_MODEL (zeroentropyai:zembed-1) when a
+      // chunk omits it, mislabeling correctly-embedded (openrouter) vectors
+      // as wrong-model and making reembed-wrong-model.ts re-process them
+      // forever (found 2026-07-14: 1433+ chunks mislabeled this way in one
+      // --catch-up run alone). The vector itself was always correct — only
+      // the audit-trail label was wrong.
       const updated: ChunkInput[] = chunks.map((c) => ({
         chunk_index: c.chunk_index,
         chunk_text: c.chunk_text,
         chunk_source: c.chunk_source,
         embedding: embeddingMap.get(c.chunk_index) ?? undefined,
+        model: embeddingMap.has(c.chunk_index) ? signature : c.model,
         token_count: c.token_count || Math.ceil(c.chunk_text.length / 4),
       }));
       await engine.upsertChunks(page.slug, updated, pageOpts);
