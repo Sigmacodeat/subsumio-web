@@ -13,7 +13,8 @@
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { createHash } from "node:crypto";
-import { CORPUS_META, CORPUS_DIR } from "@/lib/legal-grounding";
+import { CORPUS_META } from "@/lib/corpus-meta";
+import { CORPUS_DIR } from "@/lib/legal-grounding";
 
 // ── Types ─────────────────────────────────────────────────────────────
 

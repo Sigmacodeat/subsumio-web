@@ -5477,6 +5477,133 @@ export const MIGRATIONS: Migration[] = [
       ON CONFLICT DO NOTHING;
     `,
   },
+  {
+    version: 121,
+    name: "legal_data_factory_tables",
+    // T3.4 Stale Dependency Graph — corpus snapshots, amendments, stale outputs,
+    // per-paragraph hashes, and output→claim→snapshot dependency tracking.
+    //
+    // Combines DDL from server/migrations/004_corpus_snapshots.sql and
+    // server/migrations/006_source_lifecycle.sql (output_dependencies section)
+    // into the MIGRATIONS array so both PGLite and Postgres engines create
+    // these tables during initSchema(). The standalone .sql files remain as
+    // documentation; this migration is the authoritative source for the
+    // engine-parity path.
+    //
+    // All CREATE TABLE IF NOT EXISTS — idempotent, safe on fresh installs
+    // and upgrades. No CONCURRENTLY needed (no large table rewrites).
+    idempotent: true,
+    sql: `
+      -- corpus_snapshots: Versioned law corpus documents
+      CREATE TABLE IF NOT EXISTS corpus_snapshots (
+        id              BIGSERIAL PRIMARY KEY,
+        slug            TEXT NOT NULL,
+        jurisdiction    TEXT NOT NULL CHECK (jurisdiction IN ('DE', 'AT', 'CH', 'EU')),
+        statute_code    TEXT NOT NULL,
+        valid_from      DATE NOT NULL,
+        valid_to        DATE,
+        fetched_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        source_url      TEXT NOT NULL,
+        content_hash    TEXT NOT NULL,
+        parser_version  TEXT NOT NULL,
+        license_status  TEXT NOT NULL DEFAULT 'public' CHECK (license_status IN ('public', 'licensed', 'pending')),
+        amendment_count INTEGER NOT NULL DEFAULT 0,
+        announcement_date DATE,
+        gazette_reference TEXT,
+        language        TEXT NOT NULL DEFAULT 'de',
+        paragraph_count INTEGER,
+        receipt_json    TEXT,
+        UNIQUE (slug, valid_from)
+      );
+      CREATE INDEX IF NOT EXISTS idx_corpus_snapshots_slug_current
+        ON corpus_snapshots (slug) WHERE valid_to IS NULL;
+      CREATE INDEX IF NOT EXISTS idx_corpus_snapshots_jurisdiction
+        ON corpus_snapshots (jurisdiction);
+      CREATE INDEX IF NOT EXISTS idx_corpus_snapshots_hash
+        ON corpus_snapshots (content_hash);
+
+      -- corpus_amendments: Per-§ changes between snapshots
+      CREATE TABLE IF NOT EXISTS corpus_amendments (
+        id              BIGSERIAL PRIMARY KEY,
+        slug            TEXT NOT NULL,
+        statute_code    TEXT NOT NULL,
+        jurisdiction    TEXT NOT NULL CHECK (jurisdiction IN ('DE', 'AT', 'CH', 'EU')),
+        paragraph       TEXT NOT NULL,
+        change_type     TEXT NOT NULL CHECK (change_type IN ('added', 'modified', 'removed')),
+        old_hash        TEXT,
+        new_hash        TEXT,
+        detected_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        source_url      TEXT,
+        announcement_date DATE
+      );
+      CREATE INDEX IF NOT EXISTS idx_corpus_amendments_slug
+        ON corpus_amendments (slug);
+      CREATE INDEX IF NOT EXISTS idx_corpus_amendments_paragraph
+        ON corpus_amendments (slug, paragraph);
+      CREATE INDEX IF NOT EXISTS idx_corpus_amendments_detected
+        ON corpus_amendments (detected_at DESC);
+
+      -- stale_outputs: Outputs that may be affected by law changes
+      CREATE TABLE IF NOT EXISTS stale_outputs (
+        id              BIGSERIAL PRIMARY KEY,
+        output_id       TEXT NOT NULL,
+        output_type     TEXT NOT NULL,
+        cited_slug      TEXT NOT NULL,
+        cited_paragraph TEXT,
+        amendment_id    BIGINT REFERENCES corpus_amendments(id),
+        marked_stale_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        resolved_at     TIMESTAMPTZ,
+        resolved_by     TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_stale_outputs_output
+        ON stale_outputs (output_id);
+      CREATE INDEX IF NOT EXISTS idx_stale_outputs_unresolved
+        ON stale_outputs (output_id) WHERE resolved_at IS NULL;
+      CREATE INDEX IF NOT EXISTS idx_stale_outputs_slug
+        ON stale_outputs (cited_slug, cited_paragraph);
+
+      -- corpus_snapshot_paragraphs: Per-§ hashes for amendment detection
+      CREATE TABLE IF NOT EXISTS corpus_snapshot_paragraphs (
+        id              BIGSERIAL PRIMARY KEY,
+        slug            TEXT NOT NULL,
+        snapshot_id     BIGINT NOT NULL,
+        paragraph_hashes JSONB NOT NULL,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_corpus_snapshot_paragraphs_slug
+        ON corpus_snapshot_paragraphs (slug, snapshot_id);
+
+      -- output_dependencies: Output → Claim → Source Snapshot dependency graph
+      CREATE TABLE IF NOT EXISTS output_dependencies (
+        id              BIGSERIAL PRIMARY KEY,
+        output_id       TEXT NOT NULL,
+        output_type     TEXT NOT NULL,
+        claim_hash      TEXT,
+        source_slug     TEXT NOT NULL,
+        snapshot_hash   TEXT NOT NULL,
+        paragraph_ref   TEXT,
+        brain_id        TEXT,
+        user_id         TEXT,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        reverify_status TEXT NOT NULL DEFAULT 'pending' CHECK (reverify_status IN (
+          'pending', 'verified', 'stale', 'failed', 'not_affected'
+        )),
+        reverified_at   TIMESTAMPTZ,
+        reverified_by   TEXT,
+        reverify_notes  TEXT,
+        triggering_amendment_id BIGINT REFERENCES corpus_amendments(id),
+        UNIQUE (output_id, source_slug, paragraph_ref, snapshot_hash)
+      );
+      CREATE INDEX IF NOT EXISTS idx_output_deps_output
+        ON output_dependencies (output_id);
+      CREATE INDEX IF NOT EXISTS idx_output_deps_source
+        ON output_dependencies (source_slug, snapshot_hash);
+      CREATE INDEX IF NOT EXISTS idx_output_deps_reverify
+        ON output_dependencies (reverify_status) WHERE reverify_status = 'pending';
+      CREATE INDEX IF NOT EXISTS idx_output_deps_brain
+        ON output_dependencies (brain_id) WHERE brain_id IS NOT NULL;
+    `,
+  },
 ];
 
 export const LATEST_VERSION =

@@ -49,6 +49,9 @@ const ONLY_PREFIXED =
           .filter((s) => s.includes(":"))
       )
     : null;
+const AUTO_AT = args.includes("--auto-at");
+const jurIdx = args.indexOf("--jurisdiction");
+const JURISDICTION_FILTER = jurIdx !== -1 ? args[jurIdx + 1] : null;
 const dbIdx = args.indexOf("--db");
 const DB_OVERRIDE = dbIdx !== -1 ? args[dbIdx + 1] : null;
 // Target source. Legal reference sources are canonical and cannot be
@@ -222,6 +225,30 @@ const FILES: StatuteFile[] = [
   { file: "eu/euco.md", abbr: "euco", jurisdiction: "eu" },
 ];
 
+// ── Dynamic AT discovery ──────────────────────────────────────────────
+// When --auto-at is passed, scan the at/ corpus directory for all .md files
+// not already in the hardcoded FILES list. This picks up the hundreds of
+// Verordnungen and smaller Gesetze fetched from RIS.
+if (AUTO_AT) {
+  const atDir = join(CORPUS, "at");
+  let discovered = 0;
+  try {
+    const entries = await Array.fromAsync(new Bun.Glob("*.md").scan({ cwd: atDir }));
+    const existing = new Set(FILES.filter((f) => f.jurisdiction === "at").map((f) => f.file));
+    for (const file of entries.sort()) {
+      const rel = `at/${file}`;
+      if (existing.has(rel)) continue;
+      // Derive abbr from filename (without .md), normalized to lowercase
+      const abbr = file.replace(/\.md$/, "").toLowerCase();
+      FILES.push({ file: rel, abbr, jurisdiction: "at" });
+      discovered++;
+    }
+    console.log(`[auto-at] Discovered ${discovered} additional AT statute files.`);
+  } catch (e) {
+    console.warn(`[auto-at] Could not scan ${atDir}: ${e}`);
+  }
+}
+
 function yamlEscape(v: string): string {
   return JSON.stringify(v);
 }
@@ -307,10 +334,11 @@ async function preservePreviousVersion(
 async function main() {
   const requested = FILES.filter(
     (f) =>
-      !ONLY ||
-      ONLY.has(f.abbr) ||
-      ONLY.has(`${f.jurisdiction}:${f.abbr}`) ||
-      ONLY.has(f.file.replace("/", ":"))
+      (!JURISDICTION_FILTER || f.jurisdiction === JURISDICTION_FILTER) &&
+      (!ONLY ||
+        ONLY.has(f.abbr) ||
+        ONLY.has(`${f.jurisdiction}:${f.abbr}`) ||
+        ONLY.has(f.file.replace("/", ":")))
   );
   const selected = requested.filter((file) => !isQuarantinedLegalSource(file.file));
   const skippedQuarantine = requested.length - selected.length;
@@ -354,7 +382,19 @@ async function main() {
       if (!meta.source_url || !/^https?:\/\//.test(meta.source_url)) {
         preflightErrors.push(`${sf.file}: missing or invalid source_url`);
       }
-      if (sections.length === 0) preflightErrors.push(`${sf.file}: 0 sections parsed`);
+      if (sections.length === 0) {
+        // Fallback for small Verordnungen / Gesetze with <10 inline § markers:
+        // import the entire document as a single page so it's still searchable.
+        const bodyStart = raw.indexOf("\n---", 3);
+        const afterFm = bodyStart === -1 ? raw : raw.slice(raw.indexOf("\n", bodyStart + 1) + 1);
+        sections.push({
+          id: "full",
+          marker: "§" as const,
+          ref: "full",
+          title: meta.title || sf.abbr,
+          body: afterFm.trim(),
+        });
+      }
       prepared.push({ sf, meta, sections });
     } catch (error) {
       preflightErrors.push(`${sf.file}: ${error instanceof Error ? error.message : String(error)}`);
@@ -421,7 +461,7 @@ async function main() {
       const jurisdiction = Object.entries(LEGAL_SOURCE_BY_JURISDICTION).find(([, id]) => id === sid)?.[0];
       await engine.executeRaw(
         `INSERT INTO sources (id, name, jurisdiction, config)
-         VALUES ($1, $1, $2, jsonb_build_object('federated', true, 'legal_reference', true, 'jurisdiction', $2))
+         VALUES ($1, $1, $2::text, jsonb_build_object('federated', true, 'legal_reference', true, 'jurisdiction', $2::text))
          ON CONFLICT (id) DO UPDATE SET
            config = sources.config || EXCLUDED.config,
            jurisdiction = COALESCE(sources.jurisdiction, EXCLUDED.jurisdiction)`,
@@ -475,17 +515,23 @@ async function main() {
       const slug = `legal/statutes/${sf.jurisdiction}/${sf.abbr}/${section.id}`;
       assertLegalSourceJurisdiction(sf.jurisdiction, effectiveSourceId, slug);
       try {
-        await preservePreviousVersion(
-          engine,
-          importFromContent,
-          slug,
-          effectiveSourceId,
-          versionId,
-          NO_EMBED
-        );
+        // Skip preservePreviousVersion for initial bulk import — each
+        // getPage() round-trip over SSH is ~50ms; 13k sections = 10+ min
+        // of pure latency. Re-enable for versioned re-imports.
+        if (!NO_EMBED) {
+          await preservePreviousVersion(
+            engine,
+            importFromContent,
+            slug,
+            effectiveSourceId,
+            versionId,
+            NO_EMBED
+          );
+        }
         const result = await importFromContent(engine, slug, sectionPage(sf, meta, section), {
           noEmbed: NO_EMBED,
           sourceId: effectiveSourceId,
+          skipContentDuplicates: true,
         });
         if (result.status === "imported") {
           okForLaw++;
@@ -498,6 +544,9 @@ async function main() {
       } catch (e) {
         totalErrors++;
         console.error(`  ❌ ${slug}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      if ((okForLaw + skippedForLaw) % 100 === 0) {
+        console.log(`    ... ${sf.abbr}: ${okForLaw + skippedForLaw}/${sections.length}`);
       }
     }
     totalSections += okForLaw;

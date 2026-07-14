@@ -37,6 +37,9 @@ export const EMBEDDING_PRICING: Record<string, EmbeddingPricing> = {
   "voyage:voyage-4-large": { pricePerMTok: 0.18 },
   // ZeroEntropy (https://zeroentropy.dev/pricing — zembed-1)
   "zeroentropyai:zembed-1": { pricePerMTok: 0.05 },
+  // OpenRouter-routed OpenAI embeddings (same underlying price, different key format)
+  "openrouter:openai/text-embedding-3-small": { pricePerMTok: 0.02 },
+  "openrouter:openai/text-embedding-3-large": { pricePerMTok: 0.13 },
 };
 
 export type PriceLookupResult =

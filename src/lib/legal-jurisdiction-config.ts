@@ -11,7 +11,7 @@
  *  - Fremde Gesetze ohne EU-/Cross-Border-Regel blockiert
  */
 
-import { CORPUS_META } from "@/lib/legal-grounding";
+import { CORPUS_META } from "@/lib/corpus-meta";
 
 // ── Types ─────────────────────────────────────────────────────────────
 

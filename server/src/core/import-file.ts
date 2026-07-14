@@ -323,6 +323,13 @@ export async function importFromContent(
      * leave it unset → markers preserved (the gate + CLI own them).
      */
     remote?: boolean;
+    /**
+     * When true, skip import if a page with the same content_hash already
+     * exists in the same source under a different slug AND neither page has
+     * a frontmatter.id. This prevents duplicate legal statute pages when
+     * the splitter produces different section IDs on re-import.
+     */
+    skipContentDuplicates?: boolean;
   } = {}
 ): Promise<ImportResult> {
   // v0.18.0+ multi-source: when caller is syncing under a non-default source,
@@ -662,6 +669,17 @@ export async function importFromContent(
         return { slug: dup.slug, status: "skipped", chunks: 0, parsedPage };
       }
       // Same content_hash, different (or missing) frontmatter.id.
+      if (opts.skipContentDuplicates && fmIdStr === null && dupFmIdStr === null) {
+        // No external ID on either side — treat as true duplicate.
+        // This prevents re-imports of legal statutes from creating
+        // duplicate pages when the splitter assigns different section IDs.
+        process.stderr.write(
+          `[import] skipping ${opts.sourcePath ?? slug}: content_hash matches ${dup.slug} ` +
+            `(${hash.slice(0, 8)}) in source ${sourceId ?? "default"}, no frontmatter.id. ` +
+            `Pass --force-rechunk to override.\n`
+        );
+        return { slug: dup.slug, status: "skipped", chunks: 0, parsedPage };
+      }
       // Surface a warning but proceed with the insert — they may be
       // legitimate independent pages that happen to share text.
       process.stderr.write(

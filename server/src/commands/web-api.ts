@@ -1545,7 +1545,7 @@ const SHARED_READ_SOURCES: string[] = (
  */
 const JURISDICTION_LAW_SOURCES: Record<string, string[]> = {
   DE: ["law-de", "law-eu"],
-  AT: ["law-at", "law-at-judikatur", "law-eu"],
+  AT: ["law-at", "law-at-judikatur", "law-at-judikatur-vfgh", "law-at-judikatur-vwgh", "law-eu"],
   CH: ["law-ch", "law-eu"],
 };
 

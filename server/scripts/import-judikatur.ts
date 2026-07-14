@@ -1,37 +1,66 @@
 /**
- * import-judikatur — bring the fetched OGH decisions (server/law-corpus/at-
- * judikatur/*.md, from scripts/ingest-at-judikatur.ts / bulk-import-ogh-
- * judikate.ts) into the brain as pages, AND link each decision to the
- * statute §§ it's actually about via its RIS "Norm" field.
+ * import-judikatur — bring fetched Austrian court decisions into the brain
+ * as pages, AND link each decision to the statute §§ it references.
+ *
+ * Supports seven court sources via --source flag:
+ *   ogh   (default) — server/law-corpus/at-judikatur/   → source law-at-judikatur
+ *   vfgh             — server/law-corpus/at-judikatur-vfgh/ → source law-at-judikatur-vfgh
+ *   vwgh             — server/law-corpus/at-judikatur-vwgh/ → source law-at-judikatur-vwgh
+ *   bvwg             — server/law-corpus/at-judikatur-bvwg/ → source law-at-judikatur-bvwg
+ *   lvwg             — server/law-corpus/at-judikatur-lvwg/ → source law-at-judikatur-lvwg
+ *   asylgh           — server/law-corpus/at-judikatur-asylgh/ → source law-at-judikatur-asylgh
+ *   uvs              — server/law-corpus/at-judikatur-uvs/ → source law-at-judikatur-uvs
  *
  * Two writes per decision:
- *   1. The decision itself as a page (`legal/judikatur/at/<file-slug>`),
- *      source `law-at-judikatur`, embedded for semantic search.
+ *   1. The decision itself as a page (`legal/judikatur/at/[court]/<file-slug>`),
+ *      source `law-at-judikatur[-court]`, embedded for semantic search.
  *   2. `links` edges (link_type='judikatur-cites', link_source='citation-
- *      graph') from the decision to each cited § page it references — ONLY
- *      when that exact abbreviation is one we hold real statute pages for
- *      (JUDIKATUR_CODE_MAP below) and the target § page actually exists.
- *      Historical/foreign abbreviations we don't carry (JN, VersVG, RAT,
- *      GBG, ...) or renamed codes (HGB → UGB in 2007, NOT a safe 1:1 mapping
- *      since §-numbering shifted) are deliberately left unmapped rather than
- *      risk a wrong edge — same fail-closed principle as citation-graph.ts.
+ *      graph') from the decision to each cited § page — ONLY when that
+ *      abbreviation is in JUDIKATUR_CODE_MAP and the target § page exists.
+ *      Fail-closed: unknown/historical codes (HGB→UGB, JN, VersVG, ...) are
+ *      deliberately left unmapped — same principle as citation-graph.ts.
  *
  * Usage:
- *   bun run server/scripts/import-judikatur.ts [--dry-run] [--no-embed] [--limit N]
+ *   bun run server/scripts/import-judikatur.ts [--source ogh|vfgh|vwgh|bvwg|lvwg|asylgh|uvs] [--dry-run] [--no-embed] [--limit N]
  */
 
-import { readdirSync } from "fs";
+import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
-import { extractNormReferences } from "../src/core/legal/judikatur-citations.ts";
+import { extractAllNormReferences } from "../src/core/legal/judikatur-citations.ts";
 
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
 const NO_EMBED = args.includes("--no-embed");
 const limitIdx = args.indexOf("--limit");
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : Infinity;
+const sourceIdx = args.indexOf("--source");
+const sourceKey = sourceIdx >= 0 ? args[sourceIdx + 1] : "ogh";
 
-const JUDIKATUR_DIR = join(import.meta.dir, "..", "law-corpus", "at-judikatur");
-const SOURCE_ID = "law-at-judikatur";
+interface SourceConfig {
+  dir: string;
+  sourceId: string;
+  slugPrefix: string;
+  label: string;
+}
+
+const SOURCE_CONFIGS: Record<string, SourceConfig> = {
+  ogh: { dir: "at-judikatur", sourceId: "law-at-judikatur", slugPrefix: "legal/judikatur/at", label: "OGH" },
+  vfgh: { dir: "at-judikatur-vfgh", sourceId: "law-at-judikatur-vfgh", slugPrefix: "legal/judikatur/at/vfgh", label: "VfGH" },
+  vwgh: { dir: "at-judikatur-vwgh", sourceId: "law-at-judikatur-vwgh", slugPrefix: "legal/judikatur/at/vwgh", label: "VwGH" },
+  bvwg: { dir: "at-judikatur-bvwg", sourceId: "law-at-judikatur-bvwg", slugPrefix: "legal/judikatur/at/bvwg", label: "BVwG" },
+  lvwg: { dir: "at-judikatur-lvwg", sourceId: "law-at-judikatur-lvwg", slugPrefix: "legal/judikatur/at/lvwg", label: "LVwG" },
+  asylgh: { dir: "at-judikatur-asylgh", sourceId: "law-at-judikatur-asylgh", slugPrefix: "legal/judikatur/at/asylgh", label: "AsylGH" },
+  uvs: { dir: "at-judikatur-uvs", sourceId: "law-at-judikatur-uvs", slugPrefix: "legal/judikatur/at/uvs", label: "Uvs" },
+};
+
+const srcCfg = SOURCE_CONFIGS[sourceKey];
+if (!srcCfg) {
+  console.error(`Unknown source: ${sourceKey}. Use ogh, vfgh, vwgh, bvwg, lvwg, asylgh, or uvs.`);
+  process.exit(1);
+}
+
+const JUDIKATUR_DIR = join(import.meta.dir, "..", "law-corpus", srcCfg.dir);
+const SOURCE_ID = srcCfg.sourceId;
 
 /** RIS "Norm" abbreviation → our statute abbr (matches import-statutes-split.ts
  *  / import-citation-graph.ts's `at/<abbr>` file naming). Only codes we hold
@@ -61,6 +90,61 @@ const JUDIKATUR_CODE_MAP: Record<string, string> = {
   VStG: "vstg",
   JGG: "jgg",
   GOG: "gog",
+  // Expanded — codes that exist as law-at pages in the DB
+  WRG: "wrg",
+  JN: "jn",
+  SMG: "smg",
+  AZG: "azg",
+  ZustG: "zustg",
+  PatG: "patg",
+  RAO: "rao",
+  AMG: "amg",
+  BAO: "bao",
+  UrhG: "urhg",
+  BDG: "bdg",
+  WEG: "weg",
+  BUAG: "buag",
+  VbVG: "vbvg",
+  AktG: "aktg",
+  ALVG: "alvg",
+  ARG: "arg",
+  AsylG: "asylg",
+  AufenthG: "aufenthg",
+  AuslBG: "auslbg",
+  AVRAG: "avrag",
+  AWG: "awg",
+  BBG: "bbg",
+  BewG: "bewg",
+  BVerGG: "bvergg",
+  "B-VG": "b-vg",
+  ChemG: "chemg",
+  ECG: "ecg",
+  "E-GovG": "e-govg",
+  Eiwog: "eiwog",
+  EPG: "epig",
+  EstG: "estg",
+  ForstG: "forstg",
+  FPG: "fpg",
+  GebG: "gebg",
+  GlBG: "glbg",
+  GWG: "gwg",
+  KAG: "kag",
+  KartG: "kartg",
+  KStG: "kstg",
+  MedienG: "medieng",
+  MSchG: "mschg",
+  "N-G": "n-g",
+  PStG: "pstg",
+  SPG: "spg",
+  StBG: "stbg",
+  StRegG: "stregg",
+  TilgG: "tilgg",
+  TKG: "tkg",
+  TschG: "tschg",
+  UStG: "ustg",
+  VKGG: "vkgg",
+  VVG: "vvg",
+  WaffG: "waffg",
 };
 
 interface ParsedDecision {
@@ -74,9 +158,9 @@ function loadDecisions(): ParsedDecision[] {
     .filter((f) => f.endsWith(".md"))
     .slice(0, LIMIT);
   return files.map((f) => {
-    const content = require("fs").readFileSync(join(JUDIKATUR_DIR, f), "utf-8");
-    const slug = `legal/judikatur/at/${f.replace(/\.md$/, "")}`;
-    const normRefs = extractNormReferences(content);
+    const content = readFileSync(join(JUDIKATUR_DIR, f), "utf-8");
+    const slug = `${srcCfg.slugPrefix}/${f.replace(/\.md$/, "")}`;
+    const normRefs = extractAllNormReferences(content);
     return { slug, content, normRefs };
   });
 }
@@ -84,7 +168,7 @@ function loadDecisions(): ParsedDecision[] {
 async function main() {
   const decisions = loadDecisions();
   console.log("═══════════════════════════════════════════════════════════");
-  console.log("  Subsumio — Judikatur-Import (OGH-Entscheidungen)");
+  console.log(`  Subsumio — Judikatur-Import (${srcCfg.label}-Entscheidungen)`);
   console.log("═══════════════════════════════════════════════════════════");
   console.log(
     `Mode: ${DRY ? "DRY-RUN (kein DB-Write)" : NO_EMBED ? "import, no-embed" : "import + embed"}`
@@ -131,58 +215,71 @@ async function main() {
 
   let pagesOk = 0;
   let pagesErr = 0;
-  const allLinks: Array<{
-    from_slug: string;
-    to_slug: string;
-    link_type: string;
-    context: string;
-    link_source: string;
-    from_source_id: string;
-    to_source_id: string;
-  }> = [];
+  let linksWritten = 0;
+  let totalLinks = 0;
+  const BATCH_SIZE = 100;
 
-  for (const d of decisions) {
-    try {
-      const result = await importFromContent(engine, d.slug, d.content, {
-        noEmbed: NO_EMBED,
-        sourceId: SOURCE_ID,
-      });
-      if (result.status === "imported" || result.status === "skipped") pagesOk++;
-      else {
+  for (let bi = 0; bi < decisions.length; bi += BATCH_SIZE) {
+    const batch = decisions.slice(bi, bi + BATCH_SIZE);
+    const batchLinks: Array<{
+      from_slug: string;
+      to_slug: string;
+      link_type: string;
+      context: string;
+      link_source: string;
+      from_source_id: string;
+      to_source_id: string;
+    }> = [];
+
+    for (const d of batch) {
+      try {
+        const result = await importFromContent(engine, d.slug, d.content, {
+          noEmbed: NO_EMBED,
+          sourceId: SOURCE_ID,
+        });
+        if (result.status === "imported" || result.status === "skipped") pagesOk++;
+        else {
+          pagesErr++;
+          console.error(`  ❌ ${d.slug}: ${result.error || result.status}`);
+        }
+      } catch (e) {
         pagesErr++;
-        console.error(`  ❌ ${d.slug}: ${result.error || result.status}`);
+        console.error(`  ❌ ${d.slug}: ${e instanceof Error ? e.message : String(e)}`);
+        continue;
       }
-    } catch (e) {
-      pagesErr++;
-      console.error(`  ❌ ${d.slug}: ${e instanceof Error ? e.message : String(e)}`);
-      continue;
+
+      for (const r of d.normRefs) {
+        const abbr = JUDIKATUR_CODE_MAP[r.code];
+        if (!abbr) continue;
+        batchLinks.push({
+          from_slug: d.slug,
+          to_slug: `legal/statutes/at/${abbr}/p-${r.ref}`,
+          link_type: "judikatur-cites",
+          context: `${r.code} § ${r.ref}`,
+          link_source: "citation-graph",
+          from_source_id: SOURCE_ID,
+          to_source_id: "law-at",
+        });
+      }
     }
 
-    for (const r of d.normRefs) {
-      const abbr = JUDIKATUR_CODE_MAP[r.code];
-      if (!abbr) continue;
-      allLinks.push({
-        from_slug: d.slug,
-        to_slug: `legal/statutes/at/${abbr}/p-${r.ref}`,
-        link_type: "judikatur-cites",
-        context: `${r.code} § ${r.ref}`,
-        link_source: "citation-graph",
-        from_source_id: SOURCE_ID,
-        to_source_id: "law-at",
+    if (batchLinks.length > 0) {
+      const written = await (engine as any).addLinksBatch(batchLinks, {
+        auditSite: "judikatur-import",
       });
+      linksWritten += written;
+      totalLinks += batchLinks.length;
+    }
+
+    const done = Math.min(bi + BATCH_SIZE, decisions.length);
+    if (done % 500 === 0 || done === decisions.length) {
+      console.log(`  ... ${done}/${decisions.length} (pages: ${pagesOk}, links: ${linksWritten}/${totalLinks})`);
     }
   }
 
   console.log(`  Seiten: ${pagesOk} ok, ${pagesErr} Fehler`);
-
-  let linksWritten = 0;
-  if (allLinks.length > 0) {
-    linksWritten = await (engine as any).addLinksBatch(allLinks, {
-      auditSite: "judikatur-import",
-    });
-  }
   console.log(
-    `  Kanten: ${linksWritten}/${allLinks.length} geschrieben (Rest: Ziel-§ existiert nicht / bereits vorhanden)`
+    `  Kanten: ${linksWritten}/${totalLinks} geschrieben (Rest: Ziel-§ existiert nicht / bereits vorhanden)`
   );
 
   console.log("");

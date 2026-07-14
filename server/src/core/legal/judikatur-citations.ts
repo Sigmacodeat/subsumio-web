@@ -56,3 +56,62 @@ export function extractNormReferences(body: string): NormReference[] {
   }
   return refs;
 }
+
+/** Inline §-reference pattern: "§ 1152 ABGB", "§§ 12, 13 StGB", "Paragraph 6 Abs. 1 AngG".
+ *  Used for VfGH/VwGH decisions which don't have a structured "Norm" section. */
+const INLINE_PATTERNS: RegExp[] = [
+  /§+\s*(\d+[a-z]?)\s*(?:Abs\.?\s*\d+)?\s+(?:des\s+)?([A-ZÄÖÜ][A-Za-zÄÖÜäöüß]{1,10})/g,
+  /Paragraph\s+(\d+[a-z]?)\s*,?\s+([A-ZÄÖÜ][A-Za-zÄÖÜäöüß]{1,10})/g,
+  /§+\s*(\d+[a-z]?)\s+(?:Abs\.?\s*\d+\s+)?([A-ZÄÖÜ][A-Za-zÄÖÜäöüß]{1,10})/g,
+];
+
+/** Statute codes that are in our AT inventory — fail-closed: only these produce edges. */
+const KNOWN_AT_CODES = new Set([
+  "ABGB", "AHG", "AktG", "ALVG", "AMG", "AngG", "ArbVG", "ARG",
+  "ASVG", "AsylG", "AußStrG", "AufenthG", "AuslBG", "AVG", "AVRAG",
+  "AWG", "AZG", "B-VG", "BAO", "BBG", "BDG", "BewG", "BRAG",
+  "BuAG", "BVerGG", "ChemG", "DSG", "E-GovG", "ECG", "EheG",
+  "Eiwog", "EO", "EPG", "EstG", "ForstG", "FPG", "GebG", "GewO",
+  "GlBG", "GmbHG", "GOG", "GRestG", "GukG", "GWG", "IO", "JGG",
+  "JN", "KAG", "KartG", "KSchG", "KStG", "MedienG", "MRG", "MSchG",
+  "N-G", "PatG", "PStG", "RAO", "SMG", "SPG", "StBG", "StGB",
+  "StPO", "StRegG", "StVO", "TilgG", "TKG", "TschG", "UGB", "UrhG",
+  "UStG", "UWG", "VBVG", "VKGG", "VStG", "VVG", "WaffG", "WEG",
+  "WRG", "ZPO", "ZustG",
+]);
+
+/**
+ * Extract §-references from free-text (VfGH/VwGH decisions).
+ * Scans the entire body for inline patterns like "§ 1152 ABGB".
+ * Fail-closed: only returns references to known AT statute codes.
+ */
+export function extractInlineNormReferences(body: string): NormReference[] {
+  const refs: NormReference[] = [];
+  const seen = new Set<string>();
+
+  for (const pattern of INLINE_PATTERNS) {
+    pattern.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = pattern.exec(body)) !== null) {
+      const ref = m[1];
+      const code = m[2];
+      if (!KNOWN_AT_CODES.has(code)) continue;
+      const key = `${code}-${ref}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      refs.push({ code, ref });
+    }
+  }
+
+  return refs;
+}
+
+/**
+ * Unified extraction: tries "Norm" section first (OGH), falls back to
+ * inline scanning (VfGH/VwGH). Returns deduplicated references.
+ */
+export function extractAllNormReferences(body: string): NormReference[] {
+  const structured = extractNormReferences(body);
+  if (structured.length > 0) return structured;
+  return extractInlineNormReferences(body);
+}

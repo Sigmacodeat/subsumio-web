@@ -30,7 +30,10 @@ import { describe, test, expect } from "bun:test";
 import { readFileSync, readdirSync, statSync } from "fs";
 import { join } from "path";
 import { splitStatute } from "../src/core/legal/split-statute.ts";
-import { QUARANTINED_LEGAL_SOURCES } from "../src/core/legal/corpus-policy.ts";
+import {
+  QUARANTINED_LEGAL_SOURCES,
+  QUARANTINED_LEGAL_SOURCE_REASONS,
+} from "../src/core/legal/corpus-policy.ts";
 import { STATUTE_JURISDICTIONS } from "../src/core/search/source-boost.ts";
 
 const CORPUS = join(import.meta.dir, "..", "..", "law-corpus");
@@ -70,6 +73,9 @@ interface Scan {
   sections: number;
   uniqueIds: number;
   emptyBodies: number;
+  /** Raw document body length (frontmatter stripped) — the health signal for
+   *  monolith documents that legitimately split to 0 §-sections. */
+  rawBodyChars: number;
   error?: string;
 }
 
@@ -80,8 +86,10 @@ function scanCorpus(): Scan[] {
     for (const fn of readdirSync(dir)) {
       if (!fn.endsWith(".md")) continue; // skips judikate/ and other subdirs
       const path = `${country}/${fn}`;
+      const raw = readFileSync(join(dir, fn), "utf8");
+      const rawBodyChars = raw.replace(/^---[\s\S]*?---\s*/m, "").trim().length;
       try {
-        const { meta, sections } = splitStatute(readFileSync(join(dir, fn), "utf8"));
+        const { meta, sections } = splitStatute(raw);
         const ids = new Set(sections.map((s) => s.id));
         out.push({
           path,
@@ -90,6 +98,7 @@ function scanCorpus(): Scan[] {
           sections: sections.length,
           uniqueIds: ids.size,
           emptyBodies: sections.filter((s) => !s.body.trim()).length,
+          rawBodyChars,
         });
       } catch (e) {
         out.push({
@@ -99,6 +108,7 @@ function scanCorpus(): Scan[] {
           sections: 0,
           uniqueIds: 0,
           emptyBodies: 0,
+          rawBodyChars,
           error: (e as Error).message,
         });
       }
@@ -157,19 +167,50 @@ describe("legal-corpus integrity (Phase 0)", () => {
   });
 
   test("quarantine set may only shrink (baseline tripwire)", () => {
-    // Files that are stubs today: undefined jurisdiction OR < 20 sections.
+    // The 2026-07-14 RIS full scrape made the corpus two-tier:
+    //   - §-structured statutes/regulations → split into sections;
+    //   - Kundmachungen, treaties, notices → legitimately split to 0 sections
+    //     and are retrieved as monolith pages (all carry real body text).
+    // "Degraded" therefore means the file is unusable in EITHER tier:
+    //   - missing jurisdiction (cannot be isolation-filtered), or
+    //   - 0 sections AND no real body text (junk/empty fetch), or
+    //   - splits into sections but >20% of them are empty shells.
+    // (The old `sections < 20` rule pre-dates the scrape: it misread every
+    // small-but-complete Verordnung/treaty as a stub.)
     const stubToday = new Set(
-      SCAN.filter((s) => !s.jurisdiction || s.sections < 20).map((s) => s.path)
+      SCAN.filter(
+        (s) =>
+          !s.jurisdiction ||
+          (s.sections === 0 && s.rawBodyChars < 300) ||
+          (s.sections > 0 && s.emptyBodies > s.sections * 0.2)
+      ).map((s) => s.path)
     );
 
     // (a) No NEW degraded file may appear outside the quarantine.
     const newlyDegraded = [...stubToday].filter((p) => !QUARANTINE.has(p));
     expect(newlyDegraded, "new stub/untagged files must be fixed or quarantined").toEqual([]);
 
-    // (b) A quarantined file that is now healthy must be REMOVED from the list
-    // (keeps the baseline honest — it only ever shrinks).
-    const recovered = [...QUARANTINE].filter((p) => byPath.has(p) && !stubToday.has(p));
+    // (b) A quarantined file that was listed as DEGRADED and is now healthy
+    // must be REMOVED from the list (keeps the baseline honest — it only ever
+    // shrinks). "policy" entries are deliberate ingestion exclusions and stay
+    // regardless of file health.
+    const recovered = [...QUARANTINE].filter(
+      (p) =>
+        QUARANTINED_LEGAL_SOURCE_REASONS[p] === "degraded" &&
+        byPath.has(p) &&
+        !stubToday.has(p)
+    );
     expect(recovered, "these files are healthy now — delete them from QUARANTINE").toEqual([]);
+  });
+
+  test("corpus-wide §-section floor (mass split-regression guard)", () => {
+    // Per-file floors only cover the flagships; this guards the whole corpus:
+    // a splitter regression (marker-regex breakage, RIS format drift) tanks
+    // the corpus-wide section count by orders of magnitude. Measured
+    // 2026-07-14: 33,442 sections across at/de/ch/eu. Floor set ~10% below so
+    // consolidation churn passes but a split regression fails hard.
+    const total = SCAN.reduce((a, s) => a + s.sections, 0);
+    expect(total).toBeGreaterThanOrEqual(30_000);
   });
 
   test("BASELINE: corpus completeness snapshot", () => {
