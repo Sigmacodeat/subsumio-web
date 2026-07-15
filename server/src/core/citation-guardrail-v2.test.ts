@@ -182,6 +182,50 @@ describe("checkCitationGrounding v2 integration", () => {
   });
 });
 
+// ─── Slug-Shape Regression (live-003 root cause) ──────────────────────────
+// The production engine emits paragraph-level slugs like
+// `legal/statutes/at/zpo/p-464`. live-003 scored 0/7 because these were not
+// resolved to their law abbreviation, so every cited law was flagged as
+// cross-law contamination. These tests pin both supported slug shapes.
+
+describe("retrieved-law extraction from slug shapes", () => {
+  const AT_CONTEXT = "§ 464 ZPO Berufungsfrist ... § 222 ZPO verhandlungsfreie Zeit";
+
+  it("resolves production statute slugs (legal/statutes/<jur>/<abbr>/p-<N>)", () => {
+    const result = checkCitationGrounding({
+      answer: "Die Berufungsfrist beträgt vier Wochen gemäß § 464 ZPO; § 222 ZPO hemmt sie.",
+      context: AT_CONTEXT,
+      topSlugs: [
+        "legal/statutes/at/zpo/p-464",
+        "legal/statutes/at/zpo/p-222",
+        "legal/statutes/at/stpo/p-466",
+      ],
+    });
+    expect(result.retrieved_laws).toContain("zpo");
+    expect(result.retrieved_laws).toContain("stpo");
+    expect(result.cross_law_contamination).toHaveLength(0);
+  });
+
+  it("resolves article-level statute slugs (legal/statutes/<jur>/<abbr>/art-<N>)", () => {
+    const result = checkCitationGrounding({
+      answer: "Nach Art. 18 B-VG gilt das Legalitätsprinzip.",
+      context: "Artikel 18 B-VG Legalitätsprinzip",
+      topSlugs: ["legal/statutes/at/b-vg/art-18"],
+    });
+    expect(result.retrieved_laws).toContain("b-vg");
+  });
+
+  it("still resolves legacy law/<jur>/<abbr> slugs", () => {
+    const result = checkCitationGrounding({
+      answer: "Die Berufungsfrist beträgt vier Wochen gemäß § 464 ZPO.",
+      context: AT_CONTEXT,
+      topSlugs: ["law/at/zpo"],
+    });
+    expect(result.retrieved_laws).toContain("zpo");
+    expect(result.cross_law_contamination).toHaveLength(0);
+  });
+});
+
 // ─── Extract Citations Tests ──────────────────────────────────────────────
 
 describe("extractCitations", () => {
