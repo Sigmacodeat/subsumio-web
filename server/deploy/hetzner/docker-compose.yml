@@ -251,8 +251,8 @@ services:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_API_KEY_FALLBACK: ${OPENROUTER_API_KEY_FALLBACK:-}
     volumes:
-      # law-corpus on a durable volume — pre-populated before first deploy
-      - corpus-data:/law-corpus
+      # law-corpus — bind mount to host directory where fetch scripts placed files
+      - /opt/subsumio/law-corpus:/law-corpus
       # Pipeline logs
       - corpus-logs:/root/subsumio-pipeline-logs
     working_dir: /app
