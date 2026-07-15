@@ -1091,7 +1091,7 @@ async function cycle(): Promise<void> {
               "--dir",
               `law-corpus/${src.dir}`,
               "--concurrency",
-              "5",
+              "1",
             ],
             backfillKey,
             7200
