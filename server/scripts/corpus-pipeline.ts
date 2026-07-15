@@ -1248,6 +1248,14 @@ async function cycle(): Promise<void> {
             appendHistory(judKey, "backfill", "started");
             action = "backfill gestartet";
             risBackfillStartedThisCycle = true;
+            // Immediately update pidMap so checkSourceProcess sees it
+            // in the same cycle (DB update is async, pidMap is in-memory)
+            state.pidMap[backfillKey] = {
+              pid: 0, // actual PID is in DB, we just need running=true
+              cmd: `bun scripts/backfill-corpus-text.ts --dir law-corpus/${src.dir} --concurrency ${backfillConcurrency}`,
+              startedAt: new Date().toISOString(),
+              timeoutS: 7200,
+            };
           }
         }
       } else if (!statutesAtDone) {
