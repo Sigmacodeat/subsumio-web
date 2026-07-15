@@ -46,7 +46,7 @@
  * fetch-all-at-judikatur.ts deliberately when ready.
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync, openSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, openSync, unlinkSync } from "fs";
 import { join, dirname } from "path";
 import { createHash } from "crypto";
 import { fileURLToPath } from "url";
@@ -264,7 +264,20 @@ interface DBPipelineState {
 }
 
 function psqlQuery(query: string): string {
-  return sh(`psql ${JSON.stringify(dbUrl())} -t -A -c ${JSON.stringify(query)}`);
+  // Write SQL to a temp file and use psql -f to avoid shell escaping issues
+  // with multi-line SQL (JSON.stringify turns newlines into literal \n,
+  // which psql -c doesn't interpret, causing syntax errors).
+  const tmpFile = `/tmp/psql_query_${process.pid}_${Date.now()}.sql`;
+  writeFileSync(tmpFile, query, "utf-8");
+  try {
+    return sh(`psql ${JSON.stringify(dbUrl())} -t -A -f ${JSON.stringify(tmpFile)}`);
+  } finally {
+    try {
+      unlinkSync(tmpFile);
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 /** Atomically acquire a DB-backed cycle lock using pipeline_state.
