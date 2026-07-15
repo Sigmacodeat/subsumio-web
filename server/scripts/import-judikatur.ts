@@ -41,7 +41,10 @@ const limitIdx = args.indexOf("--limit");
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : Infinity;
 const sourceIdx = args.indexOf("--source");
 const sourceKey = sourceIdx >= 0 ? args[sourceIdx + 1] : "ogh";
-const SKIP_PLACEHOLDERS = args.includes("--skip-placeholders");
+// Placeholders are ALWAYS skipped — text-less stubs in the brain are retrieval
+// noise and block the content-hash update path. The --skip-placeholders flag is
+// kept for backwards compatibility but is now a no-op (default: true).
+const SKIP_PLACEHOLDERS = true;
 
 interface SourceConfig {
   dir: string;

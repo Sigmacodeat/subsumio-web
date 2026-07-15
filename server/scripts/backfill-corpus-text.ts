@@ -13,7 +13,7 @@
  *   bun scripts/backfill-corpus-text.ts --dir law-corpus/eu/regulations --concurrency 20
  */
 
-import { readFileSync, writeFileSync, readdirSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, readdirSync, existsSync, renameSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -423,7 +423,12 @@ async function backfillFile(filepath: string): Promise<"ok" | "skip" | "fail"> {
   const newBody = `# ${title}\n\n${text}\n\n${sourceSuffix}`;
   const newContent = `---\n${fm}\n---\n\n${newBody}\n`;
 
-  writeFileSync(filepath, newContent, "utf-8");
+  // Atomic write: write to temp file then rename. Prevents corrupt
+  // half-written files if the process is killed mid-write (OOM, kill -9,
+  // power loss). rename() is atomic on POSIX filesystems.
+  const tmpPath = filepath + ".tmp";
+  writeFileSync(tmpPath, newContent, "utf-8");
+  renameSync(tmpPath, filepath);
   return "ok";
 }
 
