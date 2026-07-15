@@ -19,6 +19,7 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, renameSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
 
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 2000;
@@ -126,8 +127,21 @@ function extractRisContent(html: string): string {
   content = content.replace(/<ul[^>]*class="[^"]*(?:nav|menu|access|skip|tabStrip)[^"]*"[^>]*>[\s\S]*?<\/ul>/gi, "");
   content = content.replace(/<div[^>]*class="[^"]*(?:tabStrip|nav|menu|breadcrumb|sidebar)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
 
-  // Strategy 1: RIS uses <div class="documentContent"> for the actual law text
-  let mainMatch = content.match(/<div[^>]*class="documentContent"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i);
+  // Strategy 1: RIS document pages use <div class="paperw"> for the actual law text
+  let mainMatch = content.match(/<div[^>]*class="paperw"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i);
+  if (mainMatch) {
+    const text = stripHtml(mainMatch[1]);
+    if (text.length >= 100) return text;
+  }
+  // Greedy fallback: paperw to end of document
+  mainMatch = content.match(/<div[^>]*class="paperw"[^>]*>([\s\S]*?)<\/body>/i);
+  if (mainMatch) {
+    const text = stripHtml(mainMatch[1]);
+    if (text.length >= 100) return text;
+  }
+
+  // Strategy 1b: RIS uses <div class="documentContent"> for ELI metadata pages
+  mainMatch = content.match(/<div[^>]*class="documentContent"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i);
   if (mainMatch) {
     const text = stripHtml(mainMatch[1]);
     if (text.length >= 100) return text;
@@ -338,6 +352,11 @@ async function main() {
     process.exit(1);
   }
 
+  // Global RIS lock — ensures no other RIS script runs simultaneously
+  console.log("🔒 Acquiring RIS lock...");
+  await acquireRisLock();
+  console.log("✅ RIS lock acquired.");
+
   const allFiles = readdirSync(ABS_DIR).filter((f) => f.endsWith(".md"));
   const placeholders: string[] = [];
 
@@ -406,7 +425,10 @@ async function main() {
   console.log(`═══════════════════════════════════════════════════════════`);
 }
 
-main().catch((err) => {
+main().then(() => {
+  releaseRisLock();
+}).catch((err) => {
   console.error("Fatal error:", err);
+  releaseRisLock();
   process.exit(1);
 });
