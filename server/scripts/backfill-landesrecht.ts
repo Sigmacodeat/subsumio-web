@@ -63,17 +63,8 @@ async function fetchWithRetry(url: string): Promise<Response | null> {
   return null;
 }
 
-function stripHtml(html: string): string {
-  return html
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n\n")
-    .replace(/<\/div>/gi, "\n")
-    .replace(/<h[1-6][^>]*>/gi, "\n## ")
-    .replace(/<\/h[1-6]>/gi, "\n")
-    .replace(/<li[^>]*>/gi, "\n- ")
-    .replace(/<[^>]+>/g, "")
+function decodeHtmlEntities(s: string): string {
+  return s
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
@@ -82,8 +73,102 @@ function stripHtml(html: string): string {
     .replace(/&#39;/g, "'")
     .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(parseInt(n, 10)))
     .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+    .replace(/&auml;/g, "\u00e4")
+    .replace(/&ouml;/g, "\u00f6")
+    .replace(/&uuml;/g, "\u00fc")
+    .replace(/&Auml;/g, "\u00c4")
+    .replace(/&Ouml;/g, "\u00d6")
+    .replace(/&Uuml;/g, "\u00dc")
+    .replace(/&szlig;/g, "\u00df")
+    .replace(/&eacute;/g, "\u00e9")
+    .replace(/&agrave;/g, "\u00e0");
+}
+
+function stripHtml(html: string): string {
+  return decodeHtmlEntities(
+    html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n\n")
+      .replace(/<\/div>/gi, "\n")
+      .replace(/<h[1-6][^>]*>/gi, "\n## ")
+      .replace(/<\/h[1-6]>/gi, "\n")
+      .replace(/<li[^>]*>/gi, "\n- ")
+      .replace(/<[^>]+>/g, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
+}
+
+/** Extract only the actual legal document content from a RIS HTML page.
+ *  RIS pages contain navigation chrome (Accesskey links, Seitenbereiche,
+ *  Kontakt, Impressum, etc.) that must be stripped. */
+function extractRisContent(html: string): string {
+  let content = html;
+
+  // Remove script/style/nav/header/footer
+  content = content.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+  content = content.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
+  content = content.replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, "");
+  content = content.replace(/<header[^>]*>[\s\S]*?<\/header>/gi, "");
+  content = content.replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, "");
+
+  // RIS-specific: remove navigation/sidebars
+  content = content.replace(/<ul[^>]*class="[^"]*(?:nav|menu|access|skip)[^"]*"[^>]*>[\s\S]*?<\/ul>/gi, "");
+  content = content.replace(/<div[^>]*class="[^"]*(?:nav|menu|access|skip|sidebar|footer|header|breadcrumb)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
+
+  // Try to find the main content container
+  let mainMatch = content.match(/<div[^>]*(?:id|class)="[^"]*content[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i);
+  if (mainMatch) {
+    const text = stripHtml(mainMatch[1]);
+    if (text.length >= 100) return text;
+  }
+
+  // Pattern 2: <main> tag
+  mainMatch = content.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
+  if (mainMatch) {
+    const text = stripHtml(mainMatch[1]);
+    if (text.length >= 100) return text;
+  }
+
+  // Pattern 3: <article> tag
+  mainMatch = content.match(/<article[^>]*>([\s\S]*?)<\/article>/i);
+  if (mainMatch) {
+    const text = stripHtml(mainMatch[1]);
+    if (text.length >= 100) return text;
+  }
+
+  // Pattern 4: Find largest <div> with <p> blocks
+  const pBlocks = content.match(/<div[^>]*>[\s\S]*?<p[^>]*>.*?<\/p>[\s\S]*?<\/div>/gi);
+  if (pBlocks) {
+    let best = "";
+    for (const block of pBlocks) {
+      const text = stripHtml(block);
+      if (text.length > best.length) best = text;
+    }
+    if (best.length >= 100) return best;
+  }
+
+  // Fallback: strip all HTML, then remove known RIS navigation text
+  let text = stripHtml(content);
+  const navPatterns = [
+    /Zum Inhalt \(Accesskey 0\)/g,
+    /Zur Navigationsleiste \(Accesskey 1\)/g,
+    /Zum Hauptbereich \(Accesskey 2\)/g,
+    /Kontakt \(Accesskey 4\)/g,
+    /Impressum \(Accesskey 5\)/g,
+    /Seitenbereiche:/g,
+    /RIS - .* - Landesgesetzblatt authentisch f[^r]*r [^\n]+/g,
+    /Zum Inhalt/g,
+    /Zur Navigation/g,
+    /Springe zum Inhalt/g,
+  ];
+  for (const p of navPatterns) {
+    text = text.replace(p, "");
+  }
+  text = text.replace(/\n{3,}/g, "\n\n").trim();
+  return text;
 }
 
 function isPlaceholder(body: string): boolean {
@@ -119,28 +204,7 @@ async function fetchLandesrechtText(eliUrl: string, lgblId: string): Promise<str
   const res = await fetchWithRetry(eliUrl);
   if (res && res.ok) {
     const html = await res.text();
-    // RIS Landesrecht pages have the content in specific divs
-    // Try to extract the main content area
-    let content = html;
-
-    // Remove navigation, header, footer
-    content = content.replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, "");
-    content = content.replace(/<header[^>]*>[\s\S]*?<\/header>/gi, "");
-    content = content.replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, "");
-    content = content.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
-    content = content.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
-
-    // Try to find the main content container
-    const mainMatch = content.match(
-      /<div[^>]*class="[^"]*(?:content|main|document|text)[^"]*"[^>]*>([\s\S]*?)<\/div>/i
-    );
-    if (mainMatch) {
-      const text = stripHtml(mainMatch[1]);
-      if (text.length >= 100) return text;
-    }
-
-    // Fallback: strip all HTML
-    const text = stripHtml(content);
+    const text = extractRisContent(html);
     if (text.length >= 100) return text;
   }
 
