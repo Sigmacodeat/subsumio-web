@@ -270,7 +270,7 @@ function psqlQuery(query: string): string {
   const tmpFile = `/tmp/psql_query_${process.pid}_${Date.now()}.sql`;
   writeFileSync(tmpFile, query, "utf-8");
   try {
-    return sh(`psql ${JSON.stringify(dbUrl())} -t -A -f ${JSON.stringify(tmpFile)}`);
+    return sh(`psql ${JSON.stringify(dbUrl())} -q -t -A -f ${JSON.stringify(tmpFile)}`);
   } finally {
     try {
       unlinkSync(tmpFile);
@@ -903,7 +903,6 @@ async function cycle(): Promise<void> {
   // Acquire cycle lock — prevents two pipeline instances from running
   // simultaneously and spawning duplicate processes.
   const locked = tryAcquireCycleLock();
-  console.log(`  [debug] tryAcquireCycleLock → ${locked} (pid=${process.pid})`);
   if (!locked) {
     console.log("  ⏭️ Cycle skipped — another pipeline instance holds the lock");
     return;
@@ -1225,9 +1224,7 @@ async function cycle(): Promise<void> {
     );
     console.log(report);
   } finally {
-    console.log(`  [debug] releasing cycle lock (pid=${process.pid})`);
     releaseCycleLock();
-    console.log(`  [debug] cycle lock released`);
   }
 }
 
