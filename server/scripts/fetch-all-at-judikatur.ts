@@ -30,9 +30,44 @@ import {
 } from "../src/core/ingestion/connectors/legal-judgements.ts";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
-const RATE_LIMIT_MS = 150;
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 1000;
+
+/**
+ * RIS OGD rate limiting — COMPLIANT with BKA guidelines.
+ *
+ * BKA requires:
+ *   - 1–2 seconds between API page requests
+ *   - Single connection (no parallel requests)
+ *   - Large downloads outside business hours (18:00–06:00) or weekends
+ *   - Prior notification to ris.it@bka.gv.at for mass downloads
+ *
+ * See: https://www.ris.bka.gv.at/UI/Ogd.aspx
+ *
+ * Business hours: Mon–Fri 08:00–18:00 CET → 2000ms (conservative)
+ * Off-hours / weekends → 1000ms (still within 1-2s range)
+ */
+function politeDelayMs(): number {
+  const now = new Date();
+  const cetHour = parseInt(
+    now.toLocaleTimeString("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", hour12: false })
+  );
+  const day = now.toLocaleDateString("en-US", { timeZone: "Europe/Vienna", weekday: "short" });
+  const isWeekend = day === "Sat" || day === "Sun";
+  const isBusinessHours = !isWeekend && cetHour >= 8 && cetHour < 18;
+  return isBusinessHours ? 2000 : 1000;
+}
+
+/** Check if current time is within RIS-recommended off-hours (18:00–06:00 or weekend). */
+function isRisOffHours(): boolean {
+  const now = new Date();
+  const cetHour = parseInt(
+    now.toLocaleTimeString("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", hour12: false })
+  );
+  const day = now.toLocaleDateString("en-US", { timeZone: "Europe/Vienna", weekday: "short" });
+  const isWeekend = day === "Sat" || day === "Sun";
+  return isWeekend || cetHour < 8 || cetHour >= 18;
+}
 
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
 const CORPUS_ROOT = join(_scriptDir, "..", "..", "law-corpus");
@@ -46,13 +81,83 @@ interface CourtConfig {
 }
 
 const COURT_CONFIGS: Record<string, CourtConfig> = {
-  ogh:    { applikation: "Justiz",  outDir: "at-judikatur",         label: "OGH",    defaultFrom: 2000, knownTotal: 58326 },
-  vwgh:   { applikation: "Vwgh",    outDir: "at-judikatur-vwgh",    label: "VwGH",   defaultFrom: 1990, knownTotal: 248840 },
-  vfgh:   { applikation: "Vfgh",    outDir: "at-judikatur-vfgh",    label: "VfGH",   defaultFrom: 1980, knownTotal: 17806 },
-  bvwg:   { applikation: "Bvwg",    outDir: "at-judikatur-bvwg",    label: "BVwG",   defaultFrom: 2014, knownTotal: 287209 },
-  lvwg:   { applikation: "Lvwg",    outDir: "at-judikatur-lvwg",    label: "LVwG",   defaultFrom: 2014, knownTotal: 76154 },
-  asylgh: { applikation: "AsylGH",  outDir: "at-judikatur-asylgh",  label: "AsylGH", defaultFrom: 2008, knownTotal: 53113 },
-  uvs:    { applikation: "Uvs",     outDir: "at-judikatur-uvs",     label: "UVS",    defaultFrom: 1991, knownTotal: 25939 },
+  ogh: {
+    applikation: "Justiz",
+    outDir: "at-judikatur",
+    label: "OGH",
+    defaultFrom: 2000,
+    knownTotal: 58326,
+  },
+  vwgh: {
+    applikation: "Vwgh",
+    outDir: "at-judikatur-vwgh",
+    label: "VwGH",
+    defaultFrom: 1990,
+    knownTotal: 248840,
+  },
+  vfgh: {
+    applikation: "Vfgh",
+    outDir: "at-judikatur-vfgh",
+    label: "VfGH",
+    defaultFrom: 1980,
+    knownTotal: 17806,
+  },
+  bvwg: {
+    applikation: "Bvwg",
+    outDir: "at-judikatur-bvwg",
+    label: "BVwG",
+    defaultFrom: 2014,
+    knownTotal: 287209,
+  },
+  lvwg: {
+    applikation: "Lvwg",
+    outDir: "at-judikatur-lvwg",
+    label: "LVwG",
+    defaultFrom: 2014,
+    knownTotal: 76154,
+  },
+  asylgh: {
+    applikation: "AsylGH",
+    outDir: "at-judikatur-asylgh",
+    label: "AsylGH",
+    defaultFrom: 2008,
+    knownTotal: 53113,
+  },
+  uvs: {
+    applikation: "Uvs",
+    outDir: "at-judikatur-uvs",
+    label: "UVS",
+    defaultFrom: 1991,
+    knownTotal: 25939,
+  },
+  dsk: {
+    applikation: "Dsk",
+    outDir: "at-judikatur-dsk",
+    label: "DSB",
+    defaultFrom: 2010,
+    knownTotal: 5000,
+  },
+  gbk: {
+    applikation: "Gbk",
+    outDir: "at-judikatur-gbk",
+    label: "GBK",
+    defaultFrom: 2004,
+    knownTotal: 500,
+  },
+  pvak: {
+    applikation: "Pvak",
+    outDir: "at-judikatur-pvak",
+    label: "PVAK",
+    defaultFrom: 2002,
+    knownTotal: 2000,
+  },
+  dok: {
+    applikation: "Dok",
+    outDir: "at-judikatur-dok",
+    label: "DOK",
+    defaultFrom: 2000,
+    knownTotal: 3000,
+  },
 };
 
 interface JudikaturDoc {
@@ -70,10 +175,7 @@ interface JudikaturDoc {
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
-async function fetchWithRetry(
-  url: string,
-  maxRetries: number = MAX_RETRIES
-): Promise<Response> {
+async function fetchWithRetry(url: string, maxRetries: number = MAX_RETRIES): Promise<Response> {
   let lastErr: Error | null = null;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -120,16 +222,118 @@ function extractHtmlUrl(ref: Record<string, unknown>): string {
   return "";
 }
 
-async function fetchRisFullText(htmlUrl: string): Promise<string> {
-  if (!htmlUrl) return "";
-  try {
-    const res = await fetchWithRetry(htmlUrl);
-    if (!res.ok) return "";
-    const html = await res.text();
-    return stripHtml(html);
-  } catch {
-    return "";
+/** Decode numeric and named HTML entities (same as backfill-corpus-text.ts). */
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(parseInt(n, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'");
+}
+
+/** RIS OGD XML (risdok) → plain text. Same parser as backfill-corpus-text.ts. */
+function risXmlToText(xml: string): string {
+  const nutz = xml.match(/<nutzdaten>([\s\S]*?)<\/nutzdaten>/);
+  if (!nutz) return "";
+  let t = nutz[1];
+  t = t.replace(/<kzinhalt[^>]*>[\s\S]*?<\/kzinhalt>/g, "");
+  t = t.replace(/<fzinhalt[^>]*>[\s\S]*?<\/fzinhalt>/g, "");
+  t = t.replace(/<ueberschrift[^>]*>([\s\S]*?)<\/ueberschrift>/g, "\n## $1\n");
+  t = t.replace(/<absatz[^>]*>/g, "\n").replace(/<\/absatz>/g, "\n");
+  t = t.replace(/<[^>]+>/g, "");
+  t = decodeEntities(t);
+  return t
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/** Identity check: verify fetched text contains the document's case_number or ECLI.
+ *  Same guard as backfill-corpus-text.ts — prevents silent mislabeling when RIS
+ *  serves a generic/fallback page on 200 OK. */
+function contentMatchesDocument(text: string, caseNum: string, ecli: string): boolean {
+  const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase();
+  const normText = normalize(text);
+  if (caseNum && normText.includes(normalize(caseNum))) return true;
+  if (ecli && normText.includes(normalize(ecli))) return true;
+  if (!caseNum && !ecli) return true; // can't verify — don't block
+  return false;
+}
+
+/** Fetch full text for a RIS judikatur document using the same robust
+ *  3-strategy approach as backfill-corpus-text.ts:
+ *  1. Deterministic XML URL (structured nutzdaten, cleanest source)
+ *  2. Deterministic HTML URL (noisier but still usable)
+ *  3. API-provided HTML URL (from ContentReference, original approach)
+ *
+ *  Each candidate passes contentMatchesDocument() — no silent mislabeling.
+ *  Returns empty string only if ALL strategies fail (placeholder will be written). */
+async function fetchRisFullText(
+  htmlUrl: string,
+  sourceUrl: string,
+  caseNum: string,
+  ecli: string
+): Promise<string> {
+  // Extract Abfrage and DokNr from source_url for deterministic URLs
+  const abfrageMatch = sourceUrl.match(/Abfrage=([^&]+)/);
+  const dokNrMatch = sourceUrl.match(/Dokumentnummer=([^&]+)/);
+
+  // Strategy 1: XML URL — structured, clean, most reliable
+  if (abfrageMatch && dokNrMatch) {
+    const abfrage = abfrageMatch[1];
+    const dokNr = dokNrMatch[1];
+    const xmlUrl = `https://www.ris.bka.gv.at/Dokumente/${abfrage}/${dokNr}/${dokNr}.xml`;
+    try {
+      const res = await fetchWithRetry(xmlUrl);
+      if (res.ok) {
+        const candidate = risXmlToText(await res.text());
+        if (candidate.length >= 50 && contentMatchesDocument(candidate, caseNum, ecli)) {
+          return candidate;
+        }
+      }
+    } catch {
+      /* try next */
+    }
   }
+
+  // Strategy 2: Deterministic HTML URL
+  if (abfrageMatch && dokNrMatch) {
+    const abfrage = abfrageMatch[1];
+    const dokNr = dokNrMatch[1];
+    const directHtmlUrl = `https://www.ris.bka.gv.at/Dokumente/${abfrage}/${dokNr}/${dokNr}.html`;
+    try {
+      const res = await fetchWithRetry(directHtmlUrl);
+      if (res.ok) {
+        const candidate = stripHtml(await res.text());
+        if (candidate.length >= 50 && contentMatchesDocument(candidate, caseNum, ecli)) {
+          return candidate;
+        }
+      }
+    } catch {
+      /* try next */
+    }
+  }
+
+  // Strategy 3: API-provided HTML URL (original approach — least reliable)
+  if (htmlUrl) {
+    try {
+      const res = await fetchWithRetry(htmlUrl);
+      if (res.ok) {
+        const candidate = stripHtml(await res.text());
+        if (candidate.length >= 50 && contentMatchesDocument(candidate, caseNum, ecli)) {
+          return candidate;
+        }
+      }
+    } catch {
+      /* all strategies failed */
+    }
+  }
+
+  return ""; // All strategies failed — placeholder will be written
 }
 
 function slugify(s: string): string {
@@ -219,7 +423,7 @@ async function fullScanCourt(
   court: CourtConfig,
   fromYear: number,
   skipText: boolean,
-  target: number,
+  target: number
 ): Promise<{ fetched: number; written: number; skipped: number }> {
   const outDir = join(CORPUS_ROOT, court.outDir);
   mkdirSync(outDir, { recursive: true });
@@ -297,7 +501,7 @@ async function fullScanCourt(
         let fullText = "";
         if (!skipText) {
           const htmlUrl = extractHtmlUrl(ref);
-          fullText = await fetchRisFullText(htmlUrl);
+          fullText = await fetchRisFullText(htmlUrl, item.url, item.az ?? "", item.ecli ?? "");
         }
 
         const doc: JudikaturDoc = {
@@ -322,11 +526,11 @@ async function fullScanCourt(
           console.log(`  [${totalWritten}] ${year} — ${doc.court} ${doc.az}`);
         }
 
-        if (!skipText) await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+        if (!skipText) await new Promise((r) => setTimeout(r, politeDelayMs()));
       }
 
       if (refs.length < 100) break;
-      await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+      await new Promise((r) => setTimeout(r, politeDelayMs()));
     }
 
     if (yearCount > 0 || yearSkipped > 0) {
@@ -334,7 +538,9 @@ async function fullScanCourt(
     }
   }
 
-  console.log(`\n  ${court.label} SUMMARY: ${totalWritten} written, ${totalSkipped} skipped, ${existingCount} pre-existing`);
+  console.log(
+    `\n  ${court.label} SUMMARY: ${totalWritten} written, ${totalSkipped} skipped, ${existingCount} pre-existing`
+  );
   return { fetched: totalFetched, written: totalWritten, skipped: totalSkipped };
 }
 
@@ -346,12 +552,34 @@ async function main() {
   const courtArg = courtIdx >= 0 ? args[courtIdx + 1] : "all";
   const fromIdx = args.indexOf("--from");
   const skipText = args.includes("--skip-text");
+  const offHoursOnly = args.includes("--off-hours-only");
   const targetIdx = args.indexOf("--target");
   const targetOverride = targetIdx >= 0 ? parseInt(args[targetIdx + 1], 10) : 0;
 
-  const courtsToRun = courtArg === "all"
-    ? Object.keys(COURT_CONFIGS)
-    : courtArg.split(",").map((c) => c.trim());
+  // BKA requires large downloads outside business hours (18:00–06:00) or weekends.
+  // If --off-hours-only is set and we're within business hours, wait.
+  if (offHoursOnly && !isRisOffHours()) {
+    const now = new Date();
+    const cetHour = parseInt(
+      now.toLocaleTimeString("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", hour12: false })
+    );
+    const waitHours = 18 - cetHour;
+    console.log(`⏳ --off-hours-only: Currently ${cetHour}:00 CET (business hours).`);
+    console.log(`   Waiting ${waitHours}h until 18:00 CET to comply with RIS OGD guidelines.`);
+    console.log(`   See: https://www.ris.bka.gv.at/UI/Ogd.aspx`);
+    while (!isRisOffHours()) {
+      await new Promise((r) => setTimeout(r, 60_000)); // check every minute
+    }
+    console.log(`✅ Off-hours reached. Starting downloads.`);
+  }
+
+  console.log(
+    `\n📋 RIS OGD Rate Limiting: ${politeDelayMs()}ms between requests, single connection`
+  );
+  console.log(`   Prior notification: ris.it@bka.gv.at (for mass downloads)\n`);
+
+  const courtsToRun =
+    courtArg === "all" ? Object.keys(COURT_CONFIGS) : courtArg.split(",").map((c) => c.trim());
 
   let grandWritten = 0;
   let grandSkipped = 0;
@@ -359,7 +587,9 @@ async function main() {
   for (const courtKey of courtsToRun) {
     const court = COURT_CONFIGS[courtKey];
     if (!court) {
-      console.error(`Unknown court: ${courtKey}. Available: ${Object.keys(COURT_CONFIGS).join(", ")}`);
+      console.error(
+        `Unknown court: ${courtKey}. Available: ${Object.keys(COURT_CONFIGS).join(", ")}`
+      );
       continue;
     }
 
@@ -376,7 +606,9 @@ async function main() {
   console.log(`═══════════════════════════════════════════════════════════`);
   console.log(`\nNext steps:`);
   console.log(`  1. Backfill text:  bun scripts/backfill-judikatur-text.ts --dir <outdir>`);
-  console.log(`  2. Import to DB:   bun scripts/import-judikatur.ts --source <courtKey> --no-embed`);
+  console.log(
+    `  2. Import to DB:   bun scripts/import-judikatur.ts --source <courtKey> --no-embed`
+  );
   console.log(`  3. Embed:          bun scripts/embed-pending-at.ts --source <source_id>`);
 }
 

@@ -11,6 +11,19 @@
 # All secrets come from .env (never committed). Files live on named volumes;
 # point APP_DOMAIN + ENGINE_DOMAIN DNS A-records at this box first so Caddy
 # can issue TLS.
+#
+# `name:` below pins the Compose project id explicitly. Without it, Compose
+# derives the project name from the containing directory's basename — and
+# this directory is literally named "hetzner", same as sibling deploy dirs
+# for other apps sharing this box (e.g. a shop's own deploy/hetzner/). Two
+# compose files resolving to the same implicit project name means `docker
+# compose up` in ONE app's directory can remove the OTHER app's containers
+# as "orphans" (2026-07-14 incident: a sibling app's deploy wiped this
+# entire stack — db, engine, clamav, web, caddy, cron, backup — while its
+# own container survived, because they collided on the "hetzner" project
+# name). Pinning an explicit name here makes this project immune to that
+# collision regardless of what any other compose file on the box is named.
+name: subsumio-engine
 
 services:
   clamav:
@@ -203,9 +216,71 @@ services:
         fi
       "
 
+  # Corpus Pipeline Orchestrator — supervises the legal-corpus ingest chain
+  # (backfill → import → embed → reconcile). State is DB-backed via
+  # pipeline_state table, so container restarts are safe. Uses PID tracking
+  # + timeout enforcement for child processes. See scripts/corpus-pipeline.ts.
+  #
+  # The law-corpus volume must be pre-populated (fetch-all-at-judikatur.ts,
+  # import-eu-corpus.ts, etc.) — this service does NOT do initial discovery.
+  # It only orchestrates backfill/import/embed for files already on disk.
+  corpus-pipeline:
+    build:
+      context: ../.. # = server/ dir
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      engine:
+        condition: service_healthy
+    environment:
+      # DB connection (same network as db)
+      DATABASE_URL: postgres://${POSTGRES_USER:-subsumio}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-subsumio}?sslmode=disable
+      # Engine API (for import + embed calls)
+      SUBSUMIO_ENGINE_URL: http://engine:3131
+      # Pipeline config
+      PIPELINE_INTERVAL_S: ${PIPELINE_INTERVAL_S:-600}
+      PIPELINE_SAMPLE_SIZE: ${PIPELINE_SAMPLE_SIZE:-50}
+      PIPELINE_RECONCILE_GAP: ${PIPELINE_RECONCILE_GAP:-0.05}
+      # Alert webhook (optional — set ALERT_WEBHOOK in .env to enable)
+      ALERT_WEBHOOK: ${ALERT_WEBHOOK:-}
+      # OpenRouter (for embedding calls via auto-embed-pg.ts)
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_API_KEY_FALLBACK: ${OPENROUTER_API_KEY_FALLBACK:-}
+    volumes:
+      # law-corpus on a durable volume — pre-populated before first deploy
+      - corpus-data:/law-corpus
+      # Pipeline logs
+      - corpus-logs:/root/subsumio-pipeline-logs
+    working_dir: /app
+    entrypoint: >
+      sh -c "
+        bun scripts/corpus-pipeline.ts --loop --interval $${PIPELINE_INTERVAL_S:-600}
+      "
+
 volumes:
+  # external:true + explicit name: these volumes were created under the old
+  # implicit "hetzner" project name before the `name:` pin above was added.
+  # Declaring them external keeps Compose attached to the SAME data instead
+  # of provisioning fresh empty volumes under the new "subsumio-engine_*"
+  # names. Do not remove `external: true` without migrating the data first.
   db-data:
+    external: true
+    name: hetzner_db-data
   engine-data:
+    external: true
+    name: hetzner_engine-data
   clamav-data:
+    external: true
+    name: hetzner_clamav-data
   caddy-data:
+    external: true
+    name: hetzner_caddy-data
   caddy-config:
+    external: true
+    name: hetzner_caddy-config
+  # Corpus data — pre-populated with law-corpus before first deploy.
+  # Not external: created fresh by Compose on first `up`.
+  corpus-data:
+  corpus-logs:

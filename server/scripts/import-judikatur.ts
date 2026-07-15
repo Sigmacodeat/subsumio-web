@@ -2,7 +2,7 @@
  * import-judikatur — bring fetched Austrian court decisions into the brain
  * as pages, AND link each decision to the statute §§ it references.
  *
- * Supports seven court sources via --source flag:
+ * Supports eleven court sources via --source flag:
  *   ogh   (default) — server/law-corpus/at-judikatur/   → source law-at-judikatur
  *   vfgh             — server/law-corpus/at-judikatur-vfgh/ → source law-at-judikatur-vfgh
  *   vwgh             — server/law-corpus/at-judikatur-vwgh/ → source law-at-judikatur-vwgh
@@ -10,6 +10,10 @@
  *   lvwg             — server/law-corpus/at-judikatur-lvwg/ → source law-at-judikatur-lvwg
  *   asylgh           — server/law-corpus/at-judikatur-asylgh/ → source law-at-judikatur-asylgh
  *   uvs              — server/law-corpus/at-judikatur-uvs/ → source law-at-judikatur-uvs
+ *   dsk              — server/law-corpus/at-judikatur-dsk/ → source law-at-judikatur-dsk
+ *   gbk              — server/law-corpus/at-judikatur-gbk/ → source law-at-judikatur-gbk
+ *   pvak             — server/law-corpus/at-judikatur-pvak/ → source law-at-judikatur-pvak
+ *   dok              — server/law-corpus/at-judikatur-dok/ → source law-at-judikatur-dok
  *
  * Two writes per decision:
  *   1. The decision itself as a page (`legal/judikatur/at/[court]/<file-slug>`),
@@ -89,6 +93,30 @@ const SOURCE_CONFIGS: Record<string, SourceConfig> = {
     slugPrefix: "legal/judikatur/at/uvs",
     label: "Uvs",
   },
+  dsk: {
+    dir: "at-judikatur-dsk",
+    sourceId: "law-at-judikatur-dsk",
+    slugPrefix: "legal/judikatur/at/dsk",
+    label: "DSB",
+  },
+  gbk: {
+    dir: "at-judikatur-gbk",
+    sourceId: "law-at-judikatur-gbk",
+    slugPrefix: "legal/judikatur/at/gbk",
+    label: "GBK",
+  },
+  pvak: {
+    dir: "at-judikatur-pvak",
+    sourceId: "law-at-judikatur-pvak",
+    slugPrefix: "legal/judikatur/at/pvak",
+    label: "PVAK",
+  },
+  dok: {
+    dir: "at-judikatur-dok",
+    sourceId: "law-at-judikatur-dok",
+    slugPrefix: "legal/judikatur/at/dok",
+    label: "DOK",
+  },
 };
 
 const sourcesToRun: string[] = ALL_SOURCES ? Object.keys(SOURCE_CONFIGS) : [sourceKey];
@@ -96,7 +124,9 @@ const sourcesToRun: string[] = ALL_SOURCES ? Object.keys(SOURCE_CONFIGS) : [sour
 if (!ALL_SOURCES) {
   const srcCfg = SOURCE_CONFIGS[sourceKey];
   if (!srcCfg) {
-    console.error(`Unknown source: ${sourceKey}. Use ogh, vfgh, vwgh, bvwg, lvwg, asylgh, or uvs.`);
+    console.error(
+      `Unknown source: ${sourceKey}. Use ogh, vfgh, vwgh, bvwg, lvwg, asylgh, uvs, dsk, gbk, pvak, or dok.`
+    );
     process.exit(1);
   }
 }

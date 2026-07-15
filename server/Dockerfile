@@ -19,6 +19,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     graphicsmagick ghostscript poppler-utils pst-utils qpdf \
     libreoffice-core libreoffice-writer libreoffice-calc libreoffice-impress \
+    postgresql-client \
   && rm -rf /var/lib/apt/lists/*
 
 # Dependency layer (cached unless package.json/bun.lock change).

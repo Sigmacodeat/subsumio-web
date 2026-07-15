@@ -25,10 +25,26 @@ const args = process.argv.slice(2);
 const dirIdx = args.indexOf("--dir");
 const concIdx = args.indexOf("--concurrency");
 const limitIdx = args.indexOf("--limit");
+const offHoursOnly = args.includes("--off-hours-only");
 
 const TARGET_DIR = dirIdx >= 0 ? args[dirIdx + 1] : "law-corpus/at-judikatur-vfgh";
-const CONCURRENCY = concIdx >= 0 ? parseInt(args[concIdx + 1], 10) : 10;
+// RIS OGD requires single connection — default concurrency is 1.
+// For non-RIS sources (EU), higher concurrency is safe.
+const isRIS = TARGET_DIR.includes("judikatur");
+const CONCURRENCY = concIdx >= 0 ? parseInt(args[concIdx + 1], 10) : isRIS ? 1 : 5;
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : 0;
+const RATE_LIMIT_MS = isRIS ? 1500 : 500; // RIS: 1.5s between requests, EU: 500ms
+
+/** Check if current time is within RIS-recommended off-hours (18:00–06:00 or weekend). */
+function isRisOffHours(): boolean {
+  const now = new Date();
+  const cetHour = parseInt(
+    now.toLocaleTimeString("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", hour12: false })
+  );
+  const day = now.toLocaleDateString("en-US", { timeZone: "Europe/Vienna", weekday: "short" });
+  const isWeekend = day === "Sat" || day === "Sun";
+  return isWeekend || cetHour < 8 || cetHour >= 18;
+}
 
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
 const ABS_DIR = join(_scriptDir, "..", "..", TARGET_DIR);
@@ -168,18 +184,39 @@ function extractEcli(fm: string): string {
  * across affected courts. This guard rejects any fetch whose body doesn't
  * contain the requesting document's own case number or ECLI — the one
  * thing genuinely unique to that decision — before it's ever written.
+ *
+ * 2026-07-16 extension: EU sources (EUR-Lex / publications.europa.eu) now
+ * also pass through this guard. EU documents have a CELEX number in
+ * frontmatter — the unique identifier for EU legislation. The fetched text
+ * must contain this CELEX number, otherwise we reject it as a mismatch.
+ * This prevents the same class of silent mislabeling that affected RIS
+ * judikatur (wrong document served under a 200 OK) from affecting EU corpus
+ * files.
  */
 function contentMatchesDocument(text: string, fm: string): boolean {
   const caseNum = extractCaseNumber(fm);
   const ecli = extractEcli(fm);
+  const celex = extractCelex(fm);
   const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase();
   const normText = normalize(text);
   if (caseNum && normText.includes(normalize(caseNum))) return true;
   if (ecli && normText.includes(normalize(ecli))) return true;
-  // No case number and no ECLI in frontmatter to check against — can't
-  // validate either way, so don't block on it (rare; mostly non-judikatur
-  // sources that never call this function anyway).
-  if (!caseNum && !ecli) return true;
+  // EU CELEX check: CELEX numbers are unique identifiers for EU legislation.
+  // They appear in fetched content either as the raw number or embedded in
+  // URLs (e.g. CELEX:32024R0199). We check both the raw form and a partial
+  // match on the numeric core (year+type+number, e.g. 32024R0199).
+  if (celex) {
+    const normCelex = normalize(celex);
+    if (normText.includes(normCelex)) return true;
+    // Also check without the leading country code digit (3 = EU legislation)
+    // since EUR-Lex pages sometimes reference CELEX without the leading digit
+    const celexCore = normCelex.replace(/^3/, "");
+    if (celexCore.length > 4 && normText.includes(celexCore)) return true;
+  }
+  // No case number, no ECLI, and no CELEX in frontmatter to check against —
+  // can't validate either way, so don't block on it (rare; mostly non-judikatur
+  // and non-EU sources that never call this function anyway).
+  if (!caseNum && !ecli && !celex) return true;
   return false;
 }
 
@@ -260,6 +297,15 @@ async function backfillFile(filepath: string): Promise<"ok" | "skip" | "fail"> {
     }
 
     if (text.length < 50) return "fail";
+
+    // EU identity check: verify the fetched text contains the document's
+    // CELEX number. Same principle as the RIS judikatur guard — EUR-Lex
+    // can serve a generic/fallback page on 200 OK, and without this check
+    // mismatched content would be written silently.
+    if (!contentMatchesDocument(text, fm)) {
+      console.error(`  ✗ EU identity check FAILED for ${filepath} — CELEX not in fetched text`);
+      return "fail";
+    }
   } else if (isRIS) {
     // 2026-07-15 rewrite. The old primary path queried
     // `v2.6/judikatur/{court}?Dokumentnummer=...` — but the RIS API silently
@@ -413,8 +459,26 @@ async function main() {
   console.log(`  Backfill Text — ${TARGET_DIR}`);
   console.log(`  Total files: ${allFiles.length}`);
   console.log(`  Need backfill: ${needBackfill.length}`);
-  console.log(`  Concurrency: ${CONCURRENCY}`);
+  console.log(`  Concurrency: ${CONCURRENCY}${isRIS ? " (RIS single-connection)" : ""}`);
+  console.log(`  Rate limit: ${RATE_LIMIT_MS}ms between requests`);
+  if (isRIS && offHoursOnly) {
+    console.log(`  Off-hours only: waiting until 18:00 CET or weekend`);
+  }
   console.log(`═══════════════════════════════════════════════════════════\n`);
+
+  // RIS off-hours enforcement
+  if (isRIS && offHoursOnly && !isRisOffHours()) {
+    const now = new Date();
+    const cetHour = parseInt(
+      now.toLocaleTimeString("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", hour12: false })
+    );
+    const waitHours = 18 - cetHour;
+    console.log(`⏳ Waiting ${waitHours}h until 18:00 CET (RIS OGD guidelines).`);
+    while (!isRisOffHours()) {
+      await new Promise((r) => setTimeout(r, 60_000));
+    }
+    console.log(`✅ Off-hours reached. Starting backfill.`);
+  }
 
   const files = LIMIT > 0 ? needBackfill.slice(0, LIMIT) : needBackfill;
 
@@ -429,6 +493,11 @@ async function main() {
     skip += result.skip;
     fail += result.fail;
 
+    // Rate limit between batches for RIS compliance
+    if (isRIS && i + CONCURRENCY < files.length) {
+      await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+    }
+
     const processed = Math.min(i + CONCURRENCY, files.length);
     const elapsed = (Date.now() - startTime) / 1000;
     const rate = processed / elapsed;
@@ -436,7 +505,7 @@ async function main() {
 
     if (processed % 100 < CONCURRENCY || processed === files.length) {
       console.log(
-        `  [${processed}/${files.length}] ok=${ok} skip=${skip} fail=${fail} | ${rate.toFixed(0)}/s ETA ${remaining.toFixed(0)}s`
+        `  [${processed}/${files.length}] ok=${ok} skip=${skip} fail=${fail} | ${rate.toFixed(1)}/s ETA ${remaining.toFixed(0)}s`
       );
     }
   }
