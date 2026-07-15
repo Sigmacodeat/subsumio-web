@@ -902,7 +902,9 @@ async function cycle(): Promise<void> {
 
   // Acquire cycle lock — prevents two pipeline instances from running
   // simultaneously and spawning duplicate processes.
-  if (!tryAcquireCycleLock()) {
+  const locked = tryAcquireCycleLock();
+  console.log(`  [debug] tryAcquireCycleLock → ${locked} (pid=${process.pid})`);
+  if (!locked) {
     console.log("  ⏭️ Cycle skipped — another pipeline instance holds the lock");
     return;
   }
@@ -1223,7 +1225,9 @@ async function cycle(): Promise<void> {
     );
     console.log(report);
   } finally {
+    console.log(`  [debug] releasing cycle lock (pid=${process.pid})`);
     releaseCycleLock();
+    console.log(`  [debug] cycle lock released`);
   }
 }
 
