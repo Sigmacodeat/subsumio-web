@@ -1289,6 +1289,25 @@ async function runSampleCheck(): Promise<void> {
 }
 
 async function main() {
+  // Wait for DB DNS resolution before starting — Docker DNS can take a few
+  // seconds to propagate on container start, and if the first cycle acquires
+  // the lock but then fails to connect, the lock gets stuck.
+  const dbHost = new URL(dbUrl()).hostname;
+  console.log(`Waiting for DB host "${dbHost}" to resolve...`);
+  for (let i = 0; i < 30; i++) {
+    try {
+      sh(`getent hosts ${dbHost} 2>/dev/null || nslookup ${dbHost} 2>/dev/null`);
+      console.log(`DB host resolved. Starting pipeline.`);
+      break;
+    } catch {
+      if (i === 29) {
+        console.error(`Could not resolve DB host "${dbHost}" after 30s — exiting.`);
+        process.exit(1);
+      }
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+  }
+
   if (SAMPLE_CHECK) {
     await runSampleCheck();
     return;
