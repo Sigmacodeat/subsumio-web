@@ -1201,29 +1201,49 @@ async function cycle(): Promise<void> {
         stage = "backfill-pending";
         if (!REPORT_ONLY) {
           const backfillKey = `backfill-${judKey}`;
-          // RIS OGD: concurrency 1 during business hours, 2 during off-hours
-          // (18:00-06:00 CET or weekends). Off-hours doubling is safe — RIS
-          // is less loaded and MyraCloud is more permissive outside peak.
-          const backfillConcurrency = isRisOffHours() ? "2" : "1";
-          startProcess(
-            `backfill-${src.key}`,
-            [
-              "scripts/backfill-corpus-text.ts",
-              "--dir",
-              `law-corpus/${src.dir}`,
-              "--concurrency",
-              backfillConcurrency,
-            ],
-            backfillKey,
-            7200
-          ); // 2h timeout for backfill
-          state.pendingBackfillPh[judKey] = stats.placeholders;
-          updateSourceState(judKey, {
-            pending_backfill_ph: stats.placeholders,
-            stage: "backfilling",
-          });
-          appendHistory(judKey, "backfill", "started");
-          action = "backfill gestartet";
+          // RIS single-connection guard: only 1 RIS backfill at a time.
+          // Check if any other judikatur backfill is already running.
+          let otherRisBackfillRunning = false;
+          for (const other of JUDIKATUR) {
+            if (other.key === src.key) continue;
+            const otherKey = `backfill-jud-${other.key}`;
+            const otherProc = checkSourceProcess(otherKey, state);
+            const otherRunning =
+              otherProc.running ||
+              processRunningGrep(`backfill-corpus-text.ts --dir law-corpus/${other.dir} `);
+            if (otherRunning) {
+              otherRisBackfillRunning = true;
+              break;
+            }
+          }
+          if (otherRisBackfillRunning) {
+            stage = "waiting-for-ris-slot";
+            action = "wartet auf freie RIS-Connection";
+          } else {
+            // RIS OGD: concurrency 1 during business hours, 2 during off-hours
+            // (18:00-06:00 CET or weekends). Off-hours doubling is safe — RIS
+            // is less loaded and MyraCloud is more permissive outside peak.
+            const backfillConcurrency = isRisOffHours() ? "2" : "1";
+            startProcess(
+              `backfill-${src.key}`,
+              [
+                "scripts/backfill-corpus-text.ts",
+                "--dir",
+                `law-corpus/${src.dir}`,
+                "--concurrency",
+                backfillConcurrency,
+              ],
+              backfillKey,
+              7200
+            ); // 2h timeout for backfill
+            state.pendingBackfillPh[judKey] = stats.placeholders;
+            updateSourceState(judKey, {
+              pending_backfill_ph: stats.placeholders,
+              stage: "backfilling",
+            });
+            appendHistory(judKey, "backfill", "started");
+            action = "backfill gestartet";
+          }
         }
       } else if (!statutesAtDone) {
         stage = "waiting-for-statutes";
