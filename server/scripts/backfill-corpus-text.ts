@@ -33,11 +33,17 @@ const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : 0;
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
 const ABS_DIR = join(_scriptDir, "..", "..", TARGET_DIR);
 
-async function fetchWithRetry(url: string, headers?: Record<string, string>): Promise<Response | null> {
+async function fetchWithRetry(
+  url: string,
+  headers?: Record<string, string>
+): Promise<Response | null> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const res = await fetch(url, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; Subsumio-Legal-Import/1.0)", ...headers },
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; Subsumio-Legal-Import/1.0)",
+          ...headers,
+        },
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
       if (res.status === 429 || res.status >= 500) {
@@ -78,6 +84,44 @@ function stripHtml(html: string): string {
     .trim();
 }
 
+/** Decode numeric (&#252; / &#xFC;) and the common named HTML entities. */
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(parseInt(n, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'");
+}
+
+/**
+ * RIS OGD XML (risdok) → plain text. The XML is the cleanest representation
+ * RIS offers: real content lives in <nutzdaten> as <ueberschrift> (section
+ * titles: Gericht, Geschäftszahl, Leitsatz, Rechtssatz, ...) and <absatz>
+ * paragraphs. <kzinhalt>/<fzinhalt> are print page header/footer chrome
+ * ("www.ris.bka.gv.at Seite 1 von 6") and are dropped. The HTML variant of
+ * the same document ships the full ris.bka.gv.at site navigation — useless
+ * for embeddings — which is why XML is the primary format.
+ */
+function risXmlToText(xml: string): string {
+  const nutz = xml.match(/<nutzdaten>([\s\S]*?)<\/nutzdaten>/);
+  if (!nutz) return "";
+  let t = nutz[1];
+  t = t.replace(/<kzinhalt[^>]*>[\s\S]*?<\/kzinhalt>/g, "");
+  t = t.replace(/<fzinhalt[^>]*>[\s\S]*?<\/fzinhalt>/g, "");
+  t = t.replace(/<ueberschrift[^>]*>([\s\S]*?)<\/ueberschrift>/g, "\n## $1\n");
+  t = t.replace(/<absatz[^>]*>/g, "\n").replace(/<\/absatz>/g, "\n");
+  t = t.replace(/<[^>]+>/g, "");
+  t = decodeEntities(t);
+  return t
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function parseFrontmatter(content: string): { fm: string; body: string; fmEnd: number } {
   const match = content.match(/^---\n([\s\S]*?)\n---\n/);
   if (!match) return { fm: "", body: content, fmEnd: 0 };
@@ -101,6 +145,42 @@ function extractCelex(fm: string): string {
 
 function isPlaceholder(body: string): boolean {
   return body.includes("Volltext nicht abrufbar") || body.trim().length < 50;
+}
+
+function extractCaseNumber(fm: string): string {
+  const match = fm.match(/case_number:\s*"?([^\n"]+)"?/);
+  return match ? match[1].trim() : "";
+}
+
+function extractEcli(fm: string): string {
+  const match = fm.match(/ecli:\s*"?([^\n"]*)"?/);
+  return match ? match[1].trim() : "";
+}
+
+/**
+ * 2026-07-15 incident: the RIS Dokument.wxe fallback below sometimes returns
+ * HTTP 200 with an unrelated document (e.g. a random OGH Rechtssatz) instead
+ * of a 404/503 — because RIS serves a generic fallback page rather than
+ * erroring. Nothing downstream checked that the fetched text actually
+ * belonged to the requested decision, so mismatched content got written
+ * silently: BVwG/LVwG/VfGH/VwGH/AsylGH/UVS files ended up with unrelated OGH
+ * case text under their own (correct) frontmatter/title. Rate was 10-77%
+ * across affected courts. This guard rejects any fetch whose body doesn't
+ * contain the requesting document's own case number or ECLI — the one
+ * thing genuinely unique to that decision — before it's ever written.
+ */
+function contentMatchesDocument(text: string, fm: string): boolean {
+  const caseNum = extractCaseNumber(fm);
+  const ecli = extractEcli(fm);
+  const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase();
+  const normText = normalize(text);
+  if (caseNum && normText.includes(normalize(caseNum))) return true;
+  if (ecli && normText.includes(normalize(ecli))) return true;
+  // No case number and no ECLI in frontmatter to check against — can't
+  // validate either way, so don't block on it (rare; mostly non-judikatur
+  // sources that never call this function anyway).
+  if (!caseNum && !ecli) return true;
+  return false;
 }
 
 async function backfillFile(filepath: string): Promise<"ok" | "skip" | "fail"> {
@@ -181,60 +261,100 @@ async function backfillFile(filepath: string): Promise<"ok" | "skip" | "fail"> {
 
     if (text.length < 50) return "fail";
   } else if (isRIS) {
-    // RIS Dokument.wxe pages are often 503 — use OGD API instead
-    // Extract Abfrage and Dokumentnummer from source_url
+    // 2026-07-15 rewrite. The old primary path queried
+    // `v2.6/judikatur/{court}?Dokumentnummer=...` — but the RIS API silently
+    // IGNORES both that path segment and the Dokumentnummer param, returning
+    // the unfiltered default Justiz search instead (its first hit, OGH
+    // Rechtssatz RS0043603, is verbatim the text found in all 72k
+    // contaminated files). Correct usage verified against the live API:
+    //   - filter params are query params: `Judikatur?Applikation=Bvwg&Geschaeftszahl=...`
+    //   - content URLs are deterministic: Dokumente/{Abfrage}/{DokNr}/{DokNr}.html
+    // Every candidate still passes contentMatchesDocument() — the API shape
+    // being "correct" is never trusted on its own again.
     const abfrageMatch = sourceUrl.match(/Abfrage=([^&]+)/);
     const dokNrMatch = sourceUrl.match(/Dokumentnummer=([^&]+)/);
     if (abfrageMatch && dokNrMatch) {
       const abfrage = abfrageMatch[1];
       const dokNr = dokNrMatch[1];
-      // Map RIS Abfrage to OGD endpoint
-      const ogdMap: Record<string, string> = {
-        Justiz: "justiz",
-        Vfgh: "vfgh",
-        Vwgh: "vwgh",
-        Bvwg: "bvwg",
-        Lvwg: "lvwg",
-        AsylGH: "asylgh",
-        Uvs: "uvs",
-        Bundesverfassung: "bundesverfassung",
-      };
-      const ogdEndpoint = ogdMap[abfrage] || abfrage.toLowerCase();
-      const ogdUrl = `https://data.bka.gv.at/ris/api/v2.6/judikatur/${ogdEndpoint}?Dokumentnummer=${dokNr}&PageSize=1`;
 
-      const ogdRes = await fetchWithRetry(ogdUrl);
-      if (ogdRes && ogdRes.ok) {
-        try {
-          const ogdData = await ogdRes.json() as any;
-          const docs = ogdData?.OgdSearchResult?.OgdDocumentResults?.OgdDocumentReference;
-          const docArr = Array.isArray(docs) ? docs : docs ? [docs] : [];
-          if (docArr.length > 0) {
-            const contentRef = docArr[0]?.Data?.Dokumentliste?.ContentReference;
-            const urls = contentRef?.Urls?.ContentUrl;
-            const urlArr = Array.isArray(urls) ? urls : urls ? [urls] : [];
-            // Find HTML URL
-            let htmlUrl = "";
-            for (const u of urlArr) {
-              if (u.DataType === "Html") { htmlUrl = String(u.Url); break; }
-            }
-            if (!htmlUrl && urlArr.length > 0) htmlUrl = String(urlArr[0].Url);
+      // Primary: deterministic XML document URL — structured nutzdaten, no
+      // site chrome, no search round-trip.
+      const xmlUrl = `https://www.ris.bka.gv.at/Dokumente/${abfrage}/${dokNr}/${dokNr}.xml`;
+      const xmlRes = await fetchWithRetry(xmlUrl);
+      if (xmlRes && xmlRes.ok) {
+        const candidate = risXmlToText(await xmlRes.text());
+        if (candidate.length >= 50 && contentMatchesDocument(candidate, fm)) {
+          text = candidate;
+        }
+      }
 
-            if (htmlUrl) {
-              const htmlRes = await fetchWithRetry(htmlUrl);
-              if (htmlRes && htmlRes.ok) {
-                text = stripHtml(await htmlRes.text());
+      // Secondary: deterministic HTML URL (full site page — noisier, but
+      // stripHtml + identity check still beat a placeholder).
+      if (text.length < 50) {
+        const directUrl = `https://www.ris.bka.gv.at/Dokumente/${abfrage}/${dokNr}/${dokNr}.html`;
+        const directRes = await fetchWithRetry(directUrl);
+        if (directRes && directRes.ok) {
+          const candidate = stripHtml(await directRes.text());
+          if (contentMatchesDocument(candidate, fm)) {
+            text = candidate;
+          }
+        }
+      }
+
+      // Tertiary: search by Applikation + Geschaeftszahl, then pick the hit
+      // whose Technisch.ID matches OUR document number exactly.
+      if (text.length < 50) {
+        const caseNum = extractCaseNumber(fm);
+        if (caseNum) {
+          const searchUrl =
+            `https://data.bka.gv.at/ris/api/v2.6/Judikatur?Applikation=${encodeURIComponent(abfrage)}` +
+            `&Geschaeftszahl=${encodeURIComponent(caseNum)}`;
+          const ogdRes = await fetchWithRetry(searchUrl);
+          if (ogdRes && ogdRes.ok) {
+            try {
+              const ogdData = (await ogdRes.json()) as any;
+              const docs = ogdData?.OgdSearchResult?.OgdDocumentResults?.OgdDocumentReference;
+              const docArr = Array.isArray(docs) ? docs : docs ? [docs] : [];
+              const match = docArr.find((d: any) => d?.Data?.Metadaten?.Technisch?.ID === dokNr);
+              const contentRef = match?.Data?.Dokumentliste?.ContentReference;
+              const urls = contentRef?.Urls?.ContentUrl;
+              const urlArr = Array.isArray(urls) ? urls : urls ? [urls] : [];
+              let htmlUrl = "";
+              for (const u of urlArr) {
+                if (u.DataType === "Html") {
+                  htmlUrl = String(u.Url);
+                  break;
+                }
               }
+              if (htmlUrl) {
+                const htmlRes = await fetchWithRetry(htmlUrl);
+                if (htmlRes && htmlRes.ok) {
+                  const candidate = stripHtml(await htmlRes.text());
+                  if (contentMatchesDocument(candidate, fm)) {
+                    text = candidate;
+                  }
+                }
+              }
+            } catch {
+              /* OGD parse failed */
             }
           }
-        } catch { /* OGD parse failed */ }
+        }
       }
     }
 
-    // Fallback: try the original source_url directly
+    // Fallback: try the original source_url directly. RIS serves HTTP 200
+    // with an unrelated/generic page here more often than an actual error —
+    // contentMatchesDocument() is the only thing standing between that and a
+    // silently-mislabeled file, so a fetch that fails the check is a "fail",
+    // not an "ok with wrong text".
     if (text.length < 50) {
       const res = await fetchWithRetry(sourceUrl);
       if (res && res.ok) {
-        text = stripHtml(await res.text());
+        const candidate = stripHtml(await res.text());
+        if (contentMatchesDocument(candidate, fm)) {
+          text = candidate;
+        }
       }
     }
   } else {
@@ -259,7 +379,11 @@ async function backfillFile(filepath: string): Promise<"ok" | "skip" | "fail"> {
   return "ok";
 }
 
-async function runBatch(files: string[], startIdx: number, batchSize: number): Promise<{ ok: number; skip: number; fail: number }> {
+async function runBatch(
+  files: string[],
+  startIdx: number,
+  batchSize: number
+): Promise<{ ok: number; skip: number; fail: number }> {
   const batch = files.slice(startIdx, startIdx + batchSize);
   const results = await Promise.all(batch.map((f) => backfillFile(f)));
   return {
@@ -311,7 +435,9 @@ async function main() {
     const remaining = (files.length - processed) / rate;
 
     if (processed % 100 < CONCURRENCY || processed === files.length) {
-      console.log(`  [${processed}/${files.length}] ok=${ok} skip=${skip} fail=${fail} | ${rate.toFixed(0)}/s ETA ${remaining.toFixed(0)}s`);
+      console.log(
+        `  [${processed}/${files.length}] ok=${ok} skip=${skip} fail=${fail} | ${rate.toFixed(0)}/s ETA ${remaining.toFixed(0)}s`
+      );
     }
   }
 

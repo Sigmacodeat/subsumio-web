@@ -37,6 +37,7 @@ const limitIdx = args.indexOf("--limit");
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : Infinity;
 const sourceIdx = args.indexOf("--source");
 const sourceKey = sourceIdx >= 0 ? args[sourceIdx + 1] : "ogh";
+const SKIP_PLACEHOLDERS = args.includes("--skip-placeholders");
 
 interface SourceConfig {
   dir: string;
@@ -46,13 +47,48 @@ interface SourceConfig {
 }
 
 const SOURCE_CONFIGS: Record<string, SourceConfig> = {
-  ogh: { dir: "at-judikatur", sourceId: "law-at-judikatur", slugPrefix: "legal/judikatur/at", label: "OGH" },
-  vfgh: { dir: "at-judikatur-vfgh", sourceId: "law-at-judikatur-vfgh", slugPrefix: "legal/judikatur/at/vfgh", label: "VfGH" },
-  vwgh: { dir: "at-judikatur-vwgh", sourceId: "law-at-judikatur-vwgh", slugPrefix: "legal/judikatur/at/vwgh", label: "VwGH" },
-  bvwg: { dir: "at-judikatur-bvwg", sourceId: "law-at-judikatur-bvwg", slugPrefix: "legal/judikatur/at/bvwg", label: "BVwG" },
-  lvwg: { dir: "at-judikatur-lvwg", sourceId: "law-at-judikatur-lvwg", slugPrefix: "legal/judikatur/at/lvwg", label: "LVwG" },
-  asylgh: { dir: "at-judikatur-asylgh", sourceId: "law-at-judikatur-asylgh", slugPrefix: "legal/judikatur/at/asylgh", label: "AsylGH" },
-  uvs: { dir: "at-judikatur-uvs", sourceId: "law-at-judikatur-uvs", slugPrefix: "legal/judikatur/at/uvs", label: "Uvs" },
+  ogh: {
+    dir: "at-judikatur",
+    sourceId: "law-at-judikatur",
+    slugPrefix: "legal/judikatur/at",
+    label: "OGH",
+  },
+  vfgh: {
+    dir: "at-judikatur-vfgh",
+    sourceId: "law-at-judikatur-vfgh",
+    slugPrefix: "legal/judikatur/at/vfgh",
+    label: "VfGH",
+  },
+  vwgh: {
+    dir: "at-judikatur-vwgh",
+    sourceId: "law-at-judikatur-vwgh",
+    slugPrefix: "legal/judikatur/at/vwgh",
+    label: "VwGH",
+  },
+  bvwg: {
+    dir: "at-judikatur-bvwg",
+    sourceId: "law-at-judikatur-bvwg",
+    slugPrefix: "legal/judikatur/at/bvwg",
+    label: "BVwG",
+  },
+  lvwg: {
+    dir: "at-judikatur-lvwg",
+    sourceId: "law-at-judikatur-lvwg",
+    slugPrefix: "legal/judikatur/at/lvwg",
+    label: "LVwG",
+  },
+  asylgh: {
+    dir: "at-judikatur-asylgh",
+    sourceId: "law-at-judikatur-asylgh",
+    slugPrefix: "legal/judikatur/at/asylgh",
+    label: "AsylGH",
+  },
+  uvs: {
+    dir: "at-judikatur-uvs",
+    sourceId: "law-at-judikatur-uvs",
+    slugPrefix: "legal/judikatur/at/uvs",
+    label: "Uvs",
+  },
 };
 
 const sourcesToRun: string[] = ALL_SOURCES ? Object.keys(SOURCE_CONFIGS) : [sourceKey];
@@ -166,17 +202,36 @@ function loadDecisions(srcCfg: SourceConfig): ParsedDecision[] {
   const files = readdirSync(dir)
     .filter((f) => f.endsWith(".md"))
     .slice(0, LIMIT);
-  return files.map((f) => {
+  const decisions: ParsedDecision[] = [];
+  let skippedPlaceholders = 0;
+  for (const f of files) {
     const content = readFileSync(join(dir, f), "utf-8");
+    // Never import text-less stubs: a "Volltext nicht abrufbar" page in the
+    // brain is retrieval noise AND blocks the content-hash update path from
+    // treating the later real text as fresh content worth re-embedding
+    // eagerly. The corpus pipeline re-runs this import after backfill fills
+    // the text in, so skipping here loses nothing.
+    if (SKIP_PLACEHOLDERS && content.includes("Volltext nicht abrufbar")) {
+      skippedPlaceholders++;
+      continue;
+    }
     const slug = `${srcCfg.slugPrefix}/${f.replace(/\.md$/, "")}`;
     const normRefs = extractAllNormReferences(content);
-    return { slug, content, normRefs };
-  });
+    decisions.push({ slug, content, normRefs });
+  }
+  if (skippedPlaceholders > 0) {
+    console.log(
+      `  [${srcCfg.label}] ${skippedPlaceholders} Platzhalter-Dateien übersprungen (kein Volltext)`
+    );
+  }
+  return decisions;
 }
 
 async function main() {
   console.log("═══════════════════════════════════════════════════════════");
-  console.log(`  Subsumio — Judikatur-Import (${sourcesToRun.length} Gericht${sourcesToRun.length > 1 ? "e" : ""})`);
+  console.log(
+    `  Subsumio — Judikatur-Import (${sourcesToRun.length} Gericht${sourcesToRun.length > 1 ? "e" : ""})`
+  );
   console.log("═══════════════════════════════════════════════════════════");
   console.log(
     `Mode: ${DRY ? "DRY-RUN (kein DB-Write)" : NO_EMBED ? "import, no-embed" : "import + embed"}`
@@ -305,7 +360,9 @@ async function main() {
 
   console.log("");
   console.log("═══════════════════════════════════════════════════════════");
-  console.log(`  GESAMT: ${pagesOk} Entscheidungen, ${linksWritten} Zitier-Kanten (${totalLinks} versucht, ${pagesErr} Fehler)`);
+  console.log(
+    `  GESAMT: ${pagesOk} Entscheidungen, ${linksWritten} Zitier-Kanten (${totalLinks} versucht, ${pagesErr} Fehler)`
+  );
   console.log("═══════════════════════════════════════════════════════════");
 
   await engine.disconnect();
