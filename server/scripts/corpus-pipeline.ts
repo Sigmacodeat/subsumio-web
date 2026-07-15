@@ -1139,6 +1139,10 @@ async function cycle(): Promise<void> {
       !needsImport("at", state.lastImportSuccess["statutes-at"] || undefined);
 
     // ── Judikatur sources ──
+    // RIS single-connection: only start 1 RIS backfill per pipeline cycle.
+    // The guard inside the loop checks both process state AND this flag
+    // to prevent race conditions when multiple sources have placeholders.
+    let risBackfillStartedThisCycle = false;
     for (const src of JUDIKATUR) {
       const judKey = `jud-${src.key}`;
       const stats = dirStats(src.dir);
@@ -1216,7 +1220,7 @@ async function cycle(): Promise<void> {
               break;
             }
           }
-          if (otherRisBackfillRunning) {
+          if (otherRisBackfillRunning || risBackfillStartedThisCycle) {
             stage = "waiting-for-ris-slot";
             action = "wartet auf freie RIS-Connection";
           } else {
@@ -1243,6 +1247,7 @@ async function cycle(): Promise<void> {
             });
             appendHistory(judKey, "backfill", "started");
             action = "backfill gestartet";
+            risBackfillStartedThisCycle = true;
           }
         }
       } else if (!statutesAtDone) {
