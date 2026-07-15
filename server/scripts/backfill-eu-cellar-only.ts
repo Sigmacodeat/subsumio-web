@@ -114,40 +114,26 @@ function normalize(s: string): string {
   return s.replace(/\s+/g, "").toLowerCase();
 }
 
-/** SPARQL preflight: check if a Cellar work has any digital manifestation. */
+/** Preflight: single HTTP request with broad Accept header.
+ *  Cellar returns RDF/XML for metadata-only entries, HTML/PDF for digitalized ones.
+ *  One request instead of 5 — 5x faster for the 62% non-digitalized majority. */
 async function hasDigitalManifestation(cellarId: string): Promise<boolean> {
-  // Quick HTTP probe: try HTML, then PDF via content negotiation
   const contentUrl = `${CELLAR_BASE}/${cellarId}`;
 
-  // Try HTML
-  const htmlRes = await fetchWithRetry(contentUrl, {
-    Accept: "text/html",
+  const res = await fetchWithRetry(contentUrl, {
+    Accept: "text/html,application/pdf,application/xhtml+xml,*/*;q=0.1",
     "Accept-Language": "de",
   });
-  if (htmlRes && htmlRes.ok && htmlRes.headers.get("content-type")?.includes("text/html")) {
+  if (!res || !res.ok) return false;
+
+  const ct = res.headers.get("content-type") || "";
+  // RDF/XML = metadata only, no digital content
+  if (ct.includes("rdf+xml")) return false;
+  // HTML, PDF, XHTML = digital content available
+  if (ct.includes("text/html") || ct.includes("pdf") || ct.includes("xhtml")) {
     return true;
   }
-
-  // Try PDF
-  const pdfRes = await fetchWithRetry(contentUrl, {
-    Accept: "application/pdf",
-    "Accept-Language": "de",
-  });
-  if (pdfRes && pdfRes.ok && pdfRes.headers.get("content-type")?.includes("pdf")) {
-    return true;
-  }
-
-  // Try XHTML
-  const xhtmlRes = await fetchWithRetry(contentUrl, {
-    Accept: "application/xhtml+xml",
-    "Accept-Language": "de",
-  });
-  if (xhtmlRes && xhtmlRes.ok) {
-    const ct = xhtmlRes.headers.get("content-type") || "";
-    if (ct.includes("html") || ct.includes("xml")) return true;
-  }
-
-  // Try format-specific URL paths
+  // Unknown content type — be conservative, try format-specific paths
   for (const fmt of ["html", "pdf"]) {
     const fmtRes = await fetchWithRetry(`${contentUrl}/${fmt}`, {
       Accept: fmt === "pdf" ? "application/pdf" : "text/html",
@@ -155,7 +141,6 @@ async function hasDigitalManifestation(cellarId: string): Promise<boolean> {
     });
     if (fmtRes && fmtRes.ok) return true;
   }
-
   return false;
 }
 
