@@ -114,40 +114,58 @@ function extractRisContent(html: string): string {
   content = content.replace(/<header[^>]*>[\s\S]*?<\/header>/gi, "");
   content = content.replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, "");
 
-  // RIS-specific: remove navigation/sidebars
-  content = content.replace(/<ul[^>]*class="[^"]*(?:nav|menu|access|skip)[^"]*"[^>]*>[\s\S]*?<\/ul>/gi, "");
-  content = content.replace(/<div[^>]*class="[^"]*(?:nav|menu|access|skip|sidebar|footer|header|breadcrumb)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
+  // RIS-specific: remove known non-content divs by ID
+  content = content.replace(/<div[^>]*id="header"[^>]*>[\s\S]*?<\/div>\s*<\/div>/gi, "");
+  content = content.replace(/<div[^>]*id="TopPageNavigation"[^>]*>[\s\S]*?<\/div>/gi, "");
+  content = content.replace(/<div[^>]*id="TopDocumentNavigation_ContainerPanel"[^>]*>[\s\S]*?<\/div>/gi, "");
+  content = content.replace(/<div[^>]*id="BottomDocumentNavigation_ContainerPanel"[^>]*>[\s\S]*?<\/div>/gi, "");
+  content = content.replace(/<div[^>]*id="footer"[^>]*>[\s\S]*?<\/div>/gi, "");
+  content = content.replace(/<div[^>]*id="Topline"[^>]*>[\s\S]*?<\/div>/gi, "");
 
-  // Try to find the main content container
-  let mainMatch = content.match(/<div[^>]*(?:id|class)="[^"]*content[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i);
+  // RIS-specific: remove navigation lists
+  content = content.replace(/<ul[^>]*class="[^"]*(?:nav|menu|access|skip|tabStrip)[^"]*"[^>]*>[\s\S]*?<\/ul>/gi, "");
+  content = content.replace(/<div[^>]*class="[^"]*(?:tabStrip|nav|menu|breadcrumb|sidebar)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
+
+  // Strategy 1: RIS uses <div class="documentContent"> for the actual law text
+  let mainMatch = content.match(/<div[^>]*class="documentContent"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i);
   if (mainMatch) {
     const text = stripHtml(mainMatch[1]);
     if (text.length >= 100) return text;
   }
 
-  // Pattern 2: <main> tag
+  // Strategy 2: <div class="document"> container
+  mainMatch = content.match(/<div[^>]*class="document"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i);
+  if (mainMatch) {
+    const text = stripHtml(mainMatch[1]);
+    if (text.length >= 100) return text;
+  }
+
+  // Strategy 3: <div id="content"> container
+  mainMatch = content.match(/<div[^>]*id="content"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i);
+  if (mainMatch) {
+    const text = stripHtml(mainMatch[1]);
+    if (text.length >= 100) return text;
+  }
+
+  // Strategy 4: <div id="main"> container
+  mainMatch = content.match(/<div[^>]*id="main"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i);
+  if (mainMatch) {
+    const text = stripHtml(mainMatch[1]);
+    if (text.length >= 100) return text;
+  }
+
+  // Strategy 5: <main> tag
   mainMatch = content.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
   if (mainMatch) {
     const text = stripHtml(mainMatch[1]);
     if (text.length >= 100) return text;
   }
 
-  // Pattern 3: <article> tag
+  // Strategy 6: <article> tag
   mainMatch = content.match(/<article[^>]*>([\s\S]*?)<\/article>/i);
   if (mainMatch) {
     const text = stripHtml(mainMatch[1]);
     if (text.length >= 100) return text;
-  }
-
-  // Pattern 4: Find largest <div> with <p> blocks
-  const pBlocks = content.match(/<div[^>]*>[\s\S]*?<p[^>]*>.*?<\/p>[\s\S]*?<\/div>/gi);
-  if (pBlocks) {
-    let best = "";
-    for (const block of pBlocks) {
-      const text = stripHtml(block);
-      if (text.length > best.length) best = text;
-    }
-    if (best.length >= 100) return best;
   }
 
   // Fallback: strip all HTML, then remove known RIS navigation text
@@ -163,6 +181,30 @@ function extractRisContent(html: string): string {
     /Zum Inhalt/g,
     /Zur Navigation/g,
     /Springe zum Inhalt/g,
+    /- Startseite\n/g,
+    /- Bund\n/g,
+    /- Länder\n/g,
+    /- Bezirke\n/g,
+    /- Gemeinden\n/g,
+    /- Judikatur\n/g,
+    /- Kundmachungen, Erlässe\n/g,
+    /- Gesamtabfrage\n/g,
+    /- Hilfe\n/g,
+    /- Kontakt\n/g,
+    /- Impressum\n/g,
+    /Kurztitel:/g,
+    /Titel:/g,
+    /Kundmachungsdatum:/g,
+    /Bundesland:/g,
+    /LGBl\. Nr\./g,
+    /Typ:/g,
+    /ELI:/g,
+    /CELEX:/g,
+    /Dokument als PDF/g,
+    /Dokument als RTF/g,
+    /Web-Seite:/g,
+    /RTF-Dokument:/g,
+    /Signiertes PDF-Dokument:/g,
   ];
   for (const p of navPatterns) {
     text = text.replace(p, "");
@@ -198,40 +240,73 @@ function normalize(s: string): string {
 
 /** RIS ELI URLs for Landesrecht follow the pattern:
  *  https://www.ris.bka.gv.at/eli/lgbl/{Bundesland}/{Jahr}/{Nummer}/{Datum}
- *  They redirect to the document page. We fetch and extract the content. */
+ *  The ELI URL is a METADATA PAGE with links to the actual document.
+ *  The real law text is at /Dokumente/LgblAuth/{ID}/{ID}.html (110KB+).
+ *  Strategy: ELI page → extract document link → fetch document HTML → extract text.
+ *  Fallback: OGD API (data.bka.gv.at) → get content URLs → fetch document HTML. */
 async function fetchLandesrechtText(eliUrl: string, lgblId: string): Promise<string> {
-  // Strategy 1: Direct ELI URL (redirects to HTML page)
+  // Strategy 1: Fetch ELI metadata page, extract the /Dokumente/LgblAuth/ HTML link
   const res = await fetchWithRetry(eliUrl);
   if (res && res.ok) {
-    const html = await res.text();
-    const text = extractRisContent(html);
-    if (text.length >= 100) return text;
+    const metaHtml = await res.text();
+    // Look for the document HTML link: /Dokumente/LgblAuth/{ID}/{ID}.html
+    const docLinkMatch = metaHtml.match(/href="([^"]*\/Dokumente\/LgblAuth\/[^"]+\.html)"/i);
+    if (docLinkMatch) {
+      let docUrl = docLinkMatch[1];
+      // Make absolute if relative
+      if (docUrl.startsWith("/")) {
+        docUrl = `https://www.ris.bka.gv.at${docUrl}`;
+      }
+      const docRes = await fetchWithRetry(docUrl);
+      if (docRes && docRes.ok) {
+        const docHtml = await docRes.text();
+        // Document pages have content in <div class="paperw"> or <div class="content">
+        const text = extractRisContent(docHtml);
+        if (text.length >= 100) return text;
+      }
+    }
+    // Fallback: try extracting content from ELI page itself (rarely has full text)
+    const eliText = extractRisContent(metaHtml);
+    if (eliText.length >= 500) return eliText;
   }
 
-  // Strategy 2: Try the RIS OGD API for Landesrecht
-  // ELI URL: /eli/lgbl/OB/2024/13/20240131
+  // Strategy 2: OGD API with correct endpoint 'Landesrecht'
+  // ELI URL: /eli/lgbl/BU/2017/18/20170406
   const eliParts = eliUrl.match(/\/eli\/lgbl\/([^/]+)\/(\d+)\/([^/]+)\/(\d+)/);
   if (eliParts) {
-    const [, bundesland, jahr, nummer, datum] = eliParts;
-    // Try OGD API
-    const ogdUrl = `https://data.bka.gv.at/ris/api/v2.6/Bundeslandnorm?Applikation=Landesrecht&Bundesland=${bundesland}&Norm=${nummer}&Jahr=${jahr}`;
+    const [, bundesland, jahr, nummer] = eliParts;
+    const ogdUrl = `https://data.bka.gv.at/ris/api/v2.6/Landesrecht?Bundesland=${bundesland}&Norm=${nummer}&Jahr=${jahr}`;
     try {
       const ogdRes = await fetchWithRetry(ogdUrl);
       if (ogdRes && ogdRes.ok) {
         const data = (await ogdRes.json()) as Record<string, unknown>;
-        // Extract content from OGD response
         const docs = (data.OgdSearchResult as any)?.OgdDocumentResults?.OgdDocumentReference;
         if (docs) {
           const arr = Array.isArray(docs) ? docs : [docs];
           for (const d of arr) {
-            const urls = d.Data?.Dokumentliste?.ContentReference?.Urls?.ContentUrl;
-            if (urls) {
-              const urlArr = Array.isArray(urls) ? urls : [urls];
+            const contentRefs = d.Data?.Dokumentliste?.ContentReference;
+            const refArr = Array.isArray(contentRefs) ? contentRefs : contentRefs ? [contentRefs] : [];
+            for (const ref of refArr) {
+              if (ref.ContentType !== "MainDocument") continue;
+              const urls = ref.Urls?.ContentUrl;
+              const urlArr = Array.isArray(urls) ? urls : urls ? [urls] : [];
+              // Prefer HTML, then XML
               for (const u of urlArr) {
                 if (u.DataType === "Html") {
                   const docRes = await fetchWithRetry(u.Url);
                   if (docRes && docRes.ok) {
-                    const text = stripHtml(await docRes.text());
+                    const text = extractRisContent(await docRes.text());
+                    if (text.length >= 100) return text;
+                  }
+                }
+              }
+              // Try XML as fallback (RIS XML has structured Nutzdaten)
+              for (const u of urlArr) {
+                if (u.DataType === "Xml") {
+                  const docRes = await fetchWithRetry(u.Url);
+                  if (docRes && docRes.ok) {
+                    const xmlText = await docRes.text();
+                    const text = stripHtml(xmlText.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
                     if (text.length >= 100) return text;
                   }
                 }
@@ -241,7 +316,7 @@ async function fetchLandesrechtText(eliUrl: string, lgblId: string): Promise<str
         }
       }
     } catch {
-      /* skip */
+      /* OGD API failed */
     }
   }
 
