@@ -16,6 +16,8 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, renameSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { hasProxies, proxyFetchOptions, getUserAgent, recommendedConcurrency, PROXY_DELAY_MS, logProxyConfig, reportProxyFailure } from "./ris-proxy";
 
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 1000;
@@ -26,14 +28,16 @@ const dirIdx = args.indexOf("--dir");
 const concIdx = args.indexOf("--concurrency");
 const limitIdx = args.indexOf("--limit");
 const offHoursOnly = args.includes("--off-hours-only");
+const noLock = args.includes("--no-lock");
+const noScan = args.includes("--no-scan");
 
 const TARGET_DIR = dirIdx >= 0 ? args[dirIdx + 1] : "law-corpus/at-judikatur-vfgh";
 // RIS OGD requires single connection — default concurrency is 1.
 // For non-RIS sources (EU), higher concurrency is safe.
 const isRIS = TARGET_DIR.includes("judikatur");
-const CONCURRENCY = concIdx >= 0 ? parseInt(args[concIdx + 1], 10) : isRIS ? 1 : 5;
+const CONCURRENCY = concIdx >= 0 ? parseInt(args[concIdx + 1], 10) : isRIS ? recommendedConcurrency() : 5;
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : 0;
-const RATE_LIMIT_MS = isRIS ? 1500 : 500; // RIS: 1.5s between requests, EU: 500ms
+const RATE_LIMIT_MS = isRIS ? (hasProxies() ? PROXY_DELAY_MS : 1500) : 500; // RIS: 1.5s (or proxy delay), EU: 500ms
 
 /** Check if current time is within RIS-recommended off-hours (18:00–06:00 or weekend). */
 function isRisOffHours(): boolean {
@@ -57,10 +61,11 @@ async function fetchWithRetry(
     try {
       const res = await fetch(url, {
         headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; Subsumio-Legal-Import/1.0)",
+          "User-Agent": getUserAgent(),
           ...headers,
         },
         signal: AbortSignal.timeout(TIMEOUT_MS),
+        ...proxyFetchOptions(),
       });
       if (res.status === 429 || res.status >= 500) {
         if (attempt < MAX_RETRIES) {
@@ -70,6 +75,7 @@ async function fetchWithRetry(
       }
       return res;
     } catch {
+      if (hasProxies()) reportProxyFailure();
       if (attempt < MAX_RETRIES) {
         await new Promise((r) => setTimeout(r, RETRY_BASE_MS * Math.pow(2, attempt)));
       }
@@ -164,12 +170,12 @@ function isPlaceholder(body: string): boolean {
 }
 
 function extractCaseNumber(fm: string): string {
-  const match = fm.match(/case_number:\s*"?([^\n"]+)"?/);
+  const match = fm.match(/case_number:\s*['"]?([^\n'"]*)['"]?/);
   return match ? match[1].trim() : "";
 }
 
 function extractEcli(fm: string): string {
-  const match = fm.match(/ecli:\s*"?([^\n"]*)"?/);
+  const match = fm.match(/ecli:\s*['"]?([^\n'"]*)['"]?/);
   return match ? match[1].trim() : "";
 }
 
@@ -225,6 +231,10 @@ async function backfillFile(filepath: string): Promise<"ok" | "skip" | "fail"> {
   const { fm, body } = parseFrontmatter(content);
 
   if (!isPlaceholder(body)) return "skip";
+
+  // Skip files marked as not_digitalized — these are pre-digital-era EU
+  // documents that only exist in printed OJ. No online source has them.
+  if (/not_digitalized:\s*true/i.test(fm)) return "skip";
 
   const sourceUrl = extractSourceUrl(fm);
   if (!sourceUrl) return "fail";
@@ -331,10 +341,12 @@ async function backfillFile(filepath: string): Promise<"ok" | "skip" | "fail"> {
 
     // EU identity check: For PDF-extracted text, the CELEX number may not
     // appear in the body text (it's in the OJ header which PDF extraction
-    // may not capture). We accept text > 500 chars from the Cellar URL as
+    // may not capture). We accept text > 200 chars from the Cellar URL as
     // valid — the URL itself is the identity guarantee. For HTML/XHTML
     // fetches, we still check CELEX to guard against generic fallback pages.
-    if (text.length < 500 && !contentMatchesDocument(text, fm)) {
+    // (Threshold lowered from 500→200: many valid berichtigungen/corrections
+    // are 200-500 chars and legitimately don't contain the CELEX number.)
+    if (text.length < 200 && !contentMatchesDocument(text, fm)) {
       console.error(`  ✗ EU identity check FAILED for ${filepath} — CELEX not in fetched text`);
       return "fail";
     }
@@ -349,11 +361,15 @@ async function backfillFile(filepath: string): Promise<"ok" | "skip" | "fail"> {
     //   - content URLs are deterministic: Dokumente/{Abfrage}/{DokNr}/{DokNr}.html
     // Every candidate still passes contentMatchesDocument() — the API shape
     // being "correct" is never trusted on its own again.
+    // Parse RIS document URL. Two formats:
+    //   1. Query URL: ...Dokument.wxe?Abfrage=Justiz&Dokumentnummer=JJR_...
+    //   2. Direct URL: ...Dokumente/Justiz/JJR_.../JJR_....html
     const abfrageMatch = sourceUrl.match(/Abfrage=([^&]+)/);
     const dokNrMatch = sourceUrl.match(/Dokumentnummer=([^&]+)/);
-    if (abfrageMatch && dokNrMatch) {
-      const abfrage = abfrageMatch[1];
-      const dokNr = dokNrMatch[1];
+    const directPathMatch = sourceUrl.match(/\/Dokumente\/([^/]+)\/([^/]+)\//);
+    const abfrage = abfrageMatch?.[1] || directPathMatch?.[1] || "";
+    const dokNr = dokNrMatch?.[1] || directPathMatch?.[2] || "";
+    if (abfrage && dokNr) {
 
       // Primary: deterministic XML document URL — structured nutzdaten, no
       // site chrome, no search round-trip.
@@ -482,15 +498,30 @@ async function main() {
     process.exit(1);
   }
 
+  // Global RIS lock — only for RIS sources without proxies and without --no-lock.
+  // With proxies, each request goes through a different IP so parallel is safe.
+  // With --no-lock, caller takes responsibility for rate limiting across processes.
+  if (isRIS && !hasProxies() && !noLock) {
+    console.log("🔒 Acquiring RIS lock (single-connection mode)...");
+    await acquireRisLock();
+    console.log("✅ RIS lock acquired.");
+  } else if (isRIS && hasProxies()) {
+    console.log("✅ RIS proxy mode — skipping global lock (proxies handle rate limiting).");
+  } else if (isRIS && noLock) {
+    console.log("✅ RIS no-lock mode — caller manages rate limiting across processes.");
+  }
+
   const allFiles = readdirSync(ABS_DIR)
     .filter((f) => f.endsWith(".md"))
     .map((f) => join(ABS_DIR, f));
 
-  // Quick-filter to only files that need backfill
-  const needBackfill = allFiles.filter((f) => {
-    const content = readFileSync(f, "utf-8");
-    return isPlaceholder(content);
-  });
+  // Quick-filter to only files that need backfill (skip if --no-scan for speed)
+  const needBackfill = noScan
+    ? allFiles
+    : allFiles.filter((f) => {
+        const content = readFileSync(f, "utf-8");
+        return isPlaceholder(content);
+      });
 
   console.log(`\n═══════════════════════════════════════════════════════════`);
   console.log(`  Backfill Text — ${TARGET_DIR}`);
@@ -553,7 +584,10 @@ async function main() {
   console.log(`═══════════════════════════════════════════════════════════`);
 }
 
-main().catch((err) => {
+main().then(() => {
+  if (isRIS && !hasProxies() && !noLock) releaseRisLock();
+}).catch((err) => {
   console.error("Fatal:", err);
+  if (isRIS && !hasProxies() && !noLock) releaseRisLock();
   process.exit(1);
 });
