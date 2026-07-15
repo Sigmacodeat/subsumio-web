@@ -59,6 +59,17 @@ const HOME = process.env.HOME || "~";
 const LOG_DIR = join(HOME, "subsumio-pipeline-logs");
 mkdirSync(LOG_DIR, { recursive: true });
 
+/** Check if current time is within RIS-recommended off-hours (18:00–06:00 CET or weekend). */
+function isRisOffHours(): boolean {
+  const now = new Date();
+  const cetHour = parseInt(
+    now.toLocaleTimeString("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", hour12: false })
+  );
+  const day = now.toLocaleDateString("en-US", { timeZone: "Europe/Vienna", weekday: "short" });
+  const isWeekend = day === "Sat" || day === "Sun";
+  return isWeekend || cetHour < 8 || cetHour >= 18;
+}
+
 const args = process.argv.slice(2);
 const LOOP = args.includes("--loop");
 const REPORT_ONLY = args.includes("--report-only");
@@ -401,7 +412,12 @@ interface CycleState {
   pendingBackfillPh: Record<string, number | null>;
   backfillExhausted: Record<string, boolean>;
   pidMap: Record<string, { pid: number; cmd: string; startedAt: string; timeoutS: number }>;
+  /** Consecutive failed import attempts, derived from import_failed alert flags. */
+  importFailCount: Record<string, number>;
 }
+
+/** Give up restarting a source's import after this many consecutive failures. */
+const MAX_IMPORT_ATTEMPTS = 5;
 
 function stateFromDB(dbState: Map<string, DBPipelineState>): CycleState {
   const cs: CycleState = {
@@ -411,6 +427,7 @@ function stateFromDB(dbState: Map<string, DBPipelineState>): CycleState {
     pendingBackfillPh: {},
     backfillExhausted: {},
     pidMap: {},
+    importFailCount: {},
   };
   for (const [key, row] of dbState) {
     cs.lastImportSuccess[key] = row.last_import_success;
@@ -418,6 +435,9 @@ function stateFromDB(dbState: Map<string, DBPipelineState>): CycleState {
     cs.lastPlaceholderCount[key] = row.last_placeholder_count;
     cs.pendingBackfillPh[key] = row.pending_backfill_ph;
     cs.backfillExhausted[key] = row.backfill_exhausted;
+    cs.importFailCount[key] = Array.isArray(row.alert_flags)
+      ? row.alert_flags.filter((a) => a.type === "import_failed").length
+      : 0;
     if (row.pid) {
       cs.pidMap[key] = {
         pid: row.pid,
@@ -465,13 +485,24 @@ function pidStatus(
 /** Kill a stale process by PID (SIGTERM then SIGKILL after 5s). */
 function killStalePid(pid: number, key: string): void {
   console.log(`  ⏱️ Killing stale PID ${pid} for ${key} (timeout exceeded)`);
+  // Negative pid = whole process group. startProcess spawns detached, so the
+  // sh wrapper is a group leader; killing only the wrapper would orphan the
+  // actual bun worker and the pipeline would immediately double-start it.
   try {
-    process.kill(pid, "SIGTERM");
-  } catch {}
+    process.kill(-pid, "SIGTERM");
+  } catch {
+    try {
+      process.kill(pid, "SIGTERM");
+    } catch {}
+  }
   setTimeout(() => {
     try {
-      process.kill(pid, "SIGKILL");
-    } catch {}
+      process.kill(-pid, "SIGKILL");
+    } catch {
+      try {
+        process.kill(pid, "SIGKILL");
+      } catch {}
+    }
   }, 5000);
   raiseAlert(key, "stale_process", "warning", `Process PID ${pid} killed after timeout`);
 }
@@ -542,6 +573,27 @@ async function risHits(applikation: string): Promise<number> {
 /** Start a child process and record its PID in the DB.
  *  The PID is tracked in pipeline_state.pid so we can detect stale processes
  *  and enforce timeouts — replacing the old `ps grep` approach. */
+/** Path of the exit-code file a wrapped process writes on termination. */
+function exitFileFor(name: string): string {
+  return join(LOG_DIR, `${name}.exit`);
+}
+
+/**
+ * Read a finished process's exit code: 0 = clean success, >0 = crashed,
+ * null = no exit file (process was SIGKILLed, or predates exit tracking).
+ * Callers MUST treat null as failure — "the process is gone" said nothing
+ * about success (2026-07-15: killed imports were promoted to done with a
+ * fraction of their data; nothing ever restarted them).
+ */
+function readExitCode(name: string): number | null {
+  try {
+    const raw = readFileSync(exitFileFor(name), "utf-8").trim();
+    return raw === "" ? null : parseInt(raw, 10);
+  } catch {
+    return null;
+  }
+}
+
 function startProcess(
   name: string,
   argv: string[],
@@ -549,8 +601,18 @@ function startProcess(
   timeoutS: number = 3600
 ): void {
   const log = join(LOG_DIR, `${name}.log`);
+  const exitFile = exitFileFor(name);
+  try {
+    unlinkSync(exitFile);
+  } catch {
+    /* no previous exit file */
+  }
   const fd = openSync(log, "a");
-  const child = spawn("bun", argv, {
+  // sh wrapper captures the exit code — the only reliable success signal.
+  // detached:true makes the wrapper a process-group leader so stale-kill can
+  // take down the whole group (wrapper + bun child) via kill(-pid).
+  const shCmd = `bun ${argv.map((a) => JSON.stringify(a)).join(" ")}; echo $? > ${JSON.stringify(exitFile)}`;
+  const child = spawn("sh", ["-c", shCmd], {
     cwd: SERVER_DIR,
     detached: true,
     stdio: ["ignore", fd, fd],
@@ -964,20 +1026,45 @@ async function cycle(): Promise<void> {
       if (running) return { stage: "importing", action: "—" };
 
       if (state.pendingImport[key]) {
-        // We started one and it's no longer running → it finished.
-        state.lastImportSuccess[key] = state.pendingImport[key];
-        delete state.pendingImport[key];
-        updateSourceState(key, {
-          pending_import_since: null,
-          last_import_success: state.lastImportSuccess[key],
-          stage: "done",
-        });
-        appendHistory(key, "import", "finished");
-        clearAlerts(key, "import_failed");
+        // The process we started is gone — but "gone" is NOT "succeeded".
+        // Only a clean exit 0 promotes to done; a crash, kill, or missing
+        // exit file leaves lastImportSuccess unset so the import re-runs.
+        // (2026-07-15: killed statute imports were promoted with a fraction
+        // of their pages imported and nothing ever restarted them.)
+        const code = readExitCode(`import-${key}`);
+        if (code === 0) {
+          state.lastImportSuccess[key] = state.pendingImport[key];
+          delete state.pendingImport[key];
+          updateSourceState(key, {
+            pending_import_since: null,
+            last_import_success: state.lastImportSuccess[key],
+            stage: "done",
+          });
+          appendHistory(key, "import", "finished");
+          clearAlerts(key, "import_failed");
+        } else {
+          delete state.pendingImport[key];
+          updateSourceState(key, { pending_import_since: null });
+          state.importFailCount[key] = (state.importFailCount[key] || 0) + 1;
+          appendHistory(key, "import", `failed (exit ${code === null ? "killed/unknown" : code})`);
+          raiseAlert(
+            key,
+            "import_failed",
+            "error",
+            `Import exited ${code === null ? "without exit code (killed?)" : `with code ${code}`} — attempt ${state.importFailCount[key]}`
+          );
+        }
       }
 
       if (!needsImport(dir, state.lastImportSuccess[key] || undefined)) {
         return { stage: "done", action: "—" };
+      }
+
+      // Fail-closed retry cap: after MAX_IMPORT_ATTEMPTS consecutive failures
+      // the source needs a human (or an alert-webhook consumer) — endless
+      // crash-looping would hammer the DB and mask the real problem.
+      if ((state.importFailCount[key] || 0) >= MAX_IMPORT_ATTEMPTS) {
+        return { stage: "failed", action: `aufgegeben nach ${MAX_IMPORT_ATTEMPTS} Fehlversuchen` };
       }
 
       if (REPORT_ONLY || !startArgv) return { stage: "import-pending", action: "import nötig" };
@@ -1013,6 +1100,36 @@ async function cycle(): Promise<void> {
         stage,
         action,
       });
+    }
+
+    // ── EU backfill (parallel, safe — Cellar API has no MyraCloud) ──
+    for (const src of SIMPLE) {
+      if (src.kind !== "eu") continue;
+      const euBackfillKey = `backfill-${src.key}`;
+      const euBackfillProc = checkSourceProcess(euBackfillKey, state);
+      const euBackfillRunning =
+        euBackfillProc.running ||
+        processRunningGrep(`backfill-corpus-text.ts --dir law-corpus/${src.dir} `);
+      const euStats = dirStats(src.dir);
+
+      if (!euBackfillRunning && euStats.placeholders > 0) {
+        if (!REPORT_ONLY) {
+          // EU Cellar: concurrency 5, 500ms rate limit — no bot protection
+          startProcess(
+            `backfill-${src.key}`,
+            [
+              "scripts/backfill-corpus-text.ts",
+              "--dir",
+              `law-corpus/${src.dir}`,
+              "--concurrency",
+              "5",
+            ],
+            euBackfillKey,
+            14400 // 4h timeout — EU dirs are large (161k regulations)
+          );
+          appendHistory(src.key, "backfill", "started (EU, concurrency 5)");
+        }
+      }
     }
 
     // Check if AT statutes are done (ordering gate for judikatur)
@@ -1084,6 +1201,10 @@ async function cycle(): Promise<void> {
         stage = "backfill-pending";
         if (!REPORT_ONLY) {
           const backfillKey = `backfill-${judKey}`;
+          // RIS OGD: concurrency 1 during business hours, 2 during off-hours
+          // (18:00-06:00 CET or weekends). Off-hours doubling is safe — RIS
+          // is less loaded and MyraCloud is more permissive outside peak.
+          const backfillConcurrency = isRisOffHours() ? "2" : "1";
           startProcess(
             `backfill-${src.key}`,
             [
@@ -1091,7 +1212,7 @@ async function cycle(): Promise<void> {
               "--dir",
               `law-corpus/${src.dir}`,
               "--concurrency",
-              "1",
+              backfillConcurrency,
             ],
             backfillKey,
             7200
