@@ -234,6 +234,8 @@ services:
         condition: service_healthy
       engine:
         condition: service_healthy
+    networks:
+      - hetzner_default
     environment:
       # DB connection (same network as db)
       DATABASE_URL: postgres://${POSTGRES_USER:-subsumio}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-subsumio}?sslmode=disable
@@ -284,3 +286,7 @@ volumes:
   # Not external: created fresh by Compose on first `up`.
   corpus-data:
   corpus-logs:
+
+networks:
+  hetzner_default:
+    external: true
