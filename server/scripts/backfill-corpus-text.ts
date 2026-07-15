@@ -290,9 +290,39 @@ async function backfillFile(filepath: string): Promise<"ok" | "skip" | "fail"> {
         const eurlexRes = await fetchWithRetry(eurlexUrl, {
           "Accept-Language": "de",
         });
-        if (eurlexRes && eurlexRes.ok) {
+        if (eurlexRes && eurlexRes.ok && eurlexRes.status === 200) {
           const html = await eurlexRes.text();
-          text = stripHtml(html);
+          if (html.length > 100) {
+            text = stripHtml(html);
+          }
+        }
+      }
+    }
+
+    // Strategy 5: Cellar format-specific URL paths — some entries only
+    // serve content at /cellar/{id}/html or /cellar/{id}/pdf, not via
+    // content negotiation on the base URL.
+    if (text.length < 50) {
+      for (const fmt of ["html", "pdf"]) {
+        const fmtUrl = `${contentUrl}/${fmt}`;
+        const fmtRes = await fetchWithRetry(fmtUrl, {
+          Accept: fmt === "pdf" ? "application/pdf" : "text/html",
+          "Accept-Language": "de",
+        });
+        if (fmtRes && fmtRes.ok) {
+          if (fmt === "pdf") {
+            try {
+              const { extractDocumentText } = await import("../src/core/extract-document.ts");
+              const buf = Buffer.from(await fmtRes.arrayBuffer());
+              const extracted = await extractDocumentText(buf, ".pdf");
+              text = extracted.text;
+            } catch {
+              /* skip */
+            }
+          } else {
+            text = stripHtml(await fmtRes.text());
+          }
+          if (text.length >= 50) break;
         }
       }
     }
