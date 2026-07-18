@@ -119,6 +119,7 @@ import {
   buildVisibilityClause,
   buildRecencyComponentSql,
   buildBestPerPagePoolCte,
+  buildLegalMetadataClause,
 } from "./search/sql-ranking.ts";
 import { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from "./ai/defaults.ts";
 import { DELETE_BATCH_SIZE } from "./engine-constants.ts";
@@ -365,6 +366,31 @@ export class PostgresEngine implements BrainEngine {
 
     const sqlText = getPostgresSchema(dims, model);
 
+    // Bootstrap fastpath: replaying the full SCHEMA_SQL blob on every engine/
+    // script start holds AccessExclusiveLocks (DROP/CREATE TRIGGER, ALTER TABLE)
+    // for the whole replay — on a large production DB under IO load that has
+    // stalled every pages read for 30+ minutes. The hash of the exact schema
+    // blob (embedding dims/model are baked into sqlText, so config changes
+    // invalidate it) is written to the config table only after a fully
+    // successful bootstrap; when it matches, only the cheap migration check
+    // runs. GBRAIN_SCHEMA_BOOTSTRAP=force is the incident-time escape hatch.
+    const { createHash } = await import("node:crypto");
+    const bootstrapHash = createHash("sha256").update(sqlText).digest("hex");
+    if (process.env.GBRAIN_SCHEMA_BOOTSTRAP !== "force") {
+      try {
+        const rows = await conn`SELECT value FROM config WHERE key = 'schema.bootstrap_hash'`;
+        if (rows.length > 0 && rows[0].value === bootstrapHash) {
+          const { applied } = await runMigrations(this);
+          if (applied > 0) {
+            process.stderr.write(`  ${applied} migration(s) applied\n`);
+          }
+          return;
+        }
+      } catch {
+        /* config table missing or unreadable — fall through to full bootstrap */
+      }
+    }
+
     // Advisory lock prevents concurrent initSchema() calls from deadlocking
     // on DDL statements (DROP TRIGGER + CREATE TRIGGER acquire AccessExclusiveLock).
     //
@@ -420,6 +446,14 @@ export class PostgresEngine implements BrainEngine {
       } catch {
         /* best-effort */
       }
+
+      // Record the successful bootstrap so the next initSchema takes the
+      // fastpath. Written last — a bootstrap that died mid-way never records
+      // its hash and replays in full on the next start.
+      await conn`
+        INSERT INTO config (key, value) VALUES ('schema.bootstrap_hash', ${bootstrapHash})
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+      `;
     } finally {
       await conn`SELECT pg_advisory_unlock(42)`;
       logConnectionEvent({
@@ -1718,6 +1752,12 @@ export class PostgresEngine implements BrainEngine {
       params.push(opts.sourceId);
       sourceClause = `AND p.source_id = $${params.length}`;
     }
+    const legalMetaClause = buildLegalMetadataClause("p", {
+      court: opts?.court,
+      legalArea: opts?.legalArea,
+      decisionDateFrom: opts?.decisionDateFrom,
+      decisionDateTo: opts?.decisionDateTo,
+    }, params);
     params.push(innerLimit);
     const innerLimitParam = `$${params.length}`;
     params.push(limit);
@@ -1753,6 +1793,7 @@ export class PostgresEngine implements BrainEngine {
           ${beforeDateClause}
           ${asOfDateClause}
           ${sourceClause}
+          ${legalMetaClause}
           ${hardExcludeClause}
           ${visibilityClause}
           -- v0.27.1: hide image rows from text-keyword search so OCR text
@@ -1874,6 +1915,12 @@ export class PostgresEngine implements BrainEngine {
       params.push(opts.sourceId);
       sourceClause = `AND p.source_id = $${params.length}`;
     }
+    const legalMetaClause = buildLegalMetadataClause("p", {
+      court: opts?.court,
+      legalArea: opts?.legalArea,
+      decisionDateFrom: opts?.decisionDateFrom,
+      decisionDateTo: opts?.decisionDateTo,
+    }, params);
     params.push(limit);
     const limitParam = `$${params.length}`;
     params.push(offset);
@@ -1903,6 +1950,7 @@ export class PostgresEngine implements BrainEngine {
         ${afterDateClause}
         ${beforeDateClause}
         ${sourceClause}
+        ${legalMetaClause}
         ${hardExcludeClause}
         ${visibilityClause}
       ORDER BY score DESC
@@ -2009,6 +2057,12 @@ export class PostgresEngine implements BrainEngine {
       params.push(opts.sourceId);
       sourceClause = `AND p.source_id = $${params.length}`;
     }
+    const legalMetaClause = buildLegalMetadataClause("p", {
+      court: opts?.court,
+      legalArea: opts?.legalArea,
+      decisionDateFrom: opts?.decisionDateFrom,
+      decisionDateTo: opts?.decisionDateTo,
+    }, params);
     params.push(innerLimit);
     const innerLimitParam = `$${params.length}`;
     params.push(limit);
@@ -2064,6 +2118,7 @@ export class PostgresEngine implements BrainEngine {
           ${beforeDateClause}
           ${asOfDateClause}
           ${sourceClause}
+          ${legalMetaClause}
           ${hardExcludeClause}
           ${visibilityClause}
         ORDER BY cc.${col} <=> ${castSql}

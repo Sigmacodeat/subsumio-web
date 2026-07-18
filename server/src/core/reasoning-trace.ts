@@ -175,6 +175,135 @@ export function buildReasoningTrace(opts: TraceCaptureOpts): ReasoningTrace {
   };
 }
 
+/**
+ * Persist a reasoning trace to the subsumio_reasoning_traces table.
+ * Fire-and-forget — errors are logged but never thrown.
+ * Requires the engine's executeRaw for DB access.
+ */
+export async function persistTrace(
+  engine: { executeRaw<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]> },
+  trace: ReasoningTrace
+): Promise<void> {
+  try {
+    await engine.executeRaw(
+      `CREATE TABLE IF NOT EXISTS subsumio_reasoning_traces (
+        trace_id            TEXT PRIMARY KEY,
+        audit_id            BIGINT,
+        brain_id            TEXT NOT NULL,
+        user_id             TEXT,
+        timestamp           TIMESTAMPTZ NOT NULL DEFAULT now(),
+        query               TEXT NOT NULL,
+        query_hash          TEXT NOT NULL,
+        jurisdiction        TEXT,
+        search_mode         TEXT,
+        retrieved_chunks    JSONB NOT NULL DEFAULT '[]',
+        pages_gathered      INTEGER NOT NULL DEFAULT 0,
+        takes_gathered      INTEGER NOT NULL DEFAULT 0,
+        graph_hits          INTEGER NOT NULL DEFAULT 0,
+        model_used          TEXT NOT NULL,
+        system_prompt_hash  TEXT NOT NULL,
+        max_tokens          INTEGER,
+        guardrail_passed    BOOLEAN,
+        guardrail_flags     JSONB,
+        cross_verify_clean  BOOLEAN,
+        cross_verify_flags  JSONB,
+        ensemble_clean      BOOLEAN,
+        ensemble_flags      JSONB,
+        ensemble_method     TEXT,
+        regeneration_count  INTEGER NOT NULL DEFAULT 0,
+        injection_detected  BOOLEAN NOT NULL DEFAULT false,
+        injection_blocked   BOOLEAN NOT NULL DEFAULT false,
+        injection_flags     JSONB,
+        final_answer_hash   TEXT NOT NULL,
+        answer_length       INTEGER NOT NULL DEFAULT 0,
+        citations           JSONB NOT NULL DEFAULT '[]',
+        confidence_level    TEXT,
+        overall_confidence  REAL,
+        provenance_links    JSONB,
+        prev_trace_hash     TEXT,
+        trace_hash          TEXT NOT NULL,
+        latency_ms          INTEGER,
+        warnings            JSONB NOT NULL DEFAULT '[]',
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+      )`
+    );
+
+    await engine.executeRaw(
+      `INSERT INTO subsumio_reasoning_traces
+        (trace_id, brain_id, user_id, timestamp,
+         query, query_hash, jurisdiction, search_mode,
+         retrieved_chunks, pages_gathered, takes_gathered, graph_hits,
+         model_used, system_prompt_hash, max_tokens,
+         guardrail_passed, guardrail_flags,
+         cross_verify_clean, cross_verify_flags,
+         ensemble_clean, ensemble_flags, ensemble_method,
+         regeneration_count,
+         injection_detected, injection_blocked, injection_flags,
+         final_answer_hash, answer_length, citations,
+         confidence_level, overall_confidence, provenance_links,
+         prev_trace_hash, trace_hash,
+         latency_ms, warnings)
+       VALUES ($1, $2, $3, $4,
+               $5, $6, $7, $8,
+               $9::jsonb, $10, $11, $12,
+               $13, $14, $15,
+               $16, $17::jsonb,
+               $18, $19::jsonb,
+               $20, $21::jsonb, $22,
+               $23,
+               $24, $25, $26::jsonb,
+               $27, $28, $29::jsonb,
+               $30, $31, $32::jsonb,
+               $33, $34,
+               $35, $36::jsonb)
+       ON CONFLICT (trace_id) DO NOTHING`,
+      [
+        trace.trace_id,
+        trace.brain_id,
+        trace.user_id ?? null,
+        trace.timestamp,
+        trace.query,
+        trace.query_hash,
+        trace.jurisdiction ?? null,
+        trace.search_mode ?? null,
+        JSON.stringify(trace.retrieved_chunks),
+        trace.pages_gathered,
+        trace.takes_gathered,
+        trace.graph_hits,
+        trace.model_used,
+        trace.system_prompt_hash,
+        trace.max_tokens ?? null,
+        trace.guardrail_passed ?? null,
+        trace.guardrail_flags ? JSON.stringify(trace.guardrail_flags) : null,
+        trace.cross_verify_clean ?? null,
+        trace.cross_verify_flags ? JSON.stringify(trace.cross_verify_flags) : null,
+        trace.ensemble_clean ?? null,
+        trace.ensemble_flags ? JSON.stringify(trace.ensemble_flags) : null,
+        trace.ensemble_method ?? null,
+        trace.regeneration_count,
+        trace.injection_detected,
+        trace.injection_blocked,
+        trace.injection_flags ? JSON.stringify(trace.injection_flags) : null,
+        trace.final_answer_hash,
+        trace.answer_length,
+        JSON.stringify(trace.citations),
+        trace.confidence_level ?? null,
+        trace.overall_confidence ?? null,
+        trace.provenance_links ? JSON.stringify(trace.provenance_links) : null,
+        trace.prev_trace_hash ?? null,
+        trace.trace_hash,
+        trace.latency_ms ?? null,
+        JSON.stringify(trace.warnings),
+      ]
+    );
+  } catch (err) {
+    console.error(
+      "[reasoning-trace] Failed to persist trace:",
+      err instanceof Error ? err.message : String(err)
+    );
+  }
+}
+
 export function verifyTraceChain(traces: ReasoningTrace[]): {
   valid: boolean;
   broken_at?: number;

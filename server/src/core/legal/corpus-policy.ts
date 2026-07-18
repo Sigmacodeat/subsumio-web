@@ -10,6 +10,10 @@
 export const QUARANTINED_LEGAL_SOURCE_REASONS: Record<string, "policy" | "degraded"> = {
   "de/ao-index.md": "policy", // reference index, not a real law (AO fulltext is in de/ao.md)
   "at/uwg.md": "policy", // already imported as monolith (slug: uwg), not in FILES list
+  // NOTE: the CH files zpo/bgfa/bvg/dsg/schkg/uwg/vwvg (+ dbg/mwstg/zg/sthg)
+  // pass the structural stub heuristic (frontmatter + real body) but carry
+  // only a Kurztext (~2-7KB) instead of the full statute — the fulltext
+  // Fedlex fetch is tracked as an open corpus task, NOT via this quarantine.
 };
 
 export const QUARANTINED_LEGAL_SOURCES = new Set<string>(

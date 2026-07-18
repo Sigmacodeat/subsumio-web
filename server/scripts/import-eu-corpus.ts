@@ -7,7 +7,7 @@
  *
  * Usage:
  *   bun run server/scripts/import-eu-corpus.ts [--type regulation|directive|decision|caselaw|all]
- *                                              [--dry-run] [--no-embed] [--limit N]
+ *                                              [--dry-run] [--no-embed] [--limit N] [--offset N]
  *
  * Sources created:
  *   law-eu-regulations — EU Verordnungen
@@ -26,6 +26,8 @@ const DRY = args.includes("--dry-run");
 const NO_EMBED = args.includes("--no-embed");
 const limitIdx = args.indexOf("--limit");
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : Infinity;
+const offsetIdx = args.indexOf("--offset");
+const OFFSET = offsetIdx >= 0 ? parseInt(args[offsetIdx + 1], 10) : 0;
 const typeIdx = args.indexOf("--type");
 const TYPE_ARG = typeIdx >= 0 ? args[typeIdx + 1] : "all";
 
@@ -45,7 +47,9 @@ const typesToRun = TYPE_ARG === "all" ? Object.keys(TYPE_CONFIGS) : TYPE_ARG.spl
 
 interface CorpusFile {
   slug: string;
-  content: string;
+  /** Absolute path — content is read lazily per file. Materializing all
+   *  ~160k regulation bodies up front OOM-killed the import (exit 137). */
+  path: string;
   sourceId: string;
   label: string;
 }
@@ -67,15 +71,13 @@ function loadFiles(): CorpusFile[] {
       continue;
     }
 
-    const dirFiles = readdirSync(dirPath).filter((f) => f.endsWith(".md"));
+    const allFiles = readdirSync(dirPath).filter((f) => f.endsWith(".md")).sort();
+    const dirFiles = allFiles.slice(OFFSET, OFFSET + LIMIT);
     for (const f of dirFiles) {
-      if (count >= LIMIT) break;
-      const content = readFileSync(join(dirPath, f), "utf-8");
       const slug = `${cfg.slugPrefix}/${f.replace(/\.md$/, "")}`;
-      files.push({ slug, content, sourceId: cfg.sourceId, label: `${typeKey}/${f}` });
+      files.push({ slug, path: join(dirPath, f), sourceId: cfg.sourceId, label: `${typeKey}/${f}` });
       count++;
     }
-    if (count >= LIMIT) break;
   }
 
   return files;
@@ -102,6 +104,7 @@ async function main() {
   console.log("═══════════════════════════════════════════════════════════");
   console.log(`  Types: ${typesToRun.join(", ")}`);
   console.log(`  Mode: ${DRY ? "DRY-RUN" : NO_EMBED ? "import, no-embed" : "import + embed"}`);
+  if (OFFSET > 0) console.log(`  Offset: ${OFFSET}, Limit: ${LIMIT === Infinity ? "∞" : LIMIT}`);
   console.log(`  Gefunden: ${files.length} Dateien`);
 
   for (const typeKey of typesToRun) {
@@ -117,12 +120,13 @@ async function main() {
     let wholeFiles = 0;
     let placeholders = 0;
     for (const f of files) {
-      if (f.content.includes("Volltext nicht abrufbar")) {
+      const content = readFileSync(f.path, "utf-8");
+      if (content.includes("Volltext nicht abrufbar")) {
         placeholders++;
         continue;
       }
-      if (f.content.length > SPLIT_THRESHOLD) {
-        const split = trySplit(f.content);
+      if (content.length > SPLIT_THRESHOLD) {
+        const split = trySplit(content);
         if (split && split.length > 1) {
           totalSections += split.length;
           continue;
@@ -178,16 +182,18 @@ async function main() {
   let totalPlaceholders = 0;
 
   for (const f of files) {
+    // Read lazily — one file body in memory at a time.
+    const content = readFileSync(f.path, "utf-8");
     // Skip placeholder files (no text content)
-    if (f.content.includes("Volltext nicht abrufbar")) {
+    if (content.includes("Volltext nicht abrufbar")) {
       totalPlaceholders++;
       continue;
     }
 
     let pages: Array<{ slug: string; content: string }> = [];
 
-    if (f.content.length > SPLIT_THRESHOLD) {
-      const split = trySplit(f.content);
+    if (content.length > SPLIT_THRESHOLD) {
+      const split = trySplit(content);
       if (split && split.length > 1) {
         pages = split.map((s) => ({
           slug: `${f.slug}/${s.slugSuffix}`,
@@ -195,10 +201,10 @@ async function main() {
         }));
         totalSplit++;
       } else {
-        pages = [{ slug: f.slug, content: f.content }];
+        pages = [{ slug: f.slug, content }];
       }
     } else {
-      pages = [{ slug: f.slug, content: f.content }];
+      pages = [{ slug: f.slug, content }];
     }
 
     for (const page of pages) {
@@ -206,7 +212,7 @@ async function main() {
         const result = await importFromContent(engine, page.slug, page.content, {
           noEmbed: NO_EMBED,
           sourceId: f.sourceId,
-          skipContentDuplicates: true,
+          skipContentDuplicates: false,
         });
         if (result.status === "imported") {
           totalPages++;

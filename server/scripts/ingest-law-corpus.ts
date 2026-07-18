@@ -114,6 +114,23 @@ const DE_LAWS: DeLaw[] = [
   { slug: "estdv_1955", abbr: "EStDV", title: "Einkommensteuer-Durchführungsverordnung" },
   { slug: "solzg_1995", abbr: "SolZG", title: "Solidaritätszuschlaggesetz" },
   { slug: "astg", abbr: "AStG", title: "Außensteuergesetz" },
+  // ── DACH-Legal-Ausbau 2026-07-18: Arbeitsrecht, Gesellschaftsrecht, IP,
+  //    Verwaltungsverfahren, Versicherung, Verkehr, Wohnungseigentum ──
+  { slug: "kschg", abbr: "KSchG", title: "Kündigungsschutzgesetz" },
+  { slug: "tzbfg", abbr: "TzBfG", title: "Teilzeit- und Befristungsgesetz" },
+  { slug: "arbzg", abbr: "ArbZG", title: "Arbeitszeitgesetz" },
+  { slug: "burlg", abbr: "BUrlG", title: "Bundesurlaubsgesetz" },
+  { slug: "entgfg", abbr: "EntgFG", title: "Entgeltfortzahlungsgesetz" },
+  { slug: "agg", abbr: "AGG", title: "Allgemeines Gleichbehandlungsgesetz" },
+  { slug: "arbgg", abbr: "ArbGG", title: "Arbeitsgerichtsgesetz" },
+  { slug: "aktg", abbr: "AktG", title: "Aktiengesetz" },
+  { slug: "vvg_2008", abbr: "VVG", title: "Versicherungsvertragsgesetz" },
+  { slug: "prodhaftg", abbr: "ProdHaftG", title: "Produkthaftungsgesetz" },
+  { slug: "stvg", abbr: "StVG", title: "Straßenverkehrsgesetz" },
+  { slug: "vwvfg", abbr: "VwVfG", title: "Verwaltungsverfahrensgesetz" },
+  { slug: "markeng", abbr: "MarkenG", title: "Markengesetz" },
+  { slug: "patg", abbr: "PatG", title: "Patentgesetz" },
+  { slug: "woeigg", abbr: "WEG", title: "Wohnungseigentumsgesetz" },
 ];
 
 const AT_LAWS: AtLaw[] = [
@@ -577,12 +594,36 @@ const AT_LAWS: AtLaw[] = [
   // und Erbrecht (§§ 531-817 ABGB) sind im ABGB geregelt, das wir bereits haben.
 ];
 
-// ── Switzerland (3 core codes via Fedlex) ─────────────────────────────
+// ── Switzerland (core codes + stub laws via odat.ch/Fedlex) ──────────
 const CH_LAWS: ChLaw[] = [
   { srNumber: "220", abbr: "OR", title: "Obligationenrecht (Schweiz)" },
   { srNumber: "311.0", abbr: "StGB", title: "Schweizerisches Strafgesetzbuch" },
   { srNumber: "210", abbr: "ZGB", title: "Schweizerisches Zivilgesetzbuch" },
   { srNumber: "312.0", abbr: "StPO", title: "Schweizerische Strafprozessordnung" },
+  // ── Stub laws: currently only 5-15 paragraphs in DB, need full text ──
+  { srNumber: "272", abbr: "ZPO", title: "Schweizerische Zivilprozessordnung" },
+  // SR 281 was a 404 (SchKG is SR 281.1) — the bare number produced the Kurztext stub.
+  { srNumber: "281.1", abbr: "SchKG", title: "Schuldbetreibungs- und Konkursgesetz" },
+  { srNumber: "642.11", abbr: "DBG", title: "Bundesgesetz über die direkte Bundessteuer" },
+  { srNumber: "642.14", abbr: "StHG", title: "Steuerharmonisierungsgesetz" },
+  // SR 832.10 is the KVG; the BVG (berufliche Vorsorge) is SR 831.40.
+  { srNumber: "831.40", abbr: "BVG", title: "Bundesgesetz über die berufliche Alters-, Hinterlassenen- und Invalidenvorsorge" },
+  { srNumber: "235.1", abbr: "DSG", title: "Bundesgesetz über den Datenschutz" },
+  { srNumber: "172.021", abbr: "VwVG", title: "Verwaltungsverfahrensgesetz" },
+  { srNumber: "241", abbr: "UWG", title: "Bundesgesetz gegen den unlauteren Wettbewerb" },
+  // SR 822.11 is the ArG (Arbeitsgesetz); the BGFA (Anwaltsgesetz) is SR 935.61.
+  { srNumber: "935.61", abbr: "BGFA", title: "Bundesgesetz über die Freizügigkeit der Anwältinnen und Anwälte" },
+  { srNumber: "822.11", abbr: "ArG", title: "Bundesgesetz über die Arbeit in Industrie, Gewerbe und Handel" },
+  // ── DACH-Legal-Ausbau 2026-07-18 ──
+  { srNumber: "101", abbr: "BV", title: "Bundesverfassung der Schweizerischen Eidgenossenschaft" },
+  { srNumber: "173.110", abbr: "BGG", title: "Bundesgerichtsgesetz" },
+  { srNumber: "832.10", abbr: "KVG", title: "Bundesgesetz über die Krankenversicherung" },
+  { srNumber: "291", abbr: "IPRG", title: "Bundesgesetz über das Internationale Privatrecht" },
+  { srNumber: "251", abbr: "KG", title: "Kartellgesetz" },
+  { srNumber: "232.11", abbr: "MSchG", title: "Markenschutzgesetz" },
+  { srNumber: "232.14", abbr: "PatG", title: "Patentgesetz" },
+  { srNumber: "221.301", abbr: "FusG", title: "Fusionsgesetz" },
+  { srNumber: "955.0", abbr: "GwG", title: "Geldwäschereigesetz" },
 ];
 
 // ── EU (key regulations via EUR-Lex Cellar API) ───────────────────────
