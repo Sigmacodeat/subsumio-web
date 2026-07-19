@@ -2806,6 +2806,11 @@ export async function hybridSearch(
   }
 
   if (vectorLists.length === 0) {
+    console.error(
+      "[HYBRID-SEARCH] VECTOR LISTS EMPTY — keyword-only fallback. keywordResults:",
+      keywordResults.length,
+      "vectorFailedSilently"
+    );
     // Embed/vector failed silently; record that vector did not run.
     // v0.29.1 codex pass-2 #4: this is the third return path. Apply
     // post-fusion stages here too — without it, salience='on' silently
