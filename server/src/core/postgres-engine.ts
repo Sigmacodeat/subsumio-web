@@ -2170,13 +2170,23 @@ export class PostgresEngine implements BrainEngine {
     const hasSourceFilter = !!(opts?.sourceIds?.length || opts?.sourceId);
     const efSearch = hasSourceFilter ? 1000 : 100;
 
+    console.error(
+      "[VECTOR-SQL] params count:",
+      params.length,
+      "col:",
+      col,
+      "castSql:",
+      castSql,
+      "sourceClause:",
+      sourceClause.slice(0, 100)
+    );
+    console.error("[VECTOR-SQL] full query:", rawQuery);
+
     const rows = await sql.begin(async (sql) => {
       await sql`SET LOCAL statement_timeout = '15s'`;
       await sql`SET LOCAL hnsw.ef_search = ${efSearch}`;
       await sql`SET LOCAL hnsw.iterative_scan = 'relaxed_order'`;
       await sql`SET LOCAL hnsw.max_scan_tuples = 50000`;
-      console.error("[VECTOR-SQL] params count:", params.length, "col:", col, "castSql:", castSql);
-      console.error("[VECTOR-SQL] query preview:", rawQuery.slice(0, 500));
       return await sql.unsafe(rawQuery, params as Parameters<typeof sql.unsafe>[1]);
     });
     return rows.map(rowToSearchResult);
