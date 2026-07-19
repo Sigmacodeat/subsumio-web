@@ -2175,6 +2175,8 @@ export class PostgresEngine implements BrainEngine {
       await sql`SET LOCAL hnsw.ef_search = ${efSearch}`;
       await sql`SET LOCAL hnsw.iterative_scan = 'relaxed_order'`;
       await sql`SET LOCAL hnsw.max_scan_tuples = 50000`;
+      console.error("[VECTOR-SQL] params count:", params.length, "col:", col, "castSql:", castSql);
+      console.error("[VECTOR-SQL] query preview:", rawQuery.slice(0, 500));
       return await sql.unsafe(rawQuery, params as Parameters<typeof sql.unsafe>[1]);
     });
     return rows.map(rowToSearchResult);
