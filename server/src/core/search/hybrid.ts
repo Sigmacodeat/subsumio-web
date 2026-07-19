@@ -2800,8 +2800,9 @@ export async function hybridSearch(
       if (effectiveModality === "both" && imageVectorList !== null) {
         vectorLists = [...vectorLists, imageVectorList];
       }
-    } catch {
+    } catch (vecErr: any) {
       // Embedding failure is non-fatal, fall back to keyword-only
+      console.error("[HYBRID-SEARCH] VECTOR SEARCH FAILED:", vecErr?.message ?? vecErr);
     }
   }
 
