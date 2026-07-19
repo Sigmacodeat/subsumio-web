@@ -2171,10 +2171,12 @@ export async function applyLLMReranker(
     } finally {
       clearTimeout(timer);
     }
-  } catch {
+  } catch (err: any) {
+    console.error("[LLM-RERANK] ERROR:", err?.message ?? err);
     return results;
   }
 
+  console.error("[LLM-RERANK] Response:", response?.slice(0, 200));
   const indices = response
     .trim()
     .split(/[,\s]+/)
