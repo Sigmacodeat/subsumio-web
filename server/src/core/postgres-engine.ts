@@ -2168,13 +2168,13 @@ export class PostgresEngine implements BrainEngine {
     // recall when HNSW traverses a subset of the graph. Unfiltered queries can
     // use a lower ef for speed.
     const hasSourceFilter = !!(opts?.sourceIds?.length || opts?.sourceId);
-    const efSearch = hasSourceFilter ? 200 : 100;
+    const efSearch = hasSourceFilter ? 500 : 100;
 
     const rows = await sql.begin(async (sql) => {
-      await sql`SET LOCAL statement_timeout = '8s'`;
+      await sql`SET LOCAL statement_timeout = '15s'`;
       await sql`SET LOCAL hnsw.ef_search = ${efSearch}`;
       await sql`SET LOCAL hnsw.iterative_scan = 'relaxed_order'`;
-      await sql`SET LOCAL hnsw.max_scan_tuples = 20000`;
+      await sql`SET LOCAL hnsw.max_scan_tuples = 50000`;
       return await sql.unsafe(rawQuery, params as Parameters<typeof sql.unsafe>[1]);
     });
     return rows.map(rowToSearchResult);
