@@ -113,7 +113,7 @@
     "@modelcontextprotocol/sdk": "1.29.0",
     "@npeersab/msgreader": "^4.4.0",
     "@types/busboy": "^1.5.4",
-    "ai": "^6.0.168",
+    "ai": "^7.0.31",
     "busboy": "^1.6.0",
     "chokidar": "^4.0.3",
     "cookie-parser": "^1.4.7",
