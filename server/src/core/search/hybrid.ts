@@ -2172,11 +2172,10 @@ export async function applyLLMReranker(
       clearTimeout(timer);
     }
   } catch (err: any) {
-    console.error("[LLM-RERANK] ERROR:", err?.message ?? err);
+    console.error("[llm-rerank] error:", err?.message ?? err);
     return results;
   }
 
-  console.error("[LLM-RERANK] Response:", response?.slice(0, 200));
   const indices = response
     .trim()
     .split(/[,\s]+/)
@@ -2207,12 +2206,6 @@ export async function hybridSearch(
   query: string,
   opts?: HybridSearchOpts
 ): Promise<SearchResult[]> {
-  console.error(
-    "[HYBRID-SEARCH] called with llmRerank:",
-    JSON.stringify(opts?.llmRerank),
-    "limit:",
-    opts?.limit
-  );
   // v0.32.3 search-lite mode: resolve the active mode + per-key overrides
   // once at entry. Mode supplies DEFAULTS for intentWeighting, tokenBudget,
   // expansion, and searchLimit when the caller leaves those undefined.
@@ -2802,16 +2795,11 @@ export async function hybridSearch(
       }
     } catch (vecErr: any) {
       // Embedding failure is non-fatal, fall back to keyword-only
-      console.error("[HYBRID-SEARCH] VECTOR SEARCH FAILED:", vecErr?.message ?? vecErr);
+      console.error("[hybridSearch] vector search failed:", vecErr?.message ?? vecErr);
     }
   }
 
   if (vectorLists.length === 0) {
-    console.error(
-      "[HYBRID-SEARCH] VECTOR LISTS EMPTY — keyword-only fallback. keywordResults:",
-      keywordResults.length,
-      "vectorFailedSilently"
-    );
     // Embed/vector failed silently; record that vector did not run.
     // v0.29.1 codex pass-2 #4: this is the third return path. Apply
     // post-fusion stages here too — without it, salience='on' silently
@@ -3004,7 +2992,6 @@ export async function hybridSearch(
   // v0.44 — LLM-based re-ranker for paragraph-level precision. Slots after
   // the cross-encoder reranker and before alias-hop. Fail-open: any error
   // returns reranked results in original order.
-  console.error("[LLM-RERANK-CHECK] opts?.llmRerank:", JSON.stringify(opts?.llmRerank));
   const llmReranked = opts?.llmRerank?.enabled
     ? await applyLLMReranker(query, reranked, opts.llmRerank)
     : reranked;
