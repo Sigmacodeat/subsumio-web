@@ -293,3 +293,62 @@ export function buildRecencyComponentSql(opts: {
 
 // Exported for unit tests
 export const __test__ = { escapeLikePattern, escapeSqlLiteral, buildLikePrefixLiteral };
+
+/**
+ * v0.48 — Legal metadata filter clause builder.
+ *
+ * Generates SQL WHERE fragments for filtering court decisions by
+ * frontmatter jsonb fields: court, legal_area, and decision date range.
+ *
+ * All filters are optional and combine with AND. Uses parameterized
+ * queries (not string interpolation) for safety. The frontmatter GIN
+ * index (idx_pages_frontmatter) supports `@>` containment checks, but
+ * since we need `->>` text extraction for case-insensitive matching and
+ * date comparison, we use expression-level predicates. For high-volume
+ * deployments, expression indexes on `frontmatter->>'court'` etc. can
+ * be added if needed.
+ *
+ * @param pageAlias  — SQL alias for the pages table (e.g. "p")
+ * @param filters    — legal metadata filter options
+ * @param params     — existing params array to append to
+ * @returns raw SQL fragment (with leading "AND ") or empty string
+ */
+export function buildLegalMetadataClause(
+  pageAlias: string,
+  filters: {
+    court?: string;
+    legalArea?: string;
+    decisionDateFrom?: string;
+    decisionDateTo?: string;
+  },
+  params: unknown[]
+): string {
+  const clauses: string[] = [];
+
+  if (filters.court) {
+    params.push(filters.court.toLowerCase());
+    clauses.push(`LOWER(${pageAlias}.frontmatter->>'court') = $${params.length}`);
+  }
+
+  if (filters.legalArea) {
+    params.push(filters.legalArea.toLowerCase());
+    clauses.push(`LOWER(${pageAlias}.frontmatter->>'legal_area') = $${params.length}`);
+  }
+
+  if (filters.decisionDateFrom) {
+    params.push(filters.decisionDateFrom);
+    clauses.push(
+      `(${pageAlias}.frontmatter->>'date') IS NOT NULL AND (${pageAlias}.frontmatter->>'date') >= $${params.length}`
+    );
+  }
+
+  if (filters.decisionDateTo) {
+    params.push(filters.decisionDateTo);
+    clauses.push(
+      `(${pageAlias}.frontmatter->>'date') IS NOT NULL AND (${pageAlias}.frontmatter->>'date') <= $${params.length}`
+    );
+  }
+
+  if (clauses.length === 0) return "";
+  return "AND " + clauses.join(" AND ");
+}
