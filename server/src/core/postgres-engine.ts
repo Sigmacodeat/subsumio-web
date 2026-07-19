@@ -1752,12 +1752,16 @@ export class PostgresEngine implements BrainEngine {
       params.push(opts.sourceId);
       sourceClause = `AND p.source_id = $${params.length}`;
     }
-    const legalMetaClause = buildLegalMetadataClause("p", {
-      court: opts?.court,
-      legalArea: opts?.legalArea,
-      decisionDateFrom: opts?.decisionDateFrom,
-      decisionDateTo: opts?.decisionDateTo,
-    }, params);
+    const legalMetaClause = buildLegalMetadataClause(
+      "p",
+      {
+        court: opts?.court,
+        legalArea: opts?.legalArea,
+        decisionDateFrom: opts?.decisionDateFrom,
+        decisionDateTo: opts?.decisionDateTo,
+      },
+      params
+    );
     params.push(innerLimit);
     const innerLimitParam = `$${params.length}`;
     params.push(limit);
@@ -1915,12 +1919,16 @@ export class PostgresEngine implements BrainEngine {
       params.push(opts.sourceId);
       sourceClause = `AND p.source_id = $${params.length}`;
     }
-    const legalMetaClause = buildLegalMetadataClause("p", {
-      court: opts?.court,
-      legalArea: opts?.legalArea,
-      decisionDateFrom: opts?.decisionDateFrom,
-      decisionDateTo: opts?.decisionDateTo,
-    }, params);
+    const legalMetaClause = buildLegalMetadataClause(
+      "p",
+      {
+        court: opts?.court,
+        legalArea: opts?.legalArea,
+        decisionDateFrom: opts?.decisionDateFrom,
+        decisionDateTo: opts?.decisionDateTo,
+      },
+      params
+    );
     params.push(limit);
     const limitParam = `$${params.length}`;
     params.push(offset);
@@ -2049,20 +2057,27 @@ export class PostgresEngine implements BrainEngine {
     // before re-rank; pushing it to the outer SELECT would force HNSW to
     // over-fetch then post-filter, wasting candidate slots. Codex flagged
     // this placement during plan review. Array form wins over scalar.
+    //
+    // v0.42: Use denormalized cc.source_id instead of p.source_id — avoids
+    // JOIN with pages in the HNSW candidate scan, enabling partial index usage.
     let sourceClause = "";
     if (opts?.sourceIds && opts.sourceIds.length > 0) {
       params.push(opts.sourceIds);
-      sourceClause = `AND p.source_id = ANY($${params.length}::text[])`;
+      sourceClause = `AND cc.source_id = ANY($${params.length}::text[])`;
     } else if (opts?.sourceId) {
       params.push(opts.sourceId);
-      sourceClause = `AND p.source_id = $${params.length}`;
+      sourceClause = `AND cc.source_id = $${params.length}`;
     }
-    const legalMetaClause = buildLegalMetadataClause("p", {
-      court: opts?.court,
-      legalArea: opts?.legalArea,
-      decisionDateFrom: opts?.decisionDateFrom,
-      decisionDateTo: opts?.decisionDateTo,
-    }, params);
+    const legalMetaClause = buildLegalMetadataClause(
+      "p",
+      {
+        court: opts?.court,
+        legalArea: opts?.legalArea,
+        decisionDateFrom: opts?.decisionDateFrom,
+        decisionDateTo: opts?.decisionDateTo,
+      },
+      params
+    );
     params.push(innerLimit);
     const innerLimitParam = `$${params.length}`;
     params.push(limit);
@@ -2149,8 +2164,17 @@ export class PostgresEngine implements BrainEngine {
       OFFSET ${offsetParam}
     `;
 
+    // v0.42: Adaptive ef_search — filtered queries need higher ef to maintain
+    // recall when HNSW traverses a subset of the graph. Unfiltered queries can
+    // use a lower ef for speed.
+    const hasSourceFilter = !!(opts?.sourceIds?.length || opts?.sourceId);
+    const efSearch = hasSourceFilter ? 200 : 100;
+
     const rows = await sql.begin(async (sql) => {
       await sql`SET LOCAL statement_timeout = '8s'`;
+      await sql`SET LOCAL hnsw.ef_search = ${efSearch}`;
+      await sql`SET LOCAL hnsw.iterative_scan = 'relaxed_order'`;
+      await sql`SET LOCAL hnsw.max_scan_tuples = 20000`;
       return await sql.unsafe(rawQuery, params as Parameters<typeof sql.unsafe>[1]);
     });
     return rows.map(rowToSearchResult);
@@ -3518,6 +3542,33 @@ export class PostgresEngine implements BrainEngine {
     }[]) {
       if (!r.reason) continue;
       result.set(Number(r.id), { reason: r.reason, detail: r.detail ?? "" });
+    }
+    return result;
+  }
+
+  async getCitationStatuses(
+    pageIds: number[]
+  ): Promise<Map<number, "good_law" | "overturned" | "superseded" | "confirmed">> {
+    const result = new Map<number, "good_law" | "overturned" | "superseded" | "confirmed">();
+    if (pageIds.length === 0) return result;
+    const sql = this.sql;
+    const rows = await sql`
+      SELECT id,
+             frontmatter ->> 'citation_status' AS status
+      FROM pages
+      WHERE id = ANY(${pageIds}::int[])
+        AND frontmatter ? 'citation_status'
+    `;
+    for (const r of rows as unknown as { id: number; status: string | null }[]) {
+      if (!r.status) continue;
+      if (
+        r.status === "good_law" ||
+        r.status === "overturned" ||
+        r.status === "superseded" ||
+        r.status === "confirmed"
+      ) {
+        result.set(Number(r.id), r.status);
+      }
     }
     return result;
   }

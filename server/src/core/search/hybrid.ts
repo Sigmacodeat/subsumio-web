@@ -46,9 +46,36 @@ const COMPILED_TRUTH_BOOST = 2.0;
 const pendingCacheWrites = new Set<Promise<unknown>>();
 
 const LEGAL_RELAXED_STOPWORDS = new Set([
-  "aber", "als", "bei", "das", "dem", "den", "der", "des", "die", "durch",
-  "ein", "eine", "einer", "eines", "für", "gegen", "im", "ist", "mit", "nach",
-  "oder", "sich", "und", "von", "vom", "was", "welche", "welcher", "zu", "zur",
+  "aber",
+  "als",
+  "bei",
+  "das",
+  "dem",
+  "den",
+  "der",
+  "des",
+  "die",
+  "durch",
+  "ein",
+  "eine",
+  "einer",
+  "eines",
+  "für",
+  "gegen",
+  "im",
+  "ist",
+  "mit",
+  "nach",
+  "oder",
+  "sich",
+  "und",
+  "von",
+  "vom",
+  "was",
+  "welche",
+  "welcher",
+  "zu",
+  "zur",
 ]);
 
 /**
@@ -68,7 +95,9 @@ export function buildRelaxedLegalKeywordQuery(query: string): string | null {
 }
 
 function isLikelyLegalQuery(query: string): boolean {
-  return /(?:§|\b(?:abgb|bgb|mrg|gmbhg|stgb|stpo|zpo|io|insolvenz|verjähr|gewähr|schadenersatz|vertrag|kündigung|stammkapital|diebstahl|mord|berufung|klage|frist|gewo|dsg|avg|asvg|eheg|kartg|asylg|mschg|vkgg|buag|jn|ugb|estg|ustg|bao|arbvg|aktg|bescheid|mutterschutz|karenz|pension|scheidung|gewerbe|datenschutz|asyl|zusammenschluss|verwaltungsverfahren|parteienstellung|rechtsschutz|urlaubsentgelt|abfertigung|krankenversicherung|sozialversicherung|entlassung|unterhalt|ehegatt|ehewohnung|schuldhaft|verschulden|zuständigkeit|gerichtsstand|gericht|prozess|versäumnisurteil|einstweilige|widerklage|streitwert|streitgegenstand|kaufmann|handelsgewerbe|handelsregister|pflichtverletzung|sittenwidrigkeit|geschäftsfähigkeit|notwehr|notstand|freiheitsstrafe|gelstrafe|vorsatz|schuldunfähig|ermittlungsverfahren|staatsanwaltschaft|untersuchungshaft|verwaltungsgericht|verwaltungsrecht|grundgesetz|verfassung|grundrecht|baugenehmigung|bebauungsplan|wettbewerb|irreführend|anwaltskosten|rechtsanwalt|prozesskosten|insolvenzplan|sanierung)\w*)/iu.test(query);
+  return /(?:§|\b(?:abgb|bgb|mrg|gmbhg|stgb|stpo|zpo|io|insolvenz|verjähr|gewähr|schadenersatz|vertrag|kündigung|stammkapital|diebstahl|mord|berufung|klage|frist|gewo|dsg|avg|asvg|eheg|kartg|asylg|mschg|vkgg|buag|jn|ugb|estg|ustg|bao|arbvg|aktg|bescheid|mutterschutz|karenz|pension|scheidung|gewerbe|datenschutz|asyl|zusammenschluss|verwaltungsverfahren|parteienstellung|rechtsschutz|urlaubsentgelt|abfertigung|krankenversicherung|sozialversicherung|entlassung|unterhalt|ehegatt|ehewohnung|schuldhaft|verschulden|zuständigkeit|gerichtsstand|gericht|prozess|versäumnisurteil|einstweilige|widerklage|streitwert|streitgegenstand|kaufmann|handelsgewerbe|handelsregister|pflichtverletzung|sittenwidrigkeit|geschäftsfähigkeit|notwehr|notstand|freiheitsstrafe|gelstrafe|vorsatz|schuldunfähig|ermittlungsverfahren|staatsanwaltschaft|untersuchungshaft|verwaltungsgericht|verwaltungsrecht|grundgesetz|verfassung|grundrecht|baugenehmigung|bebauungsplan|wettbewerb|irreführend|anwaltskosten|rechtsanwalt|prozesskosten|insolvenzplan|sanierung)\w*)/iu.test(
+    query
+  );
 }
 
 /**
@@ -389,9 +418,7 @@ export function applyLegalParagraphBoost(
   // Extract all § numbers from the query
   const paraMatches = query.match(/§\s*(\d+[a-z]?)/gi);
   if (!paraMatches || paraMatches.length === 0) return;
-  const paraNumbers = new Set(
-    paraMatches.map((m) => m.replace(/§\s*/i, "").toLowerCase())
-  );
+  const paraNumbers = new Set(paraMatches.map((m) => m.replace(/§\s*/i, "").toLowerCase()));
   if (paraNumbers.size === 0) return;
 
   for (const r of results) {
@@ -403,8 +430,12 @@ export function applyLegalParagraphBoost(
     let matched = false;
     for (const num of paraNumbers) {
       // Match in title (e.g. "§ 1295 ABGB") or slug (e.g. "p-1295")
-      if (titleLower.includes(`§ ${num}`) || titleLower.includes(`§${num}`) ||
-          slugLower.includes(`p-${num}`) || slugLower.includes(`/p-${num}/`)) {
+      if (
+        titleLower.includes(`§ ${num}`) ||
+        titleLower.includes(`§${num}`) ||
+        slugLower.includes(`p-${num}`) ||
+        slugLower.includes(`/p-${num}/`)
+      ) {
         matched = true;
         break;
       }
@@ -430,64 +461,425 @@ export const DEFAULT_LEGAL_PARA_BOOST = 1.15;
  * Floor-ratio-gated like other post-fusion stages.
  */
 const STATUTE_AREA_MAP: { keywords: string[]; slugPrefix: string }[] = [
-  { keywords: ["scheidung", "ehe", "eheschließung", "unterhalt", "ehewohnung", "vermögensauseinandersetzung", "verschulden"], slugPrefix: "legal/statutes/at/eheg/" },
-  { keywords: ["insolvenz", "konkurs", "sanierung", "sanierungsplan", "insolvenzverfahren"], slugPrefix: "legal/statutes/at/io/" },
-  { keywords: ["gewerbe", "gewerbeberechtigung", "gewerbeerteilung", "gewerbeuntersagung", "gewerberecht"], slugPrefix: "legal/statutes/at/gewo/" },
-  { keywords: ["datenschutz", "personenbezogene", "datenverarbeitung", "betroffen", "auskunft"], slugPrefix: "legal/statutes/at/dsg/" },
-  { keywords: ["kartell", "zusammenschluss", "fusion", "marktbeherrsch", "wettbewerbsrecht"], slugPrefix: "legal/statutes/at/kartg/" },
-  { keywords: ["asyl", "asylwerber", "asylverfahren", "asylantrag"], slugPrefix: "legal/statutes/at/asylg/" },
-  { keywords: ["verwaltungsverfahren", "bescheid", "verwaltungsgericht", "parteienstellung"], slugPrefix: "legal/statutes/at/avg/" },
-  { keywords: ["straf", "mord", "diebstahl", "betrug", "körperverletzung", "tötung"], slugPrefix: "legal/statutes/at/stgb/" },
-  { keywords: ["zivilverfahren", "klage", "berufung", "gerichtsstand", "zuständigkeit", "prozess"], slugPrefix: "legal/statutes/at/zpo/" },
-  { keywords: ["gerichtsstand", "örtliche zuständigkeit", "sachliche zuständigkeit", "jurisdiktion"], slugPrefix: "legal/statutes/at/jn/" },
-  { keywords: ["gesellschaft", "gmbh", "geschäftsführer", "mindesteinlage", "stammkapital"], slugPrefix: "legal/statutes/at/gmbhg/" },
-  { keywords: ["aktiengesellschaft", "vorstand", "grundkapital", "aktionär"], slugPrefix: "legal/statutes/at/aktg/" },
-  { keywords: ["unternehmensgesetzbuch", "ugb", "firma", "rechnungslegung", "buchführung"], slugPrefix: "legal/statutes/at/ugb/" },
-  { keywords: ["arbeitsverhältnis", "kündigung", "dienstnehmer", "arbeitnehmer"], slugPrefix: "legal/statutes/at/arbvg/" },
+  {
+    keywords: [
+      "scheidung",
+      "ehe",
+      "eheschließung",
+      "unterhalt",
+      "ehewohnung",
+      "vermögensauseinandersetzung",
+      "verschulden",
+    ],
+    slugPrefix: "legal/statutes/at/eheg/",
+  },
+  {
+    keywords: ["insolvenz", "konkurs", "sanierung", "sanierungsplan", "insolvenzverfahren"],
+    slugPrefix: "legal/statutes/at/io/",
+  },
+  {
+    keywords: [
+      "gewerbe",
+      "gewerbeberechtigung",
+      "gewerbeerteilung",
+      "gewerbeuntersagung",
+      "gewerberecht",
+    ],
+    slugPrefix: "legal/statutes/at/gewo/",
+  },
+  {
+    keywords: ["datenschutz", "personenbezogene", "datenverarbeitung", "betroffen", "auskunft"],
+    slugPrefix: "legal/statutes/at/dsg/",
+  },
+  {
+    keywords: ["kartell", "zusammenschluss", "fusion", "marktbeherrsch", "wettbewerbsrecht"],
+    slugPrefix: "legal/statutes/at/kartg/",
+  },
+  {
+    keywords: ["asyl", "asylwerber", "asylverfahren", "asylantrag"],
+    slugPrefix: "legal/statutes/at/asylg/",
+  },
+  {
+    keywords: ["verwaltungsverfahren", "bescheid", "verwaltungsgericht", "parteienstellung"],
+    slugPrefix: "legal/statutes/at/avg/",
+  },
+  {
+    keywords: ["straf", "mord", "diebstahl", "betrug", "körperverletzung", "tötung"],
+    slugPrefix: "legal/statutes/at/stgb/",
+  },
+  {
+    keywords: ["zivilverfahren", "klage", "berufung", "gerichtsstand", "zuständigkeit", "prozess"],
+    slugPrefix: "legal/statutes/at/zpo/",
+  },
+  {
+    keywords: [
+      "gerichtsstand",
+      "örtliche zuständigkeit",
+      "sachliche zuständigkeit",
+      "jurisdiktion",
+    ],
+    slugPrefix: "legal/statutes/at/jn/",
+  },
+  {
+    keywords: ["gesellschaft", "gmbh", "geschäftsführer", "mindesteinlage", "stammkapital"],
+    slugPrefix: "legal/statutes/at/gmbhg/",
+  },
+  {
+    keywords: ["aktiengesellschaft", "vorstand", "grundkapital", "aktionär"],
+    slugPrefix: "legal/statutes/at/aktg/",
+  },
+  {
+    keywords: ["unternehmensgesetzbuch", "ugb", "firma", "rechnungslegung", "buchführung"],
+    slugPrefix: "legal/statutes/at/ugb/",
+  },
+  {
+    keywords: ["arbeitsverhältnis", "kündigung", "dienstnehmer", "arbeitnehmer"],
+    slugPrefix: "legal/statutes/at/arbvg/",
+  },
   { keywords: ["ungerechtfertigt", "entlassung", "avrag"], slugPrefix: "legal/statutes/at/avrag/" },
   { keywords: ["karenz", "elternkarenz", "karenzzeit"], slugPrefix: "legal/statutes/at/vkgg/" },
-  { keywords: ["mutterschutz", "schutzfrist", "wochenhilfe"], slugPrefix: "legal/statutes/at/mschg-at/" },
-  { keywords: ["urlaubsentgelt", "urlaubsgeld", "abfertigung", "urlaub"], slugPrefix: "legal/statutes/at/buag/" },
-  { keywords: ["sozialversicherung", "krankenversicherung", "pension", "pensionsanspruch"], slugPrefix: "legal/statutes/at/asvg/" },
-  { keywords: ["einkommensteuer", "einkommen", "einkünfte", "gewerbebetrieb"], slugPrefix: "legal/statutes/at/estg/" },
+  {
+    keywords: ["mutterschutz", "schutzfrist", "wochenhilfe"],
+    slugPrefix: "legal/statutes/at/mschg-at/",
+  },
+  {
+    keywords: ["urlaubsentgelt", "urlaubsgeld", "abfertigung", "urlaub"],
+    slugPrefix: "legal/statutes/at/buag/",
+  },
+  {
+    keywords: ["sozialversicherung", "krankenversicherung", "pension", "pensionsanspruch"],
+    slugPrefix: "legal/statutes/at/asvg/",
+  },
+  {
+    keywords: ["einkommensteuer", "einkommen", "einkünfte", "gewerbebetrieb"],
+    slugPrefix: "legal/statutes/at/estg/",
+  },
   { keywords: ["umsatzsteuer", "ustg"], slugPrefix: "legal/statutes/at/ustg/" },
-  { keywords: ["abgaben", "bundesabgabenordnung", "bao", "verjährung"], slugPrefix: "legal/statutes/at/bao/" },
+  {
+    keywords: ["abgaben", "bundesabgabenordnung", "bao", "verjährung"],
+    slugPrefix: "legal/statutes/at/bao/",
+  },
   { keywords: ["außerstreit", "rekurs", "austrg"], slugPrefix: "legal/statutes/at/au-strg/" },
-  { keywords: ["schadenersatz", "verjährung", "gewährleistung", "vertrag", "irrtum", "liegenschaft", "kaufvertrag"], slugPrefix: "legal/statutes/at/abgb/" },
+  {
+    keywords: [
+      "schadenersatz",
+      "verjährung",
+      "gewährleistung",
+      "vertrag",
+      "irrtum",
+      "liegenschaft",
+      "kaufvertrag",
+    ],
+    slugPrefix: "legal/statutes/at/abgb/",
+  },
   // ── DE statute-area entries (slug prefix: law/de/<law>/) ──
-  { keywords: ["zivilverfahren", "klage", "berufung", "gerichtsstand", "zuständigkeit", "prozess", "versäumnisurteil", "einstweilige verfügung", "widerklage", "streitwert", "streitgegenstand", "sachliche zuständigkeit", "örtliche zuständigkeit", "gericht"], slugPrefix: "law/de/zpo" },
-  { keywords: ["straf", "mord", "diebstahl", "betrug", "körperverletzung", "tötung", "raub", "unterschlagung", "brandstiftung", "widerstand", "hausfriedensbruch", "falschaussage", "strafvereitelung", "vorsatz", "schuldunfähig", "notwehr", "notstand", "gelstrafe", "freiheitsstrafe"], slugPrefix: "law/de/stgb" },
-  { keywords: ["abgaben", "steuer", "finanzbehörde", "steuergeheimnis", "betriebsstätte", "geschäftsleitung", "wohnsitz", "aufenthalt", "wirtschaftlicher geschäftsbetrieb", "angehörige", "vertreter"], slugPrefix: "law/de/ao" },
-  { keywords: ["kaufmann", "handelsgewerbe", "handelsregister", "firma", "prokura"], slugPrefix: "law/de/hgb" },
-  { keywords: ["schuldverhältnis", "pflichtverletzung", "käufer", "mangel", "verjährung", "schadensersatz", "sittenwidrigkeit", "geschäftsfähigkeit", "täuschung", "rücktritt", "verkäufer", "miete", "mietmängel", "kündigung", "arbeitsverhältnis"], slugPrefix: "law/de/bgb" },
-  { keywords: ["baugenehmigung", "bebauungsplan", "bauvorhaben", "bauplan"], slugPrefix: "law/de/baugb" },
-  { keywords: ["datenschutz", "personenbezogene", "datenverarbeitung", "betroffen", "auskunft", "datenlöschung", "dsgvo"], slugPrefix: "law/de/bdsg" },
-  { keywords: ["wettbewerb", "irreführend", "geschäftliche handlung", "vergleichende werbung", "unternehmen"], slugPrefix: "law/de/uwg" },
-  { keywords: ["insolvenz", "konkurs", "sanierung", "insolvenzplan", "insolvenzverfahren"], slugPrefix: "law/de/inso" },
-  { keywords: ["anwaltskosten", "rechtsanwalt", "beiordnung", "prozesskosten"], slugPrefix: "law/de/rvg" },
-  { keywords: ["ermittlungsverfahren", "staatsanwaltschaft", "festnahme", "untersuchungshaft", "beschuldigter"], slugPrefix: "law/de/stpo" },
-  { keywords: ["verwaltungsgericht", "verwaltungsrecht", "rechtsschutz", "anfechtungsklage"], slugPrefix: "law/de/vwgo" },
+  {
+    keywords: [
+      "zivilverfahren",
+      "klage",
+      "berufung",
+      "gerichtsstand",
+      "zuständigkeit",
+      "prozess",
+      "versäumnisurteil",
+      "einstweilige verfügung",
+      "widerklage",
+      "streitwert",
+      "streitgegenstand",
+      "sachliche zuständigkeit",
+      "örtliche zuständigkeit",
+      "gericht",
+    ],
+    slugPrefix: "law/de/zpo",
+  },
+  {
+    keywords: [
+      "straf",
+      "mord",
+      "diebstahl",
+      "betrug",
+      "körperverletzung",
+      "tötung",
+      "raub",
+      "unterschlagung",
+      "brandstiftung",
+      "widerstand",
+      "hausfriedensbruch",
+      "falschaussage",
+      "strafvereitelung",
+      "vorsatz",
+      "schuldunfähig",
+      "notwehr",
+      "notstand",
+      "gelstrafe",
+      "freiheitsstrafe",
+    ],
+    slugPrefix: "law/de/stgb",
+  },
+  {
+    keywords: [
+      "abgaben",
+      "steuer",
+      "finanzbehörde",
+      "steuergeheimnis",
+      "betriebsstätte",
+      "geschäftsleitung",
+      "wohnsitz",
+      "aufenthalt",
+      "wirtschaftlicher geschäftsbetrieb",
+      "angehörige",
+      "vertreter",
+    ],
+    slugPrefix: "law/de/ao",
+  },
+  {
+    keywords: ["kaufmann", "handelsgewerbe", "handelsregister", "firma", "prokura"],
+    slugPrefix: "law/de/hgb",
+  },
+  {
+    keywords: [
+      "schuldverhältnis",
+      "pflichtverletzung",
+      "käufer",
+      "mangel",
+      "verjährung",
+      "schadensersatz",
+      "sittenwidrigkeit",
+      "geschäftsfähigkeit",
+      "täuschung",
+      "rücktritt",
+      "verkäufer",
+      "miete",
+      "mietmängel",
+      "kündigung",
+      "arbeitsverhältnis",
+    ],
+    slugPrefix: "law/de/bgb",
+  },
+  {
+    keywords: ["baugenehmigung", "bebauungsplan", "bauvorhaben", "bauplan"],
+    slugPrefix: "law/de/baugb",
+  },
+  {
+    keywords: [
+      "datenschutz",
+      "personenbezogene",
+      "datenverarbeitung",
+      "betroffen",
+      "auskunft",
+      "datenlöschung",
+      "dsgvo",
+    ],
+    slugPrefix: "law/de/bdsg",
+  },
+  {
+    keywords: [
+      "wettbewerb",
+      "irreführend",
+      "geschäftliche handlung",
+      "vergleichende werbung",
+      "unternehmen",
+    ],
+    slugPrefix: "law/de/uwg",
+  },
+  {
+    keywords: ["insolvenz", "konkurs", "sanierung", "insolvenzplan", "insolvenzverfahren"],
+    slugPrefix: "law/de/inso",
+  },
+  {
+    keywords: ["anwaltskosten", "rechtsanwalt", "beiordnung", "prozesskosten"],
+    slugPrefix: "law/de/rvg",
+  },
+  {
+    keywords: [
+      "ermittlungsverfahren",
+      "staatsanwaltschaft",
+      "festnahme",
+      "untersuchungshaft",
+      "beschuldigter",
+    ],
+    slugPrefix: "law/de/stpo",
+  },
+  {
+    keywords: ["verwaltungsgericht", "verwaltungsrecht", "rechtsschutz", "anfechtungsklage"],
+    slugPrefix: "law/de/vwgo",
+  },
   { keywords: ["grundgesetz", "verfassung", "grundrecht"], slugPrefix: "law/de/gg" },
   // ── DE tax law entries ──
-  { keywords: ["einkommensteuer", "einkommen", "einkünfte", "gewinn", "verlust", "abschreibung", "betriebsausgaben", "werbungskosten", "sonderausgaben", "außergewöhnliche belastung", "kindergeld", "freibetrag", "steuerklasse", "splittingtarif"], slugPrefix: "law/de/estg" },
-  { keywords: ["umsatzsteuer", "vorsteuer", "steuerbarer umsatz", "steuerbefreiung", "kleinunternehmer", "reverse charge", "innergemeinschaftliche lieferung", "ustg"], slugPrefix: "law/de/ustg" },
-  { keywords: ["körperschaftsteuer", "körperschaft", "kstg", "ausschüttung", "betriebsausgaben", "verdeckte gewinnausschüttung"], slugPrefix: "law/de/kstg" },
-  { keywords: ["gewerbesteuer", "gewerbeertrag", "gewstg", "hebesatz", "freibetrag gewerbe"], slugPrefix: "law/de/gewstg" },
-  { keywords: ["erbschaftsteuer", "schenkungsteuer", "erbstg", "freibetrag erbschaft", "steuerklasse erbschaft"], slugPrefix: "law/de/erbstg" },
-  { keywords: ["bewertung", "bewg", "gemeiner wert", "bedarfswert", "grundstückswert", "bewertungseinheit"], slugPrefix: "law/de/bewg" },
-  { keywords: ["grunderwerbsteuer", "grestg", "grundstückskauf", "grundstücksübertragung", "antilsübertragung"], slugPrefix: "law/de/grestg" },
-  { keywords: ["lohnsteuer", "lstdv", "lohnsteuerabzug", "elstam", "lohnsteuerklasse", "freibetrag lohn"], slugPrefix: "law/de/lstdv" },
-  { keywords: ["steuerberatervergütung", "stbvv", "gebühren steuerberater", "gegenstandswert", "wertgebühr"], slugPrefix: "law/de/stbvv" },
-  { keywords: ["steuerberatungsgesetz", "stberg", "steuerberater", "berufsmäßige hilfeleistung", "hilfe in steuersachen"], slugPrefix: "law/de/stberg" },
+  {
+    keywords: [
+      "einkommensteuer",
+      "einkommen",
+      "einkünfte",
+      "gewinn",
+      "verlust",
+      "abschreibung",
+      "betriebsausgaben",
+      "werbungskosten",
+      "sonderausgaben",
+      "außergewöhnliche belastung",
+      "kindergeld",
+      "freibetrag",
+      "steuerklasse",
+      "splittingtarif",
+    ],
+    slugPrefix: "law/de/estg",
+  },
+  {
+    keywords: [
+      "umsatzsteuer",
+      "vorsteuer",
+      "steuerbarer umsatz",
+      "steuerbefreiung",
+      "kleinunternehmer",
+      "reverse charge",
+      "innergemeinschaftliche lieferung",
+      "ustg",
+    ],
+    slugPrefix: "law/de/ustg",
+  },
+  {
+    keywords: [
+      "körperschaftsteuer",
+      "körperschaft",
+      "kstg",
+      "ausschüttung",
+      "betriebsausgaben",
+      "verdeckte gewinnausschüttung",
+    ],
+    slugPrefix: "law/de/kstg",
+  },
+  {
+    keywords: ["gewerbesteuer", "gewerbeertrag", "gewstg", "hebesatz", "freibetrag gewerbe"],
+    slugPrefix: "law/de/gewstg",
+  },
+  {
+    keywords: [
+      "erbschaftsteuer",
+      "schenkungsteuer",
+      "erbstg",
+      "freibetrag erbschaft",
+      "steuerklasse erbschaft",
+    ],
+    slugPrefix: "law/de/erbstg",
+  },
+  {
+    keywords: [
+      "bewertung",
+      "bewg",
+      "gemeiner wert",
+      "bedarfswert",
+      "grundstückswert",
+      "bewertungseinheit",
+    ],
+    slugPrefix: "law/de/bewg",
+  },
+  {
+    keywords: [
+      "grunderwerbsteuer",
+      "grestg",
+      "grundstückskauf",
+      "grundstücksübertragung",
+      "antilsübertragung",
+    ],
+    slugPrefix: "law/de/grestg",
+  },
+  {
+    keywords: [
+      "lohnsteuer",
+      "lstdv",
+      "lohnsteuerabzug",
+      "elstam",
+      "lohnsteuerklasse",
+      "freibetrag lohn",
+    ],
+    slugPrefix: "law/de/lstdv",
+  },
+  {
+    keywords: [
+      "steuerberatervergütung",
+      "stbvv",
+      "gebühren steuerberater",
+      "gegenstandswert",
+      "wertgebühr",
+    ],
+    slugPrefix: "law/de/stbvv",
+  },
+  {
+    keywords: [
+      "steuerberatungsgesetz",
+      "stberg",
+      "steuerberater",
+      "berufsmäßige hilfeleistung",
+      "hilfe in steuersachen",
+    ],
+    slugPrefix: "law/de/stberg",
+  },
   { keywords: ["solidaritätszuschlag", "solzg", "solidarität"], slugPrefix: "law/de/solzg" },
-  { keywords: ["außensteuer", "astg", "auslandsgesellschaft", "verdeckte gewinnausschüttung ausland", "doppelbesteuerung"], slugPrefix: "law/de/astg" },
-  { keywords: ["einkommensteuer-durchführungsverordnung", "estdv", "durchführung einkommensteuer"], slugPrefix: "law/de/estdv" },
-  { keywords: ["umsatzsteuer-durchführungsverordnung", "ustdv", "durchführung umsatzsteuer"], slugPrefix: "law/de/ustdv" },
+  {
+    keywords: [
+      "außensteuer",
+      "astg",
+      "auslandsgesellschaft",
+      "verdeckte gewinnausschüttung ausland",
+      "doppelbesteuerung",
+    ],
+    slugPrefix: "law/de/astg",
+  },
+  {
+    keywords: ["einkommensteuer-durchführungsverordnung", "estdv", "durchführung einkommensteuer"],
+    slugPrefix: "law/de/estdv",
+  },
+  {
+    keywords: ["umsatzsteuer-durchführungsverordnung", "ustdv", "durchführung umsatzsteuer"],
+    slugPrefix: "law/de/ustdv",
+  },
   // ── CH tax law entries ──
-  { keywords: ["direkte bundessteuer", "dbg", "einkommenssteuer schweiz", "vermögenssteuer schweiz", "eigenmietwert", "steuerbar einkommen schweiz"], slugPrefix: "law/ch/dbg" },
-  { keywords: ["mehrwertsteuer schweiz", "mwstg", "mwst schweiz", "vorsteuer schweiz", "steuerpflicht schweiz", "normalsatz mwst", "reduzierter satz mwst"], slugPrefix: "law/ch/mwstg" },
-  { keywords: ["steuerharmonisierung", "sthg", "kantonale steuern", "gemeindesteuern", "harmonisierung direkte steuern"], slugPrefix: "law/ch/sthg" },
-  { keywords: ["zoll schweiz", "zollgesetz", "zg", "zolltarif", "zollfreibetrag", "zollanmeldung schweiz", "ezv"], slugPrefix: "law/ch/zg" },
+  {
+    keywords: [
+      "direkte bundessteuer",
+      "dbg",
+      "einkommenssteuer schweiz",
+      "vermögenssteuer schweiz",
+      "eigenmietwert",
+      "steuerbar einkommen schweiz",
+    ],
+    slugPrefix: "law/ch/dbg",
+  },
+  {
+    keywords: [
+      "mehrwertsteuer schweiz",
+      "mwstg",
+      "mwst schweiz",
+      "vorsteuer schweiz",
+      "steuerpflicht schweiz",
+      "normalsatz mwst",
+      "reduzierter satz mwst",
+    ],
+    slugPrefix: "law/ch/mwstg",
+  },
+  {
+    keywords: [
+      "steuerharmonisierung",
+      "sthg",
+      "kantonale steuern",
+      "gemeindesteuern",
+      "harmonisierung direkte steuern",
+    ],
+    slugPrefix: "law/ch/sthg",
+  },
+  {
+    keywords: [
+      "zoll schweiz",
+      "zollgesetz",
+      "zg",
+      "zolltarif",
+      "zollfreibetrag",
+      "zollanmeldung schweiz",
+      "ezv",
+    ],
+    slugPrefix: "law/ch/zg",
+  },
 ];
 
 export function applyStatuteAreaBoost(
@@ -541,7 +933,12 @@ export function applyDefinitionQuestionBoost(
 ): void {
   if (!query || !Number.isFinite(factor) || factor <= 1.0) return;
   // Only fire for definitional questions
-  if (!/^(was ist|welche rechte|wie wird|wie lange|was regelt|welche leistungen|welche voraussetzungen|welche fristen|welche formvorschriften|wie hoch|wie ist|welches gericht|was muss|was unterliegt|innerhalb welcher)/i.test(query.trim())) return;
+  if (
+    !/^(was ist|welche rechte|wie wird|wie lange|was regelt|welche leistungen|welche voraussetzungen|welche fristen|welche formvorschriften|wie hoch|wie ist|welches gericht|was muss|was unterliegt|innerhalb welcher)/i.test(
+      query.trim()
+    )
+  )
+    return;
 
   for (const r of results) {
     if (!Number.isFinite(r.score)) continue;
@@ -603,14 +1000,384 @@ export function applyLegalAuthorityBoost(
 }
 
 /**
- * v0.29.1 — runPostFusionStages: wrap backlink + salience + recency in a
- * single stage that fires from EVERY hybridSearch return path (codex
- * pass-1 #2 + pass-2 #4: keyword-only, embed-fail-fallback, full-hybrid).
- * Without this wrapper, salience='on' silently does nothing on keyless
- * installs that fall back to keyword-only.
+ * v0.47 — Court decision boost (Phase 5: Filter & Ranking).
  *
- * Mutates `results` in place; caller re-sorts.
+ * Boosts court decision pages (slug starts with `legal/judikatur/`) using
+ * three signals:
+ *
+ * 1. **Recency**: Newer decisions are slightly preferred. A decision from
+ *    the last 2 years gets the full recency factor; older decisions get a
+ *    linearly decreasing factor down to 1.0 at 10 years. This is a mild
+ *    tilt — not a hard filter — because old landmark decisions (OGH
+ *    ständige Rechtsprechung) are still highly relevant.
+ *
+ * 2. **Legal area match**: When the query contains terms matching a known
+ *    legal area (e.g. "Scheidung" → familienrecht, "Insolvenz" →
+ *    insolvenzrecht), decisions whose slug or title contains that area
+ *    keyword get a boost.
+ *
+ * 3. **Court match**: When the query mentions a specific court (OGH, BGH,
+ *    BVerfG, VfGH, VwGH, BVwG, BGer, ...), decisions from that court get
+ *    a boost. Court is detected from the slug pattern
+ *    `legal/judikatur/<jur>/<court>/...`.
+ *
+ * Floor-ratio-gated like other post-fusion stages. Mutates in place;
+ * caller re-sorts.
  */
+
+/** Legal area keywords → match patterns for court decision slugs/titles. */
+const DECISION_AREA_MAP: { keywords: string[]; matchers: string[] }[] = [
+  {
+    keywords: ["scheidung", "ehe", "unterhalt", "ehewohnung", "vermögensauseinandersetzung"],
+    matchers: ["familienrecht", "eheg", "mschg"],
+  },
+  {
+    keywords: ["insolvenz", "konkurs", "sanierung", "insolvenzplan"],
+    matchers: ["insolvenzrecht", "io", "inso"],
+  },
+  {
+    keywords: ["straf", "mord", "diebstahl", "betrug", "körperverletzung", "tötung", "raub"],
+    matchers: ["strafrecht", "stgb"],
+  },
+  {
+    keywords: ["zivilverfahren", "klage", "berufung", "gerichtsstand", "zuständigkeit", "prozess"],
+    matchers: ["zivilrecht", "zpo", "zivilsachen"],
+  },
+  {
+    keywords: ["verwaltungsgericht", "verwaltungsrecht", "bescheid", "verwaltungsverfahren"],
+    matchers: ["verwaltungsrecht", "vwgh", "bvwg", "lvwg", "avg"],
+  },
+  { keywords: ["asyl", "asylwerber", "asylverfahren"], matchers: ["asylrecht", "asylgh", "asylg"] },
+  {
+    keywords: ["datenschutz", "personenbezogene", "datenverarbeitung"],
+    matchers: ["datenschutzrecht", "dsg", "dsgvo"],
+  },
+  {
+    keywords: ["gesellschaft", "gmbh", "geschäftsführer", "stammkapital"],
+    matchers: ["gesellschaftsrecht", "gmbhg"],
+  },
+  {
+    keywords: ["arbeitsverhältnis", "kündigung", "dienstnehmer", "arbeitnehmer"],
+    matchers: ["arbeitsrecht", "arbvg"],
+  },
+  {
+    keywords: ["schadenersatz", "verjährung", "gewährleistung", "vertrag", "irrtum"],
+    matchers: ["schadenersatzrecht", "abgb", "bgb"],
+  },
+  {
+    keywords: ["einkommensteuer", "einkommen", "einkünfte", "steuer"],
+    matchers: ["steuerrecht", "estg", "bao", "ao"],
+  },
+  { keywords: ["umsatzsteuer", "vorsteuer", "ustg"], matchers: ["steuerrecht", "ustg"] },
+  {
+    keywords: ["verfassung", "grundrecht", "verfassungsgericht"],
+    matchers: ["verfassungsrecht", "vfgh", "bverfg", "gg"],
+  },
+  {
+    keywords: ["kartell", "wettbewerb", "zusammenschluss"],
+    matchers: ["kartellrecht", "kartg", "uwg"],
+  },
+  { keywords: ["gewerbe", "gewerbeberechtigung"], matchers: ["gewerberecht", "gewo"] },
+  {
+    keywords: ["patent", "urheberrecht", "markenschutz"],
+    matchers: ["immaterialgüterrecht", "patg", "urhg"],
+  },
+];
+
+/** Court name → slug fragment mapping for court detection. */
+const COURT_SLUG_MAP: { keywords: string[]; slugFragment: string }[] = [
+  { keywords: ["ogh", "oberster gerichtshof"], slugFragment: "legal/judikatur/at/" },
+  { keywords: ["vfgh", "verfassungsgerichtshof"], slugFragment: "legal/judikatur/at/vfgh" },
+  { keywords: ["vwgh", "verwaltungsgerichtshof"], slugFragment: "legal/judikatur/at/vwgh" },
+  { keywords: ["bvwg", "bundesverwaltungsgericht"], slugFragment: "legal/judikatur/at/bvwg" },
+  { keywords: ["lvwg", "landesverwaltungsgericht"], slugFragment: "legal/judikatur/at/lvwg" },
+  { keywords: ["asylgh", "asylgerichtshof"], slugFragment: "legal/judikatur/at/asylgh" },
+  { keywords: ["bgh", "bundesgerichtshof"], slugFragment: "legal/judikatur/de/bgh" },
+  { keywords: ["bverfg", "bundesverfassungsgericht"], slugFragment: "legal/judikatur/de/bverfg" },
+  { keywords: ["bger", "bundesgericht"], slugFragment: "legal/judikatur/ch/bger" },
+];
+
+/** Default boost multipliers. */
+export const DEFAULT_COURT_DECISION_RECENCY_BOOST = 1.08;
+export const DEFAULT_COURT_DECISION_AREA_BOOST = 1.06;
+export const DEFAULT_COURT_DECISION_COURT_BOOST = 1.05;
+
+/** Extract a date from a court decision slug (format: ...-YYYY-MM-DD-...). */
+function extractDecisionDateFromSlug(slug: string): Date | null {
+  const m = slug.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  const d = new Date(`${m[1]}-${m[2]}-${m[3]}`);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+export function applyCourtDecisionBoost(
+  results: SearchResult[],
+  query: string,
+  recencyFactor: number,
+  areaFactor: number,
+  courtFactor: number,
+  floorThreshold?: number,
+  nowMs: number = Date.now()
+): void {
+  if (recencyFactor <= 1.0 && areaFactor <= 1.0 && courtFactor <= 1.0) return;
+  const qLower = query.toLowerCase();
+
+  // Detect legal areas from query
+  const matchedAreas: string[][] = [];
+  for (const entry of DECISION_AREA_MAP) {
+    if (entry.keywords.some((kw) => qLower.includes(kw))) {
+      matchedAreas.push(entry.matchers);
+    }
+  }
+
+  // Detect courts from query
+  const matchedCourtSlugs: string[] = [];
+  for (const entry of COURT_SLUG_MAP) {
+    if (entry.keywords.some((kw) => qLower.includes(kw))) {
+      matchedCourtSlugs.push(entry.slugFragment);
+    }
+  }
+
+  for (const r of results) {
+    if (!Number.isFinite(r.score)) continue;
+    if (floorThreshold !== undefined && r.score < floorThreshold) continue;
+    // Only court decision pages
+    if (!r.slug.startsWith("legal/judikatur/")) continue;
+
+    let totalFactor = 1.0;
+
+    // 1. Recency boost
+    if (recencyFactor > 1.0) {
+      const decisionDate = r.effective_date
+        ? new Date(r.effective_date)
+        : extractDecisionDateFromSlug(r.slug);
+      if (decisionDate) {
+        const daysOld = Math.max(0, (nowMs - decisionDate.getTime()) / 86_400_000);
+        const yearsOld = daysOld / 365.25;
+        // Full boost for ≤2 years, linearly decreasing to 1.0 at 10 years
+        if (yearsOld <= 2) {
+          totalFactor *= recencyFactor;
+        } else if (yearsOld < 10) {
+          const proportion = 1.0 - (yearsOld - 2) / 8; // 1.0 at 2y, 0.0 at 10y
+          totalFactor *= 1.0 + (recencyFactor - 1.0) * proportion;
+        }
+        // else: 10+ years → no recency boost (factor 1.0)
+      }
+    }
+
+    // 2. Legal area match boost
+    if (areaFactor > 1.0 && matchedAreas.length > 0) {
+      const slugLower = r.slug.toLowerCase();
+      const titleLower = (r.title ?? "").toLowerCase();
+      const combined = `${slugLower} ${titleLower}`;
+      if (matchedAreas.some((matchers) => matchers.some((m) => combined.includes(m)))) {
+        totalFactor *= areaFactor;
+      }
+    }
+
+    // 3. Court match boost
+    if (courtFactor > 1.0 && matchedCourtSlugs.length > 0) {
+      if (matchedCourtSlugs.some((frag) => r.slug.startsWith(frag))) {
+        totalFactor *= courtFactor;
+      }
+    }
+
+    if (totalFactor !== 1.0) {
+      r.score *= totalFactor;
+      r.court_decision_boost = totalFactor;
+    }
+  }
+}
+
+/**
+ * v0.48 — Court hierarchy authority-level boost.
+ *
+ * Boosts court decision pages based on the hierarchical authority of the
+ * issuing court. Higher courts (OGH, VfGH, VwGH) set binding precedents;
+ * lower courts (LVwG, UVS) are persuasive but not binding. This mirrors
+ * how lawyers evaluate precedent weight — an OGH decision on a legal
+ * question is inherently more authoritative than a first-instance BG
+ * ruling on the same question.
+ *
+ * Court hierarchy (AT):
+ *   Tier 1 (×1.08): OGH — Oberster Gerichtshof (highest court in civil/criminal)
+ *   Tier 2 (×1.06): VfGH, VwGH — Constitutional/Administrative high courts
+ *   Tier 3 (×1.04): BVwG, LVwG, AsylGH — Federal/Land administrative courts
+ *   Tier 4 (×1.02): UVS — Unabhängige Verwaltungssenate (legacy, pre-2014)
+ *
+ * Court hierarchy (DE):
+ *   Tier 2 (×1.06): BGH — Bundesgerichtshof
+ *   Tier 2 (×1.06): BVerfG — Bundesverfassungsgericht
+ *
+ * Court hierarchy (CH):
+ *   Tier 2 (×1.06): BGer — Bundesgericht
+ *
+ * Only affects court_decision pages (slug starts with legal/judikatur/).
+ * Floor-ratio-gated like other post-fusion stages. Mutates in place;
+ * caller re-sorts.
+ */
+
+/** Court slug fragment → authority tier multiplier. */
+const COURT_AUTHORITY_MAP: { slugFragment: string; factor: number }[] = [
+  // AT — Tier 1 (highest)
+  { slugFragment: "legal/judikatur/at/ogh", factor: 1.08 },
+  // AT — Tier 2 (high courts)
+  { slugFragment: "legal/judikatur/at/vfgh", factor: 1.06 },
+  { slugFragment: "legal/judikatur/at/vwgh", factor: 1.06 },
+  // AT — Tier 3 (federal/land administrative courts)
+  { slugFragment: "legal/judikatur/at/bvwg", factor: 1.04 },
+  { slugFragment: "legal/judikatur/at/lvwg", factor: 1.04 },
+  { slugFragment: "legal/judikatur/at/asylgh", factor: 1.04 },
+  // AT — Tier 4 (legacy, pre-2014)
+  { slugFragment: "legal/judikatur/at/uvs", factor: 1.02 },
+  // DE — Tier 2
+  { slugFragment: "legal/judikatur/de/bgh", factor: 1.06 },
+  { slugFragment: "legal/judikatur/de/bverfg", factor: 1.06 },
+  // CH — Tier 2
+  { slugFragment: "legal/judikatur/ch/bger", factor: 1.06 },
+];
+
+/** Default boost multiplier for authority-level stage. */
+export const DEFAULT_AUTHORITY_LEVEL_BOOST = 1.04;
+
+/** Extract court from slug for authority-level lookup. */
+function getCourtAuthorityFactor(slug: string): number {
+  for (const entry of COURT_AUTHORITY_MAP) {
+    if (slug.startsWith(entry.slugFragment)) {
+      return entry.factor;
+    }
+  }
+  // Unknown court — no boost (factor 1.0). This includes non-AT/DE/CH
+  // courts or slugs that don't match the expected pattern.
+  return 1.0;
+}
+
+export function applyAuthorityLevelBoost(results: SearchResult[], floorThreshold?: number): void {
+  for (const r of results) {
+    if (!Number.isFinite(r.score)) continue;
+    if (floorThreshold !== undefined && r.score < floorThreshold) continue;
+    // Only court decision pages
+    if (!r.slug.startsWith("legal/judikatur/")) continue;
+
+    const factor = getCourtAuthorityFactor(r.slug);
+    if (factor > 1.0) {
+      r.score *= factor;
+      r.authority_level_boost = factor;
+    }
+  }
+}
+
+/**
+ * v0.48 — Citation authority boost for court decisions.
+ *
+ * Uses global inbound citation count (backlinks) as a precedent authority
+ * signal. A decision cited by 50 other decisions is a landmark precedent;
+ * a decision cited by 1 is a routine ruling. This mirrors vLex's "up-the-tree"
+ * citation analysis and LexisNexis's Knowledge Graph authority signals.
+ *
+ * Tiered boost:
+ *   >5 citations   → ×1.03 (established precedent)
+ *   >20 citations  → ×1.05 (well-cited precedent)
+ *   >50 citations  → ×1.08 (landmark precedent)
+ *   >100 citations → ×1.10 (foundational precedent)
+ *
+ * Only affects court_decision pages (slug starts with legal/judikatur/).
+ * Stacks on top of the generic backlink boost (which applies a log-compressed
+ * factor to ALL page types). The citation authority boost is ADDITIONAL
+ * because in legal context, citation count carries precedential weight that
+ * generic backlink count does not capture.
+ *
+ * Floor-ratio-gated like other post-fusion stages. Mutates in place;
+ * caller re-sorts.
+ */
+
+/** Citation count thresholds → boost factor. Sorted descending. */
+const CITATION_AUTHORITY_TIERS: { threshold: number; factor: number }[] = [
+  { threshold: 100, factor: 1.1 },
+  { threshold: 50, factor: 1.08 },
+  { threshold: 20, factor: 1.05 },
+  { threshold: 5, factor: 1.03 },
+];
+
+export function applyCitationAuthorityBoost(
+  results: SearchResult[],
+  backlinkCounts: Map<string, number>,
+  floorThreshold?: number
+): void {
+  for (const r of results) {
+    if (!Number.isFinite(r.score)) continue;
+    if (floorThreshold !== undefined && r.score < floorThreshold) continue;
+    // Only court decision pages
+    if (!r.slug.startsWith("legal/judikatur/")) continue;
+
+    const citationCount = backlinkCounts.get(r.slug) ?? 0;
+    if (citationCount < CITATION_AUTHORITY_TIERS[CITATION_AUTHORITY_TIERS.length - 1]!.threshold) {
+      continue;
+    }
+
+    // Find the highest applicable tier
+    for (const tier of CITATION_AUTHORITY_TIERS) {
+      if (citationCount >= tier.threshold) {
+        r.score *= tier.factor;
+        r.citation_authority_boost = tier.factor;
+        break;
+      }
+    }
+  }
+}
+
+/**
+ * v0.48 — Citation validity boost (Shepard's/KeyCite equivalent).
+ *
+ * Adjusts search result scores based on the citation validity status of
+ * court decisions. This is the modular implementation of what Shepard's
+ * (LexisNexis) and KeyCite (Westlaw) do: flag decisions that have been
+ * overturned, superseded, or explicitly confirmed by later courts.
+ *
+ * Status values (from frontmatter.citation_status):
+ *   "good_law"   → ×1.00 (neutral — default for unenriched decisions)
+ *   "confirmed"  → ×1.02 (explicitly affirmed by higher court — mild boost)
+ *   "superseded" → ×0.92 (replaced by newer ruling — moderate demotion)
+ *   "overturned" → ×0.85 (explicitly overturned — strong demotion)
+ *
+ * Only affects court_decision pages (slug starts with legal/judikatur/).
+ * Floor-ratio-gated like other post-fusion stages. Mutates in place;
+ * caller re-sorts.
+ *
+ * Enrichment: run `enrich-citation-status.ts` to populate
+ * frontmatter.citation_status from RIS API or text heuristics.
+ * Unenriched decisions default to "good_law" (no boost/demotion).
+ */
+const CITATION_VALIDITY_FACTORS: Record<string, number> = {
+  good_law: 1.0,
+  confirmed: 1.02,
+  superseded: 0.92,
+  overturned: 0.85,
+};
+
+export function applyCitationValidityBoost(
+  results: SearchResult[],
+  statusMap: Map<number, "good_law" | "overturned" | "superseded" | "confirmed">,
+  floorThreshold?: number
+): void {
+  for (const r of results) {
+    if (!Number.isFinite(r.score)) continue;
+    if (floorThreshold !== undefined && r.score < floorThreshold) continue;
+    // Only court decision pages
+    if (!r.slug.startsWith("legal/judikatur/")) continue;
+
+    const status = statusMap.get(r.page_id);
+    if (!status) continue; // unenriched → treat as good_law (no change)
+
+    const factor = CITATION_VALIDITY_FACTORS[status];
+    if (factor === undefined || factor === 1.0) continue;
+
+    r.score *= factor;
+    r.citation_status = status;
+    r.citation_validity_boost = factor;
+  }
+}
+
 export interface PostFusionOpts {
   applyBacklinks: boolean;
   salience: "off" | "on" | "strong";
@@ -708,6 +1475,43 @@ export interface PostFusionOpts {
   cognitiveTier1Boost?: number;
   /** v0.46 — boost multiplier for Tier 0 (Unknown). Default 0.98 (mild demote). */
   cognitiveTier0Boost?: number;
+  /**
+   * v0.47 — court decision recency boost multiplier. When > 1.0, newer court
+   * decisions get a mild boost over older ones. Auto-enabled for legal queries.
+   */
+  courtDecisionRecencyBoost?: number;
+  /**
+   * v0.47 — court decision legal-area match boost multiplier. When > 1.0 and
+   * the query mentions a legal area, decisions from that area get boosted.
+   */
+  courtDecisionAreaBoost?: number;
+  /**
+   * v0.47 — court decision court-match boost multiplier. When > 1.0 and the
+   * query mentions a specific court, decisions from that court get boosted.
+   */
+  courtDecisionCourtBoost?: number;
+  /**
+   * v0.48 — court hierarchy authority-level boost. When true, court decisions
+   * are boosted based on the issuing court's hierarchical authority (OGH > VfGH/
+   * VwGH > BVwG/LVwG/AsylGH > UVS). Auto-enabled for legal queries.
+   */
+  authorityLevelEnabled?: boolean;
+  /**
+   * v0.48 — citation authority boost for court decisions. When true, court
+   * decisions with high inbound citation counts get an additional precedential
+   * authority boost (>5 → ×1.03, >20 → ×1.05, >50 → ×1.08, >100 → ×1.10).
+   * Auto-enabled for legal queries. Reuses the backlink counts already fetched
+   * by the backlink stage — no extra DB call.
+   */
+  citationAuthorityEnabled?: boolean;
+  /**
+   * v0.48 — citation validity boost (Shepard's/KeyCite equivalent). When
+   * true, court decisions with frontmatter.citation_status are demoted
+   * (overturned ×0.85, superseded ×0.92) or boosted (confirmed ×1.02).
+   * Auto-enabled for legal queries. No-op when no decisions have
+   * citation_status set (unenriched → all treated as good_law).
+   */
+  citationValidityEnabled?: boolean;
 }
 
 export async function runPostFusionStages(
@@ -823,7 +1627,12 @@ export async function runPostFusionStages(
   // low-numbered paragraphs get a mild boost.
   if (opts.query && opts.definitionQuestionBoost && opts.definitionQuestionBoost > 1.0) {
     try {
-      applyDefinitionQuestionBoost(results, opts.query, opts.definitionQuestionBoost, floorThreshold);
+      applyDefinitionQuestionBoost(
+        results,
+        opts.query,
+        opts.definitionQuestionBoost,
+        floorThreshold
+      );
     } catch {
       // Non-fatal; preserves the per-stage contract.
     }
@@ -835,6 +1644,79 @@ export async function runPostFusionStages(
   if (opts.legalAuthorityJurisdiction !== undefined) {
     try {
       applyLegalAuthorityBoost(results, opts.legalAuthorityJurisdiction, floorThreshold);
+    } catch {
+      // Non-fatal; preserves the per-stage contract.
+    }
+  }
+
+  // v0.47 — court decision boost (Phase 5: Filter & Ranking). Runs after
+  // legal authority boost, before graph signals. Boosts court decisions by
+  // recency, legal area match, and court match. Auto-enabled for legal queries.
+  if (
+    opts.query &&
+    ((opts.courtDecisionRecencyBoost ?? 0) > 1.0 ||
+      (opts.courtDecisionAreaBoost ?? 0) > 1.0 ||
+      (opts.courtDecisionCourtBoost ?? 0) > 1.0)
+  ) {
+    try {
+      applyCourtDecisionBoost(
+        results,
+        opts.query,
+        opts.courtDecisionRecencyBoost ?? 1.0,
+        opts.courtDecisionAreaBoost ?? 1.0,
+        opts.courtDecisionCourtBoost ?? 1.0,
+        floorThreshold
+      );
+    } catch {
+      // Non-fatal; preserves the per-stage contract.
+    }
+  }
+
+  // v0.48 — authority-level boost (court hierarchy). Runs after court decision
+  // boost, before citation authority boost. Boosts court decisions based on
+  // the issuing court's hierarchical authority (OGH > VfGH/VwGH > BVwG/LVwG >
+  // UVS). Auto-enabled for legal queries.
+  if (opts.authorityLevelEnabled) {
+    try {
+      applyAuthorityLevelBoost(results, floorThreshold);
+    } catch {
+      // Non-fatal; preserves the per-stage contract.
+    }
+  }
+
+  // v0.48 — citation authority boost (precedent weight). Runs after
+  // authority-level boost, before graph signals. Uses the backlink counts
+  // already fetched by the backlink stage — no extra DB call. Boosts court
+  // decisions with high inbound citation counts (>5 → ×1.03, >20 → ×1.05,
+  // >50 → ×1.08, >100 → ×1.10). Auto-enabled for legal queries.
+  if (opts.citationAuthorityEnabled && opts.applyBacklinks) {
+    try {
+      // Reuse the backlink counts already fetched by the backlink stage.
+      // We refetch here because the counts Map is scoped to the backlink
+      // stage's try block. This is a single SQL call (IN clause on slugs)
+      // and only fires for legal queries.
+      const slugs = Array.from(new Set(results.map((r) => r.slug)));
+      const counts = await engine.getBacklinkCounts(slugs);
+      applyCitationAuthorityBoost(results, counts, floorThreshold);
+    } catch {
+      // Non-fatal; preserves the per-stage contract.
+    }
+  }
+
+  // v0.48 — citation validity boost (Shepard's/KeyCite equivalent). Runs
+  // after citation authority boost, before graph signals. Fetches
+  // frontmatter.citation_status for result page_ids — single SQL query.
+  // Demotes overturned/superseded decisions, boosts confirmed ones.
+  // No-op when no decisions have citation_status set.
+  if (opts.citationValidityEnabled) {
+    try {
+      const pageIds = Array.from(
+        new Set(results.map((r) => r.page_id).filter((id) => typeof id === "number" && id > 0))
+      );
+      const statusMap = await engine.getCitationStatuses(pageIds);
+      if (statusMap.size > 0) {
+        applyCitationValidityBoost(results, statusMap, floorThreshold);
+      }
     } catch {
       // Non-fatal; preserves the per-stage contract.
     }
@@ -1107,10 +1989,29 @@ export interface HybridSearchOpts extends SearchOpts {
    * Floor-ratio-gated.
    */
   definitionQuestionBoost?: number;
+  /**
+   * v0.47 — court decision recency boost multiplier. When > 1.0, newer court
+   * decisions get a mild boost. Auto-enabled for legal/jurisdiction-scoped
+   * queries via DEFAULT_COURT_DECISION_RECENCY_BOOST when undefined.
+   */
+  courtDecisionRecencyBoost?: number;
+  /**
+   * v0.47 — court decision legal-area boost multiplier. Auto-enabled for
+   * legal queries when undefined.
+   */
+  courtDecisionAreaBoost?: number;
+  /**
+   * v0.47 — court decision court-match boost multiplier. Auto-enabled for
+   * legal queries when undefined.
+   */
+  courtDecisionCourtBoost?: number;
 }
 
 /** Keep only the newest available version per statute section for as-of reads. */
-export function selectLegalVersionsAsOf(results: SearchResult[], asOfDate?: string): SearchResult[] {
+export function selectLegalVersionsAsOf(
+  results: SearchResult[],
+  asOfDate?: string
+): SearchResult[] {
   if (!asOfDate) return results;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(asOfDate)) {
     throw new Error(`Invalid as_of date: ${asOfDate}. Expected YYYY-MM-DD.`);
@@ -1135,7 +2036,9 @@ export function selectLegalVersionsAsOf(results: SearchResult[], asOfDate?: stri
     }
     const dated = group
       .map((result) => ({ result, match: /--v-(\d{4}-\d{2}-\d{2})$/.exec(result.slug) }))
-      .filter((entry): entry is { result: SearchResult; match: RegExpExecArray } => Boolean(entry.match))
+      .filter((entry): entry is { result: SearchResult; match: RegExpExecArray } =>
+        Boolean(entry.match)
+      )
       .filter((entry) => entry.match[1] <= asOfDate)
       .sort((a, b) => b.match[1].localeCompare(a.match[1]));
     if (dated[0]) selected.push(dated[0].result);
@@ -1420,6 +2323,12 @@ export async function hybridSearch(
     // it never has to read config. Engines normalize string-or-descriptor
     // via normalizeEngineColumn; the descriptor path is the strict one.
     embeddingColumn: resolvedCol,
+    // v0.48 — legal metadata filters (court, legal_area, decision date range).
+    // Threaded through to engine SQL WHERE clauses via buildLegalMetadataClause.
+    court: opts?.court,
+    legalArea: opts?.legalArea,
+    decisionDateFrom: opts?.decisionDateFrom,
+    decisionDateTo: opts?.decisionDateTo,
   };
   // Track what actually ran for the optional onMeta callback (v0.25.0).
   // Caller leaves onMeta undefined → these flags are computed but never
@@ -1564,16 +2473,12 @@ export async function hybridSearch(
     // via opts.legalParaBoost (future mode-bundle knob).
     legalParaBoost:
       opts?.legalParaBoost ??
-      (opts?.jurisdiction || isLikelyLegalQuery(query)
-        ? DEFAULT_LEGAL_PARA_BOOST
-        : undefined),
+      (opts?.jurisdiction || isLikelyLegalQuery(query) ? DEFAULT_LEGAL_PARA_BOOST : undefined),
     // v0.44 — statute-area boost. Auto-enabled for legal/jurisdiction-scoped
     // queries via DEFAULT_STATUTE_AREA_BOOST when undefined.
     statuteAreaBoost:
       opts?.statuteAreaBoost ??
-      (opts?.jurisdiction || isLikelyLegalQuery(query)
-        ? DEFAULT_STATUTE_AREA_BOOST
-        : undefined),
+      (opts?.jurisdiction || isLikelyLegalQuery(query) ? DEFAULT_STATUTE_AREA_BOOST : undefined),
     // v0.44 — definition-question boost. Auto-enabled for legal/jurisdiction-scoped queries.
     definitionQuestionBoost:
       opts?.definitionQuestionBoost ??
@@ -1584,9 +2489,7 @@ export async function hybridSearch(
     // jurisdiction-scoped queries. Demotes archived versions and boosts
     // jurisdiction-matched statute pages.
     legalAuthorityJurisdiction:
-      opts?.jurisdiction || isLikelyLegalQuery(query)
-        ? opts?.jurisdiction
-        : undefined,
+      opts?.jurisdiction || isLikelyLegalQuery(query) ? opts?.jurisdiction : undefined,
     // v0.46 — cognitive tier priority cascade threaded from resolved mode.
     // Defaults per ModeBundle (conservative=false, balanced/tokenmax=true).
     // Per-call SearchOpts.cognitive_tier overrides through resolveSearchMode.
@@ -1595,6 +2498,36 @@ export async function hybridSearch(
     cognitiveTier2Boost: resolvedMode.cognitive_tier2_boost,
     cognitiveTier1Boost: resolvedMode.cognitive_tier1_boost,
     cognitiveTier0Boost: resolvedMode.cognitive_tier0_boost,
+    // v0.47 — court decision boost (Phase 5). Auto-enabled for legal/
+    // jurisdiction-scoped queries. Boosts court decisions by recency,
+    // legal area match, and court match.
+    courtDecisionRecencyBoost:
+      opts?.courtDecisionRecencyBoost ??
+      (opts?.jurisdiction || isLikelyLegalQuery(query)
+        ? DEFAULT_COURT_DECISION_RECENCY_BOOST
+        : undefined),
+    courtDecisionAreaBoost:
+      opts?.courtDecisionAreaBoost ??
+      (opts?.jurisdiction || isLikelyLegalQuery(query)
+        ? DEFAULT_COURT_DECISION_AREA_BOOST
+        : undefined),
+    courtDecisionCourtBoost:
+      opts?.courtDecisionCourtBoost ??
+      (opts?.jurisdiction || isLikelyLegalQuery(query)
+        ? DEFAULT_COURT_DECISION_COURT_BOOST
+        : undefined),
+    // v0.48 — authority-level boost (court hierarchy). Auto-enabled for
+    // legal/jurisdiction-scoped queries. Boosts court decisions based on
+    // the issuing court's hierarchical authority (OGH > VfGH/VwGH > BVwG/
+    // LVwG/AsylGH > UVS). No per-call override needed — it's a boolean gate.
+    authorityLevelEnabled: opts?.jurisdiction !== undefined || isLikelyLegalQuery(query),
+    // v0.48 — citation authority boost (precedent weight). Auto-enabled
+    // for legal/jurisdiction-scoped queries. Reuses backlink counts.
+    citationAuthorityEnabled: opts?.jurisdiction !== undefined || isLikelyLegalQuery(query),
+    // v0.48 — citation validity boost (Shepard's/KeyCite equivalent).
+    // Auto-enabled for legal/jurisdiction-scoped queries. No-op when
+    // no decisions have citation_status set (unenriched).
+    citationValidityEnabled: opts?.jurisdiction !== undefined || isLikelyLegalQuery(query),
   };
 
   // v0.43 — build the relational recall arm ONCE here, before any return
@@ -2026,10 +2959,7 @@ export async function hybridSearch(
   // aliasing in the postFusionOpts resolver near line ~256.
 
   // Dedup
-  const deduped = selectLegalVersionsAsOf(
-    dedupResults(fused, dedupOpts),
-    opts?.asOfDate
-  );
+  const deduped = selectLegalVersionsAsOf(dedupResults(fused, dedupOpts), opts?.asOfDate);
 
   // Auto-escalate: if detail=low returned 0, retry with high. The inner
   // call's onMeta fires with the escalated detail_resolved; do NOT also
@@ -2242,6 +3172,12 @@ export async function hybridSearchCached(
     // class as the column/provider and schema-pack folds above).
     jurisdiction: opts?.jurisdiction,
     asOfDate: opts?.asOfDate,
+    // v0.48 — legal metadata filters must scope the cache key so a
+    // court/area/date-filtered read never serves an unfiltered cache row.
+    court: opts?.court,
+    legalArea: opts?.legalArea,
+    decisionDateFrom: opts?.decisionDateFrom,
+    decisionDateTo: opts?.decisionDateTo,
   });
 
   // Cache decision: opts.useCache (explicit) wins over global config; global

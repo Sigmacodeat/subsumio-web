@@ -654,6 +654,12 @@ export interface ChunkInput {
   model?: string;
   token_count?: number;
   /**
+   * Transient retrieval context prepended only to the embedding request.
+   * It is deliberately not persisted in chunk_text, so citations still show
+   * the canonical source wording while the vector retains §/court/role context.
+   */
+  embedding_context?: string;
+  /**
    * v0.27.1 multimodal. modality 'image' carries its 1024-dim Voyage vector
    * in embedding_image (not embedding). Markdown + code chunks omit both
    * fields and inherit modality='text' via column DEFAULT.
@@ -837,6 +843,37 @@ export interface SearchResult {
    * Floor-ratio-gated like other post-fusion stages.
    */
   legal_authority_boost?: number;
+  /**
+   * v0.47 — multiplier applied by applyCourtDecisionBoost. Boosts court
+   * decisions (slug starts with legal/judikatur/) by recency, legal area
+   * match, and court match. Floor-ratio-gated like other post-fusion stages.
+   */
+  court_decision_boost?: number;
+  /**
+   * v0.48 — multiplier applied by applyAuthorityLevelBoost. Boosts court
+   * decisions based on court hierarchy (OGH > VfGH/VwGH > BVwG/LVwG/AsylGH >
+   * BGH/BVerfG/BGer > UVS). Floor-ratio-gated like other post-fusion stages.
+   */
+  authority_level_boost?: number;
+  /**
+   * v0.48 — multiplier applied by applyCitationAuthorityBoost. Boosts court
+   * decisions based on global inbound citation count (precedent authority).
+   * Tiered: >5 citations → ×1.03, >20 → ×1.05, >50 → ×1.08, >100 → ×1.10.
+   * Floor-ratio-gated like other post-fusion stages.
+   */
+  citation_authority_boost?: number;
+  /**
+   * v0.48 — citation validity status from frontmatter. Values: "good_law"
+   * (default), "overturned", "superseded", "confirmed". Set by enrichment
+   * script from RIS API or text heuristics. Used by applyCitationValidityBoost.
+   */
+  citation_status?: "good_law" | "overturned" | "superseded" | "confirmed";
+  /**
+   * v0.48 — multiplier applied by applyCitationValidityBoost. Demotes
+   * overturned (×0.85) and superseded (×0.92) decisions, boosts confirmed
+   * (×1.02). Floor-ratio-gated like other post-fusion stages.
+   */
+  citation_validity_boost?: number;
   /**
    * v0.44 — relevance score assigned by the LLM re-ranker (DeepSeek cross-encoder).
    * Set when llmRerank is enabled in SearchOpts. Doesn't replace `score` —
@@ -1083,6 +1120,7 @@ export interface SearchOpts {
     | "embedding"
     | "embedding_image"
     | "embedding_multimodal"
+    | "embedding_half"
     | string
     | ResolvedColumn;
   /**
@@ -1235,6 +1273,23 @@ export interface SearchOpts {
    */
   relationalRetrieval?: boolean;
   relationalRetrievalDepth?: number;
+
+  /**
+   * v0.48 — Legal metadata filters for court decisions. These filter on
+   * frontmatter jsonb fields (court, legal_area, date) stored per page.
+   * Applied at SQL level via frontmatter->>'key' predicates, leveraging
+   * the existing GIN index on frontmatter.
+   *
+   * All filters are optional and combine with AND. Undefined = no filter.
+   */
+  /** Filter by court name (e.g. "OGH", "BGH", "BFH", "VfGH"). Case-insensitive. */
+  court?: string;
+  /** Filter by legal area (e.g. "Zivilrecht", "Strafrecht", "Verwaltungsrecht"). */
+  legalArea?: string;
+  /** Filter court decisions: only include decisions on or after this date (YYYY-MM-DD). */
+  decisionDateFrom?: string;
+  /** Filter court decisions: only include decisions on or before this date (YYYY-MM-DD). */
+  decisionDateTo?: string;
 }
 
 /**

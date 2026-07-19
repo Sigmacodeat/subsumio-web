@@ -114,6 +114,7 @@ import {
   buildVisibilityClause,
   buildRecencyComponentSql,
   buildBestPerPagePoolCte,
+  buildLegalMetadataClause,
 } from "./search/sql-ranking.ts";
 import {
   normalizeEngineColumn,
@@ -1650,6 +1651,19 @@ export class PGLiteEngine implements BrainEngine {
       params.push(opts.sourceId);
       extraFilter += ` AND p.source_id = $${params.length}`;
     }
+    // v0.48 — legal metadata filters (court, legal_area, decision date range).
+    extraFilter +=
+      " " +
+      buildLegalMetadataClause(
+        "p",
+        {
+          court: opts?.court,
+          legalArea: opts?.legalArea,
+          decisionDateFrom: opts?.decisionDateFrom,
+          decisionDateTo: opts?.decisionDateTo,
+        },
+        params
+      );
 
     const { rows } = await this.db.query(
       `WITH ranked AS (
@@ -1911,6 +1925,19 @@ export class PGLiteEngine implements BrainEngine {
       params.push(opts.sourceId);
       extraFilter += ` AND p.source_id = $${params.length}`;
     }
+    // v0.48 — legal metadata filters (court, legal_area, decision date range).
+    extraFilter +=
+      " " +
+      buildLegalMetadataClause(
+        "p",
+        {
+          court: opts?.court,
+          legalArea: opts?.legalArea,
+          decisionDateFrom: opts?.decisionDateFrom,
+          decisionDateTo: opts?.decisionDateTo,
+        },
+        params
+      );
 
     // visibilityClause already declared above (v0.32.7: hoisted so CJK branch can reuse).
 
@@ -2008,6 +2035,19 @@ export class PGLiteEngine implements BrainEngine {
       params.push(opts.sourceId);
       extraFilter += ` AND p.source_id = $${params.length}`;
     }
+    // v0.48 — legal metadata filters (court, legal_area, decision date range).
+    extraFilter +=
+      " " +
+      buildLegalMetadataClause(
+        "p",
+        {
+          court: opts?.court,
+          legalArea: opts?.legalArea,
+          decisionDateFrom: opts?.decisionDateFrom,
+          decisionDateTo: opts?.decisionDateTo,
+        },
+        params
+      );
 
     // v0.26.5: visibility filter applied in the inner CTE so HNSW sees the
     // same candidate count it always did. See postgres-engine.ts for rationale.
@@ -3405,6 +3445,33 @@ export class PGLiteEngine implements BrainEngine {
     for (const r of rows as { id: number; reason: string | null; detail: string | null }[]) {
       if (!r.reason) continue;
       result.set(Number(r.id), { reason: r.reason, detail: r.detail ?? "" });
+    }
+    return result;
+  }
+
+  async getCitationStatuses(
+    pageIds: number[]
+  ): Promise<Map<number, "good_law" | "overturned" | "superseded" | "confirmed">> {
+    const result = new Map<number, "good_law" | "overturned" | "superseded" | "confirmed">();
+    if (pageIds.length === 0) return result;
+    const { rows } = await this.db.query(
+      `SELECT id,
+              frontmatter ->> 'citation_status' AS status
+       FROM pages
+       WHERE id = ANY($1::int[])
+         AND frontmatter ? 'citation_status'`,
+      [pageIds]
+    );
+    for (const r of rows as { id: number; status: string | null }[]) {
+      if (!r.status) continue;
+      if (
+        r.status === "good_law" ||
+        r.status === "overturned" ||
+        r.status === "superseded" ||
+        r.status === "confirmed"
+      ) {
+        result.set(Number(r.id), r.status);
+      }
     }
     return result;
   }

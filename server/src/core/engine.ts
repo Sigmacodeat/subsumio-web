@@ -1379,6 +1379,17 @@ export interface BrainEngine {
     pageIds: number[]
   ): Promise<Map<number, { reason: string; detail: string }>>;
   /**
+   * v0.48 — for a list of page_ids, return their
+   * `frontmatter.citation_status` values. Used by hybrid search
+   * applyCitationValidityBoost to demote overturned/superseded decisions
+   * and boost confirmed ones. Single SQL query, not N+1. Pages without
+   * the marker get no entry in the map (treated as "good_law" by caller).
+   * Empty input → empty map (no query).
+   */
+  getCitationStatuses(
+    pageIds: number[]
+  ): Promise<Map<number, "good_law" | "overturned" | "superseded" | "confirmed">>;
+  /**
    * v0.27.0: for a list of slugs, return their updated_at timestamps (or created_at fallback).
    * Used by hybrid search recency boost. Single SQL query, not N+1.
    * Slugs with no timestamp get no entry in the map.

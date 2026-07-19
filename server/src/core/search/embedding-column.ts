@@ -310,6 +310,15 @@ export function getEmbeddingColumnRegistry(
     type: "vector",
   };
 
+  // v0.42: Builtin 'embedding_half' — halfvec(1536) mirror of 'embedding'.
+  // Same model/dims as 'embedding' but type=halfvec for 50% smaller HNSW
+  // index and faster traversal. Populated by UPDATE embedding_half = embedding::halfvec(1536).
+  out["embedding_half"] = {
+    provider: embedModel,
+    dimensions: embedDims,
+    type: "halfvec",
+  };
+
   // Builtin: 'embedding_image' — derived from multimodal config keys.
   // Hardcoded 1024d / vector because that's the committed schema shape
   // (see src/schema.sql:158). If the user runs a different multimodal
@@ -559,6 +568,17 @@ export function normalizeEngineColumn(
       type: "vector",
       dimensions: 1024,
       embeddingModel: "voyage:voyage-multimodal-3",
+    };
+  }
+
+  // v0.42: halfvec column — 50% smaller than vector, ~50% faster HNSW
+  // traversal, <1% recall loss. Cast from embedding::halfvec(1536).
+  if (embeddingColumn === "embedding_half") {
+    return {
+      name: "embedding_half",
+      type: "halfvec",
+      dimensions: 1536,
+      embeddingModel: "",
     };
   }
 
