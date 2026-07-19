@@ -49,6 +49,22 @@ services:
   db:
     image: pgvector/pgvector:pg16
     restart: unless-stopped
+    shm_size: 4gb
+    command: >
+      postgres
+      -c shared_buffers=2GB
+      -c effective_cache_size=6GB
+      -c work_mem=32MB
+      -c maintenance_work_mem=2GB
+      -c effective_io_concurrency=200
+      -c wal_buffers=16MB
+      -c checkpoint_completion_target=0.9
+      -c random_page_cost=1.1
+      -c max_parallel_workers=4
+      -c max_parallel_workers_per_gather=2
+      -c max_parallel_maintenance_workers=4
+      -c autovacuum=on
+      -c autovacuum_naptime=30s
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-subsumio}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
@@ -71,6 +87,7 @@ services:
       context: ../.. # = server/  (where the Dockerfile lives)
       dockerfile: Dockerfile
     restart: unless-stopped
+    shm_size: 1gb
     env_file: .env
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-subsumio}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-subsumio}
@@ -79,6 +96,8 @@ services:
       GBRAIN_HOME: /data # legacy alias for engine internals
       CLAMAV_HOST: clamav:3310
       SUBSUMIO_PRESIGNED_UPLOAD_ENABLED: ${SUBSUMIO_PRESIGNED_UPLOAD_ENABLED:-false}
+      # Unified corpus root — engine reads law files from here
+      LAW_CORPUS_ROOT: /law-corpus
     volumes:
       - engine-data:/data # uploaded files / vault on durable volume
       # Read-only ADVOKAT export/document mirror. Point the host side at an
@@ -250,12 +269,32 @@ services:
       # OpenRouter (for embedding calls via auto-embed-pg.ts)
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_API_KEY_FALLBACK: ${OPENROUTER_API_KEY_FALLBACK:-}
+      SUBSUMIO_EMBEDDING_MODEL: ${SUBSUMIO_EMBEDDING_MODEL:-openrouter:openai/text-embedding-3-small}
+      SUBSUMIO_EMBEDDING_DIMENSIONS: ${SUBSUMIO_EMBEDDING_DIMENSIONS:-1536}
+      # RIS Proxy — disabled: all 10 proxies were dead (timeout on every HTTPS request).
+      # Re-enable by setting RIS_PROXY_URLS in .env with working proxy URLs.
+      RIS_PROXY_URLS: ""
+      RIS_PROXY_DELAY: ${RIS_PROXY_DELAY:-1500}
+      RIS_PROXY_CONCURRENCY: ${RIS_PROXY_CONCURRENCY:-0}
+      # Pipeline pause flag — when "true", orchestrator reports but starts no jobs
+      PIPELINE_PAUSED: ${PIPELINE_PAUSED:-true}
+      # Unified corpus root — all scripts use this path for law-corpus files
+      LAW_CORPUS_ROOT: /law-corpus
+      # Config home — must match engine so gbrain config.json is found
+      GBRAIN_HOME: /data
+      # Anthropic + OpenAI (for LLM calls in pipeline scripts)
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     volumes:
       # law-corpus — bind mount to host directory where fetch scripts placed files
       - /opt/subsumio/law-corpus:/law-corpus
       # Pipeline logs
       - corpus-logs:/root/subsumio-pipeline-logs
+      # Engine data (for gbrain config.json at /data/.gbrain/config.json)
+      - engine-data:/data:ro
     working_dir: /app
+    healthcheck:
+      test: ["NONE"]
     entrypoint: >
       sh -c "
         bun scripts/corpus-pipeline.ts --loop --interval $${PIPELINE_INTERVAL_S:-600}
