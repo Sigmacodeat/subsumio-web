@@ -1949,6 +1949,10 @@ export interface HybridSearchOpts extends SearchOpts {
   rrfK?: number;
   /** Override the inner candidate limit (default: limit * 2). Increasing this gives RRF fusion and the LLM reranker more candidates to work with. */
   innerLimit?: number;
+  /** Override keyword weight in RRF fusion (default: from intent classifier). Higher = keyword results contribute more. */
+  keywordWeight?: number;
+  /** Override vector weight in RRF fusion (default: from intent classifier). Higher = vector results contribute more. */
+  vectorWeight?: number;
   /** Override dedup pipeline parameters. */
   dedupOpts?: {
     cosineThreshold?: number;
@@ -2859,8 +2863,8 @@ export async function hybridSearch(
   // contributions up by lowering their k. The base rrfK still controls
   // the overall RRF shape; intent weights tilt within that shape.
   const baseRrfK = opts?.rrfK ?? RRF_K;
-  const keywordK = effectiveRrfK(baseRrfK, intentWeights.keywordWeight);
-  const vectorK = effectiveRrfK(baseRrfK, intentWeights.vectorWeight);
+  const keywordK = effectiveRrfK(baseRrfK, opts?.keywordWeight ?? intentWeights.keywordWeight);
+  const vectorK = effectiveRrfK(baseRrfK, opts?.vectorWeight ?? intentWeights.vectorWeight);
 
   // v0.36 cross-modal (D6): in 'both' mode, vectorLists carries
   // [textList, imageList]. Apply per-modality RRF weights so the merge
