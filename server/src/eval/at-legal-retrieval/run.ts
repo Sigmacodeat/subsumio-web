@@ -89,7 +89,13 @@ interface ParsedArgs {
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
-  const out: ParsedArgs = { fixturePath: "", topK: 8, append: false, byType: false, llmRerank: false };
+  const out: ParsedArgs = {
+    fixturePath: "",
+    topK: 8,
+    append: false,
+    byType: false,
+    llmRerank: false,
+  };
   const args = argv.slice(2);
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -239,9 +245,10 @@ async function main() {
       // This is the realistic metric — finding the right law is what the user needs;
       // the exact paragraph can be scrolled to.
       const lawPrefix = q.expected_slug.replace(/\/(?:p|art)-[^/]+$/, "/");
-      const lawFirstHit = lawPrefix !== q.expected_slug
-        ? rankedSlugs.findIndex((s) => s.startsWith(lawPrefix))
-        : firstHit;
+      const lawFirstHit =
+        lawPrefix !== q.expected_slug
+          ? rankedSlugs.findIndex((s) => s.startsWith(lawPrefix))
+          : firstHit;
       const lawHitAt = (k: number) => lawFirstHit >= 0 && lawFirstHit < k;
 
       const result: QuestionResult = {
@@ -270,6 +277,13 @@ async function main() {
       process.stderr.write(
         `[at-legal-retrieval] ${questionIdx}/${questions.length} (${pct}%) ${hit} ${q.question_id}\n`
       );
+      // Keepalive: LLM rerank adds 5-15s latency between DB queries; without
+      // this the pool's idle_timeout (20s) closes the connection mid-benchmark.
+      if (opts.llmRerank && questionIdx < questions.length) {
+        try {
+          await engine.searchKeyword("keepalive", { limit: 1 });
+        } catch {}
+      }
     } catch (err: any) {
       results.push({
         question_id: q.question_id,
