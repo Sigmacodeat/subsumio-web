@@ -2992,6 +2992,7 @@ export async function hybridSearch(
   // v0.44 — LLM-based re-ranker for paragraph-level precision. Slots after
   // the cross-encoder reranker and before alias-hop. Fail-open: any error
   // returns reranked results in original order.
+  console.error("[LLM-RERANK-CHECK] opts?.llmRerank:", JSON.stringify(opts?.llmRerank));
   const llmReranked = opts?.llmRerank?.enabled
     ? await applyLLMReranker(query, reranked, opts.llmRerank)
     : reranked;
