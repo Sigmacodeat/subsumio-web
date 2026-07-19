@@ -78,7 +78,7 @@ jobs:
         run: bun run test:workflow
       - name: Upload workflow report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-workflow-report
           path: tests/e2e-workflow-report.json
@@ -251,7 +251,7 @@ jobs:
           cp -r server/src/eval/test-gate/trends/smoke.jsonl gate-artifacts/ 2>/dev/null || true
       - name: Upload smoke gate artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: smoke-gate-${{ github.run_id }}-${{ github.run_attempt }}
           path: gate-artifacts/
