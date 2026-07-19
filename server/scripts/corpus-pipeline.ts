@@ -80,6 +80,19 @@ const INTERVAL_S = intervalIdx >= 0 ? parseInt(args[intervalIdx + 1], 10) : 600;
 // Configurable alert webhook (optional). Set ALERT_WEBHOOK env var to a URL
 // that accepts POST JSON. Alerts are also stored in pipeline_state.alert_flags.
 const ALERT_WEBHOOK = process.env.ALERT_WEBHOOK || "";
+// Pipeline pause flag — when paused, orchestrator reports but starts no jobs.
+// Two layers: the env var is the incident-time override (needs restart), the
+// pipeline_config DB row is dashboard-controlled and re-read every cycle.
+const PIPELINE_PAUSED_ENV = (process.env.PIPELINE_PAUSED || "false").toLowerCase() === "true";
+let pipelinePausedDb = false;
+function refreshPausedFlag(): void {
+  // sh() returns "" on any error (e.g. table missing on older DBs) → not paused.
+  const raw = psqlQuery("SELECT value->>'paused' FROM pipeline_config WHERE key = 'paused'");
+  pipelinePausedDb = raw.trim() === "true";
+}
+function isPipelinePaused(): boolean {
+  return PIPELINE_PAUSED_ENV || pipelinePausedDb;
+}
 // How many files to sample for Stichproben-Zweitfetch (default 50)
 const SAMPLE_SIZE = parseInt(process.env.PIPELINE_SAMPLE_SIZE || "50", 10);
 // Gap threshold for Mengen-Abgleich alert (RIS vs disk, percentage)
@@ -658,6 +671,10 @@ function startProcess(
   sourceKey: string,
   timeoutS: number = 3600
 ): void {
+  if (isPipelinePaused()) {
+    console.log(`  ⏸️  PAUSED — would start: ${name} (${argv.join(" ")})`);
+    return;
+  }
   const log = join(LOG_DIR, `${name}.log`);
   const exitFile = exitFileFor(name);
   try {
@@ -1027,6 +1044,9 @@ async function cycle(): Promise<void> {
     console.log("  ⏭️ Cycle skipped — another pipeline instance holds the lock");
     return;
   }
+
+  // Dashboard-steuerbarer Pausenschalter (pipeline_config) — jeden Zyklus neu lesen.
+  refreshPausedFlag();
 
   try {
     // Load state from DB (not JSON file)
@@ -1532,6 +1552,8 @@ async function main() {
   }
   if (LOOP) {
     console.log(`Corpus-Pipeline Supervisor — Loop alle ${INTERVAL_S}s (Logs: ${LOG_DIR})`);
+    if (isPipelinePaused())
+      console.log(`⏸️  PIPELINE PAUSED — reporting only, no jobs will be started`);
     if (ALERT_WEBHOOK) console.log(`Alert webhook: ${ALERT_WEBHOOK}`);
     // eslint-disable-next-line no-constant-condition
     while (true) {

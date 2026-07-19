@@ -18,7 +18,12 @@ import { CORPUS_DIR } from "@/lib/legal-grounding";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
-export type SourceType = "statute_corpus" | "judgement_api" | "regulatory_feed" | "commercial";
+export type SourceType =
+  | "statute_corpus"
+  | "judgement_api"
+  | "literature_corpus"
+  | "regulatory_feed"
+  | "commercial";
 export type SourceStatus = "fresh" | "stale" | "syncing" | "error" | "unknown";
 export type AuthorityTier = "official" | "semi-official" | "community" | "commercial";
 export type JurisdictionCode = "DE" | "AT" | "CH" | "EU" | "ALL";
@@ -118,6 +123,60 @@ const JUDGEMENT_APIS: JudgementApiDef[] = [
     license: "EUR-Lex — Amtliche Veröffentlichung der Europäischen Union",
     api_endpoint: "https://eur-lex.europa.eu/europa-webservices/rs/search",
     auto_sync_interval_hours: 48,
+  },
+];
+
+// ── Literature / Materialien corpus definitions ───────────────────────
+// Directory-based sources (many .md files per dir), harvested by
+// server/scripts/fetch-*.ts. License terms mirror the engine's
+// license-registry (server/src/core/legal/license-registry.ts).
+
+interface LiteratureCorpusDef {
+  id: string;
+  label: string;
+  jurisdiction: JurisdictionCode;
+  authority_tier: AuthorityTier;
+  license: string;
+  dir: string; // under law-corpus/
+  auto_sync_interval_hours: number;
+}
+
+const LITERATURE_CORPORA: LiteratureCorpusDef[] = [
+  {
+    id: "lit-de-materialien",
+    label: "Gesetzesmaterialien (BT/BR-Drucksachen, DIP)",
+    jurisdiction: "DE",
+    authority_tier: "official",
+    license: "Amtliches Werk, § 5 UrhG — DIP, Deutscher Bundestag",
+    dir: "de-materialien",
+    auto_sync_interval_hours: 168, // wöchentlich
+  },
+  {
+    id: "lit-de-literatur",
+    label: "Literatur DE (OpenRewi, Verfassungsblog)",
+    jurisdiction: "DE",
+    authority_tier: "community",
+    license: "CC BY-SA 4.0 — Namensnennung + Share-Alike",
+    dir: "de-literatur",
+    auto_sync_interval_hours: 168,
+  },
+  {
+    id: "lit-at-literatur",
+    label: "Literatur AT (Austrian Law Journal)",
+    jurisdiction: "AT",
+    authority_tier: "community",
+    license: "Diamond Open Access (DOAJ) — Abstracts via OAI-PMH",
+    dir: "at-literatur",
+    auto_sync_interval_hours: 336, // zweiwöchentlich
+  },
+  {
+    id: "lit-ch-literatur",
+    label: "Literatur CH (Onlinekommentar, sui generis)",
+    jurisdiction: "CH",
+    authority_tier: "community",
+    license: "CC BY 4.0 / CC BY-SA 4.0 — Namensnennung erforderlich",
+    dir: "ch-literatur",
+    auto_sync_interval_hours: 336,
   },
 ];
 
@@ -299,6 +358,71 @@ async function getFileMtime(filePath: string): Promise<string | null> {
   }
 }
 
+/**
+ * Scan a literature corpus directory: .md file count + directory mtime.
+ * Dir mtime (updates on add/remove) avoids stat-ing thousands of files;
+ * a re-harvest that only rewrites existing files is still caught via the
+ * newest mtime of a small sample.
+ */
+export async function scanLiteratureDir(
+  dirPath: string
+): Promise<{ exists: boolean; document_count: number; last_modified: string | null }> {
+  try {
+    const entries = await fs.readdir(dirPath);
+    const mdFiles = entries.filter((f) => f.endsWith(".md"));
+    const dirStat = await fs.stat(dirPath);
+    let newest = dirStat.mtime;
+    for (const f of mdFiles.slice(0, 25)) {
+      try {
+        const st = await fs.stat(path.join(dirPath, f));
+        if (st.mtime > newest) newest = st.mtime;
+      } catch {
+        // einzelne Datei nicht lesbar — ignorieren
+      }
+    }
+    return {
+      exists: true,
+      document_count: mdFiles.length,
+      last_modified: newest.toISOString(),
+    };
+  } catch {
+    return { exists: false, document_count: 0, last_modified: null };
+  }
+}
+
+export async function buildLiteratureEntries(): Promise<SourceRegistryEntry[]> {
+  return Promise.all(
+    LITERATURE_CORPORA.map(async (def): Promise<SourceRegistryEntry> => {
+      const scan = await scanLiteratureDir(path.join(CORPUS_DIR, def.dir));
+      const { freshness_hours, status } = calculateFreshness(
+        scan.last_modified,
+        def.auto_sync_interval_hours
+      );
+      return {
+        id: def.id,
+        type: "literature_corpus",
+        label: def.label,
+        jurisdiction: def.jurisdiction,
+        authority_tier: def.authority_tier,
+        license: def.license,
+        // Leeres/fehlendes Verzeichnis ist kein Fehler, sondern "noch nicht
+        // geerntet" (z.B. de-materialien vor dem DIP-Key).
+        status: scan.exists && scan.document_count > 0 ? status : "unknown",
+        last_sync_at: scan.last_modified,
+        freshness_hours,
+        auto_sync_interval_hours: def.auto_sync_interval_hours,
+        document_count: scan.document_count,
+        file_path: def.dir,
+        enabled: scan.exists,
+        last_error:
+          scan.exists && scan.document_count === 0
+            ? "Noch kein Bestand — Fetch-Script ausführen (siehe docs/LITERATUR_CORPUS.md)"
+            : undefined,
+      };
+    })
+  );
+}
+
 export function buildJudgementApiEntries(
   syncStatus?: Record<string, { last_sync_at: string | null; last_error?: string }>
 ): SourceRegistryEntry[] {
@@ -329,12 +453,13 @@ export function buildJudgementApiEntries(
 export async function buildSourceRegistry(
   syncStatus?: Record<string, { last_sync_at: string | null; last_error?: string }>
 ): Promise<SourceRegistryResponse> {
-  const [statuteEntries, judgementEntries] = await Promise.all([
+  const [statuteEntries, judgementEntries, literatureEntries] = await Promise.all([
     buildStatuteEntries(),
     Promise.resolve(buildJudgementApiEntries(syncStatus)),
+    buildLiteratureEntries(),
   ]);
 
-  const sources = [...statuteEntries, ...judgementEntries];
+  const sources = [...statuteEntries, ...judgementEntries, ...literatureEntries];
 
   return {
     sources,

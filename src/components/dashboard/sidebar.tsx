@@ -108,6 +108,7 @@ import {
   FileText,
   ChevronsDownUp,
   BrainCog,
+  Workflow,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -907,6 +908,23 @@ const ADMIN_SECTION: NavSection = {
       audienceTier: "system",
     },
     {
+      href: "/dashboard/admin/corpus",
+      icon: Database,
+      labelKey: "nav.corpus_dashboard",
+      keywords: "corpus embedding chunking chunks vector hnsw index retrieval quality",
+      tier: "admin",
+      audienceTier: "system",
+      tooltipKey: "nav.tooltip.corpus_dashboard",
+    },
+    {
+      href: "/dashboard/admin/pipeline",
+      icon: Workflow,
+      labelKey: "nav.corpus_pipeline",
+      keywords: "pipeline korpus supervisor backfill import embed reconcile alerts pause resume",
+      tier: "admin",
+      audienceTier: "system",
+    },
+    {
       href: "/dashboard/mobile",
       icon: Smartphone,
       labelKey: "nav.mobile",
@@ -1515,6 +1533,23 @@ const TAX_ADMIN_SECTION: NavSection = {
       icon: Activity,
       labelKey: "nav.slo",
       keywords: "slo service level objective monitoring metrics alerts",
+      tier: "admin",
+      audienceTier: "system",
+    },
+    {
+      href: "/dashboard/admin/corpus",
+      icon: Database,
+      labelKey: "nav.corpus_dashboard",
+      keywords: "corpus embedding chunking chunks vector hnsw index retrieval quality",
+      tier: "admin",
+      audienceTier: "system",
+      tooltipKey: "nav.tooltip.corpus_dashboard",
+    },
+    {
+      href: "/dashboard/admin/pipeline",
+      icon: Workflow,
+      labelKey: "nav.corpus_pipeline",
+      keywords: "pipeline korpus supervisor backfill import embed reconcile alerts pause resume",
       tier: "admin",
       audienceTier: "system",
     },

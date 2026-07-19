@@ -82,6 +82,7 @@ const STATUS_CONFIG: Record<
 const TYPE_CONFIG: Record<SourceType, { labelKey: DashboardKey; icon: React.ElementType }> = {
   statute_corpus: { labelKey: "sources.type_statute", icon: Scale },
   judgement_api: { labelKey: "sources.type_judgement", icon: Landmark },
+  literature_corpus: { labelKey: "sources.type_literature", icon: FileText },
   regulatory_feed: { labelKey: "sources.type_regulatory", icon: Globe },
   commercial: { labelKey: "sources.type_commercial", icon: Database },
 };
@@ -459,6 +460,7 @@ export default function SourcesPage() {
           <option value="all">{t("sources.all_types")}</option>
           <option value="statute_corpus">{t("sources.type_statute")}</option>
           <option value="judgement_api">{t("sources.type_judgement")}</option>
+          <option value="literature_corpus">{t("sources.type_literature")}</option>
         </select>
         <select
           value={statusFilter}

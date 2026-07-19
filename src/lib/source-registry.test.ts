@@ -267,6 +267,22 @@ describe("buildSourceRegistry", () => {
     expect(types.has("judgement_api")).toBe(true);
   });
 
+  it("includes all four literature_corpus sources with license + jurisdiction", async () => {
+    const lit = registry.sources.filter((s) => s.type === "literature_corpus");
+    expect(lit.map((s) => s.id).sort()).toEqual([
+      "lit-at-literatur",
+      "lit-ch-literatur",
+      "lit-de-literatur",
+      "lit-de-materialien",
+    ]);
+    for (const entry of lit) {
+      expect(entry.license.length).toBeGreaterThan(10);
+      expect(["DE", "AT", "CH"]).toContain(entry.jurisdiction);
+      // Leerer/fehlender Bestand ist "unknown" (noch nicht geerntet), nie "error".
+      expect(entry.status).not.toBe("error");
+    }
+  });
+
   it("includes DE, AT, and CH jurisdictions", async () => {
     const jurisdictions = new Set(registry.sources.map((s) => s.jurisdiction));
     expect(jurisdictions.has("DE")).toBe(true);
