@@ -2168,7 +2168,7 @@ export class PostgresEngine implements BrainEngine {
     // recall when HNSW traverses a subset of the graph. Unfiltered queries can
     // use a lower ef for speed.
     const hasSourceFilter = !!(opts?.sourceIds?.length || opts?.sourceId);
-    const efSearch = hasSourceFilter ? 500 : 100;
+    const efSearch = hasSourceFilter ? 1000 : 100;
 
     const rows = await sql.begin(async (sql) => {
       await sql`SET LOCAL statement_timeout = '15s'`;
