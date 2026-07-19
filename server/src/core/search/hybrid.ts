@@ -1947,6 +1947,8 @@ export interface HybridSearchOpts extends SearchOpts {
   expandFn?: (query: string) => Promise<string[]>;
   /** Override default RRF K constant (default: 60). Lower values boost top-ranked results more. */
   rrfK?: number;
+  /** Override the inner candidate limit (default: limit * 2). Increasing this gives RRF fusion and the LLM reranker more candidates to work with. */
+  innerLimit?: number;
   /** Override dedup pipeline parameters. */
   dedupOpts?: {
     cosineThreshold?: number;
@@ -2265,7 +2267,7 @@ export async function hybridSearch(
 
   const limit = opts?.limit || resolvedMode.searchLimit;
   const offset = opts?.offset || 0;
-  const innerLimit = Math.min(limit * 2, MAX_SEARCH_LIMIT);
+  const innerLimit = Math.min(opts?.innerLimit ?? limit * 2, MAX_SEARCH_LIMIT);
 
   // v0.32.x search-lite: classify intent once up front. Drives BOTH the
   // legacy auto-detail / salience / recency suggestions AND the new

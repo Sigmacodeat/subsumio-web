@@ -209,6 +209,7 @@ async function main() {
     try {
       const searchResults = await hybridSearch(engine, q.question, {
         limit: opts.topK,
+        innerLimit: 50,
         sourceId: "law-at",
         sourceIds: ["law-at", "law-at-judikatur", "law-eu"],
         jurisdiction: "at",
@@ -222,7 +223,7 @@ async function main() {
           ? {
               llmRerank: {
                 enabled: true,
-                topNIn: 25,
+                topNIn: 50,
                 model: "openrouter:deepseek/deepseek-chat",
                 timeoutMs: 30000,
               },
