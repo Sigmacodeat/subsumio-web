@@ -210,8 +210,8 @@ async function main() {
       const searchResults = await hybridSearch(engine, q.question, {
         limit: opts.topK,
         innerLimit: 50,
-        keywordWeight: 2.0,
-        vectorWeight: 0.5,
+        keywordWeight: 1.5,
+        vectorWeight: 0.7,
         sourceId: "law-at",
         sourceIds: ["law-at", "law-at-judikatur", "law-eu"],
         jurisdiction: "at",
