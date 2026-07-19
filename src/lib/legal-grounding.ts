@@ -190,6 +190,71 @@ export async function lookupCorpusParagraph(
   }
 }
 
+// ── Literature / Materialien grounding ───────────────────────────────
+
+import type { RawLiteratureCitation } from "@/lib/citation-gate-client";
+
+/**
+ * Verify literature/materialien citations against the corpus on disk.
+ *
+ * - materialien   → law-corpus/de-materialien/<file>.md (BT/BR-Drucksachen)
+ * - kommentar_oa  → law-corpus/ch-literatur/<file>.md  (Onlinekommentar, CC BY)
+ * - licensed_work → NEVER verifies: we hold no license for publisher text.
+ *   The citation is flagged instead of silently dropped.
+ */
+export async function groundLiteratureCitations(
+  refs: RawLiteratureCitation[]
+): Promise<GroundedCitation[]> {
+  const results: GroundedCitation[] = [];
+
+  for (const ref of refs.slice(0, 20)) {
+    if (ref.kind === "licensed_work") {
+      results.push({
+        code: ref.work,
+        paragraph: ref.ref,
+        context: ref.raw,
+        verified: false,
+        category: "verlags_literatur",
+        jurisdiction: ref.jurisdiction,
+        unverifiable_reason:
+          `Verlags-Content (${ref.work}) — nicht im freien Korpus, ` +
+          "keine Verifikation möglich. Zitat anwaltlich prüfen.",
+      });
+      continue;
+    }
+
+    const category = ref.kind === "materialien" ? "materialien" : "literatur";
+    const file = path.join(CORPUS_DIR, ref.corpusDir!, `${ref.corpusFile}.md`);
+    let body: string | null = null;
+    try {
+      const content = await fs.readFile(file, "utf8");
+      const end = content.startsWith("---") ? content.indexOf("---", 3) : -1;
+      body = (end !== -1 ? content.slice(end + 3) : content).trim();
+    } catch {
+      body = null;
+    }
+
+    results.push({
+      code: ref.work,
+      paragraph: ref.ref,
+      context: ref.raw,
+      verified: body !== null,
+      category,
+      jurisdiction: ref.jurisdiction,
+      ...(body
+        ? { source_text: body.slice(0, 600), source_file: `${ref.corpusDir}/${ref.corpusFile}.md` }
+        : {
+            unverifiable_reason:
+              ref.kind === "materialien"
+                ? "Drucksache nicht im Korpus (Materialien-Import ausstehend oder Nummer falsch)"
+                : "Kommentierung nicht im Korpus gefunden",
+          }),
+    });
+  }
+
+  return results;
+}
+
 export async function groundCitations(rawCitations: RawCitation[]): Promise<GroundedCitation[]> {
   const results: GroundedCitation[] = [];
 
@@ -231,7 +296,8 @@ export async function groundCitations(rawCitations: RawCitation[]): Promise<Grou
     };
 
     if (!sourceText) {
-      result.unverifiable_reason = detectUnverifiableCitation(code, context) || "Paragraph not found";
+      result.unverifiable_reason =
+        detectUnverifiableCitation(code, context) || "Paragraph not found";
     }
 
     results.push(result);

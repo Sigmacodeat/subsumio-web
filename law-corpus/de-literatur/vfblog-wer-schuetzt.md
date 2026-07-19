@@ -1,0 +1,49 @@
+---
+title: Verfassungsblog — Afghanistan – wer schützt das Völkerrecht?
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2021-10-26'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/wer-schuetzt/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Afghanistan – wer schützt das Völkerrecht?
+
+In Einem sind sich politische Parteien, Medien und Öffentlichkeit einig: ob man den Rückzug der Bundeswehr aus Afghanistan nun Desaster, Debakel oder Niederlage nennt, er soll gründlich analysiert werden, und mit ihm der gesamte Einsatz seit 2001. Bei aller Skepsis, ob das bei der ständig betonten weltweiten Verantwortung der Bundesrepublik wirklich tiefgreifend geschieht, ist ein Defizit schon heute offensichtlich. Die völkerrechtliche Legitimation des Kriegseinsatzes steht nicht zur Debatte. Doch muss eine unvoreingenommene Analyse zu dem Ergebnis kommen: der Krieg begann mit einem Verstoß gegen das Völkerrecht, produzierte in seinen 20 Jahren zahlreiche Kriegsverbrechen und endete nun mit einem letzten Bruch des Völkerrechts.
+
+## Verteidigung oder Aggression?
+
+Gehen wir an den Anfang. Schon einen Tag nach dem historischen Anschlag auf das World Trade Center wusste die US-Regierung, wer ihn zu verantworten hatte und wo der Verantwortliche sich aufhielt. Sie beantragte am 12. September 2001 bei dem UN-Sicherheitsrat ein Mandat für einen Angriff auf Afghanistan, wo sich Bin Laden versteckt hielt. Doch der Sicherheitsrat verweigerte eine derartiges Mandat. In seiner Resolution. 1368 vom gleichen Tag sah er in dem Anschlag zwar eine „Bedrohung des Weltfriedens und der internationalen Sicherheit“, die gemäß Art. 39 und 42 UNO-Charta Voraussetzung für eine militärische Antwort ist. Er stufte die Angriffe jedoch als „terroristische Handlungen“ ein, auf die nicht wie auf Kriegsakte mit militärischen Mittel der UNO-Charta reagiert werden kann. Terrorakte sind Gewalt von nichtstaatlichen Akteuren gegen Zivilisten oder zivile Objekte und werden nach den zahlreichen Anti-Terrorkonventionen bekämpft. So etwa nach den Regeln der „Montreal-Konvention von 1971 zur Bekämpfung widerrechtlicher Handlungen gegen die Sicherheit der Zivilluftfahrt“, der „Konvention gegen Geiselnahme“ von 1979 oder dem „Übereinkommen gegen Geiselnahme“ von 1999. Da alle 19 Piloten bei den Angriffen ums Leben gekommen waren, hätten die USA auf der Basis der „Montreal Konvention“ Verhandlungen eröffnen sollen, nach Bin Laden fahnden lassen und seine Auslieferung verlangen können. Diese war übrigens von den Taliban verschiedentlich angeboten worden. Am 28. September versuchte Bush noch einmal, die Zustimmung für militärische Gewalt zu bekommen, er sprach nun von „Akten des Krieges“. Er scheiterte aber wiederum, der Sicherheitsrat bezeichnete die Angriffe in seiner Resolution 1373 erneut als „terroristische Akte“.
+
+Am 7. Oktober teilte Botschafter Negroponte dem Sicherheitsrat mit, dass die USA nunmehr ihr Recht auf Selbstverteidigung gemäß Art. 51 UNO-Charta in Anspruch nehmen wollten. Die „Operation Enduring Freedom“ (OEF) dauerte bis zum 31. Dezember 2014. Doch auch diese Rechtgrundlage trifft nicht zu, da terroristische Handlungen kein Recht auf Selbstverteidigung mit militärischen Mitteln auslösen. Es gab damals keine Beweise, dass die Taliban als afghanische Regierung hinter den Anschlägen standen. Wie Verteidigungsminister Powell in einem Interview mit der „New York Times“ sagte, gab es nicht einmal Indizien gegen Bin Laden. Eine Anklage hätte nicht einmal vor einem normalen Strafgericht standgehalten. Es gab schlicht keine völkerrechtliche Grundlage für den Angriff auf Afghanistan.
+
+Damit fehlte auch dem Beschluss der NATO am 12. Oktober, mit dem sie den Bündnisfall nach Art. 5 NATO-Vertrag ausrief, die rechtliche Grundlage. Die USA waren nicht militärisch angegriffen worden, die NATO konnte sich nicht auf die Legitimation „kollektiver Selbstverteidigung“ nach Art. 51 UNO-Charta berufen. Gegen Terrorakte wie im Fall Lockerbie oder der Anschläge auf die Botschaften der USA in Afrika hatte es ebenfalls keinen Bündnisfall gegeben.
+
+Selbst wenn man der US-amerikanischen Argumentation folgt, lässt sich eine solche Verteidigungslegitimation nicht über Jahre hin begründen. Art. 51 UNO-Charta lässt Maßnahmen der individuellen und kollektiven Selbstverteidigung nur so lange zu, „bis der Sicherheitsrat die zur Wahrung des Weltfriedens und der internationalen Sicherheit erforderlichen Maßnahmen getroffen hat“. Dies war aber schon im Dezember 2001 mit der Einrichtung der International Security Assistance Force (ISAF)der Fall. Selbstverteidigung setzt die Gefahr eines unmittelbaren Angriffs auf das eigene Territorium oder das eines Bündnispartners voraus. Mit der Beseitigung der Talibanherrschaft im Herbst 2001 und der Vertreibung Osama Bin Ladens und der Al Qaida aus den Grenzgebirgen Afghanistans war der Verteidigungsauftrag der Militärintervention OEF erfüllt. Es drohte keine unmittelbare und gegenwärtige Gefahr mehr für das Territorium der USA, geschweige denn für Deutschland.
+
+Eine Legitimation lässt sich auch nicht aus Resolution 1386 (2001) herleiten, mit der der Sicherheitsrat am 20. Dezember 2001 ein zunächst auf sechs Monate begrenztes Mandat zur Aufstellung einer internationalen Sicherheitsunterstützungstruppe in Afghanistan beschloss. Obwohl es auf Kapitel VII der UNO-Charta basierend die Anwendung von Waffengewalt legitimierte, war es nur ein Mandat zur Friedenssicherung, zunächst in Kabul. Es wurde später mit der UN-Resolution 1510 vom 13. Oktober 2003 auf andere Landesteile ausgeweitet. Es war kein Mandat zur Terrorbekämpfung und wurde lange Zeit strikt vom OEF-Einsatz getrennt.
+
+## Nur Kriegsverbrechen der Taliban?
+
+Die zahllosen Toten und Verletzten unter der Zivilbevölkerung, die immer wiederkehrenden Berichte über Folter, Flucht und Vertreibung, die „Irrtümer“ beim Einsatz von Kampfdrohnen dokumentieren massive Verletzungen des humanitären Völkerrechts während der 20 Jahre Krieg. Die ehemalige Chefanklägerin des Internationalen Strafgerichtshofes, Fatou Bensouda, hatte bereits Untersuchungen wegen Kriegsverbrechen in die Wege geleitet. Ihr Nachfolger Karim Khan hat sie jedoch, wahrscheinlich auf Druck der USA, wieder eingestellt, aber Untersuchungen wegen Kriegsverbrechen der Taliban angekündigt. Selbst ein Kriegsverbrechen wie die Bombardierung eines Tanklastzuges am Kundusfluss im September 2009, bei dem über 100 Zivilisten umgekommen sind, blieb ohne strafgerichtliche Klärung 1) und angemessene Entschädigung der Opfer. Nichts spricht dafür, dass die Aufarbeitung des Kriegsgeschehens nicht ebenso scheitert wie nach dem Überfall auf Ex-Jugoslawien 1999 (Vgl. Carla Del Ponte, Ich bin keine Heldin, 2021, S. 65 ff).
+
+## Ein letztes Mandat?
+
+Schließlich das Ende dieses unrühmlichen Kriegszuges, der ein weitgehend zerstörtes Land und eine entwurzelte Gesellschaft hinterlässt. Während die Regierung mit einem großen Zapfenstreich und Lobgesängen auf die Bundeswehr versucht, die Öffentlichkeit und sich selbst über das komplette Scheitern der Mission hinwegzutäuschen, wird vollkommen übersehen, dass auch dieses Ende mit einem Bruch des Völkerrechts besiegelt wird. Denn die Bundesregierung beantragte am 6. Oktober im Bundestag ein Mandat für die Bundeswehr, die Evakuierung ihrer Ortskräfte im Lande bis zum Ende September fortführen zu können. Für dieses Mandat benötigte sie aber ein Mandat des UNO-Sicherheitsrats oder die Zustimmung der neuen Machthaber im Land, da das alte Mandat mit der Flucht des Präsidenten Ashraf Ghani und dem Zusammenbruch seiner Regierung keine Gültigkeit für den geplanten Zeitraum mehr hatte. Es erweiterte zudem den Einsatzbereich der Bundeswehr auf ganz Afghanistan und setzte dem Kontingent „im Notfall“ keine zahlenmäßigen Grenzen. Das bedeutete einen schweren Eingriff in die Souveränität Afghanistans, und die große Mehrheit des Bundestags stimmte zu – ein klarer Verstoß gegen das Völkerrecht.
+
+Die Regierung hatte ebenso wie die USA noch im August in Doha über eine Verlängerung des Mandats mit den Taliban verhandelt. Diese hatten abgelehnt, und die USA haben sich dem gefügt. Am Vorabend der Abstimmung im Bundestag hatte US-Präsident Biden den Rückzug der US-Truppen für den 31. August angekündigt. Alle Abgeordneten im Bundestag wussten also, dass ihr Mandat, über das sie abzustimmen hatten, ins Leere ging, da bekannt war, dass die Bundeswehr ohne die Unterstützung der USA ihre Evakuierungsflüge über den verlassenen Flughafen nicht mehr fortsetzen konnte. Was veranlasste die Mehrheit der Abgeordneten, einem völkerrechtswidrigen und obendrein sinnlosen, da undurchführbaren Mandat zuzustimmen oder sich der Stimme zu enthalten? Der Regierung ging es offensichtlich darum, ihr Versäumnis einer frühzeitigen Evakuierung noch in letzter Minute in ein Zeichen moralischer Verantwortung zu verwandeln. Und der Bundestag stimmte zu, da auch ihn der Vorwurf der Unterlassung traf – keine Sternstunde des Parlaments.
+
+So bleibt nur die Hoffnung, dass dem notorischen Bekenntnis zum Völkerrecht und einer „regelbasierten Ordnung“ bei der nächsten Versuchung, mit der Bundeswehr Ordnung zu stiften, der gebotene Vorrang vor der Entscheidung eingeräumt wird.
+
+ References[+]
+
+ References  
+
+ &#8593;1 Nachdem die Generalbundesanwaltschaft 2010 ihre Ermittlungen nach einem Monat gem. § 170 II StPO eingestellt hatte, wie die große Kammer des Europäischen Gerichtshof für Menschenrechte mit 14 zu 3 Stimmen am 16. Februar 2021 die Beschwerde gegen die Einstellung zurück. Die deutsche Justiz habe zwar Fehler begangen, aber insgesamt ausreichend Ermittlungen angestellt und nicht gegen Art. 2 Europäische Menschenrechtskonvention verstoßen, Beschwerde 4871/16.

@@ -1,0 +1,44 @@
+---
+title: Verfassungsblog — The European Union and the Erosion of State Capacity
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2016-06-13'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/the-european-union-and-the-erosion-of-state-capacity/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# The European Union and the Erosion of State Capacity
+
+The broad assumption in Europe is that member states of the European Union inherently have the capacity to implement EU legislation. This proceeds from the general understanding of Weber’s definition of the modern state as having a monopoly of legal violence within its territory. To this can be added the capacity of the state to “read” the population, to know through censuses, registers data bases who the inhabitants of the state are and, for that matter, where they are; the ability to impose taxes; and the capacity to sustain the uniform distribution of authority.
+
+Globalisation, it will argued here, has made serious inroads into state capacity and that factor, in turn, erodes the ability of the EU to perform what it sets out to do. Not least, the gap between form and content – always a problem – is likely to intensify rather than diminish, thereby potentially strengthening Euroscepticism. Indeed, at least a part of the dissatisfaction with the EU and the demands to claw back powers from Brussels can be attributed to this erosion. In this connection, the conferral of powers to the EU and implementing legislation that may follow acquire a particular significance. The perception of lack of control over political outcomes is thus attributed to the EU, whereas they are more to do with a set of interacting structural factors.
+
+The first of these is the role of tax havens. Despite whistleblowing, demands for transparency, dramatic revelations (LuxLeaks, Panama Papers), the reality is that tax havens are not a deviant, marginal feature of the relationship between the state and its ability to extract money through taxation, but an inescapable part of the contemporary world-wide business model. States connive at these dispositions notably through setting up low tax regimes in order to attract custom. The neo-liberal perspective sees this as a legitimate operation of the market, but is at a loss when confronted with the outcome – serious loss of revenue, a global tax competition in which the rules are set by unaccountable economic actors, a growth in rent-seeking and the loss of power over concentrations of wealth that are then converted into political influence through lobbying, the funding of NGOs and foundations.
+
+Note that these arrangements are legal in as much as they fall within the sovereign jurisdictions of states. Not all of these are obscure island entities, like the Cayman Islands, as the Luxembourg example shows. Ronen Palan and his co-authors provide a very detailed account in their book Tax Havens: How Globalization Really Works. They quote a 2007 estimate of $5-7 trillion as being located in various tax havens. It is inconceivable that this sum has declined in the last decade.
+
+The effect of the tax haven phenomenon is that state administrations have to deal with extra-territorial sites of power which are frequently opaque, but which are mobile enough to decamp and take their investment elsewhere if the local tax regime is found unprofitable. The outcome is an offstage contest between states for global money and that in turn generates a secondary allocation of resources based redistributive injustice, from taxpayers to the super-rich whose power is neither transparent nor accountable. Hence they escape democratic scrutiny and, at the same time, the redistributive capacity of the state is weakened.
+
+The European Parliament voted on the 8th of June to launch a Committee of Enquiry into the tax haven problem with a notably strong remit. The Committee will look at “the alleged failure of the Commission to enforce and Member States to implement” a wide range of Directives. These Directives, which are binding legal acts, were supposed to have regulated the tax haven problem.
+
+The second factor weakening state capacity is the sudden and rapid migratory flows of the most recent period. Again, this process is intimately linked to globalisation. The full impact of these population movements on the European state has yet to be fully assessed, but a few initial structural points are clear enough. Since the 18th century, the European state has created a complex administrative machinery to ensure that the population on its territory is known to it through registers, lists and, latterly, electronic data-bases. The purpose of this “reading capacity” has been to ensure taxability and order, notably through a single set of legal provisions.
+
+Migration is not in itself the problem. There have been major population movements throughout the history of Europe. What is new is the critical speed and critical mass of the new arrivals, as well as their mostly legally and administratively unregulated nature. The existing state structures were not constructed to deal with the agency exercised by the migrants. This comes at a cost. It places considerable strain on these administrations and erodes their capacity. The added tax burdens that become necessary are disapproved of by much of the tax-paying population, given that their consent to receive migrants in this mass has not been sought. Hence confidence in the state’s capacity is diminished. That in turn weakens state capacity to administer EU regulations.
+
+The third factor is the impact of migration on cultural expectations and norms. When migrants settle in the same place, parallel societies emerge, the members of which often enough have no incentive fully to adopt the norms of majority. This adds a considerable burden to the maintenance of the uniform distribution of authority, to the even-handed administration of the law, notably when cultural norms clash. Transactional costs tend to rise and trust will tend to diminish in such circumstances.
+
+Furthermore, there is a highly controversial aspect to this cultural dimension. Basically, it asks the question, must there be a basic cultural predisposition on the part of settlers to be able to implement and live by European values? And that raises the further question of who has the capacity to define these values and to interpret the application of Article 2 of the TEU (which sets out the basic values of the European Union)?
+
+The fourth factor is about the rising costs of politics, of political activity. The point is derived from, Alex de Waal’s review in the Times Literary Supplement, in which he offers this insight, “Economic globalization has sharply increased the cost of conducting politics, so that rulers and aspirants must pay much more for maintaining patronage network and contesting elections. The shift towards rent-seeking politics, with closely integrated networks of corruption and party political finance, is not unique to South Africa, but is found across the globe’s peripheries.”
+
+This insight does not apply merely to peripheries, but does so equally to the centre and semi-periphery, given the general point of the ever-rising cost of politics. Campaigns, advertising, air time, the requirement to reach the voters at all times, demand a near-permanent effort in communication. Then, this is where we find the intersection with the first factor, with the rise of the global super-rich, politicians everywhere use the wealth of the former as the benchmark for their aspirations. The acquisition of political power must be paralleled by access to an equivalence in wealth, otherwise loyalties will shift. Party loyalty, let alone public service, are no longer sufficient, are no longer a reward for their own sake. In other words, rent-seeking has become part and parcel of all political systems, democratic ones very much included. This diverts state resources, both material and intellectual towards the elite and distorts the formal legal-rationality of the system, as well as weakening transparency and accountability.
+
+The four processes analysed here raise difficult questions over the openness of globalisation, as well as its impact on the institutional order and capacity of the modern state. Both legal and constitutional issues come into play in this connection. The European Union is strongly committed to openness, indeed regards it in a sense as virtuous, but has little to offer when it comes to the downside, to the negative consequences of globalisation. These issues are neglected only at quite some risk to the effective functioning of the EU.

@@ -50,6 +50,125 @@ export function extractStatuteCitations(text: string): RawCitation[] {
   return citations;
 }
 
+// ── Literature / Materialien extraction ───────────────────────────────
+// Mirrors server/src/core/legal/literature-citations.ts (engine-side).
+// Pure regex — client-safe.
+
+export type LiteratureCitationKind = "materialien" | "kommentar_oa" | "licensed_work";
+
+export interface RawLiteratureCitation {
+  kind: LiteratureCitationKind;
+  /** Verbatim citation text as matched. */
+  raw: string;
+  /** Work label for display (e.g. "BT-Drs.", "Onlinekommentar", "Grüneberg"). */
+  work: string;
+  /** Reference within the work (e.g. "19/27873", "Art. 53"). */
+  ref: string;
+  /** Corpus file basename (without .md), when resolvable. */
+  corpusFile: string | null;
+  /** Corpus directory under law-corpus/, when resolvable. */
+  corpusDir: "de-materialien" | "ch-literatur" | null;
+  pinpoint?: string;
+  jurisdiction: "de" | "ch";
+}
+
+const DRUCKSACHE_RX =
+  /\b(BT|BR)-(?:Drs\.?|Drucksache)\s*(\d{1,3})\/(\d{1,6})(?:\s*,?\s*S\.\s*(\d{1,5}))?/g;
+const OK_SHORT_RX =
+  /\bOK-([A-ZÄÖÜ][A-Za-z]{1,8})\s+Art\.?\s*(\d+[a-z]?)(?:\s+(?:Rn\.?|N)\s*(\d{1,4}))?/g;
+const OK_LONG_RX =
+  /\bOnlinekommentar\s+zu\s+Art\.?\s*(\d+[a-z]?)\s+([A-ZÄÖÜ][A-Za-z]{1,8})(?:\s+(?:Rn\.?|N)\s*(\d{1,4}))?/g;
+const LICENSED_RX =
+  /\b([A-ZÄÖÜ][A-Za-zÄÖÜäöüß]+(?:\/[A-ZÄÖÜ][A-Za-zÄÖÜäöüß]+)?),?\s+([A-ZÄÖÜ][A-Za-z]{1,8})\s*§\s*(\d+[a-z]?)\s+Rn\.?\s*(\d{1,4})/g;
+
+/** CH codes covered by Onlinekommentar.ch (site slug = abbr + article number). */
+const OK_CH_CODES = new Set(["ZGB", "OR", "BV", "BPR", "STGB", "DSG", "BGÖ", "BGOE"]);
+
+/** Publisher works we recognize but hold no license for (fail-closed). */
+const LICENSED_WORKS = new Set([
+  "grüneberg",
+  "palandt",
+  "palandt/grüneberg",
+  "mükobgb",
+  "münchener",
+  "staudinger",
+  "erman",
+  "bamberger/roth",
+  "beckok",
+  "henssler",
+  "baumbach/hopt",
+  "zöller",
+  "thomas/putzo",
+  "schönke/schröder",
+  "fischer",
+]);
+
+/**
+ * Extract literature + Gesetzesmaterialien citations from answer text.
+ * Deduplicated; publisher-commentary citations are surfaced as
+ * `licensed_work` so grounding can flag them instead of dropping them.
+ */
+export function extractLiteratureCitations(text: string): RawLiteratureCitation[] {
+  const out: RawLiteratureCitation[] = [];
+  const seen = new Set<string>();
+
+  for (const m of text.matchAll(DRUCKSACHE_RX)) {
+    const [raw, organ, wp, nr, seite] = m;
+    const file = `${organ.toLowerCase()}d-${wp}-${nr}`;
+    if (seen.has(file)) continue;
+    seen.add(file);
+    out.push({
+      kind: "materialien",
+      raw,
+      work: `${organ}-Drs.`,
+      ref: `${wp}/${nr}`,
+      corpusFile: file,
+      corpusDir: "de-materialien",
+      ...(seite ? { pinpoint: `S. ${seite}` } : {}),
+      jurisdiction: "de",
+    });
+  }
+
+  const pushOk = (raw: string, code: string, art: string, rn?: string) => {
+    const upper = code.toUpperCase();
+    if (!OK_CH_CODES.has(upper)) return;
+    const file = `ok-${upper.toLowerCase().replace("ö", "oe")}${art.toLowerCase()}`;
+    if (seen.has(file)) return;
+    seen.add(file);
+    out.push({
+      kind: "kommentar_oa",
+      raw,
+      work: "Onlinekommentar",
+      ref: `Art. ${art} ${code}`,
+      corpusFile: file,
+      corpusDir: "ch-literatur",
+      ...(rn ? { pinpoint: `Rn. ${rn}` } : {}),
+      jurisdiction: "ch",
+    });
+  };
+  for (const m of text.matchAll(OK_SHORT_RX)) pushOk(m[0], m[1], m[2], m[3]);
+  for (const m of text.matchAll(OK_LONG_RX)) pushOk(m[0], m[2], m[1], m[3]);
+
+  for (const m of text.matchAll(LICENSED_RX)) {
+    const [raw, work, code, para] = m;
+    if (!LICENSED_WORKS.has(work.toLowerCase())) continue;
+    const key = `licensed:${raw}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      kind: "licensed_work",
+      raw,
+      work,
+      ref: `${code} § ${para}`,
+      corpusFile: null,
+      corpusDir: null,
+      jurisdiction: "de",
+    });
+  }
+
+  return out;
+}
+
 // ── Grounding metadata ────────────────────────────────────────────────
 
 export interface GroundingMetadata {

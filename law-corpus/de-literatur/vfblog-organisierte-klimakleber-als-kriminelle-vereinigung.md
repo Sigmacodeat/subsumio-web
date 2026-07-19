@@ -1,0 +1,90 @@
+---
+title: Verfassungsblog — Organisierte „Klimakleber“ als kriminelle Vereinigung?
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2023-05-25'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/organisierte-klimakleber-als-kriminelle-vereinigung/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Organisierte „Klimakleber“ als kriminelle Vereinigung?
+
+Im Kontext der Aktionen der „Letzten Generation“, die durch Ankleben auf Verkehrswegen oder an Kunstwerken Aufmerksamkeit für ihre klimapolitischen Anliegen zu erreichen versuchen, ist zuletzt die Frage aufgeworfen worden, ob Straftaten nach § 129 Abs. 1 StGB (Bildung krimineller Vereinigungen) verwirklicht sein könnten. Nachdem die Generalstaatsanwaltschaft München bundesweit wegen eines entsprechenden Anfangsverdachts (§ 152 Abs. 2 StPO) hat Hausdurchsuchungen durchführen lassen, rollte eine vorhersehbare Welle der Empörung. Der Vorgang ist jedoch strafrechtlich eher banal1) und verfassungsrechtlich unbedenklich.
+
+## Straftatbestand
+
+Mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe wird nach § 129 Abs. 1 Satz 1 StGB bestraft, wer eine Vereinigung gründet oder sich an einer Vereinigung als Mitglied beteiligt, deren Zweck oder Tätigkeit auf die Begehung von Straftaten gerichtet ist, die im Höchstmaß mit Freiheitsstrafe von mindestens zwei Jahren bedroht sind. Auf ein besonderes Gewicht der Straftaten kommt es durch die Verweisung auf eine präzise bezeichnete Höchststrafe nicht (mehr) an. Nur wenige Bezugsstraftatbestände fallen aus dem Anwendungsbereich, weil die gesetzliche Höchststrafe unter zwei Jahren liegt, z. B. Hausfriedensbruch (§ 123 StGB), Beleidigung (§ 185 StGB), Missbrauch von Titeln, Berufsbezeichnungen und Abzeichen (§ 132a StGB) oder Störung der Tätigkeit eines Gesetzgebungsorgans (§ 106b StGB). Auf der Rechtsfolgenseite hat § 129 Abs. 1 Satz 1 StGB einen Strafrahmen typischer Alltagskriminalität wie z. B. bei Diebstahl (§ 242 StGB), Betrug (§ 263 StGB) oder Sichbeschaffen von Betäubungsmitteln (§ 29 Abs. 1 Nr. 1 BtMG). Mit Freiheitsstrafe bis zu drei Jahren oder mit Geldstrafe wird nach § 129 Abs. 1 Satz 2 StGB zudem bestraft, wer eine solche Vereinigung unterstützt oder für sie um Mitglieder oder Unterstützer wirbt. Das ist ein niedriger Strafrahmen, vergleichbar der Belohnung und Billigung von Straftaten (§ 140 StGB), dem unerlaubten Entfernen vom Unfallort (§ 142 Abs. 1 StGB), der falschen Versicherung an Eides Statt (§ 156 StGB) oder der Störung einer Bestattungsfeier (§ 167a StGB).
+
+Natürlich macht es einen Unterschied, ob man Geld für die kalabrische Mafia, den Ku-Klux-Klan oder „Klimakleber“ sammelt. Aber das ist – wie bei anderen Vergehen auch – eine Frage der Verfolgungsopportunität (§§ 153, 153a StPO) sowie letztlich der tatproportionalen Strafzumessung (§ 46 StGB). Auch der Diebstahl einer Packung Lollis aus dem Drogeriemarkt wird im Rahmen des § 242 StGB anders sanktioniert als der von diamantbesetzten Goldketten beim Juwelier.
+
+## Bezugsstraftaten
+
+Dass die Aktionen der „Letzten Generation“ jedenfalls auch Straftaten einschließen, dürfte nicht ernsthaft in Frage stehen. Nötigung (§ 240 Abs. 1 StGB), gemeinschädliche Sachbeschädigung (§ 304 StGB), Widerstand gegen Vollstreckungsbeamte (§ 113 Abs. 1 StGB) oder gefährlicher Eingriff in den Straßenverkehr (§ 315b StGB) haben auch den erforderlichen Strafrahmen. Die damit verbundenen Auslegungsfragen können hier nicht vertieft werden. Politische Ziele spielen jedenfalls für die strafrechtliche Bewertung richtigerweise keine Rolle, erst recht nicht eine vermeintliche Verfassungskonformität des Fernziels. Das Argument, man verfolge ja nur Ziele, die das BVerfG in seinem Klimaschutzbeschluss2) selbst als verpflichtend angesehen habe und zwinge gleichsam den Staat nur zu verfassungskonformem Handeln, was nicht verwerflich (§ 240 Abs. 2 StGB) sein könne, erscheint reichlich verstiegen. Das demokratische Verfahren beruht auf der prozeduralen Formalisierung sozialer Konfliktbewältigung und damit auch darauf, dass niemand demokratisch gesetztes Recht schlicht deswegen brechen darf, weil sie oder er sich selbst bescheinigt, einen guten Zweck zu verfolgen, der einfach zu Unrecht nicht mehrheitsfähig sei.
+
+Verfassungsrechtliche Schutzaufträge sind zudem ubiquitär, aber für die Frage der legitimen Mittelwahl zivilgesellschaftlicher Politisierung nicht von unmittelbarer Relevanz. Das BVerfG hat etwa den wirksamen Schutz des Lebensrechts von Embryonen3) oder der nachhaltigen Leistungsfähigkeit des demokratischen Rechts- und Sozialstaats gegen überbordende Staatsverschuldung4) eingefordert. Dass es verfassungsunmittelbar deshalb gerechtfertigt wäre, wenn militante Abtreibungsgegnerinnen sich vor den Eingang einer Abtreibungsklinik kleben oder aggressive Austeritätsaktivisten die Werkszugänge von Rheinmetall blockieren, um die Herstellung milliardenteurer Panzer für die Bundeswehr und damit neue Staatschulden zu verhindern, erscheint abwegig.
+
+Zudem kommt es darauf an, ob die organisatorischen Anforderungen an eine Vereinigung nach § 129 Abs. 2 StGB erfüllt sind. Die Schwelle ist nicht sonderlich hoch und die Anforderungen an einen Anfangsverdacht (§ 152 Abs. 2 StPO) dürften allemal erfüllt sein. Die bei den Durchsuchungen beschlagnahmten Beweismittel dürften vermutlich vor allem dazu dienen, die innere Kommunikationsstruktur von „Letzte Generation“ und damit die organisatorische Verfestigung aufzuklären. Allenfalls kann man diskutieren, ob eine Strafbarkeit nach der tatbestandlichen Rückausnahme des § 129 Abs. 3 Nr. 2 StGB entfällt, weil „die Begehung von Straftaten nur ein Zweck oder eine Tätigkeit von untergeordneter Bedeutung ist“. Auch das dürfte nicht greifen, wenn Straftaten organisiert gerade als sozialkommunikatives Verstärkungsmittel für politische Botschaften eingesetzt werden. Ohne die öffentlichkeitswirksamen strafbaren Aktionen, die den Kern der kollektiven Tätigkeit ausmachen, wäre die „Letzte Generation“ eine der vielen biederen Protestgruppen, für die sich niemand interessiert.
+
+## Ein „Türöffner-Paragraf“?
+
+Ist denn § 129 StGB wenigstens ein „Türöffner-Paragraf“, der akzessorisch weitergehende Eingriffsermächtigungen nach sich zieht und das prozessuale Handlungsspektrum der Strafverfolgungsbehörden erweitert?5) Auch strafprozessrechtlich löst § 129 StGB wenig besondere Folgen aus. Wie bei anderer Kriminalität auch steht das allgemeine Spektrum des strafprozessualen Eingriffsrechts von der Durchsuchung (§§ 102 ff. StPO) über die Beschlagnahme von Beweismitteln (§§ 94 ff. StPO) bis – im Extremfall – zur Untersuchungshaft (§ 112 StPO) zur Verfügung. Das gilt auch für den „Fahrraddiebstahl“ oder die „Unfallflucht“; jede Maßnahme zur Erforschung des Sachverhalts ist daher an der Verhältnismäßigkeit zu messen. Sofern es im Einzelfall zu unverhältnismäßigen Eingriffen kommen sollte (wofür bislang nichts spricht), wäre das ohnehin kein Problem des Designs des materiellen Straftatbestandes, sondern der Anwendung des Prozessrechts.
+
+Die einzige qualifizierte Eingriffsermächtigung, in deren Rahmen § 129 Abs. 1 StGB als Katalogtat fungiert, ist die Telefonüberwachung (§ 100a Abs. 2 Nr. 1 lit. d StPO) – eine inzwischen bis hinein in die Alltagskriminalität ubiquitäre Standardmaßnahme. Eine Online-Durchsuchung (§ 100b Abs. 2 Nr. 1 lit. c StPO) oder eine Erhebung von Verkehrsdaten (§ 100g Abs. 2 Satz 2 Nr. 1 lit. c StPO) kommt nur bei besonders schweren Fällen in Betracht, wenn die gebildete Vereinigung auf die Begehung von Schwerstkriminalität nach § 129 Abs. 5 Satz 3 StGB (i. V. mit § 100b Abs. 2 Nr. 1 lit. a, b, d-f und h-o, Nr. 2-8 und 10 StPO) gerichtet ist,6) also etwa eine Vereinigung, die organisiert Hochverrat, Vergewaltigung, Verbreitung von Kinderpornografie oder Bestechung begeht. Eine Vermögensbeschlagnahme ist möglich (§ 443 Abs. 1 Satz 1 Nr. 1 StPO), was aber in der Ratio des § 129 StGB begründet ist, systematischer Straftatbegehung die organisatorische Infrastruktur zu entziehen. Zu einer substantiellen Erweiterung der Handlungsmöglichkeiten der Strafverfolgungsbehörden führt also der Verdacht einer Straftat nach § 129 StGB nicht.
+
+Auch im präventiven Bereich ist § 129 StGB durchweg keine Katalogtat, die besondere Maßnahmen eröffnet. Würde man die „Letzte Generation“ als verfassungsfeindliche Bestrebung i. S. der §§ 3, 4 BVerfSchG ansehen, was wohl derzeit noch nicht naheliegt, könnte der Verfassungsschutz beispielsweise keine individuellen Beschränkungen der Telekommunikation nach § 3 G10 beantragen und bliebe damit im Ermächtigungsspektrum hinter den Strafverfolgungsbehörden zurück.
+
+## Vorfeldkriminalisierung als Verfassungsproblem
+
+Letztlich verbleibt nur die Frage, ob die mit § 129 StGB fraglos einhergehende Vorverlagerung der Strafbarkeit in das verbreiterte logistische Umfeld der Straftatorganisation jenseits der unmittelbaren Tatbeteiligung (§§ 25, 26, 27 StGB) verhältnismäßig ist. Das vermeintliche Vorfeldproblem ist freilich alt und wurde bereits seit den gesetzlichen Reaktionen auf den RAF-Terrorismus ausgiebig diskutiert.7) Die bisweilen geäußerten Bedenken haben sich mit Recht nicht durchgesetzt. Die Verhältnismäßigkeit sowohl der zugrundeliegenden Verhaltensnorm (des Verbots, eine entsprechende Vereinigung zu bilden) als auch der akzessorischen Verbotsnorm (der Kriminalisierung) richtet sich nach dem Grad der sozialen Gefährlichkeit des Verhaltens. Hierfür gibt es keinen fixierten Korridor. Die Frage der sozialen Risikotoleranz ist auch im Strafrecht immer wieder neu auszuhandeln. So hat man etwa konstruktiv darüber gestritten, ob der Straftatbestand der sexuellen Belästigung (§ 184i StGB) – so ein traditionalistischer Reflex – eine erneute illiberale Überdehnung des Kriminalstrafrechts oder nicht eher – deutlich plausibler – eine Aktualisierung des seinerseits liberalen Versprechens ist, die sexuelle Selbstbestimmung besser zu schützen. Das ist keine Verfassungs-, sondern politisch-demokratische Aushandlungs- und Entscheidungsfrage.
+
+## Keine Rechtsgutsromantik
+
+Die Vorbehalte gegen eine Vorfeldkriminalisierung hängen eng zusammen mit einer reichlich anachronistischen, in der Strafrechtswissenschaft aber noch verbreiteten Doktrin, Strafgesetzgebung sei nur gerechtfertigt, wenn sie Rechtsgüter (was auch immer das ist) schütze. Risiken im Vorfeld des unmittelbaren Angriffs auf ein Schutzgut erscheinen dann als illegitime Vorverlagerung des strafrechtlichen Handlungsinstrumentariums in den Bereich sozialadäquater Risiken. Das BVerfG ist solcher Rechtsgutsromantik mit Recht nicht gefolgt.8) Rechtsgüter sind keine ontischen Kategorien, sondern Konstrukte der Rechtsordnung, deren bewegliche Gestaltung im Wesentlichen in der Hand des einfachen Gesetzgebers liegt. Die verfassungskonforme Bewertung der sozialen Gefährlichkeit muss natürlich plausiblen Gründen folgen und darf nicht grundrechtliche Bewegungsfreiheit unangemessen einschränken. Die legislativen Spielräume sind hierbei aber sehr weit.
+
+Ob mit der Gefährlichkeit von konkretem Verhalten gerechtfertigte Verbote rein ordnungsrechtlich durchgesetzt, als bloße Ordnungswidrigkeit behandelt oder ins Kriminalstrafrecht eingegliedert werden, ist vornehmlich eine Frage der Praktikabilität. Verfassungsrechtliche Direktiven gibt es hierfür kaum. Mit einer sich verschärfenden Klimakrise könnte man sicher auch das Rasen auf der Autobahn oder das unerlaubte Beheizen des Swimmingpools zu niederschwelligen Straftaten machen, um Gemeinwohlbelange des ökologischen Klimaschutzes und der sozialen Energieversorgung effektiv durchzusetzen. Man sehe einmal in das verwaltungsakzessorische Nebenstrafrecht in den Fachgesetzen des besonderen Verwaltungsrechts, welche Trivia heute bereits strafbar sind!
+
+Der Straftatbestand des § 129 Abs. 1 StGB soll „die erhöhte kriminelle Intensität erfassen, die in der Gründung oder Fortführung einer festgefügten Organisation ihren Ausdruck findet, die kraft der ihr innewohnenden Eigendynamik eine erhöhte Gefährlichkeit für wichtige Rechtsgüter der Gemeinschaft mit sich bringt“.9) Begegnet wird also dem sozialen Risiko, dass die Häufigkeit, Intensität und/oder Zielgerichtetheit von Straftaten steigt, wenn sie aus einer organisierten Gruppe heraus begangen werden, die entweder die Motivation oder die Logistik hierfür liefert. Wer im konkreten Anlassszenario organisiert Geld sammelt oder dafür wirbt, dass Straßenblockaden organisiert oder Kunstwerke beschädigt werden, eskaliert eben die systematische Begehung von Straftaten. § 129 Abs. 1 StGB schützt hier nur flankierend die öffentlichen Interessen, die schon die sehr vielfältigen Bezugsstraftatbestände schützen sollen, und dient insoweit einem verfassungsrechtlich legitimen Ziel. Die Verhältnismäßigkeit der Kriminalisierung ist angesichts der mit Recht weit gefassten Einschätzungsprärogative des Gesetzgebers über den Mitteleinsatz nicht ernsthaft angreifbar. Das logistische Umfeld einzubeziehen (Abs. 1 Satz 2), ist dann nur konsequent, der Tatproportionalität wird durch den abgesenkten Strafrahmen hinreichend Rechnung getragen.
+
+## Keine Privilegierung des Politischen
+
+Wenn eine Vereinigungsstraftat nach § 129 Abs. 1 StGB im Kontext politischer Auseinandersetzungen erfolgt, ergibt sich jedenfalls verfassungsrechtlich keine Verpflichtung, politische Motive zu privilegieren. Weder die politischen Grundrechte, die selbstverständlich den Inhalt der transportierten Botschaften schützen (Art. 5 Abs. 1 Satz 1, 8 Abs. 1, 9 Abs. 1 GG), noch die (aus historischer Erfahrung meistens rosig gemalten) Fernziele (hier: Schutz insbesondere von Art. 2 Abs. 2 Satz 1, 20a GG) erfordern es, bei der gesetzlichen Ausgestaltung der legalen Grenzen des Mitteleinsatzes darauf Rücksicht zu nehmen, dass bzw. inwiefern Verhalten politisch motiviert ist. Gerade die freie öffentliche Auseinandersetzung über Ziele der Politik ist nur möglich, wenn sich diese auf kommunikative Mittel beschränkt und nicht Rechte anderer verletzt. Freiheit ist in einer Rechtsgemeinschaft immer konditioniert, auch die politische. Illegale Druckmittel und Emphasizer symbolisch einzusetzen, um dem eigenen Anliegen ersehnte schnelle Sichtbarkeit zu verschaffen, ist gerade ein Angriff auf die Kommunikationsstruktur des demokratischen Prozesses, der erst die politische Gestaltung des Miteinanders auf der Grundlage der gleichen Freiheit aller sichert. Die Selbstprivilegierung, sich kraft erfühlter höherer Einsicht oder aus narzisstischem Sendungsbewusstsein über die gleiche Freiheit der anderen zu stellen, die für ihre – zunächst einmal ebenfalls legitimen – Anliegen um Mehrheiten werben müssen, ist anti-demokratisch,10) anti-egalitär und letztlich autoritär. Weder Gesetzgeber noch Strafverfolgungsbehörden und Gerichte sind verfassungsrechtlich in der Pflicht, dies im Rahmen der Verhältnismäßigkeit zu honorieren.
+
+## Entpolitisiertes Strafrecht und politische Bigotterie
+
+Wir sind bislang gut damit gefahren, das Strafrecht möglichst inhaltlich zu entpolitisieren, also das politische Framing von Handlungen auszublenden und allenfalls als Strafzumessungsproblem zu behandeln. Es wäre z. B. an der Grenze zur Rechtssatire abwegig, die Maskenverweigerung11) auf einer Querdenkerdemo als gerechtfertigt anzusehen, weil man nun einmal gegen die Maskenpflicht demonstriere, oder das organisierte Spendensammeln für die gewaltsame Blockade einer Flüchtlingsunterkunft zu schonen, weil „besorgte Bürger“ doch wohl noch eine „migrationskritische“ Meinung haben dürften. Dass dies jeweils sanktionierbares Unrecht ist, sollte selbstverständlich sein. Irritierend ist daher eher der bisweilen bizarre Erfindungsreichtum, mit dem nunmehr aus politischem Opportunismus versucht wird, „Klimakleber“ mit der Brechstange vor einer Bestrafung zu schützen, die diese bewusst herbeigeführt haben, um den Staat vorzuführen. Die Ermittlungsverfahren folgen hier nur dem Legalitätsprinzip (§ 152 Abs. 1 StPO), die Durchsuchungen sind kaum vermeidbare Routinemaßnahmen, um Beweismittel zu sichern.
+
+„Klimakleber“ schützen nicht das Klima, sie setzen nur unter Klebstoffeinsatz von der Rechtsordnung verfassungskonform kriminalisierte Mittel ein, um einem politischen Anliegen zu größerer Wahrnehmung zu helfen. Wer Straftaten begeht, um Aufmerksamkeit zu erlangen, muss damit leben, dass diese Taten dann auch in regulären Strafverfahren verfolgt werden. Die aufgeblasene Aufregung hierüber ist dann nur Bigotterie.
+
+ References[+]
+
+ References  
+
+ &#8593;1 Sehr instruktiv und sachlich Thomas Fischer, Ist die „Letzte Generation“ eine kriminelle Vereinigung?, https://www.lto.de/recht/meinung/m/kriminelle-vereinigung-thomas-fischer-letzte-generation/
+
+ &#8593;2 BVerfGE 157, 30 ff.
+
+ &#8593;3 BVerfGE 88, 203 (251 ff.).
+
+ &#8593;4 BVerfGE 119, 96 (142).
+
+ &#8593;5 So die Behauptung von Fynn Wenglarczyk, Wie man eine kriminelle Vereinigung macht: Zu den Razzien gegen Mitglieder von „Letzte Generation“, VerfBlog, 2023/5/24, https://verfassungsblog.de/wie-man-eine-kriminelle-vereinigung-macht/.
+
+ &#8593;6 Die Ermächtigung zur akustischen Wohnraumüberwachung nach § 110c Abs. 1 Nr. 1 StPO verweist ebenfalls auf den Katalog des § 110b Abs. 2 StPO und verlangt darüber hinaus weitere Qualifikationen wie die besondere Schwere der Tat im Einzelfall (§ 110c Abs. 1 Nr. 2 StPO), was hier völlig fernliegend ist. Verzerrend daher Wenglarczyk, a.a.O.
+
+ &#8593;7 Wobei es bei dem einschlägigen § 129a Abs. 1-2 StGB um einen Verbrechenstatbestand (§ 12 Abs. 1 StGB) geht, bei dem eine Freiheitsstrafe von einem bis zu zehn Jahren angedroht wird, und das prozessuale Eingriffsinstrumentarium das weiteste ist.
+
+ &#8593;8 BVerfGE 120, 224 (240).
+
+ &#8593;9 BGHSt 31, 202 (207).
+
+ &#8593;10 Vgl. Christoph Möllers, Demokratie – Zumutungen und Versprechen, 2008, S. 80.
+
+ &#8593;11 Ordnungswidrig nach § 73 Abs. 1a Nr. 11b IfSG.

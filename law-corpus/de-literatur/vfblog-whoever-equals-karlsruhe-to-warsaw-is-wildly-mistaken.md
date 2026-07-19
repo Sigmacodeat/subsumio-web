@@ -1,0 +1,44 @@
+---
+title: Verfassungsblog — Whoever equates Karlsruhe to Warsaw is wildly mistaken
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2021-10-10'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/whoever-equals-karlsruhe-to-warsaw-is-wildly-mistaken/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Whoever equates Karlsruhe to Warsaw is wildly mistaken
+
+In the Polish, and to some extent also in the German public discourse, the ruling of the Federal Constitutional Court of 5 May 2020 on the partial unconstitutionality of the ECB's PSP programme is considered to be qualitatively comparable to the ruling of the Polish Constitutional Tribunal of 7 October 2021. In this respect, the Polish judgement is merely seen as a continuation of the established case law of the Bundesverfassungsgericht. From a legal point of view, however, this is clearly false for several reasons, which will be briefly outlined here.
+
+Effectively, the Polish ruling – unlike the German one – calls into question a cornerstone of European integration with its sweeping rejection of the primacy of European law, up to a point where there are serious doubts as to whether Poland can continue to remain part of the EU. In detail, the following differences exist:
+
+- In its tenor, the Polish court establishes the unconstitutionality of central primary law norms (Art. 1 and 19 TEU) and questions in principle the established primacy of European law with regard to the Polish constitution. The Federal Constitutional Court, on the other hand, in its case law consistently accepts the primacy also over the Constitution and in its ruling only classified an individual secondary legal act of an EU institution as ultra vires by way of exception.
+
+- By declaring primary legislation unconstitutional, the Polish Constitutional Tribunal is breaking new legal ground. This has never been done before in any Member State, especially since Article 1 TEU, a central article, is affected. Dogmatically, this is very doubtful in any case. In any case, the BVerfG's ruling was not about primary law, but about a secondary law purchase programme.
+
+- The Polish Constitutional Tribunal does not follow an established and limited doctrine of reservations and does not develop such a doctrine in this judgement. In any case, the judgement is notable for its lack of reasoning, especially in comparison to the BVerfG judgement. Unlike the latter, it is not about harmonising and reconciling European law in its claim to primacy with the requirements of the national constitution in a cooperative procedure. Rather, a blanket primacy of the Polish constitution is postulated (almost somewhat defiantly). There is not even an attempt to limit this constitutional primacy to certain constellations (such as national identity) and thus not to make it absolute.
+
+- The Polish Constitutional Tribunal's decision, unlike in the case of the Federal Constitutional Court, is not about a single act of a single EU institution. Rather, the primacy of European law is excluded comprehensively and for all areas with regard to the constitution. Contrary to public perception, this by no means only concerns the field of legal remedies. This was quite different at the BVerfG: Here it was only about the PSP programme; other, future purchase programmes were expressly not even covered.
+
+- Furthermore, the provisions of the Union Treaty are also classified as unconstitutional by the Polish Constitutional Tribunal to the extent that they jeopardize the Republic of Poland's functioning “as a sovereign and democratic state”. What this is supposed to mean is completely unclear and ultimately open to the free interpretation of the Polish government. Taken literally, the Polish government can thus oppose any obligation that follows from European law. This would be nothing less than the end of the EU as a community of law. The supranational organisation would become a weak confederation of states. Once again, nothing comparable can be found in the ruling of the Federal Constitutional Court.
+
+- The Polish Constitutional Tribunal's judgement has an effect primarily on the future and can and probably will be used against future judgements of the ECJ and other actions of the EU. This is probably also the reason why the Polish government itself applied for this ruling in the first place. The ruling of the Federal Constitutional Court, on the other hand, explicitly referred only to the ECB's PSP programme and explicitly excluded other purchase programmes. It therefore has rather an effect on the past. Now that the dispute over the proportionality of the PSP programme has been settled, it no longer has any direct effect. How the Court will decide in future rulings remains to be seen. The established reservations have been activated once; apart from that, the primacy of European law remains completely untouched, also and especially from the perspective of the BVerfG.
+
+- The Polish Constitutional Tribunal resists any form of alleged encroachment by the EU in general and the ECJ in particular. In contrast, the Federal Constitutional Court explicitly calls for stricter control by the ECJ and will then retreat again to its reserve role. Whatever one thinks of the BVerfG's ruling, it is in any case not directed against the institutional order of the EU, but rather wants to see it strengthened with respect to separation of powers.
+
+- With regard to the design of the national judicial system, the Polish Constitutional Tribunal ultimately denies any competence of the EU. This is practically untenable, since the Polish courts are part of the European judicial network and act within this framework as functional Union courts. For this reason, non-independent national courts are incompatible with the European rule of law, which is why such an organisation of a national judiciary can and must be sanctioned by the EU. This is a matter of fundamental principles, the non-existence of which would prevent EU accession. The case of the Federal Constitutional Court, on the other hand, was about very technical questions of monetary union, which ultimately do not threaten the foundation of the EU as such from the outset. In fact, the BVerfG's ruling did not even have any serious impact on the monetary union or the ECB's ability to act (as I, among others, have already predicted here).
+
+- The Polish Constitutional Tribunal denies national judges the established power to review the conformity of national measures with European law themselves and to disregard conflicting provisions. This is another fundamental encroachment on basic principles of the European judicial system and the community of law. Obviously, none of this can be found in the BVerfG decision.
+
+- In this context, the Polish Constitutional Court also prohibits national judges from applying superseded national law, insofar as the new superseding law should be contrary to European law. This also massively damages the legal community with effect in the future; the EU could no longer be considered a supranational organisation. There is nothing of that sort in the decision of the Federal Constitutional Court.
+
+The bottom line is this: Regardless of what one thinks of the BVerfG ruling, the Polish ruling has a completely different quality. It shakes the foundations of European integration, massively impairs the functioning of the supranational European judicial system and, in this respect, primarily affects the future. With the blanket rejection of the primacy of European law, European integration in its previous form is no longer possible. Strictly speaking, Poland's remaining in the EU is no longer conceivable under these circumstances; the EU would be nothing more than a weak confederation of states (like the German Confederation of 1815-1866). The BVerfG's ruling, on the other hand, does not question any of the established principles, not even and especially not the primacy of European law, but merely sees the EU outside its competences in a very specific and hardly relevant field in the future. To put it differently: In one case, integration in general becomes practically impossible, while in the other case, only selective corrections are demanded without touching the basic principles. The dispute between the ECJ and the BVerfG can be resolved, the one between the Polish Constitutional Court and the EU (and the ECJ) cannot – at least not legally. Formally, this judgement still has to be published by the Polish government. Until then, it has no formal legal force. Irrespective of this, however, the political damage has already been done.

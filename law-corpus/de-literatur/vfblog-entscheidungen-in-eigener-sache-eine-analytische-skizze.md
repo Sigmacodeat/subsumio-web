@@ -1,0 +1,84 @@
+---
+title: Verfassungsblog — Entscheidungen in eigener Sache – eine analytische Skizze
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2023-09-06'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/entscheidungen-in-eigener-sache-eine-analytische-skizze/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Entscheidungen in eigener Sache – eine analytische Skizze
+
+Entscheidungen in eigener Sache sind Akte der Selbstbestimmung. In eigenen Angelegenheiten zu entscheiden, bedeutet Wahrnehmung von Freiheit. Es gilt: Des Menschen Wille ist sein Himmelreich. Für sich genommen stellen solche Entscheidungen kein Problem dar. Es bedarf der Differenzierung und näheren Spezifizierung, um den Gegenstand unseres Nachdenkens zu bestimmen.
+
+Zum Problem werden die sogenannten Entscheidungen in eigener Sache erst dann, wenn sie auch andere betreffen, wenn sie zugleich auch Entscheidungen über andere darstellen. Dies ist regelmäßig der Fall bei Entscheidungen der organisierten Staatlichkeit. Diese beanspruchen Verbindlichkeit gegenüber ihren Adressaten, sie stellen einen Gehorsamsanspruch an diese. Solche verbindlichen Entscheidungen begründen ein Legitimationsproblem. Unter der Geltung der Selbstbestimmungspostulate individueller wie kollektiver Art müssen verbindliche Entscheidungen über andere gerechtfertigt werden. Der demokratische Rechtfertigungsmechanismus verbindlicher staatlicher Entscheidungen liegt in ihrer Zurückführbarkeit auf das Volk. Legitimationsgrund ist mithin die Volkssouveränität. Das Volk übt seinen Einfluss nicht zuletzt über Wahlen zur Volksvertretung aus, um darüber die Inhalte der Entscheidungen zu beeinflussen und diesen Legitimation zu verleihen.
+
+Im Folgenden soll unterstellt werden, dass die politischen Entscheidungen, insbesondere diejenigen des Parlaments, grundsätzlich hinreichend demokratisch legitimiert sind. Das diskutierte Problem der Entscheidungen in eigener Sache ist hier angesiedelt: in der Volksvertretung. Wenn bei der Entscheidungsfindung Eigeninteressen der Entscheider den Inhalt der Entscheidung beeinflussen können, so kann dies den idealen Gang der Entscheidungsfindung verzerren und damit deren Legitimität mindern. In eigenen Angelegenheiten ist man ja gerne etwas großzügiger, Eigeninteressen gewinnen tendenziell eine überproportionale Bedeutung.
+
+## Keine Verlagerung auf andere Entscheidungsträger
+
+Die Bezeichnung dieser Art von Entscheidungen als solche „in eigener Sache“ und die damit verbundenen Gefahren für eine „gute“ Entscheidung legen es nahe, anstelle des Parlaments solche Entscheidungen auf andere Instanzen zu verlagern. Entscheidungen über die Parteifinanzen sollten demnach einem Sachverständigengremium in die Hand gegeben werden oder Ähnliches mehr.
+
+In der Tat: Um die Gefahr für die Qualität und Akzeptabilität der verbindlichen Entscheidungen zu bekämpfen, gilt die alte Regel nemo iudex in sua causa. Deswegen gelten für von einer Entscheidung selbst Betroffene Mitwirkungsverbote (siehe etwa § 20 VwVfG, § 22 StPO, § 54 VwGO), selbst der Anschein eines untunlichen Einflusses durch persönliche Motive der Entscheider soll vermieden werden, weswegen es die Ablehnung wegen Besorgnis der Befangenheit gibt 24 StPO, § 54 VwGO, § 21 VwVfG).
+
+Wie ersichtlich gelten die Mitwirkungsverbote und greift die Möglichkeit der Ablehnung wegen Befangenheit nur im Bereich der Exekutive und der Judikative. Hier wird die Fiktion praktiziert, diese Entscheidungen seien programmiert, also weitgehend durch das Recht determiniert. Die verbleibenden Entscheidungsspielräume sollen hier nicht durch Eigeninteressen der entscheidenden Personen verschmutzt werden.
+
+Freilich gilt anderes bei den demokratischen Entscheidungen im Parlament. Hier haben wir es nicht mit programmiertem, sondern mit programmierendem Handeln zu. Der Spielraum für die Entscheidungen ist sehr viel größer, lediglich durch die Verfassung begrenzt. Hier gilt: mea res agitur – es geht um meine Sache. Die Selbstbestimmung durch die Betroffenen ist demokratische Kernidee.
+
+Die programmierende Entscheidungsfindung in der Volksvertretung, die sich innerhalb weiter Spielräume bewegt, ist deswegen ganz anders strukturiert. Hier sollen nicht Eigeninteressen von Betroffenen abgewehrt, sondern vielmehr die Chance eröffnet werden, dass alle Interessen und Überzeugungen sich auswirken können. Das Volk, das durch das Parlament vertreten wird, ist heterogen. Deswegen ist die Volksvertretung pluralistisch zusammengesetzt. Zur Organisation dieser Pluralität werden politische Parteien und innerhalb des Parlaments Fraktionen organisiert und in ihren Handlungsmöglichkeiten rechtlich gesichert. Alles Wesentliche ist im Parlament zu entscheiden. Das Parlament als demokratisches Zentralorgan soll nicht ersetzt werden durch ein Sachverständigengremium.
+
+Wenn man das Problem der sogenannten Entscheidungen in eigener Sache der Bezeichnung folgend in der Entscheidung durch Betroffene sieht, so verkennt dies genau den Kerngedanken der Demokratie: die Selbstbestimmung.
+
+## Entscheidungen mit strukturellem Kontrolldefizit
+
+Die Besonderheit dieser sogenannten Entscheidungen in eigener Sache liegt darin, dass zu den vielfältigen Interessen der Bürger noch spezifische Interessen der Volksvertreter und ihrer Organisationen, also politische Parteien und Fraktionen, hinzutreten. Im Widerstreit der verschiedenen Interessen, in der Suche nach Kompromissen und auch in der Mehrheitsentscheidung wird aus diesen vielen Interessen eine Entscheidung gefunden, die den Anspruch erhebt, das Gemeinwohl darzustellen. Bei den hier in Rede stehenden Entscheidungen kommen aber die Eigeninteressen der Entscheidungsträger hinzu, denen als solche keine organisierten Gegeninteressen im Wege stehen, weil diese Interessen sich erst in der Sphäre der Politik selbst bilden. Schlagwortartig mag auf die These von den „Kartellparteien“ hingewiesen werden oder auf das Phänomen der classe politique. Das Maßgebliche dieser Entscheidungen liegt also darin, dass diesen Eigeninteressen der Akteure im Zentrum der Politik keine quasi-natürlichen Kräfte und Kontrollen gegenüberstehen. Bei Entscheidungen im Mietrecht rivalisieren Interessen der Vermieter und der Mieter, wenn es um Maßnahmen des Umweltschutzes geht, treten die Interessen der Wirtschaft konträr auf den Plan. Deswegen empfiehlt sich für diese Art von Entscheidungen der Begriff „Entscheidungen mit strukturellem Kontrolldefizit“.1)
+
+Hinzu tritt: Es sind die Abgeordneten, die unmittelbar die parlamentarischen Entscheidungen treffen, deswegen haben deren persönliche Interessen, etwa an den Diäten, und die Interessen der Parteien und Fraktionen, in denen sie Mitglied sind, eine besondere Realisierungschance.
+
+## Entscheidungen in eigener Sache in der Perspektive der Prinzipal/Vertreter-Theorie
+
+In einer repräsentativen Demokratie werden die wesentlichen Entscheidungen durch die Abgeordneten als Vertreter der Bürger im Parlament getroffen. Die Selbstbestimmung des Volkes ist damit mediatisiert durch deren Vertreter. In normativer Perspektive handelt es sich dabei eigentlich um Entscheidungen des Volkes. Aus verschiedenen Gründen kann die direkte Demokratie nur in sehr begrenztem Umfang praktiziert werden. So wegen der notwendigen Spezialisierung und Fachkenntnisse für die Entscheidungen, die einer modernen komplizierten Gesellschaft gerecht werden sollen, so deswegen, weil die Bürger neben der Informationstätigkeit für politische Fragen und neben der Zeit für politische Diskussionen in ihr Zeitbudget auch die Erfordernisse der Familie, des Berufs und der Freizeit einstellen (müssen). Deswegen delegiert das Elektorat die deutliche Mehrzahl der wesentlichen politischen Entscheidungen auf die Abgeordneten. Es bleibt aber dabei, dass diese letztlich im Auftrag der Bürger entscheiden. Das Wort vom „Mandat“ der Abgeordneten macht deutlich, dass es sich um ein Auftragsverhältnis handelt. Das lateinische „mandatare“ liegt dem zu Grunde, es bedeutete „in die Hand legen“, also anvertrauen, beauftragen.
+
+Eine solche Konstellation der Beauftragung wird von der Prinzipal/Vertreter-Theorie konzeptionell erfasst. Die Bürger sind hiernach die Geschäftsherren („Prinzipale“), die Abgeordneten die Vertreter. Strukturell sind in einem solchen Verhältnis gewisse Probleme gegeben, welche die zuverlässige Erfüllung der Aufträge durch die Vertreter gefährden. So haben die Prinzipale zwangsläufig nur begrenzte Informationen über die Handlungen und die Handlungsmöglichkeiten ihrer Beauftragten, es sei denn, sie stellten sich immer neben diese, die Vorteile der Beauftragung anderer fielen damit aber weg. Zwischen Prinzipal und Vertreter besteht eine Informationsasymmetrie. Zufolge dieser ist die Kontrolle über die Vertreter auch eingeschränkt. Nicht zufällig ist deswegen das „Vertrauen“ eine entscheidende Größe in der Politik; die Bürger müssen – wie gesagt zwangsläufig – ihren Abgeordneten vertrauen, die Parlamentarier ermächtigen ihrerseits die Regierung, die von ihrem Vertrauen abhängt; ob dieses noch besteht, kann gegebenenfalls mit der Vertrauensfrage geklärt oder durch ein Misstrauensvotum entschieden werden.
+
+Die Vertreter des Volkes verfolgen auch ihre eigenen Interessen, praktizieren ein bestimmtes Maß an Eigennützigkeit. Dies nicht aus moralischer Verderbtheit, sondern auch deswegen, weil der Erfolg in ihrer Rolle bestimmtes Handeln verlangt. So muss ein Abgeordneter sich bemühen um Bekanntheit, um politische Erfolge, um innerparteiliche Reputation, um Wiederwahl; eine politische Partei muss ihre finanzielle Lage stabilisieren, muss ihre Mitglieder pflegen und ihnen gegebenenfalls auch Karrierechancen verschaffen, also Anreize zur Mitgliedschaft und zur Mitarbeit geben. Diese Bestandsinteressen der Organisation sind nicht unmittelbar die Interessen der Bürger.
+
+Damit ist die strukturelle Grundlage des Problems benannt: Die institutionelle Ausdifferenzierung eines politischen Systems schafft Eigeninteressen der Akteure dieses Systems. Zwei Typen solcher Interessen können unterschieden werden: zum einen Interessen der Akteure des politischen Systems insgesamt, etwa an der Parteienfinanzierung; zum anderen Interessen der je aktuellen Mehrheit, welche kraft dieser durchgesetzt werden können. Problematisch ist dies insbesondere bei den Regeln des politischen Wettbewerbs, insbesondere dem Wahlrecht.
+
+Die Figur der „Entscheidungen in eigener Sache“ rückt die Aufmerksamkeit auf die Frage, wie die Durchsetzung dieser Interessen kontrolliert und begrenzt werden kann.
+
+## Maßnahmen zur Eindämmung der Eigeninteressen der politischen Akteure
+
+Bei dieser konzeptionellen Fassung des Problems rücken verschiedene Möglichkeiten ins Blickfeld, wie die damit verbundenen Probleme bekämpft werden können.
+
+Entscheidungen im Felde der Eigeninteressen der politischen Akteure könnten erst in der nächsten Legislaturperiode wirksam werden. Es könnte also ein zeitlicher Puffer eingebaut werden, der die Stärke der Motivation zur Selbstbegünstigung mindert, weil mindestens ungewiss ist, ob die aktuellen Entscheider später davon profitieren können. Insbesondere bei Entscheidungen über die Diäten der Abgeordneten kommt dies in Betracht. Vorbild für eine solche Regelung ist das 27. Amendment der Verfassung der Vereinigten Staaten. Hiernach treten Gesetze über die Entschädigung der Senatoren und Mitglieder des Repräsentantenhauses erst nach einer dazwischenliegenden Wahl in Kraft.
+
+Eine andere Möglichkeit zur Begrenzung der möglichen Selbstbedienung liegt darin, die Erhöhung von Mitteln der Politikfinanzierung nicht frei in die Hand des Parlaments zu geben, sondern solche Entscheidungen zu indexieren, d. h. an die Entwicklung der Preissteigerung zu binden. Eine solche Regelung für die Diäten hat zuerst die Verfassung des Freistaats Thüringen in Art. 54 Abs. 2 eingeführt. Hiernach verändert sich die Entschädigung der Landtagsabgeordneten auf der Grundlage der allgemeinen Einkommen, die Aufwandsentschädigungen orientieren sich an der allgemeinen Preisentwicklung im Freistaat. Nach heftigen Auseinandersetzungen, auch übelsten Anfeindungen der Abgeordneten in der ersten Zeit nach der Wiedervereinigung bei angekündigten Erhöhungen der Diäten, hat diese Regelung beruhigend gewirkt; in der Sache wird wenig dagegen einzuwenden sein. Bei der Parteienfinanzierung sieht § 18 Abs. 1 S. 2 – 5 PartG eine entsprechende Regelung vor. Eine darüber hinausgehende Erhöhung der absoluten Obergrenze der staatlichen Parteienfinanzierung wurde vor kurzem vom Bundesverfassungsgericht für unzulässig erklärt (Urteil vom 24.1.2023).
+
+Weiter können Eigeninteressen der politischen Akteure dadurch diszipliniert werden, dass vor solchen Entscheidungen – wiederum ist in erster Linie an die Politikfinanzierung zu denken – eine Sachverständigenkommission mit der Frage befasst werden muss. Aus den genannten Gründen der demokratischen Legitimation kommt die Entscheidung durch eine solche Kommission nicht in Betracht, aber die obligatorische Befassung vor einer Erhöhung der Leistungen ist möglich und schafft einen zusätzlichen Rechtfertigungsbedarf, falls von den Empfehlungen der Sachverständigenkommission abgewichen werden soll. Ohne eine Pflicht zur Einschaltung einer solchen Kommission sahen frühere Fassungen des Parteiengesetzes die Möglichkeit einer Kommission unabhängiger Sachverständiger zu Fragen der Parteienfinanzierung vor.
+
+Auf Rechtfertigungslasten setzen auch Begründungspflichten für den Gesetzgeber, wenn er bestimmte Entscheidungen treffen will. In Abweichung von der üblichen Maxime, der Gesetzgeber schulde nur das Gesetz, hat das Bundesverfassungsgericht für einige besondere Fälle eine solche Begründungspflicht verlangt. Das genannte Urteil vom Januar 2023 hat für die Abweichung von der Indexierungsregelung bei der Parteienfinanzierung eine solche Begründungspflicht des Gesetzgebers vorgesehen. Mangels seiner hinreichenden Begründung im Gesetzgebungsverfahren wurde die Anhebung der absoluten Obergrenze über die durch die Indexierung gebotenen Steigerung hinaus für verfassungswidrig erklärt.
+
+Eine heilsame Wirkung ist auch von Mindestberatungspflichten für Entscheidungen, die in die hier behandelte Gattung fallen, zu erwarten. Beim sog. Heizungsgesetz ist jedenfalls im Eilverfahren dieser Aspekt zum Tragen gekommen. Es dürfte kein Zufall sein, dass eine Reihe von Entscheidungen zur Erhöhung der Parteienfinanzierung in großer Eile über die Bühne des Bundestages gingen und zusätzlich auch noch zu einer Zeit, in der die allgemeine Aufmerksamkeit für das politische Geschehen reduziert war. So wurden solche Entscheidungen in wenigen Tagen vor Weihnachten getroffen oder während der Fußballweltmeisterschaft. Offensichtlich waren die Initiatoren dieser Entscheidungen bemüht, größere Beachtung in der Öffentlichkeit zu vermeiden.
+
+Eine Mindestberatungszeit im Gesetzgebungsverfahren hat zum einen den Vorteil, dass im Gesetzgebungsverfahren selbst eine gründliche Informationserhebung und -verarbeitung stattfinden kann, auch durch die Durchführung und Auswertung von Sachverständigenanhörungen, zum anderen kann während eines einige Zeit laufenden Gesetzgebungsverfahrens die Öffentlichkeit sich des Themas annehmen, kann weitere Argumente ins Spiel bringen und insbesondere auch gegenläufige Interessen mobilisieren. Das könnte das strukturelle Kontrolldefizit beseitigen. Das Vorgehen bei der Anhebung der absoluten Obergrenze der Parteienfinanzierung gibt ein entsprechendes Beispiel für eine schlechte Praxis.
+
+Schließlich hat die Rechtsprechung der Verfassungsgerichte in Bund und Ländern eine Praxis entwickelt, bei solchen Entscheidungen in eigener Sache, – neben Finanzierungsfragen ging es um Wahlrechtsänderungen – die Kontrollintensität zu erhöhen. Das Fehlen hinreichender Kontrollen im Gesetzgebungsverfahren wird insofern kompensiert, dass die Gerichte die nachträgliche Kontrolle anhand verschärfter Maßstäbe durchführen.
+
+Für die Änderung des Wahlrechts ist es vorzugswürdig, solche nur im Konsens mit der Opposition vorzunehmen. Allerdings setzt dies voraus, dass die parteipolitischen Interessen nicht mit letzter Hartnäckigkeit verfolgt werden, um eine Einigung zu ermöglichen. Leider ist dies in der letzten Legislaturperiode nicht gelungen.
+
+Entscheidungen des beschriebenen Typus lassen sich in einem ausdifferenzierten politischen System nicht vermeiden. Die damit verbundenen Gefahren lassen sich aber durch verschiedene Maßnahmen minimieren. Zu diesen zählt nicht zuletzt eine politische Kultur, die auf solche Entscheidungen ein besonders kritisches Auge wirft.
+
+ References[+]
+
+ References  
+
+ &#8593;1 Siehe Th. Streit, Entscheidung in eigener Sache, 2006

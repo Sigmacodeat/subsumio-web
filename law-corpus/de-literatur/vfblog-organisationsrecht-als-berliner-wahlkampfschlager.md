@@ -1,0 +1,79 @@
+---
+title: Verfassungsblog — Organisationsrecht als Berliner Wahlkampfschlager
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2022-12-19'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/organisationsrecht-als-berliner-wahlkampfschlager/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Organisationsrecht als Berliner Wahlkampfschlager
+
+Unverhofft ist das Berliner Verwaltungsorganisationsrecht Thema des Wahlkampfes für die vom Berliner Verfassungsgerichtshof angeordnete Wiederholungswahl zum Berliner Abgeordnetenhaus und den Bezirksverordnetenversammlungen geworden. Es scheint einen Konsens der politischen Kräfte in Berlin zu geben, dass es angesichts diverser Missstände in der Berliner Verwaltung, vor allem der Unzuständigkeit der jeweiligen Verwaltungsebene – vom Tagesspiegel gern als „Behörden-Ping-Pong“ betitelt – einer Reform bedarf. Nicht zuletzt angesichts umfassender Vorschläge des Chief Digital Officer (CDO) des Landes Berlin und Staatssekretär für Digitales und Verwaltungsmodernisierung, Ralf Kleindiek, und der nachfolgenden Berichterstattung  ist das sonst eher Verwaltungswissenschaftlern und -juristen vorbehaltene Thema zum Wahlkampfschlager mutiert.
+
+Mit Blick auf die Historie wird dabei ersichtlich, dass eine inkrementelle Weiterentwicklung der bisherigen zweistufigen Verwaltung nicht ausreichen wird, um eindeutige Zuständigkeitsregelungen zu schaffen. Vielmehr wird sich der Gesetzgeber entscheiden müssen, ob er eine starke zentrale Hauptverwaltung auf Landesebene schaffen möchte, die etwaige Konflikte mit den einzelnen Bezirken im Rahmen umfassender Aufsichts- und Weisungsbefugnisse zu Gunsten der Landesinteressen entscheiden kann, oder ob der Grundsatz der Selbstverwaltung auf Bezirksebene ernstgenommen und den Bezirken damit mehr – auch politische – Eigenverantwortung zugestanden werden soll.
+
+## Einheitsgemeinde mit zweistufiger Verwaltung
+
+Gemäß Art. 1 I der Verfassung von Berlin (VvB) ist Berlin sowohl ein deutsches Land als auch zugleich eine Stadt. Volksvertretung, Regierung und Verwaltung einschließlich der Bezirksverwaltungen nehmen die Aufgaben Berlins als Gemeinde, Gemeindeverband und Land wahr, Art. 3 II VvB. Staatliche und gemeindliche Tätigkeit werden gemäß § 1 des Allgemeinen Zuständigkeitsgesetzes (AZG) nicht getrennt. Berlin – und nicht die Bezirke – ist somit als Stadt Gemeinde im Sinne von Art. 28 II GG und daher auch Träger der Garantie der kommunalen Selbstverwaltung. Die Bezirke sind Selbstverwaltungseinheiten Berlins ohne Rechtspersönlichkeit (§ 2 I des Bezirksverwaltungsgesetzes [BezVG]).
+
+Ob es ein Recht auf bezirkliche Selbstverwaltung gibt und wie weit dieses reicht, ist umstritten. Nach h. M. und der Rechtsprechung der Verfassungsgerichtshofs des Landes Berlin ergibt sich jedoch aus Art. 66 II VvB, wonach die Bezirke ihre Aufgaben nach den Grundsätzen der (kommunalen) Selbstverwaltung erfüllen und regelmäßig die örtlichen Verwaltungsaufgaben wahrnehmen, kein Recht auf bezirkliche Selbstverwaltung, sondern allein ein verbindliches Organisationsprinzip der Berliner Verwaltung.
+
+Diese – in den anderen Stadtstaaten Hamburg und Bremen nicht existierende – Zwitterstellung der Bezirke zwischen Unselbstständigkeit und selbstverwalteter Aufgabenerfüllung, zusammen mit einer – trotz detaillierter gesetzlicher Regelung – oft unklaren Zuständigkeitsverteilung zwischen der Hauptverwaltung einerseits und den Bezirksverwaltungen andererseits, ist die Grundlage der seit Jahrzehnten anhaltenden Diskussion über die Reformbedürftigkeit der Berliner Verwaltung.
+
+Die Hauptverwaltung umfasst dabei gemäß § 2 II AZG die Senatsverwaltungen, die ihnen nachgeordneten Behörden (Sonderbehörden) und nicht rechtsfähigen Anstalten sowie etwaige (derzeit nichtexistierende) unter ihrer Aufsicht stehende Eigenbetriebe. Gemäß Art. 75 I VvB i.V.m. § 2 III AZG umfassen die Bezirksverwaltungen auch die ihnen nachgeordneten nicht rechtsfähigen Anstalten (z. B. Schulen, Volkshochschulen) und die unter ihrer Aufsicht stehenden (Kita-)Eigenbetriebe. Gemäß § 2 II BezVG sind Organe der Bezirke die Bezirksverordnetenversammlungen und die Bezirksämter. Die Binnenorganisation der Bezirke entspricht dabei dem Kommunalverfassungstyp einer unechten Magistratsverfassung.
+
+## Detaillierte Regelung der Zuständigkeiten
+
+Der Senat nimmt gemäß Art. 67 I 1 VvB, § 3 I AZG durch die Hauptverwaltung die Aufgaben von gesamtstädtischer Bedeutung wahr. Den Bezirken obliegen gemäß Art. 67 II 1 VvB, § 3 II AZG alle anderen Aufgaben der Verwaltung. Es gibt also eine Zuständigkeitsvermutung zugunsten der Bezirke, jedoch keine Allzuständigkeit. Art. 67 I 2 VvB, § 3 I 2 AZG enthalten eine abschließende Aufzählung der Aufgaben von gesamtstädtischer Bedeutung, zu denen die Leitungsaufgaben (Planung, Grundsatzangelegenheiten, Steuerung, Aufsicht) gehören, die Polizei-, Justiz- und Steuerverwaltung, sowie einzelne andere Aufgabenbereiche, die wegen ihrer Eigenart zwingend einer Durchführung in unmittelbarer Regierungsverantwortung bedürfen.
+
+Die Zuständigkeitsabgrenzung wird einfachgesetzlich durch das Allgemeine Zuständigkeitsgesetz (AZG) geregelt, sofern keine besonderen Vorschriften bestehen. Die allgemeinen Verwaltungsaufgaben der Hauptverwaltung werden gemäß § 4 I AZG durch den in der Anlage zum AZG normierten Zuständigkeitskatalog (ZustKat AZG) bestimmt, der nach einzelnen Sachgebieten gegliedert ist. Alle dort nicht aufgeführten Aufgaben sind Aufgaben der Bezirke, § 4 I 2 AZG.
+
+Speziellere Regelungen für Polizei- und Ordnungsaufgaben enthalten das Allgemeine Sicherheits- und Ordnungsgesetz (ASOG]) und der Zuständigkeitskatalog Ordnungsaufgaben (ZustKat Ord), vgl. § 4 II AZG. Hinzu treten einzelne spezialgesetzliche Regelungen.
+
+Mit Blick auf die umfangreichen Zuständigkeitskataloge mag es erstaunen, dass überhaupt noch Unklarheiten bestehen können, welche Stufe der Berliner Verwaltung im Einzelfall zuständig ist. Vor allem schließt sich die Frage an, warum das insofern so gern beklagte bürokratische Tischtennisspiel nicht bereits verhindert werden konnte. Dass dies keine leichte und vor allem keine neue Aufgabe ist, zeigt ein Blick in die Geschichte.
+
+## Von des Kaisers Hand… 
+
+Das Organisationsrecht Berlins in seiner heutigen Form ist eine Folge historischer Entwicklungen seit dem letzten Drittel des 19. Jahrhunderts. Zwar waren die aus dem wirtschaftlichen Aufschwung und Bevölkerungswachstum nach der Gründung des Deutschen Reichs 1871 erwachsenen Nachteile einer fehlenden Koordination Berlins mit seinen seinerzeit eigenständigen Nachbarstädten und -gemeinden spürbar. Gleichwohl waren die Widerstände gegen eine verwaltungsorganisatorische Verflechtung in den Nachbargemeinden des 1875 aus der Provinz Preußen ausgeschiedenen Berlins groß („Vor Groß-Berlin und Zweckverband bewahre uns des Kaisers Hand“). Sie konnten aber weder die Gründung besagten Zweckverbands im Jahr 1911 noch das Gesetz über die Bildung einer neuen Stadtgemeinde Berlin vom 27. April 1920 verhindern, durch das Groß-Berlin gegründet wurde, welches die Städte Berlin, Charlottenburg, Wilmersdorf, Schöneberg, Neukölln, Lichtenberg, Köpenick und Spandau sowie 59 Landgemeinden und 27 Gutsbezirke zu einer neuen Einheit zusammenfasste.
+
+Dieses Groß-Berlin-Gesetz führte bereits die noch heute bestehende zweistufige Verwaltung mit bezirklicher Selbstverwaltung ein, um die Widerstände (v.a. Charlottenburgs und Spandaus) zu brechen, den ehemals selbstständigen Gemeinden einen Rest an Selbstständigkeit zu belassen und die Teilnahme der Bevölkerung an der Verwaltungstätigkeit zu ermöglichen. Schon damals wurde keine klare Verteilung der Zuständigkeiten getroffen – was noch heute als Kern der Defizite der Berliner Verwaltung ausgemacht wird.
+
+Während der Zeit des Nationalsozialismus wurde die bezirkliche Selbstverwaltung fast vollständig aufgehoben und durch das Führerprinzip ersetzt. Nach Kriegsende knüpfte die Alliierte Kommandantur in ihrer Vorläufigen Verfassung von Groß-Berlin vom 13. August 1946 an die Regelungen von 1920 an. Zudem wurde Berlin aufgrund der Auflösung Preußens durch Zufall zum Stadtstaat. Bereits Ende 1948 wurde ein neuer Magistrat für den Ostteil Berlins gewählt, der später ein Bezirk der DDR wurde.
+
+## …über West-Berlin…
+
+Im Westteil trat am 1. Oktober 1950 die Verfassung von Berlin in Kraft, die inhaltlich an die Vorläufige Verfassung anschloss und den Status Berlins als Einheitsgemeinde mit begrenzt eigenständigen Bezirken beibehielt. Mit der ersten Verwaltungsreform im Jahr 1958 wurden das Allgemeine Zuständigkeitsgesetz (AZG), das Bezirksverwaltungsgesetz (BezVG), und das Polizeizuständigkeitsgesetz (PolizeiZG; heute: Allgemeine Sicherheits- und Ordnungsgesetz [ASOG]) verabschiedet. Die neben den heute noch existierenden Organen der Bezirksverwaltung – Bezirksamt und Bezirksverordnetenversammlung – zugleich eingeführten Deputationen wurden 1971 mit Blick auf die schon damals kritisierte Unübersichtlichkeit und Schwerfälligkeit der Bezirksverwaltung wieder abgeschafft; ferner wurde erneut das Proporzbezirksamt, das die Stärke aller Fraktionen in der Bezirksverordnetenversammlung bei der Besetzung der Stadtratsposten berücksichtigt, eingeführt. Das Problem der Kompetenzüberschneidungen zwischen Haupt- und Bezirksverwaltung konnte auch eine Enquête-Kommission im Jahr 1984 nicht beseitigen.
+
+Die erste große Verwaltungs- und Verfassungsreform nach der Wiedervereinigung erfolgte im Jahr 1994, ein Jahr später wurde die neue Verfassung von Berlin verabschiedet, die Verwaltungsorganisation jedoch bereits 1998 erneut überarbeitet. Neben einer umfassenden Gebietsreform (12 statt 23 Bezirke) sollten eine striktere Aufgabenabgrenzung und eine Stärkung der bezirklichen Ebene erreicht werden, weswegen einige Aufgaben (etwa Teile der bauplanungsrechtlichen Rechtsetzungsbefugnis) auf die Bezirke verlagert wurden.
+
+## … bis zum CDO
+
+Zuletzt gab es in den Jahren 2008 und 2010 größere Änderungen des Bezirksverwaltungsrechts. Insgesamt – wie auch in der aktuellen Diskussion – ist inzwischen eine Tendenz zur Vereinheitlichung der Bezirksverwaltungen und zur Stärkung der Senatsebene zu beobachten. In diese Richtung gehen auch die Ideen des derzeitigen Landes-CDO Kleindiek: Er schlägt insbesondere eine Dreiteilung der Aufgaben in solche des Senats, in gesamtstädtische Aufgaben der Bezirke nach einheitlichen, durch den Senat gesetzten Standards und in reine Bezirksaufgaben vor. Insbesondere die zweite Kategorie würde hier zu einer stärkeren Vereinheitlichung führen, etwa im Bereich der Bürgerämter und Sozialämter, bei Baugenehmigungsverfahren und im Straßenbau sowie hinsichtlich der Durchführung von Wahlen. Die reinen Bezirksaufgaben wären dahingegen v.a. auf kulturelle und Bildungsangebote begrenzt (Bezirksmuseen, Weiterbildung von Erwachsenen).
+
+Zudem soll das früher weitgehend einer bloßen Rechtsaufsicht entsprechende, in den letzten Jahren bereits teilweise ausgebaute Eingriffsrecht der Hauptverwaltung durch eine umfassende Fachaufsicht der Landesebene gegenüber den Bezirken einschließlich entsprechender Weisungsrechte ersetzt werden. Bei Streitigkeiten zwischen Senat und Bezirken soll es zudem eine Schlichtungsstelle in der Senatskanzlei mit verbindlichem Entscheidungsrecht geben.
+
+Hinsichtlich der Bezirke soll der Rat der Bürgermeister – als zentrales Beratungsgremium mit der Senatsebene – gestärkt und personell besser ausgestattet werden. Neben einer Richtlinienkompetenz der Bezirksbürgermeister gegenüber den übrigen Stadträten und fachlichen Anforderungen an Stadträte sieht Kleindiek zudem einen Wechsel vom Proporz- zum politischen, also allein aufgrund politischer Mehrheit in der Bezirksverordnetenversammlung gebildeten Bezirksamt vor.
+
+## Ein heißes Eisen: Das politische Bezirksamt
+
+Auch die Frage der Einführung des politischen Bezirksamts wird immer wieder aufgeworfen. Beim derzeitigen Proporzbezirksamt werden die Bezirksamtsmitglieder durch die Bezirksverordnetenversammlung aufgrund von Wahlvorschlägen der Fraktionen entsprechend ihrem nach dem Höchstzahlverfahren (d’Hondt) berechneten Stärkeverhältnis gewählt (Art. 74 I 2 VvB, § 35 II 1 BezVG). Indem somit auf die Stärke aller in der Bezirksverordnetenversammlung vertretenen Fraktionen zurückgegriffen wird, soll ein gewisser Zwang zum Konsens erreicht werden, was in der Praxis nur bedingt funktioniert. Nicht selten kommt es zu parteipolitisch gefärbten Meinungsverschiedenheiten zwischen den einzelnen Bezirksamtsmitgliedern.
+
+Ob ein rein von der Mehrheit der Fraktionen in der Bezirksverordnetenversammlung getragenes, politisches Bezirksamt demgegenüber organisationsrechtlich wünschenswert wäre, ist zumindest zu hinterfragen. Den Vorteilen wie einer nach außen klar ersichtlichen politischen Verantwortlichkeit auf Bezirksebene stehen entsprechende Nachteile gegenüber: So wäre bei unterschiedlicher parteipolitischer Zusammensetzung der Senats- und der jeweiligen Bezirksebene eine noch stärker parteipolitisch geprägte Auseinandersetzung der beiden Ebenen als heute zu befürchten. Zudem würde die – derzeit wohl angestrebte – stärkere Vereinheitlichung der Bezirksverwaltung dem Vorteil der „Politisierung“ des Bezirksamts entgegenstehen. Sind die Gestaltungsmöglichkeiten der Bezirksverwaltung in den zentral durch von der Hauptverwaltung vorgegebenen Standards gesteuerten Bereichen eingeschränkt, führt die nach außen hin wahrnehmbare bezirkliche Zuständigkeit gegebenenfalls erst recht zu dem Versuch einer Abwälzung der Verantwortung und Zuständigkeit von einer Ebene auf die andere.
+
+Jedenfalls dürfte eine stärkere Zentralisierung der Aufgaben auf Landesebene nicht die Einführung des politischen Bezirksamts bedingen, wie dies andersherum auch für eine etwaige Stärkung der bezirklichen Selbstständigkeit nicht erforderlich wäre. Es dürfte vielmehr anzuraten sein, die Frage der Zusammensetzung des Bezirksamts nicht mit jener der Zuständigkeitsabgrenzung zwischen den beiden Verwaltungsstufen zu vermengen.
+
+## Organisation ist nicht alles
+
+Sicherlich ist es begrüßenswert, dass die Frage der Zuständigkeitsabgrenzung zwischen Haupt- und Bezirksverwaltung als dringendes Thema wahrgenommen wird. Zum einen bleibt jedoch zu hoffen, dass sie nicht nur im Wahlkampf, sondern auch vom neu gewählten Abgeordnetenhaus mit Priorität, aber auch mit hinreichender Tiefe behandelt werden wird.
+
+Unabhängig davon, welche Richtung eine Reform einschlägt, kann das Organisationsrecht zum anderen bestenfalls der Anfang eines umfassenden Umbaus der Berliner Verwaltung sein. Ohne eine ausreichende Ausstattung an Ressourcen einschließlich gut ausgebildeten und motivierten Personals wird auch eine Klärung der Zuständigkeiten keinen nennenswerten Fortschritt bringen. Es reicht nicht aus, das Tischtennisnetz so hoch zu ziehen, dass der Ball nicht mehr auf die andere Seite der Platte gespielt werden kann und damit ein „Behörden-Ping-Pong“ zu verhindern.
+
+Denn wenn dann niemand den Ball in die Hand nimmt, geht es dennoch nicht voran. Vor diesem Hintergrund sind die weiteren – etwa hinsichtlich etwaiger Genehmigungsfiktionen bei langsamem Verwaltungshandeln durchaus zu hinterfragenden – Vorschläge des CDO Kleindiek zu sehen, die Bezirke für die von ihnen wahrzunehmenden Aufgaben nicht nur einer stärkeren Aufsicht zu unterstellen, sondern sie auch mit ausreichenden finanziellen und personellen Mitteln auszustatten. Nicht zuletzt deshalb bleibt abzuwarten, ob nach der Wahl die im Wahlkampf als dringlich empfundene Reform, die insbesondere hinsichtlich des politischen Bezirksamts eine Änderung der Verfassung von Berlin erfordern würde, auch umgesetzt wird.

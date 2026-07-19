@@ -348,7 +348,13 @@ export interface GroundedCitation {
   source_text?: string;
   source_file?: string;
   unverifiable_reason?: string;
-  category?: "statute" | "state_treaty" | "state_law";
+  category?:
+    | "statute"
+    | "state_treaty"
+    | "state_law"
+    | "materialien"
+    | "literatur"
+    | "verlags_literatur";
   jurisdiction?: "at" | "de" | "ch" | "eu";
 }
 

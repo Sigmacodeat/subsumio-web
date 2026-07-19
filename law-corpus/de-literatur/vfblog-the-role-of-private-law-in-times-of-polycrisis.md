@@ -1,0 +1,49 @@
+---
+title: Verfassungsblog — The Role of Private Law in Times of Polycrisis
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2024-10-10'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/the-role-of-private-law-in-times-of-polycrisis/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# The Role of Private Law in Times of Polycrisis
+
+Crises are a good test case, not only to check the practical performance of the law, but also to gain conceptual clarity about the possibilities of (certain areas of) the law. This post compares a German regulatory approach to private law with the US Law and Political Economy (LPE) movement. At first glance, the LPE movement in the US and the German debates on the substantive approach to private law and its use for behavioral control show many similarities. However, the goal of this post is to show that important differences remain: Regulatory private law is more concerned with the way in which political objectives are enforced, whereas LPE seeks to change the objectives themselves.
+
+The blog post is organized as follows: First, I will briefly present the concept of a functional analysis of law and show why this can be seen as a “substantive approach to private law”. In a second step, I will shed light on the relationship between private law and politics drawing on examples from the polycrisis in Germany. Thirdly, I will briefly compare the German regulatory private law approach to the LPE movement in the US.
+
+## A Functional Approach to (Private) Law
+
+Law performs different functions but the reference to legal functions is not unambiguous. In the present context, I am referring to generalizable functions of individual legal rules or complexes of norms. In the following, I will briefly discuss three main functions.
+
+A fundamental and important function in this sense is the infrastructure function of the law. Through its infrastructure function, the law constitutes certain institutions and enables people to use them to shape their legal relationships. Examples are marriage, the legal person including corporations with limited shareholder liability and all property rights. When legislators enact infrastructural laws, they provide people with a framework for action. Legal infrastructure creates a specific connection between several people that is legally binding and offers promoters legal certainty in their dealings with each other and with third parties.
+
+Another legal function is the balancing of interests. This concerns situations in which the interests of different persons conflict and the law acts as an arbitrator. The balancing of interests can be understood as one point on a scale that extends between the interests of one party and the other. Often, it has considerable distributive effects at which point of the scale the balance of interests is set, whether it is more on the side of employees, tenants, and consumers or on the side of employers, landlords, and businesses.
+
+The third and last function, I want to discuss here, is regulation. Understood as a function of law, regulation describes the use of law as a governmental instrument to steer people in order to pursue public interest goals. There is a considerable difference between balancing interests and regulation. When regulating, the legislator wants to achieve a specific regulatory goal. This is not one point on a scale, but a maximization task.
+
+In my view, legal functions such as these can be found in all parts of the legal system. They are not specific to criminal law, administrative law, or private law. This is an insight that probably seems more controversial in Germany than in the US. According to traditional understanding, private law primarily serves to balance interests and possibly also provides legal infrastructures. But the pursuit of public interests – i.e., regulation – was largely excluded from the realm of private law. However, that is not true. German tenancy law, for example, contains a provision according to which the tenant may not reduce the rent for three months if the landlord renovates the building to make it more energy efficient. This provision does not aim to rebalance the interests of landlords and tenants but serves the clearly stated purpose to help the energy transition achieve a breakthrough and to reduce Germany’s dependence on fossil fuels. When private law is used to achieve such geopolitical goals, it is no longer a formalistic concept that is separated from politics and seemingly neutral. In this respect, the functional analysis of law and specifically the revelation of the regulatory function of private law can be viewed as a “substantive approach to private law”.
+
+## (Private) Law’s Functions in Times of Crisis
+
+The use of private law in the context of crises offers a good opportunity to take a closer look at the different legal functions and their relationship to politics. Generally, private law can be used to prevent or combat crises, to manage them, and to distribute the losses incurred during crises. One example is Covid-19, when the German legislator inserted by law a mandatory clause in all employment contracts according to which the employees had to perform their work from home. This adjustment of employment contracts aimed to isolate people in order to stop the pandemic from spreading.
+
+But private law is also used for crisis management. One example are increased gas prices following the Russian invasion of Ukraine that threatened German businesses and could have led to mass layoffs. These dangers were addressed by restricting contractually agreed options to price increases. In this way, energy suppliers, who in turn received state aid, were used to stabilize the economy as a whole. Sometimes, the energy contracts were also changed by law granting energy customers a bonus to be credited by the supplier, who in turn got reimbursed by the government.
+
+If you compare various crises – Covid-19, the Ukraine war, the climate crisis – a certain pattern emerges: Law, and especially private law, is regularly used firstly with the aim of minimizing the overall losses from the crisis. Then, in a second step, private law is used to distribute the unavoidable damage in such a way that as few third-party effects as possible are triggered. In all these cases, private law is used for regulatory purposes. This is a genuinely political field. The legislator initially decides on the regulatory goal. Do we want rigid contact restrictions during a pandemic, or do we take the Swedish route? Do we want maximum climate protection, or do we think that promoting the traditional automotive industry is more important? These are decisions that cannot be made by judges. They are political and – depending on the constellation – have to be made by the legislator or the government. This ensures the democratic legitimacy of such decisions that have fundamental impact on our future. But not only defining regulatory goals is a political decision; the same is true for the choice of regulatory instrument. To whom (industry, pupils, elderly people) do we want to impose obligations and to what extent? What side effects – such as social isolation during a pandemic or temporarily higher unemployment – are we prepared to accept? These are again decisions that have far-reaching impact on society as a whole and need to be taken by the government or the legislator.
+
+The situation changes completely when we look at issues of balancing interests. Who in a supply chain bears the risk of a war-related sanction against Russian suppliers? How are crisis-related rapid price increases for raw materials to be distributed between the parties? This is about allocating risks in contractual relationships in the face of unforeseen events. The main issue here is what contractual arrangements the specific parties have made and whether the corresponding risk has already been allocated. The use of private law is much less political in these cases. It is not a question of imposing external political objectives on the parties, but of adapting their existing private law relationships to the external circumstances changed by the crisis. This is why the courts take center stage here, while regulation by means of private law is the realm of the legislator.
+
+## Functional Analysis vs. LPE
+
+This brings me to the third and final point: How does such a functional analysis of law differ from US-style LPE? According to its founders, LPE is much more a political project than what I have just outlined as functional analysis of law. It seems to be a legacy of legal realism that in the US the application of law as such is conceived as a political act. Given the longstanding focus on economic efficiency as the primary goal of law, LPE propagates alternative political goals such as the consideration of egalitarian and democratic values. I believe that functional legal analysis can show that different areas of law are open to political influences to varying degrees. The crucial point here – at least from a German perspective – is that the dividing line does not run between the legal domains, in the sense that administrative law is political, private law is apolitical. Instead, the dividing line runs along the distinction between regulation and the balancing of interests. Where law serves primarily to help the general interest to prevail, it is genuinely political, even if it is private law. However, when it comes to settling conflicts between individuals, other standards apply.
+
+Functional analysis deals with the engine room of law. The LPE movement seems to be more concerned with replacing the captain on the bridge.

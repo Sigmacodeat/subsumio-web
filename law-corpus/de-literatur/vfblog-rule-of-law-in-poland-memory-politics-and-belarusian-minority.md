@@ -1,0 +1,42 @@
+---
+title: >-
+  Verfassungsblog — Rule of Law in Poland: Memory Politics and Belarusian
+  Minority
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2017-11-21'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/rule-of-law-in-poland-memory-politics-and-belarusian-minority/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Rule of Law in Poland: Memory Politics and Belarusian Minority
+
+In recent years, the Verfassungsblog has commented extensively on the decline of the rule of law in Hungary and Poland. While most of the contributors have unfolded the dramatic changes regarding judicial independence in these countries, two facets of this decline, in my view, have not received sufficient attention in light of the ongoing constitutional discussion in Europe, namely regarding memory politics and protection of ethnic minorities. With this entry, I would like to initiate the discussion about “mnemonic constitutionalism” on Verfassungsblog, as Poland has recently supplied a paradigmatic example of how memory laws affect national minorities and symptomize the decline of liberal democracy. By virtue of the so-called “de-communization law” (Law No. 744 of April 2016), local administrations are obliged to identify public objects (e.g. street or building names) that glorify communist past or personalities. One of the recent targets for the local administration has become Branisłaŭ Taraškievič (or Bronisław Taraszkiewicz in Polish transliteration), a prominent Belarusian linguist, after whom a street and a school are named in eastern Poland, a region with a high concentration of the Belarusian minority. Ironically, Taraškievič was tortured by the NKVD in the 1930s and died as a victim of Stalinist repressions.
+
+## Memory Laws for Memory Wars
+
+The obsession of the Fidesz’s Hungary and PiS’s Poland with historical memory has been well documented elsewhere. To give but a few examples, the new constitution of Hungary emphasises the heroic history of the Magyar nation, portraying the country as an innocent victim attacked by two totalitarian regimes. Equally, Poland has made multiple attempts to criminalize defamation of the Polish nation, in a way similar to the crime of denigration of Turkishness in Turkey. We essentially observe two populist nationalistic regimes using law as a sword in memory wars in circumstances where no actual intervention has taken place at their borders in the last twenty-five years. This can be contrasted with Ukraine, for example, that has to – understandably – protect its mnemonic security in light of the Russian military aggression and media propaganda.
+
+The case of Poland is particularly fascinating because memory laws have been developed not by the Parliament, but by a special body with quasi-parliamentary functions instead, called the Institute of National Remembrance (Instytut Pamięci Narodowej). The institution can be characterized as promoting an openly nationalistic narrative of Polish history, where Poles are always portrayed as victims and rarely as perpetrators, unless they had collaborated with the communist regime. In this regard, the history of Holocaust in Poland has been a matter of particular irritation by PiS supporters, many of whom believe that only Nazis tortured Jews while Poles were completely immune to the Anti-Semitic violence. In line with this narrative, the virtuous Poles are just incapable of burning their Jewish neighbours alive. The role of murderers in this simplified history is reserved for Germans, Russians, Ukrainians and other baddies around.
+
+## Branisłaŭ Taraškievič and Belarusian Minority in Poland
+
+The personality of Branisłaŭ Taraškievič is extremely pertinent to this obsession of PiS with legal governance of historical memory. Born in 1892 in what today is Lithuania (and in the epoch, was a region of the Russian empire densely populated with Belarusians, Jews, Poles and Lithuanians), Taraškievič has become a symbol of the Belarusian anti-Soviet aesthetics as he was, amongst his other academic contributions and translations, the author of the first standardized grammar of the Belarusian language (Vilnius, 1918). That popular book was issued in five editions both in Cyrillic and Latin alphabets.
+
+Not only was he repressed and sentenced to death by the Soviet NKVD in the 1937-purge that physically erased a whole generation of the Belarusian intelligentsia, his standards of grammar were prohibited in Soviet Belarus from the 1930s onwards. The 1933 language reform introduced new – explicitly Russified – norms of the Belarusian grammar, along with the rise of the Russian vocabulary during the Soviet years. Even nowadays, an openly pro-Russian regime of Ałaksandr Lukašenka uses either the Russian language or the Russified (post-1933) version of Belarusian (the so-called “narkamaŭka”) in its administration. The classical written standards of Taraškievič (the so-called “taraškievica”) have thus remained a symbol of anti-communist resistance amongst the Belarusian diaspora in Europe and North America, as well as a frequent indicator of the political views amongst contemporary Belarusian intellectuals during the pending Lukašenka’s regime. I have already addressed elsewhere the decline of the rule of law in Hungary as constitutional “Belarusization”, a term that was also later borrowed by Dimitry Kochenov with regard to Poland. However, that “Belarusization” has nothing to do with the Belarusian language. It instead alludes to the patterns of constitutional demise in the rule of law in Hungary and Poland, clearly mimicking the rise of Lukašenka’s regime in the 1990s.
+
+Yet linguistic studies are not the reason why Taraškievič was targeted by the local administration in Podlasie. By virtue of the Riga Treaty (1921), the territories of Belarus and Ukraine were divided between Bolshevik Russia and Poland. Thus, until the start of the Wold War II in 1939, the Western half of Belarus was under Polish rule. The Belarusian language and culture were either denied or oppressed, and the schools promoted Polonization of the local population. Taraškievič supported a left-wing “communist” fraction representing the interests of the Belarusian minority in the Polish interwar parliament. This petite histoire certainly would not fit into the legislative narrative propounded by the Institute of National Remembrance and PiS, in which Poles always act as heroes oppressed by the neighbouring nations and never as oppressors. This rhetoric is also captured aptly in another recent – in that instance declaratory – Polish law on the Wołyn massacre (Resolution of 2016), regarding ethnic inter-war conflict with Ukrainians. Taraškievič was arrested for his “anti-Polish” activities, and later in 1933 exchanged – rather ironically – for another Belarusian political prisoner and transferred into the Eastern (Soviet) part of Belarus. There, he was subsequently repressed and prosecuted in a fabricated case against “Belarusian nationalists”.
+
+## (Memory) Law and Justice
+
+At the moment, Belarusian historians and minority representatives in Eastern Poland are trying to establish a dialogue on Taraškievič with regional authorities and the Institute of National Remembrance. Should their arguments not be sufficiently persuasive for the purists of the newest historical narrative of Poland, the name of Taraškievič, the author of the first Belarusian grammar, will be removed from a street and a Belarusian-language lyceum in the region. The victim of Stalinism will be banned via a “de-communization” law. “Law and justice”, as the ruling Polish party is officially called (Prawo i Sprawiedliwość = PiS), will be “restored” once again. This is an emblematic example of how a memory law can be explicitly detrimental to minority protection.
+
+Together with Aleksandra Gliszczyńska-Grabias, I have recently edited a book on various memory laws for Cambridge University Press (2017). The analysis of our authors unequivocally shows that legal governance of memory is on the rise in Europe and has become a matter of pertinent constitutional debate. More specifically in Central and Eastern Europe, this rise is correlated with the decline of democracy and rule of law. The Polish-Belarusian case of Taraškievič unfolded here fits neatly in this newest wave of resentment embodied in memory laws.

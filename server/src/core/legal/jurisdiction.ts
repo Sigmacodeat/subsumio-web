@@ -15,7 +15,7 @@ export function isLegalJurisdiction(value: string): value is LegalJurisdiction {
 }
 
 export function statuteJurisdictionFromSlug(slug: string): LegalJurisdiction | null {
-  const match = /^legal\/(?:statutes|judikatur)\/([a-z]{2})\//i.exec(slug);
+  const match = /^legal\/(?:statutes|judikatur|literatur|materialien)\/([a-z]{2})\//i.exec(slug);
   if (!match) return null;
   const value = match[1].toLowerCase();
   return isLegalJurisdiction(value) ? value : null;
@@ -42,9 +42,7 @@ export function assertLegalSourceJurisdiction(
   if (slug) {
     const slugJurisdiction = statuteJurisdictionFromSlug(slug);
     if (slugJurisdiction && slugJurisdiction !== jur) {
-      throw new Error(
-        `Legal jurisdiction/slug mismatch: ${jur} does not match ${slug}`
-      );
+      throw new Error(`Legal jurisdiction/slug mismatch: ${jur} does not match ${slug}`);
     }
   }
 }

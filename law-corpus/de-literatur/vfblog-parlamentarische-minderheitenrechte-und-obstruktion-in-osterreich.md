@@ -1,0 +1,100 @@
+---
+title: >-
+  Verfassungsblog — Parlamentarische Minderheitenrechte und Obstruktion in
+  Österreich
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2024-02-06'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/parlamentarische-minderheitenrechte-und-obstruktion-in-osterreich/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Parlamentarische Minderheitenrechte und Obstruktion in Österreich
+
+In Österreich sind bereits seit Mitte der 1980er-Jahre obstruierende Aktivitäten der Oppositionsparteien im parlamentarischen Verfahren zu beobachten. Nach dem Zweiten Weltkrieg war die parlamentarische Tätigkeit zunächst vom Gedanken der Konsensdemokratie zwischen den beiden großen politischen Lagern – SPÖ und ÖVP – geprägt, eine relevante Opposition war nicht vorhanden. Der Gesetzgeber und die parlamentarische Praxis haben seit den 1980ern unterschiedliche Instrumente entwickelt, um der Gefahr der Obstruktion der parlamentarischen Tätigkeit im Nationalrat1) durch die missbräuchliche Ausübung von Minderheitenrechten zu begegnen, ohne gleichzeitig Minderheitenrechte völlig auszuschließen. Diese Abwägung ist nicht in allen Fällen geglückt und effektiv. Der Gedanke, dass im parlamentarischen Verfahren im Widerstreit von Mehrheit und Minderheit über unterschiedliche Interessenlagen ein politischer Konsens entstehen kann und soll, scheint dabei zusehends in den Hintergrund zu treten.
+
+## Tiefe Gräben in der Ersten Republik
+
+Das österreichische Bundes-Verfassungsgesetz (B‑VG) sah bei seinem Inkrafttreten 1920 (ebenso wie das Geschäftsordnungsgesetz des Nationalrats) vergleichsweise wenige Rechte der Minderheit im Nationalrat vor. Insbesondere die Kontrollrechte des Nationalrats gegenüber der Regierung waren lange Zeit weitgehend Mehrheitsrechte (z.B. das Recht zur Einsetzung von Untersuchungsausschüssen, das bis 2015 ein Mehrheitsrecht blieb, siehe dazu unten). Die Bundesverfassung war noch sichtlich vom Dualismus zwischen Parlament und Monarch geprägt.2)
+
+Die Zeit der Ersten Republik von Inkrafttreten des B‑VG 1920 bis zum Beginn der austrofaschistischen Diktatur 1933 bzw. 1934 war von tiefen Gräben und Spannungen zwischen den beiden großen politischen Lagern und einem fragmentierten Parteiensystem geprägt. Den Sozialisten stand das Lager der Christlichsozialen und einer Reihe weiterer konservativ, national und bäuerlich ausgerichteter Parteien gegenüber.3) Das von der Bundesverfassung vorgesehene parlamentarische System erwies sich als ungeeignet, mit diesen Spannungen umzugehen. Eine Verfassungsänderung war ohne die Sozialdemokraten und die Christlichsozialen nicht möglich. Die beiden Lager sperrten sich gegenseitig. Es kam in dieser Zeit nicht zu einer Obstruktion des parlamentarischen Verfahrens durch Minderheitenparteien, sondern durch die beiden großen Lager. Der Prozess zur Erlassung der B-VG-Novelle 1929 war dementsprechend schwierig. Zwar wurde letztlich ein Kompromiss zwischen den Lagern gefunden, 1934 wurde die Bundesverfassung jedoch durch eine ständisch-autoritäre Verfassung abgelöst. Die beiden Lager hatten sich gegeneinander derart gesperrt, dass im März 1933 alle drei Nationalratspräsidenten zurücktraten. Die parlamentarische Tätigkeit kam zum Erliegen. Die Regierung nutzte die Schwäche des Parlaments, um auf Grundlage von Notstandsbefugnissen rechtswidrig die Verfassungsordnung auszuschalten.
+
+## Konsensdemokratie in der frühen Zweiten Republik
+
+In der Zweiten Republik, also in der Zeit ab 1945, trat das Problem der Obstruktion des Parlaments durch die Opposition zunächst nicht auf, weil keine relevante Opposition vorhanden war. Die FPÖ als konstant im Nationalrat vertretene Oppositionspartei kam zwischen 1959 und 1986 auf unterschiedliche Ergebnisse mit sechs bis zwölf Sitzen im Nationalrat, der 1971 von 165 auf 183 Sitze vergrößert wurde. Nach dem Zweiten Weltkrieg bestand unter den beiden großen politischen Lagern der SPÖ und der ÖVP der Wille zur Zusammenarbeit. Sie verfolgten einen Kurs der Konsensdemokratie. Diese Phase war zum einen von einer langen Zeit der Regierung durch eine große Regierungskoalition von ÖVP und SPÖ geprägt, die im Nationalrat über eine Verfassungsmehrheit verfügte. Zum anderen wurden wesentliche politische Entscheidungen in der informellen und außerparlamentarischen Institution der „Sozialpartnerschaft“ vorbereitet bzw. getroffen. An dieser sind auch heute noch unterschiedliche Interessenvertretungen und -gruppen beteiligt, insbesondere der Wirtschaft und Arbeitgeber sowie der Arbeitnehmer. Die Mehrheitsverhältnisse und der konsensdemokratische Kurs hatten zur Folge, dass im Rahmen der Gesetzgebung maßgebliche Entscheidungsprozesse der öffentlichen Debatte im Nationalrat entzogen waren. Der parlamentarische Prozess setzte erst ein, als unter den Regierungsparteien und den Interessenvertretungen die wesentlichen Entscheidungen bereits abgemacht waren.4)
+
+## Reaktionen auf eine erstarkte und obstruierende Opposition
+
+Ab 1986 setzte durch das Erstarken der FPÖ unter Jörg Haider und dem erstmaligen Einzug der Grünen in den Nationalrat eine Veränderung ein. Die Opposition wuchs auf insgesamt 26 von 183 Mandaten an und war nicht an der Sozialpartnerschaft und anderen Einrichtungen des faktisch-politischen Systems beteiligt. Die Oppositionsparteien nutzten dementsprechend den Nationalrat als institutionelles Forum. Es wurde bald deutlich, dass das Gesetz über die Geschäftsordnung des Nationalrats und die parlamentarische Praxis nur bedingt geeignet waren, um mit diesen veränderten Mehrheitsverhältnissen umzugehen. Die Inanspruchnahme parlamentarischer Minderheitenrechte durch die Opposition führte zu Verzögerungen im parlamentarischen Verfahren.5) Die Opposition begann auf Obstruktion des Parlaments zu setzen. Als Reaktion darauf wurde ab 1988 das Geschäftsordnungsgesetz des Nationalrats mehrfach geändert und es wurden unterschiedliche Beschränkungen vorgesehen.6) Neben diesen rechtlichen Anpassungen änderte sich auf faktischer Ebene die parlamentarische Praxis, um missbräuchliche Obstruktion des parlamentarischen Verfahrens durch die Opposition zu verhindern.
+
+## Redezeitbeschränkungen
+
+Ein wesentlicher Aspekt war dabei die Verteilung der Redezeit im Plenum des Nationalrats, um obstruierende Dauerreden (Filibustern) hintanzuhalten. Als ein Beispiel für Obstruktion unter vielen, auf die der Gesetzgeber reagiert hat, sei das Vorgehen der Grünen zur Obstruktion parlamentarischer Debatten angesprochen: Im März 1993 hielt die grüne Abgeordnete Madeleine Petrovic eine 10 Stunden und 35 Minuten lange Rede im Plenum des Nationalrates. Als Reaktion darauf wurden Redezeitbeschränkungen für das Plenum des Nationalrates in das Geschäftsordnungsgesetz aufgenommen (BGBl 569/1993). Aktuell ist die Redezeit eines Abgeordneten im Plenum grundsätzlich auf 20 Minuten beschränkt. Dies hinderte den grünen Abgeordneten – und nunmehrigen Vizekanzler ­– Werner Kogler nicht daran, im Dezember 2010 eine Rede von 12 Stunden und 42 Minuten im Budgetausschuss des Nationalrates zu halten.
+
+## Rolle der Parlamentsklubs
+
+Ein möglicher Weg der Obstruktion im Nationalrat sind die Rechte, die den Klubs (sie entsprechen den Fraktionen im deutschen Bundestag) eingeräumt sind. Dabei ist die Schwelle für die Gründung eines Klubs im Nationalrat niedriger als für die Fraktionen im deutschen Bundestag. Fünf Abgeordnete können sich zu einem Nationalratsklub zusammenschließen. Das entspricht rund 2,7% der Gesamtmitgliederzahl von 183. Im deutschen Bundestag sind 5% der Mitglieder des Bundestages erforderlich. Die Mittel, die den Klubs in die Hände gelegt sind, können somit auch von vergleichsweise kleinen Oppositionsparteien in Anspruch genommen werden. Das betrifft im Nationalrat vor allem die Beeinflussung der Rednerliste und der Redezeit sowie die dringliche Behandlung einer schriftlichen Anfrage an ein Mitglied der Bundesregierung im Plenum. Gerade die dringliche Anfrage wird von der Minderheit gerne und häufig genutzt, weil es eines der wenigen Minderheitenrechte im Nationalrat ist, das unmittelbar eine Behandlung im Plenum nach sich zieht. Wie sogleich zu besprechen ist, gelangen andere Anträge der Minderheit erst gar nicht zur Behandlung ins Plenum, sondern werden faktisch schon zuvor der Plenardebatte entzogen.
+
+Das Geschäftsordnungsgesetz enthält unterschiedliche Bestimmungen, um einer potenziellen Obstruktion durch Klubs zu begegnen: Wie bereits angesprochen ist die Redezeit gesetzlich beschränkt. Auch die Gesamtredezeit eines Klubs kann beschränkt werden. In der Praxis hat sich für die meisten Debatten eine an der Mandatsstärke der Klubs orientierte Aufteilung der Redezeit einschließlich einer Mindestredezeit durchgesetzt, die kleinere Klubs verhältnismäßig bevorzugt. Das Verlangen auf dringliche Behandlung einer Anfrage, das neben den Klubs auch fünf Abgeordnete gemeinsam einbringen können, ist kontingentiert. Ein Abgeordneter darf ein solches nur einmal im Jahr unterstützen. Ein Klub darf ein solches Verlangen nur vier Mal pro Jahr einbringen. Diese Kontingentierung erweist sich jedoch faktisch als begrenzt effektiv, weil bei derzeit drei im Nationalrat vertretenen Oppositionsparteien die Klubs der Minderheiten im Jahr insgesamt zwölf dringliche Anfragen stellen können – bei durchschnittlich zwei Plenarsitzungen pro Monat eine vergleichsweise hohe Frequenz. Dabei nimmt die Behandlung dringlicher Anfragen jeweils mindestens zwei Stunden in Anspruch.7)
+
+## Faktische Maßnahmen gegen Obstruktion
+
+Neben der Änderung der Geschäftsordnung beschränkt die Parlamentsmehrheit faktisch die Ausübung von Minderheitenrechten durch die Opposition. Durch geschäftsordnungsmäßiges Vorgehen wird dabei die Behandlung von Minderheitenanträgen im Plenum verhindert. Das betrifft z.B. Initiativanträge. Jeder Abgeordnete kann mit Unterstützung vier weiterer Abgeordneter einen solchen einbringen und damit ein Gesetzgebungsverfahren im Nationalrat einleiten. Solche Anträge von Oppositionsparteien werden in aller Regel in den (nichtöffentlichen) Ausschüssen durch Mehrheitsbeschluss ohne inhaltliche Auseinandersetzung vertagt, sodass sie in der Folge nicht mehr im Plenum behandelt werden. Damit ist der Opposition, die mit der Ausübung von Minderheitenrechten oft angestrebte „Tribünenfunktion“ des Plenums des Nationalrats verschlossen, gleichzeitig aber auch die Gefahr der Obstruktion durch eine überbordende Zahl an Initiativanträgen der Opposition hintangehalten. Ein ähnliches Vorgehen ist bei Entschließungsanträgen der Minderheit zu beobachten. Auch diese werden von der Mehrheit ohne inhaltliche Auseinandersetzung vertagt.8) Als Reaktion auf die regelmäßige Vertagung bringen die Oppositionsparteien eine hohe Zahl derartiger (oft gleich formulierter) Anträge ein.9) Das steigert die Attraktivität dringlicher Anfragen, weil deren Behandlung nicht von der Mehrheit dem Plenum entzogen werden kann.
+
+## Obstruktion durch Sperrminoritäten
+
+Gewisse Besonderheiten gelten im österreichischen Nationalrat bezüglich der Befürchtung, dass eine Oppositionspartei die parlamentarische Arbeit durch eine 1/3-Sperrminorität hemmen könnte. Nur vergleichsweise wenige Beschlüsse bedürfen im Nationalrat einer 2/3-Mehrheit. Neben der Erlassung von Bundesverfassungsgesetzen betrifft das insbesondere die Zustimmung zu Änderungen der Verträge der EU oder die Änderung des Gesetzes über die Geschäftsordnung des Nationalrates. Vorschläge des Nationalrates, z.B. zur Bestellung von Mitgliedern des Verfassungsgerichtshofes, werden mit einfacher Mehrheit beschlossen. Jedoch besteht in Österreich – aufgrund der langen Zeit der großen Koalition mit 2/3-Mehrheit im Nationalrat – die Besonderheit, dass vergleichsweise viele Angelegenheiten durch Verfassungsgesetze geregelt sind. Die Regierungsmehrheit im Nationalrat braucht in diesen Bereichen für Gesetzesänderungen die Unterstützung von Teilen der Opposition, was Raum für Obstruktion schafft. So hat etwa die FPÖ diese Unterstützung in jüngerer Zeit vielfach verweigert.10) Seit 2008 konnte in Österreich keine Oppositionspartei 1/3 der Mandate im Nationalrat für sich gewinnen. In Zeiten, in denen z.B. die FPÖ mit 52 (1999-2012) oder 51 (2017-2019) Mandaten im Nationalrat vertreten war und damit vergleichsweise nahe an eine Drittel-plus-1-Sperrminorität von 62 Mandaten im Nationalrat gekommen ist, war die FPÖ stets an einer Koalitionsregierung beteiligt. Freilich ist nicht absehbar, wie sich diese Zahlen bei der nächsten Nationalratswahl entwickeln werden, die voraussichtlich im Herbst 2024 stattfinden wird.
+
+## Ausweitung von Minderheitenrechten
+
+In den letzten Jahren wurden in Österreich die Rechte der parlamentarischen Minderheit nicht ausschließlich beschränkt. In unterschiedlicher Hinsicht wurden auch Minderheitenrechte ausgeweitet, zumeist unter gleichzeitiger Kontingentierung. Das betrifft vor allem die Ausgestaltung des Rechts zur Einsetzung von Untersuchungsausschüssen als Minderheitenrecht. Seit 2015 darf ein Viertel der Mitglieder (also 46 von 183 Mitgliedern) des Nationalrates die Einsetzung eines Untersuchungsausschusses verlangen. Dieses Minderheitenrecht ist kontingentiert. Ein Abgeordneter, der die Einsetzung eines Minderheitenuntersuchungsausschuss unterstützt hat, darf kein weiteres solches Verlangen unterstützen, solange dieser Untersuchungsausschuss seine Tätigkeit nicht beendet hat. Die Einsetzung eines Untersuchungsausschusses durch die Minderheit birgt die Gefahr parlamentarischer Obstruktion, weil der Ausschuss Ressourcen der Parteien bzw. Klubs bindet. Auf das parlamentarische Verfahren in anderen Angelegenheiten wirkt sich dies freilich nur mittelbar aus. Durch die Kontingentierung kann die Opposition im Nationalrat gegen den Willen der Regierungsmehrheit nicht mehr als einen Minderheitenuntersuchungsausschuss gleichzeitig einsetzen.
+
+Mit Blick auf die Tätigkeit des Untersuchungsausschusses selbst sind wiederum Rechte der Minderheit vorgesehen, z.B. die Anrufung des Verfassungsgerichtshofes im Rahmen eines Organstreitverfahrens gegenüber der Mehrheit im Ausschuss. Der Verfassungsgerichtshof hatte bereits in zahlreichen Fällen über derartige Anträge der Minderheit im Untersuchungsausschuss zu entscheiden.
+
+## Conclusio
+
+Der Gesetzgeber und die parlamentarische Praxis haben in Österreich seit Mitte der 1980er-Jahre unterschiedliche Instrumente entwickelt, um der Gefahr der Obstruktion der parlamentarischen Tätigkeit im Nationalrat durch die missbräuchliche Ausübung von Minderheitenrechten zu begegnen, ohne gleichzeitig Minderheitenrechte völlig auszuschließen. Diese Abwägung scheint nicht in allen Fällen geglückt und effektiv zu sein. Dabei zeigt sich das grundlegende Problem, dass der Versuch der Einhegung des missbräuchlichen Einsatzes von Minderheitenrechten zu Lasten von Minderheitenrechten an sich und der konstruktiven parlamentarischen Opposition gehen kann. Der Gedanke, dass im Widerstreit von Mehrheit und Minderheit über unterschiedliche Interessenlagen im parlamentarischen Verfahren ein politischer Konsens entstehen kann und soll, scheint zusehends in den Hintergrund zu treten. Dies ist faktischen Entwicklungen und Veränderungen in den politischen Mehrheitsverhältnissen geschuldet. Freilich muss die Frage gestellt werden, ob und inwieweit das parlamentarische Verfahren in Österreich jemals diesem Idealkonzept einer Konsensfindung entsprochen hat.
+
+Für den österreichischen Nationalrat haben sich vor allem zwei Wege herausgebildet, auf denen oppositionelle Obstruktion abgewehrt werden soll – zum einen anlassbezogene Änderungen des Geschäftsordnungsgesetzes, zum anderen Anpassungen der parlamentarischen Praxis bei der Anwendung der Geschäftsordnung.
+
+Die Einführung von Redezeitbeschränkungen erweist sich als geeignetes Mittel, einer Obstruktion durch Filibustern entgegenzuwirken. Vordergründig scheint auch die Kontingentierung von Minderheitenrechten ein besonders geeigneter Weg zu sein, um deren Missbrauch zu verhindern. Eine Kontingentierung schafft jedenfalls Abhilfe gegen einen einzelnen Klub, der z.B. dringliche Anfragen in überbordender Zahl missbräuchlich einsetzen will. Bestehen jedoch mehrere Oppositionsklubs, können diese nebeneinander durch Ausschöpfung ihres jeweiligen Kontingents gleichwohl eine große Zahl solcher Anfragen stellen.
+
+Die parlamentarische Praxis, Minderheitenanträge der Opposition pauschal zu vertagen, um sie so der Debatte im Plenum des Nationalrats zu entziehen, ist kritisch zu sehen. Mag sie gegenüber einer destruktiven und obstruktiven Opposition zweckmäßig sein, verhindert sie für eine konstruktive Opposition wesentliche Aspekte eines parlamentarischen Verfahrens und Interessenausgleichs. Der Opposition und ihren Anträgen wird die öffentliche Bühne des Plenums im Nationalrat schlichtweg verweigert. Sinnvoll und nach legitimer und illegitimer Oppositionsarbeit differenzierend eingesetzt kann diese Praxis aber ein gangbarer Weg gegen illegitime Obstruktion sein. In Österreich hat der prinzipielle Ausschluss von Anträgen der Opposition aus dem Plenum hingegen zur Folge, dass die Opposition geradezu in eine obstruktive Rolle gedrängt wird. Die Minderheitenparteien gehen wie geschildert regelmäßig dazu über, eine sehr große Zahl derartiger Anträge zu stellen. Gleichzeitig bringen sie eine Vielzahl dringlicher Anfragen ein, um einen Weg ins Plenum zu finden. Einige Seiten sehen diese dringlichen Anfragen wiederum als obstruktiv für die parlamentarische Tätigkeit. Überdies scheint eine gewisse Ermüdung der Öffentlichkeit hinsichtlich dringlicher Anfragen eingetreten zu sein. Wurde früher regelmäßig in den Medien über dringliche Anfragen berichtet, bleiben sie nun aufgrund ihrer Häufigkeit medial und in der Öffentlichkeit weitgehend unbeachtet.11)
+
+In welchem Ausmaß die Ausgestaltung des Rechts auf Einsetzung von Untersuchungsausschüssen als Minderheitenrecht die parlamentarische Arbeit tatsächlich obstruiert, muss sich noch zeigen. Seit der Einführung 2015 wurden erst sieben Untersuchungsausschüsse auf Verlangen der Minderheit eingesetzt. Die Kontingentierung dieses Rechts scheint wirksam zu sein. Das ebenfalls als Minderheitenrecht ausgestaltete Organstreitverfahren innerhalb des Untersuchungsausschusses hat jedenfalls zu einem Anstieg der Arbeitsbelastung am Verfassungsgerichtshof geführt.
+
+ 
+
+Anm. d. Red. (20.02.2024): Nachträglich wurden wenige Stellen im Text sprachlich korrigiert.
+
+ References[+]
+
+ References  
+
+ &#8593;1 In Österreich bestehen insgesamt zehn Parlamente. Auf Ebene der Bundesländer zählen dazu die neun Landtage. Auf Bundesebene besteht das „Bundesparlament“ aus den beiden Kammern des Nationalrats und des Bundesrats. Dem Nationalrat als „erste Kammer“ kommt dabei die tragende und führende Rolle zu. Dieser Beitrag behandelt die Minderheitenrechte und Obstruktionsgefahren im Nationalrat. Die Minderheitenrechte in den Landtagen entsprechen grundsätzlich jenen im Nationalrat. Hingewiesen sei jedoch darauf, dass die Landesverfassungen für die Landtage teilweise abweichende und weitergehende Minderheitenrechte vorsehen.
+
+ &#8593;2 Glawischnig, Parlamentarische Minderheitenrecht in Österreich, in FS Mantl (2004) 267 (268 f).
+
+ &#8593;3 Konrath, Parlamentarische Opposition in Österreich, ZParl 2017, 557 (561).
+
+ &#8593;4 Konrath, ZParl 2017, 562.
+
+ &#8593;5 Konrath, ZParl 2017, 563 f.
+
+ &#8593;6 Schefbeck, Der Nationalrat zwischen Rechtsetzungsorgan und Tribune, JRP 1997, 117 (119 f); Zögernitz/Sully, Die Spielregeln des österreichischen und des britischen Parlaments, in Schulz/Wirsching (Hrsg), Das Parlament als Kommunikationsraum (2012) 155 (157).
+
+ &#8593;7, &#8593;9 Konrath, ZParl 2017, 569.
+
+ &#8593;8 Meinl-Reisinger, Diskussionsbeitrag, in FS Machacek (2014) 137.
+
+ &#8593;10 Konrath, ZParl 2017, 571.
+
+ &#8593;11 Zögernitz/Sully, Spielregeln 163.

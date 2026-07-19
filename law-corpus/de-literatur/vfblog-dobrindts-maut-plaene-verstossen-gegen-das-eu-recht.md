@@ -1,0 +1,40 @@
+---
+title: Verfassungsblog — Dobrindts Maut-Pläne verstoßen gegen das EU-Recht
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2014-07-08'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/dobrindts-maut-plaene-verstossen-gegen-das-eu-recht/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Dobrindts Maut-Pläne verstoßen gegen das EU-Recht
+
+Es ist ziemlich genau ein halbes Jahr her, seit ich mich auf diesem Blog mit den ersten halbwegs konkreten Ideen für eine Pkw-Maut auf deutschen Autobahnen beschäftigte. Seitdem passierte lange nichts, bis endlich am 7.7.14 (eigentlich ein dankbares Datum für die Geschichtsbücher) weißer Rauch aus dem Verkehrsministerium aufstieg. Selbst wenn man es äußerst freundlich mit der CSU meint, besteht jedoch kein Grund, euphorisch „habemus pedagium“ zu rufen. Zu offensichtlich sind die Fehler, die dem Konzept von Minister Dobrindt immer noch anhaften. Um Wiederholungen zu vermeiden, möchte ich nicht noch einmal die Rechtsfragen rund um Art. 92 AEUV und den allgemeinen Gleichheitssatz des Grundgesetzes (Art. 3 Abs. 1 GG) eingehen. An dieser Front hat sich – auch wenn die Lkw-Maut künftig schon etwas früher einsetzt – nichts Grundsätzliches getan. Stattdessen möchte ich mich auf das unionsrechtliche Verbot der Diskriminierung aufgrund der Staatsangehörigkeit (Art. 18 Abs. 1 AEUV) konzentrieren, das an zwei Stellen sehr offensichtlich verletzt ist.
+
+Verstoß durch einheitliche Kurzzeitvignetten
+
+Da wäre zunächst die Regelung der Kurzzeitvignetten zu nennen. Während für die Jahresvignette die von mir bereits Anfang des Jahres befürchtete komplizierte Berechnung entlang den Parametern der Kfz-Steuer vorgesehen ist, soll bei den geplanten Zehn-Tages- und Zwei-Monats-Vignetten jeweils ein einheitlicher Tarif gelten. Das Resultat würde so aussehen: Wer in Deutschland einen Kleinwagen hält, auf den bisher 20 € Kfz-Steuer pro Jahr erhoben werden, wird künftig auch nur etwa 20 € für die Jahresvignette entrichten müssen. Auch wenn er täglich – ohnehin steuersubventioniert – über die Autobahn zur Arbeit pendelt, bleibt es bei den 20 €. Ein Schwede, der das gleiche Fahrzeug besitzt und Deutschland auf der Hin- und Rückfahrt für einen zweiwöchigen Italien-Urlaub passieren muss, muss nach Dobrindts Vorschlägen ebenfalls 20 € bezahlen – die Zwei-Monats- und die Jahresvignette kosten ihn etwa gleich viel. Der Unterschied ist: Der Deutsche wird die Autobahn typischerweise über das Jahr verteilt immer wieder nutzen, für den Schweden hingegen ist sie hingegen vor und nach seiner Urlaubsfahrt im Regelfall völlig uninteressant.
+
+Diese Konstellation ist rechtlich gesehen eine Gleichbehandlung von wesentlich Ungleichem: Der Deutsche und der Schwede haben, obwohl sie Halter des gleichen Kfz-Modells sind, einen völlig unterschiedlichen Bedarf und nehmen die deutsche Infrastruktur auch in völlig unterschiedlichem Ausmaß in Anspruch. Es ist daher EU-rechtlich geboten, die beiden differenziert zu behandeln. Dies muss nicht bedeuten, dass jeder Nutzungstag umgerechnet genau gleich viel kostet: Deutschland darf durchaus in Rechnung stellen, dass der Schwede die Autobahn typischerweise in der kurzen Zeit vergleichsweise intensiv nutzt und die Verwaltung für den Vertrieb und die Kontrolle der Kurzzeitvignetten einen zusätzlichen Aufwand treiben muss. Die Vignette, die man für eine zweiwöchige Urlaubsfahrt benötigt, darf aber niemals bei einigen Kfz-Modellen genauso viel kosten wie eine Jahresvignette. Es gibt keinen rechtlich relevanten Grund, um die einheimischen Kfz-Halter in einem solchen Ausmaß besserzustellen.
+
+Die traurige Konsequenz ist: Das ohnehin schon komplizierte Berechnungssystem müsste noch schwieriger werden, da eine diskriminierungsfreie Regelung die Ökostufen auch bei den Kurzzeitvignetten aufgreifen müsste. Dadurch würde die „Maut“ noch weniger Geld einbringen und der Verwaltungsaufwand noch größer.
+
+Verstoß durch Entlastung der Inländer bei der Kfz-Steuer
+
+Die zweite große Baustelle ist die vorgesehene Reform des Kfz-Steuersystems. Verkehrsminister Dobrindt sprach davon, einen „Freibetrag“ in Höhe der Kosten einer Jahresvignette bei der Kfz-Steuer einzuführen. Der Effekt ist folgender: Für Deutsche ist die Autobahnmaut kostenneutral, da sie diese nur anstelle der sonst geschuldeten Kfz-Steuer bezahlen müssen. Ausländern hingegen steht eine solche Entlastung nicht zur Verfügung, sie werden durch die Infrastrukturabgabe tatsächlich in der Höhe ihres Nennwerts stärker belastet. Dies ist eine klassische Diskriminierung in Form der Ungleichbehandlung von wesentlich Gleichem. Da die Differenzierung (Kompensation ja oder nein) an die Kfz-Steuerpflicht im Inland anknüpft, handelt es sich um eine indirekte Diskriminierung aufgrund der Staatsangehörigkeit (denn in Deutschland sind die weitaus meisten Kfz-Halter Deutsche). Und wieder ist kein juristisch relevanter Rechtfertigungsgrund dafür ersichtlich, dass effektiv nur Ausländer bezahlen sollen.
+
+Um es noch einmal deutlich zu machen: Das Kfz-Steuersystem ist eigentlich eine autonome Angelegenheit der Mitgliedstaaten. Deutschland dürfte daher ohne weiteres die einzelnen Steuersätze heben und senken, wie es lustig ist. Der Konflikt mit dem EU-Recht entsteht erst dadurch, dass die Senkung der Kfz-Steuer passgenau die Mehrbelastung durch die neue Autobahnmaut auffangen soll. Unter diesen Umständen sind die Mautregelung und die Kfz-Steuer als Regelungseinheit zu sehen. Und in dieser Regelungseinheit trifft eine neu eingeführte Abgabe effektiv nur Menschen, die ihr Auto nicht in Deutschland angemeldet haben. Das ist im EU-Recht schlicht ausgeschlossen. Eine Reform der Kfz-Steuer müsste ihren eigenen, von den wirtschaftlichen Folgen der Maut völlig unabhängigen Erwägungen folgen, um nicht zusammen mit der Autobahnmaut am Maßstab des Diskriminierungsverbots gemessen zu werden. Dies gewährleisten die Vorschläge des Verkehrsministers nicht, im Gegenteil: Dass Deutsche keinen Cent mehr zahlen müssen und trotzdem jährlich Einnahmen in dreistelliger Millionenhöhe in den deutschen Staatssäckel fließen, wird offensiv als Errungenschaft beworben. So sieht ein unionsrechtliches Himmelfahrtskommando aus.
+
+Falsche Fixierung auf die Kommission
+
+Schließlich sei noch ein Wort dazu verloren, dass die Diskussion in den Medien sich immer wieder an einzelnen – oft nicht besonders geschickten – Äußerungen der Kommission aufhängt. Die Rolle der Kommission wird hier gnadenlos überschätzt, da es letztlich nicht auf ihr Votum ankommen wird. Die Mautregelung wird, falls sie tatsächlich verabschiedet werden sollte, so sicher wie das Amen in der Kirche vor dem Europäischen Gerichtshof landen. Die Frage ist nur, ob die Kommission selbst ein Vertragsverletzungsverfahren nach Art. 258 AEUV einleitet oder ob an ihrer Stelle die Niederlande, Belgien und/oder Österreich dies tun (möglich nach Art. 259 AEUV und bereits angekündigt). Und selbst wenn auch diese Staaten auf diplomatischen Druck hin kneifen, wird das erstbeste Bußgeldverfahren gegen einen EU-Ausländer wegen Fahrens ohne Vignette in einer Vorlage an den EuGH nach Art. 267 AEUV münden. Auch „grünes Licht“ aus Brüssel, so unwahrscheinlich es sein mag, würde also nichts nützen, da es letztlich ausschließlich auf Luxemburg ankommt.
+
+Ein kleiner Fußballbezug muss in dieser Endphase der WM noch sein. Nachdem die Kommission der UEFA ihre Ausländerregelung abgesegnet hatte, kommentierte der EuGH dies in Leitsatz 16 des berühmt-berüchtigten Bosman-Urteil so: „Die Kommission ist […] nicht berechtigt, Garantien hinsichtlich der Vereinbarkeit eines bestimmten Verhaltens mit dem Vertrag zu geben, und sie hat keinesfalls die Befugnis, gegen den Vertrag verstoßende Verhaltensweisen zu genehmigen.“ Daran sollte Minister Dobrindt sich bei seinen nächsten Gesprächen in Brüssel unbedingt erinnern.

@@ -1,0 +1,29 @@
+---
+title: >-
+  Verfassungsblog — Why Armstrong is wrong and there IS in fact a legal duty to
+  appoint Juncker
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2014-06-13'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/armstrong-wrong-fact-legal-duty-appoint-juncker/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Why Armstrong is wrong and there IS in fact a legal duty to appoint Juncker
+
+The disagreement that exists between my learned colleague Kenneth Armstrong and myself concerns the question whether the Council is legally obligated to propose a candidate that, following the election, the Parliament has committed to support. The argument supporting that claim is, at its core, simple. The elections have produced a Parliament that is committed to elect a particular candidate as Commission President (here: Juncker). If that is the result the election has produced, the Council would not be taking into account the elections, as it is obligated to do, if it made a proposal that did not reflect that fact. To challenge this argument Armstrong makes three points.
+
+The first is conceptual. The Treaty uncontroversially has given the power to nominate the candidate for the Commission Presidency to the Council and not to the Parliament. Parliament can´t presume to nominate someone by making them Spitzenkandidaten. But of course nobody is claiming that the Parliament has the power to nominate the candidate for Commission President. By naming Spitzenkandidaten Parliament never claimed to be nominating a Commission President. European party groupings merely articulated their political commitment to elect their Spitzenkandidat, should he be able to gain the majorities support in Parliament after the elections. It is the power of the Parliament to elect the Commission President. Of course parliamentary party grouping need no explicit constitutional authorization to make such political commitments. (Not surprisingly, the Spitzenkandidaten do not have constitutional status in Germany either).
+
+So there is no dispute about the powers of the relevant actors. The question is what legal principles, if any, govern the exercise of these powers. Are there circumstances under which the Parliament is under a duty to elect the candidate nominated by the Council, notwithstanding their commitments? (I´m skeptical). Is the Council under an obligation to nominate the person who, following the elections enjoys the committed support of a majority in Parliament? (Yes). But whatever you might take the right answer to be, it is clear that focusing on who has the power to nominate won´t resolve anything. In Britain it is the undisputed Royal Prerogative to appoint and dismiss a Prime Minister. But everybody understands that the governing principle relating to the exercise of that power is that the leader of the majority party gets to lead the Commons. The EU is not Britain, of course, and the European Council, though perhaps also part of an ancien régime of sorts, is no monarch. But the point in both cases is that principles of democracy restrict the way that power may be legitimately exercised by more indirectly legitimated Heads of State. (The claim implicitly made by Chancellor Merkel and now explicitly made by the British Prime Minister, that the Parliament is behaving in a way that violates the Treaty when it insists that it would not elect a Commission President nominee that is not Juncker, is obfuscating nonsense.)
+
+Second, Armstrong is right that the Treaty does not provide a clear resolution of the issue, even though it could have, if the parties had wanted that. But what follows from that for the interpretation of the Treaty? It is not unusual for Constitutions or Treaties to leave things vague or abstract. The current Art. 17 TEU does not have to be be read as inviting only intergovernmental deliberations and negotiations behind closed doors between the Parliament and the Council. It can also be read as a call for legal interpretation and concretization by scholars and courts, whose interpretation of these provisions would inevitably be informed by the principles of representative democracy as it is laid out in the Treaty.
+
+It is exactly with these principles in mind that one must read Armstrongs claims about the virtue of deliberative intergovernmentalism and what he calls my “irresponsibly over-optimistic” views about the capacity of the EP to generate a genuine representative European democracy that is inappropriately neglectful of “the powerful capacity of the European Council – through its representation of individuals democratically accountable to their own national electorates – to seek also to promote a vision of a common European good.” This is the right kind of argument to make. The problem is that it is substantively wrong (more on this here). Here it must suffice to say that I´m perfectly happy to turn that charge around. Armstrong appears to be irresponsibly beholden to collectively exercised executive power in Europe, notwithstanding the structural weakness of national parliaments as institutions to hold accountable their governments as far as their action in the Council is concerned and with little awareness of the link between the way politics has been conducted in the past and the significant degree of citizens disinterest and discontent. Thankfully the Treaties provide the basis for leaving behind the ancien régime of executive federalism and pushes towards a more democratic politics in Europe. Ironically the path to a brighter democratic future in Europe depends to a nontrivial extent on the Council acting in conformity with its duty to nominate a perhaps less than inspiring steady hand of the past as Commission President.

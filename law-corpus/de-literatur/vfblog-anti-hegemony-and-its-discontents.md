@@ -1,0 +1,75 @@
+---
+title: Verfassungsblog — Anti-Hegemony and Its Discontents
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2020-10-14'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/anti-hegemony-and-its-discontents/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Anti-Hegemony and Its Discontents
+
+Long before the fighting ceased, Jean Monnet was already planning to integrate a defeated Germany into “a Europe united on terms of equality.”1) The idea had been brewing in the French and Italian resistance during World War II, even since Germany had been defeated last time around, and before then, in other forms, too. The key to bringing the warring nations together in solidarity was, as the Schuman Declaration would explain, taming the age-old animosity between Germany and France in a supranational project “open to all countries willing to take part.” The aim, in the words of the Treaty of Rome would be an “ever closer union among the peoples of Europe.”
+
+The project was anti-hegemonial, but its promise of equality and inclusion came with flaws from the start. Take only the continued embrace of Europe’s colonial tradition. Even as the Declaration suggested a kind of horizontal equality within Europe, it announced with none-too-subtle racial condescension that the resulting increase in resources would allow Europe to strive toward completing “one of her essential tasks, namely, the development of the African continent” (emphasis added) – as if Europe was somehow in charge of Africa. Along the way, the pervasive erasure of race from European public discourse in reaction to the Nazi era meant combating race discrimination would be put off for decades, and remain slow after that.2) Fast forward to today, and although strides toward equality have been made, unreflective majoritarian bias, in particular but not only toward racial minorities, remains deep in the heart of Europe.3)
+
+The focus on taming the age-old animosity between Germany and France also meant these two Member States were more equal than the others. Even as the qualified majority system was to keep Germany in line with the other big Member States and boost the smaller ones, Germany and France would usually sort things out for all. Along the way, there was joint leadership on such matters as the Schengen Agreement,4) and a largely Franco-German Euro deal, whereby France relinquished its veto over German unification while Germany gave up its currency but embedded its restrictive monetary and fiscal policy preferences into the treaties. Fast forward to today, and we have joint cabinet meetings and policy leadership by the only two Member States without whom the Union still cannot proceed.
+
+In structural terms, the founders created an elite system of integration. Even as it promised to bring the peoples of Europe together, it kept the people themselves at bay, seeking to persuade by dirigiste output. Along the way, it meant eventual elections to a parliament that took decades to become a (second-class) legislative body of the Union. And fast forward to today, Union governance has yet to become accountable to a democratic electorate in a satisfactory manner.
+
+Germany has fared well in this imperfect union – but not by shaping Europe’s legal culture or method, as Carl Schmitt envisioned. As with so much of Schmitt, his analytically brilliant, richly comparative, and broadly inter-disciplinary analysis painted an aspirational picture that was anti-democratic and deeply nationalistic. In his Lage der europäischen Rechtswissenschaft, Schmitt spoke of the emergence of an anti-positivist European legal science under the leadership of the Germanic historical tradition of (fellow anti-Semite) Friedrich Carl von Savigny.5) As far as the Union itself is concerned, however, nothing of the sort happened.
+
+In terms of grand legal culture or method, the Union is indeed inspired by the common law. But contra Schmitt, if there is an overarching mindset, it would seem to be (ironically, given Brexit) English, not German. As with the creation of the common law in England, we can think of European Union law as a kind of “overlay” on top of existing laws, customs, and legal institutions. The Union builds on each Member State’s existing traditions as much as possible, as opposed to remaking national laws, customs, and legal institutions radically in the EU’s image. That is as it should be, as the Union’s pluralist polity is only loosely consolidated, with a characteristic common law legislature that acts in an “episodic” fashion (i.e., legislating only periodically and mostly on isolated issues, not setting out to produce a comprehensive unifying code). Indeed, EU law leaves in place more variation among the laws of its component states than any other federal-type system in the world.6) If anything, in terms of Europe’s legal culture and method, the legal systems of the commonwealth and the United States, not Germany and its civil law sisters, may serve as guides.
+
+The EU’s judiciary is empowered in all this, but its reasoning, too, has not followed the tradition of Savigny or any other particularly German scholarly method or culture.7) On that score, the latest attempt of the German Constitutional Court to supervise the CJEU’s “methodische Grundsätze” (para. 112) may be misleading, as the decision was more of a policy squabble wrapped in a misguided judgment of a departing President and a Court that had barked so much it felt it needed to bite just once as well.
+
+To the contrary, in the larger picture of European legal method, Germany has been openly playing catch-up in terms of bringing its national scholarly enterprise in line with global (U.S. inspired) trends. Given the relative weakness of the Union legislature, and its episodic interventions, the EU judiciary has indeed been free to expound on legal texts under a self-created (again, common law inspired) system of precedent. The EU’s high court has thereby situated itself as interlocutor in dialogue not just with national courts, but with Union and national politics writ large. In doing so, the Court has drawn inspiration in pragmatic ecumenical fashion from all corners – whether teleological considerations, doctrinal analysis, law and economics, empirical studies, common constitutional traditions, moral and political theory, and even the winds of politics. If there’s an analogue for the CJEU, the closest (though imperfect, as well) lies not somewhere in Germany, but in the Supreme Court of the United States.
+
+While not leading Europe’s legal method, Germany has surely done well in terms of policy – but here, again, Germany’s leadership may be contested. Given its structural embeddedness at the very core of the European enterprise, its economic heft, and its population relative to the other Member States, Germany is the 800-pound gorilla in Europe. But despite its frequently successful policy leadership (and policy obstruction), Germany has also given in, even on several of its previous red lines.8) Think only of Mario Draghi’s softening of the no-bail out clause, or the latest Corona virus assistance package (which, again, emerged out of Franco-German cooperation).9) It would seem premature, then, to conclude that Germany has left the others behind, and is leading Europe on its own.
+
+Far worse than misjudging its current position in the Union, however, would be making the mistake of encouraging Germany (with or without professed reluctance) to take on the role of hegemon in Europe.10) We should be wary here not just of Carl Schmitt, but also of Heinrich Triepel, whose work still seems to serve – uncritically – as benchmark for such debates in Germany.11) Like Schmitt, Triepel saw past the simplistic positivism of his time, drawing broadly on comparative and interdisciplinary insights to craft original ideas with brilliant precision. And yet, as with Schmitt, there is a dark side to Triepel’s shining work. To be sure, Triepel was a more traditional national conservative, who ultimately distanced himself from the Nazi-regime (in part, perhaps, because his wife was of Jewish origin).12) But Triepel, too, was a staunch opponent of parliamentary democracy and interest group pluralism. One need only read his hailing the Ermächtigungsgesetz of 1933 as a “legal revolution” reflecting “Germanic legal sensibilities,” and as happily signaling “the death of the Volk-destroying individualism, on whose fields 19th Century parliamentarism alone could grow rampant.”13) No surprise that Triepel’s big book was a paean to Prussia and unitary leadership, and presented hegemony as a legitimate path to restoring fractured social unity.14) The basic idea was consistent with his longstanding preference for “the enlightened or unenlightened despotism of an individual over the despotism of the never enlightened masses.”15) In cheering on a hegemon, then, Triepel did not have much to lose. We do.
+
+Rather than our cheering on an emerging hegemon, the imperfect project of the European Union demands our constant vigilance. Buried in the Preamble’s promise of an “ever closer union among the peoples of Europe” (“d'une union sans cesse plus étroite”) lies Zeno’s paradox, that in this ever closer union, a unitary people will never come. But buried in the Preamble also lies the even more profound idea that anti-hegemony itself is a projet sans cesse, i.e., that anti-hegemony will never be done.
+
+The project of anti-hegemony is ongoing, and it comes with constant discontents, as well it should. This must not discourage us. It should spur us on to work against the imperfections we see today – whether they be German hegemony, Franco-German hegemony, incomplete democracy, or the lack of inclusion more broadly. Even if we were to overcome all these, new imperfections, including some we may not understand today, will appear – and then we must turn our efforts against those. In short, the struggle against hegemony in Europe can never cease. We must, therefore, resist the impulse to seek out and cheer on Germany as leader. The European Union neither wants nor needs Germany as hegemon. Team player should be enough.
+
+ References[+]
+
+ References  
+
+ &#8593;1 François Duchêne, Jean Monnet: First Statesman of Independence 127 (1994).
+
+ &#8593;2 Iyiola Solanke, Making Anti-Racial Discrimination Law: A comparative history of social action and racial anti-discrimination law (2009); Mathias Möschel, ‘Race in mainland European legal analysis: towards a European critical race theory’, 34 Ethnic and Racial Studies 1648-1664 (2011); Jeffrey Miller and Fernanda Nicola, ‘The Failure to Grapple with Racial Capitalism in European Constitutionalism’, ICourts Working Paper No. 201, IMAGINE Paper No. 8 (2020), available here.
+
+ &#8593;3 Cf., e.g., Case C-157/15, Achbita v. G4S, ECLI:EU:C:2017:203; Case C-188/15, Bougnaoui v. Micropole, ECLI:EU:C:2017:204; Gareth Davies, ‘Achbita v. G4S: Religious Equality Squeezed between Profit and Prejudice’, Eurpean Law Blog, 6 April 2017, available here.
+
+ &#8593;4 See, e.g., Georges Saunier, ‘A Special Relationship: Franco-German Relations at the Time of François Mitterand and Helmut Kohl’, in Carine Germond and Henning Türk (eds.), A History of Franco-German relations in Europe: from “hereditary enemies” to partners 235, 237 (2008).
+
+ &#8593;5 Carl Schmitt, Die Lage der europäischen Rechtswissenschaft (1950). Schmitt requires no further elaboration regarding the parenthetical. As for Savigny, he thought the emancipation of the Jews misguided and even “unnatural,” as “in their inner being Jews will completely remain foreigners to us,” Savigny, ‘Stimmen für und wider neue Gesetzbücher’, 3 Zeitschrift für geschichtliche Rechtswissenschaft. 1, 25 (1817). Savigny put his beliefs into action, for example, when voting to have his Hegelian colleague Eduard Gans, whom he despised, removed, in part because “we do not know whether Dr. Gans, who belongs to a well-known Jewish family, personally converted to Christianity, and whether therefore on this aspect there might not be an obstacle to his employment in public service.” Die juristische Fakultät an das Ministerium (Berlin, 4. April 1820), in Max Lenz, 4 Geschichte der Königlichen Friedrich-Wilhelms-Universität zu Berlin 448, 449 (1910).
+
+ &#8593;6 Daniel Halberstam and Mathias Reimann, Federalism and Legal Unification: A Comparative Empirical Investigation of Twenty Systems (2013).
+
+ &#8593;7 To be sure, the CJEU follows the German Constitutional Court’s balancing method of fundamental rights analysis – but which Western high court (other than that of the United States) does not? This successful German global export has little to do with the present subject.
+
+ &#8593;8 See, e.g., Simon Bulmer & William E. Paterson, Germany and the European Union: Europe’s Reluctant Hegemon? (2019); Joachim Schild, ‘The myth of German hegemony in the euro area revisited’, 43 West European Politics 1072-1094 (2020).
+
+ &#8593;9 See, e.g., Georg Blume, ‘Endlich Wieder Liebe’, Die Zeit (May 18, 2020), available here ; Un nouveau départ franco-allemand pour l’Europe’ (Editorial, Le Monde, May 19, 2020), available here.
+
+ &#8593;10 See, e.g., Christoph Schönberger, ‘Hegemon wider Willen. Zur Stellung Deutschlands in der Europäischen Union‘, 66(1) Merkur 1-8 (2012); ‘The Reluctant Hegemon; Germany and Europe‘, The Economist, June 15, 2013, p.12.
+
+ &#8593;11 Even opponents of the hegemony thesis in Germany rely on Triepel uncritically, indeed celebrating their common reliance on Triepel as a purportedly sober and exact foundation for the debate. See, e.g., Werner Link, ‘Integratives Gleichgewicht und gemeinsame Führung: Das europäische System und Deutschland,‘ 66(11) Merkur 1021-34 (2012); Werner Link, ‘Keine deutsche Hegemonie,‘ Merkur Blog, June 18, 2013, available here.
+
+ &#8593;12 See, e.g., Ralph Poscher, ‘Heinrich Triepel’, in Arthur Jacobson and Bernhard Schlink (eds.), Weimar: A Jurisprudence of Crisis 171, 174 (2000); Ulrich M. Gassner, Heinrich Triepel: Leben und Werk 102f., 186ff. (1999).
+
+ &#8593;13 Heinrich Triepel, ‘Die nationale Revolution und die deutsche Verfassung‘, Deutsche Allgemeine Zeitung, April 2, 1933, pp.1-2. Cf., e.g., Horst Dreier, Staatsrecht in Demokratie und Diktatur 56, 270 (2016); Bardo Fassbender, ‚Heinrich Triepel und die Anfänge der dualistischen Sicht von „Völkerrecht und Landesrecht“ im späten 19. Jahrhundert,‘ in Lukas Gschwend et al. (eds.), Recht im digitalen Zeitalter – Festgabe Schweizerischer Juristentag 2015 in St. Gallen. pp. 449, 459-60 (2015).
+
+ &#8593;14 See Heinrich Triepel, Die Hegemonie: Ein Buch von Führenden Staaten 294, 566-567 (1938). Cf. Perry Anderson, The H-Word: The Peripeteia of Hegemony 56 (2017).
+
+ &#8593;15 Heinrich Triepel, Unitarismus und Föderalismus im Deutschen Reiche: eine staatsrechtliche und politische Studie 119 (1907).

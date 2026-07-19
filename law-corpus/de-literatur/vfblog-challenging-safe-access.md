@@ -1,0 +1,65 @@
+---
+title: Verfassungsblog — Challenging Safe Access
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2025-05-27'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/challenging-safe-access/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Challenging Safe Access
+
+Safe access zones (SAZ) statutes in Great Britain create protective areas around premises where abortion services are provided and criminalise specified behaviours within these protective areas. The SAZ laws came into force in Scotland on 25 September 2024 and in England and Wales on 31 October 2024. Now, ongoing anti-abortion demonstrations pose challenges to the practical realisation of the new laws. Although some may interpret this as evidence of the inefficacy of the SAZ laws, I will argue that they are able to withstand these challenges and that, in doing so, they represent a satisfactory balance between the rights afforded to anti-abortion demonstrators and pregnant persons seeking access to lawful abortion services under the European Convention on Human Rights (ECHR).
+
+## Testing the enforcement of the law
+
+The first (and so far, only) person to be arrested and charged under the Scottish SAZ law was standing within the SAZ outside the Queen Elizabeth University Hospital (QEUH) in Glasgow in February 2025, holding a sign that read “coercion is a crime, here to talk, only if you want”. Although someone like the accused may believe that she is merely offering help and support, this is not how many clinic-users would understand her presence within the SAZ. This incident occurred in February 2025.
+
+The accused has refused to accept a warning from the procurator fiscal (the public prosecutor in Scotland), so the outcome of the incident is still pending.
+
+It might be questioned whether violations of SAZ laws indicate that these laws lack the deterrent effect that they were intended to have. However, some arrests, charges, and convictions do not undermine the deterrent effect of SAZ laws. It is unrealistic to think that criminalising behaviour will eradicate it. Indeed, this is not the standard we hold other laws to – for example, it is accepted that some thefts will still occur even though theft is criminalised. Therefore, a more appropriate measure of success of SAZ laws would be whether anti-abortion demonstrations occurring close to premises providing abortion services have been reduced. Gillian Mackay MSP (who introduced the Scottish SAZ law) has suggested that such demonstrations in Scotland have indeed been significantly reduced. Additionally, when understood as a tool that allows the relevant authorities to respond to anti-abortion demonstrations that do inevitably occur, some arrests, charges, and convictions show that SAZ laws are working. It does not follow from this that an arrest is always the most appropriate police response; it may be a more pragmatic response, in some circumstances, for police to simply ask anti-abortion demonstrators to move on.
+
+## Testing the spacial limits of the law
+
+Anti-abortion demonstrations are also continuing just outside the 200 metre SAZ on the main entry route to the QEUH. They include a series of so-called vigils as part of the 40 Days for Life campaign (which originated in the US) between March and April 2025. Generally, the presence of anti-abortion demonstrators outside SAZs would not compromise the aims of SAZ laws. This is because SAZ laws are not intended to prevent all anti-abortion demonstrations. Rather, SAZ laws are meant to prevent anti-abortion demonstrators targeting individuals when they are accessing abortion services. Accordingly, distancing anti-abortion demonstrators from premises where abortion services are provided may represent the success of SAZ laws.
+
+However, the case of the QEUH is more problematic because the geographical circumstances of the hospital mean that pregnant persons are still being exposed to anti-abortion demonstrations as they approach the hospital to access abortion services. Moreover, the police are limited in how they can respond because the SAZ law has not been breached. In response, Gillian Mackay MSP has called for the QEUH SAZ to be extended. The Scottish SAZ law makes provision for a particular SAZ to be extended (unboundedly) where it does not adequately protect clinic users or service providers, as long as it is proportionate to do so. Extending the QEUH SAZ would therefore demonstrate the laudable flexibility of the Scottish SAZ law, rather than signalling its inadequacy. Indeed, Scotland is one of just a handful of jurisdictions that allows SAZs to be extended or reduced. No equivalent provision exists in the English and Welsh SAZ law, where the size of SAZs is fixed.
+
+Extending the existing 200 metre SAZ outside QEUH just enough to cover the main approaches to the hospital (including the junction of Hardgate Road and Shieldhall Road) would make it one of the largest SAZs in existence anywhere in the world. Nevertheless, it does not follow that this would amount to a disproportionate interference with the ECHR rights of anti-abortion demonstrators. This is because the SAZ would be doing no more than is strictly necessary to ensure that pregnant persons can access abortion services in conditions of privacy and dignity. Indeed, a recent decision of the Supreme Court of the United Kingdom (UKSC) suggests that flexibility with regard to the size of SAZs is a relevant factor for determining that a SAZ law achieves a satisfactory balance between the ECHR rights of anti-abortion demonstrators and pregnant persons seeking access to lawful abortion services (paragraph 133).
+
+## Testing the temporal limits of the law
+
+Additionally, anti-abortion demonstrators have held demonstrations within SAZs outside abortion clinics in Scotland while they are closed. On Saturday 12 April 2025, the Scottish Family Party undertook an anti-abortion demonstration outside the Sandyford Clinic in Glasgow, which was closed at the time. Some members of the public were said to be “distressed” by the demonstration. This is not the only example of this tactic being used by anti-abortion demonstrators since the SAZ law came into force in Scotland. However, this incident is particularly significant because it prompted the police to apparently confirm that SAZs could not be enforced outside of an abortion clinic’s operating hours. This position was later clarified by Police Scotland, which said that enforcement is always an option – provided the threshold of criminality has been met.
+
+It is less likely that this threshold will have been met when an abortion clinic is closed because anti-abortion demonstrators will be aware that they are unlikely to encounter clinic users or service providers who might be negatively impacted by their actions in the relevant ways. However, it has been suggested that:
+
+“[T]he legislation could still be enforceable after a clinic is closed but an employee is leaving after working late. Or, if a protester puts up posters outside the centre late at night but they are still there when service users or employees arrive at the clinic the next morning.”
+
+Considering this, a situation in which anti-abortion demonstrators simply gather outside a clinic for a period while it is closed and leave no trace behind seems unlikely to meet the threshold for criminality under the Scottish SAZ law.
+
+Abortion Rights Scotland has suggested that distress and alarm can still be caused to pregnant persons who see images online of transitory out-of-hours demonstrations occurring in the vicinity of premises they are due to attend to access abortion services. While this may well be true, it might not be sufficient to justify police intervention under the current Scottish SAZ law. This is because the gathering does not have “continuing effect” within the SAZ itself. For one thing, it is the photograph that has been posted online that persists. This may have been taken and posted by someone other than one of the demonstrators, and this person may not have been within the SAZ at the time. For another, a pregnant person who later visits the relevant abortion clinic may nevertheless have encountered the photograph while she was located somewhere other than within the SAZ.
+
+If a “loophole” allowing transitory out-of-hours anti-abortion demonstrations to occur without sanction does exist, it ought to be given due consideration as part of the first review of the operation and effectiveness of the Scottish SAZ law by Ministers in 2026. Including a requirement for substantive review is a (distinctive) strength of the Scottish SAZ law because it makes it easier for teething problems like this one to be addressed. No equivalent provision exists in the English and Welsh SAZ law.
+
+Given that SAZ laws aim to ensure good access to abortion services, the focus of any review must be on the impact of transitory out-of-hours anti-abortion demonstrations on pregnant persons seeking access to abortion services. This is also important for maintaining the appropriate balance of rights that has been struck by the current law. Indeed, the UKSC did not find that there is a right under the ECHR not be shocked or offended by anti-abortion demonstrations. Rather, the relevant right under Article 8 ECHR is the right to access health care in conditions of privacy and dignity (see paragraph 115). This would not be engaged by the general public who may unfortunately encounter the demonstrations.
+
+## Testing the legitimacy of the law
+
+In a speech given to the Munich Security Conference on 14 February 2025, Vice President Vance made several false claims about British SAZ laws. Vance also referred to the “backslide away from conscience rights” and the “retreat” of “free speech” in Britain – a sentiment that is echoed by anti-abortion groups in Britain. However, any suggestion that British SAZ laws unjustifiably interfere with the rights of anti-abortion demonstrators to freedom of conscience and freedom of expression under the ECHR is undermined by the UKSC’s assessment of the (similar) Northern Irish SAZ law.
+
+Considering the decision of the UKSC on the compatibility of the Northern Irish SAZ law with the ECHR, it seems unlikely that British SAZ laws will be challenged in the courts. However, some anti-abortion demonstrators (such as Isabel Vaughn-Spruce) now appear to be breaching SAZs to draw attention to the law and in an attempt to challenge the law itself. This represents an interesting shift away from demonstrations, which were initially intended primarily to affect the abortion decisions of individual pregnant persons (rather than to oppose abortion law or policy in any effective way).
+
+While opposing SAZ laws is a more legitimate form of protest than challenging the personal health care decisions of pregnant persons, it only makes the location of the protest even more inappropriate. This is because it is Parliament, which has the power to change the law, not premises providing abortion services. Additionally, the decision of the English and Welsh court in Dulgheriu v London Borough of Ealing shows that the ECHR rights of pregnant persons seeking access to abortion services would outweigh the ECHR rights of anti-abortion demonstrators even if the demonstrators’ conduct contributed to a debate on a matter of public interest. While the Court of Appeal held that anti-abortion demonstrators make a contribution to the abortion debate (paragraph 92), this was later doubted by the UKSC (paragraph 132).
+
+Interestingly, Vaughn-Spruce is supported by the US campaign group Alliance Defending Freedom which has “coordinated publicity and funded legal costs” in relation to several SAZ cases – some of which concerned Public Space Protection Orders (PSPOs)/buffer zones pre-dating the new SAZ law in England and Wales. One such case has also attracted comment from the US government, which said it was “disappointed” by the conviction of a woman for breaching a PSPO/buffer zone around an abortion clinic in Bournemouth.
+
+## Concluding thoughts
+
+As is to be expected when a new law is passed, anti-abortion demonstrators have seemingly set out to test the limits of SAZ laws (especially in Scotland, where the SAZ law is distinctly adaptable). Additionally, anti-abortion demonstrators may be emboldened by interventions from US politicians and campaign groups. However, when the aims of SAZ laws are properly understood and expectations of SAZ laws are managed appropriately, this does not indicate the inefficacy of the new SAZ laws in Great Britain. Rather, it is apparent that SAZ laws (generally) allow the authorities to deal with the significantly reduced number of anti-abortion demonstrations that continue to take place in proximity to premises providing abortion services, without disproportionately interfering with the ECHR rights of anti-abortion demonstrators.

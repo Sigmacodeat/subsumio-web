@@ -1,0 +1,65 @@
+---
+title: Verfassungsblog — Kreditaufnahme statt Konfiskation
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2026-01-23'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/90-milliarden-euro-darlehen-der-eu-an-die-ukraine/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Kreditaufnahme statt Konfiskation
+
+Am 14. Januar 2026 veröffentlichte die Europäische Kommission eine Reihe von Legislativvorschlägen, um die Vergabe eines 90-Milliarden-Euro-Darlehens der EU an die Ukraine zu ermöglichen. Seit dem EU-Gipfel vom 18. Dezember 2025 steht fest, dass dieses Darlehen durch eine Kreditaufnahme der Union am Kapitalmarkt finanziert werden soll, nicht dagegen durch den Einsatz der russischen „frozen assets“. Diese Form der Finanzierung muss sich in den Rahmen des geltenden Primärrechts fügen. Aus europaverfassungsrechtlicher Perspektive spricht einiges dafür, die Kreditaufnahme im Eigenmittelbeschluss der Union zu verankern.
+
+## EU-Verschuldung statt Verwendung der „frozen assets“
+
+Seit dem erneuten Amtsantritt von US-Präsident Trump haben die USA ihre Finanzhilfen an die Ukraine weitgehend eingestellt. In den Jahren 2022 bis 2024 betrugen diese noch rund 40 Milliarden Euro pro Jahr. Für die Finanzlage der Ukraine und damit für ihre Fähigkeit, sich wirksam gegen den russischen Angriff zu verteidigen, hat das Ende der US-Finanzhilfen dramatische Folgen. Nach Berechnungen des Internationalen Währungsfonds ergibt sich für die Jahre 2026 und 2027 – unter Berücksichtigung der bereits zugesagten Hilfen von Geberländern und internationalen Institutionen – eine Finanzierungslücke der Ukraine im Umfang von rund 135 Milliarden Euro.
+
+Angesichts dessen wurde bereits auf dem EU-Gipfel am 23. Oktober 2025 intensiv darüber diskutiert, ob ein Einsatz des bei europäischen Banken und Zentralbanken deponierten russischen Staatsvermögens und Vermögens wohlhabender russischer Privatpersonen zur Finanzierung der Ukraine rechtlich zulässig ist und welche ökonomischen wie auch politischen Auswirkungen ein solcher Einsatz hätte. Auf dem EU-Gipfel vom 18. Dezember 2025 entschieden sich die Staats- und Regierungschefs der EU dann aber vorerst dagegen, die russischen „frozen assets“ unmittelbar zu verwenden. Stattdessen kam man überein, dass die Europäische Union der Ukraine ein Darlehen mit einem Volumen von 90 Milliarden Euro für die Jahre 2026 und 2027 gewähren und sich dazu ihrerseits an den Kapitalmärkten verschulden solle. Die EU-Anleihen sollen dabei durch den verbliebenen finanziellen Spielraum („head room“) im Rahmen des bestehenden Mehrjährigen Finanzrahmens (MFR 2021-2027) abgesichert werden. Weil die Mitgliedstaaten Slowakei, Tschechische Republik und Ungarn nicht mitwirken wollen, wird im Wege der verstärkten Zusammenarbeit nach Art. 20 EUV, Art. 326 ff. AEUV vorgegangen.
+
+## Rechtstechnische Umsetzung
+
+Das am 14. Januar 2026 von der Europäischen Kommission veröffentlichte Regelungspaket besteht aus drei Elementen: (1) der Einführung eines neuen Unterstützungsdarlehens für die Ukraine in Höhe von 90 Milliarden Euro, (2) der Änderung der Verordnung über den Mehrjährigen Finanzrahmen, um die Deckung der Kreditaufnahme der Union aus dem „head room“ des EU-Haushalts zu ermöglichen, und (3) der Änderung der Fazilität für die Ukraine als ein Mittel zur Durchführung der Haushaltshilfe.
+
+Das Unterstützungsdarlehen soll auf Art. 212 AEUV gestützt werden, der Maßnahmen der wirtschaftlichen, finanziellen und technischen Zusammenarbeit mit Nicht-Entwicklungsländern zulässt. Im Rahmen dieses außenpolitischen Handelns kann die EU auch Darlehen an Drittstaaten vergeben. Die Union hat der Ukraine schon zuvor mit vergleichbaren Darlehen geholfen.
+
+Von den vorgesehenen 90 Milliarden Euro soll ein Anteil von 30 Milliarden Euro als allgemeine Haushaltshilfe gewährt werden; entweder als Makrofinanzhilfe oder über die Fazilität für die Ukraine. Die Makrofinanzhilfe ist eine Soforthilfe, die dazu dient, die makroökonomische Stabilität des Landes zu sichern. Die Verausgabung dieser Hilfsmittel soll an ein Memorandum of Understanding (MoU) gekoppelt werden, das bestimmte Konditionalitäten regelt (Verbesserung der Staatseinnahmen, Korruptionsbekämpfung, Qualität der öffentlichen Finanzen). Das MoU soll im Komitologieverfahren beschlossen werden. Die einzelnen Hilfstranchen sollen sodann aufgrund von Beschlüssen der Kommission geleistet werden. Mittel, die über die Fazilität für die Ukraine laufen, fallen dort in die Säule I (Budgethilfe). Die Verausgabung im Einzelnen folgt den schon bestehenden Regeln der Ukrainefazilität. Der dort geltende Konditionalitätsrahmen (Ukraineplan) soll überarbeitet werden, um die zusätzlich gewährten Mittel zu berücksichtigen.
+
+Der verbleibende Darlehensanteil von 60 Milliarden Euro ist demgegenüber für militärische Zwecke bestimmt, namentlich zur Unterstützung der Verteidigungsindustrie der Ukraine. Konditionalitäten beziehen sich hier auf zu beziehende Waffensysteme bzw. die Herstellungsländer. Die genaue Aufteilung der Zuweisungen soll jährlich vom Rat auf Basis einer Finanzierungsstrategie der Ukraine festgelegt werden.
+
+Zur Rückzahlung des 90-Milliarden-Euro-Darlehens soll die Ukraine überhaupt nur dann verpflichtet sein, wenn es zu monetären oder nicht-monetären Reparationszahlungen Russlands an die Ukraine kommt, alternativ bei Verstößen der Ukraine gegen Rule-of-Law-Standards (insbesondere mit Blick auf Korruption). Realistisch betrachtet handelt es sich bei dem Ukrainedarlehen also um einen faktischen Zuschuss der Union. Die russischen „frozen assets“ bleiben zugleich beschlagnahmt. Ihre Inanspruchnahme für den Fall ausbleibender Reparationszahlungen behält sich die Union nach einer vorerst rein politischen Aussage vor. Auf jede rechtsverbindliche Einbindung der assets wurde bislang verzichtet.
+
+Finanziert wird das neue Ukrainedarlehen durch eine erneute Kreditaufnahme der Union an den Kapitalmärkten. Abgesichert wird diese Kreditaufnahme durch den verbliebenen finanziellen Spielraum im aktuellen Mehrjährigen Finanzrahmen. Um dies zu ermöglichen, ist die auf Art. 312 AEUV beruhende Verordnung über den Mehrjährigen Finanzrahmen (einstimmig) zu ändern. Die Zinsen und weitere Kosten der Kreditaufnahme sollen den EU-Haushalt belasten und zu entsprechend höheren Abführungen der Mitgliedstaaten an den EU-Haushalt führen. Zur langfristigen Zinsfinanzierung und insbesondere zur Tilgung des von der Union aufgenommenen Darlehens gibt es demgegenüber – anders als im Fall von NextGenerationEU (NGEU) – keine konkreten Planungen.
+
+Weil die für die finanziellen Beiträge der Mitgliedstaaten entscheidende Eigenmittelobergrenze unverändert bleiben könne, wird auf eine Anpassung des geltenden Eigenmittelbeschlusses, der die Eigenmittelanteile der Mitgliedstaaten regelt und nach Art. 311 UAbs. 3 AEUV vom Rat beschlossen wird und der Zustimmung der Mitgliedstaaten bedarf, verzichtet.
+
+Die Legislativvorschläge wurden nun dem Europäischen Parlament und dem Rat vorgelegt, um das Gesetzgebungsverfahren einzuleiten und eine baldige Verabschiedung und schnellstmögliche Unterstützung der Ukraine zu erreichen.
+
+## Europaverfassungsrechtliche Würdigung
+
+Besondere Zeiten erfordern besondere Maßnahmen. Es steht außer Frage, dass die Verteidigung höchste Priorität hat und daher auch deren Finanzierung gewährleistet werden muss. Dies gilt für Deutschland (etwa mit Blick auf die Bereichsausnahme für die Verteidigung in der verfassungsrechtlichen Schuldenregel nach Art. 109 Abs. 3 und Art. 115 Abs. 2 GG), für die Europäische Union (etwa mit Blick auf die Aktivierung der nationalen Ausweichklausel in Art. 26 der VO (EU) 2024/1263) und eben auch für die Situation der Ukraine.
+
+Der auf dem EU-Gipfel im Dezember 2025 gewählte Weg eines weiteren EU-Darlehens an die Ukraine, das wohl niemals zurückgezahlt werden wird, ist sehr viel risikoärmer als die diskutierte Variante, beschlagnahmte russische Vermögensbestände zu nutzen. Eine solche Nutzung hätte sehr wahrscheinlich zu Klagen gegen Euroclear in Belgien geführt sowie ökonomische und politische Vergeltungsmaßnahmen und sonstige Kollateralschäden nach sich ziehen können.
+
+Es bleibt aber die Frage, ob die Finanzierung des der Ukraine gewährten Darlehens im Wege der Kreditaufnahme (borrow-to-lend) mit dem unionalen Primärrecht vereinbar ist. Wie auch im Fall von NGEU ist hier zwischen der Einnahmen- und der Ausgabenseite der Union zu unterscheiden. Während sich die Mittelausreichung im Fall von NGEU (Zuschüsse und Darlehensvergaben an die Mitgliedstaaten) auf Art. 122 Abs. 2 AEUV stützte, wird im Fall der Ukrainehilfe (Darlehensvergabe an die Ukraine) Art. 212 AEUV nutzbar gemacht. Das erscheint tragfähig und als solches unproblematisch.
+
+Genauerer Betrachtung bedarf indes die Refinanzierung, also die unionale Einnahmenseite. Im Fall von NGEU wurde die Kreditaufnahme der Union in Höhe von damals 750 Milliarden Euro im Eigenmittelbeschluss 2020 verankert und in weiteren Rechtsakten ausgestaltet. Auch wurde im Eigenmittelbeschluss geregelt, inwieweit die einzelnen Mitgliedstaaten für die Unionsschulden haften (weshalb es sich bei den NGEU-Anleihen auch nicht um Eurobonds im strengen Sinne handelt). Im aktuellen Zusammenhang will die Union den Eigenmittelbeschluss demgegenüber unangetastet lassen und sich allein darauf beschränken, die Verordnung über den Mehrjährigen Finanzrahmen zu ändern, um die Haftung mit dem verbliebenen Haushaltsspielraum zu gewährleisten. Die Zinsen sollen aus dem EU-Haushalt beglichen werden. Die Tilgung des Darlehens bleibt offen.
+
+Doch muss die Sicherstellung der Haftungsmasse von der Maßnahme der Kreditaufnahme und damit der Verschuldung der Union als solcher unterschieden werden. Denn die Kreditaufnahme, die zu zusätzlichen Finanzmitteln der Union und einer einhergehenden Rückzahlungsverpflichtung führt, bedarf selbst der Legitimation.
+
+Bekanntermaßen findet sich in den Unionsverträgen keine ausdrückliche Einzelermächtigung für die Unionsverschuldung, weshalb sie grundsätzlich umstritten ist. Im Fall von NGEU ging das Bundesverfassungsgericht in seinem diesbezüglichen Urteil vom 6. Dezember 2022 davon aus, dass Kreditmittel der Union als „sonstige Einnahmen“ im Sinne von Art. 311 UAbs. 2 AEUV angesehen werden können. Derartige Einnahmen brauchen, so das Bundesverfassungsgericht weiter, eine rechtliche Grundlage im Eigenmittelbeschluss. So heißt es in Rn. 166 des NGEU-Urteils, in der Sache zur Kreditaufnahme der Union, wörtlich:
+
+„Die Verankerung der sonstigen Einnahmen unmittelbar im Eigenmittelbeschluss ist nicht nur eine Option, sondern – wie insbesondere der Vertreter der Europäischen Kommission in der mündlichen Verhandlung unterstrichen hat – ein primärrechtliches Gebot. Ohne eine solche Verankerung im Eigenmittelbeschluss selbst könnte eine Entscheidung des Rates und der nationalen Parlamente über die Zurverfügungstellung der Eigenmittel nicht getroffen werden.“
+
+Das Bundesverfassungsgericht verlangt darüber hinaus, dass sich die Kreditaufnahme der Union durch eine bestimmte Sachaufgabe rechtfertigen muss, für die die Kompetenz bei der Union liegt. Schließlich dürfe der Umfang der Kreditaufnahme das Gesamtvolumen des eigenmittelfinanzierten Haushalts nicht überschreiten. Nach diesen Maßgaben beurteilte das Bundesverfassungsgericht die Kreditaufnahme der Union im Rahmen von NGEU als kompetenzgemäß und erkannte keine offensichtliche Überschreitung des geltenden Integrationsprogramms. Denn die Kreditaufnahme war im Eigenmittelbeschluss 2020 vorgesehen. Sie diente einer Aufgabe, die in Art. 122 Abs. 2 AEUV angelegt war. Und das Volumen der Kreditaufnahme blieb hinter dem Volumen des eigenmittelfinanzierten Haushalts zurück.
+
+## Anpassung des Eigenmittelbeschlusses?
+
+In der aktuellen Planung wird demgegenüber auf eine Anpassung des Eigenmittelbeschlusses verzichtet. Dies erscheint nicht unproblematisch. Denn es ist zwar richtig, dass die notwendige Haftungsmasse für die nunmehr geplante Kreditaufnahme der Union – anders als im Fall von NGEU im Jahr 2020 – im verbliebenen Volumen des bestehenden Mehrjährigen Finanzrahmens vorhanden ist. Doch ist, wie schon ausgeführt, zwischen der Sicherstellung der Haftung und der Kreditaufnahme als solcher zu unterscheiden. Fokussiert man auf die Kreditaufnahme, ähneln sich der NGEU- und der Ukraine-Fall deutlich. Dies spricht erneut für eine Verankerung der – wiederum erheblichen – Kreditaufnahme im Eigenmittelbeschluss, also für dessen Anpassung durch Ratsbeschluss und mitgliedstaatliche Zustimmung. Die Finanzierung des Ukrainedarlehens könnte dadurch auf noch solidere Füße gestellt und es könnte eine angemessene demokratische Rückbindung der Unionsverschuldung erreicht werden. Die Alternative wäre eine – auf die Ermöglichung autonomer Unionsverschuldung zielende – Weiterentwicklung des Primärrechts.

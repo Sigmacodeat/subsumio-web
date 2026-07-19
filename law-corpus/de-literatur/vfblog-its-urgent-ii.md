@@ -1,0 +1,69 @@
+---
+title: Verfassungsblog — It’s Urgent II
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2020-09-06'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/its-urgent-ii/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# It’s Urgent II
+
+## What happened?
+
+On Friday 4 September 2020, Judge Anthony Collins of the General Court, the judge hearing the application for interim measures as the President and Vice-President were prevented from considering the application, as per Article 157(4) of the Rule of Procedure of the General Court, ordered the suspension of operation and all consequential effects of the Decision of the Representatives of the Governments of the Member States, in so far as it purports to appoint Mr. Athanasios Rantos to the position of Advocate General of the Court of Justice (the ‘2 September 2020 activity’). 
+
+The Order of Judge Collins in Case T-550/20 R, Sharpston v. Council and the Representatives of the Governments of the Member States on 4 September 2020 thus suspends, for now, the action by  the Member States misguidedly impinging on the independence of the judicial branch of the European Union. The order of the judge hearing applications for interim measures against the imminent questionable appointment of a new Advocate General, attempting to displace an incumbent before the end of her term of office, was exactly the course of action we expected Advocate General Sharpston to take in our 3 September 2020 contribution to this blog. 
+
+## Significance
+
+The significance of this extremely urgent development for the independence of the judiciary in the EU and the general articulation of the rule of law in Europe is difficult to overestimate. The interim measures procedure has never been used by the EU courts before to suspend, with immediate effect, an undermining effort by the Representatives of the Governments of Member States against the principle of the irremovability of a sitting member of the Court of Justice whose mandate has not expired. Such undermining efforts on the judicial branch show blatant disregard of the principle of judicial independence and the standards of Article 19 TEU and Article 47 of the Charter (CFR), as well as the values of the Union (and the Member States) articulated in Article 2 TEU. 
+
+A healthy system of the separation of powers presupposes conflicts about how far the influence of one branch over the others would stretch. In the EU, with its long-established principle of institutional balance safeguarding the independence of the Court of Justice – the possible arbiter in case of any inter-institutional conflict – is of particular importance. The rule of law, a constitutional principle of the Union, has long been understood to imperatively demand that all the decisions of the institutions and organs of the Union (as well as the Member States, of course) should be grounded in the law. As Advocate General Sharpston rightly submitted in this new case, her third (for procedural reasons – Cases T-180/20, T-184/20, and now, T-550/20), Union law allows for the appointment of 11 Advocates General for the duration of 6 years. This lack of a vacancy is of vital importance. 
+
+## The Order of 4 September 2020
+
+Judge Collins confirmed in his Order of 4 September 2020 that in the case, ‘[a]s of the date of the making of this order each of these eleven posts are occupied’ (paragraph 4 of the Order). The action of the Representatives of the Governments of the Member States purporting to appoint Mr. Rantos as an Advocate General regardless is most surprising in this context, given that the vacancy is simply not there, as has also been explained by Professors Halberstam, Pech, Kochenov, and the two current authors. In this context, reasoned Judge Collins, the appointment, should it go ahead, will ‘terminate [Advocate General Sharpston’s] mandate’ (paragraph 7 of the Order) before the term she was appointed to expires, in line with the EU Treaties. 
+
+The consequences of having a member of the Court of Justice whose appointment is questionable, if Mr. Rantos is proceeded to be appointed to the Court of Justice, also played a role in the Order of Judge Collins. In explaining his Order, which lasts until he can determine the interim measures application itself, he laid special emphasis on the criterion of the proper administration of justice. Specifically, he stated that ‘[a]s for the criterion of the proper administration of justice, the negative consequences of replacing a lawfully appointed office holder by someone whom may ultimately be deemed to have been appointed unlawfully, are self-evident. Such a scenario is not in the interests of the applicant nor in those of her possible successor. Nor, since such a result would generate challenges as to the composition of the Court of Justice, thereby impugning the validity of its judgments, is it in the interests of the application of the rule of law in the European Union not to accede to this application’ (paragraph 13 of the Order). 
+
+## The use of interim measures
+
+As we have already pointed out earlier this week, the timing of this effort by the Member States against the principle of irremovability and independence of the judiciary is particularly poor. The Court of Justice has been the only institution of the Union achieving (at least some) success in fighting against the identical developments in Poland and Hungary, where the executive would either pretend that the law simply does not exist – as happened with the Polish Constitutional Tribunal – or that they can change the terms of mandate of the appointed members of the judiciary with backfiring force – as happened in Poland and Hungary. 
+
+The Order of Judge Collins fits within the growing practice of the necessity at the EU courts to use the interim measures tools at their disposal to safeguard the rule of law. The Court of Justice has effectively deployed and constantly perfected the interim measures with respect to Poland, from halting the change in the retirement age of the Polish Supreme Court judges, which resulted in the curtailment in their mandates established by law with a backfiring force (Order of the Court of 17 December 2018 in Case C-619/18 R, Commission v Poland (Independence of the Supreme Court)) referring to the ‘serious damage’ to the EU’s judiciary, which is ‘also likely to be irreparable’ (paragraph 70), should the legally established mandates of the Judges of the Supreme Court be reduced. The Court also made a direct connection between the cardinal principle of irremovability of judges as an essential part of guaranteeing the independence of the judicial branch and the values of Article 2 on which the Union is built. Similarly, by the Order of the Court of 8 April 2020 in Case C-791/19 R, Commission v. Poland (New Disciplinary Regime for Judges) the Court granted interim relief against the ‘Disciplinary Chamber’ of the Polish Supreme Court, which has already been clearly ruled as failing to meet the independence criteria of Articles 19 TEU and Article 47 CFR by the Supreme Court applying Court of Justice’s guidance received in the case of Case C-585/18, A.K. and Others. 
+
+## The link between the EU judiciary and national judiciaries
+
+Some commentators question the connection being made between this attempt at the Member States sacking a member of the EU judiciary on the one hand; and rule of law challenges in EU Member States on the other hand. However, regrettably, they are highly interlinked in their substance. There is no room for double standards as far as the requirements of the Articles 2 and 19 TEU as well as Article 47 CFR go. The EU itself is unquestionably bound by such requirements as much as any national bodies in Member States. 
+
+In this context, cutting the mandate of a member of the EU judiciary without any legal basis in the EU Treaties is a violation as significant as the one the Court prevented in the Commission v. Poland (Independence of the Supreme Court). The only manner in which the EU Treaties allow for a member of the Court to be deprived of their office is if all judges and advocates general, unanimously (except for the member concerned), decide so (Article 6, Protocol No. 3 on the Statute of the Court). The EU Treaties protect Advocate General Sharpston’s mandate against illegal actions by the Representatives of the Governments of the Member States in the same way as it does for members of national courts. Unlike some commentators seem to believe, who claim the intentions are different; the reasons do not matter here: only the illegality does. An illegal action is a threat to independence, whatever the motivation. A ‘cardinal’ principle cannot have two meanings, protecting judicial independence and irremovability at the national level, while protecting none at the EU level.
+
+## What happens now?
+
+It must be remembered that the order of 4 September 2020 merely ensures nothing changes on Monday 7 September 2020, when Mr. Rantos was to enter into office according to the 2 September 2020 activity. As succinctly put by Judge Collins, the issues at stake in the case require ‘detailed and comprehensive argument before the judge hearing the application for interim measures before the application for interim measures can be ruled’ (paragraph 12 of the Order). It must be borne in mind that the Order of Judge Collins of 4 September 2020 is not a final interim measure order. Rather, it is predicated on a suspensory measure that maintains the status quo (paragraph 8 of the Order) until the interim measures application is fully dealt with. 
+
+In particular, it has to be recalled that appointments to the Court are made by ‘common accord of the governments of the Member States’ (Article 19(2) TEU, third paragraph). The Order of Judge Collins has not fully injuncted the common accord, as it will have to be assessed later whether such a common accord is a judicially reviewable act. For now however, the Order of Judge Collins merely suspends the effects of the common accord on a temporary basis, until it later sees fit. Thus, the interim measures proceedings can be considered to be continuing proceedings. 
+
+The defendants in Advocate General Sharpston’s case – the Council and the Representatives of the Governments of the Member States – have been given until 11 September 2020 to submit their written observations on the interim measures application so involve further pleadings before Judge Collins. The appointment of Mr. Rantos to the position of Advocate General, whose appointment is not grounded in the law, will now not happen on the date announced in the press release on the Council’s website on 2 September 2020, which was meant to be Monday 7 September 2020. 
+
+## An abandoned alternative approach
+
+The question must be raised as to why Member States are forcefully acting in such a manner like their 2 September 2020 activity. In the Order of Judge Collins of (paragraph 11 of the Order), it was alluded to the fact that Article 50(3) TEU is of disputed interpretation. Notwithstanding the lodging of this new case (Case T-550/20) with a request for interim measures, the prior actions of the Council and the Conference of the Representatives of the Governments of the Member States are subject to ongoing proceedings before the General Court (Case T-180/20). The interpretation of Article 50(3) TEU is of concern in both cases. 
+
+The issues prior to the 2 September 2020 activity, that has led to Case T-550/20, could have been resolved through ordinary judicial processes, had Member States acted diligently. Instead, the Member States have taken the heavy-handed approach by proceeding to attempt to appoint a new Advocate General, presenting the applicant with a fait accompli, thus rendering the proceedings in Case T-180/20 (and Case T-184/20) irrelevant. It is no wonder that the only means of redress for Advocate General Sharpston was to seek judicial protection from the EU General Court. 
+
+It has been accepted that Advocate General Sharpston could remain a member of the Court after Brexit had formally occurred (31 January 2020). Indeed, she has issued seven Opinions since then. This continuation in office, as we have previously analysed, is not the case for judges. It is therefore completely mystifying why the Member States have tried to curtail the appointment of a member of the Court in such a brazen manner. The new Advocate General could have been appointed already to take up office from October 2021, without any legal difficulty. 
+
+## Conclusion
+
+It is deeply disappointing that the Court of Justice, which has done so much for the articulation of the principle of judicial independence in the recent years, would come under threat from the Member States, collectively disregarding this principle. Blocking illegal moves on time in the courts of law acting impartially and in full compliance with the cardinal principles as well as the letter of the law is precisely what the rule of law boils down to. Judge Collins has demonstrated – in the face of an undermining of the EU judiciary by the Member States – that the EU is indeed a Union based on the rule of law. 
+
+Viewed in this light, the Order of Judge Collins is of crucial significance for the protection of European judiciaries at both EU- and Member State-level, ensuring compliance with the principles of Article 19 TEU in the face of an arbitrary undermining effort against the mandates of the members of the judiciary. An illegal termination of a legally guaranteed mandate of a member of the EU judiciary is not in line with Article 19 TEU. It has to be undone. The Order of Judge Collins is a step on this path, and we await further developments.

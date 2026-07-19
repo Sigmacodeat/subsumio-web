@@ -4,11 +4,12 @@
  * Client code MUST NOT import from this file — use citation-gate-client.ts instead.
  */
 
-import { groundCitations } from "@/lib/legal-grounding";
+import { groundCitations, groundLiteratureCitations } from "@/lib/legal-grounding";
 
 // Re-export client-safe functions and types for server-side convenience
 export {
   extractStatuteCitations,
+  extractLiteratureCitations,
   extractTextFromJsonResponse,
   emptyGroundingMetadata,
   type GroundingMetadata,
@@ -16,6 +17,7 @@ export {
 
 import {
   extractStatuteCitations,
+  extractLiteratureCitations,
   extractTextFromJsonResponse,
   emptyGroundingMetadata,
 } from "@/lib/citation-gate-client";
@@ -23,12 +25,21 @@ import type { GroundingMetadata } from "@/lib/citation-gate-client";
 
 /**
  * Run corpus grounding on the answer text.
- * Extracts statute references, verifies them against the law corpus,
- * and returns structured grounding metadata.
+ * Extracts statute references AND literature/materialien references
+ * (BT-Drs., Onlinekommentar, publisher commentaries), verifies them against
+ * the law corpus, and returns structured grounding metadata. Publisher
+ * citations (Grüneberg etc.) always count as unverified — we hold no license
+ * for their text, and the answer must carry the warning instead of silently
+ * presenting them as grounded.
  */
 export async function groundAnswerCitations(answerText: string): Promise<GroundingMetadata> {
   const rawCitations = extractStatuteCitations(answerText);
-  const grounded = await groundCitations(rawCitations);
+  const rawLiterature = extractLiteratureCitations(answerText);
+  const [statuteGrounded, literatureGrounded] = await Promise.all([
+    groundCitations(rawCitations),
+    groundLiteratureCitations(rawLiterature),
+  ]);
+  const grounded = [...statuteGrounded, ...literatureGrounded];
   const verified = grounded.filter((c) => c.verified).length;
   const unverified = grounded.filter((c) => !c.verified).length;
   const hasUnverified = unverified > 0;

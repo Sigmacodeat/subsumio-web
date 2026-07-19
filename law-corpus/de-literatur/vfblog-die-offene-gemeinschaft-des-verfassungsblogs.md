@@ -1,0 +1,95 @@
+---
+title: Verfassungsblog — Die offene Gemeinschaft des Verfassungsblogs
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2019-09-02'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/die-offene-gemeinschaft-des-verfassungsblogs/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Die offene Gemeinschaft des Verfassungsblogs
+
+## 1. Der Verfassungsblog hat etwas verändert
+
+Ich kann mich gut daran erinnern, wie ich mit Max Steinbeis Anfang 2010 am Gendarmenmarkt in Berlin in einem Café saß und wir überlegten, wie man unter anderem weitere Staatsrechtslehrerinnen oder -lehrer für die Mitwirkung in diesem neuen Medium gewinnen könnte. Der Verfassungsblog hatte da schon eine gewisse Sichtbarkeit. Die ersten Antworten waren teilweise ernüchternd. Besonders in Erinnerung geblieben ist mir die Antwort eines Kollegen, er könne sich auf ein solches Medium gar nicht einlassen. Das sei doch nicht seriös, aus der Hüfte geschossen. Er brauche nun einmal eine Zeit, um ein Thema zu durchdringen und dann mit Tiefe etwas dazu zu schreiben. Das war damals sicherlich keine Einzelmeinung. 
+
+Dass sich besagter Kollege mittlerweile auch unter den Verfassungsblogautoren findet, beweist, dass sich in den 10 Jahren etwas geändert hat. Dafür, dass der Verfassungsblog als Veröffentlichungsmedium heute allseits ernst genommen wird, fehlt wenn ich recht sehe zwar noch der ultimative Beweis: Ein Zitat in einem Urteil des BVerfG steht noch aus – viel mehr kann man im Leben nicht erreichen, vom Horizont eines Öffentlichrechtlers aus (siehe immerhin VerfGH Sachsen Vf. 76-IV-19 (HS) v. 16.8.2019). Aber eine Vielzahl von Kolleginnen und Kollegen hat mittlerweile im Verfassungsblog veröffentlicht. Die Verfassungsrechtswissenschaft hat sich in den letzten 10 Jahren unter verschiedensten Aspekten verändert, nicht zuletzt, weil sich auch Rolle und Stellenwert demokratischer Verfassungen verändert haben. Der Verfassungsblog war in inhaltlicher Hinsicht in Teilen Chronist dieser Entwicklung, aber sicherlich auch in Teilen Medium und vielleicht sogar Antrieb einer Veränderung: eine Öffnung der Verfassungsrechtswissenschaft, und zwar unter verschiedensten Aspekten. 
+
+## 2. Der Verfassungsblog hat nicht alles verändert
+
+Der Verfassungsblog ist nicht der einzige deutsche Law Blog – Blawg – geblieben, gleichwohl besteht im deutschsprachigen Raum noch immer ein großer Abstand zu den USA, wo sich Blawgs als Veröffentlichungsformat schon seit längerem sehr viel breiter etabliert haben. Eine Übersicht der American Bar Association weist 4500 Blawgs aus, darunter etliche von Juraprofessoren. Einer der bekannteren, Balkinization (Jack Balkin), besteht bereits seit 2003. 
+
+Mit dem Verfassungsblog hat sich für die hiesige Rechtswissenschaft die Bandbreite möglicher Veröffentlichungsformate vergrößert. Man ist nicht mehr auf analoge Zeitschriften angewiesen. Im Verfassungsblog selbst gibt es mittlerweile eine beachtliche – manchen zu wenig übersichtliche – Binnenausdifferenzierung: vom Urteilskommentar, der den analogen Urteilsanmerkungen ähnelt, über Meinungsbeiträge, Online-Symposien, Grundsatz-Essays bis zu Vorortreportagen von mündlichen Verhandlungen oder Experimenten wie dem Kurzformat „Verfassungsblog vom Blatt“. 
+
+Aber unverändert gilt: Nach wie vor hat die analoge Welt für die deutsche Rechtswissenschaft die maßgebliche Bedeutung. Der Verfassungsblog will auch gar nicht Wissenschaft sein, weswegen er trotz seiner überragenden Bedeutung für die Verfassungsrechtswissenschaft quer zu den etablierten Förderkonzepten bei der DFG und anderen staatlichen Geldgebern liegt. In den Veröffentlichungslisten bei Bewerbungen zählen nach wie vor zuvörderst die Beiträge in Fachzeitschriften, Sammelbänden und Kommentaren, sowie Monographien – Bücher, wie man sie mit den Qualifikationsschriften ja immer noch in der Regel mindestens zweimal geschrieben haben muss (als Dissertation und Habilitation). Der Blogbeitrag schadet zwar heute wohl nicht mehr, er fällt aber allenfalls unter Sonstige Veröffentlichungen in der Publikationsliste. Dass der Verfassungsblog seiner digitalen Nachhaltigkeit selbst nicht restlos traut, scheinen die in der NOMOS-Schriftenreihe “Recht in Kontext” erschienen Analogversionen (gedruckte Bücher) von Verfassungsblogbeiträgen zu bestätigen. 
+
+## 3. Der Verfassungsblog wollte vielleicht gar nicht alles verändern
+
+Der Verfassungsblog hat aber auch deswegen nicht alles verändert, weil er nur Teile der Digitalisierung mitmacht. Am Rande der Staatsrechtslehrertagung in Bonn 2018 sinnierte ich mit dem Kollegen Kingreen nicht ohne leicht melancholischen Unterton darüber, dass ein an einem einzigen Abend geschriebener Blogpost im Verfassungsblog womöglich weitaus wesentlich mehr Leser erreicht – und damit (vielleicht) mehr bewegt – als ein über mehrere Monaten mühevoll erarbeiteter Archivbeitrag für beispielsweise das Archiv des Öffentlichen Rechts. Wenn man hier einmal weiterdenkt: Über Twitter erreicht man im Zweifel mit noch weniger Text noch mehr Menschen. Dieses Medium, spätestens mit dem US-Präsidenten Trump weltweit bekannt geworden, haben indessen bisher doch noch vergleichsweise wenige aus der Staatsrechtslehre für sich entdeckt, dies gilt auch für Studierende. 
+
+Hier gibt es vielleicht auch einen generational divide. Für die Jüngeren ist das Internet auf der einen Seite noch mehr Selbstverständlichkeit als für diejenigen, die noch eine Welt ohne Internet gekannt haben. Email ist dabei aber fast schon retro, und auch Facebook hat ab dem Punkt, ab dem man riskierte, den eigenen Großeltern auf dem sozialen Medium zu begegnen, offenbar erheblich an Anziehungskraft für die Jüngeren verloren. Twitter erscheint vielen Jüngeren möglicherweise zu sehr text-, nachrichten- und politiklastig, anders als Instagram.
+
+YouTube aber ist der Ratgeber in allen Lebenslagen, hier manifestiert sich der generational divide ganz deutlich. Auch für den universitären Bereich. Spätestens als ich zum ersten Mal eine Seminararbeit korrigierte, die im Fußnotenapparat allen Ernstes überwiegend mit YouTube-Quellen unterwegs war – und es ging keineswegs um ein Thema, das diese Quelle besonders nahe gelegt hätte – wurde mir klar, dass wir uns entscheiden müssen, wie wir mit dieser Entwicklung umgehen. 
+
+Wenn die Abstandnahme vom Text ein Trend ist, befördern wir ihn oder stellen wir uns ihm entgegen? Es ist nicht völlig sicher, dass die Rechtswissenschaft über die nächsten Jahrzehnte oder Jahrhunderte eine textzentrierte Buchwissenschaft bleibt. Der Verfassungsblog ist unter diesem Aspekt noch richtig schön altmodisch. Text, gelegentlich sogar viel Text, einzeilig, es gibt allenfalls ein einziges Bild, ein Autorenphoto. Immerhin, unter Hyperlinks kann sich alles Mögliche verbergen, neben Text auch eine mp3– oder mp4.-Datei, JPEGs, Webseiten. 
+
+Ich finde diese Entscheidung für Text gut. Ich bin aber auch nicht durch YouTube sozialisiert. Vielleicht wird man die besagte Entscheidung dann doch immer wieder zu überprüfen haben. Und dann doch über den VerfassungsTube nachdenken müssen, als Ergänzung, Erweiterung oder gar Weiterentwicklung des Verfassungsblogs. Schon, damit nicht andere auf die Idee kommen und womöglich die falschen Leute in Verfassungsfragen dort Deutungshoheit erlangen. 
+
+## 4. Der Verfassungsblog hat den Verfassungsdiskurs in Deutschland internationaler gemacht
+
+Der Verfassungsblog erscheint ganz selbstverständlich mit deutschen und englischen Beiträgen, es gibt eine deutsche und eine englische Fassung. Nun ist es keinesfalls so, dass die deutsche Verfassungsrechtswissenschaft in der Vergangenheit völlig isoliert existiert hätte. Ganz im Gegenteil, deutsches Verfassungsdenken ist vielerorts rezipiert worden, manche deutschen oder deutschsprachigen Staatsrechtslehrer sind auswärts bekannter als zu Hause und auch das deutsche Grundgesetz ist als konkretes Modell in etlichen Ländern betrachtet worden. Keine Isolation also, aber gleichwohl konnte man die Verbindungen nach draußen lange als Einbahnstraße wahrnehmen – als Verbindungen, über die mehr nach außen abgegeben als nach innen aufgenommen wurde, wenn nicht gar diese Verbindungen komplett ausgeblendet wurden. Die deutschsprachige Verfassungsrechtswissenschaft ist groß genug, dass sie sich herrlich mit sich selbst beschäftigen kann und dabei schnell übersieht, wie intensiv sie von außen beobachtet wird. 
+
+Hier setzt der Verfassungsblog jedenfalls einen Gegenimpuls. Ausländisches Verfassungsrecht und Verfassungsvergleich sind selbstverständlich. Internationales und Fremdsprachiges war von Anfang an präsent und wurde nicht gleich dem Völkerrecht zugeschlagen, eine vormals in den Augen sehr traditioneller Staatsrechtslehrer als Recht ohnehin nicht ganz ernst zu nehmende Materie. Im Verfassungsblog sind die Grenzen buchstäblich irrelevant. Dass er aus Deutschland kommt wird ebenso wenig betont wie eine disziplinäre Abgrenzung, wenn es um Internationales geht. Es ist ein Medium in dem die Einheit des Öffentlichen Rechts ganz selbstverständlich und international gelebt wird. International Public Law. 
+
+## 5. Der Verfassungsblog hat den europäischen Verfassungsdiskurs in Deutschland gestärkt
+
+Der Verfassungsblog hat den Verfassungsdiskurs in Deutschland von vornherein europäisch als Gespräch über das europäische Verfassungsrecht und Verfassungsrecht in Europa angelegt. 2009 ist das Jahr des Lissabon-Urteils des BVerfG und 16 Jahre nach der mäßig geglückten, folgenreichen letzten bundesverfassungsgerichtlichen Standortbestimmung und Richtungsentscheidung im Maastricht-Urteil 1993 Startpunkt für eine nahezu jährliche, jedenfalls kontinuierliche Befassung mit den verfassungsrechtlichen Grundlagen der europäischen Integration. Der Verfassungsblog hat diese ebenso kontinuierlich begleitet, mit kritischer Intensität. 
+
+Dabei sind viele, auch gegensätzliche Positionen zu Wort gekommen. Aber schon die Auswahl der Autoren und der Grundton der Themenwahl gibt doch zu erkennen, dass hier ganz selbstverständlich von einem Europäischen Verfassungsrecht ausgegangen wird. Das Grundgesetz erscheint dabei als Teilverfassung im Europäischen Verfassungsrecht. Dazu, dass die These von der Existenz eines Europäischen Verfassungsrechts heute eigentlich nicht mehr ernsthaft in Frage gestellt wird, hat der Verfassungsblog sicherlich auch einen Beitrag geleistet. Auch hier haben disziplinäre Grenzziehungen keine Rolle gespielt, zahllose europarechtliche Fragen sind im Verfassungsblog verhandelt worden. Europarechtler aus vielen anderen Ländern sind zu Wort gekommen. 
+
+Das „Verfassungs“ im Verfassungsblog ist europäisch grundiert. Sonst würde er wohl „Staatsblog“ heißen. Dazu würden mir zwar auch aktuell durchaus einige geeignete Blogwarte einfallen, aber ein Desiderat sehe ich hier nicht.
+
+## 6. Der Verfassungsblog illustriert die Risiken und Gefahren der Online-Welt für die Rechtswissenschaft 
+
+Für Wissenschaftler ist der Verfassungsblog nicht ohne Risiko. Nicht nur wegen des Echtzeitfaktors, der oben angesprochen wurde: Vielleicht ist es manchmal eben doch besser, ein paar Monate länger über ein Thema nachzudenken. Ich denke bei Risiken aber vor allem an die Interaktivität. Der Leser der Texte schlägt hier nämlich womöglich zurück. Nun kann einem das auch sonst über Leserbriefe oder Repliken bei Publikationen passieren, dann aber doch sehr vermittelt und gefiltert. Hier ist der Echtzeitfaktor anders. Man hat ein unmittelbares Feedback in Gestalt der Kommentarfunktion, die für jeden Beitrag besteht. Dies kann noch dazu in anonymisierter Form erfolgen, auch wenn eine gültige Email-Adresse hinterlegt sein muss. Die Kommentare sind moderiert, wer also allzu ausfällig wird, wird gelöscht. Und doch macht man schnell Bekanntschaft mit Trollen, mit digitalen Erregungszuständen und Kampagnen. Damit muss man umgehen. 
+
+Und auch ein anderes Risiko der Online-Kommunikation lässt sich anhand des Verfassungsblogs diskutieren: die Filterblase. Der Verfassungsblog ist auch im Hinblick auf seine akademische Anbindung doch sehr berlinzentriert. Dass man – außerhalb der Kommentarspalte, siehe oben – überwiegend mit Ansichten konfrontiert wird, die jedenfalls im weitesten Sinne von ähnlichen Grundannahmen ausgehen, könnte trügerisch sein. Da ich die Grundannahmen des Verfassungsblogs, etwa dass Verfassung eine gute Sache ist und verteidigt werden muss, teile, habe ich auch hier letztlich keine Einwände. Aber dass es auch Blogs der Verfassungsfeinde geben dürfte, sollte man nicht völlig ausblenden. 
+
+## 7. Der Verfassungsblog illustriert die Chancen und Vorteile der Online-Welt für die Rechtswissenschaft
+
+Den Risiken und Gefahren stehen offenkundige Chancen und Vorteile gegenüber. Es beginnt mit dem Kern des Mediums, dem Hypertext. Zwar ist die Verlinkung zu Fundstellen an sich nichts anderes als das Setzen von Fußnoten. Aber in diesem Medium kann durch den Link der Nachweis oder – allgemeiner – Verweisinhalt unmittelbar verfügbar gemacht werden, ohne die Limitation einer Seitenbegrenzung. 
+
+Neben der niedrigen Zugangsschwelle (dazu unten 9.) ist es aber vor allem die Geschwindigkeit, mit der man auf Verfassungsfragen reagieren kann, die fasziniert. Zur Veranschaulichung: Es ist an sich der Anspruch der deutschen Staatsrechtslehre, sich zu den großen Verfassungsfragen der Zeit zu äußern. Symptomatisch erschien vielen dann aber, dass im Jahr der Flüchtlingskrise 2015 die Staatsrechtslehrertagung auf ihrer Jahrestagung über allerlei spannende Themen sprach, nur die Flüchtlingskrise kam nicht vor. Warum? Weil die Themen schon lange Monate vorher festgelegt und die Vortragstexte Wochen vorab fertig sein müssen. Auch in den häufig erscheinenden Zeitschriften vergehen durch die Produktionsabläufe Wochen, bei Archivzeitschriften und Sammelbänden Monate, gar Jahre, bis man publiziert ist. 
+
+Vor diesem Hintergrund ist der Verfassungsblog buchstäblich eine andere Welt. Die Verfassungsrechtswissenschaft hat so zumindest die Chance, näher an die Verfassungsthemen heranzurücken, die die Menschen beschäftigen. Eine Brücke aus dem Elfenbeinturm. 
+
+## 8. Der Verfassungsblog schließt eine Lücke in der Juristenausbildung
+
+Uns wurde im 1. Semester Hesse, Grundzüge des Verfassungsrechts der Bundesrepublik Deutschland empfohlen. Ein großartiges Buch – aber nicht für Erstsemester. Ich empfehle den Verfassungsblog in den Verfassungsrechts- und Europarechtsvorlesungen als Begleitlektüre. Wie interessiert und begeistert man angehende Juristinnen und Juristen für das Verfassungsrecht? Immerhin ist das nicht irgendein Nebenfach, es geht um die Grundlage der Rechtsordnung. Und da schließt der Verfassungsblog als zeitgemäß einfach zugängliches Online-Medium mit aktuellen Inhalten eine Lücke. Was vielleicht noch fehlt: eine Verfassungsblog-App.
+
+## 9. Der Verfassungsblog hat den Verfassungsdiskurs demokratischer gemacht
+
+Mit dem Internet verbindet sich, dass es nie einfacher war, etwas zu publizieren. Die damit verbundenen Verheißungen eines demokratischeren Diskurses haben sich indessen (bisher) nicht realisiert. Nicht selten scheint es, als förderten die Sozialen Medien einen enthemmten Diskurs, in dem Hass und Bosheit besonders deutlich sichtbar werden. 
+
+Der Verfassungsblog hat sich demgegenüber noch etwas vom deliberativen Optimismus der Anfangszeit des Internet bewahrt. Dies beginnt bereits mit dem (grundsätzlich kostenlosen!) Zugang zu qualifizierten verfassungsrechtlichen Informationen. Wer sich als Laie für Verfassungsfragen interessiert wird nicht ohne weiteres den Weg in eine juristische Seminarbibliothek finden. Insoweit leistet der Verfassungsblog auch einen Beitrag zum Wissenschaftstransfer und zur allgemeinen politischen Bildung, weil Verfassungsfragen natürlich immer auch politisch sind. 
+
+Der andere Aspekt: Nie war es einfacher, etwas zum Verfassungsrecht zu publizieren. Aus Sicht der Verfassungsrechtswissenschaft bedeutet dies eine enorme Egalisierung und Demokratisierung. Neben den etablierten Ordinarien oder ehemaligen Verfassungsrichtern erscheint der Blogbeitrag von jungen und unbekannten Nachwuchswissenschaftlern. 
+
+Freilich gibt es noch immer den Filter der Annahme eines Beitrags zur Veröffentlichung im Blog durch den Herausgeber. Kritiker mögen hier beanstanden, dass Standards wie Peer review, Doppelblindgutachten usf. fehlen. Gleichwohl spiegelt sich im Verfassungsblog die Idee von der Offenen Gesellschaft der Verfassungsinterpreten, gegen das blinde Vertrauen auf Verfassungshüter, wie kaum woanders. 
+
+Dass die Verteidigung der Verfassungsidee in den letzten zehn Jahren immer dringlicher geworden ist und heute wichtiger denn je erscheint, das hätten freilich vor zehn Jahren die wenigsten erwartet. In Zeiten eines neu erwachten Nationalpopulismus in Deutschland und anderswo, in Anbetracht von autokratischen Herrscherfiguren und um sich greifender Irrationalität von Brexit bis Klimawandel bedarf es einer klaren Stellungnahme der Verfassungsrechtswissenschaft. Irrationalität und offensive Inkompetenz sind hochgefährlich für die Wissenschaft. 
+
+Dass es der demokratischen Verfassung besser gelingt als allen Alternativen (für Deutschland und anderswo), langfristig Freiheit und Wohlstand für die größtmögliche Zahl zu sichern, kann nicht oft genug erklärt werden. Und auch Einzelfragen müssen offenbar vor allem erklärt werden, wie Daniel Thyms Klarstellungen zum Rechtsbruchmythos in der Flüchtlingsfrage belegen. Dass der Nationalismus in den Krieg führt, darf gerade in Europa nicht in Vergessenheit geraten, genauso wenig wie die Leitidee der Rechtsgemeinschaft in Europa. 
+
+Der Verfassungsblog ist Medium und Akteur bei der Verteidigung von Verfassung. Nicht nur in Deutschland, auch anderswo in Europa und der Welt. So hat der Verfassungsblog die Entwicklungen in Polen und Ungarn kontinuierlich begleitet. Zu verteidigen ist auch die Offenheit des Grundgesetzes für die europäische und internationale Zusammenarbeit, die eigentlich in die DNA des Grundgesetzes eingeschrieben ist, gegen alle Relativierungen. Es gibt viel zu tun. 
+
+## 10. Wenn es den Verfassungsblog nicht gäbe, man müsste ihn erfinden 
+
+Zu dieser letzten These möchte ich gar nicht viel ausführen, sie ergibt sich inhaltlich aus dem, was ich bisher gesagt habe, und drückt die Wertschätzung für diese großartige Idee aus. Adressiert ist diese Wertschätzung dabei vor allem an den Urheber, Max Steinbeis. Er hat den Verfassungsblog ins Leben gerufen und zu dem entwickelt, was er heute ist. Sicherlich haben Autoren, ein im Laufe der Zeit entstandenes Mitarbeiterteam und Geldgeber auch ihren Anteil am Erfolg. Aber ohne Max Steinbeis und seine Vision wäre das alles so nicht gekommen. Ohne ihn kann man sich den Verfassungsblog auch gar nicht richtig vorstellen. Deswegen herzliche Geburtstagsglückwünsche nicht nur an den Verfassungsblog, sondern auch an Max Steinbeis. Auf die nächsten 10, 20, 30, &#8230; Jahre!

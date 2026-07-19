@@ -1,0 +1,51 @@
+---
+title: Verfassungsblog — Bolsonaro’s Conviction
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2025-09-15'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/bolsonaros-conviction/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Bolsonaro’s Conviction
+
+Last week, former president Jair Bolsonaro was sentenced by the Brazilian Supreme Court to 27 years in prison for orchestrating a conspiracy to stay in power after losing the 2022 election. Some high-ranking military officers involved in the plot also received lighter sentences. As a result, the most prominent newspapers around the world praised Brazil as an example to follow in resisting authoritarian populism (see here and here), with authors like Levitsky affirming that Brazil has succeeded where the US has failed. At the same time, many commentators in the country saw the ruling as evidence that, unlike in its past, marked by military and military-backed coups with no consequences for those responsible, the country is now committed to learning from its mistakes and holding accountable the military that tries to undermine democracy. Brazil could serve as a lesson to the world about combating authoritarian populism, but the expectation that the decision will restrain the military should be treated with caution.
+
+## Brazil as an example in resisting authoritarian populism
+
+Bolsonaro’s conviction is undeniably significant in the fight against authoritarian populism. It could offer a lesson to the world, particularly in light of Donald Trump’s attacks on Brazil and its justices in support of Bolsonaro (and other U.S. interests). However, despite its importance, caution is still warranted. For one, it is still too early to celebrate, as conservative lawmakers are already pushing for Bolsonaro’s amnesty. This may be nothing more than a political move meant to reassure their base of loyalty to Bolsonaro, without expecting real results. The fact that Supreme Court justices have publicly signaled that they would consider such an amnesty unconstitutional, along with polls showing that 54% of Brazilians oppose it, suggests that such a course of action would be particularly challenging for Congress to adopt. In any case, it remains best to wait and see how events unfold.
+
+Second, although the decision led to a positive outcome, it can also be seen as only possible due to a highly controversial expansion of the Brazilian Supreme Court’s power and the growing influence of its individual justices. While the outcome in this case is a positive marker, it might result from institutional dynamics that are highly problematic and that other countries may prefer not to replicate. Therefore, the Brazilian case, although successful, provides limited guidance on a constitutional design best suited to contain authoritarian populists.
+
+## The judgment's ambiguous narrative toward the military
+
+Although the case has merit for warning generals in Brazil, maybe for the first time, that they may be held accountable for acts against constitutional democracy, it also sends mixed signals to the military. Some justices have characterized the ruling as a sign that Brazil is changing its approach to the military’s role in threatening democracy. However, the judgment itself leaves unclear the Armed Forces' institutional role in the plot and fails to challenge their deeply held belief in a legitimate political role.
+
+On one hand, justices emphasize that the coup supposedly failed because the commanders of the Army and the Air Force refused to join Bolsonaro and heroically refused to participate in his plot. In this account, the generals who supported him appear as rotten apples within an otherwise professional institution committed to civilian supremacy. Not even the fact that these commanders did nothing to stop him seems to shake that narrative.
+
+On the other hand, of the 34 people indicted by the Prosecutor General’s Office before the Supreme Federal Court, 24 were military personnel. In describing the role of these rotten apples during the judgment, the justices reveal that they were not marginal figures but central, influential, and admired leaders within an institution where many share similar political views. Furthermore, in recounting the events leading up to the coup attempt, the judgment highlights moments when the institution as a whole facilitated Bolsonaro’s plot, such as being central to Bolsonaro’s effort to undermine trust in the voting system, allowing his supporters to camp undisturbed by the police in front of Army headquarters in preparation for the assault on democratic institutions and failing to discipline on-duty generals who openly violated military regulations by engaging in political activities in his favor.
+
+In this sense, an accurate characterization of the Armed Forces in the plot is as an institution that lent Bolsonaro its popularity to win elections, became part of his government, but, at the decisive moment, chose not to officially join the coup, providing support only strategically and informally. By emphasizing the single “no” the Armed Forces gave Bolsonaro after years of “yes,” the narrative of the judgment distorts the reality of the situation. It suggests that once the institution remains professional and the rotten apples are punished, the problem is solved, and Brazil will never support impunity again.
+
+## The impact of the narrative on controlling the military
+
+More than rotten apples, the Armed Forces actively supplied some of the most essential elements of Bolsonarism's ideological substance. Unlike followers of authoritarian populists elsewhere, Bolsonaro’s supporters do not idealize a fictional past; instead, they romanticize the 1964 dictatorship, aligning with the Armed Forces’ longstanding denial of the human rights violations committed during that period. Throughout Bolsonaro’s government, the military repeatedly argued, based on a heterodox interpretation of the Constitution, that they were entitled to intervene in the constitutional branches politically. That interpretation gained traction among Bolsonaro’s supporters. It was disseminated through pamphlets, banners, and social media, becoming a decisive element of Bolsonarism and the constitutional justification for the coup plot itself.
+
+Once the proper role of the Armed Forces in the plot is recognized, it becomes clear that the ruling does little to address it. The institutional reforms long called for by civil-military experts to place Brazil’s military firmly under civilian control remain mostly unimplemented. While such reforms are not within the Court’s authority, the justices’ narrative risks suggesting that they are not necessary, as the rotten apples have already been punished. However, the machinery that fosters anti-constitutional, pro-authoritarian ideas within the barracks persists fully. In that case, the convicted officers are more likely to be seen as martyrs rather than warnings.
+
+## The impact of the narrative on the constitutional branches' responsibility to the military
+
+Furthermore, the story of a professional military resisting corrupt elements and the orders of an authoritarian leader also hides the role that other branches of government played in the military’s rise to power. In recent years, the legislative branch has broadened the legal scope of the military’s role in domestic security operations and, contrary to the Inter-American Court of Human Rights’ jurisprudence, has extended the jurisdiction of military courts over human rights violations committed by the armed forces during these operations. As political scientists have pointed out, there has been little attention from congressmen to defense issues or to controlling the military, leaving the armed forces to manage their own affairs largely without democratic oversight. Different presidents across the ideological spectrum have extensively employed such operations, banalizing the circumstances of their use and reinforcing the military's belief that they are essential for the country's internal stability.
+
+The judiciary, for its part, bears its share of responsibility. More than a decade ago, it shamefully upheld the military’s self-serving amnesty law as constitutional, and today it holds a majority likely to endorse legislative expansions of the Armed Forces’ domestic role and the jurisdiction of military courts. It was only after the coup attempt that the Court finally issued a plenary ruling rejecting the military’s heterodox interpretation of the Constitution, even though the lawsuit was filed long before, in 2020. During Bolsonaro’s presidency, Supreme Court justices maintained close ties with the armed forces. Further, one Supreme Court justice, while serving as president of the Superior Electoral Court, invited the military to join the commission tasked with reviewing electoral transparency, thereby strengthening their authority to propagate a narrative that cast doubt on the elections.
+
+## Conclusion
+
+It is essential to recognize that Bolsonaro’s movement is closely connected to contemporary authoritarian populisms, especially those represented by Donald Trump, as Brazil’s January 8, 2023, coup attempt strongly resembles Trump’s January 6, 2021, insurrection. In that sense, Bolsonaro`s conviction must be seen as a victory against impunity. Yet it is equally crucial to acknowledge that the Brazilian military enabled Bolsonarism, and that it is rooted in Brazil’s unique historical context, shaped by the flawed end of the 1964 dictatorship, which occurred without effective civilian oversight, meaningful memory laws, robust transitional justice, or complete control over the military. Addressing these structural problems requires institutional reforms far beyond the condemnation of a few generals. The narrative advanced by the justices and the media obscures this reality. In doing so, it risks stalling momentum for deeper reforms and leaving the country vulnerable to future episodes of military intervention.

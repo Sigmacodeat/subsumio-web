@@ -1,0 +1,52 @@
+---
+title: >-
+  Verfassungsblog — Zwangshaft für Markus Söder? Von der Ungemütlichkeit an den
+  Grenzen des Rechtsstaats
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2018-12-13'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/zwangshaft-fuer-markus-soeder-von-der-ungemuetlichkeit-an-den-grenzen-des-rechtsstaats/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Zwangshaft für Markus Söder? Von der Ungemütlichkeit an den Grenzen des Rechtsstaats
+
+Mitten in die ohnehin längst nicht mehr beschauliche Vorweihnachtszeit schallten jüngst beunruhigende Nachrichten von einer spektakulären Vorlage des Bayerischen Verwaltungsgerichtshofs an den Europäischen Gerichtshof. Dürfen oder müssen wir den Bayerischen Ministerpräsidenten in Zwangshaft nehmen lassen? So lautet nur wenig verkürzt die Vorlagefrage.
+
+## Unionsrechtlich gebotene Zwangshaft?
+
+Hintergrund ist erneut der Streit um die Dieselfahrverbote in deutschen Innenstädten, diesmal in München. Hier haben die bayerischen Verwaltungsgerichte schon vor Jahren entschieden, dass Fahrverbote der aktuell einzige Weg zur zügigen Einhaltung der bereits seit acht Jahren verbindlichen Luftreinhaltewerte der Europäischen Union sind. Die bayerische Staatsregierung aber verweigert sich allen gerichtlichen Anordnungen. Ministerpräsident Söder erklärt Bayern öffentlich zum Autoland, sich selbst zum Autofreund und die gerichtlich geforderten Verbote für unverhältnismäßig. Die Gerichte reagieren mit weiteren Urteilen und mit Zwangsgeldandrohungen. Die Zwangsgelder werden sogar „gezahlt“, aber das schert die Regierung nicht, denn die Zahlung kann allein durch eine Umbuchung im Staatshaushalt geleistet werden und tut nicht weh.
+
+Deshalb jetzt also die lange angekündigte Vorlage an den EuGH, ein Hilferuf in rechtsstaatlicher Not, eine Protestnote: „Die vorliegend zu verzeichnende gezielte Missachtung rechtskräftiger gerichtlicher Entscheidungen durch die vollziehende Gewalt kann nicht hingenommen werden.“ (Rn. 119). Diese rechtstaatliche Empörung über das Verhalten der bayerischen Staatsregierung spricht auch sonst aus jeder Zeile des Vorlagebeschlusses. Das Verhalten der Regierung widerspreche den Vorgaben des Grundgesetzes ebenso wie denen des EU-Primär- und Sekundärrechts. Mit der offensiven Missachtung der dritten Gewalt werde nicht nur der Rechtsstaatsgrundsatz im Allgemeinen, sondern konkret auch der klägerische Anspruch auf wirksamen Rechtsschutz unterlaufen (Art. 47 EU-Grundrechtecharta und Art. 19 Abs. 1 UAbs. 2 EUV). Zugleich liege darin eine Verletzung des Anspruchs auf ein faires Verfahren aus Art. 6 EMRK.
+
+Minutiös beschreibt der BayVGH die Versuche der bayerischen Exekutive, sich den gerichtlichen Maßgaben durch immer neue Halbheiten, Ausflüchte und Fehldarstellungen zu entziehen. Die Einhaltung des EU-rechtlich vorgegebenen Grenzwerts für NO2 sei nach deren Planungen „nicht einmal entfernt absehbar“. Dies führe zu einer fortwährenden Schädigung menschlichen Lebens und menschlicher Gesundheit in München.
+
+In der Sache ersucht der BayVGH um die Beantwortung der Frage, ob die Anordnung von Zwangshaft gegenüber Amtsträgern der bayerischen Exekutive unionsrechtlich zulässig und ggf. gar geboten ist. Innerstaatlich sieht er sich an einer entsprechenden Anordnung gehindert. Zwar erachte das Bundesverfassungsgericht grundsätzlich die Anwendung der ganzen Palette der Zwangsmittel der ZPO auch im verwaltungsgerichtlichen Verfahren für zulässig. Zugleich mache es eine Freiheitsberaubung aber davon abhängig, dass der Gesetzgeber mit der Schaffung der jeweiligen Norm auch eine entsprechende Intention verbunden habe. Dies sei wegen der traditionellen Nichtanwendung der Bestimmungen über die Zwangshaft auf Amtsträger aber gerade nicht der Fall.
+
+Überwinden will der BayVGH diese Begrenzungen des innerstaatlichen Rechts unter Rückgriff auf das Unionsrecht. Dessen effektive Durchsetzung erfordere die Zwangshaft, da andere Zwangsmittel sich als wirkungslos erwiesen hätten oder sachlich keine Abhilfe versprächen. Zwar verlangten auch das Unionsrecht und die EMRK nach einer „Vorhersehbarkeit“ freiheitsberaubender Maßnahmen. Eine solche Vorhersehbarkeit sei allerdings möglicherweise schon dadurch zu erreichen, dass die Zwangshaft den Amtsträgern mit angemessener Frist und unter Hinweis auf die dem Wortlaut nach einschlägigen Regelungen des nationalen Rechts angedroht werde. Welch genaue Gedanken der BayVGH sich hinsichtlich einer möglichen Zwangshaft für bayerische Amtsträger bereits gemacht hat, zeigen seine detaillierten Ausführungen zu dem in Frage kommenden Personenkreis. Zugegriffen werden soll danach nicht auf nachrangige Sachbearbeiter, sondern auf die eigentlich politisch Verantwortlichen. Weil diesem Zugriff aber unter Umständen parlamentarische Immunitäten entgegenstünden, sei auch an eine Zwangshaft für Behördenleiter zu denken.
+
+## Judikative und Exekutive auf Konfrontationskurs im Umweltrecht
+
+Die Vorlage bringt den EuGH in eine erkennbar unangenehme Lage. Soll er in diesem Konflikt von Judikative und Exekutive spektakulär intervenieren und dem vorlegenden Gericht mit einer unionsrechtlichen Verpflichtung zur Anordnung der Zwangshaft zur Seite stehen? Dafür sprechen die rechtswidrige Wurstigkeit der Staatsregierung ebenso wie die vom EuGH traditionell hochgehaltene Zusammenarbeit zwischen ihm und der nationalen Gerichtsbarkeit. Auch hat eben erst das EuG (Rs. T-391, 392/16) den Bemühungen der EU-Kommission zur Aufweichung der Emissionsgrenzwerte für Diesel-PKW eine klare Absage erteilt. Den Hilferuf des BayVGH zu überhören, dürfte alldem nicht entsprechen. In der Vergangenheit hat sich der EuGH zudem wiederholt entschieden gegen mitgliedstaatliche Begrenzungen der effektiven Durchsetzung des EU-Rechts im Allgemeinen und der EU-rechtsbezogenen Urteile der innerstaatlichen Gerichte im Besonderen gewandt.
+
+Eine ausdrückliche unionsrechtliche Verpflichtung zur Anordnung der Zwangshaft scheint deshalb zwar nicht ausgeschlossen. Sie spitzte den Konflikt allerdings ihrerseits erheblich zu und brächte nicht nur die bayerische Staatsregierung, sondern auch die in besonderer Weise auf Kooperation und Folgebereitschaft anderer Staatsgewalten angewiesene Judikative in eine heikle Lage. Die mit dieser Verpflichtung potentiell verbundenen Vollstreckungsszenarien mag man sich gerade mit Blick auf die Wahrung des Rechtsstaates nicht ausmalen.
+
+Wahrscheinlicher erscheint es deshalb, dass der EuGH die schon in der Vorlage des BayVGH angelegte Möglichkeit ergreift und letzteren zur Anordnung von Zwangshaft zwar ermächtigt, aber nicht verpflichtet. Die Letztentscheidung bliebe so dem BayVGH überlassen, der mit der Ermächtigung aber immerhin ein neues Droh- und Vollstreckungsinstrument in die Hand bekäme.
+
+Auch damit droht der Streit zwischen Judikative und Exekutive aber zu eskalieren. Die hier zu beobachtende neue Ungemütlichkeit an den Grenzen des Rechtsstaates hat das Potential, das Vertrauen in dessen Berechenbarkeit und Verlässlichkeit nachhaltig zu erschüttern. Verantwortlich dafür sind sicher in allererster Linie die politischen Entscheidungsträger, die sich selbst zu einer Luftreinhaltepolitik verpflichtet haben, deren Durchsetzung sie seitdem aber im kollusiven Zusammenwirken mit der Automobilindustrie hintertreiben. In den letzten Monaten lässt sich immer deutlicher beobachten, wie von diesem eigenen Versagen abgelenkt werden soll: durch Angriffe auf Richter und Kläger wie die Deutsche Umwelthilfe. Dem muss entschieden widersprochen werden. Dies gilt für den Anwurf richterlicher Unverhältnismäßigkeit gegenüber Gerichten, die nicht mehr tun, als gesetzlich unbedingte Vorgaben zu subsumieren. Und es gilt für die Versuche, der Umwelthilfe die Gemeinnützigkeit und staatliche Förderung wegen des Gebrauchs unionsrechtlich ausdrücklich garantierter Klagerechte zu entziehen.
+
+## Grenzen gerichtlicher Leistungsfähigkeit
+
+Gerade die in Deutschland bislang unbekannte Unverfrorenheit dieser politischen Angriffe auf die Gerichtsbarkeit zeigt aber auch das Konfliktpotential, das den Auseinandersetzungen um das richtige Maß an Umweltschutz innewohnt. Bei aller berechtigten rechtsstaatlichen Empörung über das Verhalten politischer Entscheidungsträger in der Frage der Luftreinhaltepolitik werden hier zugleich Grenzen der Leistungsfähigkeit judikativer Entscheidungen erkennbar. Diese drohen überschritten zu werden, wenn – anders als in den rechtlich vergleichsweise eindeutigen Fällen der Dieselfahrverbote – sich die Justiz dazu bereitfinden sollte, aus eher vagen rechtlichen Maßgaben konkrete und weitreichende Umweltschutzvorgaben abzuleiten.
+
+Entsprechende Szenarien erscheinen nicht mehr ganz fernliegend, seit ein Obergericht in den Niederlanden aus den menschenrechtlichen Garantien der EMRK konkrete Klimaschutzvorgaben für die niederländische Regierung entwickelt hat (s. dazu auch Ingrid Leijten hier auf dem Blog). Auch in Deutschland und auf der Ebene der Europäischen Union sind entsprechende Klagen anhängig. Menschenrechtsgestützte Klimaklagen werden derzeit weltweit und mit viel publizistischer Unterstützung lanciert. Umweltschützern erscheinen sie angesichts des auch insoweit offensichtlichen Politikversagens als probates Mittel, um den drohenden Weltuntergang per Gerichtsbeschluss abzuwenden. Dabei wird aber die juristische Tragfähigkeit der Menschenrechte ebenso überdehnt, wie die Erwartungen an die Leistungs- und Durchsetzungsfähigkeit der dritten Gewalt. Wo schon die Garantie gesetzlich beschlossener konkreter Gesundheitsschutzstandards auf rechtsstaatswidrigen Widerstand stößt, da erscheint ein gerichtlich erzwungener Radikalumbau der Industrie- und Konsumgesellschaft im Zeichen des Klimaschutzes vollends illusionär (näher dazu: Wegener, Urgenda – Weltrettung per Gerichtsbeschluss?, ZUR 2019, 3 ff. (i.E.)).
+
+Rechtsstaatliche Grenzen exekutiver wie judikativer Macht sind nach alldem keine Fragen bloßer vorweihnachtlicher Gemütlichkeit. Noch erscheinen die Konflikte überschaubar und noch kann man hoffen, dass die große gemeineuropäische Tradition der „rule of law“ sich gegenüber den hier aufgezeigten Angriffen und Versuchungen als standfest erweist. Gerade die grundlegenden Herausforderungen des Umweltschutzes haben aber das Potential einer beständigen Prüfung des demokratischen Verfassungsstaates.

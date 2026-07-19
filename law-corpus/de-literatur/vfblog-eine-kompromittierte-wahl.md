@@ -1,0 +1,49 @@
+---
+title: Verfassungsblog — Eine kompromittierte Wahl
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2021-09-27'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/eine-kompromittierte-wahl/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Eine kompromittierte Wahl
+
+Ich habe heute mit Karl Eisenhardt telefoniert, einem jungen Mann aus Berlin-Wilmersdorf, neunzehn Jahre alt und Erstwähler. Gestern, am Tag des Bundestags-, Berliner Landtags- und Berliner Kommunalwahl nebst Volksentscheid, fuhr er mittags zu seinem Wahllokal am Rüdesheimer Platz. “Da kam jemand raus und sagte: Wir können hier nicht weitermachen. Wir haben keine Stimmzettel mehr. Wir sollen in zwei, drei Stunden wiederkommen.” Da war er aber bereits als Wahlhelfer im Wahllokal Messe-Süd eingeteilt, um dort bis nach Mitternacht Briefwahlstimmen auszuzählen. “Bei meiner ersten Wahl war ich neun Stunden Wahlhelfer, aber konnte meine Stimme nicht abgeben.” Wie er sich jetzt fühle? “Ein bisschen betrogen.”
+
+Ich habe heute mit Kristín von Kistowski telefoniert, die in einem Wahllokal an der Berkaer Straße gestern das Ehrenamt des Wahlvorstands versehen hat. Mittags sei absehbar gewesen, dass die Stimmzettel für die Bundestagswahl ausgehen würden, berichtet sie. Im Bezirksrathaus sei niemand ans Telefon gegangen. Um 12:30 Uhr habe sie beschlossen, das Wahllokal zu schließen, und per 110 die Polizei gerufen. Als das auch nichts brachte, habe sich ihre Stellvertreterin per Fahrrad – mit dem Auto war wegen des zeitgleich stattfindenden Berlin-Marathons kein Durchkommen – zum Bezirksrathaus an der Otto-Suhr-Allee aufgemacht. Sie hatte Glück. Anruf mit dem Handy: “Ich habe die letzten Stimmzettel bekommen!”. Mit dem Fahrrad konnte sie die aber nicht transportieren, weshalb sie ein Taxi rief, das sie immerhin bis zur Marathon-Absperrung am Hohenzollerndamm brachte, wohinselbst zwei starke Wahlhelfer zu Fuß aufbrachen und die Kisten mit den Wahlzetteln schließlich unter großem Jubel mit bloßer Hand ins Wahllokal schleppten, so dass das Wahllokal schließlich um 13:40 wieder seinen Betrieb aufnehmen konnte. Wie viele Wähler_innen unterdessen frustriert Kehrt gemacht haben? “Ich weiß es nicht. Da waren alte Leute mit Rollatoren, Eltern mit kleinen Kindern. Das war nicht nur eine Panne. Das war eine Katastrophe.”
+
+Was genau da wo schief gegangen ist bei dieser Wahl in Berlin und wer genau da was verbockt hat, das alles wird in den kommenden Tagen und Wochen aufzuarbeiten sein. Heute bereits stellt sich aber eine dringende Frage: Kann man das noch als demokratisch saubere Ermittlung des Willens des Volkes werten, von dem nach Art. 20 GG alle Staatsgewalt ausgeht, wenn Karl Eisenhardt und weiß der Himmel wie viele – Dutzende, Hunderte, Tausende? – weitere Wähler_innen durch die schiere Bodenlosigkeit der Berliner Verwaltung daran gehindert wurden, an ihr teilzunehmen?
+
+Das ist mitnichten eine akademische Erbsenzählerfrage. Das rührt an das Herz der Demokratie. In den USA wird bekanntlich aktiv und gezielt daran gearbeitet, bestimmte Wähler_innen bei der Stimmabgabe so sehr zu frustrieren, dass sie gleich gar nicht wählen gehen. Das wird man in Berlin niemandem unterstellen wollen, was aber nichts an dem Vertrauensschaden ändert, den diese Sache anrichtet. Die Querdenker trauen dem Staat bereits jetzt schon noch ganz andere Sachen zu. Das war nicht nur ein Verwaltungsversagen. Das war ein Demokratieversagen.
+
+Relativ unproblematisch erscheint mir dabei noch der Befund, dass durch das Chaos in vielen Berliner Wahllokalen sich die Stimmabgabe bis teilweise nach 20 Uhr hinausgezögert hat, also lange nach der sogenannten “Schließung der Wahllokale” um 18 Uhr. Ich selbst war gestern um 17:30 Uhr am Wahllokal und wartete bis nach 19 Uhr in der Schlange, bis ich endlich an die Urne durfte. In dieser Zeit hatte ich alle Zeit der Welt, mir auf dem Handy die Prognosen anzuschauen, die ab 18 Uhr veröffentlicht wurden, und so theoretisch die Möglichkeit, meine Wahlentscheidung noch taktisch anzupassen.
+
+Das kann man als Verstoß gegen das Gebot der Wahlrechtsgleichheit werten: Andere konnten das nicht. Umgekehrt: hätten die Wahlhelfer Schlag 18 Uhr den Laden dicht gemacht und mich und Hunderte andere Wartende nach Hause geschickt, hätten Sie auf viel gravierendere Weise den Grundsatz der Allgemeinheit der Wahl verletzt. In § 60 Bundeswahlordnung und in § 54 der Berliner Wahlordnung steht deshalb, dass bei Ablauf der Wahlzeit um 18 Uhr die Wähler_innen, die zu diesem Zeitpunkt zur Stimmabgabe “erschienen” sind und in oder vor dem Wahllokal warten, ihre Kreuzchen noch machen dürfen. Das erscheint mir vernünftig und deckt sich mit dem, was ich gestern im Wahllokal erlebt habe. Ab 18 Uhr durfte sich niemand mehr neu in die Schlange stellen. Aber die schon in der Schlange warten, wurden ins Wahllokal gelassen. (Alles andere hätte jedenfalls in der Schlange, in der ich wartete, zu einem Aufstand geführt, und zwar zu Recht.)
+
+Viel, viel schlimmer sind die Fälle, wo Wähler_innen, die wählen wollten, nicht wählen konnten, weil sie auf geschlossene Wahllokale stießen oder kein Stimmzettel für sie da war. Zu den Grundsätzen einer demokratischen Wahl, die Art. 38 Abs. 1 GG aufstellt, gehört auch, dass sie allgemein zu sein hat: Jede erwachsene Bürger_in hat das Recht, an der Wahl teilzunehmen, und wenn sie das nicht kann, dann ist das keine allgemeine Wahl.
+
+Was folgt daraus rechtlich? Kann man die Wahl jetzt anfechten? Interessanterweise ist die Frage gar nicht so einfach zu beantworten.
+
+Wenn im Wahlverfahren Fehler passieren, dann kann man nicht einfach beim Verwaltungsgericht klagen. Die Wahlprüfung ist erst mal Sache des Bundestags (Art. 41 Abs. 1 GG). Dort prüft der Wahlprüfungsausschuss die Einwendungen und schlägt dem Parlament vor, was es damit machen soll, und das ist in aller Regel: gar nichts. Dagegen kann man sich dann beim Bundesverfassungsgericht beschweren (Art. 41 Abs. 2 GG), das aber von seiner Kompetenz, eine Wahl wegen Verfahrensfehlern für ungültig zu erklären, mit extremster Sparsamkeit Gebraucht macht. Wer sich die Mühe macht, trotz dieser Aussichtslosigkeit diesen Rechtsweg zu beschreiten, kann seit 2012 mit einem Gerichtsbeschluss belohnt werden, der die Verletzung der Rechte des Klägers immerhin feststellt. Aber dass eine Wahl ganz oder teilweise für ungültig erklärt wird? Undenkbar.
+
+Fast so undenkbar, wie dass Wähler_innen in erheblicher Zahl mangels Stimmzettel nicht wählen können.
+
+In jedem Fall müsste aber belegt werden können, dass der Wahlfehler “mandatsrelevant” war. Das Wahlverfahren ist nicht um seiner Schönheit willen da, sondern soll ein Ergebnis herbeiführen, nämlich eine bestimmte Zusammensetzung des Parlaments, das gewählt wird. Ein Fehler, der sich auf die Sitzverteilung nicht auswirkt, kann noch so übel sein, aber ein erfolgreicher Einspruch gegen die Gültigkeit der Wahl lässt sich auf ihn nicht stützen. Es kommt also darauf an, wie viele Menschen das tatsächlich waren, die hier um ihr Wahlrecht gebracht worden sind. Die Berliner Verwaltung weiß das nicht – das hat ja niemand aufgenommen, wie viele Leute frustriert ihrer Wege gegangen sind. Daher wird sich mit einiger Wahrscheinlichkeit der Wahlprüfungsausschuss auf den Standpunkt stellen, dass das leider alles ganz unklar und unbekannt und daher davon auszugehen ist, dass der Fehler schon nicht mandatsrelevant gewesen sein wird.
+
+Ich finde, dazu sollten wir es nicht kommen zu lassen. Ich wäre dafür, die Fälle zu sammeln und gebündelt vor den Wahlprüfungsausschuss bzw., wenn nötig, vor das Bundesverfassungsgericht zu bringen. Das wäre ein echter Dienst an der Demokratie. Die Berliner Verwaltung wieder einmal mit einem Achselzucken davon kommen zu lassen nach dem Motto: kannste ooch nüscht machen, ist keine Option. Es muss deutlich werden, dass das so nicht geht. Und das wird nur deutlich, wenn es tatsächlich so nicht geht. Wenn diese Wahl als zu kompromittiert gewertet wird, als dass sie Bestand haben kann.
+
+Muss dann die ganze Bundestagswahl wiederholt werden? Das glaube ich nicht.
+
+Selbst wenn ein Wahlfehler mandatsrelevant gewesen ist, so das Bundesverfassungsgericht 2008, “unterliegt die Wahlprüfungsentscheidung des Bundesverfassungsgerichts dem Gebot des geringstmöglichen Eingriffs. Die Entscheidung darf nur so weit gehen, wie es der festgestellte Wahlfehler verlangt (…). Daraus folgt unter anderem, dass vorrangig ein Wahlfehler zu berichtigen ist, statt die Wahl zu wiederholen. Ist eine Wahl nur teilweise für ungültig erklärt worden und eine Wahlwiederholung insoweit unumgänglich, so darf diese nur dort stattfinden, wo sich der Wahlfehler ausgewirkt hat, also in dem betroffenen Stimmbezirk, Wahlkreis oder Land.”
+
+Die Wahl war nicht in ganz Deutschland kompromittiert, nicht einmal in ganz Berlin, sondern erst mal nur in bestimmten Wahlbezirken. Eigentlich nur in bestimmten Wahllokalen. Prima facie sehe ich keinen Grund, warum es nicht gehen sollte, die Wahl beschränkt auf diese ganz speziellen Wahllokale für ungültig zu erklären und wiederholen zu lassen. (Den Wahlfehler dadurch zu “berichtigen”, dass man die betroffenen Wähler_innen einfach doch noch wählen lässt, geht deshalb nicht, weil ja niemand weiß, wer die sind, und wäre auch unter dem Aspekt der Allgemeinheit der Wahl schwer vorstellbar.) Wenn ich damit Recht habe, dann sollte der Wahlprüfungsausschuss schnellstmöglich einen entsprechenden Beschluss fassen, damit dieser Fleck vom Schild der bundesdeutschen Demokratie, wenn auch nicht dem der Berliner Verwaltungsehre getilgt werden kann.
+
+Dank für wertvollen Input an Fabian Michl, Matthias Friehe und Sven Jürgensen.

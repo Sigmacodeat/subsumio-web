@@ -1,0 +1,52 @@
+---
+title: >-
+  Verfassungsblog — EuG-Urteil zur Ukraine: Scheitert die europäische
+  Außenpolitik an den eigenen Ansprüchen?
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2015-10-29'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/eug-urteil-zur-ukraine-scheitert-die-europaeische-aussenpolitik-an-den-eigenen-anspruechen/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# EuG-Urteil zur Ukraine: Scheitert die europäische Außenpolitik an den eigenen Ansprüchen?
+
+In seinem neuesten Urteil vom 26. Oktober 2015 zum Einfrieren von Konten, auf denen veruntreute ukrainische Staatsgelder zu vermuten sind, unterwirft sich die europäische Justiz strengen Maßstäben. Obgleich es grundsätzlich wünschenswert ist, dass Eingriffe der EU in die Handlungsfreiräumer Einzelner so restriktiv wie möglich behandelt werden, scheint das Gericht der Europäischen Union (EuG) in diesem Fall die außenpolitische Handlungsfreiheit des Rates der Europäischen Union über Gebühr zu beschränken.
+
+## Eingefrorene Konten ermöglichen erst die Strafverfolgung durch ukrainische Behörden
+
+In dem Fall geht es die Aufarbeitung der Korruption unter der Regierung von Viktor Janukowitsch von 2010 bis zum 22. Februar 2014. Nach Schätzungen der ukrainischen Generalstaatsanwaltschaft belaufen sich die in dieser Zeit veruntreuten Gelder auf etwa 15 Milliarden Euro. Beispiel und Symbol für die Zweckentfremdung staatlicher Gelder ist die von Viktor Janukowitsch bis zum 22. Februar 2014 selbst bewohnte Residenz „Meschihirja“: ein unweit von Kiew gelegenes 140-ha-Grundstück mit Wohnhaus, Fitness-Studio, Golfparcours, Hubschrauberlandeplatz, Privat-Zoo, Oldtimer-Museum und eigener Jagd. Inzwischen ist die Anlage in das „Museum für Korruption“ umgewandelt worden. Eine Rückübereignung an den ukrainischen Staat hat aber nur in Teilen stattgefunden. Nur das Grundstück, auf dem Meschihirja erbaut ist, ist per Gerichtsbeschluss dem ukrainischen Staat zugesprochen worden. Die auf dem Grundstück befindlichen Luxusgegenstände wurden von Sergei Kljujew, dem „Strohmann“ Janukowitschs was die Eigentümerstellung von Meschihirja betrifft, veräußert.
+
+Um diesen und andere Korruptionsfälle verfolgen zu können, sind die ukrainischen Behörden darauf angewiesen, dass die Verschiebung der veruntreuten Gelder ins Ausland bestenfalls unmöglich gemacht, zumindest aber erschwert wird. Dieses Ziel kann durch das Einfrieren der Konten der Personen, die für die Veruntreuung von Geldern verantwortlich waren, erreicht werden. Für sich betrachtet kommt dem Einfrieren von Konten nur eine politische Bedeutung zu.
+
+Der Rat der Europäischen Union hat durch Beschluss am 5. März 2014 (abgeändert am 14. April 2014, 29. Januar 2015 und 5. März 2015) veranlasst, die innerhalb der EU liegenden Konten von insgesamt 18 „Personen, die als für die Veruntreuung staatlicher Vermögenswerte der Ukraine verantwortlich identifiziert wurden, sowie der für Menschenrechtsverletzungen in der Ukraine verantwortlichen Personen und der mit ihnen verbundenen [&#8230;]“ einzufrieren.
+
+Die Änderung vom 29. Januar (in Kraft getreten am 1. Februar) spezifiziert, wie der Personenkreis zu bestimmen ist: „Für die Zwecke dieses Beschlusses zählen zu Personen, [&#8230;] Personen, die Gegenstand von Untersuchungen der ukrainischen Behörden sind, wegen a) der Veruntreuung [&#8230;]“. Dies sind unter anderen Viktor Janukowitsch selbst, aber auch Sergei Kljujew und der Kläger im Urteil vom 26. Oktober 2015, Andriy Portnov, ein ehemaliger Berater Janukowitschs.
+
+Durch die letzte Änderung vom 5. März wurde schließlich die Dauer der Konten-Einfrierung für bestimmte Personen bis zum 6. März 2016 bzw. 6. Juni 2015 verlängert. Andriy Portnov gehört nicht zu dem von dieser Maßnahme betroffenen Personenkreis. Ihm stehen seine finanziellen Mittel damit seit März auch innerhalb der EU wieder zur freien Verfügung.
+
+Das EuG erkennt dennoch ein Interesse Andriy Portnovs an der Entscheidung über die Rechtswidrigkeit des Beschlusses an. Betroffen sei Portnovs immaterielles Interesse, insbesondere sein Ruf als Politiker in der Ukraine, der durch eine fälschliche Unterstellung, strafrechtlich verfolgt zu werden, gelitten habe.
+
+## Das EuG stellt auf Voraussetzung eines Verfahren vor den ukrainischen Behörden ab
+
+Von insgesamt fünf vorgetragenen Klagegründen stützt sich das Gericht auf nur einen: Die im Beschluss vorgetragenen Kriterien seien nicht eingehalten worden. Vor allem sei Portnov nicht „Gegenstand der Untersuchungen der ukrainischen Behörden“, wie der Beschluss für die Sperrung von Konten verlangt. Als Prüfungsmaßstab gesteht das EuG dem Rat der Europäischen Union zwar einen „weites Ermessen“ zu, zu überprüfen ist aber, ob die Entscheidung des Rats auf „hinreichend gesicherten Tatsachen“ basiere.
+
+Der Rat hatte die Einfrierung Portnovs Konto damit begründet, dass er „in der Ukraine Gegenstand strafrechtlicher Verfolgung zur Untersuchung von Straftaten im Zusammenhang mit der Veruntreuung öffentlicher Gelder der Ukraine und des illegalen Transfers dieser Gelder ins Ausland sei.“ Dies ergibt sich aus einem Schreiben, dass der Rat von der ukrainischen Generalstaatsanwaltschaft am 3. März 2014 erhalten hat. Portnov wie auch andere ehemalige hohe Beamte seien Gegenstand eines Ermittlungsverfahrens bezüglich der Veruntreuung öffentlicher Gelder. Das Gericht rügt an dieser Stelle, dass weder die Taten Portnovs genau benannt werden noch seine Verantwortlichkeit spezifiziert wird. Aus diesem Grund wäre es Aufgabe der zuständigen Unionsbehörde gewesen, die „die Stichhaltigkeit der gegen die betroffene Person angezogenen Begründung nachzuweisen.“ Ferner sei Portnov, wie sich aus Dokumenten ergibt, die der Rat nachträglich zum Beschluss beigebracht hat, erst am Tag der Veröffentlichung des Beschlusses Gegenstand eines Ermittlungsverfahrens gewesen aber noch nicht zum Zeitpunkt des Erlasses. Daher sei die Begründung, dass Portnov „Gegenstand eines strafrechtlichen Verfahrens“ sei unrichtig gewesen. Dem Gericht zufolge ist es damit zu keinem Zeitpunkt rechtmäßig gewesen, Portnovs Konto einzufrieren.
+
+## Unrealistische Ansprüche an die Stichhaltigkeit der Entscheidungsgrundlagen des Rats?
+
+Das Gericht legt damit den Beschluss des Rates der Europäischen Union sehr eng aus. Es hält starr an der Auffassung fest, dass es auf die Begründung des Rates im Wortlaut ankommt, nämlich dass Portnov „Gegenstand einer strafrechtlichen Verfolgung [&#8230;]“ gewesen sein muss. Liest man den Text des Beschlusses, so kommt auch in Betracht, dass auch jede andere Untersuchung einer ukrainischen Behörde genügen zu lassen, bei der es um die Veruntreuung von Geldern geht, zum Beispiel das Schreiben der Generalanwaltschaft als Ermittlungsbeginn (dass die ukrainischen Strafverfolgungsbehörden „Strafverfahren eingeleitet“ haben) der Ermittlungsverfahren, die anschließend stattfanden – zusammen mit den vom Rat anschließend beigebrachten Beweisstücken, die das Ermittlungsverfahren gegen Portnov belegen. Eine solche Ausdehnung des Verfahrensbegriffs wäre gedanklich mit der Rechtsprechung des EuG vereinbar, die feststellt, dass es für das Einfrieren von Konten auf eine gerichtliche Verurteilung nicht ankommt (Rn. 72). Ratio hinter beiden Überlegungen ist, dass das Einfrieren von Konten nur Vorbedingung ist, um ein laufendes Verfahren zu ermöglichen.
+
+Im Fall zu Portnov entscheidet das EuG allerdings, dass ein Vorverfahren nicht genügen kann: „Eine Person kann nicht allein deshalb als für die Veruntreuung von Geldern verantwortlich angesehen werden, weil gegen sie ein Ermittlungsverfahren eingeleitet ist.“
+
+Eine weite Auslegung des Begriffs „Untersuchungen einer ukrainischen Behörde“ wäre aber gerade im Fall Ukraine eine ebenfalls angemessene Entscheidung gewesen. Der dem Urteil zu Grunde liegende Beschluss wurde nur wenige Wochen nach der Flucht Janukowitschs ins Ausland erlassen. Die Übergangsregierung führte dann am 11. April 2014 ein erstes „Lustrationsgesetz“ zur „Wiederherstellung des Vertrauens in die ukrainische Justiz“ ein. Die Änderung des Beschlusses durch den Rat drei Tage später war darauf gerichtet, den Anwendungsbereich des Beschlusses auszudehnen, auf dass „weitere Personen in die im Anhang des Beschlusses 2014/119/GASP enthaltene Liste der Personen, Organisationen und Einrichtungen, gegen die restriktive Maßnahmen verhängt wurden, aufgenommen werden [sollen].“ Eine weitere Anpassung des Beschlusses erfolgte nicht, obwohl die Aufarbeitung des Regimes Janukowitsch gerade erst begonnen hatte. Nach der ersten demokratischen Wahl am 25. Mai 2014 wurden die Bemühungen um Lustration, also die Entfernung der Schlüsselfiguren des Regimes Janukowitschs, weiter voran getrieben (wenn auch mit einem zweifelhaften Rundumschlag/widersprüchlicher Zielsetzung, s. Gutachten der Venice Commission). Eine Unterstützung seitens der EU durch Maßnahmen wie das Einfrieren entsprechender Konten ist daher jetzt nicht weniger notwendig als zum Zeitpunkt des Erlasses. Insbesondere angesichts der Vielzahl der von den ukrainischen Behörden zu stemmenden Prozesse ist es daher sehr viel verlangt, wenn eine Verfahren sich bereits jenseits des Ermittlungsverfahrens befinden müssen, bevor eine Einfrierung der betreffenden Konten überhaupt in Betracht kommt.
+
+Mit seinen hohen Anforderungen an die im Beschluss genannten Voraussetzungen erschwert das EuG somit die gerichtliche Auseinandersetzung mit Veruntreuungen staatlicher Gelder im Fall Ukraine, aber auch mit Blick auf vergleichbare Fälle. Die hohe Schwelle, die das Gericht für einen so schweren Eingriff wie das Einfrieren von Konten fordert, ist zwar mit Blick auf die einzelnen Betroffenen löblich. Im konkreten Fall hatte die Entscheidung auch keine Auswirkungen, weil die Maßnahmen gegen Portnov bereits im Vorfeld des Urteils aufgehoben worden waren. Blickt man aber auf die durch eine solche Rechtsprechung entstehenden Hindernisse für eine umfassende Auseinandersetzung mit dem „Regime Janukowitsch“ und vergleichbaren politischen Umbrüchen, so ist es zumindest fraglich, ob nicht eine anderes, ebenfalls vertretbares Ergebnis angemessener gewesen wäre und das außenpolitische Ermessen des Rates der Europäischen Union zu Recht unangetastet ließe.

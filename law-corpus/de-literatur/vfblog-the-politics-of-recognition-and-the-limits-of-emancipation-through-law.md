@@ -1,0 +1,74 @@
+---
+title: >-
+  Verfassungsblog — The Politics of Recognition and the Limits of Emancipation
+  through Law
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2017-11-29'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/the-politics-of-recognition-and-the-limits-of-emancipation-through-law/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# The Politics of Recognition and the Limits of Emancipation through Law
+
+There is much to celebrate about the BVerfG decision. Intersex erasure is a serious issue, and 2017 could go down in history as the year intersex reached a tipping point of visibility: supermodel Hanne Gaby Odiele comes out as intersex in the US Teen Vogue, generally intersex activism is picking up media time around the world, and now Vanja has won the Bundesverfassungsgericht.
+
+Ten years ago, in 2007, a claimant known only as “K” was denied their request to have the gender marker erased from their registration by the Supreme Court of The Netherlands. K considered themself neither male nor female and felt that the forced categorization by the state as either M or F violated their Art. 8 ECHR right to privacy. The court considered that K’s individual desire for a ‘null-status’ was outweighed by the general interest of maintaining the current order in Europe where there was no widespread trend towards legal recognition of intersex or ‘non-sexed’ individuals. Ten years later, the case of Vanja in the German Constitutional Court shows that acceptance of intersex, and other manifestations of sex or gender beyond the binary, is finally becoming more common. At the same time, the history of LGBITQA struggles warrants us to pause for thought: is ‘positive Anerkennung’ (affirmative recognition) really all that positive?
+
+In this post I will call attention to the limits to recognition’s emancipatory potential, the possibility of gender-proliferation ad absurdum, and I will take another look at the privacy argument made by K. I conclude with a reappraisal of the ‘null-option’ and support for scrapping gender registration altogether.
+
+## “Positive Anerkennung” vs the Nulloption
+
+In a brief social media comment, Intersex UK warned of undue celebration of the German decision. It noted that legal gender status is not something most intersex people in the UK worry about. Rather, what causes deep concern, as well as lifelong pain and suffering, is the routine and ongoing practice of non-consensual surgical genital mutilation (torture) of intersex infants. Intersex UK’s comments constitute a warning that a celebration of intersex legal recognition, easily mistaken as the end-goal of intersex emancipation, risks erasing the main material concern of most intersex people, which is bodily autonomy.
+
+The BVerfG decision is overwhelmingly celebrated as a timely and above all progressive move. Intersex erasure is widespread, and violent. However, beneath the surface of the generous bestowal of ‘positive recognition’ lies a different reality. What the BVerfG decision risks concealing, is that the ‘positive’ recognition in law does not equal a life equally valued, enabled and protected in society. In particular poor, racialized, disabled, immigrant or incarcerated queer, trans and intersex people, continue to be affected disproportionately by the ongoing deep austerity cuts being made to health, education, social care and other formerly public services. The unequal distribution of resources across the late capitalist global sphere (at best) are papered over by equality politics and (at worst) used as excuses to invade other countries and close our borders to those most in need.
+
+Legal recognition and equality measures, like diversity policies, rather than being emancipatory tools, can amount to diversion tactics employed by law- and policy makers that provide temporary euphoria, yet hide the true extent, and structural causes, of inequality in society. The neoliberal state (supported by willingly or unwittingly through homo- and transliberal activists) is able to incorporate (and indeed commodify) our differences through recognition of an ever-expanding set of individual identity-based rights if it means demobilizing, privatizing and depoliticizing the struggle and thus silencing the call for real structural change. Although rights can confer welcome benefits and postulate a milestone of where society has arrived in terms of acceptance of difference (for example ‘equal marriage’ which is seen by many campaigners, allies and policy makers as the climax of the struggle for LGBITQA liberation) it is important to continue the struggle beyond ‘recognition’ or indeed ‘equality’ or ‘inclusion’ for a radical politics of redistribution that dismantles the very structures that gave rise to the inequality in the first place.
+
+Strategic rights activism and litigation can play a role in moving the struggle forward. For example, as a result of decades of campaigning, several European countries have now abolished the surgery and castration/sterilization requirement for legal sex change (which is not to say that it isn’t routinely practiced as part of medicalised transition trajectories). The massive achievement reached in in Ireland, Malta and Denmark where individuals can change their legal gender solely on the basis of their self-identification, should not seduce us into closing our eyes to the possibility that dropping the medical requirement may ‘justify’ cuts to – often life-saving – trans healthcare services. Nor should a state’s ‘progressive’ LGBITQA politics distract from its backward policies on, for example, reproductive rights. We may rejoice in the radical move by Colombia to recognise the marriage of three men, and closer to home, the expected legal victory in the BVerfG for a transman with the seemingly very modest request to be recognized as the father of the child he gave birth to, while remembering that the politics of recognition an sich are ultimately conservative.
+
+Law’s ‘ordering function’ [Ordnungsfunktion] is upholding the ‘Erwartungen’ [expectations] attached to traditional (conservative) ways of living – still enshrined for example in the laws that forbid German parents from giving their daughters “boys’ names” or their sons “girls’ names” – and their intersex child one of each. A recognition claim – a claim for ‘admission to the system’ moves us to seek freedom through validation by the oppressor state rather than a fundamental change of the system itself.
+
+Could we say that adding a ‘third gender’ box to the administrative system of compulsory gender performance is the equivalent of ‘building better prisons’ when what we need for true equality is abolitionism? Can the ‘prison house of gender’ that places individuals in a fixed hierarchically order be brought down by the addition of a third, or can the cisheteropatriarchy endure – with M>F>X? Upon reflection, without real structural change ‘recognition’ perhaps does not seem quite so positive.
+
+## Proliferation ad absurdum?
+
+That intersex people are enjoying an increasing profile in society is of course cause for celebration. Many will have been shocked to see Hanne Gaby’s Teen Vogue video where she describes the routine medical procedures she was subjected to as a child without being told why, until one day she found out for herself.
+
+The past 5 years or so have also seen an astronomical rise in the social/media attention given to the phenomenon now predominantly known as non-binary gender identity. If the German parliament decides to create a third gender, an ‘inter’ option, the next day we will have a non-binary in court – with the rightful claim that the unavailability of a non-binary option violates their constitutional right to positive recognition. Currently the ‘Nulloption’ is in Germany available to persons with a medical declaration of their intersex condition, but non-binary (or agender, genderqueer, etc) does not have a physical presentation in the same way and would most likely only ‘work’ on the basis of self-declaration.
+
+Even though non-binary has ‘won’ the competition among terms used by people who reject the gender binary (and Scotland recently published proposals to recognize non-binary – but not intersex! identity; cf. Luxembourg), recognition of one, or two terms, inevitably results in others – genderqueer, agender, weder/noch to name but a few – being excluded and making similar claims. We could end up with a situation like that of Facebook and the dating app OKCupid, which have each around 50 gender options.
+
+Perhaps anticipating this situation, TransInterQueer EV suggests, rather than a series of options to choose from, the best solution may be an open text box where one could, in 30 characters or less, describe one’s own gender (or lack thereof). Would this (in a good way) lead to proliferation ad absurdum: a situation where because of the plethora of options, the choice of gender marker loses its meaning, its power?
+
+Law’s role in upholding and continually reproducing the cisheteropatriarchy through the compulsory gender performance that law requires – will continue to be challenged. While the proliferation of options mitigates the harm of intersex ‘outing’ and ‘othering’ and may provide safety in gendervariant numbers, the question still remains, why should we continue to declare ourselves? What happens if we recast ‘recognition’ as ‘obligatory gender categorisation’? Why is gender – after race, religion, height and eye colour have been eliminated off ID documents – the only remaining, officially required factor that remains, mostly unquestioned?
+
+## Privacy
+
+A mid-term pregnant friend recently reported on social media of having been told against their will the sex of their baby, and being sent home with an enlarged printed picture of the embryo’s genitalia. “No privacy, not even in utero”, the expectant parent commented.
+
+Why is gender (or sex) considered the most important factor of our personality (the BVerfG also holds), such that our full and free development as an individual, requires the law’s ‘positive recognition’ by constitutional right? Can we flip the issue and ask, why is it, that the law, the state, seeks continued exposure of our private parts? What business of the state is it what I have between my legs, or indeed between my ears?
+
+In The Netherlands the case of K prompted the Ministry of Security & Justice to commission a report into the need for the continued practice of registering sex at birth, and requiring individuals to disclose their legal gender at a variety of points of interaction with state bureaucracy. The report’s finding was that there are indeed no good reasons why gender registration happens and needs to continue. This begs the question, why does it happen? Rather than a generous acceptance of a different gender, perhaps intersex recognition is a continuation of a system of forced gender performance, a forced disclosure, forced assimilation to the current order, the whitecisheteropatriarchy.
+
+Could we say that the requirement, for the purpose of ‘biocontrol’, to register and disclose gender/sex without reason amounts to an unjustifiable invasion of our privacy? Indeed, as K argued, a violation of Art. 8 ECHR? Considering the European Court of Human Rights recently upheld employees’ right to privacy from their employer as to the content of their work emails, requesting privacy as to the content of our knickers seems like a reasonable ask.
+
+## Embracing the Null Option
+
+In K’s case the court handed the glove to the Dutch Parliament, which has discussed the report and proposals for implementation, but not yet acted upon them. In a deeply gendered world, organized around (mostly) binary gender categories, the abolition of gender registration requires a massive change of culture, as well as careful work to ensure such abolition does not harm intersex and trans people.
+
+In Germany, TrIQ suggests that the desire for legal gender recognition is generated by the fact that gender is actually (still) officially registered. This suggests attachment to gender on the emotional level as well as material dependence on gendered rights and entitlements. The abolition of gender registration will need to be done extremely carefully so as to ensure (improve upon!) the fulfilment of previously gendered rights. Currently, for trans and intersex people it can be of life-or-death importance to have an ID document to show their legal gender so as to get access to services and spaces. Ultimately, it is the availability of services to those who need them that we need to ensure, and the exclusion of people from spaces they need to access, that we should to prevent, without requiring attachment to a binary or even ternary gender. Post-categorical anti-discrimination policies and laws that do not depend on specific categories but provide a blanket prohibition on discrimination on whatever basis (creating vulnerability) could ensure that discrimination based on gender remains visible and actionable. For example, degendered parenthood regulations that speak of ‘the pregnant worker’, or ‘the birthing parent’ can ensure adequate protection that isn’t contingent on gender recognition or disclosure.
+
+Abolishing gender registration also does not mean abolishing gender per se. – once gender loses its grip and ‘constituting power’ of a hierarchical binary or ternary, gender-diverse spaces should cease to feel awkward. As soon as we stop fetishizing gender, stop asking “is it a boy or a girl?” as the first question at birth, stop demanding to know and see their gender (and for their anatomy to be surgically ‘conformed’), stop attaching privilege and expectation to anatomy, then gender should lose its place as the main determinant of our personhood.
+
+Abolishing obligatory state-enforced gender-performance could indeed be liberatory, it would create the space for the autonomous Selbstbestimmung, ‘free development of personality’ of people like K, and Norrie in Australia, and allow for a gender that is fluid, can change over the course of a day, or a lifetime. Everyone has a different relationship with gender, which should be respected and accepted in their expression or even non-expression. We could be Masc in the morning, Femme on Fridays, demi-boy on a date, butch in the workplace, but above all Mensch, in every facet, of gender and beyond.
+
+Most importantly, it would direct our emancipatory energy away from seeking validation by the state apparatus to ‘engendering’ radical, material change – a move away from ‘who I am’ to ‘what I want for us, what kind of society we want to build together’.

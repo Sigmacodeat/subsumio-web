@@ -1,0 +1,29 @@
+---
+title: Verfassungsblog — Zwischen Völkerrecht und Selbstbestimmung
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2014-03-18'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/zwischen-voelkerrecht-und-selbstbestimmung/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Zwischen Völkerrecht und Selbstbestimmung
+
+Nach den Umbrüchen von 1989/1991, dem Zerfall Jugoslawiens und der Quasi-Sezession Abchasiens und  Süd-Ossetiens von Georgien stellt die Abspaltung der Krim von der Ukraine einen weiteren Schritt der territorialen Neuordnung Europas nach dem Ende des Kalten Kriegs dar. Beim Vorgehen Putins handelt es sich um die dürftig getarnte Annexion eines fremden Territoriums mit offensichtlich vorgeschobenen Argumenten; um ein Vorgehen also, das eher ins 19. Jahrhundert gehört und das sich in der Jetztzeit als wenig produktiv erweisen dürfte. Russland ist im 21. Jahrhundert stark in die globale Arbeitsteilung eingebunden; seine Eliten werden nicht lange Freude an der sich abzeichnenden internationalen Isolierung haben.
+
+Erklärt wird der russische Ansatz mit einer spezifischen Interpretation der internationalen Ordnung, die auf den postsowjetischen Raum als Einflusssphäre rekurriert. Eine wichtige Rolle spielen dabei die in der Ukraine und anderswo lebenden ethnischen Russen, die seit Jahren mit russischen Pässen ausgestattet werden und daher auch legal unter einem von Russland aufgespannten Schutzschirm leben. Dass sich die russischen Behörden weigern, den Umfang der ausgegebenen Pässe mitzuteilen, zeugt von imperialen Hintergedanken, mit denen sich Europa noch über Jahrzehnte hinweg auseinandersetzen wird. Russland verfolgt in seiner Nachbarschaft eine spätkoloniale Strategie der selektiven Einmischung.
+
+Welche Szenarien zeichnen sich vor diesem Hintergrund für die Ukraine ab? Zur Annäherung an eine Antwort sollten zwei Denkmodelle unterschieden werden, die in der öffentlichen Debatte häufig vermischt werden. Das erste Denkmodell orientiert sich am Völkerrecht. Die Krimfrage wird hier über die Frage thematisiert, ob im 21. Jahrhundert an der existierenden Staatenordnung gerüttelt werden darf. Das Völkerrecht sagt recht eindeutig „nein“, und daher stellt das russische Vorgehen eine völkerrechtswidrige Handlung dar. Die Verurteilung durch die westliche Diplomatie ist aus dieser Perspektive nachvollziehbar.
+
+Weniger eindeutig liegen die Dinge jedoch, wenn wir uns dem Thema über das Denkmodell der Selbstbestimmung nähern. Hier lautet die Frage, ab welchem Moment eine irredentistische Bewegung oder deren politische Eliten das Recht haben, sich einem Mutterstaat anzuschließen oder sich für unabhängig zu erklären. Es gibt es keine allgemein akzeptierte Antwort auf die Frage, wann Selbstbestimmung legitim ist. Die kurdischen wie baskischen Autonomiebewegungen gelten wegen ihrer Neigung zur Gewalt als diskreditiert und können daher nicht auf ausländische Unterstützung zählen. Den Kosovo haben dagegen mehr als 20 EU-Staaten anerkannt, obwohl die dortige separatistische Bewegung ebenfalls nicht zimperlich bei der Wahl ihrer Mittel war. Ein Problem des Westens besteht also darin, die Denkmodelle des staatszentrierten Völkerrechts und der an Bevölkerungen orientierten Selbstbestimmung in der Vergangenheit gegeneinander ausgespielt haben. Das positiv besetzte Leitbild der „Demokratisierung“ hat dazu verführt, Autonomiebewegungen in nicht-demokratischen Staaten schneller für legitim zu erklären als das Völkerrecht sowie das damit verbundene System der Vereinten Nationen eigentlich erlauben.
+
+Sicherlich lässt sich den Behauptungen Putins, die russische Minderheit in der Ukraine unterläge lebensbedrohenden repressiven Maßnahmen, kaum folgen. Dennoch ist es nicht angebracht, den latenten Selbstbestimmungswillen der Russen in der Ukraine zu diskreditieren. Die Korruption der ukrainischen Eliten, deren konstantes Ausspielen der West- gegen die Ostukraine sowie das Fehlen langfristiger politischer Leitlinien in fast allen Politikbereichen: all diese Punkte stehen für ein Regime von bad governance, das in Europa unter Einschluss Osteuropas ohne Beispiel ist. Die neue ukrainische Regierung hatte vor einigen Wochen nicht besseres zu tun, als nun auch noch den Gebrauch des Russischen in den russischsprachigen Regionen einzudämmen zu versuchen. Das fehlende Vertrauen der Krimbewohner in das Kiewer Regime ist unter diesen Bedingungen leicht zu erklären; das Referendumsergebnis erscheint trotz der fragwürdigen Umstände der Abstimmung nicht verfälscht.
+
+Wie geht es nun weiter? Gegenwärtig kann es in Kiew, Berlin und Brüssel nur um Schadenbegrenzung gehen. Auf der Ebene der internationalen Politik müssen Signale an Russland ausgesandt werden, dass seine Aggressionspolitik keine Zukunft hat. Hier muss dem Denkmodell des Völkerrechts gefolgt werden. Auf der Ebene des Selbstbestimmungsrechts sollte die ukrainische Regierung dagegen davon überzeugt werden, der Selbstbestimmungsdiskussion in der Ostukraine konstruktiv entgegenzutreten. Noch vor den Wahlen im Mai sollten Vorschläge formuliert werden, welche Autonomieangebote den östlichen Regionen der Ukraine gemacht werden können, über die zu einem späteren Zeitpunkt ebenfalls mit Abspaltungsreferenden entschieden werden kann. Die Abstimmung um das Saarstatut im Jahr 1955 hat gezeigt, dass derartige Prozesse zwar kurzfristig schmerzhaft und umstritten sind, aber langfristig Legitimität erlangen können. Die neue Führung in Kiew besteht sehr darauf, durch das Volk legitimiert zu sein. In Donezk, Odessa oder Charkiw kann sie nun beweisen, dass ihr das Selbstbestimmungsrecht in der östlichen Ukraine ebenso viel wert ist wie die Basisdemokratie des Maidan.

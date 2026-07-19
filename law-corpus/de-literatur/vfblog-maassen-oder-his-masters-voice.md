@@ -1,0 +1,33 @@
+---
+title: Verfassungsblog — @Maaßen – oder His Masters Voice?
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2018-09-10'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/maassen-oder-his-masters-voice/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# @Maaßen – oder His Masters Voice?
+
+Ein Geheimdienstchef, der naturgemäß im Geheimen wirkt, ist unheimlich, doch einer, der in der Öffentlichkeit verschwörerisch daherredet, ist gruselig. Was hat Hans-Georg Maaßen, Chef des Bundesamtes für Verfassungsschutz, überhaupt auf einem Podium zu suchen? Wieso fühlte er sich gedrängt, post festum zu einem Ereignis Stellung zu nehmen, das seine Behörde nach landläufigem Verständnis geheimer Dienste qua Gefahrenprävention eher zu verhindern gehabt hätte? Was treibt einen Beamten der Inneren Sicherheit dazu, Medienberichte zu korrigieren und sensible Sprachkritik am Terminus „Hetzjagd“ zu betreiben? 
+
+Das alles geht Maaßen nicht das Mindeste an, aber diese letzte Entgleisung ist noch harmlos im Verhältnis zu den Verfehlungen, die seine Amtszeit von Beginn an begleiten. Und auch die sind weniger bedeutsam als die gesamte Veranstaltung namens Verfassungsschutz, die seit 1950 aus strukturellen Gründen die Republik weniger schützt als belastet. Das Totalversagen ist im NSU-Prozess noch einmal klargeworden, die Amri-Affäre hat es zuletzt bestätigt. Maaßens „Meinungsbeitrag“ ist nicht nur ein Indiz mangelnder Eignung (denn ein geschwätziger Geheimdienstler zeigt, dass er auch sonst nichts taugt) – nein, diese Geschwätzigkeit ist darüber hinaus ein Beleg für die Fehlkonstruktion eines Inlandsgeheimdienstes, der sich im Wesentlichen auf die Erkundung und Bewertung von „Meinungen“ beschränkt, bei der Gefahrenabwehr rechter Gewalt aber regelmäßig versagt hat. Wer Maaßens Plaudereien als Beweis der versprochenen größeren Transparenz und Volksnähe des BfV wertet, hat die Kritik an dieser Einrichtung offenbar missverstanden.
+
+Die Liste ihrer Verfehlungen und Entlassungsgründe ist lang. Sie beginnt schon 2002 mit der Affäre Murat Kurnaz, eines deutschen Staatsbürgers, der unschuldig in Guantánamo festgehalten worden war. Die Frage, ob er nach Deutschland zurückzuholen sei oder ob man seine Einreise verweigern solle, hatte Maaßen als hoher Beamter in Otto Schilys Innenministerium mit dem formalrechtlichen Irrwitz begründet, Kurnaz’ unbegrenztes Aufenthaltsrecht in Deutschland sei verfallen, da dieser mehr als sechs Monate außer Landes gewesen sei und sich nicht bei den zuständigen Behörden gemeldet habe – das Bremer Verwaltungsgericht musste ihn belehren, dass die Aufenthaltserlaubnis Kurnaz’ nicht erloschen war, da Kurnaz nicht „ausgereist“ war.
+
+Seit dem Amtsantritt 2012, für den der CSU-Rechtsaußen Hans-Peter Friedrich verantwortlich zeichnet, sind zuletzt folgende „Skandale“ aufgelaufen: die Gespräche mit AfD-Größen wie Frauke Petry, Alexander Gauland und Stephan Brandner, bei denen es angeblich um „Fragen der Gefährdungseinschätzung“ und um „einen allgemeinen Austausch“ gegangen sein soll. Man lese die Begründung dafür: „Die aktive Kommunikation in den öffentlichen und politischen Raum durch den Präsidenten der BfV entsprach und entspricht dem ausdrücklichen Wunsch des Bundesinnenministeriums, die Aufgaben, Fähigkeiten und Sicherheitsbeiträge des Verfassungsschutzes nach dem Vertrauensverlust in Folge der NSU-Morde auch durch den Präsidenten aktiv nach außen darzustellen.“ Tipps, wie man eine „Beobachtung“ der AfD vermeiden oder Björn Höcke loswerden kann, hat es dabei also sicher nicht gegeben&#8230;
+
+Maaßen plaudert offenbar gerne, zum Beispiel ohne Belege über Edward Snowden als „russischen Agenten“, aber nicht mit der Presse. Blogger von Netzpolitik.org bedrohte er hingegen mit einer Anzeige wegen Landesverrats, als diese 2015 dem Budgetplan des Amtes entnahmen, dass 2,75 Millionen Euro für den Aufbau einer neuen Behördeneinheit zur „Massendatenerfassung“ in sozialen Netzwerken zur Verfügung gestellt werden sollten. Weitere Versuche, auch die kritische Berichterstattung über die Befassung des BfV mit dem NSU zu verhindern, und die so gut wie erwiesene Falschaussage Maaßens vor dem Amri-Untersuchungsausschuss über den Einsatz von V-Leuten (wohl um davon abzulenken, dass der Anschlag auf den Berliner Weihnachtsmarkt womöglich hätte verhindert werden können) führen nun zu dem strukturellen Problem, das wir mit dem Verfassungsschutz auch ganz ohne „Skandale“ haben. 
+
+Ein Geheimdienst, der im Vergleich der europäischen Demokratien einzigartig ist und der von Beginn an keine sinnvolle Aufgabe hatte, der notorisch die Meinungsfreiheit beeinträchtigt, ist schlicht überflüssig.  Nicht die Propagierung verfassungswidriger „Ziele“ ist das Problem, sondern das im aktuellen Rechtsradikalismus offensichtlich angelegte gewalttätige und illegale „Verhalten“ ist ein Problem für eine Demokratie – darunter Hetzjagden, die nicht das erste Mal in Chemnitz stattgefunden haben und die der Präsident des BfV verharmlost oder leugnet. Für Straftaten ist er aber gar nicht er zuständig, sondern der polizeiliche Staatsschutz mit seinen speziell ausgebildeten Kriminalbeamten. Sie kümmern sich nicht um „Verbal-Extremisten“, sondern um Gewalt- und Propagandadelikte nach dem Strafgesetzbuch. Vor allem das Gewaltkriterium markiert die Grenze des politischen Meinungskampfes, und es ein Alarmsignal, wenn es ausgerechnet vom Chef des Gemeindienstes ignoriert wird. Hier zeigt sich einmal mehr, dass die Fehlkonstruktion „Verfassungsschutz“ eine notorische „ideologische“ Schlagseite hat, das heißt auf „extremistische“ Meinungen und Gesinnungen fixiert bleibt.
+
+Maaßens arrogante Auftritte vermitteln eine Ahnung davon, durch welche Mentalitäten auch in der Bundesrepublik Deutschland ein „tiefer Staat“ entstehen könnte. Höchste Zeit, dass Maaßen zurücktritt; und Innenminister, die ihn von der Leine lassen bzw. sich schützend vor ihn stellen, sind ebenso fehl am Platze. 
+
+*Jene aber, die gerade darum betteln, der Verfassungsschutz möge die AfD „beobachten“, täten besser daran, diesen Inlandsgeheimdienst nicht länger zu instrumentalisieren: Er ist weder im Kampf gegen rechts noch gegen links zu gebrauchen. Indessen ist für die eigentliche Aufgabe, die demokratieverträgliche Abwicklung dieses sonderbaren Dienstes, immer noch keine politische Mehrheit in Sicht. In härter werdenden Zeiten braucht aber die Berliner Republik nichts dringender als rationale Gefahrenabwehr statt ideologischen Verfassungsschutz.

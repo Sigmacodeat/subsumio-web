@@ -1,0 +1,63 @@
+---
+title: Verfassungsblog — Waiting for Godot
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2022-10-13'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/waiting-for-godot/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Waiting for Godot
+
+The words of the President of the European Commission during her keynote speech at Princeton University on 22 September have caused quite a stir. Responding to a question from Erika Passoni, an Italian PhD student at the German Department, about the (then) upcoming elections and the prospect of a right-wing government comprising members related to Putin, Ursula von der Leyen (VDL) surprised everyone with a reference to the well-known situations in Hungary and Poland. Here are the four key passages of her reasoning: 1) democracy is never safe and requires the active engagement of citizens; 2) the Commission intends to maintain a dialogue with all the elected governments in the member states; 3) the heads of state and government who attend European Council meetings soon realize that their well-being depends on the other 26 members; 4) if things go wrong, recent experience shows that the Union has the necessary tools to cope with sovereigntist and illiberal drifts.
+
+Now that the formation of a new Italian government is well underway, this contribution reconsiders the fears fueled by VDL’s statements in light of the past and current context to draw some more general conclusions on the institution’s duty to respect and promote the EU’s founding values. Overall, the EU is poorly equipped to combat rule of law backsliding and the Council is effectively under siege.
+
+## Words in context: the EU’s founding values and the Europeanization of national politics
+
+The rule of law, democracy and respect for fundamental rights, including the rights of minorities, constitute the values on which the Union is founded (Art. 2 TEU) and their promotion and respect is a necessary condition for access (Art. 49 TEU). Moreover, member states cannot lower the protection of the value of the rule of law without violating their obligation to “provide remedies sufficient to ensure effective legal protection in the fields covered by Union law” (Art. 19 TEU), most notably within the meaning of Art. 47 of the Charter, which expressly refers (para 2) to access to an ‘independent’ tribunal (judgment of 18 May 2021 Asociaţia ‘Forumul Judecătorilor din România’ and Others). As clarified by the Court of Justice in its seminal Repubblika judgement, this means that “any regression of their laws on the organization of justice is prevented”.
+
+Although it is undisputed that domestic elections must take place without any external pressure, the points raised by VDL can hardly be considered an undue influence on the outcome of the elections. Nonetheless, they are evidently cause for concern. Firstly, the President’s reply implies that there is the potential for a rule of law backsliding in Italy. Secondly, it suggests that the Union is well equipped to confront such a situation.
+
+The Princeton incident confirms the Commission’s desire to promote the respect of the founding values of the EU regardless of the ruling majorities in the member states through dialogue and cooperation, but also highlights the EU’s weakness in contrasting rule of law backsliding. The instruments in the hands of the EU only operate ex post and have proven incapable of bringing the interested Member State(s) back on track. Thus, it is no surprise that the focus has shifted towards prevention. But avoiding the creation of the conditions which trigger that infamous process entails exercising political pressure.
+
+## The Union’s legal and political gearbox against rule of law backsliding in the member states
+
+The practice and experience developed with Hungary and Poland over the last decade reveals an extremely intricated preparedness and response framework. Two complementary dimensions are immediately detectable: on the one side, the eminently political debate; on the other side the existing legal lockpicks. These two dimensions are evidently complementary and intertwined, with the former governing large part of the latter. A first overarching legal instrument for countering the backsliding of the rule of law is the determination of a clear risk of a serious breach or of a serious and persistent breach of these values by a Member State pursuant to Art. 7 TEU.
+
+Article 7 TEU suffers from the original sin of assuming that the deterioration, if it ever occurred, would only concern one state (at a time) and the required majorities make the instrument unworkable. Hence, through a skillful operation of legal engineering, the Court of Justice has agreed to assess (indirectly) the compatibility of a domestic law and practice on the organization of the judicial system – in principle outside the scope of EU law – with the founding values of the Union, and in particular with the principle of judicial independence as an expression of the rule of law, via the preliminary ruling procedure on the basis of the assumption that it is incumbent on the member states to guarantee effective judicial protection (Art. 19 TEU and 47 CFREU) in areas governed by Union law (judgment of 27 February 2018, Associação Sindical dos Juízes Portugueses).
+
+On the basis of the same premises (i.e. the need to preserve the independence of the judiciary in order to comply with the obligation to ensure effective judicial protection under EU law), the Court accepted to (directly) assess the compatibility of a domestic law and practice on the organization of the judicial system in the context of an infringement action, upheld the Commission’s action against Poland and condemned the defendant country, inter alia, for introducing a measure to lower the retirement age of judges, subject to the power of the Minister of Justice to extend the period of activity of the individual magistrate (judgment of 5 November 2019, Case C-192/18, Commission v. Poland; judgment of 24 June 2019, C-619/18, Commission v. Poland).
+
+Both the preliminary ruling and the infringement judgement, however, are declaratory in nature and the fines and penalties that can be imposed in the latter case for disregarding the decision of the Court are not per se capable of forcing the interested Member State to comply.
+
+The last and more recent instrument available to the institutions to address the rule of law crisis is of course the so-called Conditionality Regulation (Regulation 2020/2092), which allows the Commission, in the event of violations of the principles of the rule of law that hinder or seriously risk hampering the sound financial management of the EU budget, to propose a decision to suspend funds. The final decision is taken by the Council, acting by a qualified majority.
+
+## National(ist) governments and the appeasing role of the European Council
+
+In her reply to Erika Passone, VDL implied that once you are part of the circle of power and sit in the European Council, you are confronted with a completely new scenario, which follows different rules. This is certainly true and well known to any reasonably far-sighted wannabe prime minister/president, especially in times of war.
+
+Giorgia Meloni is no rookie. She has been a MP since 2006 and she even served as Minister for youth during the fourth Berlusconi government (2008-2011). In other words, she knew the heated political debate that would build around her candidature and probable election very well. It can, therefore, be doubted whether Meloni was actually surprised to hear about the open letter addressed to the President of the European People’s Party by MEP Daniel Freund, where Weber is invited to expel Berlusconi’s Forza Italia from the group should it participate in the next Meloni-driven government; European values should not be sacrificed to buy government participation being the main argument.
+
+Even before winning the elections, Giorgia Meloni abandoned and/or downplayed all pro-Putin and extremist positions she might have had in the past. Asked to respond to VDL’s words, Meloni declared with poise that “Political parties, Parliament, political role is one thing, but commissioners are like ministers of the whole European Commission. So, I advise caution, if you believe in the credibility of European commissioners and the Commission [own translation]”.
+
+The formation of the new government also seems to keep European concerns in due consideration, e.g. the apparent acceptance of a no-go on Salvini as Minister for internal affairs. In the last week, moreover, we have witnessed a progressive alignment with Draghi’s agenda in the attempt to ensure continuity and reassure the EU institutions (and the international financial markets) that the Recovery and Resilience Plan (RRP) objectives will be realized and funds well spent.
+
+However, the realpolitik VDL was talking about in her reply dictate a self-restraint on certain formal occasions, but that does not exclude anti-EU rhetoric at a national level. To be sure, when the French Prime Minister, Elisabeth Borne, and subsequently the French Minister for European Affairs, Laurence Bloom, said they would be vigilant on the developments in Italy Meloni promptly demanded formal excuses for an undue interference into the national politics of a sovereign State of the Union.
+
+## Italy is not the problem, but fundamental values should be taken (more) seriously by the Union…where is the EU Council?
+
+To date there is no reason to doubt that Italy will continue to respect and promote EU values. National politicians regularly comment – often very bluntly – on the elections, declarations and legislation passed in other EU countries. Bringing the Union into the national political arena and creating transnational alliances within the European Parliament and the EU Council posits the acceptance of a wider political space in which cooperation and criticism are part of the game. Considering VDL’s statements an illegitimate interference betrays a disquieting misconception of the relations between EU and national law where the statal dimension should invariably prevail in the name of sovereignty.
+
+The Princeton incident is therefore not about ultra vires interference, but simple accountability. Meloni has longstanding, special ties with Orban and Morawiecki and has witnessed how slow and ineffective the instruments hinted at by VDL are in real life without taking distance from the illiberal reforms their governments have realized. It is her background and her past with which she is now confronted, like every politician.
+
+More importantly, perhaps, the debate that followed VDL’s reply effectively sheds light on the risk deriving from the fact that the EU has only blunt weapons to combat the rule of law backsliding. The experience with Hungary, Poland and other countries like Malta, Romania, Bulgaria, Slovakia, Slovenia shows that the ultra-cooperative stance taken by the Commission has not proven effective. To what extent the effective protection of the rule of law can be sacrificed in name of the principle of loyal cooperation without giving up European identity? Mostly, how can the instruments devised to contrast rule of law backsliding in EU countries be implemented when the Council is under siege? When more than four member states representing more than 35 percent of the population are part of the problem the conditionality regulation is rendered ineffective. When that number reaches six even the activation of the early-alarm procedure, where the required majority is 4/5, is effectively ruled out. The reluctance of the Council (i.e., the member states) to meddle with national politics is dangerous and hardly compatible with the duty to protect the rule of law under the treaties. Yet, the Council seems to work properly when it comes to approving Poland’s RRP. In this sense, the action for annulment brought by The Good Lobby Profs against that decision is of course more than welcome as it reminds the Council that it will be held accountable for any hesitation and/or failure to systematically and firmly uphold the rule of law; a truly existential problem for the EU.
+
+All things considered, to this author’s mind, the Princeton incident and the current state of affairs closely resemble Samuel Beckett’s tragicomedy in two acts, with the Commission and Parliament playing Pozzo and Lucky, respectively, and the Council playing…Godot.

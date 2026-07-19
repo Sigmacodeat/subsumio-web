@@ -1,0 +1,63 @@
+---
+title: Verfassungsblog — Being Rejected is not a Crime
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2026-05-11'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/eu-return-regulation-detention-crimmigration/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Being Rejected is not a Crime
+
+On 26 March 2026, the European Parliament approved the European People’s Party’s amendments to the proposed EU Return Regulation, thereby adopting its position for the negotiations with the Council and the European Commission. It did so with the support of right-wing and far-right groups, including the European Conservatives and Reformists, Patriots for Europe and Europe of Sovereign Nations. This vote is a further erosion of the EU’s so-called cordon sanitaire. As the Parliament’s and the Council’s positions (see the proposal of 5 December 2025) differ only marginally, its adoption alongside the reforms of the Common European Asylum System (CEAS) in summer 2026 appears likely. The draft, therefore, already reveals what lies ahead, as it is set to replace the Return Directive 2008/115/EC.
+
+Declaring the Return Regulation as an “essential element for combating illegal migration” (Recital 1), the current draft considerably expands detention and introduces far-reaching derogations, particularly for third-country nationals considered to pose security risks. This ICE-ification of the EU’s migration policy and the de facto criminalisation of people on the move pose a threat to the rule of law and to the protection of fundamental rights within the EU.
+
+## Anyone can be detained
+
+The forthcoming Return Regulation significantly widens the catalogue of grounds for detention while still leaving discretion to Member States to add even more grounds (as noted here and here). Of particular concern is that the current draft expands the definition of “risk of absconding” as grounds for detention in Article 29(3)(a). Whereas the Return Directive has delegated its interpretation to Member States, Article 30(1) provides for a detailed yet expansive list of criteria. Accordingly, a “risk of absconding” is presumed, unless proven otherwise, when one of the following criteria is fulfilled: a third-country national has entered or moved to another Member State without authorisation, is subject to a return decision issued by another Member State, fails to cooperate, violates an entry ban, or physically or violently (or even verbally in the Council’s proposal) opposes removal. In practice, detention is likely to be used as a default rather than exceptional measure, contrary to Article 29(1) of the current draft, which requires an individualised and proportionate assessment in each case.
+
+Moreover, this approach raises serious concerns regarding the prohibition of arbitrary detention under Article 5(1)(f) of the European Convention on Human Rights (ECHR). Article 5(1)(f) ECHR allows for the detention “of a person against whom action is being taken with a view to deportation”. The European Court of Human Rights (ECtHR) held in Saadi v. United Kingdom that detention under Article 5(1)(f) ECHR may be lawful yet still qualify as arbitrary and thus incompatible with the Convention (para. 67). Arbitrariness is interpreted differently depending on the nature of the deprivation of liberty (para. 70). Under Article 5(1)(f) ECHR, detention is considered arbitrary where it is not carried out in good faith, particularly where it lacks a sufficient connection to its underlying purpose, where the place and conditions of detention are inappropriate, or where the detention exceeds the period reasonably required for the purpose pursued (para. 74). A system that relies on automatic detention risks lacking its underlying purpose and is therefore potentially incompatible with Article 5(1)(f) ECHR, to which Article 6 of the Charter of Fundamental Rights (CFR) corresponds.
+
+## Detention without a realistic prospect of removal
+
+Article 29(2) of the current draft states that detention shall only be maintained for the purpose of preparing or carrying out removal of an individual. Unlike Article 15(4) of the Return Directive, the current draft does not explicitly require release if there is no longer a reasonable prospect of removal. However, this reflects a core requirement under Article 5(1)(f) ECHR and Article 6 CFR. As clarified by the ECtHR in Chahal v. United Kingdom (para. 113), detention ceases to be lawful where removal proceedings are not pursued with due diligence or where removal is no longer feasible.
+
+The Court of Justice of the European Union (CJEU) held in Adrar (C-313/25 PPU, para. 76) that the risk of non-refoulement (Article 33 of the Refugee Convention, Articles 4 and 18 CFR, Article 3 ECHR) precludes a reasonable prospect of removal and therefore necessitates the immediate release of the detainee. In addition, Member States are obliged under Article 47 CFR to assess ex officio whether a return decision would violate the principle of non-refoulement (see Ararat (C-156/23), para. 50).
+
+Against this background, Member States remain under a continuing obligation to examine the risk of non-refoulement and to release individuals from detention without delay where such a risk exists.
+
+## Detention of “vulnerable persons”
+
+Article 3(9) of the Return Directive has defined “vulnerable persons” as “minors, unaccompanied minors, disabled people, elderly people, pregnant women, single parents with minor children, and persons who have been subjected to torture, rape or other serious forms of psychological, physical or sexual violence”. This definition has not been included in the current draft. Recital 32 of the current draft states that detention shall only be imposed following an individual assessment of each case, including consideration of any situation of vulnerability. While this potentially allows for a broader and more individualised understanding of vulnerability, it remains to be seen how this individual assessment will be implemented in practice, given the simultaneous expansion of detention grounds.
+
+Furthermore, Article 29(6) of the current draft requires Member States to consider any visible signs, statements or behaviour related to, or made or shown by, the third-country national indicating that they are a vulnerable person. However, the Commission’s original proposal, which explicitly requires that alternatives to detention are considered for vulnerable persons, has been removed in the amendments. Nevertheless, Member States remain obliged to give due weight to vulnerabilities prior to imposing detention under the general principle of proportionality of EU law, as well as the prohibition of arbitrariness under Article 5(1)(f) ECHR and Article 6 CFR.
+
+Moreover, Article 35(1) of the current draft allows for the detention of minors, inter alia, if it is in the best interests of the child. This safeguard has previously been laid down in Article 5 of the Return Directive, stating that Member States shall take the child’s best interests into account regarding all measures. However, the premise itself is deeply flawed. Detention can never serve a child’s best interests and is incompatible with Article 37 of the Convention on the Rights of the Child, as it has been discussed here and here. Although Recital 32 acknowledges that minors should, as a rule, not be detained, this safeguard remains insufficient.
+
+## Detention in third countries: “return hubs”
+
+Article 17 of the current draft introduces detention in so-called “return hubs”. This has become a central issue in the debate on the proposed Return Regulation (see here and here). A recent development is the pending Sedrata (C-414/25) case before the CJEU concerning the Italy–Albania Protocol, in which Advocate General Emiliou delivered his Opinion on 23 April 2026 on the legality of “return hubs” under the Return Directive. According to the Advocate General, the Return Directive does not categorically preclude the detention of third-country nationals in facilities located in a third country, provided that those facilities remain under the jurisdiction of the Member State concerned and that the relevant national and EU law provisions continue to apply, ensuring certain safeguards, e.g. detention conditions for vulnerable persons (para. 89). The Advocate General also emphasises the obligation to release individuals where there is no realistic prospect of removal. As outlined above, this obligation is not explicitly provided for in the draft but continues to apply under Article 5(1)(f) ECHR and Article 6 CFR.
+
+The forthcoming Return Regulation aligns with the broad approach endorsed by the Advocate General concerning the legality of “return hubs”. Still, it remains questionable to what extent procedural safeguards can effectively be guaranteed in third countries, given that the current draft has removed an independent monitoring mechanism originally proposed by the Commission in Article 17(2)(e).
+
+More fundamentally, detention conditions in third countries, such as Albania, have to comply with the requirements of Article 3 ECHR and Article 4 CFR, which enshrine absolute prohibitions closely linked to the protection of human dignity (see Aranyosi and Căldăraru (C‑404/15, C‑659/15 PPU) paras. 85–87). This has not been addressed in the pending Sedrata case. Nevertheless, in 2025, the Committee Against Torture raised concerns regarding detention conditions and the treatment of migrants in Albania. 
+
+## Detention of third-country nationals posing security risks
+
+The European Commission has called for a stronger focus on third-country nationals to be considered to pose a security risk. This reflects a broader trend in which migration policy is increasingly shaped by securitisation. Unlike the Return Directive, the current draft explicitly addresses the category of “third-country nationals posing a security risk” in Article 16. Yet, this concept relies on vague notions such as public policy, public security, national security, and other broad grounds. This may allow for far-reaching derogations, such as indefinite detention (Article 16(3)(d) of the current draft), contrary to the prohibition of arbitrariness under Article 5(1)(f) ECHR and Article 6 CFR (see above).
+
+Article 16(1) of the Return Directive has only permitted detention in prisons separated from ordinary prisoners where a Member State could not provide accommodation in a specialised detention facility. By contrast, Article 16(3)(c) of the current draft foresees that third-country nationals posing a security risk may also be “detained in prisons and, where possible, be kept separated from ordinary prisoners”. Notably, in its own proposal, the Council went even further and dropped the words “and be kept separated from ordinary prisoners”. However, the CJEU clarified in Pham (C-474/13, para. 20) that according to Recital 2 of the Return Directive, detention in conditions equivalent to those of ordinary prisoners is incompatible with the objective of a humane return system and the protection of human dignity, even when the individual consents.
+
+Overall, this targeting of third-country nationals considered to pose security risks further reinforces the racist construction of the crimmigrant other. This development is particularly visible at the national level: in September 2025, Greece adopted Law 5226/2025 which, inter alia, imposes prison sentences of two to five years on individuals who fail to comply with a return decision within 14 days. Criminalising “illegal stay” without exhausting administrative coercive measures undermines the objectives of the Return Directive as well as the forthcoming regulation and is therefore incompatible with the principle of effet utile under Article 4(3) TEU (see El-Dridi (C-61/11 PPU), Achughbabian (C‑329/11), Sagor (C‑297/12)).
+
+## Crimmigration within the EU’s migration policy
+
+The expanding use of detention under the Return Regulation reflects a broader shift towards crimmigration within EU migration policy. Detention is increasingly deployed beyond its preventive function. Thus, the distinction between administrative detention and criminal punishment is progressively eroding, as migration control becomes increasingly intertwined with criminal law rationales. As a result, people on the move are exposed to coercive measures comparable to those in criminal proceedings, without being protected by equivalent procedural safeguards.

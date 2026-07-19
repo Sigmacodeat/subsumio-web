@@ -1,0 +1,51 @@
+---
+title: Verfassungsblog — New Wine in Old Bottles
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2023-02-23'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/new-wine-in-old-bottles/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# New Wine in Old Bottles
+
+On February 14, the Grand Chamber of the European Court of Human Rights released its judgment on the Raphael Halet case. In a context of both increasing attacks against financial transparency, and failure of states to properly implement the EU directive on the protection of whistleblowers, the judgment by the Grand Chamber was a much awaited one. This case gave the Strasbourg Court an opportunity to reaffirm the importance of whistleblower protection as a human right, and amend the threshold for protection. The last Grand Chamber judgment on that issue from 2008 fails to accommodate whistleblower’s unique needs, as was stressed in a previous blog post.
+
+Yet, the Strasbourg Court still falls short from providing whistleblowers a safe way of expressing concerns publicly. Strongly advocating leaked financial transparency and making public disclosures slightly easier, it nevertheless gives member states a green light to introduce subjective and unpredictable conditions for whistleblower protection, in blatant contradiction with the current European Union framework.
+
+## A 1,000 Euro fine for 10,000 leaked pages follows a reference to the Grand Chamber
+
+As a reminder, Raphael Halet, one of the two « Luxleaks » whistleblowers along with Antoine Deltour, was sentenced to a 1,000 euros fine by the Luxembourg Court of Cassation for copying and disclosing 10,000 pages of documents about tax avoidance schemes in Luxembourg to a journalist, Edouard Perrin. In a sharp contrast with its view on Antoine Deltour’s case – who was acquitted and fully recognized as a whistleblower – the Luxembourg Court denied that Mr Halet’s actions could qualify as « whistleblowing » under Article 10 of the Convention. It did so stressing that the applicant, who disclosed informations about a tax evasion scheme that had already been partially brought to light by Antoine Deltour, « did not however provide any cardinal information, hitherto unknown, that was capable of relaunching or contributing to the debate on tax evasion ».
+
+In a much contested judgment, the third chamber of the European Court of Human Rights then refused to vindicate the whistleblower’s free speech rights. While it acknowledged that the disclosure was in the public interest, it nevertheless affirmed the reasoning of the Luxembourg courts, stressing that the documents handed over by the applicant to the journalist did not contribute to the public debate on the Luxembourg practice of tax rescripts, or trigger debate on tax evasion or provide essential, new and previously unknown information. Raphael Halet subsequently referred the case to the Grand Chamber of the Court.
+
+Of great concern was also the requirement, set up by the third chamber, that whistleblowers should in principle disclose information that is “essential, new and previously unknown ”. As dissenting judges Lemmens and Pavli rightly stressed, this requirement reflects a view of a public debate instantaneous or frozen in time, that is at odd with the very nature of public whistleblowing, where decades of argument and counter-argument may be needed before any meaningful change is achieved.
+
+## Reaffirming and refining the protection for whistleblowers
+
+Stressing on the developments which have occurred since the Guja judgment was adopted in 2008, the grand chamber rejected the requirement that an information should be “essential, new and previously unknown” and decided to reaffirm and refine the criterias for protection. In doing so, though, it delivered a mixed bag to whistleblowers and their advocates.
+
+ In a sharp contrast with the European Court of Justice Sovim judgment which, on November 2022, struck down the requirement that beneficial owner’s registries should be accessible to the general public, the Court strongly advocates financial transparency. First of all, it reaffirms the wide scope of the public interest, stressing – in contrast to the European court of Justice's judgement – that the conduct of private parties, such as companies, who also inevitably and knowingly lay themselves open to close scrutiny of their acts should be subjected to public scrutiny. Second, it emphasizes that the public interest in information cannot be assessed only on a national scale, some types of information being of public interest at a supranational level, or for other states and their citizens.
+
+In connection to this, the Court reaffirms that a public debate may be of an ongoing nature and draw on additional information, as “citizens’ attitudes to issues of general interest evolve over time. Accordingly, in the Court’s view, the sole fact that a public debate on tax practices in Luxembourg was already underway when the applicant disclosed the impugned information cannot in itself rule out the possibility that this information might also be of public interest. In this respect, the Court states that the purpose of whistleblowing is not only to uncover and draw attention to information of public interest, but also to bring about change in the situation. This means, in the court's eyes, that it is sometimes necessary for the alarm to be raised several times on the same subject before complaints are effectively dealt with by the public authorities, or in order to mobilize society as a whole and enable it to exercise increased vigilance.
+
+As regards the channels for disclosure, the court points out that the criterion relating to the reporting channel must be assessed in the light of the circumstances of each case. Thus, it eases the requirement that whistleblowrs should in principle report internally in the first place, stressing that the right to impart information of public interest implies that direct use of an external reporting channel, including, where necessary, the media, can be acceptable. Pointing out the chilling effect of sanctions on the freedom of expression of the applicant or any other whistleblower, the court also notes that, despite that the disclosure was carried out through the theft of data and a breach of the professional secrecy, public interest in the disclosure of that information outweighs all of the detrimental effects. In that case, this is because of the utter importance, at both national and European level, of the public debate on the tax practices of multinational companies.
+
+By facilitating the use of external reporting to the media and adopting a broad, evolutive view of the public interest, the court certainly sends a positive signal to insiders with relevant information, who may have been chilled by the demanding threshold that was set up in 2008. In that respect, it offers public whistleblowers a good alternative to the system of the European Directive on the protection of reporting persons passed on November 2019, whose Article 15 only allows public disclosures in very restricted cases. Yet unfortunately, it does not depart from a view on whistleblowing that scrutinizes the messenger's motives and behaviour, rather than focusing on the message and making sure authorities are properly dealing with it.
+
+## The “broken promise” of whistleblowing
+
+Disappointingly indeed, the Court reiterates that the motive behind the actions of the reporting employee is a determinant factor in deciding whether a particular disclosure should be protected or not. In assessing an applicant’s good faith, the Court verifies, in each case brought before it, whether he or she was motivated by a desire for personal advantage, held any personal grievance against his or her employer, or whether there was any other ulterior motive for the relevant actions.
+
+Yet this notion of good faith – which was transplanted from the case-law of the court on journalists' freedom of expression – might certainly fit the needs of journalists with years of experience in dealing with information, but definitely fails to accommodate the needs of vulnerable insiders who may face great pressure inside their organizations when the lid blows, and might thus be led to disruptive behaviors, especially when nothing is done to effect the situation that they denounce. It is also disturbingly at odd with the EU Directive on the protection of whistleblowers, which only requires whistleblowers to give reasonable grounds to believe that the matters reported by them are true, no matter their motives.
+
+Not less dazzling is the court’s reiteration of the Gawlik’s case requirement  for a whistleblower to “carefully verify” that the information is “accurate and reliable”, so as to mitigate the risk of harm to the organization. Alas, however well-intentioned an employee may be, he or she may not be equipped with sufficient time and knowledge to understand and foresee the potential impact of the disclosure, which may cause far more damage than the person making the disclosure was able to anticipate. This outdated requirements are not only at odd with the profile of whistleblowers in the networked society, where individuals can have access to vast amounts of information that they alone would not be able to analyze and sort out. It is also, again contradictory with the requirements of the European Directive on the protection of whistleblowers, which does not make the protection of whistle-blowers conditional on any considerations related to the harm caused to the employer, as long as the general conditions for protection are met.
+
+ Claiming to take into account the new developments that occurred since 2008, the Strasbourg Court still falls short from providing whistleblowers a safe way of expressing concerns publicly. It thus reflects what Professor Wim Vandekerckhove called the “broken promise” of whistleblowing: a paradox of whistleblower protection is that free speech drove it but was irrelevant in bringing it home.

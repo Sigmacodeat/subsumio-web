@@ -1,0 +1,77 @@
+---
+title: Verfassungsblog — Verschlusssache Lagebericht
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2022-11-11'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/verschlusssache-lagebericht/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Verschlusssache Lagebericht
+
+In behördlichen und gerichtlichen Asylverfahren spielt die Beurteilung der Lage im Herkunftsstaat eine wesentliche Rolle. Die dafür erforderlichen Tatsachen sind durch Behörden und Gerichte zu ermitteln, was sich jedoch schwierig gestaltet und vielfach in Kritik gerät. Dem Problem der Uneinheitlichkeit der Rechtsprechung will die Bundesregierung nun mit einem Gesetzentwurf begegnen, der das Bundesverwaltungsgericht (BVerwG) dazu ermächtigen soll, bei Divergenz selbst Tatsachen zu ermitteln und sogenannte Länderleitentscheidungen zu treffen (siehe dazu Feneberg und Pettersson, Verfassungsblog, 8.11.2022).
+
+Damit bleibt jedoch ein Problem unangetastet: Bisher greift das Bundesamt für Migration und Flüchtlinge (BAMF) ebenso wie Gerichte bei der Tatsachenermittlung in besonderem Umfang auf die “Berichte über die asyl- und abschiebungsrelevante Lage” (Lageberichte) des Auswärtigen Amtes zurück, die sich in der Vergangenheit teilweise als fehlerhaft erwiesen haben. Die hinter der Informationsgewinnung und -aufbereitung stehende Methodik ist unbekannt. Eine öffentliche Debatte hierüber erschwert, dass die Lageberichte als Verschlusssache eingestuft und damit der Öffentlichkeit und sogar Beratungsstellen nicht zugänglich sind. Nur Rechtsanwält*innen erhalten über das BAMF oder über die Gerichte Einsicht. Die Weitergabe der Lageberichte soll laut BAMF strafbewehrt sein. Ein erster wichtiger Schritt zur Verbesserung der Tatsachenermittlung wäre, die Lageberichte zu veröffentlichen, um eine Kontrolle durch andere Institutionen und die Öffentlichkeit zu ermöglichen.
+
+## Lageberichte als Erkenntnismittel in Asylverfahren
+
+Die Tatsachenermittlung ist Aufgabe der Behörden und Fachgerichte, die von Amts wegen zur vollständigen und zutreffenden Ermittlung des Sachverhaltes verpflichtet sind (§ 24 Abs. 1 VwVfG, § 86 Abs. 1 VwGO). Während also beispielsweise im Asylverfahren Asylsuchende dafür verantwortlich sind, ihre individuellen Fluchtgründe vorzutragen (vgl. §§ 15, 25 AsylG), obliegt es dem BAMF und den Verwaltungsgerichten die tatsächlichen Verhältnisse im betroffenen Land zu ermitteln.
+
+Bei der Auswahl und Bewertung der Beweismittel steht den Gerichten ein Auswahlermessen zu, § 86 Abs. 1 VwGO, § 108 VwGO. Da es für die Gerichte naturgemäß schwierig ist, Informationen über die Lage in anderen Ländern zu gewinnen, führen sie Listen mit sogenannten Erkenntnismitteln. Ein wesentlicher Bestandteil der Erkenntnismittel sind die Lageberichte des Auswärtigen Amts. Darüber hinaus gehören hierzu etwa Berichte anderer Staaten, wie USA, Großbritannien, Schweiz oder Österreich, aber auch Einschätzungen des UNHCR oder von Menschenrechtsorganisationen wie Amnesty International.
+
+Die Auslandsvertretungen des Auswärtigen Amts erstellen die Lageberichte in regelmäßigen Abständen für die wichtigsten Herkunftsländer von Schutzsuchenden. Dies geschieht ausdrücklich im Wege der Amtshilfe für das BAMF und die Ausländerbehörden sowie die zuständigen Verwaltungsgerichte, um diesen Entscheidungshilfen an die Hand zu geben.
+
+Dabei sind die Lageberichte des Auswärtigen Amts eine besonders beliebte Referenz. Häufig geht aus der Urteilsbegründung hervor, dass sich die Entscheidung wesentlich auf den jeweiligen Lagebericht des Auswärtigen Amts stützt (siehe zum Beispiel die Auswertung gerichtlicher Entscheidungen zur Frage der Mitwirkungspflicht bei der Dokumentenbeschaffung bei eritreischen Auslandsvertretungen von Corinna Ujkašević, ZAR 2022, 263, 265).
+
+Das Bundesverfassungsgericht hat diese entscheidende Rolle der Lageberichte zur Tatsachenermittlung – im konkreten Fall zur Bestimmung von sicheren Herkunftsstaaten nach Art. 16a Abs. 3 GG durch den Gesetzgeber – anerkannt. Es betonte jedoch auch, dass den „Auslandsvertretungen eine Verantwortung zu[falle], die sie zu besonderer Sorgfalt bei der Abfassung ihrer einschlägigen Berichte verpflichtet, da diese […] für die Exekutive eine wesentliche Entscheidungsgrundlage bilden.“ Nach dem Bundesverwaltungsgericht sind die Gerichte dazu gehalten, sich anhand des jeweils aktuellen Lageberichts des Auswärtigen Amtes zu informieren.
+
+Ob die vom Bundesverfassungsgericht vorausgesetzte besondere Sorgfalt stets eingehalten wird, erscheint allerdings fraglich. Zweifel daran weckt etwa die Fehleinschätzung des Auswärtigen Amts zu Afghanistan. Noch im Juli 2021 – einen Monat vor der Machtübernahme der Taliban – legte das Auswärtige Amt seinen Lagebericht für Afghanistan vor, in der die Sicherheitslage für viele Regionen als vergleichsweise stabil beschrieben wurde. Auch sonst soll der Bericht an vielen Stellen veraltet gewesen sein, einer anderen maßgeblichen Studie widersprochen und Berichte der UN unberücksichtigt gelassen haben, (vgl. Thomas Ruttig, taz, 23. Juli 2021; Pro Asyl vom 27. Juli 2021). Dennoch sollte dieser Bericht als Entscheidungshilfe für Asylrichter*innen und Behörden dienen.
+
+Auch über solche Einzelfälle hinaus bestehen grundsätzliche Bedenken, ob die erforderliche Sorgfalt gewährleistet werden kann. Denn die Lageberichte werden auch dafür kritisiert, dass aus ihnen oft nicht hervorgeht, welche Methodik der Informationsgewinnung und -auswertung ihnen zu Grunde liegt oder über welche fachliche Expertise die Ersteller*innen verfügen (vgl. Kluth, ZAR 2018, 331, 335). So schätzt beispielsweise das Auswärtige Amt anders als andere internationale Akteure die Haftbedingungen in Côte d’Ivoire ausdrücklich nicht als Folter ein (Lagebericht über die Côte d’Ivoire aus dem Jahr 2019, S. 14), gibt dafür jedoch keine Begründung.
+
+Ein weiteres Problem sind Informationsdefizite (siehe auch Lehmann, NVwZ 2018, 293, 297), die oft nicht ausreichend gekennzeichnet werden. Gerichte schließen so von der fehlenden Kenntnis des Auswärtiges Amtes über einschlägige Fälle von Verfolgung oft auf das Nichtvorliegen einer Gefährdung (vgl. Ujkašević, ZAR 2022, 263, 265).
+
+## Die Verschlusssachenproblematik
+
+Eine öffentliche Auseinandersetzung mit den Inhalten der Lageberichte und möglichen Defiziten fand bisher – abgesehen von der Fehleinschätzung zu Afghanistan – kaum statt. Sie sind nämlich, anders als vergleichbare Berichte anderer Staaten, die teilweise im Internet frei zugänglich sind (etwa Großbritannien, USA oder Schweiz), seit März 1995 als Verschlusssachen – Nur für den Dienstgebrauch (VS-NfD) eingestuft.
+
+Eine solche Einstufung bedeutet unter anderem, dass die Weitergabe an nichtöffentliche Stellen nur zulässig ist, wenn sie im staatlichen Interesse erforderlich ist (§ 25 Verschlusssachenanweisung). In der Praxis folgt daraus, dass vor allem Beratungsstellen, die Asylsuchende ehrenamtlich betreuen, wie etwa studentische Refugee Law Clinics, nicht ohne Weiteres Zugang zu den Lageberichten haben, die für den Ausgang der Asylverfahren und die Beratung relevant sind.
+
+Zwar steht Anwält*innen im Verwaltungs- sowie im gerichtlichen Verfahren ein Akteneinsichtsrecht zu (vgl. BVerfG, Beschluss vom 25.03.2020 – 2 BvR 113/20). Das Auswärtige Amt informiert die Anwält*innen allerdings darüber, dass eine Weitergabe der Berichte einen Verstoß gegen § 19 der anwaltlichen Berufsordnung darstelle. Das BAMF geht noch einen Schritt weiter und teilt den Anwält*innen mit, dass bei Weitergabe der Berichte eine Strafbarkeit nach den §§ 93 – 99 StGB (Landesverrat und Gefährdung äußerer Sicherheit) sowie § 203 Abs. 1 Nr. 3 StGB (Verletzung von Privatgeheimnissen) in Betracht komme. Sie dürften die Lageberichte “insbesondere nicht an die Mandanten von anfragenden Prozessbevollmächtigten” weitergeben. Die Rechtsansicht des BAMF ist mehr als zweifelhaft: Die §§ 93 – 99 StGB setzen voraus, dass Staatsgeheimnisse betroffen sind. Staatsgeheimnisse sind Tatsachen, Gegenstände oder Erkenntnisse, die nur einem begrenzten Personenkreis zugänglich sind und vor einer fremden Macht geheim gehalten werden müssen, um die Gefahr eines schweren Nachteils für die äußere Sicherheit der Bundesrepublik Deutschland abzuwenden, § 93 Abs. 1 StGB. Dass derartige Staatsgeheimnisse “nur” mit VS-NfD, also der schwächsten Einstufungskategorie, versehen werden, erscheint abwegig. § 203 Abs. 1 Nr. 3 StGB schützt das Vertrauensverhältnis zwischen Rechtsanwält*innen und Mandant*innen (vgl. AGH Rostock, Beschluss vom 01.08.2007 – I AG 6/07).
+
+## Begründung der Einstufung trägt nicht
+
+Davon abgesehen ist bei näherer Betrachtung kein Grund dafür ersichtlich, warum die Lageberichte pauschal als VS-NfD eingestuft sind. § 4 Absatz 2 Nummer 4 Sicherheitsüberprüfungsgesetz (SÜG) setzt dafür voraus, dass eine Kenntnisnahme durch Unbefugte für die Interessen der Bundesrepublik Deutschland oder eines ihrer Länder nachteilig sein kann.
+
+Das Auswärtige Amt begründet die Einstufung unter anderem, damit, dass für die Gewinnung der Erkenntnisse in “Einzelfällen” Vertraulichkeit zugesichert worden sei. Nur die Einstufung könne sicherstellen, dass die Berichte “ohne Rücksichtnahme auf außenpolitische Interessen formuliert werden” könnten. Wiederum „in Einzelfällen“ sei die Einstufung darüber hinaus sogar im persönlichen Interesse von Mitarbeitenden des Auswärtigen Amts geboten.
+
+Bereits die mehrfache Bezugnahme auf „Einzelfälle“ in der Begründung des Auswärtigen Amts stellt in Frage, ob die pauschale Einstufung des gesamten Inhalts sämtlicher Berichte notwendig ist. Auch der Umstand, dass die Berichte anderer Staaten sowie des UNHCR und von Menschenrechtsorganisationen frei verfügbar sind, spricht gegen eine Einstufung der Lageberichte als VS-NfD.
+
+## Rolle der Berichte als “Entscheidungshilfen”
+
+Zum anderen lässt sich die Einstufung als VS-NfD nicht mit der Rolle in Einklang bringen, die die Lageberichte in Gerichtsverfahren spielen. Ohne dass es hierfür einer gesonderten Zustimmung des Auswärtigen Amts bedarf (vgl. Hessischer VGH, Entscheidung vom 07.07.1997 – 12 UE 2019/96.A), führt das Gericht die Lageberichte in das Verfahren ein und macht sie den Beteiligten auf Antrag nach § 100 VwGO zugänglich. Das Akteneinsichtsrecht umfasst hierbei auch die Anfertigung von Kopien. Ferner gibt es in der Regel eine öffentliche mündliche Verhandlung, in der die Sach- und Rechtslage erörtert wird (vgl. § 104 Abs. 1 VwGO, § 169 GVG), und zu der auch eine Erörterung der Erkenntnisse aus den Lageberichten gehört, jedenfalls, soweit das Gericht seine Entscheidung darauf stützen möchte. Damit ist der Kreis der Personen, die potenziell von den Inhalten der Lageberichte Kenntnis haben, bereits unkontrollierbar groß. Letztendlich geben veröffentlichte Urteile die Inhalte der Lageberichte des Auswärtigen Amtes zum Teil sehr umfangreich und im Wortlaut wieder.
+
+All dies entspricht nicht dem üblichen Umgang mit geheimhaltungsbedürftigen Unterlagen in Gerichtsverfahren. Vielmehr können Behörden deren Herausgabe im gerichtlichen Verfahren nach § 99 Abs. 1 Satz 2 VwGO verweigern, soweit Auskünfte darüber dem Wohl des Bundes oder eines Landes Nachteile bereiten würden, und eine Sperrerklärung abgeben (vgl. etwa die Entscheidung des Bundesverwaltungsgerichts zu Herkunftsländer-Leitsätzen des BAMF). Ob die Weigerung rechtmäßig erfolgte, wird anschließend in einem In-Camera-Verfahren überprüft, in dem die Gegenseite keine Einsicht in die Unterlagen erhält, vgl. § 99 Abs. 2 Satz 9 VwGO. Derartige Sperrerklärungen gibt das Auswärtige Amt für Lageberichte allerdings nicht ab, sondern stellt diese den Gerichten zur Verfügung und macht auch keine Einwände gegen die Wahrnehmung von Akteneinsicht durch Prozessbevollmächtigte geltend.
+
+## Praxis in IFG-Verfahren
+
+Dass das Auswärtige Amt die pauschale Einstufung der Berichte selbst nicht als gerechtfertigt anzusehen scheint, zeigt sich auch an dem Umgang mit Anfragen nach dem Informationsfreiheitsgesetz auf Herausgabe von Lageberichten. Diesen gibt es nämlich überraschenderweise überwiegend statt, obwohl nach § 3 Nr. 4 Var. 2 IFG kein Anspruch auf Informationszugang besteht, sofern die Information einer durch die Verschlusssachenanordnung geregelten Geheimhaltungs- oder Vertraulichkeitspflicht unterliegt. Nach der Rechtsprechung des Bundesverwaltungsgerichts ist hierbei die formelle Einstufung als Verschlusssache nicht ausreichend, um den Informationszugang zu verweigern. Die Einstufung muss materiell gerechtfertigt sein.
+
+Das Auswärtige Amt überprüft die Einstufung der Berichte nach Eingang entsprechender IFG-Anträge und macht sie den Antragstellenden anschließend mit moderaten Schwärzungen zugänglich, wobei die Verschlusssacheneinstufung für diese geschwärzte Fassung zugleich entfällt. Das Auswärtige Amt hat bisher nicht geltend gemacht, dass die materiellen Voraussetzungen für die Einstufung der gesamten Berichte vorliegen. Vielmehr hält es lediglich einzelne Schwärzungen für erforderlich. Die Einstufung als Verschlusssache sollte jedoch bezogen auf die jeweilige Information, nicht bezogen auf das ganze Dokumente erfolgen (vgl. § 4 Abs. 1 SÜG „geheimhaltungsbedürftige Tatsachen, Gegenstände oder Erkenntnisse“ sowie § 20 Abs. 6 VSA und Muster 12 in Anlage VIII zur VSA). Mit anderen Worten: Das Vorhandensein einzelner Absätze, die als geheimhaltungsbedürftig angesehen werden, rechtfertigt nicht die Praxis der Einstufung von ganzen Dokumenten als Verschlusssachen.
+
+Während es zwar zu begrüßen ist, dass das Auswärtige Amt auf IFG-Anfragen die Einstufung als Verschlusssache überprüft und die Dokumente überwiegend zugänglich macht, stellt sich doch umso mehr die Frage nach der Sinnhaftigkeit der ursprünglichen Geheimhaltung der Lageberichte. Die wird erst auf einzelne IFG-Anträge hin auf ihre materielle Richtigkeit überprüft, was in aller Regel darin resultiert, dass die Berichte mit Teilschwärzungen zugänglich gemacht werden – allerdings nur gegen Gebühr für die antragstellende Person.
+
+Die Transparenzplattform FragDenStaat und ProAsyl haben die Praxis des Auswärtigen Amts in IFG-Verfahren zum Anlass für eine Kampagne genommen, im Rahmen derer die Lageberichte zu den wichtigsten Herkunftsländern angefragt werden sollen, um sie so – wenigstens in teilgeschwärzter Fassung – einer breiten Öffentlichkeit zugänglich zu machen. Dass die Herstellung von Transparenz in einem so wichtigen Bereich wieder einmal der Zivilgesellschaft obliegt, ist mehr als bedenklich. Das Auswärtige Amt sollte dem Beispiel anderer Staaten folgen und die Berichte proaktiv der Öffentlichkeit zur Verfügung stellen.
+
+Die Veröffentlichung der Lageberichte würde den notwendigen wissenschaftlichen Diskurs über die inhaltliche Richtigkeit und die Methodik der Lageberichte ermöglichen und könnte so erheblich zur Verbesserung der Tatsachenermittlung in Asylverfahren beitragen. Angesichts der anderen umfangreichen Reformvorschläge, wie der Errichtung einer unabhängigen wissenschaftlichen Einrichtung ähnlich dem Robert-Koch-Institut (vgl. Kluth, ZAR 2018, 331, 335) oder der Ausstattung des Bundesverwaltungsgerichts mit einer neuen Tatsachentscheidungskompetenz – wäre es eine sinnvolle und einfach umsetzbare Sofortmaßnahme, die Lageberichte proaktiv zu veröffentlichen.
+
+ 
+
+Anm. d. Red.: Die Autorinnen arbeiten im Legal Team von FragDenStaat.

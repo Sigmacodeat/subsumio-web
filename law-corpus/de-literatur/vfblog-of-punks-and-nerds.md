@@ -1,0 +1,57 @@
+---
+title: Verfassungsblog — Of Punks and Nerds
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2022-09-27'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/of-punks-and-nerds/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Of Punks and Nerds
+
+The 1970s and 80s brought about two new social archetypes – the punk and the nerd. While the anti-establishment punk wants to trash the (economic, political, social) system, wants to provoke and get attention for the sake of it, the nerd behaves rather inconspicuously but effectively. He might be socially awkward and overlooked at first, but skilled and smart as he is, he knows the rules of the game and the mechanisms to get ahead with his plans.
+
+When looking at different authoritarian leaders in the world today, these two archetypes come to mind. The former US-president Donald Trump or the current Brazilian president Jair Bolsonaro personify the punk. They rise in their wholesale rejection of the status-quo and promise to trash and bury ‘the system’. They are vandals rather than builders. Viktor Orban of Hungary or the Indian prime minister Narendra Modi present the other type, the nerd. They are knowledgeable operators of the system, managerialists who know how to transform political and constitutional structures in a systematic and strategic manner. They are bureaucrats rather than showmen.
+
+In this blogpost, I want to use these two archetype of authoritarian leaders to analyse their behaviour and sketch the contours of an analytical framework to compare and distinguish between them. It is high time, I think, to develop a more differentiated understanding of different types of autocratic rule and rulers, not least in order to better react to them. Surely, authoritarian regimes around the world have many features in common (their disrespect for institutions and pluralism, their grievance-driven attitude, their populist rhetoric). But there are also important differences that we need to understand. This blogpost then is also a call for more comparative studies of authoritarianism.
+
+The catchy archetypes of the punk and the nerd point to some characteristic differences. I will highlight three points of comparison: their personal and rhetorical style, their scope of political action and their mode of governing.
+
+## Style 
+
+Punks and nerds are polar opposites in terms of their personal and rhetorical style and their (political) biography. For the punk, an aggressive, disruptive style and appearance are central. He fashions himself as the outsider, the provocateur, the disruptor, but also as the truth-teller. The prototype here is Trump. He is first and foremost a business man, not a politician; his style is bombastic and instinctive, not argumentative and rational. Jair Bolsonaro is similar. Even though he entered politics in fairly young age after a career in the military, he never found a political home but remained on the fringe. In 28 years in Congress, he switched parties eight times; an aggressive loner all the while. In their interaction with others, both their style is brash, intentionally rude and provocative. They don’t pay lip-service to the idea of an overarching responsibility of the political leader for the people as a whole. Their base is what they care for and who they address.
+
+The political nerd also has a distinct style but one that is almost the opposite of the punk. While he can be a populist at times, his style is more inconspicuous, his rhetoric (on the surface) more integrating and his career more normal for a politician. The nerd has been part of a political family and is a man of the system. A prime example for this type is the Indian prime minister, Narendra Modi. Since young age, he has been engaged in the RSS, the social organisation associated with the BJP. Before he became Indian prime minister, he held many posts in the organization, in the party and then in his home state of Gujarat, including as its chief minister. In terms of rhetoric, Modi adopted the language of the leader for all in his political offices, fashions himself as a father of the nation. He has his political allies to do the attacks, contents himself with using the dog-whistle, not more.
+
+## Scope of political activity 
+
+A second distinct difference between nerds and punks concerns the scope of their political activity. The political punk mostly cares for certain pet-themes and pet-projects. Even though he rhetorically claims to have a broad, disruptive general vision for the country and its future, this is often not very thought-through or sophisticated. Instead, he pushes selective items. Again, Bolsonaro is a typical example. He excels in praising the military, very conservative social models and law-and-order ideas; he is highly critical of environmental policies, denies climate change and pushes aggressively for the deforestation and ‘economic development’ of the Amazonas rain forest. Beyond this, he is rather blank.
+
+Here too, the nerd has a very different approach – and actually a much scarier agenda. He shares the punks’ encompassing rhetoric of transformational change, but in contrast to him, the nerd knows what he is talking about. He follows up on it and attacks the political and constitutional system at critical points. Also in this regard, Modi is a good counter-example to Bolsonaro. While he shares Bolsonaro’s blend of social conservatism and neoliberal politics, he also pursues a much broader agenda of Hindutva. This claims that Hindu identity and Hindu culture should dominate the Indian subcontinent in political, religious and cultural ways. This ideology opposes and reformulates the very idea of India, as it was constituted after independence, pursuing a shift from a secular, plural to a Hindu, from a consensual to a majoritarian political system. Here, other religious and cultural groups are aggressively pushed to the side, ‘put in their place’ as they say. While this agenda is pursued with some highly symbolic and visible actions, Modi’s agenda also includes the subversion of the broader institutional and electoral system to sustain power over time.
+
+## Mode of governing 
+
+Finally, a third characteristic difference between the punk and the nerd in authoritarian politics concerns their mode of governing. Here, we come closest to the legal and constitutional structure. The punk provokes in broad daylight and does not mind when his actions are rather amateurish and potentially illegal. He cares more for the public provocation than the actual implementation and effect. Impressions are more important than facts. Trump is a prime example here (remember the Muslim travel ban or the border wall?). It was more about the show than the substance. Bolsonaro again is similar. Few politicians in Brazil have suffered more defeats in courts than he has, and he was opposed many times even by Congress. But this doesn’t deter him. In fact, he seems to provoke and use those formal defeats. Another trademark of him is to appoint blatantly incompetent or adverse people to lead ministries and agencies, decapitating them intellectually and wasting their productive potentials.
+
+The nerd’s mode of operation is very different. Yes, he also enacts shiny, symbolic projects that enthuse his base but he also operates in many ways without much fanfare and even secretly. Being a man of the system, he knows how to play it, which screws to turn, which paths to block or open. He is a managerialist. Here again, Modi is a prime example (and so is surely Orban). Modi in his first term build the highest statue for a nationalist figure (Sardar Vallabhbhai Patel) but he also immediately moved to attack key parts of the constitutional and political system in a hidden, barely communicated way. He changed the system of campaign financing to secure a second term and victories in the states, aimed to weaken bicameralism and federalism, to capture the courts by interfering with judicial appointments. It was a concerted, multi-pronged effort to freeze mechanisms of executive accountability. The most fundamental constitutional shift, the abolition of the special status of the State of Jammu and Kashmir, was enacted over night and without any public or parliamentary debate (as was demonetisation though here for inherent reasons).
+
+## Meaning for law and constitutionalism 
+
+Surely, there are also other important distinctions to be considered, when we develop a more comparative understanding of authoritarian rule. We would have to look at the political and institutional context, the state of opposition parties, historical experiences and grievances, cleavages in society, etc. Another important distinction could be, whether we deal with an autocrat in his first or second term (autocrats lose inhibition over time).
+
+In addition, the ideological position of punks and nerds can vary. When they emerged as social archetypes, the punk was rather anarchic and a left-wing critique of capitalism, a reaction to the budding neoliberalism; the nerd was apolitical. In politics today, we might also find left-wing punks (think of Mexico’s president Obrador), centrist nerds (Angela Merkel!) or left-wing nerds (Manmohan Singh of India or Olaf Scholz from Germany, the country of nerds). In that sense, the archetypes of the punk and the nerd could help to sort through more material, as they have analytical power and help to identify certain characteristics in political leaders and governing approaches.
+
+In particular, the archetypes indicate and implicate the way they use law and relate to the constitution. This way, the distinction sheds light, for example, on the prominent and important notion of autocratic legalism (Kim Lane Scheppele). While her observation about the important use of law and a legal appearance of the regime is convincing for Orban and Modi, it is less so for Bolsonaro and Trump. Their use of law and relation to legality is different, as my thoughts on the mode of governing demonstrate.
+
+Consequently, which of the two types we deal with might also affect the role of courts. While they might be important roadblocks for nerds, one could argue that they are not so for punks. Punks rather provoke illegality, use courts as stages for revolt and provocation, not for confirmation and settlement. The different archetypes might also use law differently. While the punk might be erratic in whether and what law he deploys for his goals, the nerd will surely use the whole bandwidth of legal means from the formal to the informal, low-key legal shifts.
+
+Another consequence from the types could lie in the way these types leave office (or not) and hence questions of constitutional safeguards there. I guess every autocrat considers himself irreplaceable. But it could be worse in case we deal with a punk. The punk has no institutional successor; he is not part of a broader party and hence might be more dangerous when he faces defeat. He has nothing to lose and no party to show him way out.
+
+These are just ideas for how to think further about autocratic leaders, punks and nerds – and the role of law. It is a call for more comparative legal analysis of autocratic rule, which is likely here to stay.

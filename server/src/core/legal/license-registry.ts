@@ -184,7 +184,183 @@ export const KNOWN_LICENSE_TERMS: SourceLicenseTerms[] = [
     notes:
       "EUR-Lex Web Services. CC-BY 4.0. EU-Gesetzgebung ist gemeinfrei. SOAP/REST API verfügbar.",
   },
+  // ── Gesetzesmaterialien ────────────────────────────────────────────
+  {
+    source_id: "law-de-materialien",
+    source_name: "DIP — Dokumentations- und Informationssystem des Bundestages",
+    jurisdiction: "DE",
+    official_url: "https://dip.bundestag.de/",
+    license_type: "public",
+    terms_url: "https://dip.bundestag.de/über-dip/hilfe/api",
+    scraping_allowed: false,
+    api_usage_allowed: true,
+    attribution_required: true,
+    commercial_use_allowed: true,
+    notes:
+      "BT-Drucksachen (Gesetzentwürfe mit Begründungen) sind amtliche Werke (§ 5 UrhG). " +
+      "Zugriff NUR über die offizielle REST-API (search.dip.bundestag.de/api/v1); " +
+      "API-Key formlos per Mail an parlamentsdokumentation@bundestag.de. " +
+      "Zitierweise: BT-Drs. <Wahlperiode>/<Nummer>.",
+  },
+  // ── Literatur: frei lizenziert (Open Access) ───────────────────────
+  {
+    source_id: "law-ch-literatur-onlinekommentar",
+    source_name: "Onlinekommentar.ch — Open-Access-Kommentar (CH)",
+    jurisdiction: "CH",
+    official_url: "https://onlinekommentar.ch/",
+    license_type: "open",
+    terms_url: "https://onlinekommentar.ch/de/creative-commons-license",
+    scraping_allowed: true,
+    api_usage_allowed: true,
+    attribution_required: true,
+    commercial_use_allowed: true,
+    notes:
+      "Peer-reviewte Kommentare zu ZGB, OR, BV u.a. unter CC BY 4.0. Namensnennung " +
+      "(Autor:in + Onlinekommentar + Zitiervorschlag) erforderlich. Volltext-Nutzung erlaubt.",
+  },
+  {
+    source_id: "law-de-literatur-openrewi",
+    source_name: "OpenRewi — offene Lehr-/Fall-/Handbücher (Wikibooks)",
+    jurisdiction: "DE",
+    official_url: "https://de.wikibooks.org/wiki/OpenRewi",
+    license_type: "open",
+    terms_url: "https://de.wikibooks.org/wiki/Benutzer:OpenRewi/_Weiterverwendung",
+    scraping_allowed: true,
+    api_usage_allowed: true,
+    attribution_required: true,
+    commercial_use_allowed: true,
+    notes:
+      "CC BY-SA 4.0. Zugriff über die MediaWiki-API von de.wikibooks.org. Namensnennung + " +
+      "Share-Alike: abgeleitete Darstellungen der Inhalte müssen die Lizenz nennen.",
+  },
+  {
+    source_id: "law-de-literatur-verfassungsblog",
+    source_name: "Verfassungsblog",
+    jurisdiction: "DE",
+    official_url: "https://verfassungsblog.de/",
+    license_type: "open",
+    terms_url: "https://verfassungsblog.de/impressum/",
+    scraping_allowed: false,
+    api_usage_allowed: true,
+    attribution_required: true,
+    commercial_use_allowed: true,
+    notes:
+      "Beiträge i.d.R. CC BY-SA 4.0 (einzelne Beiträge können abweichen — Lizenzfeld pro " +
+      "Beitrag prüfen). Zugriff über die WordPress-REST-API (wp-json/wp/v2/posts).",
+  },
+  {
+    source_id: "law-at-literatur-alj",
+    source_name: "Austrian Law Journal (Uni Graz, Diamond Open Access)",
+    jurisdiction: "AT",
+    official_url: "https://alj.uni-graz.at/",
+    license_type: "open",
+    terms_url: "https://alj.uni-graz.at/index.php/alj/about",
+    scraping_allowed: false,
+    api_usage_allowed: true,
+    attribution_required: true,
+    commercial_use_allowed: true,
+    notes:
+      "Diamond-OA-Zeitschrift, DOAJ-indexiert. Harvesting über die OAI-PMH-Schnittstelle " +
+      "(index.php/alj/oai). Phase 1: nur Metadaten + Abstracts; Volltext-PDFs erst nach " +
+      "Lizenzprüfung pro Artikel.",
+  },
+  {
+    source_id: "law-ch-literatur-suigeneris",
+    source_name: "sui generis — juristische Open-Access-Zeitschrift (CH)",
+    jurisdiction: "CH",
+    official_url: "https://sui-generis.ch/",
+    license_type: "open",
+    terms_url: "https://sui-generis.ch/about",
+    scraping_allowed: false,
+    api_usage_allowed: true,
+    attribution_required: true,
+    commercial_use_allowed: true,
+    notes:
+      "Beiträge unter CC BY-SA 4.0, double-blind peer review. Harvesting über OAI-PMH " +
+      "(sui-generis.ch/oai). Phase 1: Metadaten + Abstracts.",
+  },
+  // ── Verlags-Content: FAIL-CLOSED (keine Lizenz — NICHT anfassen) ───
+  // Diese Einträge existieren, damit checkSourceCompliance/checkStaticCompliance
+  // jeden Import-Versuch ablehnt UND die Begründung dokumentiert ist.
+  {
+    source_id: "law-de-literatur-beck",
+    source_name: "beck-online (C.H.Beck) — Kommentare, NJW etc.",
+    jurisdiction: "DE",
+    official_url: "https://beck-online.beck.de/",
+    license_type: "restricted",
+    terms_url: "https://beck-online.beck.de/Home/AGB",
+    scraping_allowed: false,
+    api_usage_allowed: false,
+    attribution_required: true,
+    commercial_use_allowed: false,
+    notes:
+      "VERBOTEN: urheberrechtlich geschützt + Datenbankherstellerrecht (§ 87b UrhG). " +
+      "Scraping ist keine Option. Lizenzweg: C.H.Beck arbeitet mit LDA Legal Data Analytics " +
+      "('Frag den Grüneberg'); realistisch nur über eine künftige Verlagspartnerschaft.",
+  },
+  {
+    source_id: "law-de-literatur-juris",
+    source_name: "juris Rechtsportal",
+    jurisdiction: "DE",
+    official_url: "https://www.juris.de/",
+    license_type: "restricted",
+    terms_url: "https://www.juris.de/jportal/nav/agb.jsp",
+    scraping_allowed: false,
+    api_usage_allowed: false,
+    attribution_required: true,
+    commercial_use_allowed: false,
+    notes:
+      "VERBOTEN ohne Vertrag: geschützte Datenbank. Kooperationsmodell existiert " +
+      "(Prime Legal AI wurde mit juris entwickelt) — nur über Business-Development.",
+  },
+  {
+    source_id: "law-de-literatur-ottoschmidt",
+    source_name: "Verlag Dr. Otto Schmidt — Legal Data Hub (via LDA)",
+    jurisdiction: "DE",
+    official_url: "https://www.otto-schmidt.de/",
+    license_type: "pending",
+    terms_url: "https://docs.legal-data-analytics.com",
+    scraping_allowed: false,
+    api_usage_allowed: false,
+    attribution_required: true,
+    commercial_use_allowed: false,
+    notes:
+      "Lizenz-Track: ~700 Bücher, 60 Zeitschriften, 40 Loseblattwerke über den LDA Legal " +
+      "Data Hub (gleiche API, die Libra und Legora nutzen). Status pending bis Vertrag; " +
+      "bis dahin blockiert das Compliance-Gate jeden Import.",
+  },
 ];
+
+// ── Static Compliance (kein DB-Zugriff) ───────────────────────────────
+
+/**
+ * Compliance check against the static registry only — for fetch scripts that
+ * run outside the engine (no Pool available). Fail-closed: unknown source or
+ * disallowed use throws.
+ */
+export function checkStaticCompliance(
+  sourceId: string,
+  use: "scraping" | "api" | "commercial"
+): SourceLicenseTerms {
+  const terms = KNOWN_LICENSE_TERMS.find((t) => t.source_id === sourceId);
+  if (!terms) {
+    throw new Error(
+      `License compliance: no documented terms for "${sourceId}" — import blocked (fail-closed)`
+    );
+  }
+  const allowed =
+    use === "scraping"
+      ? terms.scraping_allowed
+      : use === "api"
+        ? terms.api_usage_allowed
+        : terms.commercial_use_allowed;
+  if (!allowed || terms.license_type === "pending" || terms.license_type === "restricted") {
+    throw new Error(
+      `License compliance: ${use} not allowed for "${sourceId}" (${terms.license_type}). ${terms.notes}`
+    );
+  }
+  return terms;
+}
 
 // ── License Registry Store ────────────────────────────────────────────
 

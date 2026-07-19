@@ -1,0 +1,61 @@
+---
+title: Verfassungsblog — Worth Waiting For
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2022-11-18'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/worth-waiting-for/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Worth Waiting For
+
+Am 10. November 2022 hat der Bundestag endlich beschlossen, das Fakultativprotokoll zum Internationalen Pakt über wirtschaftliche, soziale und kulturelle Rechte (UN-Sozialpakt) zu ratifizieren, das ein Individualbeschwerdeverfahren bei Menschenrechtsverletzungen ermöglicht. Dies war lange überfällig, wurde das Fakultativprotokoll doch bereits 2008 verabschiedet. Der mit der Überwachung der Umsetzung des UN-Sozialpakts betraute Ausschuss forderte die Bundesrepublik vielfach auf, das Fakultativprotokoll zu ratifizieren, um Schutzlücken im Menschenrechtsschutz zu schließen. Inwiefern sich dieser Schritt aber auch tatsächlich auf die individuellen Rechte auswirkt, steht und fällt mit der zukünftigen Praxis der nationalen Gerichte. Nationale Gerichte lehnen eine Prüfung der Rechte aus dem UN-Sozialpakt häufig ab, da diese nicht unmittelbar anwendbar seien.
+
+Diese Haltung reflektiert (auch) eine grundsätzliche Einstellung der Rechtswissenschaft zu den wirtschaftlichen, sozialen und kulturellen Rechten (wsk-Rechte), die sich dringend ändern muss.
+
+## Der steinige Weg des UN-Sozialpakts
+
+Deutschland nimmt bei der Gewährung sozialer Rechte eine ambivalente Rolle ein. Während die Weimarer Reichsverfassung noch einen Katalog sozialer Grundrechte enthielt, wie beispielsweise das Recht auf Arbeit, fanden diese nach dem Zweiten Weltkrieg in das neu geschaffene Grundgesetz keinen Einzug. Und auch 1992 lehnte die gemeinsame Verfassungskommission es ab, soziale Grundrechte in die Verfassung einzubinden (BT-Drs. 12/6000, S. 77). Gleichzeitig ging die Bundesrepublik aber 1973 einen Schritt in Richtung Schutz sozialer Rechte, als sie den UN-Sozialpakt ratifizierte. Der UN-Sozialpakt hat seitdem in der innerstaatlichen Rechtsordnung über Art. 59 Abs. 2 GG den Rang eines einfachen Bundesgesetzes, weshalb die Verpflichtungen aus dem Pakt stets zu berücksichtigen sind.
+
+Gemeinsam mit dem UN-Zivilpakt wurde der UN-Sozialpakt 1966 verabschiedet und regelt grundlegende wsk-Rechte: etwa den Schutz des Arbeitslebens (Art. 6 bis 8), der sozialen Sicherheit (Art. 9), des angemessenen Lebensstandards (Art. 11), der Gesundheit (Art. 12), der Bildung (Art. 13 und 14) sowie der Kultur, Wissenschaft und Forschung (Art. 15). Der UN-Zivilpakt regelt hingegen bürgerliche und politische Rechte (bp-Rechte). Obwohl zunächst geplant war, wsk-Rechte und bp-Rechte in einem Pakt zu vereinen, wurden die Rechte in zwei Menschenrechtsabkommen aufgespalten. Während bp-Rechte von der Staatengemeinschaft seit jeher als „echte Rechte“ anerkannt werden und ihre Wirkung nicht bestritten wird, müssen wsk-Rechte um ihre Anerkennung kämpfen. Wsk-Rechte, so beispielsweise die Ansicht der Bundesrepublik aus dem Jahr 1973, begründeten keine subjektiven Rechte, die gerichtlich eingeklagt werden könnten. bp-Rechte werden deshalb oft als Rechte „erster Generation“, wsk-Rechte als Rechte „zweiter Generation“ bezeichnet.
+
+Dies spiegelt sich auch in den Rechtsschutzmöglichkeiten wider. So wurde für den UN-Zivilpakt bereits 1966 ein Fakultativprotokoll verabschiedet, das Individuen die Möglichkeit eines Beschwerdeverfahrens eröffnet, sofern ihre Rechte aus dem UN-Zivilpakt verletzt wurden, und auch rege genutzt wird. So wurden allein im Jahr 2021 mehr als 200 Beschwerden vor dem Ausschuss zum UN-Zivilpakt erhoben. Der UN-Sozialpakt konnte diesen Erfolg erst 2008 verzeichnen. Derzeit haben erst 26 Staaten das Fakultativprotokoll des UN-Sozialpakts ratifiziert. Das Fakultativprotokoll des UN-Zivilpaktes hingegen wurde bereits von 117 Staaten ratifiziert und das, obwohl die Anzahl der Ratifikationen der Pakte selbst annähernd gleich ist (171 Staaten beim UN-Sozialpakt, 173 Staaten beim UN-Zivilpakt).
+
+## Endlich Rechtsschutz nach einer Ratifikation
+
+Nach einer Ratifikation des Fakultativprotokolls besteht die Möglichkeit für Betroffene, Verletzungen von wsk-Rechten durch den Ausschuss („CESCR“) überprüfen zu lassen (Individualbeschwerde). Der Ausschuss ist für die Überwachung der Umsetzung des UN-Sozialpakts zuständig und überprüft unter anderem in Staatenberichtsverfahren, ob die Vertragsstaaten Maßnahmen unternehmen, um ihre Verpflichtungen zu erfüllen. Er setzt sich aus 18 unabhängigen Sachverständigen zusammen, die Expert*innen auf dem Gebiet der Menschenrechte sind und denen, so der CESCR, ein „hohes moralisches Ansehen“ zugeschrieben wird.
+
+Nach der Ratifikation ist es möglich, gemäß Art. 1 des Protokolls Beschwerden (sogenannte „communications“) abzugeben. Der Ausschuss nimmt diese Beschwerden entgegen und prüft sie. Nach Art. 2 können Beschwerden nur von Individuen, im Namen von Individuen (beispielsweise durch Nichtregierungsorganisationen) oder durch Gruppen von Individuen eingereicht werden. Zulässigkeitsvoraussetzung ist zudem, dass die Betroffenen der Hoheitsgewalt des jeweiligen Staates unterstehen und behaupten, Opfer der Verletzung von Menschenrechten aus dem UN-Sozialpakt zu sein. Schließlich muss – und das ist insbesondere für die Bundesrepublik relevant – nach Art. 3 Abs. 1 der innerstaatliche Rechtsweg erschöpft sein.
+
+Wenn die Beschwerde zulässig ist, prüft der Ausschuss, ob der UN-Sozialpakt verletzt wurde. Das Ergebnis dieser Prüfung übermittelt er als sogenannte Auffassung („view“) an den Vertragsstaat. Stellt der Ausschuss eine Verletzung fest, werden Handlungsempfehlungen („recommendations“) erteilt, die aber nicht bindend sind. Sie heben auch nicht die nationalen Rechtsakte auf, die die betroffenen Menschenrechte verletzen. Sie werden allerdings in fortwährendem Austausch zwischen Ausschuss und Vertragsstaat erarbeitet und haben so das Potential, durch einen Dialog eine bessere Verwirklichung der Rechte zu erreichen. So müssen die Vertragsstaaten beispielsweise nach Art. 9 Abs. 2 des Protokolls innerhalb von sechs Monaten auf die Ansichten des Ausschusses antworten. Ziel des Individualbeschwerdeverfahrens ist gemäß Art. 7, eine gütliche Einigung herbeizuführen.
+
+Die Äußerungen des Ausschusses zu den wsk-Rechten konkretisieren zudem den Inhalt dieser Rechte. Sowohl Vertragsstaaten als auch Nichtregierungsorganisationen und Individuen können dann den Schutzbereich der Rechte besser einschätzen. Das versetzt Vertragsstaaten in die Lage, die Menschenrechte zu achten, und befähigt Betroffene, ihre Menschenrechte durchzusetzen. Derzeit sind fast 200 Verfahren vor dem Ausschuss zum UN-Sozialpakt anhängig.
+
+Ein interessantes Verfahren fand etwa im Jahr 2018 seinen Abschluss. Der Ausschuss stellte hier eine Menschenrechtsverletzung durch Ecuador fest. Der Staat hatte Maria Cecilia Trujillo Calero ihre Rente verweigert, da sie aufgrund jahrelanger unbezahlter Hausarbeit die Voraussetzungen der Altersrente nicht erfüllte. Hierin lag eine Verletzung der Rechte auf soziale Sicherheit, Nichtdiskriminierung sowie Gleichstellung der Geschlechter aus dem UN-Sozialpakt.
+
+## Problematische Zurückhaltung der Gerichte
+
+Wesentliche Voraussetzung für ein zulässiges Individualbeschwerdeverfahren nach Art. 3 Abs. 1 des Protokolls ist, dass der innerstaatliche Rechtsweg erschöpft ist. Deutsche Gerichte sind jedoch dafür bekannt, völkerrechtliche Menschenrechtsabkommen regelmäßig nicht anzuwenden. Diese seien entweder nicht justiziabel oder nicht unmittelbar anwendbar. Unter dem Stichwort „Justiziabilität“ wird die Frage verhandelt, ob sich Rechte für eine Durchsetzung vor Gericht eignen. Die unmittelbare Anwendbarkeit wiederum dreht sich um das Problem, ob Rechte konkret genug sind, um durch ein Gericht direkt angewendet zu werden, oder ob sie noch konkretisiert werden müssen. So wird dem Recht auf soziale Sicherheit aus Art. 9 UN-Sozialpakt beispielsweise vorgeworfen, dass es nicht die Art und den Umfang der sozialen Leistungen regele und somit nicht von den Gerichten angewendet werden könnte.
+
+Die Ratifikation des Individualbeschwerdeverfahrens liefert nun Argumente sowohl für die Justiziabilität als auch die unmittelbare Anwendbarkeit von wsk-Rechten, zuvorderst systematische und teleologische Gründe: Da das Individualbeschwerdeverfahren erst dann zulässig ist, wenn der nationale Rechtsweg erschöpft ist, müssen nationale Gerichte überhaupt in der Lage sein, die Rechte in Gerichtsverfahren anzuwenden und zu prüfen. Der Zweck des Individualbeschwerdeverfahrens liefe andernfalls leer.
+
+Ob die Gerichte jedoch die unmittelbare Anwendbarkeit der wsk-Rechte bejahen werden, ist weniger klar. Ein beliebtes Argument gegen die unmittelbare Anwendbarkeit von wsk-Rechten ist, dass die Rechte aus dem UN-Sozialpakt zu unbestimmt seien und deshalb nicht direkt von Gerichten angewendet werden könnten. Rechte mit eher vagem Wortlaut, welche die Legislative erst ausgestalten muss, sind dem Grundgesetz jedoch nicht fremd. So regelt beispielsweise auch das Grundgesetz in Art. 14 nicht, was Inhalt und Schranken des Eigentums sind. Hierfür bedarf es einfachgesetzlicher Konkretisierung. Ganz ähnlich erfolgt die Rechtsausgestaltung des UN-Sozialpakts durch den Ausschuss. In allgemeinen Bemerkungen („general comments“), Richtlinien für das Staatenberichtsverfahren(„reporting guidelines“) und bei Entscheidungen über die Staatenberichtsverfahren konkretisiert der Ausschuss die Inhalte der Rechte aus dem UN-Sozialpakt. Da die Rechte jedoch unterschiedlich genau ausgearbeitet werden, muss die hinreichende Bestimmtheit für jedes Recht gesondert geprüft werden. Für die Rechte aus Art. 9 (soziale Sicherheit) oder Art. 11 (angemessener Lebensstandard) kann auf Grundlage der Äußerungen des Ausschusses bereits eine hinreichende Konkretisierung angenommen werden. Aus den Äußerungen des Ausschusses lässt sich ein Schutzbereich der Rechte zusammentragen – eine Aufgabe, die übrigens (auch) in der Verantwortung der Rechtswissenschaft liegt. Obwohl die Ausgestaltung durch den Ausschuss unverbindlich ist, konkretisiert sie doch maßgeblich die Rechte des UN-Sozialpakts.
+
+## Was wäre, wenn? Das Bürgergeld vor dem CESCR
+
+Was wäre, wenn die Bundesrepublik das Fakultativprotokoll bereits kurz nach seiner Verabschiedung 2008 ratifiziert hätte? Nehmen wir die aktuelle Debatte um das Bürgergeld: Bereits 2018 bemängelte der für den UN-Sozialpakt zuständige Ausschuss im Rahmen des letzten Staatenberichtsverfahrens zu Deutschland nicht nur die Höhe der Grundsicherung, sondern auch die Sanktionen im Rahmen der Grundsicherung. Er führte aus:
+
+„The Committee is concerned that the level of the basic social benefits is not sufficient to allow recipients and their families to enjoy an adequate standard of living. […] It is further concerned at the sanctions imposed on recipients of the basic social benefits (Grundsicherung) for jobseekers under Book II of the Social Code, which cut the benefits by 30 to 100 per cent and particularly affect young people, whose benefits are removed entirely if they are found to have breached their duties (Pflichtverletzung).”
+
+Wäre ein Individualbeschwerdeverfahren damals schon möglich gewesen, hätten Betroffene die von dem Ausschuss befürchtete Menschenrechtsverletzung öffentlichkeitswirksam feststellen lassen können. Die Debatte um das Bürgergeld verliefe nun sicherlich anders.
+
+Allerdings wäre es auch erforderlich gewesen, dass die nationalen Gerichte die Rechte aus dem UN-Sozialpakt tatsächlich prüfen, statt stur die unmittelbare Anwendbarkeit abzulehnen. Ob Individuen Menschenrechtsverletzungen erfolgreich vor dem Ausschuss zum UN-Sozialpakt geltend machen können, hängt also entscheidend davon ab, wie Gerichte die Rechte aus dem UN-Sozialpakt handhaben. Hierfür ist notwendig, dass Rechtsanwender*innen die Inhalte des UN-Sozialpakts kennen und die Rechtswissenschaft sich den transformativen Gehalt von Menschenrechtsabkommen vergegenwärtigt.
+
+Die Reaktion der nationalen Gerichte auf die Ratifikation des Fakultativprotokolls ist deshalb wohl hoffentlich: worth waiting for.

@@ -1,0 +1,45 @@
+---
+title: Verfassungsblog — Ein Reförmchen zum Geburtstag
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2026-04-17'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/agg-reform/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Ein Reförmchen zum Geburtstag
+
+Das Allgemeine Gleichbehandlungsgesetz (AGG) feiert in diesem Sommer seinen 20. Geburtstag. Es hat eine turbulente Jugend hinter sich: Zahlreiche Regelungen des AGG waren bereits früh als unionsrechtswidrig erkannt worden – zum Teil gar mit höchster Bestätigung durch den EuGH. Gleichwohl verliefen Reformvorhaben im Sande. Dies ist seit letztem Montag anders. Das Justizministerium hat zusammen mit dem Bildungs- und Familienministerium nun einen Referentenentwurf veröffentlicht. Herausgekommen ist eine Mini-Reform, die nur sehr punktuell Verbesserungen für den Diskriminierungsschutz bringen wird – und dies vor allem an Stellen, wo das Unionsrecht dem deutschen Gesetzgeber keine andere Wahl lässt.
+
+## Eine zähe Reform
+
+Seiner Verkündung im Juni 2006 ging ein zähes Ringen voraus, das der Bundesrepublik sogar ein Vertragsverletzungsverfahren vor dem Europäischen Gerichtshof bescherte, weil man mit der Umsetzung der europäischen Antidiskriminierungsrichtlinien nicht hinterherkam. Nicht minder zäh sollten sich fortan die Bemühungen um eine Weiterentwicklung des Antidiskriminierungsrechts gestalten. Nicht nur der EuGH hatte Reformbedarf angemahnt. Auch die Antidiskriminierungsstelle des Bundes hatte bereits zum 10. Geburtstag des AGG im Jahr 2016 eine umfangreiche Gesetzesevaluation in Auftrag gegeben, die dem deutschen Gesetzgeber dringenden Handlungsbedarf attestierte. Die Ampel-Koalition hatte sich in ihrem Koalitionsvertrag zwar auf eine Modernisierung des AGG verständigt. Das federführende Justizressort unter Marco Buschmann ließ das Gesetz aber schlicht liegen; bis zum (vorzeitigen) Koalitionsende kam nicht einmal ein Referentenentwurf zustande.
+
+Am 14. April hat also nun endlich das Justizministerium zusammen mit dem Bildungs- und Familienministerium einen Referentenentwurf vorgelegt. Dass es sich beim AGG auch nach zwei Jahrzehnten noch um eine hochpolitisierte Materie handelt, wird allerdings auch in dieser Woche wieder deutlich. Das Thema der AGG-Reform brannte nicht zuletzt zahlreichen zivilgesellschaftlichen Organisationen auf den Nägeln. Gleichwohl ist für die Verbändeanhörung zu dem neuen Referentenentwurf eine Frist von lediglich vier Tagen vorgesehen worden. Das kann man nicht anders deuten, als dass man in den Ministerien lieber nichts hören möchte. In einem Begleitpapier auf der Website des Justizministeriumswird sodann auch offen zugegeben, dass sich die beteiligten Ressorts – hier wird man neben dem BMJV und dem BMBFSFJ insbesondere auf das BMI und das BMWE blicken müssen – in zahlreichen Punkten nicht einig geworden sind.
+
+## Eine zögerliche Reform
+
+Das Resultat sind minimalinvasive Änderungen an dem Gesetz, die sich vor allem auf das unionsrechtlich Nötigste beschränken. Angesprochen ist damit etwa die Reform der „Kirchenklausel“ des § 9 Abs. 1 AGG, die nach dem Urteil des EuGH in der Rechtssache Egenberger überhaupt nicht mehr angewendet werden darf. Ein laufendes Vertragsverletzungsverfahren betrifft zudem die Beschränkung des Verbots sexistischer Diskriminierungen auf „Massengeschäfte des täglichen Lebens“ in § 19 Abs. 1 Nr. 1 AGG; auch dieser Umsetzungsfehler wird streng entlang der Richtlinienvorgaben korrigiert (ohne über das geforderte Schutzniveau hinauszureichen).
+
+Entsprechend (un)motiviert ist auch die Ausweitung der Befugnisse der Antidiskriminierungsstelle des Bundes. Sie soll unter bestimmten Voraussetzungen an antidiskriminierungsrechtlichen Gerichtsverfahren teilnehmen dürfen und um eine Schlichtungsstelle erweitert werden. Auch diese Änderungen gehen auf zwingende europäische Vorgaben – nämlich die neuen Equality Bodies-Richtlinien (siehe hier und hier) – zurück. Und auch hier ist die Bundesrepublik eher spät dran. Denn die Umsetzungsfrist läuft bereits im Juni ab. Die Vorgaben dieser neuen Richtlinien dürfte allerdings auch der jetzige Referentenentwurf nicht vollständig abbilden. Denn nicht zuletzt fordern die Equality Bodies-Richtlinien in ihren Art. 8 und 9 robuste Untersuchungs- sowie Stellungnahme- oder Entscheidungsbefugnisse der nationalen Antidiskriminierungsstellen. Dies muss auch die Kompetenz zur Anordnung von Folgemaßnahmen umfassen. Hierzu findet sich im Referentenentwurf indessen nicht viel, wenn es dort lediglich heißt, die Stelle dürfe „Vorschläge zur Abhilfe“ unterbreiten.
+
+## Eine zurückhaltende Reform
+
+Nur an wenigen Stellen sucht der Entwurf eine Konsolidierung des deutschen Antidiskriminierungsrechts, die über zwingende europäische Umsetzungsbefehle hinausreicht. Darunter fällt vor allem die Verlängerung der Fristen der §§ 15 Abs. 4 und 21 Abs. 5 AGG. Derzeit muss eine Diskriminierung innerhalb von zwei Monaten förmlich geltend gemacht werden, andernfalls sind die Ansprüche nach dem AGG gesperrt. Diese Fristen sind extrem kurz im Vergleich zu den übrigen Fristen etwa des BGB, wo Ansprüche aufgrund (anderer) Persönlichkeitsrechtsverletzungen regelmäßig erst nach drei Jahren gehemmt sind (vgl. § 195 BGB). Sie hindern effektiven gerichtlichen Rechtsschutz, wo sich die (oftmals rechtsunkundigen) betroffenen Personen erst einmal sortieren und zu einer Geltendmachung von Rechtsansprüchen (immerhin etwa gegen die eigene Arbeitgeberin im laufenden Arbeitsverhältnis) durchringen müssen. Sie versperren aber oftmals auch den Weg zu einer produktiven außergerichtlichen Problembewältigung, weil sie die Betroffenen zu einem rechtlich-konfrontativen Vorgehen drängen. Hier sieht der Entwurf nun eine Verlängerung auf vier Monate vor. Dies ist ein Schritt in die richtige Richtung; der Vergleich mit der Regelverjährungsfrist des BGB, aber auch mit den entsprechenden Fristen im (spärlichen) Landesantidiskriminierungsrecht – etwa ein volles Jahr nach § 8 Abs. 4 LADG Berlin – zeigt indessen, dass auch das reformierte AGG hier restriktiv bliebe.
+
+## Eine zahnlose Reform
+
+Der größte Kritikpunkt – gerade aus der Perspektive der Zivilgesellschaft: Der Entwurf verbessert die Mitwirkungsmöglichkeiten der Betroffenenverbände nicht. Gefordert wird hier seit langem eine Prozessstandschaft – also die Möglichkeit, individuelle Ansprüche Betroffener als Verband einklagen zu können – und/oder eine Verbandsklage – mithin die rechtliche Befähigung, bestimmte Diskriminierungslagen auch ohne konkrete Klägerin gerichtlich feststellen zu lassen. Diese Instrumente nehmen Betroffenen ein Stück weit die Last teurer, zeitaufwendiger und oftmals auch psychisch belastender Gerichtsverfahren. Sie können somit den Abstand verringern helfen zwischen dem Recht „in the books“ und dem gelebten, effektiv durchgesetzten Recht „in action“. Beides – Prozessstandschaft und Verbandsklage – bleibt der Referentenentwurf schuldig. Der Entwurf bleibt damit empfindlich hinter anderen Antidiskriminierungsgesetzen zurück. Denn neben dem LADG Berlin kennen insbesondere zahlreiche Gleichstellungsgesetze zugunsten von Menschen mit Behinderung bereits seit längerem Verbandsklagen.
+
+## Bilanz
+
+Dabei sollten sowohl die gesammelten Erfahrungen mit diesen Gesetzen, als auch der Rückblick auf 20 Jahre AGG die Debatte versachlichen helfen. Angst vor einer „Klagewelle“ muss man auch unter den Bedingungen einer Verbandsklage nicht haben. Eine Juris-Recherche unter den Stichworten „LADG Berlin“ ergibt eine einstellige Verfahrenszahl unter den relevanten Treffern – und dies vor dem Hintergrund sowohl einer Verbandsklage (§ 9 LADG Berlin) als auch der erheblich längeren Geltendmachungsfrist. Die Gesamtzahl der AGG-Fälle bleibt ebenfalls übersichtlich, wie es auch hier eine Juris-Abfrage nahelegt. Eine einfache Stichwortsuche ergibt hier knapp 2.400 Treffer, also durchschnittlich etwa 120 im Jahr. Darunter sind wohlgemerkt auch Entscheidungen, die lediglich einen einzigen (für die konkrete Entscheidung nicht weiter relevanten) Verweis auf das AGG enthalten; die Zahl der „echten“ AGG-Fälle ist also weitaus geringer. Vollautomatisierte Abschaltvorrichtungen deutscher Dieselfahrzeuge haben somit unsere Justiz in den letzten Jahren um ein Vielfaches mehr „belastet“ als 20 Jahre Antidiskriminierungsrecht.
+
+Ein weiteres unbeantwortetes Problem betrifft das öffentlich-rechtliche Behördenhandeln des Bundes. Hier ist das AGG grundsätzlich nicht anwendbar. Studien zeigen indessen, dass es auch hier immer wieder zu Diskriminierungen kommt. Ein echtes „Allgemeines“ Gleichbehandlungsgesetz müsste zwingend auch auf diesen Bereich erstreckt werden. Das erforderte allerdings einen größeren Wurf als es die Papiere dieser Woche hergeben. Man hätte dem AGG zu seinem runden Geburtstag schon eine etwas größere Torte backen können.

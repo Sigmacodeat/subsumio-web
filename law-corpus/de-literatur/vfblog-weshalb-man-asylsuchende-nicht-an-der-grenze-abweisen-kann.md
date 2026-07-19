@@ -1,0 +1,46 @@
+---
+title: Verfassungsblog — Weshalb man Asylsuchende nicht an der Grenze abweisen kann
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2018-06-13'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/weshalb-man-asylsuchende-nicht-an-der-grenze-abweisen-kann/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Weshalb man Asylsuchende nicht an der Grenze abweisen kann
+
+Der Vorschlag, Asylsuchende doch einfach direkt an der Grenze abzuweisen, ist als politisches Material erstaunlich langlebig. Erstaunlich, weil das Recht dem Vorschlag so eindeutig entgegensteht. Das Europarecht steht ihm entgegen, in Form der Regelungen der Dublin-Verordnung. Wenn man die ändern oder missachten möchte, steht dem Vorschlag immer noch die Europäische Menschenrechtskonvention (EMRK) entgegen, mit dem Verbot der Kollektivausweisung nach Art. 4 Zusatzprotokoll IV. Und falls die entsprechenden Fraktionen überlegen, aus der EMRK auszutreten, steht der Zurückweisung von Flüchtlingen an der Grenze auch noch die Genfer Flüchtlingskonvention und das Völkergewohnheitsrecht entgegen, mit dem Refoulement-Verbot und der deklaratorischen Natur der Flüchtlingsanerkennung. Insofern wäre politische Energie besser investiert, indem über rechtskonforme Vorschläge der Gestaltung von Flüchtlingsschutz diskutiert wird.
+
+## Die Regeln der Dublin-Verordnung
+
+Die Staaten der Europäischen Union haben sich entschieden, Asylverfahren und Flüchtlingsschutz gemeinsam zu regeln. Das ist kaum anders denkbar angesichts des Schengenraums, in dem es keine Kontrollen an den Binnengrenzen mehr stattfinden. So finden sich die Vorvorgängerregeln der Dublin-Verordnung bereits im Schengener Durchführungsübereinkommen von 1990. Dass Asyl auf Ebene der EU geregelt wird, ist in anderen Worten eng verbunden mit dem Kern dessen, was für viele Bürgerinnen und Bürger Europa ausmacht – das Unsichtbarwerden von Grenzen.
+
+Art. 78 AEUV führt die Regelungskompetenz der EU bezüglich Flüchtlingsschutz aus, dort findet sich unter Absatz 2, Buchstabe e die Vorgabe, Zuständigkeitsregeln zu erlassen. Das ist passiert in Form der Dublin-Verordnung. Die Dublin-Verordnung wiederum hat zwei Kernanliegen. Einerseits soll „forum-shopping“ vermieden werden, Schutzsuchende können sich nicht aussuchen, wo sie ihren Asylantrag stellen. Andererseits soll sichergestellt werden, dass Schutzsuchende einen Ort haben, wo sie vorläufig aufgenommen werden und wo ihr Asylantrag bearbeitet wird. „Refugees in orbit“ sollen vermieden werden, bzw. dass Asylsuchende zwischen den Interessen von Staaten zerrieben werden. Nun kann man streiten, wie gut die Dublin-Verordnung diese Ziele erreicht. Es mangelt nicht an Kritik. Aber die Dublin-Regeln gelten und sie sollten gelesen werden vor dem Hintergrund dieser Ziele.
+
+Weshalb also stehen die Dublin-Verordnung und allgemeiner ein gemeinsames Zuständigkeitssystem der Idee entgegen, Personen an der Grenze abzuweisen? Weil es ein Verfahren gibt, in denen diese Zuständigkeitsverteilung geprüft wird.
+
+Art. 3 Dublin-Verordnung spricht von der Prüfung eines Antrags auf internationalen Schutz – diese Prüfung ist die inhaltliche Prüfung, ob die Personen als schutzberechtigt anerkannt ist. Diese Prüfung ist die chronologisch zweite: zunächst muss geprüft werden, welcher Mitgliedstaat für die inhaltliche Prüfung zuständig ist. Daher spricht Art. 3 Abs. 2 Dublin-Verordnung vom „die Zuständigkeit prüfende[n]“ Mitgliedstaat. Diese chronologisch erste Prüfung der Zuständigkeit möchten die „Flüchtlinge an der Grenze abweisen“-Vorschlager vermeiden. Sie ist aber Grundlage der Dublin-Verordnung: eine Zuständigkeitsregelung, bei der die Zuständigkeit nicht geprüft sondern an der Grenze vermutet wird, wäre eine Farce. Die Prüfung der Zuständigkeit ist in der Dublin-Verordnung selbstverständlich verankert, so auch explizit in den Verfahrensgarantien der Art. 4 bis 6. Und die Prüfung der Zuständigkeit ist eben unverzichtbar, um zu vermeiden, dass Flüchtlinge hin- und herverwiesen werden und kein Staat die Zuständigkeit akzeptiert.
+
+Nun mögen die Vorschlagenden einwenden, dass regelmäßig Deutschland nicht der nach Kapitel III Dublin-Verordnung zuständige Staat ist. Und dass es gleichzeitig so schwierig ist, Personen an andere Mitgliedstaaten zu überstellen – insbesondere seitdem der EuGH die Fristen dafür im Urteil Mengesteab eng ausgelegt hat. Was ist also mit dem Ziel, „forum shopping“ zu vermeiden? Erstens ist nicht auf Grund der geographischen Lage klar, dass Deutschland nicht zuständig wäre. Es gibt neben dem Kriterium des ersten Eintritts in die EU zahlreiche weitere, vorrangige Zuständigkeitsregeln in den Artikeln 8 bis 12 Dublin-Verordnung. Zweitens enthält die Verordnung die Pflicht, das Asylverfahren zu übernehmen, wenn in dem eigentlich zuständigen Mitgliedstaat systemische Mängel im Asylverfahren und den Aufnahmebedingungen bestehen (Art. 3 Abs. 2). Das reagierte auf die Rechtsprechung seit M.S.S. gg. Belgien und Griechenland (EGMR) und N.S. (EuGH).
+
+Es ist also nicht klar, wenn eine Person an der Grenze steht, ob Deutschland für die inhaltliche Prüfung des Asylantrags zuständig ist. Daher muss erst die Zuständigkeit geprüft werden. Herr Dobrindt liegt falsch, wenn er meint, dass ein Blick in die Fingerabdruckdatei Eurodac diese Prüfung ersetzen könnte. Eurodac erkennt Personen. Die Rechtslage erkennen Richter. Zum Glück. Bei allen Problemen, die man ihr vorhalten kann, transportiert die Dublin-Verordnung diese wichtige Entscheidung: Dass es letztlich um den Schutz von Personen geht. Deren Wohl ist gegen die Interessenskonflikte der Mitgliedstaaten abzusichern und so sehen die Regeln vor, dass in jedem Fall ein Staat zuständig bleibt. Deshalb ist ein Abweisen von Personen an der Grenze unter EU-Recht schlicht unzulässig.
+
+## Verbot der Kollektivausweisung
+
+Auch in einer Welt ohne EU-Recht wäre der Vorschlag, Personen an der Grenze ohne Verfahren abzuweisen, nicht mit dem Recht vereinbar. Im Art. 4 des von Deutschland ratifizierten IV. Zusatzprotokoll der Europäischen Menschenrechtskonvention (EMRK) findet sich das Verbot der Kollektivausweisung. Diese gilt auch für Zurückweisungen an der Grenze (so der EGMR in Fall N.D. und N.T., para. 104). Das heißt, Personen dürfen nicht pauschal abgewiesen werden, ihre individuellen Umstände müssen zur Kenntnis genommen und berücksichtigt werden. Das ist weniger als die Vorgaben der Dublin-Verordnung, welche ein spezifisches Verfahren der Zuständigkeitsprüfung verlangen. Aber bereits durch das Verbot der Kollektivausweisung wären Zurückweisungen mit vorgefertigten Begründungen, die sich nur nach der Nationalität des Asylsuchenden oder nach einem Eurodac-Treffer richten, unzulässig.
+
+## Das Refoulement-Verbot und die deklaratorische Natur der Anerkennung als Flüchtling
+
+Schließlich trifft der Vorschlag von Alexander Dobrindt auch im allgemeinen Völkerrecht auf Hindernisse. Das Verbot, Flüchtlinge zurückzuweisen, das Refoulement-Verbot, gilt nach Art. 33 Abs. 1 Genfer Flüchtlingskonvention sowie völkergewohnheitsrechtlich und ebenfalls bereits an der Grenze. Nun geht es um eine Zurückweisung in Nachbarländer Deutschlands, nicht in die Staaten, aus denen Personen geflohen sind. Aber das Refoulement-Verbot erfordert auch, sicherzustellen, dass eine Person nicht Opfer einer Kettenrückschiebung wird. Abgewiesen werden darf also nur, wenn sicher ist, dass die Person nicht in dem anderen Staat ebenso zurückgewiesen wird. Insofern verbleibt von dem Prinzip auch mitten in Europa ein wesentlicher Gehalt: der Staat muss genau hinschauen. Das geht gerade nicht mit pauschaler Abweisung an der Grenze.
+
+Gilt das Refoulement-Verbot nur für Flüchtlinge im Sinne der Genfer Flüchtlingskonvention (GFK)? Im Ausgangspunkt gilt es für sie – aber vor einem Verfahren kann niemand wissen, ob es sich bei Personen um Flüchtlinge im Sinne der GFK handelt. Insofern entfaltet das Prinzips seine Schutzwirkung unabhängig von einer später erst festzustellenden Flüchtlingseigenschaft. Dies bildet die Kehrseite der deklaratorischen Natur der Anerkennung als Flüchtling (siehe UNHCR Handbook, para 28): Als Flüchtling zu schützen ist eine Person schon bevor der Staat über ihren Schutzstatus befinden konnte. Ja, das bedeutet, dass auch Personen zu schützen sind, die später nicht in die Kategorie des Flüchtlings oder der subsidiär Schutzberechtigten fallen. Ja, das bedeutet, das Personen vorläufig aufgenommen werden müssen, bei denen sich später herausstellt, dass sie keinen Schutzanspruch haben. Die Unsicherheit, welche an der Grenze besteht, soll dem Recht nach vom Staat getragen werden, der ein Verfahren betreiben kann. Sie soll nicht von den Asylsuchenden getragen werden, die allenfalls zu Unrecht und ohne anderen Ausweg abgewiesen werden. Diese Verteilung, die das Recht vornimmt, verlangt dem Staat etwas ab. Aber sie ist richtig, denn das Flüchtlingsrecht hat zum Ziel, Menschen vor Verfolgung zu schützen – nicht Staaten vor Menschen.
+
+Diese Version des Artikels enthält im Vergleich zur Ursprungsversion zur Klarstellung an zwei Stellen Verweise auf die Genfer Flüchtlingskonvention.

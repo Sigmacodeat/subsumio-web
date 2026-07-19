@@ -1,0 +1,44 @@
+---
+title: >-
+  Verfassungsblog — How to Defend the Integrity of the EP Elections against
+  Authoritarian Member States
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2019-03-31'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/how-to-defend-the-integrity-of-the-ep-elections-against-authoritarian-member-states/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# How to Defend the Integrity of the EP Elections against Authoritarian Member States
+
+The elections to the European Parliament will take place in a few weeks’ time. There is a clear danger that some of the new MEPs will gain their mandates in elections organised by Member States that are not up to democratic standards. Therefore, the European Parliament should try to defend itself from being infiltrated by MEPs with questionable democratic mandates. It already possesses the competence which is necessary for it, in the form of mandate validation.
+
+## The European Parliament and the Concept of Democracy
+
+According to Article 2 TEU, the EU is founded, inter alia, on the principle of democracy. One consequence of this principle is Article 14 TEU, which foresees the direct election of MEPs. Additional details are regulated in the Act of 20 September 1976 concerning the election of the Members of the European Parliament by direct universal suffrage. Its Art 1(3) is especially relevant for us: “Elections shall be by direct universal suffrage and shall be free and secret.” 
+
+Let’s suppose that a government in one of the EU Member States is, according to EU organs and international organisations, clearly demonstrating authoritarian symptoms. Let’s suppose, furthermore, that the legal and factual environment of the EP elections is the following: (a) the vast majority of media, both private and public, echoes the fake news propaganda of the government, (b) the government regularly finances big campaigns supporting the government parties before elections (see the OSCE report on the 8 April 2018 parliamentary elections) and this is also taking place before the EP elections (whereas opposition parties have neither the finances, nor the legal possibility to launch campaigns except for a short period before the EP elections), (c) most opposition parties are regularly being fined by a politically biased Court of Auditors, crippling them financially, whereas government parties (despite well-known irregularities which are also reported in the media) are always found to be in compliance with the law, (d) the last remaining bastion of the separation of powers, the ordinary court system (which is supposed to check upon the domestic legality of EP elections), is under pressure and its independence is currently being dismantled (see the recent opinion of the Venice Commission on this matter). 
+
+The question is whether we can qualify such elections as “free” in the sense of Art 1(3) of the Act of 20 September 1976, as interpreted in light of Art 2 TEU. The answer is clearly no. The mere fact that more votes are being correctly counted, in lack of some other basic requirements, does not confer a democratic mandate on its own. In a number of dictatorships, the government actually wins elections according to the votes counted, but we still do not recognise these elections as free or democratic. And because the European Parliament itself is bound by Art 2 TEU, it is also under an active duty to take measures against such tendencies. The question does not concern the actual number of such MEPs, and it is definitely not about their substantive political opinions: it is only about whether we should allow MEPs with questionable democratic mandates to infiltrate the EP, therefore questioning the legitimacy of its every single future decision.
+
+Art 7 TEU allows only for the suspension of Member State rights (such as voting rights in the Council), thus it does not affect the rights or the status of MEPs (see e.g., Ruffert, Art 7, in: Callies/Ruffert (eds), EUV/AEUV Kommentar, 5th ed. 2016, 173). Therefore, even in the event of a fully completed Art 7 procedure, including sanctions according to Art 7(3) TEU, the problem of MEPs with questionable democratic mandates would not be resolved.
+
+## Validating Mandates in the European Parliament
+
+Following general elections to the EP, national electoral authorities notify the EP of the names of the elected MEPs. Parliament then verifies their credentials and “rule on the validity of the mandate of each of its newly elected Members and also on any disputes referred to it pursuant to the provisions of the Act of 20 September 1976, other than those which, under that Act, fall exclusively under the national provisions to which that Act refers.” (Rule 3(3) of the Rules of Procedure of the European Parliament)
+
+Despite the title of Rule 3 (“Verification of credentials”) and the restrictive wording of Rule 3(3) (according to which the notification by each Member State serves as the basis of a committee report on the credentials, which report then serves as the basis of the decision on the validity of the mandate), the decision has to go beyond the mere formal examination, as Rule 3 should be interpreted in light of Art 2 TEU and in connection with Art 1(3) of the Act of 20 September 1976. Mandate validation is supposed to guarantee the legitimacy of the composition of the newly elected parliament, therefore it also has to contain a substantive element (cf. Schröder, Grundlagen und Anwendungsbereich des Parlamentsrechts, 1979, 190). A substantive review cannot evaluate whether Member States’ legal rules were breached as it is explicitly excluded by Rule 3(3), but it can review to what extent the elections were “free” in the sense of Art 1(3) of the Act. The latter includes questions both about whether Member States’ legal rules themselves were in breach of the principles of EU elections, and whether the manner in which these rules were applied was contrary to the principles of EP elections (On the difference between formal and substantive review in their historical contexts see e.g. Ruszoly, Zur Institutionengeschichte der parlamentarischen Wahlprüfung in Europa, Der Staat 1982, 203ff.).
+
+The parliamentary decision determines both about whether there was a breach of the election principles and, if so, what the legal consequences of this breach are. As to the latter, the decision needs to be proportionate and mandates can only be invalidated if the breach was likely to have had an effect on the number of mandates. The primary function of the parliamentary validation of mandates is not the protection of subjective rights (i.e., the active suffrage of EU citizens), but the objective protection of electoral rules and principles (on the debate about how far the purpose of the review can (also) be the protection of fundamental rights, see Lang, Subjektiver Rechtsschutz im Wahlprüfungsverfahren, 1997). The protection of fundamental rights, however, according to Art 39 CFR and Art 3 Protocol 1 ECHR can be used as supportive arguments in the form of systematic interpretation when establishing whether elections are “free” in the sense of Art 1(3) of the Act.
+
+In order to strengthen the legitimacy of such decisions in the future, the Rules of Procedure should be amended as soon as possible to regulate the principles governing the exercise of this competence (scope of relevant breaches, standards, relevance of proportionality, burden of proof, etc.).
+
+Without judicial review, however, substantive mandate validation runs the danger of being politicised (i.e., being biased and concentrating on the political affiliation and/or substantive political opinion of MEPs, instead of the democratic way in which and the democratic circumstances under which they are elected as prescribed by EU law) – this should definitely be avoided. Consequently, parliamentary decisions should ideally be subject to judicial review (nemo iudex in sua causa, see Isensee, Nemo iudex in sua causa – auch nicht das Parlament, in: FS Schiedermair, 2001, 181ff). For this purpose, a procedure similar to Art 41(2) of the German Grundgesetz should be introduced for the EP by an amendment to the TFEU, i.e. the possibility of an appeal to the ECJ against EP decisions on mandate validation also seems necessary. However, the current lack of such a court procedure does not mean that the EP does not possess the competence of substantive mandate validation, or that it should refrain from applying it to the results of the May 2019 EP elections. The establishment of the new EP after May 2019 therefore should not comprise MEPs with questionable democratic mandates.

@@ -1,0 +1,34 @@
+---
+title: >-
+  Verfassungsblog — The TTIP Negotiations Innovations: On Legal Reasons for
+  Cheer
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2016-08-24'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/the-ttip-negotiations-innovations-on-legal-reasons-for-cheer/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# The TTIP Negotiations Innovations: On Legal Reasons for Cheer
+
+By now, the Transatlantic Trade and Investment (TTIP) negotiations have undergone a marathon 14 rounds of negotiations after 36 months of talks, despite Brexit and the tumultuous US presidential elections standing in the back drop. The political mood on either side of the Atlantic is still challenging to say the least. And after EU-Canada Comprehensive Economic Trade Agreement (CETA) being proposed for recently as a mixed agreement meaning that many national parliaments will vote on it (not being an exclusive EU only agreement as anticipated), the legal context of free trade with Europe just got trickier.
+
+The TTIP negotiations have generated fears about the transfer of authority to a new living entity as a form of global governance. Yet by opting for public institutions and institutionalisation within TTIP, there is a shift towards transparency and the ‘governability’ of global governance. Even if it fails – and there is a reasonable chance that it may not survive the US elections – there are a whole host of positives to be found within the TTIP negotiations. They can be viewed as innovative attempts to right the wrongs of global governance. They may well inspire future developments and are worthy of a brief analysis.
+
+This post focusses upon the latest developments as to TTIP’s institutions in the latest texts released in mid-July.
+
+On the institutional side of things, the EU’s most recent proposal of 14 July 2016 has undergone some considerable changes to appease European critics. The latest TTIP EU-proposed text still features a Joint Committee, comprised of the US Trade Representative and an EU Commission at the apex of TTIPS’s Regulatory Cooperation. The Committee would possess considerable supervisory and legally salient interpretive powers about TTIP’s proposed 30 chapters. But is more executive than supranational in nature and this matters to the US. The executive dominance of the EU’s proposed Institutional chapter as of July 2016  is apparent (Article X. 2) – because it would provide for powers to supervise and guide activities, adopt rules, adopt interpretations about the agreement and act subject to transparency and openness principles- between levels of Government essentially. The Joint Committee would principally work with Specialised Committees (e.g. market access, services …) and Working Groups but can be perceived as a great empowerment of the European Commission, arguably moving far beyond its institutional and constitutional functions.
+
+However, it is importantly now heavily ‘tempered’ by a number of other bodies, actors and entities that align with more European than American ideals.  Above all, binding duties of cooperation and participation along wide transparency and equal access are ‘latecomers’ to the negotiations – and heavily Americanised ideas of Administrative law (e.g. ‘notice and comment’). They are important in so far as they mitigate critique of earlier drafts as to closed-decision-making practices. Thus firstly, the Joint Committee is ‘tempered’ by a Regulators Forum which would discuss regulatory cooperation between regulators, holding public sessions. The Transatlantic Legislators Dialogue (TLD) next envisaged within the new text would be comprised of EU and US parliamentarians and has already been part of several decades of EU-US relations. Nonetheless, although lacking any significant powers, as has always been the case with the TLD, it could further foster the parliamentary dimension of cooperation. In the text, the Civil Society forum would also be provided for to ensure a balance number of interests is displayed, along with a Domestic Advisory Body independent representatives of civil society, whose participation is to be facilitated. Although a lot of functional overlap is apparent from this version of the text, it is an important state of affairs. For example, ironically, the harshest criticism of the latest draft of institutional set up is that it contains too much participation or too many bodies and actors – and this criticism comes directly from the TTIP’s institutionalised Advisory Body, itself supposed to represent civil society. Previous version of the text failed to provide adequate assurances concerning the place of parliamentary sovereignty and civil society. And so on balance, on can see its virtues emerging as a broadly open and truly participatory idea of transnational cooperation with considerable control and input given to elected representatives.
+
+From an institutional point of view, what is more tricky and uncertain after the 14 Rounds of Negotiation is the disputed Investment Court proposed by the EU in the Investment Chapter. It is the centrepiece of the EU’s proposals of late 2015 and a dramatic effort to add transparency and legitimacy to international investment law. Notably, it envisages a permanent World Court, professional judges, transparency, ethical standards and a wholesale reform of ISDS. It is so far accepted by the EU’s other partners e.g. Vietnam and Canada in recent Free Trade Agreements (FTA). The big question is whether the US will accept it, containing home of the most well paid private arbitrators on earth, deciding many extraordinarily important cases secretly without any accountability and yet comprising still a hugely important Washington lobby or whether the CJEU will accept such a Court system post Opinion 2/13.   The recent embarrassment of Philip Morris Tobacco against Uruguay has generated even further public opposition of the ISDS system and need for its reform. Many countries are now actively excluding ISDS from Bilateral Investment Treaties.  The EU Proposal on a permanent investment court may well offer a nice ‘third way’ for the US out of such a state of affairs. Whether its next President agrees is another matter and the issue was not central to the 14th round amidst the gloom of the global status quo.
+
+The institutionalised developments in the EU’s proposals for TTIP are far from perfect or complete. However, they demonstrate a huge faith in the EU’s power to institutionally nudge global trade – and render it more legitimate and accountable, as a good global governance actor should. They arguably do provide important reasons for cheer about the evolution of global trade through law.

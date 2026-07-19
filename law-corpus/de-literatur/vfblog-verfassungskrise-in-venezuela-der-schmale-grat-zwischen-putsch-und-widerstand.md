@@ -1,0 +1,62 @@
+---
+title: >-
+  Verfassungsblog — Verfassungskrise in Venezuela – Der schmale Grat zwischen
+  Putsch und Widerstand
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2017-07-01'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/verfassungskrise-in-venezuela-der-schmale-grat-zwischen-putsch-und-widerstand/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Verfassungskrise in Venezuela – Der schmale Grat zwischen Putsch und Widerstand
+
+In einem Manifest vom 20. Juni ruft die venezolanische Opposition die Bürger*innen des Landes dazu auf, drei der höchsten Staatsorgane nicht mehr anzuerkennen: Den Präsidenten, das Verfassungsgericht und den Nationalen Wahlrat. Besonders heikel: Auch das Militär wird aufgefordert, sich gegen diese Institutionen zu stellen. Ist das der Aufruf zu einem Putsch oder der von der Verfassung geforderte Widerstand gegen Feinde der demokratischen Verfassungsordnung? Man könnte auch fragen: Ist es okay aus einem entführten Polizeihubschrauber Granaten aufs Verfassungsgerichtsgebäude zu schmeißen?
+
+Seit dem Tod von Hugo Chávez 2013 wankt die Macht der PSUV (Vereinigte Sozialistische Partei Venezuelas). Einerseits ist Nicolás Maduro bei weitem nicht so beliebt wie sein Vorgänger. Andererseits hat der niedrige Ölpreis das Land in eine schwere Wirtschaftskrise gestützt. Nachdem Maduro die Präsidentschaftswahlen unmittelbar nach Chávez Tod noch knapp gewann, konnte das Oppositionsbündnis MUD, in dem sich Parteien unterschiedlichster Ausrichtungen zusammengefunden haben, bei den Wahlen 2015 eine überwältigende parlamentarische Mehrheit erringen. Seitdem tobt ein Machtkampf.
+
+Dass sich Verfassungsgericht und Parlament gegenseitig die Legitimität absprechen, ist in Venezuela zum Dauerzustand geworden. Jetzt ist das Oppositionsbündnis aber noch einen Schritt weiter gegangen. In dem Manifest vom 20. Juni konstatiert es, der Präsident stehe, gedeckt durch den Nationalen Wahlrat und das Verfassungsgericht, kurz davor, die verfassungsgemäße Ordnung Venezuelas abzuschaffen. Das Bündnis ruft deswegen zum friedlichen aber gesamtgesellschaftlichen Widerstand auf. Es stützt sich hierfür auf zwei Verfassungsartikel, die man im weitesten Sinne mit Art. 20 IV GG vergleichen könnte, der ebenfalls ein Widerstandsrecht gewährt.
+
+Art. 333 der venezolanischen Verfassung bestimmt, dass die Verfassung ihre Gültigkeit auch dann nicht verliert, wenn sie auf verfassungswidrige Art und Weise außer Kraft gesetzt wird. In diesem Fall haben alle Staatsbürger*innen die Pflicht, die verfassungsgemäße Ordnung wiederherzustellen. In Art. 350 heißt es außerdem, dass das venezolanische Volk kein Regime anerkennen werde, das sich gegen die demokratischen Grundwerte und die Menschenrechte stellt. Die beiden Artikel zeigen: Der Aufruf der Opposition, das Dreier-Regime zu stürzen, bewegt sich im Rahmen der Verfassung, wenn die adressierten Institutionen tatsächlich gerade einen verfassungswidrigen Staatsstreich vollziehen. Was ist also dran an diesem Vorwurf?
+
+## Maduros Verfassungsgebende Versammlung
+
+Die Opposition reagiert mit ihrem Aufruf darauf, dass Maduro am 1. Mai eine Verfassungsgebende Versammlung einberufen hat. Diese soll die Verfassung von 1999 abschaffen und durch eine neue ersetzen. Die Wahlen sind für den 30. Juli angesetzt. Maduro sagt entweder, er wolle damit einen nationalen Dialog ermöglichen oder aber, so die Botschaft an seine Parteigenossen, die Versammlung werde sich aus Arbeitern und Bauern zusammensetzen und die „bolivarische Revolution“ mithilfe einer besseren Verfassung vorantreiben. Letzteres erscheint trotz der Schwäche der PSUV gar nicht so unwahrscheinlich. Denn Maduro hat die Wahlmodalitäten per Dekret festgelegt und diese gewähren eindeutig seiner Partei einen Vorteil.
+
+Die venezolanische Verfassung kennt die Rechtsfigur einer Verfassungsgebenden Versammlung. Grundsätzlich ist es also möglich, die Verfassung abzuschaffen, ohne gegen dieselbe zu verstoßen. Die Opposition sieht allerdings die Regeln verletzt, nach denen die Verfassungsgebende Versammlung einberufen wird. Deswegen ziele Maduros Vorhaben darauf ab, die Verfassung auf verfassungswidrige Weise abzuschaffen. Konkret geht es darum, ob Maduro selbstständig die Verfassungsgebende Versammlung einberufen durfte oder ob er vorher das Volk in einem Referendum hätte konsultieren müssen.
+
+Eine ganz eindeutige Antwort auf diese Frage hält die Verfassung nicht bereit. Art. 347 bestimmt, dass die Verfassungsgebende Versammlung durch das Volk einberufen wird. In Art. 348 heißt es aber, dass die Initiative unter anderem vom Präsidenten ausgehen kann. Der Präsident schlussfolgert hieraus, das Initiativrecht gebe ihm die Möglichkeit, die Verfassungsgebende Versammlung einzuberufen. Das Volk könne dann in Wahlen über die konkrete Zusammensetzung entscheiden. Die Opposition sieht das aus guten Gründen anders:
+
+Gegen die Ansicht des Präsidenten spricht, dass der Text zwischen der Einberufung und dem Initiativrecht unterscheidet. Regelmäßig wird in juristischen Zusammenhängen unter einer Initiative einen Vorschlag verstanden, den eine Stelle vorbringt und den daraufhin eine andere Stelle entscheidet. Das Initiativrecht ist nach diesem Verständnis gerade nicht das Recht in der Sache zu entscheiden. Der Präsident vermengt also Initiativrecht und Sachentscheidung.
+
+Weiter gilt es zu bedenken, dass bereits die Einberufung der Verfassungsgebenden Versammlung, unabhängig davon wie sie sich zusammengesetzt, das Verhältnis zwischen den Staatsgewalten verändert. Die Verfassungsgebende Versammlung tritt als eigenständige Institution auf und macht möglicherweise eigene Rechte geltend. Eine weite Auslegung des Initiativrechts hätte vor diesem Hintergrund absurde Folgen. Denn nicht nur dem Präsidenten steht dieses Recht zu. Laut Art. 348 kann die Initiative auch von 15 % der eingeschriebenen Wähler*innen ausgehen. Doch soll wirklich ein so geringer Anteil der Wähler*innen das Recht haben alle anderen Wähler*innen in einen Verfassungsgebungsprozess zu zwingen? Eine kleine Minderheit könnte damit das staatliche Machtgefüge vollständig verändern. Das kann von der Verfassung nicht intendiert gewesen sein.
+
+Eigentlich scheint sie also die Argumentation der Opposition zu stützen. Aber man kann die Rechnung nicht ohne das Verfassungsgericht machen. Dieses entschied am 31. Mai darüber und schloss sich der Sichtweise der Regierung an. Es beruft sich darauf, dass eine Volksbefragung nicht ausdrücklich vorgesehen sei, ignoriert aber Argumente, die für ein Referendum sprechen. Handwerklich überzeugen die Ausführungen daher nicht. Doch das Verfassungsgericht ist der höchste Interpret der Verfassung. Müsste man nicht also die Entscheidung akzeptieren und den Streit begraben?
+
+## Die Rolle des Verfassungsgerichts
+
+Es ist sinnvoll zu rekapitulieren, warum die Opposition das Gericht schon seit einiger Zeit nicht mehr anerkennt. Sollte nämlich dem Gericht die Legitimität tatsächlich fehlen, dann würde es Maduros Vorhaben nur scheinbar ins Recht setzen. In diesem Zusammenhang sind zwei Aspekte zu beachten. Zum einen steht die Legitimität des Gerichts wegen seiner derzeitigen Besetzung in Frage. Darüber hinaus hat es sich jedoch auch durch seine Entscheidungspraxis fortschreitend selbst delegitimiert.
+
+Für den ersten Aspekt sind die Geschehnisse relevant, die sich Ende 2015 ereigneten: Bis dahin hatte die PSUV eine einfache Mehrheit. Am 6. Dezember 2015 fanden jedoch Parlamentswahlen statt, bei denen die Opposition zwei Drittel der Sitze gewann. Das neue Parlament konstituierte sich am 5. Januar. In der Zeit zwischen Wahl und Konstituierung des neuen Parlaments trat das scheidende Parlament in einer Sondersitzung zusammen. In dieser Sitzung wurden 13 Richter*innen sowie 21 Vertreter*innen für das höchste Gericht ernannt. Die Positionen waren freigeworden, weil sich die bisherigen Amtsinhaber*innen frühzeitig in den Ruhestand versetzt hatten. Das Ende ihrer Amtszeit wäre eigentlich in das erste Jahr der neuen Legislaturperiode gefallen. Das allein war gravierend genug. Aber es gab zusätzlich rechtliche Bedenken.
+
+Einerseits ist grundsätzlich nicht geklärt, ob Richter*innen mit einer einfachen Mehrheit ernannt werden können. Ein entsprechendes Gesetz geht auf Chávez zurück, der es sich damit 2004 ermöglichte, ein ihm unangenehm werdendes Gericht nach eigenen Vorstellungen zu besetzen. Durch das Gesetz wurde die Anzahl der Richter*innen erhöht und das Quorum für deren Wahl abgesenkt. Die Verfassungsmäßigkeit dieses Gesetzes wird von vielen bestritten.
+
+Andererseits scheint sich die PSUV aber nicht einmal an die Vorgaben aus diesem Gesetz gehalten zu haben. Aufgrund des Zeitdrucks wurden alle Fristen beflissentlich ignoriert. So sieht das Gesetzt etwa vor, dass sofern die Wahl der Richter*innen durch eine 2/3 Mehrheit misslingt, vier Sitzungen abgehalten werden müssen. Erst in der letzten Sitzung können die Richter*innen mit einfacher Mehrheit gewählt werden. Zwischen den Sitzungen sollen mindestens drei Tage liegen. Die PSUV aber hielt alle Sitzungen an einem Tag ab.
+
+Dieses fragwürdig besetzte Gericht hat auch durch seine Entscheidungspraxis kein Vertrauen dazu gewonnen. Man kann es als den Prototypen eines parteiischen Gerichts bezeichnen. Besonders deutlich wurde dies in folgendem Zusammenhang (die Liste der haarsträubenden Urteile ist endlos): In einem Urteil vom 31. März übertrug das Gericht die Kompetenzen des Parlaments auf sich selbst. Es begründete dies damit, dass das Parlament die Verfassung fortwährend missachte. Das Urteil erregte selbst unter bekennenden Chavist*innen Unmut. Die Generalstaatsanwältin Luisa Ortega Díaz, die ihr Amt der PSUV verdankt, bezeichnete den Schritt als Verfassungsbruch. Daraufhin rief Maduro schleunigst den Nationalen Verteidigungsrat ein. Dabei handelt es sich um ein Kriegsgremium. Der Rat bat den Gerichtspräsidenten, das Urteil, mit dem man sich offensichtlich politisch verrannt hatte, zurückzunehmen. Das Gericht lieferte. In einem sehr kurzen Urteil für das es verfahrensrechtlich keine Grundlage gibt, erklärte das Gericht Teile seiner Entscheidung für ungültig. Dass das Gericht Urteile aus politischer Opportunität zurücknimmt, zeigt vielleicht am deutlichsten, auf welch willkürlichen Pfaden es wandelt.
+
+Nun ist fraglich, wann ein Gericht seine Legitimität verliert. Man kann hier von der Funktion her argumentieren: Das Verfassungsgericht soll ein möglichst neutraler Akteur sein, der bei konkreten Streitigkeiten anderer Verfassungsakteure als Dritter urteilt. Dadurch wird gewährleistet, dass bei der Rechtsfindung nicht ausschließlich die jeweils subjektiven Interessen der Parteien leitend sind. Schlägt sich das Verfassungsgericht aber dauerhaft und offensichtlich auf die Seite einer der Parteien, dann erfüllt es seine Funktion nicht mehr. Es verliert dann auch seine Legitimität. Diese Kriterien, der „dauerhaften“ und „offensichtlichen“ Parteinahme, sollten möglichst streng gehandhabt werden. Es besteht sonst die Gefahr, dass Gerichte vorschnell delegitimiert werden. Was das venezolanische Verfassungsgericht angeht, sind sie aber sicherlich erfüllt.
+
+## Fazit
+
+Wenn man dem folgt, dann darf man auch die letzte Entscheidung des Verfassungsgerichts nicht anerkennen. Man darf dann nicht akzeptieren, dass das Verfassungsgericht einen Plan als verfassungsgemäß verklärt hat, durch den die demokratische Verfassungsordnung Venezuelas auf eigentlich verfassungswidrige Art und Weise abgeschafft werden soll. Dann, und so schließt sich der Kreis, ist tatsächlich Maduro ein Staatsstreich anzulasten, an dem sich Nationaler Wahlrat und Verfassungsgericht beteiligen. Das heißt wiederum, dass sich die Opposition im Rahmen der Verfassung bewegt und ihr Aufruf nicht als Aufruf zum Putsch, sondern als Aufruf zu dem von der Verfassung geforderten Widerstand verstanden werden sollte.
+
+Um auf die provokative Eingangsfrage zurückzukommen: Natürlich darf dieser Widerstand nur friedlich geleistet werden. Die befremdlich anmutende Tat eines rechten Nationalisten, der am Dienstag in einem gekaperten Hubschrauber das Verfassungsgerichtsgebäude überflog und es mit Handgranaten bewarf, ist zu verurteilen. Dies sollte auch die Opposition deutlich machen. Sonst schadet sie ihrer grundsätzlich legitimen Sache.

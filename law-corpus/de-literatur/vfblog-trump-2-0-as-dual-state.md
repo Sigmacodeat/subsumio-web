@@ -1,0 +1,51 @@
+---
+title: Verfassungsblog — Trump 2.0 as ‘Dual State'?
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2025-05-06'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/trump-2-0-as-dual-state/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Trump 2.0 as ‘Dual State'?
+
+Donald Trump’s radicalized efforts to transform US constitutional democracy into personalized executive-centered rule have again generated a predictable avalanche of invocations of Carl Schmitt, emergency government’s theoretically most daunting defender. Less predictably, recent political commentators in The Atlantic and New York Times have turned to one of Schmitt’s contemporary critics, the mid-century socialist jurist and political scientist, Ernst Fraenkel (1898-1975), author of the landmark The Dual State: A Contribution to the Theory of Dictatorship (1941). Although never inferring a complete legal redo of 1930s Germany, they claim that Fraenkel’s account of the Nazi “dual state,” in which rule-based normative and discretionary prerogative legal spheres uneasily coexisted, provides a useful template for making sense of Trump 2.0’s highly selective rendition of legal fidelity.
+
+Their worries are obviously justified: only a few months into his second term, Trump has left his predecessors in the dust when it comes to executive decrees. Trump has already declared eight national emergencies, nearly matching Joe Biden’s eleven during his entire presidential term. On Trump’s first day in office, he issued a record-breaking 26 executive orders. In his first 100 days he easily surpassed Franklin D. Roosevelt’s own imposing record of emergency legislation. Roosevelt, of course, faced the genuine existential crises of a worldwide economic depression and World War II. In contrast, Trump’s so-called crises are mostly products of right-wing conspiracy theories, e.g. the so-called invasion posed by undocumented migrants crossing borders, or the dire threat to American manhood apparently resulting from federal regulations on showerheads aimed at reducing water usage.
+
+## Why dual state theory? 
+
+So why tap Fraenkel’s theory of the dual state? Writing in The Atlantic, Aziz Huq rightly points out that Trump 2.0 seeks to “cleave off a domain in which the law does not apply,” and that this basically lawless arena “grows by the day.” As if on cue, White House Press Secretary Karoline Leavitt declared on March 17th that federal courts have no jurisdiction over presidential endeavors in foreign affairs. On the Administration’s view, it possesses absolute authority to deny basic legal and constitutional protections to immigrants and foreign students merely because the President designates them terrorists or disagrees with their views on the Israel-Gaza War. Trump has weaponized America’s quasi-royalist presidential pardon, eviscerated internal legal restraints on the executive branch, and quickly remade a quasi-independent system of federal legal enforcement (most prominently, the Justice Department) into a partisan machine tasked with rooting out Trump’s “enemies.”  In a recent television interview on NBC’s Meet the Press, Trump wavered when asked whether all persons on US soil were entitled to basic due process protections. Most alarmingly, Trump 2.0 has sidelined and sometimes blatantly ignored inconvenient judicial rulings.
+
+Yet, Huq argues, “the CEOs who paid for and attended Trump’s second inauguration can look forward to the courts being open for the ordinary business of capitalism.” As in Germany prior to 1938 (when Fraenkel was forced to flee Germany and conclude his research), a basically “normative” state, with some identifiably legal elements, continues to hem in commercial affairs, at least when those involved in the relevant transactions do not appear among Trump’s targets.
+
+## An incomplete picture? 
+
+There is much to be said in favor of using Fraenkel to interpret 2.0. However, I worry that it occludes crucial pieces of the puzzle.
+
+Most immediately, it is unclear that Fraenkel’s framework allows us to capture the specificities of Trump 2.0’s emerging legal order. Even if we ignore other possible candidates elsewhere, his is by no means the only US legal regime that might be described in Fraenkel’s terms. Many years ago, the liberal political theorist Judith M. Shklar, a great admirer of The Dual State, suggested it provided a starting point for understanding law within “the United States until the Civil War, and in some ways thereafter” given America’s awful history of racial exclusion and second-class citizenship for African Americans. US presidents, similarly, have long exercised far-reaching discretion over so-called foreign matters, including immigration; in the context of intensified globalization, this pattern has had terrible consequences for law-based government. Shklar also suggested that Apartheid-era South Africa constituted a dual state. Indeed, many and perhaps most semi-authoritarian states can be similarly characterized. So, what then, if anything, might be special about Trump 2.0’s version?
+
+Moreover, the dual state reading of Trump 2.0 downplays how even ordinary business affairs are already subject to discretionary executive action. In fairness, Huq’s article probably went to press before Trump's roll-out of tariffs on the basis of the National Emergencies Act (1976) and International Economic Emergency Powers Act (1977), statutes outfitting the executive with discretionary power. Predictably, Trump has stretched them to the legal breaking point, making mincemeat of their normative contours for the sake of exercising freewheeling executive prerogative over a wide range of economic matters.
+
+The situation, at any rate, is worse than Huq suggested: Trump is denying not just his so-called political enemies, but also many business owners, a modicum of legal security. Trump's fickle, on-again off-again trade policy means that for many of them the “rule of law” obtains only to a limited degree. Yes, business owners still enjoy robust property rights. But the use of those rights is subject to constantly changing executive whims.
+
+## Neumann v. Fraenkel 
+
+This development brings to mind a surprisingly pertinent exchange between Fraenkel and his friend and former Berlin legal partner, Franz L. Neumann, another neglected mid-century socialist political and legal thinker. Neumann’s Behemoth: The Structure and Practice of National Socialism, 1933-1944 (1944) forcefully responded to Fraenkel by insisting that legality even within ordinary business transactions had long been decimated in Nazi Germany –precisely because of the regime’s monopoly-capitalist contours, that is, the ways in which it linked totalitarian political rule to the preservation of privileges for large capitalist enterprises. Like Fraenkel’s dual state account, Neumann’s analysis built not only on Max Weber but also Karl Marx and Karl Renner –leftist theoretical inspirations, by the way, unmentioned by commentators now eagerly applying Fraenkel to Trump 2.0. Unsurprisingly given their common intellectual and political launching pad, Neumann and Fraenkel also agreed about Nazism’s monopoly-capitalist economic credentials.
+
+Yet they disagreed about their legal ramifications. Why? Fraenkel was probably the more orthodox Weberian. Correspondingly, he remained committed to the commonplace view that capitalism required legal predictability and core elements of what Weber had called “rational legality.” To the extent that Nazi Germany rested on a capitalist economic base, Fraenkel believed, crucial normative elements –with the exception of cases involving Nazism’s so-called enemies (e.g., Jews) –would likely remain intact. Neumann, in contrast, pointedly rejected Weber’s view of an elective affinity between capitalism and rational legality, arguing that it no longer obtained under advanced capitalism.
+
+For both Fraenkel and Neumann the rule of law’s linchpin was the generality of the legal norm. However, Neumann energetically insisted that monopoly capitalism undermined the general legal norm’s economic buttresses. For immanent economic reasons every modern capitalist legal order increasingly relied on discretionary, individualized modes of law. Whereas classical capitalism favored general laws to preserve equal competition between and among entrepreneurs roughly equal in size, in a monopolized economy general norms became obsolete. The state increasingly faced not equal competitors but massive individual, more-or-less monopolistic firms. Neumann observed that large capitalists often preferred individual decrees and non-general modes of legal regulation.
+
+## Will Neumann’s worries come true? 
+
+This is not the place to revisit the rich contours of the Fraenkel-Neumann debate: others – including this writer – have done so elsewhere. But it remains striking that even as CEOs who initially celebrated Trump’s return to the White House have expressed misgivings about his trade policies, they have not yet jumped ship altogether. Many of them have been lining up to curry favor with Trump to make sure that their firms will benefit from the tariffs. It is too early to say, but Trump 2.0 may end up corroborating Neumann’s worries about the rule of law’s precarious economic bases. Well-positioned businesses may, in fact, succeed in navigating the demise of key aspects of what we have long called the rule of law.
+
+But even if Neumann’s predictions prove wrong and the US maintains something akin to Fraenkel’s dual state, the news remains bad enough: Trump 2.0 represents an unprecedented attack on the rule of law.  Trump’s billionaire allies seem likely to accommodate themselves to the demotion of norm-based legality. Even if they don’t care about its demise, the rule of law still provides essential legal and political protections for the rest of us. Whether it survives Trump’s onslaught will depend not only how privileged economic players respond, but also on whether ordinary citizens decide it’s worth fighting for.

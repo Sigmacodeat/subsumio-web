@@ -1,0 +1,54 @@
+---
+title: >-
+  Verfassungsblog — Der EGMR im Kampf um rechtsstaatliche Asylverfahren in
+  Europa
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2024-10-07'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/der-egmr-im-kampf-um-rechtsstaatliche-asylverfahren-in-europa/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Der EGMR im Kampf um rechtsstaatliche Asylverfahren in Europa
+
+Der Europäische Gerichtshof für Menschenrechte (EGMR) hat Ungarn am 19. September 2024 für eine Verletzung des Verbots der Kollektivausweisung verurteilt. Die Tatsachen des Falls bilden eine lange Liste von Rechtsstaatsproblemen ab. Das Urteil stellt weiter den Schutzumfang des Art. 4 des 4. Zusatzprotokolls klar. Zugleich zeigt es, wie sich das Gericht – leise und ohne viel öffentliche Reaktion – gegen die vollständige Untergrabung rechtlicher Standards im Asyl- und Migrationsrecht stemmt.
+
+## Asylverfahren ohne Asylrecht
+
+Die Geschichte des Falls M.D. u.a. gegen Ungarn zeigt, wie wenig die Behandlung von Asylsuchenden in Ungarn europäischen Vorgaben entspricht. Den Asylantrag der afghanischen Familie im Januar 2019 in der Transitzone von Röszke wies Ungarn als unzulässig ab. Die Abweisung geschah auf Basis einer Vorschrift, die der EuGH inzwischen als unvereinbar mit Europarecht eingestuft hat, wie auch der EGMR bemerkt (para. 25). Nach der Abweisung des Antrags wollte Ungarn die afghanische Familie von Schutzsuchenden nach Serbien ausweisen. Nachdem Serbien sich weigerte, sie aufzunehmen, drohte Ungarn, sie stattdessen nach Afghanistan abzuschieben. Auch als sich ein Vertreter des UNHCR einschaltete und warnte, eine Abschiebung nach Afghanistan verletze das Refoulement-Verbot, hielt Ungarn diese Drohung aufrecht. Bei Beginn der Abschiebung wurde der 17jährige Sohn dann aus dem Bus gezogen und bedrängt, für die ganze Familie eine Erklärung zu unterschreiben, dass sie freiwillig nach Serbien ausreisen wollten. Ein Übersetzer fehlte dabei. Somit unterschrieb der Junge unter Druck ein Formular, das er nicht verstand. Die Familie wurde daraufhin im Dunkeln hinter dem Grenzzaun ausgesetzt und ihr wurde befohlen, in Richtung Serbien zu laufen.
+
+So weit, so schlecht. Die Familie, unterstützt vom Hungarian Helsinki Committee, reichte eine Beschwerde vor dem EGMR ein, wegen Verletzung des Verbots der Kollektivausweisung nach Art. 4 des 4. Zusatzprotokolls zur EMRK, sowie der Verletzung des Rechts auf eine wirksame Beschwerde nach Art. 13 EMRK.
+
+## Wie Ungarns Vorgehen das Kollektivausweisungsverbot verletzt 
+
+Die Kammer der Ersten Sektion des Gerichtshofs urteilte, dass Ungarn mit dem Vorgehen das Verbot der Kollektivausweisung verletzt hatte. Dafür stellte sie zuerst fest, dass es sich sehr wohl um eine Ausweisung handelte, auch wenn die Erklärung einer freiwilligen Ausreise unterschrieben worden war (para. 44). Unbestritten war, dass Ungarn die Abschiebung nach Afghanistan begonnen hatte und dass die Familie letztlich die Grenze nach Serbien passierte. Die ungarische Regierung hatte im Verfahren nur vage auf die Erklärung der freiwilligen Ausreise verwiesen. Die Angaben der Beschwerdeführer, dass diese Erklärung unter Druck unterschrieben wurde und ohne Vorhandensein eines Übersetzers, blieben unbestritten. Der Gerichtshof warf die Frage auf, ob auf den Schutz nach Art. 4 des 4. Zusatzprotokolls überhaupt verzichtet werden kann. Letztlich kam es darauf aber nicht an, denn jedenfalls stellte das Dokument keine eindeutige, wissentliche Erklärung eines solchen Verzichts dar (para. 44).
+
+Die Ausweisung der Familie war auch eine Kollektivausweisung, urteilte der Gerichtshof weiter, weil es an einer individualisierten Entscheidung fehlte. Die Einschränkungen des Schutzes vor Kollektivausweisung, die im Fall N.D. und N.T. gegen Spanien eingeführt wurden, spielten hier keine Rolle, da die Familie ihren Asylantrag an der dafür vorgesehenen Stelle, nämlich in der Transitzone, gestellt hatte. Dass es nur dort die Möglichkeit gab, einen Asylantrag zu stellen, widersprach allerdings Unionsrecht. Für die erforderlichen Standards einer Ausweisungsentscheidung, die keine Kollektivausweisung darstellt, verwies der Gerichtshof auf das Urteil M.K. u.a. gg. Polen. Erforderlich ist, dass der Staat die persönlichen Umstände jeder von der möglichen Ausweisung betroffenen Person betrachtet und der Person Gelegenheit gibt, Argumente gegen die Ausweisung vorzubringen (para. 57). Der Kontext der Ausweisungsentscheidung ist dabei ebenfalls von Bedeutung, beispielsweise die Möglichkeit der Betroffenen, eine Anwältin zu kontaktieren.
+
+Diese Anforderungen an eine Ausweisungsentscheidung genügte der Vorgang im Fall nicht, stellte der Gerichtshof fest (para. 64-67). Die Grundlage der Entscheidung, die afghanische Familie nach Serbien auszuweisen, obwohl Serbien sich geweigert hatte, sie zurückzunehmen, ist nicht ersichtlich. Die späteren Antragssteller hatten keine Möglichkeit, Argumente gegen die Ausweisung vorzubringen, und die staatlichen Stellen nahmen ihre individuellen Umstände nicht ausreichend zur Kenntnis.
+
+## Das Verbot der Kollektivausweisung als Anspruch auf ein rechtsstaatliches Asylverfahren
+
+So führt das Urteil die Linie der Rechtsprechung fort, dass aus dem Verbot der Kollektivausweisung recht detaillierte Vorgaben für ein Asylverfahren abgeleitet werden. Es ist schlüssig, dass eine individualisierte Behandlung eben nicht nur erfordert, dass die Personen gesondert behandelt werden. Das war im vorliegenden Fall wohl gegeben: der Familie wurde ein Formular vorgelegt und sie wurden ohne weitere Personen zur Grenze gebracht. Vielmehr erfordert eine individualisierte Behandlung, dass auch die Umstände tatsächlich zur Kenntnis genommen werden. Das bedeutet auch, dass ein prozeduraler Blick allein nicht ausreicht. Letztlich setzt der Gerichtshof voraus, dass die Umstände so zur Kenntnis genommen werden, dass mögliche Gründe gegen eine Ausweisung beachtet werden. Das materielle Recht des internationalen Schutzes ist insofern relevant für die Beurteilung des Verfahrens. Aspekte wie das Fehlen eines Übersetzers, die chaotischen Umstände, in denen das Formular vorgelegt wurde, die Drohung mit Abschiebung nach Afghanistan sind dann allesamt relevant.
+
+Insgesamt ist bemerkenswert, wie der Gerichtshof den Art. 4 des 4. Zusatzprotokolls in den letzten Jahren interpretierend entwickelt hat: Einerseits verstößt vieles, das nach allgemeinem Verständnis nach einer Kollektivausweisung aussieht, nicht gegen das Verbot. So können seit der Rechtsprechung in N.D. und N.T. gegen Spanien (dazu hier), fortgeführt zuletzt mit A.A. u.a. gegen Nordmazedonien (dazu hier), direkte Rückschiebungen von Gruppen Schutzsuchender an der Grenze als zulässig gelten, wenn diese irregulär eingereist waren und die Möglichkeit bestanden hatte, an einem Grenzübergang regulär Asyl zu beantragen. Andererseits leitet der Gerichtshof aber aus dem Verbot weitgehende Vorgaben für ein Asylverfahren ab, was sich weniger direkt aus dem Wortlaut des Artikels ergibt.
+
+Dass eine „nicht kollektive“ Behandlung von Asylsuchenden zahlreiche Anforderungen an ein Verfahren stellt, ist schlüssig. Es füllt auch eine sonst entstehende Lücke im Schutz der Konvention: Der Art. 3 EMRK erfordert zwar ebenfalls eine weitreichende Prüfung der Umstände von Asylsuchenden und der ihnen drohenden Behandlung bei einer Ausweisung. Rückblickend, in einem Verfahren vor dem EGMR, mag aber feststehen, dass die Ausweisung nach Serbien keine Verletzung des Art. 3 EMRK darstellte. (Vorliegend war die Frage nicht aufgeworfen worden.) Die zunehmend detaillierten Anforderungen, die der Gerichtshof aus Art. 4 des 4. Zusatzprotokolls für ein Verfahren ableitet, lassen aber umso widersprüchlicher erscheinen, dass in Fällen irregulärer Einreise die Rückschiebung ohne jegliches Verfahren zulässig sein soll.
+
+## Too little, too late?
+
+Auf eine Verletzung des Rechts auf eine wirksame Beschwerde ging der Gerichtshof im Urteil nicht mehr gesondert ein (para. 69). Den Antragsstellern, der sechsköpfigen Familie, wurden insgesamt 9000 Euro Entschädigung zugesprochen (para. 73). Das ist nicht viel, im Vergleich. Somit waren es im Urteil M.K. u.a. gegen Polen 34.000 Euro je Gruppe von Antragsstellern in den drei verbundenen Verfahren. Dies wurde treffend kritisiert im Sondervotum von Richter Eicke, der forderte, es sollten 34.000 Euro je erwachsenem Antragssteller sein. Im Fall Hirsi Jamaa u.a. gegen Italien waren es 15.000 Euro je Antragssteller, im Fall Shahzad gegen Ungarn jedoch lediglich 6000 Euro für den Antragsteller, im Fall D.A. u.a. gegen Polen 10.000 Euro je Antragssteller. Dies sind alles Urteile, die eine Verletzung des Verbots der Kollektivausweisung feststellten, teilweise aber in Kombination mit der Verletzung weiterer Konventionsrechte.
+
+Daneben erwähnt das Urteil, dass die Familie am Tag vor ihrer Ausweisung einen Antrag auf eine vorläufige Maßnahme nach Art. 39 der Verfahrensordnung des Gerichtshofs gestellt hatte (para. 14). Dieser Antrag bezog sich auf die angedrohte Abschiebung nach Afghanistan. Es fehlen die Hintergründe, um einzuschätzen, inwiefern die Ablehnung einer vorläufigen Maßnahme angemessen war. Dass der Vertreter des UNHCR am Tag darauf forderte, die Abschiebung auszusetzen, weil eine Verletzung des Refoulement-Verbots drohe (para. 15), lässt vermuten, dass durchaus auch Anhaltspunkte für eine drohende Konventionsverletzung bestanden.
+
+## Rechtstaatlichkeit in der Defensive
+
+Das Urteil im Fall M.D. u.a. gegen Ungarn ist noch nicht endgültig, da Ungarn noch eine Verweisung an die Große Kammer beantragen könnte. Zu rechnen ist damit eher nicht. Zu rechnen ist leider auch nicht damit, dass das Urteil große Wirkung hat und den Umgang mit Asylsuchenden in Ungarn grundlegend ändert. Vielmehr bewegt sich Praxis in vielen europäischen Staaten auf ungarische Verhältnisse zu: In Belgien beispielsweise erhalten alleinstehende männliche Asylsuchende keine Unterkunft mehr, sondern leben auf der Straße – das beschloss die Regierung entgegen europäischen Vorgaben und setzt diese Praxis auch nach einem entgegenstehenden Urteil des Raad van State fort. Die neue niederländische Regierung will sich an Belgien orientieren. Auch in Frankreich und Irland lebten Asylsuchende ohne Obdach. Von Griechenland ganz zu schweigen. Die Rechtsstaatlichkeit ist in der Asyl- und Migrationspolitik in der Defensive. Eine einzelne Entscheidung wie die im Fall M.D. u.a. gegen Ungarn kann dann Standards einfordern, allein aber natürlich wenig bewirken. Dennoch ist sie wichtig: wichtig für Gerechtigkeit in einem Fall, wichtig als Signal, dass die Rechte von Schutzsuchenden in Europa weiterhin bestehen und einklagbar sind.

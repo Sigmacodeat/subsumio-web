@@ -1,0 +1,37 @@
+---
+title: 'Verfassungsblog — Israel: Cry, the Beloved Country'
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2023-02-01'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/cry-beloved-country/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Israel: Cry, the Beloved Country
+
+Israel, like many other democracies today, is a deeply polarized society. The operating principle of public discourse is typically: “Art thou for us or for our adversaries” (Joshua 5:13). Whether it is the never-ending Arab-Israeli Conflict and the 55-year Occupation of the Territories (even how to call them both is a divisive issue), or questions of church and state resulting from Israel’s self-definition as Jewish and democratic, one could predict with unerring certainty whom one would find on either side of the verbal, political and at times physical barricades. In recent times, the figure of Mr Netanyahu and the legal woes he is facing have deepened the polarization.
+
+It is thus telling that, in the recent eruption in response to Netanyahu’s new government plan to reform the judicial system, not only have the protestors’ numbers risen to an unprecedented scale, but one finds both in Israel and in the Jewish communities around the world, prominent figures and many individuals – card-carrying Zionists of a center/right conviction – whom one would never expect to see on the anti-government side of the current  barricade. Even the former President of the State, a lifelong Likud member alongside many others of the Menachem Begin old guard, have publicly expressed deep concerns. In the international arena, too, longtime friendly and supportive states are shifting sides.
+
+It should not come as a surprise. For there is a widespread (and not entirely unfounded) perception that the government plan, outlined by the newly minted Minster of Justice, is the Israeli January 6th. The widespread revulsion in the US and elsewhere at the January 6th insurrection was not fueled by the unruliness or even violence of the events. It was fueled by what was perceived as an assault on the core values and institutions of American democracy. And that same feeling, shared even by staunch “Israel for better of worse” defenders of the State, is present in the objections to the proposed reform: An assault on the core values and institutions of Israeli democracy. (One would be remiss in thinking and writing about democracy in Israel not to face the serious and vexed issues, predating these reforms, resulting from the long term Occupation by Israel of Palestinian territories. But that will have to wait for another day.)
+
+As a measure of the state of alarm, in an unusual step for a sitting Chief Justice, the current incumbent recently gave a speech in a professional forum but broadcast live on Israeli media. She expressed the views of many, including some of the most trenchant and sober critics of the Court: What is masquerading as a “Reform” plan, is, both in intention and effect, a plan to shatter some of the most fundamental foundations of the separation of powers and the rule of law, without which no State can legitimately claim to be democratic.
+
+For lay persons, the four principal suggested reforms (and there are more to come, it has been announced) may seem innocent enough: Making all judicial appointments a privilege of the government in power (well, isn’t that the case in the US and elsewhere?); requiring a supermajority of judges to strike down parliamentary legislation (not, on its face, an unreasonable proposal), but then also allowing the Parliament to override – even by a majority of one – constitutional decisions of the Court (do Canada or Finland not have similar override provisions?); and, finally, prohibiting the judiciary from using the criterion of ‘unreasonableness’ or even extreme unreasonableness when scrutinizing actions of ministers and public servants (isn’t that a mere technical issue, grist to the mills of law professors?).
+
+So what about this “whataboutism” argument that there are parallels to the proposed measures in well-respected democracies? The Princeton Scholar, Kim Scheppele, discussing Hungary, called this argument the Frankenstein syndrome. You take a leg from this country, a hand from another, and a nose from yet another, and you end up with a creature which exists nowhere else and would be acceptable in no country which claims democratic credentials.
+
+The cumulative effect of the planned reform is to dismantle fundamental features of the separation of powers and of checks and balances. By removing various judicial and legal checks designed to prevent a legislature, even if democratically elected, the reform would establish a “tyranny of the majority” and allow the executive branch to take measures, employing the police, the taxman and all other administrators, which are subject to fatally weakened judicial scrutiny. Particularly at risk are protections of individuals and minority rights.
+
+Rules alone do not define a democracy: Political culture and democratic normative habits play an important role too. The proposed deep politicization of all judicial appointments, compromising directly or indirectly judicial independence, is all the more alarming in the eyes of the critics for the implications in the governing coalition. This particular government is dependent on partners, holding key sensitive ministries, whose (overtly racist and supremacist) agenda and declared policies  are way beyond the political consensus. Indeed, these partners’ policies were anathema to all Israeli governments, both left and right, as recently as two or three years ago. They will now have a free, or freer hand to pursue their agenda, in some instances perhaps irreversibly. The direct attacks from the highest echelons of the government on senior civil servants, such as the Attorney General, are already evidence of this license.
+
+The deep roots driving the judicial reforms is the sense that the Center-Left, having lost power in the democratic arena, is imposing its values through the legal system with judges acculturated within that liberal worldview and dominated by the non-Sephardi elites. And make no mistake, the Israeli legal and judicial system, like many others, is far from perfect. Its critics from the Left and Right have been in no shortage, both in academia and the legal establishment itself. To give but a few examples, the very basis of judicial review of legislation in a State which has no formal constitution is problematic. And, for example, the range of issues which the Israeli Supreme Court considers as justiciable is wider than anywhere else, involving it in deciding issues better left to the political arena. The composition of the Court in identitarian and ideological terms does not adequately reflect Israeli multicultural society. And the list does not end here. All these criticisms and others are not without merit. There is, thus, much to fix. A judicious and balanced reform of the judicial system would have broad support.
+
+But the scorched earth approach reflected in the current proposals is no less, and perhaps even more, perilous than a mob storming a parliament. The fact that enemies of Israel (and there are many) will jump on the bandwagon should not prevent lovers and supporters of the State from raising their voice.

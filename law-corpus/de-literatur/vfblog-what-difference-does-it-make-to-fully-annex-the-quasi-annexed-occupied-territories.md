@@ -1,0 +1,72 @@
+---
+title: >-
+  Verfassungsblog — What Difference Does it Make to Fully Annex the
+  Quasi-Annexed Occupied Territories?
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2019-09-24'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/what-difference-does-it-make-to-fully-annex-the-quasi-annexed-occupied-territories/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# What Difference Does it Make to Fully Annex the Quasi-Annexed Occupied Territories?
+
+On September 10, 2019, a week before elections, Israel’s Prime Minister, Benjamin Netanyahu, announced that he intends to annex to Israel large parts of the Occupied Palestinian Territories (OTPs). The pending presentation of the Trump middle-east peace plan, he argued, presented an opportunity to proceed with the move. Netanyahu’s statements echoed similar statements he made in April, a few days prior the previous elections in Israel. 
+
+There is little doubt that, in both cases, Netanyahu’s statements were to intended to garner support among right-wing voters, in particular, settlers in the OPTs. Netanyahu’s statements were dismissed by his opponents as no more than an election stunt: if Netanyahu were serious about annexation, they argued, he would have taken steps to promote annexation during his long term as prime minister. 
+
+Despite this criticism, and whether or not Netanyahu’s era of prime minister of Israel is coming to an end, the possibility that Israel will unilaterally annex at least parts of the OPTs should not be dismissed. First, because the possibility of a unilateral annexation of at least parts of the OPTs has long ceased to be a political taboo in Israel (and even some of Netanyahu’s main opponents were careful not to dismiss it entirely). Second, and more importantly, because in many ways, a sub-official process of partial annexation is already taking place in Israel, to a large extent, under the radar of the international community. 
+
+Understanding this process, sometimes referred to as “creeping annexation” or “incremental annexation”, and its implications, requires familiarity with the legal framework that currently applies to the OPT, from both international law and Israeli law perspectives. 
+
+## The Legal Framework in the OPTs
+
+The west bank, including east Jerusalem, and the Golan Heights were conquered by Israel during the 1967 war. Under international law, which prohibits annexation of land concurred by military force, these territories are of the status of occupied territories. The relevant normative framework that applies to these territories is the international law of occupation. The main legal instruments this framework is composed of include the Hague Regulations Concerning the Laws and Customs of War on Land and the Fourth Geneva convention. This framework has been recognized as the applicable legal framework by numerous international institutions and instruments, including the International Court of Justice. 
+
+From an internal Israeli domestic perspective, the legal picture is more complex. Israel has applied its domestic laws to both the Golan Heights and East Jerusalem.  The act of application of an occupant’s law is the legal manifestation of annexation. Thus, within Israel, the Golan Heights and East Jerusalem are regarded as Israeli territory. This implies that all Knesset legislation that applies territorially applies to these areas, and that Israeli courts also regard them as parts of sovereign Israel.  
+
+The status of the OPTs, excluding east Jerusalem, is different. Since Israel has not applied its own law in these areas, the normative framework that has been applied to them is the international law occupation. Here, too, however, there are deviations between the manner in which international legal institutions and Israeli courts apply international law. 
+
+The domestic status of international law in Israel is not explicitly constituted, and was determined by the Supreme Court (the “Court”) in a series of decisions delivered shortly after the establishment of the state. In brief, these decisions determine that international customary law is part of domestic law, however, in accordance with the principle of parliamentary sovereignty, primary legislation that explicitly conflicts with customary international law prevails over such law. Treaties only become part of domestic law once they are incorporated into domestic law through legislation.  In addition, the Court has applied, both with regard to customary law and with regard to treaties, a “presumption of compatibility”, according to which domestic legislation should be interpreted, as far as possible, as compatible with international law.
+
+Two points should be noted in this regard. First, under a somewhat unclear rationale, the Court replicated the distinction between customary law and treaties in its jurisprudence regarding the OPTs. Second, Israel has consistently objected to the application of the Fourth Geneva Convention to the territories. The official Israeli position is that the Convention only applies to territories occupied from a sovereign, and that it does not apply to the West Bank since Jordan, from which it was conquered, was not a rightful sovereign (this position was rejected by the ICRC). Israel has also maintained that the Fourth Geneva Convention does not reflect customary law and that under Israel's domestic rules of incorporation, it was not part of domestic law which the Court could apply. Israel has declared, however, that although it is not obliged to do so, it will unilaterally respect the “humanitarian provisions” of the fourth Geneva Convention. The Court has generally accepted the state’s position, and has thus applied to the OPTs a partial law of occupation framework, which includes the Hague Regulations, and upholds Israel to its commitment to respect the “humanitarian provisions” of the fourth Geneva convention. The most important implication has been the Court’s refusal to apply article 49 of the fourth Geneva Convention, which, among other things, prohibits an occupant from transferring its own citizens into the occupied territory. The Court has thus refused to rule on the legality of settlements, declaring the subject to be non-justiciable, with the exception of settlements established on privately-held Palestinian land. 
+
+To summarize the normative framework, the main distinction between areas that were annexed and areas that were not annexed is, thus, the law that applies to such areas. Israeli law is applied in areas that were annexed. The law of occupation (or parts of it) is applied in areas that were not annexed. Officially, the law of occupation still operates as the normative framework that applies in the latter.  However, throughout the years, this distinction has been eroded in various ways, examined below.
+
+## Erosion of the distinction through military orders applying Israeli law 
+
+ Under the commonly accepted interpretation of Article 43 of the Hague Regulations, the domestic law of an occupied territory remains in force during the occupation. The military commander, however, is authorized to issue military orders as needed for the purposes defined in the Article. The legal framework that applies in the Occupied Territories thus includes the Jordanian law that was in order until 1967, as amended by numerous military orders, issued since 1967. 
+
+A considerable number of such orders are substantively based on Israeli law: the military commander often refers to a particular Israeli law, and then applies, through a military order, to the Occupied Territories. The source of the law’s authority is, in these cases, the military commander, but the content of the law is borrowed from Israeli law. 
+
+Such application can be territorial, in which case the norms applies to both Palestinian residents and Israeli settlers, or based on personal citizenship, in which case it is applied to Israeli settlers only.  As opposed to formal annexation, in which the entirety of Israeli law is applied, the military commander can selectively apply norms taken from Israeli law. 
+
+## Erosion of the distinction through Court rulings
+
+	Although the Court generally operates under the legal framework discussed above, on various instances, it has nonetheless applied Israeli law to acts that took place in the OPTs. The Court has applied Israeli administrative law in conducting judicial review over the acts of the military commander. It applied Israeli constitutional law when discussing the rights of Israeli settlers that reside in the OPTs, and, in certain instances, when discussing the rights of Palestinian residents of the OPTs. It referred to Israeli constitutional law in discussing house demolitions in the OPTs. In a few instances, it applied Israeli labor law to Palestinian employees working in Israeli settlements in the OPTs, stating that such settlements were, de-facto, “legal enclaves” governed by Israeli law, and that Palestinian residents working in them should receive the same standards of protection afforded by Israeli law.
+
+ It should be noted that in some of these cases, Israeli law was applied to limit the conduct of Israel or to offer Palestinian residents higher standards of protection than those offered by the law of occupation. Nevertheless, as others have noted, such cases erode the distinction between Israel and the OPTs, and undermine the special protections Palestinian residents of the OPTs are entitled to under the law of occupation. 
+
+## Erosion of the distinction through application of Knesset legislation 
+
+As indicated above, since Israel is not the sovereign in the OPTs, Knesset legislation does not apply in the OPTs. One notable exception is legislation that applies personally to Israeli citizens, and is applicable to Israeli settlers in the OPTs. In addition to laws the apply on the basis of citizenship, the Knesset has recently passed laws that apply directly in the OPTs and blur the line between Israel and the OPTs. The most prominent example is  the Land Regularization Act, a Knesset law that establishes a mechanism for expropriation of private Palestinian land on which settlements were built. The Act overrides the authority of the military commander, who bears responsibility under the law of occupation. Another example is The Council for Higher Education Law (Amendment no. 20) 5778-2018, which confers upon the Council for Higher Education in Israel authority over Israeli institutions and students in the OPTs, which, prior to the Law, operated under the auspices of the military commander.  The Land Regularization Act instructs the military commander how to operate while the Council for Higher Education Law transfers his authority, both laws undermine and blur the distinction between Israel and the OPTs.  
+
+## Official annexation – the last step in an ongoing process?
+
+The process of incremental annexation is, in many respects, changing the reality on the ground. The blurrier the distinction between Israel and the OPTs is, the easier it becomes for political leaders to portray partial annexation as a reasonable move, formalizing an already existing reality. It is not a coincidence, however, that Israel has abstained, so far, from formal annexation. Concerns about international condemnation play a part here, but so does the issue of the status of Palestinian residents in the case of annexation.   
+
+Following the annexation of East Jerusalem, Palestinian residents were granted the status of permanent residents, with the possibility of acquiring Israeli citizenship under the Citizenship Act (although it has been argued that Israel poses hurdles to those wishing to do so). Annexation of parts of the OPTs raises the issue of the status of Palestinian residents that reside in these part. In many respects, incremental annexation has served the settlement project better than full formal annexation: it allowed a pick and choose approach that benefited settlers, without conferring similar rights upon Palestinian residents. While some have already criticized Israel for effectively applying two legal systems in the same territory, one that applies to Israeli citizens and one that applies to Palestinian residents, the formal maintenance of the normative framework of law of occupation, required by international law, served to justify and legitimize this distinction.
+
+If and when formal annexation takes place, Israel will have to address the status of Palestinian residents in the annexed areas. In such case, they would no longer enjoy the status of protected persons granted under the law of occupation. Under these circumstances, it would be very difficult for Israel to deny them full rights, including voting rights, and the possibility of acquiring Israeli citizenship. This, in turn, is likely to change the demographics of Israel considerably. Indeed, in Israeli public discourse, one of the main arguments against annexation, in addition to the claim that it violates international law, is that it will alter the nature of Israel as a Jewish state. 
+
+The latest proposed plans for annexation, including the plan presented by Netanyahu, strive towards partial annexation rather than full annexation of the areas currently controlled by Israel. Supporters of annexations attempt to “crave out” the territory to be annexed in a manner than will annex Israeli settlements, maximizing the territory annexed, while minimizing the number of Palestinian residents that reside on these territories. 
+
+In addition to the implications of formal annexation on the rights of Palestinian residents, partial formal annexation will have a dire effect on the possibility of Palestinians realizing their right to self-determination. Partial annexation is likely to result in Palestinian enclaves too small and dispensed to effectively function as an independent state. From a practical perspective, incremental annexation has already allowed Israel to expand the settlement project and blur the distinction between Israel and the OPTs. From a political perspective, formal annexation is a statement that the settlements will stay in place, at the expense of the two-state solution and the Palestinian right to self-determination.

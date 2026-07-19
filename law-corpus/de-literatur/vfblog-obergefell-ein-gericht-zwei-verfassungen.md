@@ -1,0 +1,55 @@
+---
+title: 'Verfassungsblog — Obergefell: ein Gericht, zwei Verfassungen'
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2015-06-29'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/obergefell-ein-gericht-zwei-verfassungen/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Obergefell: ein Gericht, zwei Verfassungen
+
+Die Entscheidung des US Supreme Court, dass der Zugang gleichgeschlechtlicher Paare zur Ehe ein Gebot der Verfassung ist, ist nicht nur politisch eine Sensation, sondern auch verfassungsrechtlich ein hoch interessantes Dokument. Zwei Narrative prallen in dieser Entscheidung aufeinander, zwei Rekonstruktionen der Verfassungslage. Und was man aus diesem Aufeinanderprallen lernen kann, reicht weit über die Frage der Homo-Ehe hinaus.
+
+## Die Stunde der Politik
+
+Narrativ A erzählen mit unterschiedlichen Nuancen, aber im Kern parallel die vier konservativen Richter Roberts, Scalia, Thomas und Alito in ihren jeweiligen Sondervoten. Aus ihrer Sicht kommen da Leute und wollen etwas. Diese Leute sehen die Heteros ihre Ehen führen und sagen, das wollen wir auch. Gut, sagen die vier Dissenter. Werfen wir einen Blick in die Verfassung und schlagen wir nach. In der Verfassung kann ja nur drinstehen, was ihre Autoren hineingeschrieben haben. Haben sie einen Anspruch für diese Leute hineingeschrieben? Da steht was von Liberty, aber damit ist nicht gemeint, dass wir jemand was geben müssen, sondern nur, dass jemand nicht was wegnehmen dürfen. Da steht auch was von Equality, aber das heißt nicht, dass wir aus etwas, das nun einmal keine Ehe ist, eine machen müssten. Von einem Recht für Schwule und Lesben, ihre Partner zu heiraten, steht da nichts.
+
+Die Erzähler von Narrativ A sehen (jedenfalls Roberts, sofern er das aufrichtig meint) das Anliegen dieser Leute durchaus nicht ohne Sympathie. Aber ob man ihm Erfolg wünscht oder nicht, das ist eine politische Frage, keine rechtliche. Die politische Debatte ist ja auch bereits in vollem Gange, da ist ja gerade im Augenblick wirklich viel Bewegung vorhanden, die durch ein Urteil ex cathedra jäh beendet würde, und mit ihr die aufkeimende Sympathie auch im konservativen Lager.
+
+Wenn, so Narrativ A, in öffentlicher Deliberation und demokratischer Mehrheitsbildung zuletzt der Gesetz- bzw. Verfassungsgeber zu dem Schluss kommen sollte, dass man den Leuten geben soll, was sie fordern, dann bitte sehr. So aber wäre es eine unerhörte Selbstermächtigung, ein Putsch geradezu, wenn eine Handvoll Juristen sich an die Stelle des Volkes setzt und aus eigener Machtvollkommenheit festlegt, was die Verfassung nun einmal offen hält. Zumal es ja auch noch andere gibt, die durch diese Festlegung ihrerseits in Nöte gerieten, diejenigen nämlich, die aus religiösen Gründen tatsächlich überzeugt sind, dass Schwule und Lesben nicht nur nicht heiraten, sondern überhaupt in der Hölle schmoren sollten. Denn, apropos Religion, zur Glaubensfreiheit steht in der Verfassung in der Tat etwas drin.
+
+## Die Stunde des Rechts
+
+Narrativ B, erzählt von Anthony Kennedy und unterstützt von den vier liberalen Richter_innen Bader Ginsburg, Breyer, Kagan und Sotomayor, geht grob zusammengefasst so: Diese Leute, die da kommen, wollen nicht einfach nur irgendetwas. Ihnen wird schlimmes Unrecht zugefügt. James Obergefell aus Ohio darf auf dem Totenschein des Mannes, mit dem er über Jahrzehnte Tisch und Bett geteilt hat, nicht als Hinterbliebener auftauchen und muss sich behandeln lassen, als sei er einfach irgendein Fremder. April DeBoer und Jayne Rowse aus Michigan dürfen nicht die gemeinsame rechtliche Elternschaft für die beiden pflegebedürftigen Kinder übernehmen, die sie gemeinsam großziehen, als müsse man sie irgendwie von diesen Kindern fern halten.
+
+In der Verfassung steht aber, dass der Staat seine Bürger nicht einfach so ihrer Freiheit (liberty) berauben dürfe, ihre intimsten Entscheidungen so zu fällen, wie sie es für richtig halten. Die Verfassung schützt sehr wohl das Recht, undiskriminiert mit seinem Lebenspartner zusammenzuleben, und das um so mehr, wenn es auch noch um Familien geht, in denen Kinder aufwachsen. Wenn zwei Menschen sich wechselseitig Unterstützung versprechen, dann schuldet ihnen die Gesellschaft ihrerseits Unterstützung, und zwar nicht, weil sie das so gerne wollen, sondern weil die Gesellschaft in ihrem Fortbestand von dieser Art der wechselseitigen Verantwortungsübernahme abhängt. Das ist es, worauf es ankommt und nicht das Geschlecht der beteiligten Personen.
+
+Das Feld der Politik zu überlassen, so Narrativ B, und abzuwarten, bis sich die öffentliche Meinung entwickelt und der Gesetzgeber tätig geworden ist, hieße Menschen, die von eben diesem demokratisch legitimierten Gesetzgeber in ihren Grundrechten verletzt werden, im Stich zu lassen. James Obergefell hat überhaupt nichts davon, wenn sich irgendwann die Politik eines Besseren besinnt oder auch nicht: ihm wird jetzt, hier und heute Unrecht zugefügt. Grundrechte gibt es nicht nur, wenn und soweit die Politik das gut findet. Grundrechte sind gerade dazu da, den Menschen gegen die Macht, die Minderheit gegen die Mehrheit zu beschützen. Ihnen zur Geltung zu verhelfen, ist die vornehmste Aufgabe der Justiz, und daher ist es kein Staatsstreich, wenn jetzt fünf Richter_innen die Homo-Ehe in den USA durchsetzen, sondern ganz einfach ihr Job.
+
+## Was eine Verfassung leisten muss
+
+Ich bin ja sonst immer gern dabei, wenn es darum geht, verfassungsgerichtliches Philosophenkönigtum zu geißeln, das so tut, als könne man die Antwort auf jede noch so politische Frage im Grundgesetz nachschlagen, und dabei nach und nach jedes Gefühl für die Grenzen der eigenen Entscheidungskompetenz verliert. Aber hier scheint mir tatsächlich um etwas anderes zu gehen, und zwar nicht, weil ich bei Narrativ B das Ergebnis lieber mag. Sondern weil ich die Verfassung, von der Narrativ B spricht, für um ein Vielfaches leistungsfähiger halte als die, von der Narrativ A spricht.
+
+In den Dissenting Opinions im Fall Obergefell scheint mir sehr schön ins Relief zu treten, wie stumpf und blind die Verfassung von Narrativ A ist, wie wenig sie wahrnimmt und wie wenig gesellschaftliche Realität sich in ihr spiegelt. Narrativ A ist und macht blind für die gesellschaftliche Situation, in der erzählt wird, für die eigenen politischen Präferenzen derer, die es erzählen, und schließlich für die individuellen Menschen, deren Schicksal den Anlass der Erzählung überhaupt gibt.
+
+Narrativ A tut so, als lebten wir in einer stabilen, von mythischen Verfassungsvätern vor 250 Jahren wohl geordneten Welt, wo die Ehe eben die Ehe ist, ein vorgefundenes gesellschaftliches Faktum, das seit Jahrtausenden besteht und auch noch weitere Jahrtausende fortbestehen könnte, wären da nicht bestimmte nicht verheiratete Leute, die den Verheirateten ihr Glück neiden und streitig machen. Wir leben aber in keiner wohl geordneten Welt. In den 250 Jahren, während der die von den Verfassungsvätern geordnete Welt existierte, wurden Schwule und Lesben diskriminiert, ausgegrenzt, verfolgt, kriminalisiert, bespuckt, geschlagen und getötet. Das ist ein gesellschaftliches Faktum, und das kommt nicht vor in Narrativ A. Genauso wenig kommt James Obergefell in diesem Narrativ vor, und was ihm angetan wird, wenn ihn die Behörde, die der Liebe seines Lebens den Totenschein ausstellt, als einen Fremden behandelt. Ihm wird damit ja nicht nur gesagt, dass er, was er gern hätte, leider nicht bekommen kann. Ihm wird gesagt: du zählst hier nicht, du kannst schon froh sein, wenn wir dich nicht gleich einsperren oder umbringen, denn du bist ein Schwuler. Auch das kommt nicht vor.
+
+Narrativ A entgegnet darauf: Das mag schon sein, dass das nicht vorkommt, aber da können wir doch nichts dafür. Die Not von Schwulen und Lesben kommt halt nun einmal nicht vor in der Verfassung, solange sie niemand hineingeschrieben hat. Und hineinschreiben kann sie nur die verfassungsgebende bzw. -ändernde Gewalt – also die Politik.
+
+Das ist wiederum eine sehr saubere, wohl geordnete Welt, die in diesem Argument gezeichnet wird. Aber auch hier: Das ist nicht die Welt, in der wir leben. Diese Art von Verfassungspositivismus macht nur blind gegenüber der Tatsache, dass Richter Entscheidungen treffen. Dass sie eine Wahl treffen zwischen Dies und Dies Nicht. Verbietet die Verfassung, das Wahlrecht in den Südstaaten unter den Vorbehalt zu stellen, dass es keine Schwarzen diskriminiert? Dies ja. Verbietet die Verfassung, den Einfluss von Milliardären auf den Wahlkampf zu regulieren? Dies ja. Verbietet die Verfassung, Amerikanern das Tragen von Waffen zu verbieten? Dies ja. Verbietet die Verfassung, gleichgeschlechtliche Paare den Zugang zur Ehe zu verwehren? Dies nicht.
+
+Es weiß doch jeder, dass es kein Zufall ist, dass von den neun Richtern sich immer die gleichen vier zusammenfinden und mit ja bzw. nein stimmen, mit Richter Kennedy als Swing Vote, der den Aussschlag gibt (und dafür dann das Urteil schreiben darf). Wer behauptet, die eigene Wahl sei durch vorgelagerte politische Entscheidungen bzw. die eigene Rechtsprechungshistorie prädeterminiert, der macht sich bewusst und gezielt blind für die Selektionskriterien, die hier am Werk sind.
+
+Diese Selektionskriterien sind sicherlich politisch, da haben die vier Dissenter völlig Recht. Aber sie sind nicht nur gesellschaftspolitisch i.S.v. Präferenzen für bestimmte gesellschaftliche Verteilungslagen gegenüber anderen. Sie sind auch verfassungspolitisch. Sie sagen etwas aus über das Verständnis von Verfassung und ihrer Leistungsfähigkeit in der Gesellschaft, womit wir wieder beim Ausgangspunkt wären.
+
+Verfassungen sind nicht einfach nur da, sondern sie sind für etwas da. Wer sich eine Verfassung gibt, der erlegt sich rechtliche Bindungen auf, um wahrnehmungsfähiger zu werden. Verfassungsrecht bindet die Eigenen, die Augen aufzumachen und sich konfrontieren zu lassen von den Anderen. Wahrzunehmen, was die meinen, die etwas Anderes meinen. Wahrzunehmen, was die glauben, die etwas Anderes glauben. Menschen- und Minderheitenrechte schränken die Macht ein, aber sie machen sie gleichzeitig wahrnehmungsfähiger, effektiver in der Verarbeitung gesellschaftlicher Realitäten und damit am Ende – mächtiger.
+
+Gemessen an dieser Funktion ist es nicht allein politische Sympathie für die Homo-Ehe, die mich ins Lager des Narrativ B treibt. Ihre Rekonstruktion von Verfassung hat einfach mehr Power. Die Verfassung des Narrativ A taugt nicht viel. Sie ist stumpf und blind, die gesellschaftliche Wirklichkeit spiegelt sich nur höchst selektiv in ihr, und die Selektionskriterien kriegt sie obendrein nicht richtig in den Blick. Sie ist in den Händen von Verfassungsrichtern das, was ein schartiges Skalpell in den Händen eines Chirurgen wäre (man lese nur das Votum von Scalia – der Mann ist ein Blogger, kein Richter!). Mit einer solchen Verfassung kann man, welche politischen Präferenzen auch immer man verfolgt, nicht zufrieden sein.

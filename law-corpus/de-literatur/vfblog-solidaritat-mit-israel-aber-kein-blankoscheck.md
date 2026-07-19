@@ -1,0 +1,69 @@
+---
+title: Verfassungsblog — Solidarität mit Israel, aber kein Blankoscheck
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2023-10-17'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/solidaritat-mit-israel-aber-kein-blankoscheck/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Solidarität mit Israel, aber kein Blankoscheck
+
+Die Taten der Hamas sind in einer ausführlichen Erklärung israelischer Völkerrechtler/-innen, die auch der Verfasser unterschrieben hat, als das benannt worden, was sie sind: völkerrechtliche Kernverbrechen, möglicherweise sogar ein gegen die jüdische Bevölkerung Israels gerichteter Genozid. Unter Völker(straf)rechtlern dürfte das weitgehend konsentiert sein, vor allem hierzulande müssen wir uns allerdings selbstkritisch die Folgefrage stellen, wie weit unsere Unterstützung für den militärischen Gegenschlag Israels gehen kann. Einige politische Stellungnahmen – Zusicherungen unverbrüchlicher Unterstützung und „grenzenloser Solidarität“1) – scheinen dabei, beim Wort genommen, den völkerrechtlichen Grenzen der israelischen Reaktion keine oder doch nur eine geringe Bedeutung beizumessen – wohltuend insoweit, dass Außenministerin Baerbock in einer Talkshow immerhin an den „Rahmen des internationalen Rechts“ erinnert.
+
+Von Relevanz ist hier insbesondere das Recht des bewaffneten Konflikts (ius in bello), mitunter auch als humanitäres Völkerrecht bezeichnet. Dieses Recht ist auch und gerade vom Obersten Gerichtshof (OGH) Israels maßgeblich geprägt und weiterentwickelt worden (vgl. allgemein dazu hier und hier). Mit Blick auf Israels humanitäre Verantwortung bezüglich des Gazastreifens hat der OGH noch im Jahre 2008 (Jaber Al-Bassiouni Ahmed), drei Jahre nach dem formalen Abzug Israels,2) festgestellt:
+
+“The duty of the State of Israel derives from the essential humanitarian needs of the inhabitants of the Gaza Strip. The respondents [israelische Regierung, K.A.] are required to discharge their obligations under international humanitarian law, which requires them to allow the Gaza Strip to receive only what is needed in order to provide the essential humanitarian needs of the civilian population.” (para. 11, Herv. K.A.).
+
+Die israelische Regierung hat ihre humanitärvölkerrechtlichen Verpflichtungen in diesem Verfahren nicht – ebenso wenig wie heute3) – bestritten, vielmehr selbst „die grundlegenden Verpflichtungen, die für Kombattanten in bewaffneten Konflikten gelten und die sie verpflichten, für das Wohlergehen der Zivilbevölkerung zu sorgen und ihre Würde und Grundrechte zu achten“, angeführt (ibid., para. 14). Der OGH hat deshalb weiter festgestellt:
+
+“It transpires from the aforesaid that the respondents do not in any way deny the existence of their humanitarian obligations, which require the State of Israel to allow the passage of essential humanitarian goods to the Gaza Strip, and to refrain from deliberately inflicting damage on humanitarian facilities. According to the respondents' arguments …  not only are the respondents allowing the transfer of essential goods to the civilian population in the Gaza Strip, but they also regard this as a humanitarian obligation for which they are liable pursuant to international law and to a cabinet decision.“ (ibid., para. 15; Herv. K.A.).
+
+Bei dieser Entscheidung ging es lediglich um die Einschränkung (!) der Benzin- und Elektrizitätsversorgung (Wasser/Nahrungsmittel ausgenommen), also um eine Einschränkung, die nach Israels eigenem Bekunden „die humanitären Grundbedürfnisse der Bewohner nicht beeinträchtigt hat“ (ibid., para. 6). Also ist die nun (von Verteidigungsminister Yoav Gallant) erklärte und vollzogene vollkommene Abriegelung des Gazastreifens („complete siege“) schon nach den von Israel selbst aufgestellten Maßstäben unzulässig. Auch die völkerrechtliche Lage ist insoweit eindeutig: Die vollkommene Abriegelung ist – jedenfalls über eine sehr kurzen Zeitraum hinaus – humanitärvölkerrechtlich verboten (Art. 54(1) Erstes Zusatzprotokoll zu den Genfer Konventionen [ZP I]; s. auch Art. 23 Vierte Genfer Konvention, Art. 70 ZP I) und hat das Internationale Komitee des Roten Kreuzes (IKRK) zu einer – angesichts der sonst üblichen Vertraulichkeit seiner Aktivitäten – selten eindeutigen Stellungnahme veranlasst:
+
+“The instructions issued by the Israeli authorities for the population of Gaza City to immediately leave their homes, coupled with the complete siege explicitly denying them food, water, and electricity, are not compatible with international humanitarian law.”
+
+Die Maßnahme verwirklicht darüber hinaus das Kriegsverbrechen des „vorsätzliche[n] Aushungern[s] von Zivilpersonen als Methode der Kriegführung durch das Vorenthalten der für sie lebensnotwendigen Gegenstände, einschließlich der vorsätzlichen Behinderung von Hilfslieferungen …“ (Art. 8(2)(b)(xxv) Römisches Statut des Internationalen Strafgerichtshofs [IStGHS]; dazu eingehend und überzeugend Dannenbaum; zust. Dill); dieses Verbrechen gilt auch in einem nicht-internationalen bewaffneten Konflikt (zum neuen Art. 8(2)(e)(xix) IStGHS, s. hier), zumindest völkergewohnheitsrechtlich (dazu erneut Dannenbaum). Allerdings ist der Vorsatzinhalt umstritten und der Nachweis, wie meist, schwierig. Insoweit liefern aber bestimmte Äußerungen israelischer Regierungsvertreter starke Indizien, etwa die Äußerung von Energieminister Israel Katz: “kein elektrischer Schalter wird eingeschaltet, kein Hydrant geöffnet und kein Tankwagen kommt” bis die Entführten freigelassen werden.
+
+Aus dem humanitären Völkerrecht ergibt sich weiter, dass zwischen zivilen und militärischen Zielen zu unterscheiden ist (sog. Unterscheidungsgrundsatz, Art. 48 ZP I; s. auch Art. 51(1) und (2) ZP I; Art. 13(1) und (2) ZP II; International Committee of the Red Cross [ICRC] Customary Rules 1, 7) und das militärische Gegenmaßnahmen verhältnismäßig sein müssen (ICRC, Customary Rule 14). Aus dem Unterscheidungsgrundsatz folgt grundsätzlich, dass zwar Hamas-Kämpfer angegriffen und auch getötet werden dürfen, aber nicht aktiv an den „Feindseligkeiten“ beteiligte Zivilisten zu verschonen sind.4) Allerdings hält sich die Hamas selbst nicht an den Unterscheidungsgrundsatz, sondern tritt – typisch für einen asymmetrischen Konflikt mit einem nicht-staatlichen Akteur – nicht uniformiert auf und versteckt sich bewusst inmitten der Zivilbevölkerung. David French argumentiert deshalb, dass Hamas für die von israelischen Angriffen verursachten Kollateralschäden verantwortlich sei (New York Times, 12.10.2023). Das geht aber zu weit und ist ungenau. Letztlich kommt es darauf an, ob durch die Nichtbeachtung des Unterscheidungsgrundsatzes durch den Gegner (hier Hamas) das Ziel insgesamt zu einem militärischen Ziel wird (so etwa bei Umwidmung einer Schule – eines an sich geschützten zivilen Objekts – zu einem Militärstützpunkt). Jedenfalls enthebt die Nichtbeachtung des Unterscheidungsgrundsatzes durch den Gegner den Angreifer (hier Israel) nicht von seiner Beachtung. Die humanitärvölkerrechtlichen Verpflichtungen stehen nicht unter dem Vorbehalt des (sonst häufig geltenden) Grundsatzes der Reziprozität (ICRC, Customary Rule 140). Zivilisten bleiben geschützt, wenn sie, wie schon oben zitiert, nicht aktiv an den Feindseligkeiten teilnehmen (Art. 51(3) ZP I). Dies tun sie grundsätzlich auch dann nicht, wenn sie als Schutzschilder (zu Verbot und ggf. Strafbarkeit s. ICRC, Customary Rule 97 sowie Art. 8(2)(b)(xxiii) IStGHS) missbraucht werden.5)
+
+Auch die konkrete Anwendung des Verhältnismäßigkeitsgrundsatz ist keineswegs banal. Schon aus der Formulierung der oben zitierten IKRK-Regel 14 ergibt sich, dass es entscheidend darauf ankommt, dass (kollaterale) zivile Opfer oder Schäden nur dann unverhältnismäßig und damit verboten sind, wenn sie “im Verhältnis zu dem erwarteten konkreten und unmittelbaren militärischen Vorteil übertrieben wären“. French argumentiert deshalb, dass die Verhältnismäßigkeit nicht verlange, dass die israelischen Streitkräfte „mit demselben Maß an Gewalt reagieren oder denselben Anteil an Opfern erleiden wie die Hamas“. Klar ist, dass ein gezielter Angriff auf einen Hamas Stützpunkt in der Nähe eines zivilen Ziels grundsätzlich zulässig ist. Letztlich kommt es auch hier auf die Umstände des konkreten Einzelfalls an.
+
+Schließlich sind auch Warnungen an die Zivilbevölkerung im Sinne sog. Vorsorgemaßnahmen (precautionary measures) zur Minimierung ziviler Opfer und Schäden erforderlich (vgl. Art. 57, 58 ZP I; ICRC Customary Rule15). Die entsprechenden Maßnahmen der israelischen Streitkräfte sind deshalb grundsätzlich zu begrüßen (zur Evakuierungsaufforderung s. hier), sie heben aber den Schutz der Zivilbevölkerung nur bei der schon oben genannten aktiven Beteiligung an den Feindseligkeiten auf; diese müssen auch nicht ihre Häuser verlassen. Dannenbaum bringt das auf den Punkt:
+
+„… civilians do not lose their protected civilian status by declining to leave their homes or their homeland, because such a declination does not amount to participating directly in hostilities.“
+
+Hinzu kommt, dass es im Gazastreifen, dem größten „Freiluftgefängnis“ der Welt, keine oder kaum Ausweichmöglichkeiten für die Zivilbevölkerung gibt. Insbesondere kann diese auch nicht kollektiv – im Sinne einer Repressalie (verboten gemäß Art. 51(6) ZP I; auch Dill) oder Kollektivstrafe (krit. Dill: „logic of collective punishment“) – für die verbrecherischen Taten der Hamas in Anspruch genommen werden. Die völkerrechtsgemäße und zugleich effektive Bekämpfung der Hamas in einem so kleinen und dicht besiedelten Gebiet wie dem Gazastreifen stellt die israelischen Streitkräfte damit vor ein eigentlich unüberwindbares Dilemma, denn zivile Opfer und Schäden sind in einer solchen Situation praktisch unvermeidbar. Der Ruf nach einer Evakuierung ist damit – jedenfalls aus rein militärischer, israelischer Sicht – folgerichtig, aber selbst wenn ihm Folge geleistet wird, kommt es zu zivilen Opfern, wie der Angriff auf eine aus dem Norden Gazas kommende zivile Fahrzeugkolonne am 13. Oktober in tragischer Weise gezeigt hat.6) Und selbst eine Bodenoffensive wird nicht nur zahlreiche weitere Opfer unter den (de facto) Kombattanten, sondern auch unter der Zivilbevölkerung fordern, verbunden mit möglichen  weiteren Verletzungen des humanitären Völkerrechts und Kriegsverbrechen.
+
+Zum Zeitpunkt der Abfassung dieses Texts wird die humanitäre Situation im Gazastreifen stündlich unerträglicher.7) Die Vereinten Nationen, das IKRK und andere Organisationen haben ein Ende der Abriegelung und einen Waffenstillstand gefordert.8) Ein Waffenstillstand ist zwar keine realistische Option ohne irgendeine Art internationaler militärischer Beteiligung, doch sollte die Bundesregierung nun alle Bemühungen um eine humanitäre Lösung unterstützen, nicht zuletzt um ihrer völkerrechtspolitischen Glaubwürdigkeit willen. Weitere Waffenlieferungen an Israel sollten in dieser Situation sehr genau bedacht werden, sie könnten völker(straf)rechtliche Folgen für Deutschland und die Beteiligten haben.
+
+ 
+
+Übersetzungen aus dem Englischen vom Verfasser.
+
+ References[+]
+
+ References  
+
+ &#8593;1 Dabei hat Bundeskanzler Scholz auch einmal mehr das diffuse und vordemokratische Konzept der „Staatsräson“ bemüht (hier), die daran auch und gerade von jüdischen Intellektuellen geübte Kritik (s. nur Mendel, Über Israel Reden, 2023 (e-book), S. 34 ff.) hat die regierungsamtlichen Redenschreiber/-innen offensichtlich noch nicht erreicht.
+
+ &#8593;2 Es gibt eine breitere Debatte darüber, ob die Besatzung mit dem militärischen Rückzug Israels aus dem Gazastreifen im Jahr 2005 formell beendet wurde. Im Kern geht es um die Frage, ob Israel noch immer eine ausreichende effektive Kontrolle ausübt, um von einer Fortsetzung der Besatzung (einschließlich der entsprechenden Verpflichtungen nach dem Besatzungsrecht) sprechen zu können, oder ob diese Kontrolle mit dem Rückzug effektiv auf die Palästinensische Autonomiebehörde übertragen wurde. Für diese Ansicht z.B. Shany, Yearbook of International Humanitarian Law 8 (2005), S. 369; für eine fortgesetzte Kontrolle etwa der UN-Menschenrechtsrat, s. Human Rights Council, Report of the Independent International Commission of Inquiry on the Occupied Palestinian Territory, including East Jerusalem, and Israel, UN Doc. A/77/328, 14. September 2022, Fn. 10 und para. 19; für einen differenzierteen, funktionalen Ansatz, den sui generis Charakter von Gaza betonen, Gross, The Writing on the Wall, 2017, S. 6 ff., 204 ff.
+
+ &#8593;3 Der Sprecher der israelischen Streitkräfte (Israeli Defence Forces, IDF), Oberleutnant Peter Lerner, hat im BBC Global News Podcast vom 15.10.2023 (ab Minute 9:50) erklärt, dass sich Israel im Rahmen des humanitären Völkerrechts bewege und dessen Regeln einhalte.
+
+ &#8593;4 Vgl. Art. 51(3) ZP I: “Civilians shall enjoy the protection … unless and for such time as they take a direct part in hostilities.”
+
+ &#8593;5 Zur strittigen Frage, ob das auch gilt, wenn sie sich freiwillig als Schutzschilder zur Verfügung stellen s. Ambos, Treatise on International Criminal Law. Volume II, 2. Aufl. 2022, S. 189 f. m.w.N.
+
+ &#8593;6 Die Verantwortung der IDF für den Angriff ist bisher noch nicht bestätigt, insbesondere nicht von den IDF selbst, s. hier und hier.
+
+ &#8593;7 Inzwischen scheint Israel die Wasserversorgung wiederhergestellt zu haben (hier).
+
+ &#8593;8 Vgl. statt vieler die Stellungnahme von Lynn Hastings, Deputy Special Coordinator, UN Resident and Humanitarian Coordinator von UNSCO (The Office of the United Nations Special Coordinator for the Middle East Peace Process), in BBC Global News Podcast vom 15.10.2023, ab Minute 6:30.

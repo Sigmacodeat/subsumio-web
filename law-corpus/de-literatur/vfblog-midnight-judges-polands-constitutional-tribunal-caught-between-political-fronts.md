@@ -1,0 +1,58 @@
+---
+title: >-
+  Verfassungsblog — Midnight Judges: Poland's Constitutional Tribunal Caught
+  Between Political Fronts
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2015-11-23'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/midnight-judges-polands-constitutional-tribunal-caught-between-political-fronts/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Midnight Judges: Poland's Constitutional Tribunal Caught Between Political Fronts
+
+What every student of the US constitutional law learns in the first class is Marbury v. Madison – a case about the midnight appointments made by President John Adams on his last day in office.[i] In this case the US Supreme Court established not only the doctrine of judicial review in the United States, but also its own authority vis-à-vis the legislative and executive branch of government. The power to appoint a certain category of judges was granted in the Judiciary Act of 1801, adopted by Congress and signed by President Adams just before his successor, Thomas Jefferson, took over the power, and the appointments. William Marbury was among the less lucky “Midnight Judges” who did not receive their commissions on time, and could not assume their offices as the new President ordered the remaining commissions not to be delivered.
+
+Today, after 200 years, the mechanism of “midnight” amendments to the judiciary acts and hasty appointments before the end of the term are still in use. In this regard the human nature has not changed. Homo politicus  learnt how to prevent the winners from taking it all. Political greed and partisan appointments of judges of constitutional courts are nothing new in fledgling democracies. As professor Wojciech Sadurski noticed in the transition countries the appointment of judges is a “thoroughly political” affair.[ii] However, one could wish that governments in an established constitutional regime would not need to resort to such infamous practices like “Midnight” appointments and amendments, but accept the limits of constitutional power. Sadly, it is not the case of Poland.
+
+The story of the “Midnight Judges” in Poland shows that the history repeats itself in sequences, but in a different space and context. The Polish Constitutional Tribunal was established in 1985 in the wake of the democratic reforms and the regime change. Its status and tasks were stipulated in the Constitution of 1997 and the Act on the Constitutional Tribunal of 1997. According to Article 194 (1) of the Constitution “the Constitutional Tribunal is composed of 15 judges chosen individually by the Sejm for a term of office of 9 years from amongst persons distinguished by their knowledge of the law. No person may be chosen for more than one term of office.”
+
+The history of the Constitutional Tribunal in Poland shows that it is one of the most respected constitutional organs. Until now, the Constitutional Tribunal has never become the object of a direct political attack. The institutional prudence it has represented in the last decades allowed to safeguard its independence, and the unique position of the “constitutional guardian.” It has been obviously the Tribunal’s policy to avoid political controversies, and strike a fair balance between the advantages of holding laws unconstitutional, and the consequences of such decisions for the legal systems, and in particular for individuals. One could even argue that after the early years of democratic transition, that is after the new Constitution came into force, the Constitutional Tribunal tried to avoid the image of an “activist court,” and remained conscious about the fact that its constitutional position depends on the execution of judgements by the Parliament which explains judicial self-restraint exercised by the Tribunal both in domestic and EU-related matters.
+
+By the end of this year the Lower Chamber of the Parliament – the Sejm – was to choose five judges of the Constitutional Tribunal because of the end of term that fell on 6 November, 2 December and 6 December respectively. However, the selection process would coincide with the parliamentary elections. As the first sitting of the newly elected Parliament needs to be summoned by the President of the Republic within 30 days after elections, there was a risk that 3 seats in the Constitutional Tribunal will remain vacant until the new Parliament commences its work. However, the outgoing Parliament appointed not 3, but 5 judges, during its last sitting on 8 October 2015. It acted in pursuance of the transitional provisions of the new Act on the Constitutional Tribunal adopted on 25 June 2015.
+
+According to the new Act, the motion for appointment of a judge should be presented not later than 3 months after the Act entered into force, while the general rule introduced by this law is that such motion should be presented not later than 3 months before the expiration of the term in office. The draft of the new Act on the Constitutional Tribunal was presented by the former President, Bronislaw Komorowski, already in 2013. The reform aimed to introduce more coherent rules of the procedure before the Constitutional Tribunal, as well as specify the status of judges, and the selection procedure. Characteristically, most of the provisions included in the draft concerning the participation of other actors in the selection procedure such as representatives of legal processions, or universities, have been dropped. In result, the appointment of judges of the Constitutional Tribunal remained exclusively in the hands of the majority in the Sejm.
+
+The old Act on the Constitutional Tribunal did not include provisions concerning temporal aspects of the selection procedure. The constitutional practice was based on the Rules of the Sejm. What has not changed is the rule that “a person elected to the office of a judge of the Tribunal shall take the oath in the presence of the President of the Republic of Poland.” When the current President, Andrzej Duda, refused to take the oath of office from five judges appointed by the Sejm in October it came as no surprise. In result, three seats in the Constitutional Tribunal remain vacant. Although the impugned law may in fact turn out to be unconstitutional, the President’s refusal to take the oath from the duly appointed judges is both illegal and correctible, to cite words the Chief Justice Marshall used in Marbury. A judge is appointed by the Sejm, whereas taking the oath shall be deemed a duty enjoyed by the Constitution. Hence, the President shall take the oath from all judges appointed by the Sejm. In this context, the majority opinion in Marbury can be instructive for the Polish Constitutional Tribunal even nowadays.
+
+The newest development in the Polish midnight appointment story was the draft amendment of the Act on the Constitutional Tribunal submitted overnight, but withdrawn under the criticism of the Office of Legislative Analysis. Ultimately, in record time, the Parliament adopted an amendment to the Act on the Constitutional Tribunal on 19 November 2015 which stipulates a limited term of the Chief Justice, and vacates the current seats of the Chief Justice and the Vice-Chief, and provides that the selection of judges whose term expires in this year is to take place within 7 days after the law comes into force.[iii] It also makes the appointment conditional upon taking the oath before the President. The amendment was passed by the new Sejm, in absence of the opposition parties that had left the session in an act of protest, with tacit consent of the Senate that did not propose amendments or the motion for rejection of the draft.[iv] Currently pending before the Constitutional Tribunal is the motion for constitutional review of the transitional provisions made by the group of MPs of the previous Parliament. The recent amendment to the Act is also likely to be challenged before the Constitutional Tribunal.
+
+One needs to notice that five new judges have been validly elected according to the laws binding at the time of their election. In addition to the duty to protect acquired rights, there is also the constitutionally entrenched duty of all constitutional organs to cooperate with each other for the common good. The refusal to take the oath seems to contradict both principles. While the Constitutional Tribunal’s capacity to adjudicate cases in full bench is currently limited, the Constitutional Tribunal will soon have a surplus of judges who were “lawfully” appointed by two consecutive Sejms. One can expect that the President will take the oath only from the ones appointed according to the new rule.
+
+What we are witnessing now is a prelude to an “inglorious constitutional revolution.” The recent developments concerning the appointment of judges of the Constitutional Tribunal in Poland mark a new chapter of constitutionalism in Poland. For the first time in the history of the democratic government in Poland the Constitutional Tribunal became the object of direct political attack, which destabilizes its functioning, and any future decision-making. In this regard Poland clearly follows the path of Hungary, and the attack of the FIDESZ government on the independence of the Hungarian Constitutional Court,[v] the judiciary,[vi] and the National Judicial Council, including its President, András Baka.[vii] It also signals that the newly elected government in Poland is selective in its recognition of constitutionalism as it aims to expand the “democratic” control to all independent institutions of the state, including the administration of justice and the Constitutional Tribunal.
+
+This case is one of the many stories in Central and Eastern Europe that show how difficult it is to internalize the idea of limited government, and to accept the limits of one’s own power.[viii] It is also teaching us that passions, and human greed often take control over the rule of law. What we hope to see however is that such practices are not to be tolerated by the elite club of the European Union that should require reciprocity in loyal cooperation. The breach of the entry conditions such as the respect for the rule of law is certainly a breach of loyal cooperation in the European project. One needs to say it loud that without an independent constitutional court non possumus.
+
+[i] Marbury v. Madison, 5 U.S. 137 (1803).
+
+[ii] W. Sadurski, Rights before Courts. A Study of Constitutional Courts in Postcommunist States of Central and Eastern Europe, Springer 2005.
+
+[iii] http://orka.sejm.gov.pl/proc8.nsf/ustawy/12_u.htm
+
+[iv] The Helsinki Foundation for Human Rights calls upon the President of Poland not to sign the Act, but rather to initiate the preventive constitutional review. In the opinion of the Foundation the Act violates the Constitution on numerous grounds, including the rules of law-making. See http://beta.hfhr.pl/wp-content/uploads/2015/11/HFPC_wystapienie_20112015.pdf
+
+[v] Opinion on Act CLI of 2011 on the Constitutional Court of Hungary adopted by the Venice Commission at its 91st Plenary Session (Venice, 15-16 June 2012), CDL-AD(2012)009.
+
+[vi] C-286/12 Commission v. Hungary, judgment of 6 November 2013.
+
+[vii] See Baka v. Hungary, judgment of 27.05.2014, Appl. No. 20116/12.
+
+[viii] See i.e. the summary of the recent developments in Czech Republic, Hungary, Poland, Romania, Slovenia in International Journal of Constitutional Law, Volume 13 , Issue 1 (2015).

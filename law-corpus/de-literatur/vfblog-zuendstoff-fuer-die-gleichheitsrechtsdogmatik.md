@@ -1,0 +1,81 @@
+---
+title: Verfassungsblog — Zündstoff für die Gleichheitsrechtsdogmatik
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2021-07-18'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/zuendstoff-fuer-die-gleichheitsrechtsdogmatik/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Zündstoff für die Gleichheitsrechtsdogmatik
+
+Gut vier Jahre nach den vieldebattierten und -kritisierten „Kopftuch-Entscheidungen“ Achbita und Bougnaoui hatte der EuGH am 15. Juli 2021 erneut über Kopftuchverbote in Form betrieblicher Neutralitätsregelungen zu entscheiden – diesmal in zwei deutschen Fällen (verbundene Rechtssachen C-804/18 und C-341/19).
+
+Die Schlussanträge des Generalanwalts Rantos vom 25. Februar 2021 ließen keine Änderung der bisherigen unternehmensfreundlichen Rechtsprechungslinie des Gerichtshofs erwarten. Sie haben auch hier bereits im Vorfeld der Entscheidung für Kritik und Diskussion gesorgt. Umso erfreulicher ist, dass der EuGH seine offene Haltung gegenüber betrieblichen Kopftuchverboten durch seine jüngste Entscheidung zumindest punktuell relativiert hat, und zugleich neuen Input für die Debatte um die Einordnung von Kopftuchverboten als unmittelbare oder mittelbare Diskriminierung liefert, der die Rechtsposition kopftuchtragender Musliminnen langfristig stärken könnte.
+
+## Die Sachverhalte
+
+Die Entscheidung erging anlässlich zweier Vorabentscheidungsersuchen: Sowohl das Arbeitsgericht Hamburg als auch das Bundesarbeitsgericht hatten sich mit Vorlagefragen an den EuGH gewandt, nachdem eine Erzieherin und eine Kassiererin einer Drogeriemarkt-Kette vor den nationalen Gerichten geklagt hatten. Beiden Frauen war das Tragen des Kopftuchs bei der Arbeit verboten worden, unter Verweis auf eine Neutralitätspolitik des jeweiligen Unternehmens, die wiederum entsprechenden Kundenwünschen Rechnung tragen sollte (die diskriminierende Natur derartiger Kundenwünsche wurde hier bereits herausgearbeitet). Die beklagten Unternehmen argumentierten, ihre Neutralitätspolitik, einschließlich des Verbots sichtbarer Zeichen politischer, weltanschaulicher oder religiöser Überzeugungen (und damit auch des Kopftuchs), entspreche ihrer durch Artikel 16 EU-Grundrechtecharta garantierten unternehmerischen Freiheit, bzw. konkret der hierdurch garantierten Wettbewerbsfreiheit.
+
+## Die Entscheidung des Gerichtshofs
+
+Auch nach der jüngsten Entscheidung des Gerichtshofs bleibt es dabei, dass das Verbot des Tragens sichtbarer Zeichen politischer, weltanschaulicher oder religiöser Überzeugungen durch das Bedürfnis des Arbeitgebers gerechtfertigt sein kann, gegenüber den Kunden ein Bild der Neutralität zu vermitteln. Dennoch schränkte der EuGH seine in Achbita vertretene arbeitgeberfreundliche Haltung nunmehr weiter ein. Erforderlich sei ein „wirkliches Bedürfnis“ des Arbeitgebers zum Erlass eines Verbots, für das unter anderem „berechtigte Erwartungen der Kunden oder Nutzer“ maßgeblich sein können (Rn. 64f.). Darüber hinaus sei der Nachweis des Arbeitgebers entscheidend, dass ohne eine Politik der politischen, weltanschaulichen und religiösen Neutralität seine unternehmerische Freiheit beeinträchtigt würde (Rn. 67). Gefordert wird also eine stichhaltige Begründung unternehmerischer Neutralitätsgebote. Die vom Gerichtshof aufgestellten Maßstäbe lassen eine Parallele zur deutschen Rechtsprechungslinie erkennen, die das Vorliegen einer „hinreichend konkreten Gefahr“ für die zu schützenden Rechtsgüter als Voraussetzung für die Zulässigkeit eines Kopftuchverbots ansieht.
+
+Ein weiterer zentraler Aspekt der Entscheidung betrifft das Verhältnis von Unionsrecht und nationalem Verfassungsrecht. Diesbezüglich stellt der EuGH klar, dass nationale Vorschriften, die die Religionsfreiheit schützen, bei der Prüfung der Frage, ob eine mittelbare Ungleichbehandlung aufgrund der Religion oder der Weltanschauung angemessen ist, als günstigere Vorschriften im Sinne von Artikel 8 Abs. 1 der Richtlinie 2000/78 berücksichtigt werden dürfen (Rn. 90). Somit verbleibt den deutschen Gerichten ein Entscheidungsspielraum, der keine nennenswerte Änderung im Kurs der deutschen Rechtsprechung erwarten lässt. Die vergleichsweise hohen Hürden, welche die deutschen Gerichte im Rahmen ihrer religionsfreiheitsbasierten Rechtsprechung zu Kopftuchverboten aufgestellt haben, werden nicht durch unional determinierte antidiskriminierungsrechtliche Standards unterminiert. Obgleich im Vorfeld der Entscheidung über eine Fortsetzung der Solange-Rechtsprechung des BVerfG spekuliert (ArbRAktuell 2019, 211) worden war, hat der EuGH also durch seine Entscheidung einen Konflikt zwischen nationalem Verfassungsrecht und Unionsrecht vermieden, wie hier ausgearbeitet wurde.
+
+Darüber hinaus wirft die Entscheidung interessante gleichheitsrechtsdogmatische Fragen auf, die das Verhältnis zwischen mittelbarer und unmittelbarer Diskriminierung betreffen. Die aktuelle Entscheidung verleiht der bereits zuvor hitzigen Debatte um die Bestimmung der „richtigen“ Diskriminierungsform in Kopftuchverbots-Fällen zusätzliche Sprengkraft.
+
+## Kopftuchverbote als mittelbare Diskriminierung…
+
+Das Arbeitsgericht Hamburg hatte die Frage nach der einschlägigen Diskriminierungsform mit der ersten Vorlagefrage in der Rechtssache C-804/18 ausdrücklich aufgeworfen. Unter Verweis auf seine bisherige Rechtsprechung verneint der EuGH eine unmittelbare Diskriminierung aufgrund der Religion (Rn. 52), da
+
+[&#8230;] eine interne Regel eines privaten Unternehmens, die das Tragen sichtbarer Zeichen politischer, weltanschaulicher oder religiöser Überzeugungen am Arbeitsplatz verbietet, [&#8230;] keine unmittelbare Diskriminierung darstellt, da sie unterschiedslos für jede Bekundung solcher Überzeugungen gilt und alle Arbeitnehmer des Unternehmens gleichbehandelt, indem ihnen allgemein und undifferenziert u. a. vorgeschrieben wird, sich neutral zu kleiden, was das Tragen solcher Zeichen ausschließt (Urteil vom 14. März 2017, G4S Secure Solutions, C-157/15, EU:C:2017:203, Rn. 30 und 32). Da nämlich jede Person eine Religion oder eine Weltanschauung haben kann, begründet eine solche Regel, sofern sie allgemein und unterschiedslos angewandt wird, keine Ungleichbehandlung, die auf einem Kriterium beruht, das untrennbar mit der Religion oder der Weltanschauung verbunden ist.
+
+Im letzten Satz der Rn. 52 wird das maßgebliche Abgrenzungskriterium für die Einordnung als unmittelbare oder mittelbare Diskriminierung definiert: Entscheidend ist, ob das der Ungleichbehandlung zugrundeliegende Unterscheidungskriterium mit einem geschützten Merkmal (hier jenem der Religion) „untrennbar verbunden“ ist.
+
+## …oder unmittelbare Diskriminierung aufgrund der Religion?
+
+Die Abgrenzung wird an anderer, unerwarteter Stelle in der Entscheidung erneut aufgegriffen, und zwar anlässlich der ersten Vorlagefrage in der Rechtssache C-341/19, die eigentlich, wie der Gerichtshof selbst feststellt, „auf der Prämisse des Vorliegens einer mittelbaren Diskriminierung beruht“ (Rn. 72):
+
+Kann eine festgestellte mittelbare Ungleichbehandlung wegen der Religion im Sinne von Art. 2 Abs. 2 Buchst. b der Richtlinie 2000/78 aufgrund einer internen Regel eines privaten Unternehmens nur dann angemessen sein, wenn nach dieser Regel das Tragen jeglicher sichtbarer und nicht nur das Tragen auffälliger großflächiger Zeichen religiöser, politischer und sonstiger weltanschaulicher Überzeugungen verboten ist?
+
+Das vorlegende Gericht wollte damit die Frage klären, ob eine Neutralitätspolitik nur dann zulässig ist, wenn sie sämtliche religiösen, politischen und weltanschaulichen Zeichen verbietet, ob also die zugrundeliegende mittelbare Diskriminierung nur dann zu rechtfertigen ist, wenn ein Verbot jede sichtbare Ausdrucksform politischer, weltanschaulicher oder religiöser Überzeugungen umfasst (egal ob klein oder groß), oder ob auch ein Verbot allein „auffälliger großflächiger Zeichen“ zu rechtfertigen ist.
+
+Generalanwalt Rantos vertrat in seinen Schlussanträgen (Rn. 74) die Ansicht, dass auch ein Verbot allein großflächiger Zeichen rechtlich zulässig sei; er deutete sogar an, dass der Grundsatz der Verhältnismäßigkeit die Beschränkung auf ein Verbot großflächiger Zeichen gebieten könne, weil kleine Zeichen weniger „störend“ seien:
+
+Gewiss können auch kleine Zeichen wie ein Pin oder ein Ohrring einem aufmerksamen und interessierten Beobachter einen Hinweis auf die politischen, philosophischen oder religiösen Überzeugungen eines Arbeitnehmers geben. Solche diskreten, unauffälligen Zeichen können jedoch die Kunden des Unternehmens, die die Religion oder die Weltanschauung der betreffenden Arbeitnehmerin oder des betreffenden Arbeitnehmers nicht teilen, nicht stören.
+
+Rantos Argumentation ist mehr als fragwürdig. Dass allein die Größe eines religiösen (oder politischen) Zeichens kein maßgebliches Kriterium sein kann, verdeutlicht schon das Beispiel eines kleinen tätowierten Hakenkreuzes, welches wohl kaum als „nicht störend“ einzustufen sein dürfte. Hinzukommt die mit der Abgrenzung groß/klein verbundene Unsicherheit (was ist groß, was klein?), auf die die ehemalige Generalanwältin Sharpston in ihrer Shadow Opinion vom 23. März 2021 (Rn. 121) hingewiesen hat.
+
+Der EuGH hat sich der Einschätzung Rantos nicht angeschlossen, er sieht keine Rechtfertigungsmöglichkeit für ein derartiges partielles Verbot. Der Gerichtshof legt nahe, dass für eine Rechtfertigung gar kein Raum bestehe, da ein solches Verbot – was auch das vorlegende Gericht überrascht haben dürfte – als unmittelbare Diskriminierung einzustufen sei.
+
+Entscheidend für das Vorliegen einer unmittelbaren Diskriminierung ist, wie oben bereits herausgearbeitet, die „untrennbare Verbindung“ des fraglichen Differenzierungskriteriums mit einem geschützten Diskriminierungsmerkmal. Und nach Ansicht des EuGH kann das Kriterium des Tragens auffälliger großflächiger religiöser, politischer oder weltanschaulicher Zeichen mit bestimmten religiösen Überzeugungen und damit dem Diskriminierungsmerkmal der Religion „untrennbar verbunden“ sein (Rn. 73):
+
+So wird in den Fällen, in denen das Kriterium des Tragens auffälliger großflächiger Zeichen politischer, weltanschaulicher oder religiöser Überzeugungen mit einer oder mehreren bestimmten Religion(en) oder Weltanschauung(en) untrennbar verbunden ist, das von einem Arbeitgeber seinen Arbeitnehmern auf der Grundlage eines solchen Kriteriums auferlegte Verbot, diese Zeichen zu tragen, zur Folge haben, dass einige Arbeitnehmer wegen ihrer Religion oder Weltanschauung weniger günstig behandelt werden als andere, so dass eine unmittelbare Diskriminierung im Sinne von Art. 2 Abs. 2 Buchst. a der Richtlinie 2000/78 wird festgestellt werden können.
+
+Obgleich die Anerkennung einer „untrennbaren Verbindung“ mit dem Merkmal der Religion und die entsprechende Einordnung als unmittelbare Diskriminierung in Anbetracht der damit einhergehenden Stärkung der Rechtsposition der betroffenen Musliminnen begrüßenswert sind, werfen sie Fragen vor dem Hintergrund der Beantwortung der ersten Vorlagefrage in der Rechtssache C-804/18 auf.
+
+## Fließende Grenze zwischen beiden Diskriminierungsformen
+
+Um es noch einmal auf den Punkt zu bringen: In Rn. 52 der Entscheidung argumentiert der EuGH, das (allgemeine) Verbot religiöser, politischer und weltanschaulicher Zeichen begründe keine unmittelbare Diskriminierung, weil das zugrundeliegende Unterscheidungskriterium (Tragen religiöser, politischer, weltanschaulicher Zeichen) nicht untrennbar mit dem geschützten Diskriminierungsmerkmal der Religion verbunden sei. Ein Verbot allein großflächiger Zeichen hingegen begründe eine unmittelbare Diskriminierung aufgrund der untrennbaren Verbindung des Differenzierungskriteriums (Tragen großflächiger religiöser, politischer, weltanschaulicher Zeichen) mit bestimmten Religionen (Rn. 73).
+
+Diese anhand der Größe und Auffälligkeit der getragenen Zeichen vorgenommene Differenzierung ist alles andere als selbsterklärend. Zwar lassen sich die Adjektive „großflächig“ und „auffällig“ auf der einen, und „klein“ und „unauffällig“ auf der anderen Seite, als Proxys für die Zugehörigkeit zum Islam (großflächiges auffälliges Kopftuch) auf der einen und zum Christentum (kleines unauffälliges Kreuz um den Hals) auf der anderen Seite lesen. Doch die Beschränkung auf großflächige Zeichen führt nicht dazu, dass das Verbot ausschließlich Kopftücher erfasst. So ist das Differenzierungskriterium in diesem Fall nicht in dem Sinne „untrennbar“ mit dem Merkmal der Religion verbunden, wie eine Differenzierung aufgrund von Schwangerschaft mit dem (weiblichen) Geschlecht (als Paradefall der unmittelbaren Diskriminierung aufgrund einer „untrennbaren Verbindung“) verbunden ist. Denn denkbar sind etwa auf T-Shirts gedruckte großflächige und auffällige religiöse, politische oder weltanschauliche Zeichen, die ebenfalls unter die Regelung fielen.
+
+Dass ausschließlich Kopftücher von der Regelung erfasst werden, sieht der EuGH aber auch gar nicht als Voraussetzung des Vorliegens einer unmittelbaren Diskriminierung bzw. der „untrennbaren Verbindung“ mit dem geschützten Merkmal der Religion. Vielmehr hält er es für ausreichend, dass eine derartige Regelung Angehörige bestimmter Religionen besonders trifft.
+
+Aber ist nicht auch ein Verbot religiöser Bekleidung als solches in diesem Sinne mit bestimmten Religionen „untrennbar verbunden“, indem es allein deren Anhänger*innen – namentlich kopftuchtragende Musliminnen, kippatragende Juden und turbantragende Sikhs – trifft, die das Tragen der religiösen Kleidung als verpflichtend empfinden? Die Mehrheitsreligion des Christentums normiert nach dem gegenwärtigen Selbstverständnis ihrer Anhänger*innen demgegenüber keine verbindlichen Bekleidungsvorschriften, und auch ein Kreuz an der Halskette resultiert eben gerade nicht aus einer religiösen Verpflichtung. Womöglich (je nach Definition der Adjektive „großflächig“ und „auffällig“) ist der Kreis der potenziell Betroffenen im Falle eines partiellen Verbots etwas enger – aber wo genau ist die Grenze zu ziehen? Und kann ein solch marginaler Unterschied mit Blick auf das Differenzierungskriterium ein grundlegend anderes Schutzniveau rechtfertigen? Denn eine unmittelbare Diskriminierung ist im Unterschied zu Fällen mittelbarer Diskriminierung nach Auffassung des EuGH nicht zu rechtfertigen.
+
+## Einladung zum Überdenken der Gleichheitsrechtsdogmatik
+
+Der EuGH stellt im Anschluss an sein Plädoyer für die Einordnung eines partiellen Verbots als unmittelbare Diskriminierung fest, dass “[f]ür den Fall, dass eine solche unmittelbare Diskriminierung gleichwohl nicht festgestellt werden sollte”, jedenfalls eine mittelbare Diskriminierung vorliege (Rn. 74). Durch diese Feststellung räumt der EuGH ein, dass derselbe Sachverhalt sowohl eine unmittelbare als auch eine mittelbare Diskriminierung begründen kann. Diese Erkenntnis wiederum stellt die im Unionsrecht übliche strikte Unterscheidung beider Diskriminierungsformen mit oftmals schwerwiegenden Folgen für die Rechtfertigung in Frage, deren Problematik auch Sharpston in ihrer Shadow Opinion (Rn. 43) betonte:
+
+If, where an act is classified as indirect discrimination, a relatively lax approach is taken towards scrutinising a possible justification advanced by the employers, that risks creating a significant gap in protection: a kind of legal black hole in which acts that escape being classified as direct discrimination then escape proper scrutiny and are not sanctioned.
+
+In Anbetracht der Tatsache, dass die Unterscheidung beider Diskriminierungsformen in der Praxis, wie der Fall zeigt, oftmals schwer zu treffen und zu handhaben ist, und zum Teil mehr Fragen aufwirft, als Klarheit schafft, erscheint die grundlegend unterschiedliche Behandlung der Diskriminierungsformen auf Rechtfertigungsebene in der Tat problematisch. In diesem Sinne bietet die Entscheidung des EuGH einen willkommenen Anlass zum Neudenken des Verhältnisses beider Diskriminierungsformen und seiner Folgen für die Rechtfertigungsebene, welche gerade für die rechtliche Bewertung von Kopftuchverboten von entscheidender Bedeutung sind.

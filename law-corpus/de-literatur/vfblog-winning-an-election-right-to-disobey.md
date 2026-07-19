@@ -1,0 +1,53 @@
+---
+title: Verfassungsblog — Winning an Election Doesn’t Give the Right to Disobey
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2026-04-22'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/winning-an-election-right-to-disobey/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Winning an Election Doesn’t Give the Right to Disobey
+
+Barbara Zeller argued on this blog that the way of re-liberalizing the Hungarian democracy is disobeying its Fundamental Law. She finds constitutional disobedience not only justified, but even legally required. I disagree. Disobeying the Constitution is neither politically opportune nor legally permissible. In a democratic society it might even be counter-productive and, as such, dangerous. To overcome the biggest challenge of the incoming government – dealing with the politically packed institutions – I propose cooperation, continuance, and reform rather than disobedience.
+
+## Back to liberal democracy?
+
+TISZA’s landslide victory last Sunday is a remarkable performance of a new party. It reveals the Hungarian population’s exasperation with corruption and European isolationism. The election results also bring hope that Hungary will emerge from “illiberalism” as a liberal democracy. Through the new 2012 Fundamental Law (with subsequent amendments), the FIDESZ government created a system that will outlive its reign and hinder the ability of any future government – even with a two-thirds majority. This prompts the question of how to deal with the “illiberal” institutions and how to go about the underlying Constitution. Apart from reforming or fully replacing it, Barbara Zeller argues that one should disobey it if its material core is not in compliance with liberal principles. She bases her claim for constitutional disobedience on two arguments: a political and a legal one.
+
+## The political dimension of constitutional disobedience
+
+The political argument is twofold: the Constitution is not legitimate enough and “the people” do not want it anymore. Hence, it is justified to disobey the Constitution.
+
+Based on the premise that democratic legitimacy is the normative right to act on behalf of the people, the Hungarian Fundamental Law is legitimate and must, thus, be obeyed. Democratic legitimacy arises only where a decision can be traced back to the will of the people which it most basically expresses in elections (p. 30 f.). While the enactment process of the Fundamental Law raised many problems by restricting participation rights of the political minority, these restrictions within a liberal-democratic framework do not lead to the complete loss of legitimacy. For, there is a difference between weakened and non-existent legitimacy. While consultation processes and public relations can increase the legitimacy of a decision, they cannot forge it on its own. Even if one were to argue that the new Constitution created a system which could not vest legitimacy (p. 35 f.) to its decisions, this does not apply to the Fundamental Law itself, as it was enacted under the old (liberal-democratic) rules: FIDESZ won the 2010 election fairly, defeating the unpopular socialist MSZP government and gaining a two-thirds majority. This electoral victory allowed it to pass a new Constitution without having to compromise.
+
+Furthermore, basing the political argument on “the will of the people” is – to put it mildly – dangerous. Every authoritarian state leader – including Orbán himself – frequently bases their decisions of the supposed will of the people which only they can channel. The argument does not fit into the classical discussion about legal positivism and legal naturalism. It does not derive the applicability of the Constitution from a moral obligation – be it God-given or lying in the human nature – but bases it on a diffuse normative character of the parliamentary election: the Constitution should be disobeyed because “the people” do not want it anymore. This understanding undermines, however, the democratic principle that the minority must submit to the majority while the majority abides by the rules. A Constitution cannot be automatically invalidated because the voters elected a candidate willing to change or repeal it – be it, supposedly, for the better. The Hungarian Fundamental Law is valid (p. 27 with further references) because it was adopted in accordance with the constitutionally foreseen procedure. It will remain in effect until it is amended or repealed in a similar procedure.
+
+Furthermore, intertwining “the will of the people” with the electoral result and the question of constitutional validity does not and cannot set a clear democratic standard, inevitably leading to an arbitrary application of the law. While it is true that the democratic standard guaranteed by the old Constitution was “higher” than the one ensured by the new one, this does not lead to the right to disregard the Fundamental Law. First, this assessment is subjective in nature. Especially because the new Constitution is formally democratic, encompassing common regulatory techniques. The question raised is, therefore, not if the Constitution is liberal but if it is upheld as such. Second, disobeying creates a legal vacuum, underlining the arbitrary nature of constitutional disobedience. As the old Constitution is not in effect anymore, it is unclear to what (democratic) standard to refer. One cannot claim the Constitution erodes the rights it itself must constitutively provide.
+
+## The legal dimension: interpretation rather than disobedience
+
+The second point turns to a normative approach and bases the obligation to constitutional disobedience in the Constitution itself. Since the Hungarian Constitution explicitly refers to democracy and the rule of law in Article B and the National Avowal, this would be enough to justify disobeying the illiberal part of the Constitution.
+
+However, this argumentation does not present a normative standard for “democracy” and it does not count the provisions which are to be disobeyed, because it cannot. The Hungarian Basic Law formally satisfies recognized democratic standards; it encompasses regulation techniques present in other countries considered to be fully developed democracies. It is, thus, not a question of compliance with the Constitution, but how to implement its norms in practice. For Constitutions are no rigid instruments. They unfold their legitimate effect only through interpretation (p. 160).
+
+For example: Pursuant to Article R Sec. 3, the Basic Law is to be interpreted inter alia in accordance with the National Avowal, the introductory text to the Basic Law. While its vastness and superficiality provide questionable normative weight, it served as a gateway to shaping the Hungarian legal system to the autocratic and “illiberal” one it is today. In the same way, it can also help to reverse it. Since it not only refers to “illiberal values”, but also to democracy, freedom, and human dignity, it can serve as a means of liberalizing the Constitution without disobeying it. The argument expressly sees this doctrinal tension. It is, therefore, unclear why it concludes that disobeying constitutional provisions is legally required. As almost everything in law, most constitutional norms are relative to each other. It is a question of interpretation, of drawing the line between interfering interests – not of validity per se.
+
+While I agree that referring to European Law to solve this issue is a doctrinally convincing way of liberalizing the “illiberal”, I disagree regarding the outcome: even if conventional constitutional interpretation reaches its limits, the next step is not disobedience but turning to European law.
+
+First, Hungary – as any other EU Member State – is bound by the EU Treaties. It has been argued that an EU-friendly interpretation of the Constitution is possible, so that EU law prevails in case of conflict. This line of argument refers not only to the rules regarding the normative hierarchy (Articles Q, R, T), but also to the National Avowal mentioned before.
+
+Second, referring to Article 2 TEU is the key to providing a normative standard regarding democracy. As the argument rightly refers to the jurisprudence of the CJEU, Article 2 TEU is not only a political statement but also encompasses legally enforceable values with concrete obligations. While the judicial and the executive branch can simply – regarding the supremacy of EU law – leave certain provisions unapplied or interpret them in accordance with EU law, the legislative branch is required (para. 180 f.) to repeal provisions in contradiction with it. Surely, this might lead to the non-application of certain provisions of the Constitution or to reform obligations. This is, however, not constitutional disobedience, as the argument tried to frame it, but – even if similar – exactly the result of the constitutionally mandated transfer of sovereign rights to the EU and submission to the EU Treaties.
+
+Finally, there is no need to disregard the Basic Law as it is possible to interpret it in a liberal democratic way. Not breaking with the past but utilizing it for the democratic reconstruction increases the normative legitimacy of the Fundamental Law, completing the flawed legislative process, and building on Hungary’s history of liberalizing through constitutional reform.
+
+## Conclusion: law is only the starting point
+
+In the end, the biggest challenge Péter Magyar faces with his electoral victory is not finding an innovative way of interpreting the Constitution or disobeying it but working with the institutions he does not control. The Constitutional Court, the Supreme Court (Kúria), and the Presidency (to name a few) are controlled by loyalists who – in the past – ensured unobstructed governance. This institutional background alone does, however, not justify abandoning the Constitution altogether, as the overwhelming electoral victory grants the incoming government the power to change the Constitution. Pursuant to Article S Section 2, a new Constitution can be enacted with a two-thirds majority – a majority TISZA won. The first step should, therefore, be to attempt cooperation. Only in case of sustained obstruction should the incoming TISZA government resort to amending the constitutional framework. But even in this case, this can be achieved within the existing framework – no constitutional disobedience necessary.

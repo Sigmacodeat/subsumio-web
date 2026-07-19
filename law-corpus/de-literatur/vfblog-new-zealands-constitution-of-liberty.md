@@ -1,0 +1,63 @@
+---
+title: Verfassungsblog — New Zealand’s Constitution of Liberty
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2024-12-19'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/new-zealands-constitution-of-liberty/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# New Zealand’s Constitution of Liberty
+
+The New Zealand government has launched a consultation on a Regulatory Standards Bill that would help set a framework for both existing and future regulation undertaken by the country’s Parliament and government. In addition to laying down principles to which regulation will be expected to conform, the bill would set up an institutional mechanism for implementing them. It is an ambitious undertaking, which deserves attention beyond New Zealand’s shores, for three reasons: first, its remarkably libertarian content; second, the unusual way in which it would be implemented; and third, what it can tell us about the ways in which an “unwritten” constitution changes―or doesn’t.
+
+To put my own cards on the table, I share the Bill’s proponents’ libertarian instincts and would love it to succeed in reshaping and paring down New Zealand’s regulatory state, which could then serve as a model for other countries. I am not, however, optimistic about this coming to pass. Even so, the attempt will be interesting to watch.
+
+## A Libertarian Charter…
+
+Although presented as an attempt to improve the quality of regulation, the Regulatory Standards Bill takes a somewhat unidimensional view of what that means: that regulation is best, it implicitly says, which regulates least. To be sure, there are some procedural points, such as the need for consultation and cost-benefit analysis before law-making, as well as an insistence on “regulatory stewardship”―the idea that even regulations that were perfectly sensible when enacted might no longer be so, and need to be reassessed from time to time to ensure they are fit for purpose.
+
+But even in the discussion of regulatory procedures, the libertarian orientation is unmistakable. Before regulating, the government would be expected to verify “whether the public interest requires that the issue be addressed”. If taken seriously, this is a valuable safeguard against the instinct common to politicians of all ideological stripes that “something must be done”, which all too frequently leads them into the notorious syllogism ― this is something, therefore this must be done.
+
+The libertarian orientation is most obvious, however, in the principles that would apply to the contents of regulation. Perhaps the most explicit one would provide that “a person’s liberty, personal security, freedom of choice or action, or rights to own, use, and dispose of property” are not to be burdened “except as is necessary to provide for, or protect, any such liberty, freedom, or right of another person”. In addition, regulations would need to comply with such staples of libertarian accounts of the rule of law (say Dicey’s or Hayek’s) as equality before the law and the need for “issues of legal right and liability [to] be resolved by the application of law, rather than the exercise of administrative discretion”. Meanwhile, the meaning of the law would have to be determined by courts rather than administrators. The last principle I will mention here seeks to ensure something like proportionality between any fees levied by the government and the benefits the fee-payers derive from the service they pay for.
+
+## … That Shouldn’t Be Dismissed
+
+Much of this is bound to be quite contentious, and this post is not the place to make an argument for why these principles are the right ones for New Zealand and other countries to adopt. I would, however, encourage sceptical readers not to dismiss them all at once. Even if you disagree with many, others may be appealing. For instance, had the UK government considered the proportionality between government fees and benefits before introducing fees for access to employment tribunals, it would not have set these fees so high that, as the UK Supreme Court’s found in R (Unison) v Lord Chancellor, people on modest incomes were effectively prevented from having their disputes with (current or former) employers adjudicated.
+
+Meanwhile, those who agree with the libertarian principles of the Regulatory Standards Bill may find it rather ironic that they are only “expressed at a high level” and meant to be further elaborated in regulations that would follow the Bill’s enactment. After all, one of the pet peeves of those who complain about the quantity and quality of modern regulation is that legislatures enact vague laws that can then be developed by the executive―and not always in ways of which the enacting legislature would have approved. Such complaints often focus on the quantity of regulation as a proxy for the burden it imposes; given the deregulatory thrust of the proposed bill, this is unlikely to be an issue here. But the concern with the quality of what the executive will do with poorly defined powers remains.
+
+## Comply or Explain
+
+This leads me to the second striking feature of the Regulatory Standards Bill proposal: the institutional arrangements intended to give effect to the principles it will lay down. Broadly speaking, the Bill would rely on “comply or explain” mechanisms. Compliance with regulatory standards would not be mandatory, but the government would be expected to account for any departure from them. There are two distinct scenarios that could give rise to this obligation.
+
+First, ministers and agencies will be required “to ensure that new regulatory proposals are assessed for consistency with relevant principles, and any inconsistencies identified”. Already-existing regulations will be subject to similar review. Upon identifying an inconsistency, a minister could find a way to remedy it―or explain to Parliament why he or she is choosing not to.
+
+Second, and perhaps even more interestingly, a new Regulatory Standards Board would be created to adjudicate complaints about violations of the Regulatory Standards Bill’s principles, as well as to undertake its own investigations. While it would function more or less like an administrative tribunal empowered to both launch its own investigations and to adjudicate on complaints brought by citizens, the Board would not be a judicial or quasi-judicial body. Its decisions would not bind the government. Instead, should it identify violations of the Bill’s principles, it would make recommendations to the relevant minister ― who, once again, would have the choice of either accepting them or explaining the contrary decision to Parliament.
+
+These arrangements are reminiscent of the ones New Zealand already employs with some success in other areas. The New Zealand Bill of Rights Act obliges the Attorney-General to “bring to the attention of the House of Representatives any provision in [a] Bill that appears to be inconsistent with any of the rights and freedoms contained in this Bill of Rights.” This is similar to the duty the Regulatory Standards Bill would impose on ministers proposing new laws and regulations. As for the Regulatory Standards Board, its status as an extra-judicial body charged with non-binding adjudication of disputes arising out of the application of broadly worded principles would be similar to the Waitangi tribunal, which inquires into alleged violations of the Treaty of Waitangi between the Māori and the Crown.
+
+## Potential Obstacles to Success
+
+There are, however, noteworthy differences between the Regulatory Standards Board and these analogues, which may well mean result in the Board’s ineffectiveness. Under the Bill of Rights Act, it is the Attorney-General who assesses compliance, not the minister responsible for a given legislative scheme. A convention recorded in New Zealand’s Cabinet Manual requires the Attorney-General to approach this role in a non-partisan spirit. Other ministers will be under no such obligation and could simply turn a blind eye to potential inconsistencies. The Regulatory Standards Board, meanwhile, could be packed with partisan or pro-regulation appointees. Nor would it benefit, as the Waitangi Tribunal does, from the holding in New Zealand Maori Council v Attorney-General that it is only “in very special circumstances, if ever” that the government could fail to respond in some fashion to its recommendations.
+
+Ultimately, a comply-or-explain system can only constrain those whose behaviour it is supposed to influence as long as they believe that “I don’t feel like complying” is not a good enough explanation. Earlier versions of what has now become the Regulatory Standards Bill proposal would have relied on some form of judicial enforcement, notably by requiring courts to interpret law consistently with the Bill’s principles. But that, evidently, was politically unpalatable. What the Bill’s proponents are left with is the hope that future governments, including ones of different partisan and ideological persuasions, will nevertheless take it seriously. Good luck to them!
+
+## Changing an Unwritten Constitution
+
+This brings me to the final point I would like to note in this post: the deceptive ease of securing changes to New Zealand’s flexible, “unwritten,” constitution. The Regulatory Standards Bill would be constitutional legislation in the capacious sense in which that term is understood in New Zealand (and in other Westminster-type systems) because it bears on the operations of government institutions. But the principle of parliamentary supremacy means that, like (almost) any other constitutional change, it could become law with the support of a bare majority of the House of Representatives. The New Zealand Bill of Rights Act, for instance, was enacted in just this way, as Andrew Geddis and Marcelo Rodriguez Ferrere have noted.
+
+But the ostensible ease of changing New Zealand’s constitution has an obverse as well. It is difficult to make a constitutional change “stick”. Most obviously, parliamentary supremacy means that an obnoxious constitutional innovation can be repealed with the same ease with which it was enacted. But, more subtly, parliamentary supremacy both reinforces and is reinforced by a constitutional culture that frowns upon tying the hands of future governments. Hence the abandonment of judicial enforcement mechanisms in the proposed Regulatory Standards Bill. Similarly, the New Zealand Bill of Rights Act, though it did give courts some interpretive powers, was watered down from an initial proposal that would have enabled them to strike down acts of Parliament to a final version that explicitly prohibited this.
+
+To take hold, constitutional change in New Zealand requires buy-in from multiple political actors ― just as it does elsewhere. The difference is that this buy-in can be generated over time, by successive governments embracing their predecessors’ work, instead of being produced within the (usually confined) timeframe of the ratification of a constitutional amendment through some special procedure. Again, the Bill of Rights Act is a good example: insofar as it has become a meaningful part of the New Zealand constitution, it is because, despite its partisan enactment, successive Attorneys-General took seriously their role of advising Parliament when it was about to legislate inconsistently with the Bill of Rights, and governments of different political hues have chosen not to oppose, and sometimes even to codify in legislation, key judgments applying the Bill of Rights. (This is not to say Parliament always does this, or even heeds an Attorney-General’s warnings: neither is true.)
+
+## Conclusion
+
+The contentious nature of the principles to which the Regulatory Standards Bill would give effect makes it likely enough that future governments will take advantage of the various escape paths the Bill would allow them even if they do not seek to repeal it outright. After a century and a half of government growth, the idea that the proper role of state coercion is limited to the enforcement of individual rights and that administrative discretion is inimical to the Rule of Law cannot be revived through legislation alone. Nonetheless, the attempt may be worth making. If it succeeds in any respect, so much the better. And if it fails, the failure itself may provide the justification for a beefed-up version, with proper judicial enforcement, in the future.

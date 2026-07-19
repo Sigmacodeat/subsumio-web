@@ -1,0 +1,32 @@
+---
+title: >-
+  Verfassungsblog — Kollektivität – zwischen Staat, Individuen und kollektiven
+  Akteuren
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2012-03-14'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/kollektivitt-zwischen-staat-individuen-und-kollektiven-akteuren/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Kollektivität – zwischen Staat, Individuen und kollektiven Akteuren
+
+Von (dem Autor_innenkollektiv) HANNAH BIRKENKÖTTER, ANN-KATRIN KAUFHOLD, MICHAEL VON LANDENBERG-ROBERG, SABINE MÜLLER-MALL, ALEXANDER TISCHBIREK und TIM WIHL
+
+Die Assistententagung 2012 hat inzwischen Fahrt aufgenommen und in den ersten Stunden des wissenschaftlichen Programms die Fundamente des Kollektivitätsbegriffes eingekreist. Indem die Organisator_innen in einer kurzen thematischen Einführung ihr Verständnis von Kollektivität als „zugespitztes Querschnittsthema“ für die Wissenschaft vom öffentlichen Recht deutlich machten, es als den Bezug zum Überindividuellen bestimmten, der sich im Spannungsfeld von Gemeinwohl, Gruppen- und Individualinteressen bewege,  deutete sich die Vielschichtigkeit (und zugleich auch Uneindeutigkeit) des Kollektivitätsbegriffs und seiner Bezüge an. Drei Koordinaten, die für die Konkretisierung des Begriffs relevant sein dürften, stellten die ersten drei Referent_innen heraus:
+
+Benjamin Rusteberg dekonstruierte im ersten Vortrag („Grundrechtsdogmatik als Schlüssel für das Verhältnis von Individuum und Gemeinschaft“) einmal mehr die prinzipientheoretisch angeleitete, verfassungsdogmatisch verfestigte Abwägungspraxis der Grundrechte. Er plädierte dafür, die Gewährleistungsgehalte scharf zu konturieren und dabei insbesondere auf historische Erfahrungen zurückzugreifen. Seine Kritik knüpfte an einer Nivellierung des grundrechtlichen Feldes an, welche Grundrechtspositionen zudem umstandslos zu Staatszielen deflationiert, und dadurch die Inanspruchnahme von Grundrechten durch ihre Träger im Ergebnis ebenso rechtfertigungsbedürftig werden lässt wie Eingriffe in dieselben. Grundrechte werden so umfassend allgemeinwohlabhängig, sie stehen „unter Gemeinwohlvorbehalt“. Dieser Diagnose einer „strukturellen Disbalance“ stellte Rusteberg zuerst die gängigen Korrekturversuche innerhalb des Abwägungsmodells entgegen, um schließlich zu einem Alternativentwurf zu gelangen: grundrechtstheoretisch läuft dieser auf eine Konzeption der „Grundrechte als Trümpfe“  hinaus, der sich einer engen Präzisierung der gewährleisteten Freiheitsrechte verschreibt, diesen dann aber in jedem Konfliktfall den Vorrang einräumen will. In dieser dezidiert liberalen, immanent auch und gerade an der verfassungsgerichtlichen Abwägungsdoktrin geübten Kritik erkennen Teile unseres Autor_innenkollektivs einen deutlich antielitären Zug.
+
+Auf ganz andere Weise explizit wurde ein Antielitismus im zweiten Vortrag. Bei Clemens Kaupa wies bereits der Titel darauf hin: „Juristische Eliten und kollektives Interesse – Die irreführende Dichotomie von Marktfreiheiten vs. Allgemeininteressen im Binnenmarktrecht“. Der Referent postulierte eine Pflicht zur weiteren Demokratisierung der europäischen Integration, die als Leitmotiv den gesamten Vortrag beherrschte. Ausgehend von einer Kritik der Rechtsprechung des EuGH zum Verhältnis von Grundfreiheiten und Gemeinwohlinteressen, insbesondere in der Rechtssache Viking, zeigte Kaupa auf, dass die Interpretation der Grundfreiheiten vielfach auf  einem ökonomischen Grundverständnis aufbaut, das zumindest diskussionswürdig ist, als solches aber nicht offengelegt, kenntlich gemacht und daher weder in der öffentlichen noch in der wissenschaftlichen Debatte thematisiert wird. Wo bleiben Keynesianismus, New Trade Theory und endogen-institutionelle Wirtschaftstheorien? Doch noch ist der EuGH nicht ganz verloren: Am Beispiel der Sozialversicherungen zeigte Kaupa auf, dass das Gericht sich bei der Rechtfertigung der Eingriffe in Grundfreiheiten und der Anwendbarkeit des Wettbewerbsrechts durchaus flexibel zeigt. Es besteht also Hoffnung, dass der EuGH seine Praxis der Verhältnismäßigkeitsprüfung anpasst und, fundamentaler, überdenkt, ob den EU-Verträgen wirklich ein einseitig neoklassisches Wirtschaftsmodell zugrunde liegt.
+
+Mit Beteiligungsrechten für zivilgesellschaftliche Akteure beschäftigte sich schließlich Michaela Hailbronner in rechtsvergleichender Perspektive: „Wer hat Angst vorm Kollektiv? Deutsche Erscheinungen von Kollektivität im internationalen Vergleich“. Damit führte sie eine dritte Ebene in die Diskussion um Kollektivität ein – jene der kollektiven Akteure, die sich zwischen Individual- und Allgemeininteressen schieben. Als kollektiver Akteur, so Hailbronners Definition, sei jede Mehrzahl von Rechtssubjekten zu verstehen, die in staatlicher oder nichtstaatlicher Form organisiert sind, um gemeinsame Ziele oder Zwecke zu verfolgen. Das deutsche System, traditionell eher bipolar im Dualismus von Individualität und (tendenziell eher etatistisch begriffener) Allgemeinheit organisiert, der Idee der Selbstregierung in der demokratischen Form folgend, weise nur wenige Einbruchsstellen für die Beteiligung kollektiver Akteure auf. Dazu gehört traditionell nur in seltenen Einzelfällen die Ausweitung der Klagebefugnis auf kollektive Akteure, die sich auch nicht empfehle, weil sich dadurch die Entscheidungskompetenzen auf demokratisch schwach legitimierte Gerichte verlagerten. Die Public Interest Litigation in Indien habe auch deshalb ihren Zenit überschritten, weil sie zum einen eine Selbstlegitimierungsstrategie des Verfassungsgerichts war und zum anderen das Ziel verfehlte, den indischen Subalternen zur Emanzipation zu verhelfen. Sie plädierte dagegen dafür, nach US-amerikanischem Vorbild Beteiligungsrechte im Verwaltungsverfahren mit legislativem Charakter auszubauen. Der deutsche, in der Tendenz elitäre Korporatismus lasse sich darüber hinaus durch die in Südafrika erprobten Partizipationsrechte bei der Gesetzgebung ergänzen. Hailbronner beobachtete einen Wandel der politischen Kultur in der europäischen Gegenwart, der sich in neuen Demokratisierungsforderungen artikuliert.
+
+Und wenn sich die Kollektivität nicht solcherart Bahn bricht, welches Mittel bleibt dann noch? „Dann sollen die Leute auf die Straße gehen!“ – mit diesem beherzten Aufruf schloss der Block dreier höchst anregender Grundsatzreferate.

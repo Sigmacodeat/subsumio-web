@@ -1,0 +1,57 @@
+---
+title: Verfassungsblog — Good Intentions May Not Be Enough
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2021-12-08'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/spanish-lgbtq-bill/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Good Intentions May Not Be Enough
+
+On 29 June 2021, the Spanish Cabinet approved to sponsor the Draft Bill for the Real and Effective Equality of Trans People and the Guarantee of the Rights of LGTBI People in Parliament. This Bill aims to “guarantee and promote the right to real and effective equality” of LGTBIQ+ people and their families, and to reform in depth the legal recognition procedure for gender amendment.
+
+Stepping forward with such a proposal on trans and LGTBIQ+ rights could be interpreted as a sign that Spain is currently experiencing a contrary trend to the backlash against LGTBIQ+ rights that some fellow European countries are going through. In Italy, for example, the Senate voted against a Bill to make violence against LGBT people and disabled people, as well as misogyny, a hate crime last October. In addition, that same week, the Polish Parliament had been debating a bill to ban Pride marches and other public gatherings that “promote” non-heterosexual orientations and non-biological gender identities. Thus, the Spanish Cabinet move signaled something different, in line with the intended government coalition recently announced in Germany. However, the Spanish proposal –which has certainly generated some social debate– is not approved yet, and its development has been a source of conflict within the Spanish Government for the last two years.
+
+Even though the Bill’s main goal is to introduce game-changing and long-demanded reforms, such as the incorporation of the self-determination principle in legal gender amendment procedures or a state-level set of norms against LGTBIphobia, political struggles within the government have resulted in a weak text. And, most importantly, they are causing a major delay to its parliamentary discussion and approval.
+
+## The need for an LGTBIQ+ Bill at State level
+
+While Spain has an Act to eradicate discrimination between men and women at State level, it has none about LGTBIphobia, and being part of the LGTBIQ+ community is not recognized as a protected ground in State-level non-discrimination regulations. Although most of the Spanish regions have already passed specific acts to tackle the issue of LGTBIphobia, some have not. Also, there is great disparity among the different regulations, so legal responses to LGTBIphobia vary depending on the territory where it takes place. Therefore, if a Bill of this kind is finally approved, it will be a novelty in the Spanish State legislation and will offer more legal certainty in terms of protection to LGTBIQ+ people throughout the country. Moreover, and despite the regional norms on the matter, a State level norm is the only way to establish the self-determination principle on legal gender amendment, since the regulation of public registries is an exclusive competence of the Spanish state (art. 149.1.8ª Spanish Constitution).
+
+The Draft agglomerates issues that, according to the government’s parties’ own agreement, should be dealt with in two different bills: an act against discrimination of LGTBIQ+ people and a more specific act for the trans community. Political reasons are probably behind this decision, but their unification results in a rather dense and complex set of norms, from a technical point of view. In any case, its highlights undoubtedly are (a) the incorporation of the principle of gender self-determination; (b) civil reforms on family law matters; and (c) protection measures against LGTBIphobia.
+
+## Self-determination in legal gender amendment procedures
+
+The introduction of the principle of gender self-determination has been the main reason why this Draft has been severely criticized by some feminist groups (most of them aligned with the Socialist Party (PSOE), the main party in the Spanish Government), but is also its main feature. Probably due to the conflict that surrounds it, the term “self-determination” is not used in the text, but its regulation can be found in articles 37 to 45. The new legal gender amendment procedure would only require the solicitants’ own declaration and would replace the current one, foreseen in Act 3/2007, which requires solicitants to prove that they have been diagnosed with “gender dysphoria” and that they have undergone medical treatment for at least 2 years “to adjust their physical features to the desired sex”.
+
+Despite the clear progress that overcoming Act 3/2007 will bring, there are several limitations that the text of the preliminary Draft presents and that should be taken seriously into consideration during its parliamentary debate. Of particular concern is the submission of foreign people to a different standard than nationals: their own declaration will not be enough, they will have to prove the inability to amend their legal gender in their home countries. Also, self-determination will not be available for minors between 12 and 14 years of age who, additionally, will need to go through a judicial procedure instead of the simpler administrative one that is foreseen in the rest of cases. This is an especially delicate issue since, in 2019, the Spanish Constitutional Court ruled that excluding mature enough minors from the current administrative procedure was unconstitutional, without establishing any minimum age for a presumed maturity. Self-determination is also abandoned in the so called “reversion” regime, provided in article 41, that is, whenever someone needs to change their legal gender a second time during their life. This way, gender self-determination will only be possible once in a lifetime. Further amendments will necessarily go through a judicial procedure in which it is not clear what will need to be proven. Finally, the fact that the gender category options will remain binary between man and woman, and the resulting lack of recognition of non-binary people is worrying, especially, given that previous proposals had shown at least some concern regarding their inability to self-determine their gender.
+
+## Civil reforms in family law matters
+
+Civil reforms on family law matters mostly consist of terminological corrections that make the letter of the law more inclusive towards rainbow families. The goal is to avoid dichotomous formulas based on binaries such as “man and woman” or “father and mother” and replace them with more neutral ones such as “spouses”, “every person”, “parents”, “pregnant parent” or “non-pregnant parent”. Surprisingly, it is not even an exhaustive review of the body of regulation in whole: the great technical weight of the reform on the inclusion of family diversity falls into the creation of a tenth Additional Disposition of the Civil Register Act, which extends the effects of the parenthood norms to everybody regardless of their gender.
+
+This means that, regarding families formed by two women, some discriminatory obstacles are overcome. For example, the current requisite to be married for the birth mother’s partner to also be registered as the mother of the child. Nevertheless, this “terminological patch” does not equate them to different-gender couples, which continue to have more options available.
+
+Moreover, the Draft does not refer to the nomenclature, predictably gendered, that trans people will receive as parents upon registering their children. That is: will they be able to choose to be registered as mother, father or parent according to their gender identity? This has not been the case for Alfred McConnell in UK ([2020] EWCA Civ 559), nor in the cases solved in the Bundesgerichtshof Beschluss of 06.09.2017 (XII ZB 660/14) in Germany and in the Première chambre civile de la Cour de cassation of 16.09.2020 (n. 18-50.080, n. 19-11.251) in France. This issue is not mentioned either when the effects of legal gender amendment are described in art. 40 of the Draft. The regulation as a whole, thus, seems insufficient to ensure that the gender identity of all parents is recognized and respected in the registry entries and in the issuance of official documents.
+
+Therefore, it cannot be said that the reform on parenthood is sufficiently clear or complete. More than 15 years after the approval of same-gender marriage, it seems that we only get momentary patch up solutions which show that we are far from having a system that truly recognizes and includes LGTBIQ+ family diversity.
+
+## Protection measures against LGTBIphobia
+
+Finally, the Draft Bill aims to promote the effective equality of LGTBIQ+ people and to tackle LGTBIphobia through a wide variety of measures. A series of general and abstract mandates for public powers are introduced, but also some provisions regarding relations between private persons are foreseen. The prohibition of conversion therapies (art. 16), the prohibition of surgical interventions on intersex children (art. 18.2) or the nullity of contractual clauses that are discriminatory on the basis of sexual orientation or gender identity (art. 58) are some examples of significant relevance. It is also worth remarking on the mention of intersectionality in different sections of the Draft, a phenomenon that occurs when someone suffers multiple discriminations because of different layers of their identity. A Chapter within Title III is, for example, dedicated exclusively to vulnerable identities that are simultaneously LGTBIQ+, such as minors, elderly people or people with disabilities, among others.
+
+Probably one of the most relevant measures is the creation of a specific administrative sanctioning regime of LGTBIphobic conducts. However, it is important that the Draft Bill and future acts do not put too much weight on punitive strategies, given that restorative measures can be considered more preventing and repairing than those based on pure punishment. Notwithstanding, this regulation could mean an equalization of responses to LGTBIphobia in all Spanish territories, but the Draft articulates this sanctioning regime as supplementary to the regional ones in force. This way, the law does not only not achieve the desired uniformity among territories, but allows for less protective regional regimes to still be in place.
+
+## Future prospects
+
+Since the Government agreed on sponsoring the Bill in June, there have not been any parliamentary developments regarding the Draft. The congress' diary during these months has only stated that some parliamentary groups demand that the government “streamline, as far as possible, the processing of the Draft Bill“. Despite the tragic events that have been taking place in Spain with regard to LGTBIphobia and specific transphobia within part of the feminist movement, it seems that there is no political urgency in relation to the Bill’s development.
+
+In the light of this year’s events and the historical debt societies have towards their oppressed groups, the passing of this Bill should be a matter of high priority. Technical accuracy should be ensured for it to be an effective counter-impulse to the hate speech and hate crimes the LGBTIQ+, and specifically the trans community, are suffering worldwide.

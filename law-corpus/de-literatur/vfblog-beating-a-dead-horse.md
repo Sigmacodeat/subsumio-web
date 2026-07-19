@@ -1,0 +1,63 @@
+---
+title: Verfassungsblog — Beating a Dead Horse
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2023-12-07'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/beating-a-dead-horse/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Beating a Dead Horse
+
+The Council’s Annual Rule of Law Dialogue (ARoLD) is one of the soft law instruments adopted at the EU level in response to rule of law backsliding at Member State level. Introduced in 2014 as the intergovernmental response to the Commission's Rule of Law Framework (which the Council initially opposed), the ARoLD aims to promote and safeguard the rule of law through dialogue among all Member States. Almost ten years later, the utility of this tool is yet to be demonstrated – notwithstanding evidence-free assertions to the contrary regularly made by the Council.
+
+With the view of potentially revising how this instrument is used, in July 2023 the Spanish Presidency of the Council sent out a “questionnaire for the Member States on the evaluation of the Council’s annual rule of law dialogue.” The Presidency presented ten questions, split between queries “on the purpose and principles that govern the dialogue” and “on the way the dialogue is performed today and possible improvements.” The provided answers will inform conclusions to be adopted following the General Affairs Council scheduled for 12 December 2023.
+
+Following the disclosure of the MS’ answers to this questionnaire, this post will discuss the added value of this discursive and secretive tool to address systemic threats to or violations of the rule of law. I argue that the answers reveal the dialogue to be an ultimately toothless and partially incoherent exercise that relies excessively on the good faith of its participants and lacks accountability by design.
+
+## Origins of the Instrument
+
+The objectives of the Rule of Law Dialogue were set out in the Council’s Conclusions of December 2014. In accordance with the aim of being an exchange between the Union’s governments, the process would be guided by “objectivity, non-discrimination and equal treatment of all Member States,” with the use of a non-partisan evidence-based approach, the respect of national identities and the principle of sincere cooperation being key factors to take into consideration.
+
+What this looks like in practice is a periodic peer review exercise conducted every year. The nature of the dialogue is informal and confidential and relies entirely on the (naïve) assumption that a national government violating the rule of law will engage with it in good faith. No recommendations are adopted and no minutes are published. After 2014, the first update the public received on the Council’s ARoLD was a review, published in 2019, in which the MS agreed that it “proved a useful mechanism,” without providing any substantial evidence to support the statement. Moreover, the 2019 Conclusions postponed “the concrete elaboration of the procedure and modalities of a periodic peer review mechanism on the rule of law” to the end of 2023.
+
+Since 2020, the general makeup of the mechanism includes one annual session for horizontal debate on the state of play of the rule of law in the MS, as well one country-specific discussion led by each presidency every six months, with five MS at a time discussing their developments, issues and best practices. In terms of what the discussion entails, the original intention of holding the dialogue as a peer review exercise has shifted slightly. The debate is now based not only on the findings presented by the governments, but also takes the Commission's Annual Rule of Law Report (ARoLR), itself launched in 2020, into account. As such, the same four pillars are discussed: justice systems, the anti-corruption framework, media pluralism, and other institutional issues linked to checks and balances.
+
+Following an access to document request lodged by Laurent Pech, the Council disclosed both the questionnaire and the replies submitted by national capitals. What emerges from it is a fascinating picture of how the dialogue has been put into practice in the past nine years; how it is perceived by the MS; and how they each individually envision its future. The results will inform the presidency’s conclusions, which will be published at the end of its term.However, the responses also expose a number of problems in the current set up.
+
+## Confidentiality over Accountability
+
+To begin with, the fact that the mechanisms is predicated on “equal treatment” and based on evidence presented by the MS themselves in a very limited time frame results in discussions lacking depth and concreteness. This is particularly problematic when it comes to MS experiencing deliberate rule of law backsliding, as they can in no way be held accountable through the dialogue. While MS generally agree that this is done in the interest of avoiding duplication with other instruments (such as Art. 7(1) TEU hearings), the current approach vis-à-vis the likes of Hungary and Poland appears rather disingenuous and counterproductive.
+
+The dialogue’s effectiveness is further hindered by its nature as an informal and confidential mechanism. The idea behind this, as reaffirmed by the Italian delegation, is to provide a venue for “open and frank discussion on possibly sensitive issues.” Without even engaging with the question as to whether compliance with the rule of law may ever be understood as a sensitive issue requiring secrecy, there is no evidence that national governments have participated in open and frank discussion within the framework of the Council’s dialogue.
+
+In their answers to the questionnaire, the MS are evenly split between those that have a strong interest in retaining confidentiality in the name of encouraging discussion and making the ARoLD a strictly political instrument (including Germany, Italy, Croatia, Bulgaria), and the MS that see more transparency as the key to achieving concrete results (Belgium, Denmark, Cyprus, Finland). This should put into question whether this cult of secrecy has actually led to any meaningful result that can be traced back to the dialogue, and the apparent answer, when looking at widespread backsliding happening across the Union, is no.
+
+## Resistance to Change
+
+There is also no agreement on how the tool may be improved. Unsurprisingly, a small number of MS, such as Italy, Hungary and Poland, are even opposed to the current system which relies on the Commission’s ARoLR as the basis for discussion. A significantly larger group (Sweden, Portugal, Belgium, Germany, Luxembourg, Croatia, Bulgaria) is against expanding the sources used in discussions to include findings of other authoritative bodies (such as the Venice Commission), experts or civil society. The general argument is that these sources are already present in the ARoLR. However, the shortcomings of the latter, in particular as regards the countries subject to backsliding or suffering from systemic problems (as exposed here and here), would justify a broader set of sources, not to mention inputs on experts and submissions from civil society.
+
+## Uncertainty over Point and Purpose
+
+The questionnaire’s answer also indicate a complete lack of consensus over what the goal of the rule of law dialogue is meant to be. Sweden and Denmark refer to it as a preventive tool, Italy sees it strictly as a peer review effort, for Poland it should just be a venue to discuss “lessons learned.” Greece, meanwhile, proposed that best practices presented in the context of the dialogue should be rewarded with financial incentives. At the other end of the spectrum, France, Croatia and Cyprus express the need for monitoring and measurable standards to enhance credibility. It appears therefore that due to the lack of structure and overly general objective of this mechanism from its inception, each MS has a different vision of what it should do. But how can an instrument be effective when on top of being toothless by design, it also fails to be a lack of consensus over its purpose amongst its intended subjects?
+
+This is especially problematic when the countries that are known to suffer from systemic rule of law deficiencies are the same that openly reject the mechanism. It is quite ironic how the French delegation describes the horizontal debates as relevant, pointing to the high number of state interventions, before specifying that the three exceptions were Hungary, Poland and Bulgaria. While states such as Germany, Denmark, Ireland, Portugal, Netherlands praise the dialogue for helping them address or reflect on with marginal issues, the ones that require systemic overhauls simply dismiss it, or in the case of Hungary and Poland, make a case of arguing that EU institutions should be subject to rule of law oversight instead.
+
+## The Pitfalls of Intergovernmentalism
+
+All in all, the self-evaluation of the Council’s annual rule of law dialogue further exposes the many pitfalls of the intergovernmental approach to rule of law issues. Within the Council, MS have no incentive to bind themselves to mechanisms which could foster genuine accountability for their (in)action and possible or established violations of the rule of law. In the words of the Polish delegation the “dialogue should not serve as means of holding any MS accountable for irregularities identified in the Commission’s Annual Rule of Law Report.” While such a statement may not be surprising coming from Poland under its former PiS government, this position is shared by other governments. Lithuania argues, for instance, that though the broad scope of the dialogue may lack concreteness, the discussions should remain political in nature; Latvia remarks that many aspect touched upon in the dialogue falls under national competence, and Estonia states that “discussions at the ministerial level should not become too technically challenging, detailed and comprehensive.”
+
+## A Way Forward?
+
+If one was to rank the different rule of law tools based on their effectiveness considering their advertised objectives, the Council’s rule of law dialogue would easily come last. However, all Member States, at least in principle, are supportive of it, if only because it gives the impression that they all take seriously what the Court of Justice has described as the “condition for the enjoyment of all the rights” deriving from the Treaties. This begs the question, is there any potential to be harvested from this otherwise understated soft law mechanism?
+
+Some of the most popular proposals presented by MS delegations may provide some improvements if adopted. In the spirit of promoting best practices, several governments appear supportive of the idea of inviting experts to offer guidance and involve civil society to either improve transparency or gain a better understanding of the domestic situation. Another significant development would be the use of additional sources which differ from the ARoLR. This would give more credibility to the process and make the dialogue less self-referential. This is further elaborated by the Cypriot delegation, which argued that the dialogue would be more useful if, for example, it could discuss different established indexes and find blind spots, in order to achieve a truly comprehensive examination of the rule of law. Finally, transparency and accountability are key. There should be a way to monitor whether and how the discussions lead to national implementation of best practices, including introducing better ways to track progress and make the rule of law more measurable, as well as providing written submissions ahead of discussions to allow better preparation and informing the public by publishing the minutes after.
+
+Nevertheless, for so long as the rule of law dialogue remains a secretive and informal process, one should not expect any concrete results to follow. Even when countries recounted their positive experiences of implementing the suggestions after the discussions, without the means to monitor and measure the actual impact and correct enforcement of the rule of law, improvements will largely remain intangible. Of course, some Member States argue that there are other adversarial arenas or more suited instruments to monitor and enforce EU values. However, if that is the case, then what is the point of the essentially self-congratulatory exercise that is the Council’s rule of law dialogue cycle?

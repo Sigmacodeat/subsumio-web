@@ -1,0 +1,165 @@
+---
+title: >-
+  Verfassungsblog — ‘We need to talk about the kids': FIFA’s children's rights
+  obligations
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2019-07-04'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/we-need-to-talk-about-the-kids-fifas-childrens-rights-obligations/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# ‘We need to talk about the kids': FIFA’s children's rights obligations
+
+The world of football has been beset by a
+multitude of scandals around young people and the game, raising questions about
+the relationship between football and children’s rights. As the world of sport begins
+to talk more seriously about its human rights obligations, an opportunity
+exists for FIFA to engage with the sophisticated children’s rights framework at
+international level to leverage the game’s potential to improve the lives of
+young people. This blog begins by exploring children’s rights violations
+connected to FIFA’s activities and discusses the slightly disjointed approach
+taken to this area in the past. The move towards a more human rights-informed
+approach to sports governance is then acknowledged, and FIFA’s evolving agenda
+is discussed in the context of children’s rights. The potential impact on
+FIFA’s activities of meaningful engagement with children’s rights instruments
+and processes is outlined.
+
+## FIFA and children’s rights risks
+
+A range of children’s rights violations have been documented in football in recent years. At one end of the spectrum are the most serious examples: notably, a series of historic sexual abuse scandals in the English and Scottish games, as well as ongoing reports of rogue football agents engaging in trafficking like practices in developing regions of the world. In addition, memories of football stitching scandals of the 1990s have barely faded, whilst recent and future mega-sporting events, the Brazil 2014 and Qatar 2022 World Cups included, have been embroiled in reports of large-scale forced evictions and abuses of migrant workers, all of which impact upon the rights of young people. As atrocious as these (rightly) headline-grabbing incidents are, we should also not forget the more quotidian impact of football on children’s lives. These impacts are often wholly positive: ranging from the life-enhancing, to the life-transforming – and no serious analysis of the relationship between football and children’s rights should overlook this. But often there can be injurious consequences of playing football, particularly at an elite level, which impact upon children’s rights to an education, to a high standard of health and to family life: children’s education can become side-lined as football is prioritised, over-training, injury and the psychological pressure of success can impact a child’s health, and many children leave their homes in order to pursue a football career. For all its good, sport is an environment in which discrimination, bullying and exploitation can thrive – whatever the level of the game, and whether young people are playing or watching. In short, there is a complex relationship between FIFA’s multifarious activities and children’s rights, their impact being felt by young people who play the game, who work in and around the game, who are spectators and consumers of the game, or who are simply innocent bystanders to FIFA’s mega events. 
+
+## Historic side-lining of children’s rights
+
+Article 3 of the FIFA Statutes states that ‘FIFA is committed to respecting all internationally recognised human rights and shall strive to promote the protection of these rights’, an undertaking that naturally includes rights specifically formulated to recognise the special status of young people. That said, children’s rights and football have not always been natural allies for a number of reasons. First, there is a complicated relationship between sport and human rights in a broader sense. Historically, sport has been slow to accept the scrutiny of legal frameworks external to the game, relying on principles such as the autonomy of sport and the specificity of sport (cf. Art. 165 TFEU) to argue that it should be left to self-govern. Furthermore, states are the addressees of international human rights documents: in a strict legal sense, their realisation is an obligation that falls to public authorities. The legal status of international sports governing bodies such as FIFA (an association under Swiss law) does not automatically generate obligations according to an orthodox reading of human rights law. Second, the perceived ‘softer’ values that underpin a children’s rights ethos – one in which the interests and autonomy of the child are placed above other competing claims – can rub up against a macho culture of cut-throat competition generated by sporting and, increasingly, commercial interests. This means that, despite a gradual acceptance of the need for appropriate child protection frameworks in sport over the past twenty years, football has been relatively slow in realising the value of a wider underpinning framework around children’s rights. FIFA’s efforts on this front, until quite recently, have tended to be piecemeal, reactive and uncoordinated. However, recent developments offer an opportunity for FIFA to elaborate a more ambitious and coordinated approach to children’s rights within its activities.
+
+## A shift towards a closer relationship
+between human rights and football
+
+Human rights have become something of a
+buzz word in sport in recent years – a wholly positive development for those
+who advocate for the rights of athletes, greater transparency and
+accountability in the game’s governance, and for sport to realise its potential
+to deliver social justice goals. For example: in 2018 the high-profile Centre for Sport and Human Rights
+was launched; human rights arguments are becoming more common place before the
+Court of Arbitration for Sport (albeit
+with limited success); and, academic
+interest in the discipline of human rights and sport is growing. FIFA is a
+part of this cultural shift, most notably through the commission of the Ruggie
+report, the aim of which was to scrutinise ways in which the organisation could
+incorporate respect for human rights into its work. Entitled ‘”For
+the Game. For the World.” FIFA & Human Rights’ the 2016 report
+considers how the UN
+Guiding Principles on Business and Human Rights – which provide a global
+framework for reducing the risk of rights violations and enhancing rights
+realisation by businesses – can be applied to FIFA’s activities. The report (p.4)
+makes three central recommendations for change within FIFA: first, a cultural
+shift which would see respect for human rights embedded into FIFA’s daily
+actions and decisions; second, a move from a reactive attitude to human rights
+to a proactive one; third, improvements around human rights accountability. The
+report sets down a framework consisting of a series of action points. These
+cover improvements to FIFA’s own structures and decision-making to ensure human
+rights concerns are identified and addressed, the establishment of evaluative
+mechanisms addressing a range of actors across the organisation’s business
+relationships (including those bidding to host tournaments), use of member
+organisations to raise awareness of human rights issues, and improved access to
+remedies following human rights harms (p.
+28-35). Included in the recommendations is a suggestion that FIFA improves
+its engagement with stakeholders, including children. Beyond this, there are
+only very limited references to young people within the report. Three potential
+sites of children’s rights violation are highlighted: the trafficking of
+players, the use of child labour in FIFA’s supply chains and the potential for
+sexual exploitation linked to the influx of visitors around mega-events. In
+other words, the report is big on how human rights can be incorporated
+into FIFA’s activities, but relatively light on what human rights consist
+of in the context of football. And this is where the expansive international
+children’s rights framework can be leveraged to influence FIFA’s activities in
+a meaningful way. 
+
+## Embedding children’s rights in
+FIFA’s human rights framework
+
+It is interesting that, within this greater
+scrutiny of FIFA’s human rights credentials, relatively little thought has been
+given to what these obligations would look like in a children’s rights context.
+There is a very clear international rights framework in respect of children,
+flowing from the United
+Nations Convention on the Rights on the of the Child 1989 (UNCRC). This
+document, alongside its associated principles and processes, can be argued to
+provide an important opportunity for FIFA to improve its approach to children’s
+rights. The UNCRC is the most successful international Treaty in the world. It
+has been ratified by all UN member states, with the exception of the United
+States of America. It is therefore a globally accepted standard for the rights
+of the child, representing a level of consensus that is relatively unusual
+within international law. Within this document are a set of umbrella rights,
+which should underpin all actions relating to children: the principle that decisions
+should be taken in the best interests of the child (Article 3), the right of
+children to have their opinions listened to in accordance with their age and
+maturity (Article12), alongside anti-discrimination measures (Article 2) and a
+right to life, survival and development (Article 6). In addition to these
+cross-cutting principles are a set of substantive rights relating to most areas
+of children’s lives: amongst others, rights to the highest attainable standard
+of health (Article 24), to education (Article 28) and to live with family
+(Articles 9 and 10). What we have, therefore, is not only a strikingly
+comprehensive blueprint for rights to be enjoyed by young people, but a clear
+mandate from the international community – and the states which comprise it –
+that these are the standards by which FIFA’s activities ought to be measured.
+Therefore, in implementing the Ruggie report – whether auditing its own
+activities, scrutinising the actions of its partners, or working to improve the
+game – FIFA has a tool for understanding what positive children’s rights
+realisation looks like, and one which already enjoys widespread support from a
+range of stakeholders. Therefore, by blending the recommendations of the Ruggie
+report, with a careful analysis of the UNCRC and its framework, FIFA has a
+potentially very effective methodology for enhancing its children’s rights
+activities. 
+
+## FIFA’s potential as a children’s rights champion
+
+For FIFA to leverage this potential to
+engage in a more comprehensive and meaningful manner with international
+children’s rights obligations, a few cautionary notes must be borne in mind. The
+Ruggie report is clear about the need for action (p.36).
+Of course (and this is acknowledged) to a certain extent this is stating the
+obvious, but many expensive and glossy reports, laden with well-meaning human
+rights pledges, have gathered dust on the shelves of multi-national
+organisations. Implementation, as the report states, should begin immediately,
+but some of its recommendations require a long-term and sustained commitment,
+and in respect of children’s rights, in particular, this can be an expensive
+endeavour. Furthermore, children’s rights can require particular thought and
+expertise. The oft-repeated phrase ‘children’s
+rights are human rights’ carries weight because it reminds us that when we
+talk about human rights we must also include the rights of children, but it can
+obscure fundamental differences between the two regimes. Children’s rights
+merit separate consideration because of young people’s different needs,
+capacities and vulnerabilities – some of the underpinning principles can differ
+from adult-focused rights regimes (ideas of best interests and evolving
+capacities, for example (Articles 3 and 12 UNCRC, respectively)) and certain
+substantive rights apply only to children (most obviously, the right to
+education (Article 28 UNCRC)). Children’s rights, therefore, require different
+processes of implementation, monitoring and evaluation. The good news for FIFA
+is that this is not a new challenge: a rich and sophisticated set of tools
+exist around children’s rights indicators and children’s rights mainstreaming with
+lessons learned from a multitude of governance contexts. Key to the success of
+an improved children’s rights framework within FIFA is building children’s
+rights capacity and learning from other sectors. With these challenges
+acknowledged, however, it is worth noting the enormous potential of FIFA as a
+children’s rights actor. As a social and cultural phenomenon, football is
+unparalleled in its capacity to touch young people’s lives – its reach extends
+across the globe, its appeal transcends class, race and gender, children want
+to play football, watch football and learn about football. For FIFA to capitalise
+upon this opportunity, its children’s rights strategy requires a level of
+sophistication which captures the array of actors involved (as both rights and
+duty bearers), the complex layers of governance which operate within football
+and the diverse (social, cultural and economic) contexts within which the
+global is played. In human rights parlance, there is a chance to be more
+ambitious than to discuss FIFA’s role in respecting children’s rights, moving
+instead towards mechanisms which would facilitate the promotion of
+children’s rights.

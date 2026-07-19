@@ -1,0 +1,75 @@
+---
+title: Verfassungsblog — The New Transgender Ruling in Czechia
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2024-05-15'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/the-transgender-ruling-in-czechia/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# The New Transgender Ruling in Czechia
+
+In a recent decision in the case of N.G. (Pl. ÚS 52/23), the Czech Constitutional Court (CCC) addressed the pressing issue of trans persons’ rights, more specifically the requirements for legal gender reassignment, involving (often involuntary) sterilisation and castration. When compared to the earlier decision in T.H. (Pl. ÚS 2/20), the new ruling represents a major shift. In fact, the CCC changed its legal position by 180 degrees, giving preference to protecting individual rights over deferring to the legislator’s choices. This new approach of the CCC presents an example of responsive judicial review, a tendency which we hope to see more frequently now that the CCC entered into its fourth decade, with a wave of new judicial appointments.
+
+In this blogpost, we first provide a brief summary of the CCC’s argumentation in N.G. Then, we scrutinise the judgment in light of our analysis of the T.H. case as ‘evasive, insensitive, ignorant, and political’, reaching the conclusion that the CCC’s approach to trans rights in N.G. is no longer evasive, insensitive nor ignorant, but still (inevitably) political. Lastly, we offer a critique of the delayed implementation of the judgment.
+
+## A brief summary of the CCC’s argumentation
+
+On the merits, the CCC presented its arguments in three stages.
+
+Firstly (paras 67-74), the CCC explained that the Czech legal order gives a trans person two choices: either they decide to undergo an invasive surgery (castration and sterilisation), or they accept that the state will not recognise their gender identity. While the first choice amounts to a serious interference with a person’s physical integrity, the second option interferes with their self-determination, personal autonomy and privacy.
+
+Secondly (paras 75-81), the CCC identified the concern that gender reassignment should not be arbitrary, depending on one’s mood. In general, the state might see a legitimate aim in documenting whether individuals are men or women, and in setting out criteria for gender reassignment ‘so that the status of an individual is clear and that this status remains authentic’. The CCC recognised two prongs of this legitimate aim: the existence of ‘objective biological features’ corresponding to a person’s gender registered by the state, and ‘traditional understanding of parenthood’.
+
+Thirdly (paras 82-93), despite possibly pursuing a legitimate aim, the requirement of sterilisation and castration is ‘in direct contradiction with a fundamental right of trans persons to the protection of their physical integrity and personal autonomy, mostly because it violates their human dignity.’ The challenged legal provisions treat trans persons as objects, not as humans, as they do not allow individual assessment. This is ‘clearly disproportionate’. The aim can be achieved by less invasive means, such as a medical diagnosis by several independent specialist sexologists, supplemented by a time test. Furthermore, plastic surgery of a person’s intimate zones is not even suitable to achieve the aim since one’s genitals are not exposed in normal interpersonal contact. With regard to sterilisation, the CCC also briefly observed that the state has no right to treat a person’s reproductive function in such an instrumental way as to deprive them of the possibility of becoming a parent without that person having made such a decision.
+
+In conclusion (paras 103-112), the CCC underscored its commitment to the principle of minimal interference in the Parliament’s role and delayed the effects of its ruling by more than one year, quashing the problematic legal provisions with effect from July 2025 while refraining from prescribing specific methods for the legislator to regulate future conditions for gender reassignment.
+
+## A fundamental transformation in only two years
+
+The CCC’s ruling in N.G. seems as if it was issued by an entirely different court than the one which ruled in T.H. – and rightly so. Between the two decisions, the terms of 9 (out of 15) constitutional justices expired and the institution was rejuvenated by a new generation of justices. Of the 14 judges who decided T.H. in March 2022 (the case was decided en banc but one of the 15 judges was on holidays), only 6 sat in the composition that decided N.G. in May 2024. As we argue below, the CCC appears to have taken a new breath which is evident both in the substance of its rulings and in its communication with the public.
+
+No longer evasive…
+
+The CCC distinguished between the two cases on gender reassignment by emphasising that while T.H. was non-binary, N.G. is a trans person seeking full gender reassignment. Although this distinction is not incorrect, we argue that it alone would not explain the markedly different legal stance of the CCC. The two cases posed the same legal questions; yet, whereas the previous composition of the CCC avoided addressing the core issues of the dispute, the new composition tackled them head-on. Therefore, we are persuaded that the reason for the U-turn lies in the changed composition of the CCC, rather than a minor difference in the facts.
+
+We also find it interesting how openly the ‘new’ CCC addresses the topic of the binding force of precedent. In another recent case (Pl. ÚS 27/22), the CCC based its argumentation inter alia on the ‘inherent value of stability of case law’. In response, a group of dissenting judges suggested that while stability of case law is certainly an important constitutional value, sometimes other constitutional values may prevail and allow a legitimate departure from precedent.
+
+In N.G., the question as to whether the decision in T.H. prevented the CCC from reopening the discussion on gender reassignment was framed as one of res iudicata, rather than one of precedent. The CCC, while acknowledging the constitutional importance of the stability of its case law, recalled that the decision in T.H. was made by a so-called ‘relevant minority’ (of only 6 judges out of 14, as we explained previously) and therefore cannot bind the court as strongly as plenary rulings adopted by a qualified majority (paras 46-47). Although this claim may be controversial, we applaud the openness and we argue that such an explicit and discursive approach to judicial decision-making is preferable to the evasive and cryptical style of the previous CCC (or of the CJEU, as Daniel Sarmiento recently pointed out).
+
+No longer insensitive…
+
+Two years ago, the CCC referred to T.H. using masculine grammatical forms, despite the applicant’s use of female language forms in her/their communications with the court. The change in tone becomes apparent when the new ruling in N.G. refers to the findings in T.H.: it almost seems as if the new CCC wanted to highlight the difference, combining direct quotes from T.H. (using masculine form) with its own summaries and commentaries (using feminine form). In relation to N.G., the CCC showed empathy and although N.G. is still legally recorded as a woman in state records, the CCC addressed him using masculine forms.
+
+Regarding the style of language more generally, the judgment in N.G. is also significantly simpler than that in T.H. This appears to reflect a broader trend: the CCC now seems to pay more attention to being understandable to the applicants and wider public. Remarkably, for the first time in its history, the CCC supplemented its decision with a Q&A document, succinctly explaining the conclusions in just two pages and in very simple language.
+
+No longer ignorant (of ECtHR case law)…
+
+The decision in N.G. marked a noticeable departure from T.H. by engaging more fittingly with the ECtHR jurisprudence. For more than a decade now, the ECtHR has consistently ruled against compulsory sterilisation for gender reassignment as a violation of Article 8 of the Convention. The CCC’s newly established alignment with this view in N.G. is a pivotal step towards harmonising its jurisprudence with broader European standards. This is especially important for two reasons.
+
+First, it is a noticeable departure from the CCC’s previous approach to LGBTQ+ rights, in which the CCC has not engaged properly with ECtHR case law. It has typically included it in its judgments, but not engaged with it and not explained why, sometimes directly contravening ECtHR’s conclusions. Also in T.H., the CCC did not deal with the relevant ECtHR case law and only noted that it ‘has considerable doubts about the transferability of some of the conclusions of the ECtHR regarding gender to the environment of the Czech legal system,’ without any explanation. The CCC’s engagement with ECtHR case law in N.G. is a welcome turnaround towards better observance of rights and obligations under the ECHR.
+
+Secondly, this turnaround holds significant potential for LGTBQ+ rights in Czechia, which are still limited, despite the recently passed bill on same-sex partnerships. ECtHR’s case law has played a pivotal role in advancing LGTBQ+ rights across Europe, hugely due to the interpretative force of its judgments. It was under the influence of ECtHR and CJEU case law that CCC’s counterparts in neighbouring Germany and Austria began overcoming their previously conservative and narrow treatment of LGTBQ+ people’s rights. For example, the BVerfG’s case law regarding LGTBQ+ rights, specifically same-sex partnerships and families, had a rather formalistic and conservative phase, relying on the privileging of heterosexual marriage. From 2008, the Court entered a more progressive phase, applying much stricter standards of review and dismantling one restriction after the other. The change of perspective was initiated by the CJEU in Maruko, and some even consider this to be the main cause of the change. Under the influence of the CJEU and ECtHR, BVerfG started playing a central role in advancing the rights of same-sex couples, but also trans people. One could cautiously hope that perhaps N.G. might mark a similar turning point for the CCC.
+
+…but still political.
+
+The only adjective that remains is ‘political’. In fact, a ruling on such an important policy matter cannot avoid being political. No matter what the conclusion, the case represents an example of mega-politics, and by reviewing legislators’ choices, the CCC gets involved in political activity.
+
+This is where the concept of ‘responsive judicial review’ (RJR) of Ros Dixon offers a very attractive framing. RJR argues for giving courts a role in the process of democratic constitutional deliberation, as even relatively well-functioning legislative processes are subject to various forms of dysfunction. It centres on the importance of judicial review being responsive to both majoritarian constitutional understandings and minority rights claims by countering three types of democratic dysfunction: anti-democratic monopoly, democratic blind spots and democratic burdens of inertia. Dixon argues that judgments expanding LGBTQ+ rights respond to complex forms of legislative inertia, i.e. legislators consistently neglecting issues of minorities as they prioritise issues of greatest concern to the majority and/or try to avoid controversial issues that are likely to divide their own party. According to RJR, judicial interference countering burdens of inertia can be politically legitimate, among others, where they are designed to counter a serious and irreversible risk to human dignity, individual rights or systemic or persistent forms of state failure.
+
+The strict conditions of gender reassignment present burdens of inertia. In N.G., the CCC addressed the legislative inertia that had previously hampered the rights of transgender individuals to change their legal gender. The Court’s intervention is politically legitimate as it counters a serious and irreversible risk to human dignity and individual rights, which mandatory sterilisation presents. On persistent state failure, the CCC noted that the Parliament had failed to address the issue, despite many opportunities (para 105-108). The CCC underscored its own role as a ‘catalyst of democratic discussion where it has not yet taken place or where it has been dysfunctional for a long time’ (para 108). This is in line with the responsive role of judicial review when legislative bodies fail to address crucial human rights issues. The CCC’s responsiveness in N.G. is an important change.
+
+## Conclusion: a progressive step with reserved cautions
+
+The decision in N.H. is a commendable progression in the recognition and protection of trans persons’ rights. It reflects a growing awareness of the need for courts to respond to legislative deficiencies and protect fundamental rights against outdated and discriminatory legal frameworks. It might potentially mark a turning point in CCC’s approach to LGBTQ+ rights, though it remains to be seen whether the CCC will act similarly in situations where there is less severe and irreversible harm at stake. That the CCC decided to delay the effects of its ruling, quashing the problematic legal provisions with effect from July 2025, leaves room for further improvement, though. The postponement supposedly aims to ensure effective protection of the fundamental rights of trans people and preserve legal certainty and the stability of the legal order. However, as the CCC itself pointed out (para 109), there was a way to interpret the problematic provision as merely requiring a medical certificate, hence legal certainty, the stability of the legal order and effective protection of rights of trans people needn’t be affected. It wouldn’t be the first time a CCC’s judgment quashing legislation would take immediate effect.
+
+Yet, even if there were a risk to legal certainty and stability, these arguments are outweighed by the serious and irreversible harm to bodily integrity, human dignity and personal autonomy. (This was the argument of the BVerfG – on which the CCC is modelled – when quashing mandatory sterilisation of trans people with immediate effect.) The dissenting opinion by Judge Hulmák also highlights the urgency of providing immediate relief to the affected individuals, criticizing the majority’s cautious approach. We conclude that effective protection of trans persons’ fundamental rights required an immediate quashing, not a delayed implementation, as the CCC paradoxically argued
+
+As the Czech legal landscape continues to evolve, it remains to be seen how changes in the law will shape the lived realities of transgender individuals seeking to align their legal identities with their lived experiences.

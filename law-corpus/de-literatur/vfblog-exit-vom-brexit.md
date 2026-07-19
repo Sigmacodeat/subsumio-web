@@ -1,0 +1,61 @@
+---
+title: Verfassungsblog — Exit vom Brexit?
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2018-12-04'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/exit-vom-brexit/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Exit vom Brexit?
+
+Unmittelbar nach dem unseligen Brexit-Referendum am 23. Juni 2016 stellte der große Oxforder Europarechtler Paul Craig seine Abrechnung mit den Machtspielchen in der britischen Politik als Drama nach shakespeareschem Vorbild in sechs Akten vor. Vor einem Jahr ergänzte er die Akte 7-9, die er als „Interregnum“ bezeichnete. Man darf gespannt sein, welcher Platz in der Spannungskurve dem EuGH-Verfahren Wightman dereinst zugeschrieben werden wird, das – betrachtet man es als eigenen Handlungsstrang – heute zumindest seinen vorläufigen Höhepunkt erreicht hat: Zum ersten Mal äußerte sich mit Generalanwalt Manuel Campos Sánchez-Bordona ein Vertreter des Gerichtshofs offiziell zu der Frage, ob das Vereinigte Königreich den Austrittsprozess einseitig beenden könne („Exit vom Brexit“).
+
+## Wie kam es überhaupt zu dem Verfahren?
+
+Der Auslöser für das Verfahren vor dem EuGH ist die Vorlage des schottischen Court of Session, der von verschiedenen Abgeordneten des schottischen, des britischen und des Europäischen Parlaments in einer Art Feststellungsklage darum ersucht wurde, für Klarheit zu sorgen, ob auch der unilaterale „Rücktritt vom Austritt“ möglich sei, da hiervon ihr Abstimmungsverhalten abhänge. Da ein solches Urteil sinnvollerweise nicht ergehen kann, ohne dass der EuGH zu den bislang absolut ungeklärten Auslegungsfragen rund um Art. 50 EUV Stellung bezogen hat, initiierte das schottische Gericht ein Vorabentscheidungsverfahren nach Art. 267 AEUV. Wegen der drängenden Zeit wird dies als beschleunigtes Verfahren gem. Art. 105 der EuGH-Verfahrensordnung betrieben und ist – das zeigt die Brisanz und den Stellenwert der Sache – nicht nur, wie sonst bei bedeutsamen Rechtssachen, der Großen Kammer, sondern sogar dem Plenum des Gerichtshofs zugewiesen. Wie sich die Beteiligten positioniert haben und wie die mündliche Verhandlung gelaufen ist, lässt sich dankenswerterweise auf den Internetseiten des Good Law Project nachlesen, das den Rechtsstreit per Crowdfunding erst ermöglicht hat.
+
+## Welche juristischen Optionen gibt es überhaupt?
+
+Im Wesentlichen gibt es vier Varianten, wie der Gerichtshof auf das Vorlageverfahren reagieren könnte:
+
+Variante 1: Das Verfahren ist bereits unzulässig. Das ist die Position der britischen Regierung, die sich in der mündlichen Verhandlung letzten Dienstag sogar weigerte, sich überhaupt zu materiellen Aspekten zu verhalten. Sie warnte den Gerichtshof vielmehr, dass jegliche Entscheidung in der Sache als Intervention in den politischen Prozess verstanden würde, in dem eine Abkehr vom Brexit – bisher zumindest – keine denkbare Option sei. Das Referendum aus dem Jahr 2016 sei zumindest politisch irreversibel, auch wenn mittlerweile nicht nur die verhassten Experten klar sehen, zu welch dramatischen Konsequenzen seine Umsetzung führt. Daher sei jeder Rechtsstreit über die Auslegung des Art. 50 EUV konstruiert und infolgedessen unzulässig.
+
+Variante 2: Das Verfahren ist zulässig und führt zum Ergebnis, dass das Austrittsverfahren auch juristisch unter keinem Gesichtspunkt aufgehalten werden kann. Wenn das Vereinigte Königreich weiter Mitglied bleiben wollte, müsste es auf eine Verlängerung der Austrittsverhandlungen hinwirken und die dadurch entstehende Zeit nutzen, um statt den Austrittsmodalitäten die Bedingungen einer fortgesetzten Mitgliedschaft analog Art. 49 EUV zu verhandeln. Dies vertritt im nun anhängigen Verfahren niemand.
+
+Variante 3: Das Verfahren ist zulässig und führt zu dem Ergebnis, dass das Austrittsverfahren nach Art. 50 EUV zwar beendet werden kann, aber nur mit Zustimmung des Europäischen Rats. Dabei gäbe es noch drei Untervarianten, wie diese Zustimmung zu erfolgen hätte: einstimmig (analog der Verlängerung der Austrittsverhandlungen nach Art. 50 Abs. 3 a.E. EUV), mit qualifizierter Mehrheit (analog dem Abschluss des Austrittsabkommens nach Art. 50 Abs. 2 Satz 4 EUV mit den beiden Hasenfüßen, dass dort statt dem Europäischen Rat der Rat zuständig wäre und auch das Europäische Parlament zustimmen müsste) oder im Konsens (analog Art. 15 Abs. 4 EUV, was nach der gängigen Praxis bedeutet, dass die Zustimmung als erteilt gilt, wenn sich nicht explizit Widerstand regt, ergo: Schweigen gilt als Zustimmung). In diesem Spektrum bewegten sich die Einlassungen des Rates und der Kommission sowie einige Nachfragen von Mitgliedern des Gerichtshofs.
+
+Variante 4: Das Verfahren ist wiederum zulässig und führt zur Feststellung, dass das Vereinigte Königreich das Austrittsverfahren einseitig beenden und den Status quo als Mitglied beibehalten kann. Hierzu gibt es auch zwei Untervarianten, nämlich erstens, dass ein solches Recht zum „Rücktritt vom Austritt“ absolut und unbedingt ist, und zweitens, dass es zumindest einer Missbrauchskontrolle unterliegt, deren rechtlicher Aufhänger mangels Anhaltspunkten in Art. 50 EUV nur die Loyalitätspflicht aus Art. 4 Abs. 3 UAbs. 1 EUV sein könnte. Dies ist das Rechtsschutzziel der Antragsteller des schottischen Ausgangsverfahrens, und – viel wichtiger: Dies ist nunmehr auch die Linie, auf der sich die Schlussanträge des Generalanwalts bewegen.
+
+## Warum der Ansatz des Generalanwalts im Prinzip richtig ist
+
+Es soll dem geneigten Leser nicht verborgen bleiben, dass auch der Verfasser dieser Zeilen bereits vor gut zwei Jahren mit sehr ähnlichen Argumenten in einem Aufsatz für Variante 4 eingetreten ist und daher naturgemäß kein sonderliches Bedürfnis verspürt, kritisch mit den Schlussanträgen umzugehen. Dennoch sei kurz dargestellt, warum die Linie des Generalanwalts richtig ist.
+
+Dass Variante 1 nicht ernstlich in Betracht kommt, folgt aus zwei völlig unterschiedlichen Gesichtspunkten: Der streng juristische besagt, dass der EuGH nicht beurteilen darf, ob das nationale Ausgangsverfahren zulässig ist, und er Vorlagen nur dann zurückweist, wenn der zugrunde liegende Rechtsstreit offensichtlich konstruiert ist. Dass es gerade in der jetzigen politischen Gemengelage für EU-freundliche Abgeordnete ganz entscheidend darauf ankommen kann, ob das fertige Austrittsabkommen die einzige Option neben einem völlig ungeregelten Austritt ist, oder ob es auch noch die Hoffnung auf einen Verbleib in der EU gibt, liegt auf der Hand. Daran ist nichts konstruiert. Und warum mit dieser Frage der Rechtsweg ausgerechnet zum Court of Session in Schottland eröffnet ist, geht den EuGH nichts an. Daneben gibt es auch noch den starken rechtspolitischen Aspekt, dass der Gerichtshof sich nicht die Chance nehmen lassen darf, für rechtliche Klarheit zu sorgen, bevor es ernst wird. Man stelle sich vor, die Briten bekommen in letzter Minute vor dem Hard Brexit Torschlusspanik (das ist nicht so unwahrscheinlich), bekunden ihren Willen, in der EU zu bleiben, und niemand weiß, wie der Rechtsstatus des Vereinigten Königreichs ist. Der EuGH müsste sich dann nach dem 29. März 2019 wahllos ein Vorabentscheidungsverfahren britischer Provenienz greifen, um inzident zu klären, ob die Vorlage überhaupt von einem „Gericht eines Mitgliedstaats“ im Sinne von Art. 267 AEUV stammt. Diese Sorte Chaos kann niemand wollen. Zudem spricht nichts dafür, dass der EuGH sich im Plenum mit einer Sache befasst, nur um das Verfahren dann für unzulässig zu halten.
+
+Variante 2 wäre erwägenswert, wenn man das Vereinigte Königreich tatsächlich, wie manche Brexiters behaupten, für seine Austrittsentscheidung bestrafen wollte. Sie würde nämlich dazu führen, dass alle Opt-outs und der Britenrabatt zur Disposition stünden und paradoxerweise während einer laufenden Mitgliedschaft neu verhandelt werden müssten. Dies würde den Sinn der Verhandlungen, die Art. 50 Abs. 2 vor einen disruptiven Austritt setzt, in ihr glattes Gegenteil verkehren. Dies wäre sowohl aus wirtschaftlicher wie auch aus individualrechtlicher Perspektive aberwitzig: Obwohl es Rechts- und Planungssicherheit zu den bisherigen Konditionen während einer laufenden Mitgliedschaft geben könnte, hinge alles am seidenen Faden. Dies wäre für alle Seiten unbefriedigend und ist deshalb auch von niemandem im Verfahren vertreten worden.
+
+Es bleiben also die Varianten 3 und 4 mit ihren Untervarianten, die alle rechtspolitisch etwas für sich haben. Wie streng man die Anforderungen hier setzen möchte, hängt hauptsächlich damit zusammen, für wie wahrscheinlich man es hält, dass ein austrittswilliger Staat taktisch das Verfahren zunächst stoppen und dann bei nächster Gelegenheit wieder neu anfangen würde. Eine weitere wichtige Prämisse ist die Frage nach dem Schutzzweck des Art. 50 Abs. 2 EUV, sprich: ob das Verfahren hauptsächlich den austrittswilligen Staat in seiner Souveränität schützen will oder eher die Verhandlungsposition der EU und ihrer verbleibenden Mitgliedstaaten. Nicht zuletzt stellt sich auch die Frage, ob man völlig freie Rechtsschöpfung betreiben will oder auf die völkerrechtliche Praxis als Modell zurückgreift, wenn Art. 50 EUV selbst – trotz seiner Stellung als lex specialis – schon nichts Genaues zu dem Thema zu entnehmen ist. Dies vorausgeschickt, ist es plausibel, sowohl die Regeln der Wiener Vertragsrechtskonvention (namentlich Art. 68) als auch den Fortbestand der Staatengemeinschaft als Wert an sich dahingehend zu deuten, dass ein einseitiges Recht auf Beendigung des Austrittsverfahrens besteht, solange es nicht missbräuchlich eingesetzt wird, sondern auf einer aufrichtigen Änderung des politischen Willens beruht. Sollte es einen entscheidenden Meinungsumschwung im Vereinigten Königreich geben, wie auch immer dieser sich politisch manifestieren würde, wäre es jedenfalls die Aufgabe des Rechts, den Fortbestand der Union zu fördern, und nicht, ihn zu torpedieren.
+
+## Welche Klarstellung im Urteil des Gerichtshofs dennoch wünschenswert ist
+
+Eine Schwäche der Schlussanträge besteht jedoch darin, dass sie nicht klar benennen, worauf sich die Missbrauchskontrolle beziehen und wem sie obliegen soll. Da es sich insoweit um eine politische Einschätzung handelt, wäre sie beim Europäischen Rat am besten aufgehoben, so dass auch ein Kombination aus den letzten Untervarianten der Varianten 3 und 4 denkbar erscheint: Der einseitige Rücktritt vom Austritt wäre demnach möglich, wenn der Europäische Rat ihn nicht im Konsensverfahren als missbräuchlich zurückweist. Dadurch würde sichergestellt, dass nicht sachfremde Erwägungen wie etwa die Gibraltar-Frage die Wiederherstellung geordneter Verhältnisse verzögern oder gar verhindern könnten. Vielmehr gäbe es eine minimalinvasive politische Kontrolle, die taktischen Spielchen einen Riegel vorschöbe, aber dennoch klar zum Ausdruck brächte, dass ein Mitgliedstaat, der nach politischen Irrungen und Wirrungen weiter an die Rechte und auch die Pflichten aus dem bestehenden Mitgliedschaftsverhältnis gebunden sein möchte, dies auch darf und nicht zum Austritt gezwungen werden soll.
+
+## Der Rest ist Politik
+
+Freilich bedarf es einer erheblichen politischen Kraftanstrengung, wenn die Bleibemöglichkeiten, die nach Art. 50 EUV bestehen (wie auch immer der EuGH sie genau konturieren wird), auch genutzt werden sollen. Ob dies realistisch ist, lässt sich bezweifeln, auch wenn die Geschichte der europäischen Integration in einigen entscheidenden Phasen von Rückschlägen, Meinungsumschwüngen und bisweilen auch zweiten Referenden gekennzeichnet war. Vielleicht lässt sich die Geschichte des Brexits dereinst in der Rückschau nicht als shakespearesches Drama mit tragischem Ausgang charakterisieren, wie Paul Craig es anlegt, sondern als faustische Sinnsuche des britischen Volkes, deren wesentliches Charakteristikum der Pakt mit dem Geist, der stets verneint, ist. Sollte der Brexit noch abgewendet werden, ließe sich mit Goethe auch ein schönes Schlusswort für der Tragödie hoffentlich letzten Teil finden:
+
+Gerettet ist das edle Glied
+
+Der Geisterwelt vom Bösen,
+
+Wer immer strebend sich bemüht,
+
+Den können wir erlösen.

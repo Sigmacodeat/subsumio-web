@@ -1,0 +1,38 @@
+---
+title: >-
+  Verfassungsblog — Rescue Package for Fundamental Rights: Comments by MICHAELA
+  HAILBRONNER
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2012-04-17'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/rescue-package-fundamental-rights-comments-michaela-hailbronner/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Rescue Package for Fundamental Rights: Comments by MICHAELA HAILBRONNER
+
+The Heidelberg proposal, with its suggestion of the adoption of a Reverse-Solange Doctrine by the CJEU, has sparked considerable debate. Much of this debate has focused on the question how such a doctrine would fit into the current body of European law and whether its adoption would represent a legitimate exercise of judicial power by the CFEU. What has been largely absent from this debate, however, is the question how we should imagine the real-life consequences of the adoption and application of the Reverse-Solange doctrine. Daniel Thym and Dimitri Kochenov have touched upon this issue, but the question deserves a closer look if we want to assess the value of adopting this doctrine.
+
+From this perspective, the Heidelberg proposal appears to be primarily a means of raising the political stakes. As such, it has only a slim chance of success, by which I mean producing an actual change in the human rights regime of the Member State concerned. At best, it might serve as an instrument to push European Member States into gear and adopt a political solution, possibly according to Art. 7 TEU. Why is this?
+
+Already the adoption of a Reverse-Solange doctrine poses significant risks for the Court. It is almost certain to genuinely irritate Poland and Britain, who insisted in a Protocol attached to the Lisbon Treaty that the European Charter of Human Rights would not extend the jurisdiction of the Court beyond its current limits (which is also in tune with the language both in the treaties and the Charter). Whether or not the Heidelberg proposal sufficiently justifies Reverse-Solange as a permissible doctrinal innovation, a significant number of Member States and their courts are bound to disagree on this highly contested question. Presumably for this reason, the ECJ in Zambrano explicitly avoided connecting the theme of Union citizenship with fundamental rights, in spite of the invitation of the AG to do just that.
+
+If the CJEU however decided to take this step and adopt Reverse-Solange as an abstract doctrine, what might the consequences be? Some may argue that the mere possibility that the Court would declare a country to be in systemic violation of human rights and assume a general human rights jurisprudence for that Member State may induce national institutions to change their policies. However, since the threshold for the application of Reverse-Solange is very high (since it requires “violations of the essence of fundamental rights which in number or seriousness account for systemic failure and are not remedied by an adequate response within the respective national system”) Member States will likely disregard this possibility for a long time. And they will do so with good reasons since the stakes of an actual application of the doctrine by the Court are high. Pronouncing a systemic violation of human rights and assuming jurisdiction over all human rights cases arising within one Member States is likely to provoke significant outrage within at least that Member State and will also overstretch the Court's resources by adding a considerable caseload to its existing docket. It also seems unlikely that it would tip the human rights balance in a country whose leadership will at this point have already successfully fought against internal political and/or judicial opposition (since its human rights record at the time of accession to the EU will necessarily have been better). If national courts have been bypassed and an ECHR decision been ignored (if that hasn't happened, there seems little need or justification for involving the CJEU), the involvement of the CJEU may find resonance with national courts, but stands little chance of being taken more seriously by the political apparatus than prior national and ECHR decisions. If national courts have already been brought in line with the regime's stance, they can counter the CJEU with their own Solange-doctrine as the Czech Constitutional Court has recently done it (see Jan Komarek's post). It thus constitutes a significant risk for the CJEU to take if it wants to preserve its authority. The bigger and more important the concerned country is, the less likely it is that the CJEU will take this risk. This necessary inconsistency in its application will lead to accusations of hypocrisy and further add to national outrage. It is also a mark against the Heidelberg-proposal that is not coincidentally made by German scholars who may justifiably feel safe from intervention of the CJEU.
+
+The best situation for the CJEU to risk an application of Reverse-Solange will be when the European Union has already taken political actions, either according to Art. 7 TEU or in some other way, or when the Member States have at least signaled their intent to do so. In the first case, which is clearly not the situation envisaged by the Heidelberg proposal, an involvement of the ECJ will presumably not add much to the political pressure already exercised.
+
+In the latter case, a ruling by the CJEU might serve as a rallying point to encourage and speed up political action. This envisages a somewhat different, more modest role for the CJEU than the Heidelberg advocates seem to intend for it: It would serve not as a substitute, but as an initiator of institutional action on the European level. However, it is only in this kind of case that the court can act with reasonable confidence that its intervention will be supported politically, and that its creative exercise of judicial power will be accepted and be ultimately successful.
+
+That is not to say that this is all that legitimacy depends upon. Problems remain since the fact that a decision is accepted does not necessarily provide a normative justification. While constitutional changes may often involve elements of irregularity, as Daniel Halberstam points out, this irregularity nevertheless requires a specific justification why a court is the right institution to take on an issue which has so far been considered subject to political solutions such as Art. 7 TEU suggests for systemic violations of human rights within a Member State.
+
+That said, as a minimum condition for legitimacy that is founded both on European practice and the recognition of epistemological uncertainty, I think there is much to be said for making the application of a Reverse-Solange doctrine conditional upon the likely support of such an intervention by the European Member States. The acceptance of judicial decisions by the public has in the past been understood to lend legitimacy to important landmark decisions of the CJEU in cases like van Gend en Loos, Costa v. Enel etc., but it seems important to note that without this ex post legitimation the CJEU's doctrinal creations would today appear plainly illegitimate. This affirms the need to take the political context of the decision and its probable support into consideration when we debate the legitimacy of a possible adoption of the Heidelberg proposal by the CJEU.
+
+Michaela Hailbronner is a doctoral candidate at Yale Law School and Humboldt University of Berlin.

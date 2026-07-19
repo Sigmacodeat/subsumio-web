@@ -1,0 +1,71 @@
+---
+title: Verfassungsblog — Constitutional Change in the UK – People or Party?
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2023-04-06'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/constitutional-change-in-the-uk-people-or-party/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Constitutional Change in the UK – People or Party?
+
+The UK’s membership of, and later exit from, the EU has had a dramatic effect on the UK constitution. It also provided a catalyst for further change. These demonstrate the relative ease with which the UK constitution can be modified, reinforcing the UK’s characterisation as a predominantly political, flexible constitution.
+
+This post will argue that these transformations illustrate something more fundamental that applies to all constitutions – be they predominantly codified or uncodified, with or without the ability of the courts to strike down unconstitutional legislation. They illustrate that the success, or otherwise, of constitutional change depends on interactions between institutions of the constitution and on shifting constitutional cultures.
+
+## A Constitutional Volte Face
+
+The UK joined the EU on 1 March 1973. EU law was incorporated into domestic law by the European Communities Act 1972. According to the majority in the first Miller case, this created a new source of domestic law.
+
+The recognition of direct effect and the supremacy of EU following Factortame had an even greater impact on the UK constitution. Until the UK’s membership of the EU, no case law had challenged the traditional view of Parliamentary sovereignty that Parliament can enact legislation on any subject it wished and that Acts of Parliament could not be questioned, let alone struck down, by the courts. The only limit on the powers of Parliament was that any one Parliament could not restrict the powers of a future Parliament. The supremacy of directly effective EU law, however, required EU law to be applied in preference to Acts of Parliament, even those enacted after 1973. Whilst constitutional theorists may argue about how this recognition was achieved, it is hard to deny the impact of decisions like Benkharbouche, where the UK Supreme Court was willing to disapply provisions of an Act of Parliament that contradicted the EU Charter.
+
+The UK’s membership of the EU was also a catalyst for further constitutional change. Would the UK courts have developed a concept of constitutional statutes if they had not provided a means of explaining why later legislation could not impliedly repeal the provisions of the European Communities Act 1972? Would there have been the same desire to legislate to devolve power to Scotland, Wales, and Northern Ireland, or to incorporate Convention rights through the Human Rights Act 1998 if the UK had not joined the European Union? Joining the EU provided experience of greater European co-operation and a transfer of law-making powers, as well as concepts of legislation limited by rights and shared sovereignty. The UK’s membership of the EU may even be regarded as a first step in the UK’s move towards a legal constitution.
+
+Brexit necessitated equally fundamental constitutional change. It created a new form of law, retained EU law. Unlike domestic law, its provisions continue to have supremacy, at least as regards UK laws enacted prior to Brexit. Retained EU law is also interpreted differently, in line with general principles of EU law and retained case law.
+
+However, this new hierarchy of laws is about to change. The Retained EU Law (Revocation and Reform) Bill 2022-23 provides for most of the provisions of retained EU law to be revoked at the end of 2023. Ministers may make regulations to preserve, restate, replace, or later revoke, retained EU law made by EU institutions or implemented by UK secondary legislation. Measures that are preserved will be known as assimilated law. Assimilated law also will not have supremacy over domestic law and will need to be interpreted in line with all domestic law, unless ministers, by regulation, provide for this effect to be reversed in a specific restatement of retained EU law or assimilated law.
+
+One change has remained. The Northern Ireland Protocol and the protection of the rights of EU citizens residing in the UK, continue to have supremacy. However, these provisions can be specifically or expressly repealed – as illustrated by the provisions of the Northern Ireland Protocol Bill 2022-23. The Bill is now no longer on the legislative timetable, following the drafting of the Windsor Framework. However, should the Windsor Framework fail, the Bill, or a similar Bill, may reappear.
+
+Brexit, too, has been a catalyst for constitutional change. It has caused shifts in the balance of power between the executive and the legislature, though this may also be due to the minority government in 2019. Parliament was given a much greater role in the scrutiny over the Withdrawal Agreement than is usually the case for international Treaties. The need for future trade agreements led to the creation of a new House of Lords Committee, tasked with overseeing international agreements.
+
+Frustrations over the assertion of control by the legislature led to the reversal of the Fixed-term Parliaments Act 2011. This Act replaced the power of the Monarch to dissolve Parliament, triggering a general election, with a fixed-term Parliament, with legislation setting out when Parliament could be dissolved, triggering an early general election. This would only occur with the involvement of the House of Commons – either through a vote of no confidence in the government or where two-thirds of the members of the House of Commons voted in favour of an early general election. The Dissolution and Calling of Parliament Act 2022 revives the power of the Monarch to dissolve Parliament at the request of the Prime Minister.
+
+Brexit has also given rise to increasing tension in the Union of England, Scotland, Wales, and Northern Ireland. Acts of Parliament designed to implement Brexit were enacted without the consent of at least some of the devolved administrations, despite the Sewel convention which states that the UK will not normally legislate in an area of devolved competence without consent. The devolved administrations regard this as a breach of the convention. The UK government, however, argues that ‘Brexit’ was not normal.
+
+The distribution of power between the UK and the devolved administrations has also been affected, with power becoming more centralised (see, for example, the UK Internal Market Act 2020). The Northern Ireland Protocol has further exacerbated tensions in Northern Ireland which, for the second time during the Brexit process, is currently being governed by civil servants rather than the Northern Ireland executive and Assembly.
+
+## A flexible political constitution?
+
+The relative ease with which the UK constitution was able to accommodate EU membership and Brexit appears to confirm our understanding of the UK’s predominantly political constitution. Most changes were made by an Act of Parliament requiring only a simple majority. Some changes did not, or will not, even require Parliament. Vast amounts of retained EU law was modified by delegated legislation in order to deal with deficiencies arising from the UK’s exit from the EU. If the Retained EU Law (Revocation and Reform) Bill 2022-23 is enacted in its current form, ministers will have the power to determine whether to revive, revoke, restate, or replace retained EU law. If the Northern Ireland Protocol Bill 2022-23 had been enacted, ministers would have been able to determine  what measures will replace provisions of the Northern Ireland Protocol that will no longer apply in the UK.
+
+Conventions and practices are even easier to change. There are no legal consequences for breaching the Sewel convention. There are also disputes as to when the Sewel convention applies. Did it not apply, for example, to legislation implementing Brexit as this was not ‘normal’ legislation? The more legislation can be enacted in breach of its provisions, the more the existence or effect of the Convention can be questioned. In other words, fundamental elements of the UK constitution can be changed through merely changing practice, or through disputing the scope of a constitutional convention. This is despite the fact that the Sewel convention plays a key role in facilitating inter-governmental relations necessary to maintain devolution and this being recognised by legislation and in a memorandum of understanding between the UK and the devolved governments.
+
+However, this assessment misses the extent to which constitutional change occurred because of the actions of all three branches of the UK constitution. For example, whilst the provisions of the European Communities Act 1972 may have provided the impetus for the recognition of the supremacy of directly effective EU law, it was the courts that determined how this took effect. Courts developed the concept of constitutional statutes, including how they are identified, that constitutional statutes cannot be repealed by implication by ordinary legislation, as well as the existence of a possible hierarchy between constitutional statutes. It is unclear, however, how far the executive or the legislature have accepted the constitutional implications of constitutional statutes.
+
+Constitutional change was also initiated by the courts. The circumstances surrounding Brexit gave rise to both Miller decisions, the only decisions to date where the Supreme Court has sat with its maximum of 11 members. The first concerned whether the UK government could notify the EU of its intention to withdraw from the Treaties using prerogative powers. The second concerned the prorogation of Parliament, bringing one session of Parliament to an end and preventing Parliament from sitting for five weeks. Both changed the law regarding controls over prerogative powers. The second Miller case, in particular, recognised how the common law principles of parliamentary sovereignty and parliamentary accountability could limit the scope of the Crown’s prerogative powers. The Supreme Court clearly stated that Parliament, and not the government, is the most important institution of the constitution. The government is meant to be held to account by Parliament.
+
+More fundamentally, the UK’s membership of the EU and Brexit recognised the importance of the people and the role of referendums in constitutional change.  The UK’s continued membership of the EU was subject to a referendum in 1975. It was a referendum that prompted Brexit. Referendums were also used in support of devolution to Scotland and Wales, and to determine whether the voting system should change from first-past-the-post to the alternative vote.
+
+This growing role of the people in constitutional change may be hard to reverse. It was legally possible for the UK to leave the EU without a referendum. Would it have been politically or constitutionally possible to do so, given the use of a referendum to confirm the UK’s membership of the EU?
+
+Referendums have also become integrated into the devolution settlement. There are legal obligations placed on the UK government in response to a referendum where the result is that a majority of the people in Northern Ireland voted in favour of Northern Ireland leaving the UK and joining Ireland. Legislation ‘declares’ that both the Scottish Parliament and Scottish Government and the Senedd Cymru (Welsh Parliament) and Welsh government ‘are not to be abolished except on the basis of a decision of the people’ of Scotland or Wales, ‘voting in a referendum’. However, this is not enough to make this a legally enforceable requirement. It may, however, reinforce the constitutional and political importance of the need for referendums to initiate this specific, and more general, constitutional change.
+
+## Populism and Political Parties
+
+The above paints an idealistic account of constitutional change, occurring through inter-institutional acceptance or following a referendum. However, we also need to recognise how far constitutional change is dependent on politics, particularly party-politics. The decision to hold a Brexit referendum was motivated, at least in part, by a desire to resolve tensions within the Conservative Party. The extent to which the legislature was able to assert control over the government in 2019 relied on backbench MPs being willing to join with opposition MPs, this being easier to achieve during a minority government. The large governmental majority made it easy for the government to push through legislation to implement Brexit, and the retention and possible future revocation, of retained EU law.
+
+Large majorities also enable governments to initiate and successfully implement a programme of constitutional change. For example, the Human Rights Act 1998 may be reversed in the near future. The influence of backbench MPs was also key to the removal of both Boris Johnson and Liz Truss as leader of the Conservative Party, and thus Prime Minister.
+
+Politics has always played a role. The UK constitution has also relied on those in power exercising self-restraint – either out of respect for the role of other institutions, or to uphold good principles of constitutional government, or to secure votes in a future general election. Whilst the extent to which this acts as an effective check on governmental power has always ebbed and flowed, the emerging post-Brexit constitution paints a worrying picture.
+
+Referendums may engage the people in constitutional change. They may also homogenise the will of the people, providing governments with a justification for pursuing constitution change that is only perceived to reflect the will of the electorate. Implementing the will of the people can also be used as a justification for ignoring constitutional restraints.
+
+If the UK constitution is to learn from these episodes of constitutional change, it needs to reflect on the role of the people and of referendums in the UK constitution.

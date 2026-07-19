@@ -1,0 +1,31 @@
+---
+title: 'Verfassungsblog — Rückkehr in ein kaltes Land: Ursula Krechels “Landgericht”'
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2012-10-20'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/landgericht/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Rückkehr in ein kaltes Land: Ursula Krechels “Landgericht”
+
+Viel besprochen wurde in diesem Herbst Ursula Krechels Roman “Landgericht“, mit dem die Autorin auch den Deutschen Buchpreis gewann. Die Geschichte des Mainzer Landgerichtsdirektors Dr. Richard Kornitzer ist die Geschichte eines jüdischen Emigranten, der 1948 aus dem kubanischen Exil in die Bundesrepublik zurückkehrt – und doch nie ankommt. Kornitzer, 1903 in Breslau geboren und 1933 aus dem Berliner Justizdienst entlassen, kämpft als “Displaced Person” um die Wiederherstellung seiner beruflichen Identität. Doch nicht nur der Kampf um materielle Wiedergutmachung wird zum Kolhaas'schen Drama. Die Familie ist zerbrochen, die von den Eltern 1939 nach England geschickten Kinder sind Kornitzer und seiner Frau Claire entfremdet. Fremd bleibt der Rückkehrer auch in der Justiz: Auf der Richterbank und in den Amtsstuben sitzen Kollegen, die sich im Dritten Reich hochgedient haben und ihre Karriere nach 1945 bruchlos fortsetzen konnten. Für die Erfahrungen und Traumata des Exilanten ist in der Bundesrepublik der fünziger Jahre kein Platz.
+
+Ursula Krechel greift mit ihrem Roman ein Thema der juristischen Zeitgeschichte auf, das von der Forschung längst nicht erschöpfend bearbeitet ist. Ihr Protagonist Kornitzer hat wirklich gelebt, er hieß anders, doch seinen Fall hat sie aus den Akten des Landesarchivs von Rheinland-Pfalz akribisch rekonstruiert. Ihre profunde Kenntnis und Darstellung der Umstände und Stimmungen der bundesrepublikanischen Gründungsjahre macht dieses Buch nicht nur zu einem literarischen Ereignis, sondern auch zu einem juristischen Lehr- und Lesebuch. Den zeithistorischen Stoff hat Ursula Krechel mit der Präzision der Lyrikerin aufgearbeitet. Aktenstücke und Archivfunde sind zu einem nüchternen Nachkriegspanorama montiert, die kalte Diktion der Bürokratie trifft auf die zarte Sprache der Dichterin.
+
+Ausführliche Rezensionen kann man vielerorts nachlesen, etwa in der FAZ aus der Feder von Andreas Platthaus. Unbedingt sehenswert ist ein Interview, in dem Ursula Krechel über ihre Arbeitsweise selbst ausführlich Auskunft gegeben hat. Darin geht es unter anderem um deutsche Gerichtsarchitektur, Akten und Anträge, Migration und Integration – und um Fritz Bauer.
+
+Ab dem morgigen Sonntag widmet das Frankfurter Fritz-Bauer-Institut seinem Namensgeber, einem der bedeutendsten und juristisch einflussreichsten deutsch-jüdischen Remigranten der bundesrepublikanischen Geschichte, eine interessant besetzte Tagung. Die Historikerin Irmtrud Wojak hat über Bauer eine umfangreiche, 2009 erschienene Biographie geschrieben, die auch Bauers schwierigen Weg in der bundesdeutschen Justiz beschreibt (und die ich hier besprochen habe). Umfassend erschlossen ist das Leben dieses mutigen Remigranten aber bislang ebensowenig wie die Geschichte all derer, die nach 1945 aus der Emigration in ein kaltes Land zurückkehrten.Viel besprochen wurde in diesem Herbst Ursula Krechels Roman “Landgericht“, mit dem die Autorin auch den Deutschen Buchpreis gewann. Die Geschichte des Mainzer Landgerichtsdirektors Dr. Richard Kornitzer ist die Geschichte eines jüdischen Emigranten, der 1948 aus dem kubanischen Exil in die Bundesrepublik zurückkehrt – und doch nie ankommt. Kornitzer, 1903 in Breslau geboren und 1933 aus dem Berliner Justizdienst entlassen, kämpft als “Displaced Person” um die Wiederherstellung seiner beruflichen Identität. Doch nicht nur der Kampf um materielle Wiedergutmachung wird zum Kolhaas'schen Drama. Die Familie ist zerbrochen, die von den Eltern 1939 nach England geschickten Kinder sind Kornitzer und seiner Frau Claire entfremdet. Fremd bleibt der Rückkehrer auch in der Justiz: Auf der Richterbank und in den Amtsstuben sitzen Kollegen, die sich im Dritten Reich hochgedient haben und ihre Karriere nach 1945 bruchlos fortsetzen konnten. Für die Erfahrungen und Traumata des Exilanten ist in der Bundesrepublik der fünziger Jahre kein Platz.
+
+Ursula Krechel greift mit ihrem Roman ein Thema der juristischen Zeitgeschichte auf, das von der Forschung längst nicht erschöpfend bearbeitet ist. Ihr Protagonist Kornitzer hat wirklich gelebt, er hieß anders, doch seinen Fall hat sie aus den Akten des Landesarchivs von Rheinland-Pfalz akribisch rekonstruiert. Ihre profunde Kenntnis und Darstellung der Umstände und Stimmungen der bundesrepublikanischen Gründungsjahre macht dieses Buch nicht nur zu einem literarischen Ereignis, sondern auch zu einem juristischen Lehr- und Lesebuch. Den zeithistorischen Stoff hat Ursula Krechel mit der Präzision der Lyrikerin aufgearbeitet. Aktenstücke und Archivfunde sind zu einem nüchternen Nachkriegspanorama montiert, die kalte Diktion der Bürokratie trifft auf die zarte Sprache der Dichterin.
+
+Ausführliche Rezensionen kann man vielerorts nachlesen, etwa in der FAZ aus der Feder von Andreas Platthaus. Unbedingt sehenswert ist ein Interview, in dem Ursula Krechel über ihre Arbeitsweise selbst ausführlich Auskunft gegeben hat. Darin geht es unter anderem um deutsche Gerichtsarchitektur, Akten und Anträge, Migration und Integration – und um Fritz Bauer.
+
+Ab dem morgigen Sonntag widmet das Frankfurter Fritz-Bauer-Institut seinem Namensgeber, einem der bedeutendsten und juristisch einflussreichsten deutsch-jüdischen Remigranten der bundesrepublikanischen Geschichte, eine interessant besetzte Tagung. Die Historikerin Irmtrud Wojak hat über Bauer eine umfangreiche, 2009 erschienene Biographie geschrieben, die auch Bauers schwierigen Weg in der bundesdeutschen Justiz beschreibt (und die ich hier besprochen habe). Umfassend erschlossen ist das Leben dieses mutigen Remigranten aber bislang ebensowenig wie die Geschichte all derer, die nach 1945 aus der Emigration in ein kaltes Land zurückkehrten.

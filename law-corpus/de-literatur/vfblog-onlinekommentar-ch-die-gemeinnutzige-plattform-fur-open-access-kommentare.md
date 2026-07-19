@@ -1,0 +1,66 @@
+---
+title: >-
+  Verfassungsblog — Onlinekommentar.ch, die gemeinnützige Plattform für
+  Open-Access-Kommentare
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2021-12-17'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/onlinekommentar-ch-die-gemeinnutzige-plattform-fur-open-access-kommentare/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Onlinekommentar.ch, die gemeinnützige Plattform für Open-Access-Kommentare
+
+In der Schweiz erscheinen juristische Kommentare grundsätzlich als gedruckte Bücher. Zusätzlich schalten die Verlage eine digitale Version auf ihren Datenbanken auf, abrufbar hinter hohen Bezahlschranken. Bereits vor 13 Jahren, als ich als studentische Hilfskraft zum ersten Mal mit der Welt der Kommentare in Kontakt kam, dachte ich mir, es müsste im Internetzeitalter doch eine Möglichkeit geben, einen frei und kostenlos zugänglichen Kommentar zu schaffen. Ich registrierte daher im Sommer 2008 die Domain www.onlinekommentar.ch und versuchte in den folgenden Jahren als Student und Rechtsanwaltspraktikant mit verschiedenen Wiki-Systemen einen Kommentar aufzubauen. Leider erfolglos. Viele fanden die Idee zwar toll, aber persönlich als Autor engagieren wollte sich (fast) niemand. Als ich im Jahr 2014 beim Schweizerischen Bundesgericht meine Arbeit aufnahm, pausierte ich das Projekt.
+
+Die Idee des Onlinekommentars blieb in den nächsten Jahren in meinem Hinterkopf. Immer wieder fragte ich mich, wie ein juristischer Kommentar im digitalen Zeitalter aussehen sollte. Und dann kam die Corona-Pandemie. Ich fand, die Zeit wäre definitiv reif für Kommentare, auf welche die Nutzer kostenlos und einfach im (behördlich angeordneten) Homeoffice zugreifen könnten. Ich fasste daher den Entschluss, den Onlinekommentar neu zu lancieren. Der Grundidee eines Open-Access-Kommentars blieb ich treu, passte aber das Konzept an. Dieses lässt sich in einem Satz wie folgt zusammenfassen: Eine gemeinnützige Trägerschaft stellt mit dem Onlinekommentar eine Webplattform zur Verfügung, auf der qualitativ hochwertige und geprüfte Kommentare zum schweizerischen Recht für jedermann frei und kostenlos zur Verfügung gestellt werden können. Der Onlinekommentar ermöglicht es also, verschiedene Kommentare zu schweizerischen Erlassen an einem einzigen Ort zu veröffentlichen. Die Infrastruktur für Open-Access-Kommentare muss damit nicht mehrmals aufgebaut und bezahlt werden.
+
+Ich kam zum Schluss, es wäre einfacher, die Leute vom Onlinekommentar zu begeistern, wenn sie etwas Konkretes und nicht nur meine Projektbeschreibung vor Augen hätten. Das neue Kommentarkonzept sollte direkt erlebbar sein. Anfang April 2021 eröffnete ich daher ein WordPress-Konto und begann eine Webseite für den Onlinekommentar zu bauen. Erfahrung beim Erstellen von Webseiten hatte ich keine, abgesehen von den Wiki-Exkursen als Student. Ich schaute Youtube-Filme und googelte mich zu einer Lösung durch, was auch nur funktionierte, weil viel IT-Wissen frei zugänglich ist. Daneben schrieb ich einen ersten Kommentar zu einem Gesetzesartikel als Anschauungsbeispiel und gründete einen gemeinnützigen und nicht gewinnorientierten Verein, den Verein Onlinekommentar, als dauerhafte Trägerschaft. Am 13. Mai 2021 fiel der Startschuss, und ich veröffentlichte die Webseite des Onlinekommentars samt der von mir verfassten Kommentierung.
+
+## Aktueller Stand des Projekts
+
+Im Vergleich zu früheren Versuchen wurde das neue Konzept des Onlinekommentars sehr gut aufgenommen, und mehrere Personen meldeten umgehend Interesse an, einen oder mehrere Gesetzesartikel zu kommentieren. Entscheidend dafür war auch, dass sich kurz nach dem Start des Kommentars Bundesrichter Christoph Hurni entschloss, aktiv an diesem Pionierprojekt mitzuarbeiten. Das gab dem Onlinekommentar sofort eine größere Strahlkraft und öffnete viele Türen. Das Projekt kam danach so richtig in Fahrt. Rund sieben Monate nach der Gründung ist der Onlinekommentar ein Gemeinschaftsprojekt in der Startup-Phase, das von einem engagierten Team getragen wird. Der Onlinekommentar hat bereits dreizehn Herausgeberinnen und Herausgeber, darunter unter anderem Professorinnen und Professoren, Anwältinnen und Anwälte und Richterinnen und Richter. Weitere Herausgeberschaften sind in Vorbereitung. Sodann haben bereits über 100 Kommentatorinnen und Kommentatoren zugesagt, einen Kommentar auf dem Onlinekommentar zu verfassen, und fünf Kommentare zu einzelnen Gesetzesartikeln sind schon veröffentlicht.
+
+Ein breit zusammengesetzter Vorstand führt den Onlinekommentar als Non-profit-Projekt. Der Onlinekommentar ist somit ein Vorhaben mit genossenschaftlichem Charakter: Es geht uns darum, den Zugang zum Recht zu erleichtern und die schweizerische Rechtswissenschaft mit gemeinsamen Kräften voranzubringen. Wir möchten mit unserem Pionierprojekt auch den Beweis antreten, dass Open Access für Gesetzeskommentare funktioniert und zudem kostengünstiger ist als die bisherigen Publikationsmodelle.
+
+## Unabhängigkeit von Verlagen
+
+Nicht mit an Bord ist ein Verlag, obschon wir diesen Sommer für eine Zusammenarbeit angefragt wurden. Der Onlinekommentar wagt die These, dass die verlags- und vertriebstechnischen Fragen beim Betrieb eines digitalen Kommentars keine Herausforderung darstellen, für deren Bewältigung man zwingend auf die Zusammenarbeit mit einem Verlag angewiesen wäre. Konkret setzte ich in eigener Regie die aktuelle Webseite auf und auch die nachfolgenden Arbeiten lösen wir innerhalb des Vereins autonom, wie die (Regelung der) Beziehungen zu den Autoren und Herausgebern, das Peer-Review, das Lektorat, die Aufbereitung des Texts und dessen „Veredelung“ (Verlinkung der Quellen, Querverweise etc.) sowie die administrativen Arbeiten (Buchhaltung, Finanzierung etc.). Den Vertrieb und die Werbung bestreiten wir mithilfe der sozialen Medien, wie LinkedIn und Twitter, sowie der Mund-zu-Mund-Propaganda. Die Anfrage für diesen Beitrag zeigt, dass diese Art des Marketings sogar über die Landesgrenzen hinweg funktioniert.
+
+## Vorteile von Open-Access-Kommentaren: Schnell, laufend aufschaltbar und digital durchsuchbar
+
+Was sind nun die Vorteile eines Open-Access-Kommentars? Ein rein digitaler Kommentar bietet gegenüber dem Printprodukt zunächst den offensichtlichen Vorzug, dass er nicht gedruckt, gebunden und vertrieben werden muss. Damit können wir den Kommentar schneller und günstiger veröffentlichen. Daneben gibt es viel Nützliches, das nur ein digitales Produkt kann: Der Leser kann orts- und zeitunabhängig zugreifen, er kann die Texte mit einer Volltextsuche durchsuchen und die zitierten Quellen und Querverweise sind nur einen Mausklick entfernt. Die Kommentare können schrittweise und laufend aufgeschaltet und aktualisiert werden, und das abhängig vom jeweiligen Aktualisierungsbedarf. Der Kommentar zu einem Erlass kann dank sukzessiver Aufschaltung der einzelnen Kommentare auch nicht durch Autoren blockiert werden, die ihren Text nicht fristgerecht abgeben. Für die Herausgeber bringt die schrittweise Veröffentlichung zudem die nicht unwesentliche Erleichterung, dass die Texte nicht alle gleichzeitig begutachtet werden müssen. Es brauchen schließlich auch nicht zwingend alle Artikel eines Erlasses kommentiert zu werden. Es ist durchaus möglich, dass sich die Kommentierung (zunächst) auf die wichtigsten Artikel beschränkt.
+
+Neben diesen Vorzügen des Digitalen baut ein Open-Access-Kommentar Zugangshürden ab. Er ermöglicht einen kostenlosen, einfachen, bequemen und niederschwelligen Zugang zu den Texten, insbesondere auch für Personen außerhalb der „legal community“, wie beispielsweise für Journalisten und Politiker oder für Personen, die eine Lösung ihres Rechtsproblems googeln. Die Texte können bei Verwendung einer offenen Lizenz – der Onlinekommentar nutzt CC BY – sodann durch die Allgemeinheit weiter genutzt werden, z.B. für Datenbanken oder (maschinelle) Übersetzungen in eine andere Sprache.
+
+## Wichtig für die Schweiz und über die Landesgrenzen hinweg: Mehrsprachigkeit
+
+Die Nutzer können die Kommentare damit kostenlos und frei über das Internet von überall in der Welt lesen, maschinell übersetzt in ihre jeweilige Muttersprache. Natürlich ist diese Übersetzung nicht perfekt und juristische Kommentare verlangen nach Präzision, denen die automatisierte Übersetzung noch nicht immer gerecht wird. Trotz dieser Vorbehalte kann die übersetzte Version einen ersten Anhaltspunkt über den Inhalt geben. Das erhöht die Reichweite der Kommentartexte und erleichtert Rechtsvergleiche. Die maschinelle Übersetzung kann auch zu einer größeren internationalen Ausstrahlung einer Rechtsordnung führen, weil die Erläuterungen zu Erlassen über die Landes- und Sprachgrenzen hinaus ohne Weiteres abgerufen und verstanden werden können.
+
+Die Möglichkeit der automatisierten Übersetzung stellt gerade für ein kleines, mehrsprachiges Land wie die Schweiz eine Chance dar: Die Kommentare zum Schweizer Recht werden in aller Regel auf Deutsch oder Französisch verfasst, normalerweise entweder in der einen oder der anderen Sprache. Mehrsprachige Kommentare sind selten. Die Option der Übersetzung entschärft die Sprachenfrage: Jeder schreibt in seiner Sprache, und mit der Übersetzung wird sichergestellt, dass die anderen ihn mühelos verstehen. Aus dem Onlinekommentar kann damit ein nationales Kohäsionsprojekt entstehen, bei dem Mehrsprachigkeit ausdrücklich erwünscht ist.
+
+## Nicht das Honorar ist entscheidend, sondern das Renommée
+
+Gegen einen Open-Access-Kommentar könnte man ins Feld führen, dass die Autoren bisher am Verkaufspreis beteiligt worden sind und daher nicht bereit sein werden, ihre Texte unentgeltlich zur Verfügung zu stellen. In der Tat erhalten die Autoren bis anhin eine Entschädigung für ihre Schriftstellerei. Diese variiert – nach informellen Auskünften – je nach Kommentar von einigen hundert bis mehreren tausend Franken pro Jahr. Das ist eine schöne Vergütung. Sie steht aber in der Regel in keinem Verhältnis zur geleisteten Arbeit. Vor allem bei kürzeren Kommentaren handelt es sich eher um ein Zeichen der Wertschätzung, eine symbolische Entschädigung. Die Autoren schreiben daher grundsätzlich nicht des Honorars wegen an einem Kommentar mit. Der Onlinekommentar setzt darauf, dass die Autoren der Entschädigung entsagen, sofern ihnen die Sichtbarkeit ihrer Arbeit in einem renommierten Medium geboten wird. Gleiches gilt für die Herausgeber. Die ersten Erfahrungen zeigen, dass weder Autoren noch Herausgeber ein Problem damit haben. Zumindest wurde mir gegenüber bis jetzt noch nie erwähnt, dass jemand aus finanziellen Gründen auf eine Mitarbeit beim Onlinekommentar verzichtete.
+
+Entscheidend ist vielmehr, dass dem Onlinekommentar ein Renommée zukommt. Ein solches erarbeitet man sich durch qualitativ hochwertige Texte. Dafür braucht es eine Qualitätssicherung. Denn Open-Access-Kommentar bedeutet nicht, dass der Kommentar für jedermann zur Mitarbeit offen ist, sondern dass die Leserschaft einen freien und offenen Zugang zu den Kommentaren hat. Entsprechend gibt es auch weiterhin „Gatekeepers“. Und diese sind für die Reputation entscheidend.
+
+## Qualitätssicherung
+
+Die Qualität sichern wir beim Onlinekommentar einerseits durch Festlegung von persönlichen Voraussetzungen an die Autoren und Herausgeber, andererseits durch strenge inhaltliche Anforderungen an die Texte, die durch die Herausgeber des Erlasses kontrolliert werden. Texte, welche das geforderte Niveau nicht erreichen, werden konsequent ab- oder zur Überarbeitung zurückgewiesen. Das ist weniger problematisch als bei gedruckten Kommentaren, bei welchem das Buch wegen einer Lücke nicht gedruckt werden kann, oder der Kommentar mit kurzfristig produziertem Inhalt „gefüllt“ werden muss.
+
+Die Herausgeber des Kommentars zur Bundesverfassung leisten zusätzliche Pionierarbeit und haben neben ihrer eigenen Beurteilung einen double blind Peer Review der Kommentartexte durch externe Gutachter vorgesehen. Für diese Begutachtung können auch andere Autoren des Kommentars der Bundesverfassung angefragt werden, wodurch der genossenschaftliche Charakter des Projekts und das Gemeinschaftsgefühl zusätzlich gestärkt wird.
+
+Schließlich bestünde die Möglichkeit, die Vorteile des Digitalen auch für die Qualitätssicherung zu nutzen, etwa indem Leserkommentare auf der Webseite freigeschaltet werden könnten. Damit könnte eine neue Art von Peer Review entstehen, in welcher der Kommentator direkt durch die Leserschaft auf Unstimmigkeiten hingewiesen wird, also im wahrsten Sinne eine Begutachtung durch die Fachkollegen (wobei die Leserschaft natürlich auch aus Laien bestehen kann). Das könnte einen öffentlichen Diskurs ermöglichen und ein vollkommen neues interaktives Element für Gesetzeskommentare schaffen.
+
+## Ausblick
+
+Der Onlinekommentar wagt als gemeinnützige Plattform für Open-Access-Kommentare Neues. Bleibt zu hoffen, dass der Onlinekommentar kein Schweizer Sonderfall bleibt, sondern dass die Idee übernommen und weiterentwickelt wird. Das könnte im besten Fall dazu führen, dass juristische Erkenntnisse schneller und leichter über die Landes- und Sprachgrenzen hinweg geteilt werden können.

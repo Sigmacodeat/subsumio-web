@@ -1,0 +1,61 @@
+---
+title: Verfassungsblog — The EU’s 1787 Moment
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2026-01-02'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/eu-constitutional-moment/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# The EU’s 1787 Moment
+
+Recent actions by the United States vis-à-vis Europe, such as the adoption of the National Security Strategy, suggest that the European Union, as a political body capable of harnessing Europe’s collective potential, might need to make some quick, existential decisions in the coming years. These would involve reforming several features of the EU Treaties in order to better protect the increasingly-isolated continent’s interests, especially if the transatlantic relationship deteriorates further and the U.S. security guarantee becomes, for all practical purposes, empty.
+
+If such decisions become necessary, Europe can look to the U.S., or rather U.S. history, for an example of how to proceed and generate what we might call “a 1787 moment.” This date refers to the Constitutional Convention of 1787, during which the American Founders created a federal power that was commensurate with the urgent needs of their fragile Republic and its constituent states. Following this example, today’s Europeans might achieve necessary reforms and could do so, significantly, without having to meet the burdensome unanimity requirements of the EU Treaties’ amendment process.
+
+## The EU’s structural weaknesses and the unanimity trap
+
+There are some striking similarities between the EU Treaties and the Articles of Confederation governing the United States before the ratification of the 1787 Constitution. Like the Articles a couple centuries ago, the EU Treaties hamstring the very polity they create, whether due to limited taxing powers, onerous decision-making requirements (such as unanimity to impose financial sanctions on Russia), or an inability to have a single, coordinated foreign policy that prevents external actors from driving a wedge between its constituent states. During the 1787 Constitutional Convention, the Founders remedied this problem of fragmented power by drafting an altogether new constitution.
+
+There are many reasons to believe a 1787 moment won’t happen in Europe. For one, the enormous legal, cultural, and linguistic differences between EU Member States might be simply too powerful to overcome (unlike in the early American states, which were governed by English legal traditions and dominated by Protestant culture, whose common language was English). Importantly, and relevant to this article, the unanimity requirement of the EU Treaties’ amendment process will no doubt be used by several uncompromising Member States with short-sighted national interests (for example, Hungary and Slovakia, but probably many others) to block any major changes. Not much can be done about this within the current system since Member States that are unwilling to compromise cannot be expelled from the Union.
+
+However, should a supermajority of Member States (one that includes both the “founding” States and post-2004 enlargement States) muster the political will to generate such a 1787 moment, the procedural hurdles under the current Treaties might not be a problem. A new Union, adapted to the exigencies of our troubled times, could be created by a collective withdrawal of this supermajority from the EU and their adoption of new EU treaties that create a European Union free of any harmful limitations. The legal path to do this through the withdrawal procedure under Article 50 TEU has already been explored in a Verfassungsblog article by Professor Derrick Wyatt.
+
+## A not so perfect path towards a more perfect union
+
+The 1787 Convention in Philadelphia provides a historical, normative justification for this solution, since the United States did something similar to what Professor Wyatt proposes when it drew up its Constitution. In essence, once the 1787 Constitution and the government it created became operational in March 1789, the states that had ratified it left behind the old Union established by the Articles of Confederation and entered the new one. They did this even though the legality of this move was uncertain.
+
+First off, while the Convention itself (the idea for which originated already at the Annapolis Convention in 1786), was given approval by the Confederation Congress, this approval was only for
+
+“the sole and express purpose of revising the Articles of Confederation and reporting to Congress and the several legislatures such alterations and provisions therein as shall when agreed to in Congress and confirmed by the states render the federal constitution adequate to the exigencies of Government & the preservation of the Union”.
+
+The individual states issued similar instructions to their delegations. The mandates of the Connecticut, New York, and Massachusetts delegations were limited to revising the Articles. As for the other state delegations, their authorizations were more lax, but none granted the right to entirely replace the governing document.
+
+The members of the Constitutional Convention, of course, went far beyond these instructions when they drafted the Constitution, and they didn’t seem particularly constrained by the limits imposed by the Congress or their state legislatures. By late June 1787, within a month of the Convention’s start, the delegates’ resolutions were clearly veering toward adopting an entirely new document, and by late July the Convention’s Committee of Detail started writing a draft of what it explicitly called a “Constitution”. The delegates never cited a specific authority for scrapping the Articles of Confederation. In fact, the 1787 Constitution makes no mention of the Articles or the Union they created (apart from a passive reference to forming “a more perfect Union”); it retains few of their provisions verbatim; and it includes no clause repealing the Articles. Furthermore, Article VII of the Constitution, which allowed the new frame of government to enter into force after nine State conventions ratified it, stands in stark contrast to the requirement in Article XIII of the Articles of Confederation that all “alteration[s] be agreed to in a Congress of the United States, and be afterwards confirmed by the legislatures of every State [emphasis added]” (note, however, that the Constitution was to apply only to those States that ratified it).
+
+Clearly, at this point, the delegates, as drafters of a new governing document, were exercising not a constitutional power under the Articles of Confederation but a political power vested with them by their states or the people of those states. The later successful ratification of the new Constitution bolsters the legitimacy of that political power, which the drafters apparently assumed unilaterally as the 1787 Convention progressed.
+
+Given that the thirteen states were well represented at the Convention (only Rhode Island refused to participate, and two of three New York delegates, concerned about the direction the Convention was taking, left midway), it’s fair to say that the former British colonies as a whole, even at the drafting stage, felt little apprehension about the Articles being completely scrapped, despite several mentions in the Articles of the Union being “perpetual”. Even the Delaware delegation signed the newly written Constitution, knowing “that it was acting in contempt of its commission” which barred it from consenting to a loss of equal voting power among the states (which power the Articles of Confederation ensured, but the Constitution did not).
+
+Similarly, little apprehension was shown once the proposed Constitution was presented to the Confederation Congress and the several states. After some ten days of contentious debate and a compromise brokered by George Washington in the Congress, the body managed to unanimously submit the Constitution for ratification to the conventions of the people in each State, pursuant to Article VII of the Constitution. Notably, here once again, the drafters avoided the amendment procedure laid out in Article XIII of the Articles, which stipulated that it should be the state legislatures, not conventions, that ultimately approve any changes to the Articles.
+
+## Political will over procedural fear
+
+Judging by the ultimately successful ratifications (often by strong majorities or even unanimous votes), few of the U.S. States seem to have had a serious problem with the manner in which the 1787 Constitution was created and submitted to the States for consideration, even though the proposed Constitution inherently changed the substance of state constitutional law (particularly through its Supremacy Clause) and therefore should have been subject to the amendment processes of their respective constitutions (which the ratification conventions in several states had to skirt).
+
+Ratification debates were naturally heated due to the content of the proposed governing document, which ceded core sovereign powers to the new national government, and due to procedural flaws (such as flouting the Articles’ unanimity requirement and its lack of a right to secession). But in the end, all thirteen states of the Confederation ratified the Constitution, even those that had not played a role in shaping the document (Rhode Island and, to some extent, New York). Clearly, a majority of American political elites (if not necessarily all the people) felt that a stronger federal government was crucial to the young American Republic’s continued existence and that they need not nitpick about how to legally ditch the deeply flawed Articles of Confederation.
+
+What happened to the old Union created by the Articles once the Constitution went into effect? All evidence indicates that it was abandoned without much fanfare or formal procedures. The Confederation Congress did not immediately disappear; it provided crucial “institutional structure during the ratification struggle”, facilitating the creation of a new government under the Constitution. Some of its legislation, such as the 1787 Northwest Ordinance, passed as the Constitutional Convention was ongoing, was in fact deemed to remain in full force under the new government. But no major attempts were made, or indeed needed, to shut down the Confederation after the new government became operational in March 1789. No state even attempted to leave this “perpetual” Union under the Articles, which lacked a withdrawal provision anyway.
+
+The adoption of the U.S. Constitution shows how existential decisions regarding a polity’s constitutional order can be made quickly and successfully by, in the American case, ignoring the Articles’ crippling amendment process.
+
+As for the EU, while the pursuit of a collective withdrawal from such a massive body would likely be tricky and messy, an argument could be made, though on a speculative basis, that, should push come to shove, a supermajority of EU Member States would be willing to at least consider such a step. In any case, this solution would allow the Union to avoid the controversial solution proposed by Professor von Bogdandy and Dr. Spieker (articulated here) to overcome Hungarian-style vetoes in specific cases, and would allow for a lawful revamping of the EU’s constitutional order itself.
+
+If Europe musters a collective political will among its various nation states to increase the Union’s powers where necessary to protect the continent’s interests, it should not fear doing so in the face of perceived procedural hurdles. In fact, with the Article 50 TEU withdrawal clause, the EU has a legal path that the highly successful 1787 Constitutional Convention did not have. Since the EU’s exigencies are comparable to those of the U.S. during the Confederation Period, European methods today should, arguably, be as bold as those used by the Founders when they realized that the weak constitutional system they themselves had set up posed a threat to their young but ambitious American Republic.

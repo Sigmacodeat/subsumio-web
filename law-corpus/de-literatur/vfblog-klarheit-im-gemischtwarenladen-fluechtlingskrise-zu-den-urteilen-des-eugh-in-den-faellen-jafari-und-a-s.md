@@ -1,0 +1,78 @@
+---
+title: >-
+  Verfassungsblog — Klarheit im Gemischtwarenladen „Flüchtlingskrise“: Zu den
+  Urteilen des EuGH in den Fällen Jafari und A.S.
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2017-07-28'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/klarheit-im-gemischtwarenladen-fluechtlingskrise-zu-den-urteilen-des-eugh-in-den-faellen-jafari-und-a-s/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Klarheit im Gemischtwarenladen „Flüchtlingskrise“: Zu den Urteilen des EuGH in den Fällen Jafari und A.S.
+
+Mit den Urteilen „zur Flüchtlingskrise“ vom 26. Juli 2017 hat der EuGH gezeigt, dass er trotz seiner Sonderrolle, die es ihm erlaubt europarechtliche Normen verbindlich auszulegen, seine Aufgabe als Judikative versteht und nicht als Legislative. Er legt das Recht so aus, wie es das Völker- und das Europarecht verlangen, nämlich in erster Linie nach Wortlaut sowie nach dem Zusammenhang und dem Ziel der Normen.
+
+Alle die hofften, der EuGH würde eine Pflicht zur Verantwortungsteilung aus dem Dublin-System herauslesen („Merkel musste so handeln“) oder eine Beschränkung der mitgliedstaatlichen Handlungsfreiheit postulieren („Merkel handelte rechtswidrig“), wurden enttäuscht. Das ist so banal es klingen mag, die Konsequenz daraus, dass einerseits das Dublin-System eben kein solidarisches Verantwortungsteilungssystem ist (und auch nie sein sollte) und andererseits die Mitgliedstaaten ihre Souveränität im sehr sensiblen Asylbereich bisher nicht ernsthaft aufgegeben haben (und dies bisher auch nie wollten).
+
+Das mag aus der jeweiligen Sicht bedauerlich sein, aber es ist zuallererst rechtstaatlich geboten, dass der EuGH das Recht auslegt und nicht contra legem irgendwelche Lösungen vorgibt, deren Erarbeitung Aufgabe der Legislative ist und deren Umsetzung durch die Exekutive erfolgen müsste.
+
+## Ausgangslage
+
+Die Zuständigkeit im Gemeinsamen Europäischen Asylsystem (GEAS) ist seit langem rechtlich wie politisch umstritten. Die Zuständigkeit richtet sich nach der Dublin-III-Verordnung, deren Kriterien in einer festen Reihenfolge zu prüfen sind. Grundsätzlich ist zuerst der Staat für die Prüfung eines gestellten Asylantrags zuständig, in dem sich ein enger Familienangehöriger legal aufhält (Art. 8-11 und 16 Dublin-III-Verordnung). Ist dies nicht der Fall, ist der Staat zuständig, der für Einreise oder Aufenthalt der asylsuchenden Person verantwortlich ist. Daher sind zunächst die Erteilung eines Aufenthaltstitels oder eines Visums zuständigkeitsauslösend (Art. 12 Dublin-III-Verordnung), liegt kein Aufenthaltstitel vor, ist der Staat zuständig über dessen (europäische) Außengrenze die asylsuchende Person eingereist ist (Artikel 13 Dublin-III-Verordnung). Liegt keine illegale Einreise vor ist der Staat zuständig, in dessen Hoheitsgebiet, die Person legal visumsfrei eingereist ist (Artikel 14 Dublin-III-Verordnung).
+
+Die afghanischen Antragstellerinnen im Fall Jafari und der syrische Antragsteller im Fall A.S. überschritten Anfang 2016 die Außengrenze zwischen Serbien und Kroatien, wo die kroatischen Behörden den Weitertransport nach Slowenien organisierten. A.S. stellte einen Asylantrag in Slowenien, während die Antragstellerinnen Jafari in Österreich Asylanträge stellten. Beide Länder fragten – basierend auf der illegalen Einreise von Serbien nach Kroatien – Kroatien um Übernahme der Zuständigkeit für die Asylverfahren an.
+
+Für die Frage, ob Kroatien zuständig ist, kam es entscheidend darauf an, ob die Einreise in einem rechtlichen Sinne illegal im Sinne von Artikel 13 Dublin-III-Verordnung war, obwohl sie von Kroatien geduldet war und Kroatien sogar den Weitertransport organisiert hat. Diese Frage lag den lange erwarteten Urteilen des EuGH vom 26. Juli 2017 zu Grunde.
+
+## Die Urteile
+
+Die Urteile wurden bereits im Vorfeld zu einer rechtlichen Entscheidung über die „Flüchtlingskrise“ großgeredet und viele sahen und sehen darin auch eine Entscheidung über das Vorgehen Deutschlands bei der Flüchtlingsaufnahme, zugespitzt auf die Frage, ob Angela Merkels „wir schaffen das“ legal war. Der EuGH gibt nun eine weitgehend technische und rechtlich aus den Normen hergeleitete Antwort auf die aus Österreich und Slowenien gestellten Vorlagefragen und hält insbesondere fest, dass auch eine geduldete Einreise „illegal“ im Rechtssinne ist. Daraus ergibt sich, dass der Außengrenzen-Mitgliedstaat auch bei einer geduldeten Einreise zuständig wird. Dies jedenfalls, sofern keine Familienangehörigen in einem anderen Mitgliedstaat sind, denn dies wäre vorrangig – also vor den „Einreisekriterien“ – bei der Zuständigkeitsprüfung zu beachten.
+
+Das Hauptargument des EuGH ist dabei, dass sonst jeder Mitgliedstaat durch eine Grenzöffnung von der Zuständigkeit für Asylverfahren enthoben würde. Dies sei weder mit der Systematik des Dublin-Systems noch mit dessen Zielen (rasche und klare Zuständigkeitsbestimmung) vereinbar. Daneben stellt der EuGH fest, dass die Zuständigkeitsbestimmung eben nicht davon abhängt, ob die antragstellende Person rechtswidrig handelt und es daher nicht darauf ankommt, ob der Grenzübertritt von Kroatien quasi aktiv ermöglicht und gefördert wurde oder nicht. Ausschlaggebend ist nach dem EuGH lediglich, dass die Einreise ohne ein real ausgestelltes Visum und nicht auf Basis einer formal beschlossenen Visumsfreiheit erfolgte.
+
+## Die Reaktionen
+
+Nachdem die Heilserwartungen, die an den Gerichtshof von verschiedenen Seiten gerichtet waren, nicht erfüllt wurden, kann Enttäuschung als generelle Reaktion festgestellt werden, und ein aus einer demokratischen Sicht sehr bedenkliches „Gerichtsbashing“ setzte allenthalben ein.
+
+So werden die Urteile beispielsweise als „uninspiriert, mutlos und hasenfüßig“ und quasi „unverantwortlich“ bezeichnet. Oder auch konstatiert, dass „ankommende Flüchtlinge die Angelegenheit der Länder mit EU-Außengrenzen“ bleiben und das Urteil als Aufforderung des EuGH zum „Abschied von den Dublin-Regeln“ stilisiert. Aus demselben Urteil wollen andere Medien herauslesen, dass der EuGH das „’Durchwinken’ von Flüchtlinge verboten“ habe und dies damit nunmehr ein Ende habe. Es findet sich aber auch grundlegende Kritik, die teilweise so weit geht, zu behaupten, der EuGH habe es mit einem „Kunstgriff“ „für rechtens anerkannt, Passagen des geltenden Rechts nicht zu beachten“ und habe „keinerlei Klarheit geschaffen über die Dublin-Regelung“.
+
+Am nächsten kommen der Rechtsprechung wohl Statements, die festhalten: „EU-Asylregeln gelten auch in Ausnahmesituationen“ oder simpler konstatieren: „wer einreisen lässt ist zuständig“. Es ist sicher korrekt zu sagen, dass damit die in diesem Blog festgestellten „himmelschreienden Insuffizienzen dieses Systems“ bestehen bleiben, aber diese Frage war dem EuGH auch nicht vorgelegt worden.
+
+## Die Zurückhaltung des EuGH als Absicherung der Rechtsstaatlichkeit
+
+In einer Zeit, in der die EU-Kommission vor dem EuGH die absolute Natur des Folterverbots in Frage stellt (und damit dem Generalanwalt folgt) und die Berufung auf verfahrensrechtliche Garantien für nicht justiziabel hält (und damit der Generalanwältin widerspricht), ist es umso bedeutsamer, dass der EuGH die Rechtsordnung an sich und die Einheitlichkeit der Grundrechtsordnung verteidigt.
+
+Damit ist notwendigerweise eine eher konservative Linie verbunden, die bei der Auslegung auf den Wortlaut, den Bedeutungszusammenhang und die Ziele der Normen Bezug nimmt.
+
+Eine „mutige“ Vorgehensweise zu fordern, bedingt immer auch eine Abweichung von diesen Prinzipien in Kauf zu nehmen. Eine solche hätte möglicherweise auch zu Urteilen führen können, mit denen die umfassende Geltung des Folterverbots und die volle Überprüfung der Rechtmäßigkeit von Dublin-Entscheiden in Frage gestellt wird. In dem der EuGH die Vorlagefragen beantwortet und nicht über die „Flüchtlingskrise“ urteilt, bringt er einerseits keine Innovation, aber eine Klarheit über seine Rolle und ein rechtlich eindeutiges Ergebnis. Es liegt in der Natur der Rolle des EuGH, dass er nicht sagt, was das Ergebnis im Einzelfall ist. Dies zu beurteilen ist Sache der nationalen Gerichte, in diesem Fall der Gerichte in Slowenien und Österreich. Gleichzeitig verdeutlicht er auch, dass er in der Situation des Frühjahres 2016 keine Situation sieht in der „die Aufrechterhaltung der öffentlichen Ordnung und de[r] Schutz der inneren Sicherheit“ in einem unionsrechtlich Sinne (Art. 72 AEUV) so gefährdet war, dass entsprechende mitgliedstaatliche Maßnahmen in Abweichung vom Sekundärrecht gerechtfertigt gewesen wären und erteilt somit den mit einer solchen Gefährdung argumentierenden Obergrenzen-Befürwortern und einer generellen Binnengrenzschließung eine implizite Absage. Das System, so ist die Message, kann und wird damit rechtlich umgehen.
+
+Generell ist eine kreative oberste Gerichtsbarkeit immer auch mit einer Gefahr für die Rechtsstaatlichkeit verbunden, denn sie übernimmt mit „inspirierten“ Auslegungen immer auch die Rolle der Legislative. Das würde wiederum die Gewaltenteilung in Frage stellen und das Risiko in sich bergen, dass die Grenzen der zulässigen Rechtsfortbildung überschritten werden. Dies ist bei Dublin-Fragen umso mehr der Fall, weil der Wille des Gesetzgebers eindeutig ist: „Das Dublin-System (Dublin- und EURODAC-Verordnungen) war nicht als Lastenteilungsinstrument konzipiert“ und ist es bis heute nicht.
+
+Zusammengefasst lässt sich sagen, dass der EuGH:
+
+1)   Die Normen nachvollziehbar ausgelegt und festgestellt hat, dass das System gilt. Dem EuGH kommt es dabei nicht darauf an, ob das System funktioniert.
+
+2)   Den Mitgliedstaaten aufgezeigt hat, welche Handlungsmöglichkeiten für den einzelnen Mitgliedstaat bestehen (ein Selbsteintritt ist immer möglich und „rechtens“), welche kollektiv möglich sind (Anwendung der sogenannten Massenzustromsrichtlinie und kurzfristige Maßnahmen zur Abmilderung einer durch einen „plötzlichen Zustrom“ ausgelösten „Notlage“ – „Relocation“) und welche Verpflichtungen dabei einzuhalten sind (insbesondere die Prüfung der Kriterien und die Beachtung der absoluten und umfassenden Geltung des Non-Refoulement-Prinzips).
+
+3)   Dadurch deutlich gemacht hat, dass er die Lösung im System und nicht außerhalb des Systems sieht. Er fordert damit die Mitgliedstaaten auf, das System zum Funktionieren zu bringen, statt gegeneinander zu arbeiten.
+
+Die Funktionsfähigkeit des Systems generell hat der EuGH (wohl bewusst) nicht in den Blick genommen. Das Dublin-System hat seit seiner Einführung nie funktioniert und hatte und hat in der Realität einen Einfluss auf weniger als 10% aller gestellten Asylgesuche. Dies zu verändern ist aber – und das wird auch aus dem Urteil klar – nicht Aufgabe des EuGH, sondern der Mitgliedstaaten. In den verhandelten Fällen ging es um die individuelle Zuständigkeitsbestimmung und diese ist nach den Ausführungen des EuGH nunmehr Sache der nationalen Gerichte. Ob diese nunmehr entscheiden, das Selbsteintrittsrecht zu nutzen oder ein Überstellungsverbot wegen einer zum Entscheidungszeitpunkt drohenden „Gefahr einer unmenschlichen oder entwürdigenden Behandlung im Sinne des Artikels 4 der EU–Grundrechtecharta“ feststellen oder die Zuständigkeit Kroatiens für gegeben halten, ist nach dem Urteil offen.
+
+Der vielfach kritisierte EuGH scheint im Asylbereich damit seine Rolle gefunden zu haben. Seit dem Inkrafttreten des Vertrages von Lissabon 2009 hat er einerseits Rechtsfragen des Sekundärrechts beantwortet und andererseits auch den notwendigen Einbezug des Primärrechts – namentlich der Grundrechtecharta – weitgehend erfolgreich vorgenommen. Es zeugt von einer in der überhitzten Asyldebatte beruhigend wirkenden, rechtsstaatlichen Herangehensweise, wenn der EuGH nicht versucht, gestalterisch Lösungen für ungelöste, tieferliegende Probleme in die Rechtsnormen hineinzulesen. Progressive Lösungen müssen aus der Legislative kommen und die besteht im europäischen Rahmen aus dem Europäischen Parlament und dem Rat. Eine zukunftsgerichtete Flüchtlingspolitik zum Teil des deutschen Wahlkampfs machen zu wollen, ist unter diesen Voraussetzungen weder erforderlich noch hilfreich. Wenn sich die Bundesregierung einigen könnte und im Rat konstruktive Lösungen vorschlagen würde, wäre dies wohl für den notwendigen legislativen Prozess auf der EU-Ebene sehr viel gewinnbringender.
+
+## Lösungsansätze: Differenzierung statt Pauschalisierung
+
+Bisher sind unter Mithilfe der EU-Kommission vor allem Scheinlösungen für die Umgestaltung des Dublin-Systems vorgeschlagen worden. Insbesondere ist das Signal des Vorschlags zur Dublin-IV-Verordnung in Bezug auf die Geltung der Kriterien eindeutig: „weitermachen wie bisher“. Eine Basis für eine solidarisch orientierte Ausgestaltung der Zuständigkeitskriterien ist damit bisher nicht gegeben. Die fehlende Diskussion darüber zeigt vor allem eines: die fehlende Bereitschaft der Mitgliedstaaten, die offensichtlichen Probleme des Dublin-Systems „inspiriert“ und „mutig“ anzugehen. Man würde sich die Klarheit des EuGH in der rechtlichen Analyse auch in der politischen und legislativen Debatte wünschen. Voraussetzung dafür wäre allerdings eine echte Analyse der Ursachen für das angebliche Nicht-Funktionieren des Dublin-Systems. Nur ein Beispiel: Unter dem Blickwinkel des Zugangs zu einem Asylverfahren funktioniert Dublin durch den „Systemausfall“ durchaus: Eine große Mehrheit der Personen erhält, wie vorgesehen, rasch Zugang zu einem Asylverfahren.
+
+Trotzdem lohnt es sich im Asylbereich über Lösungen zu diskutieren, die dem Bedürfnis der Mitgliedstaaten nach besserer Kontrolle ebenso Rechnung tragen wie dem individuellen Anspruch auf Schutz von international schutzberechtigten Personen. Diese Lösungen liegen aber wohl eher nicht in der formalen Fairness eines festen Verteilschlüssels, der zudem in der vorgeschlagenen Form administrativ enorm aufwendig wäre. Ein solcher Schlüssel würde nämlich die unterschiedliche, oft individuell oder kulturell bedingte Attraktivität der Zielländer nicht beseitigen und zu Wanderungsphänomenen führen. Ein Lösungsansatz könnten hingegen rasche, gemeinsame, idealerweise von einer EU-Agentur durchgeführte Asylverfahren sein. Die Statusgewährung müsste dann mit einem Freizügigkeitsrecht verbunden sein. Der finanzielle Ausgleich könnte über EU-Fonds oder die reale, solidarische Verteilung der entstehenden Kosten erfolgen. Ein solches Verfahren wäre auch den Asylsuchenden vermittelbar, wenn es verständlich und klar kommuniziert wird.
+
+Dabei ist aber zu beachten, dass diese Lösungsansätze nur den Asylbereich betreffen und nicht die gesamte Einreisethematik. Bei weitem nicht alle Personen, die ohne die erforderlichen Dokumente und Erlaubnis einreisen, stellen einen Asylantrag. Zu glauben die Problematik irregulärer Migration könne mittels schneller oder ausgelagerter Asylverfahren gelöst werden, zeugt von mangelnder Differenzierung zwischen asylrechtlichem Schutz und anderen Migrationsphänomenen. Diese wäre aber nötig, wenn aus dem Gemischtwarenladen „Flüchtlingskrise“ einmal eine gemeinsame Asylpolitik im Sinne von Art. 78 AEUV  sowie eine davon rechtlich und politisch getrennte gemeinsame Einwanderungspolitik gemäß Artikel 79 AEUV entstehen soll. Der vom EuGH angemahnte „Geist der Solidarität“ im Sinne des Artikel 80 AEUV müsste für einen solchen Schritt aus dem gemischten Allerlei hin zu einer fachlich, politisch und vor allem solidarisch geführten Diskussion noch erheblich gestärkt werden.

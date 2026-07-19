@@ -232,6 +232,64 @@ const SIMPLE: SimpleSource[] = [
       "--no-embed",
     ],
   },
+  // Literatur + Gesetzesmaterialien (Phase 1: freie/CC-lizenzierte Quellen;
+  // Lizenzgates leben in den fetch-Scripts via checkStaticCompliance).
+  {
+    kind: "dirimport",
+    key: "materialien-de",
+    dir: "de-materialien",
+    sourceId: "law-de-materialien",
+    importCmd: [
+      "src/cli.ts",
+      "import",
+      "../law-corpus/de-materialien",
+      "--source-id",
+      "law-de-materialien",
+      "--no-embed",
+    ],
+  },
+  {
+    kind: "dirimport",
+    key: "literatur-de",
+    dir: "de-literatur",
+    sourceId: "law-de-literatur",
+    importCmd: [
+      "src/cli.ts",
+      "import",
+      "../law-corpus/de-literatur",
+      "--source-id",
+      "law-de-literatur",
+      "--no-embed",
+    ],
+  },
+  {
+    kind: "dirimport",
+    key: "literatur-at",
+    dir: "at-literatur",
+    sourceId: "law-at-literatur",
+    importCmd: [
+      "src/cli.ts",
+      "import",
+      "../law-corpus/at-literatur",
+      "--source-id",
+      "law-at-literatur",
+      "--no-embed",
+    ],
+  },
+  {
+    kind: "dirimport",
+    key: "literatur-ch",
+    dir: "ch-literatur",
+    sourceId: "law-ch-literatur",
+    importCmd: [
+      "src/cli.ts",
+      "import",
+      "../law-corpus/ch-literatur",
+      "--source-id",
+      "law-ch-literatur",
+      "--no-embed",
+    ],
+  },
   {
     kind: "eu",
     key: "eu-directives",
@@ -1081,7 +1139,12 @@ async function cycle(): Promise<void> {
     for (const src of SIMPLE) {
       const stats = dirStats(src.dir);
       const dbPages = dbBySource.get(src.sourceId) || 0;
-      const { stage, action } = importStage(src.key, src.dir, src.importCmd);
+      // Empty/absent dir (e.g. literature sources before their first fetch):
+      // nothing to import — starting the import would only crash-loop.
+      const { stage, action } =
+        stats.files === 0
+          ? { stage: "empty", action: "kein Korpus auf Disk — fetch zuerst" }
+          : importStage(src.key, src.dir, src.importCmd);
 
       // Update DB with measurements
       updateSourceState(src.key, {

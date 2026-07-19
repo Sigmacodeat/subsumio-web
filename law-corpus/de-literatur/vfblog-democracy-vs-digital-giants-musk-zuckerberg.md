@@ -1,0 +1,53 @@
+---
+title: Verfassungsblog — Democracy vs. Digital Giants
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2025-02-03'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/democracy-vs-digital-giants-musk-zuckerberg/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Democracy vs. Digital Giants
+
+In the wake of Elon Musk's multiple attacks on different European politicians, French President Emmanuel Macron expressed his surprise that the most powerful man in the world was supporting the “reactionary international.” He called for defending EU democracies and the European project from the interference of digital tycoons. While democracies have always coexisted with economic oligarchies – the United States more than most European ones – the power acquired by a few men is beginning to take on new economic and political characteristics. The technological revolution – satellites, software and search engines, AI – provides them with an extraordinary global power, as governments and decision-makers increasingly depend on their services. This grants them an unmatched capacity to influence policies by controlling data, as well as through the lack of alternatives to several services.
+
+## Tech giants’ growing influence
+
+Silicon Valley techbros are no longer just exerting political pressure through lobbying; they are now shaping entire political decision-making processes. An example of this is the U.S. ban on TikTok, based on concerns over the accumulation of user data in the hands of a geopolitical rival, in this case, China. However, in the new Trump Administration, these businessmen have influence or even hold direct positions within the government, raising questions about conflicts of interest and challenging fundamental democratic values. For the EU, the paradox is that it is simultaneously working with the US to prevent foreign interference through strategies such as the Foreign Information Manipulation and Interference Strategy (FIMI), while at the same time having to decide whether the U.S. under Trump is an increasingly demanding ally or a new systemic rival.
+
+This is a complex debate. Speeches like Macron’s mix different issues: political criticism of reactionary positions, the denunciation of foreign interference and the protection of democracy. These should be addressed as related but clearly distinct dimensions. And doing so requires clarifying the European Union's narrative on the relationship with large digital platforms and the fight against disinformation and electoral manipulation.
+
+## From allies to rivals?
+
+From the outset, the EU prioritized the protection of fundamental rights and the rule of law in its regulation of digital platforms. As a result, freedom of expression online can only be limited when it conflicts with other fundamental rights. However, since 2018, the EU’s strategy to combat illegal content and harmful speech has focused on detecting and countering campaigns from systemic rivals, especially Russia. Platforms were initially seen as necessary allies, especially after their vulnerability to foreign interference was revealed by the Cambridge Analytica scandal in 2016. The EU relied on the support of Very Large Online Platforms (VLOPs) acting as co-regulators of the digital space, committing to a Code of Practice on Disinformation. Regulatory action has evolved to include several mandatory norms such as the Digital Services Act (DSA), the European Media Freedom Act (EMFA), a directive to protect journalists and activists from abusive lawsuits (SLAPPs), and the Regulation on the transparency and targeting of political advertising. These regulations introduce more rigorous requirements for transparency and control of platforms.
+
+Over time, however, the relationship with platforms has changed, and some of their owners – notably Elon Musk and Mark Zuckerberg – now seem to be rivals and not allies of the EU and European democracies. What has happened? Musk’s personal crusade, which Zuckerberg has joined to some extent, reopens the debate on the adequacy of EU rules and policies. It is necessary to face the reality that key aspects of public debate and political process are now taking place in private digital spaces managed by companies often based abroad. For example, platforms are obliged by the DSA to remove illegal content but must also adhere to international and national standards on freedom of expression. In this sense, although many of the positions expressed in digital platforms question democratic values, this is not a crime in most democracies, and political forces supporting similar positions have had electoral success sharing these discourses.
+
+## Distinguishing disinformation from political content
+
+It is crucial to distinguish the fight against disinformation from the regulation of political information during election periods. Unlike in the US, most European democracies impose strong controls on public debate and funding to guarantee a measure of equality between political forces before elections. The EU regulation on political ads requires political content to be clearly identified as well as the identity of its promoters, to ensure compliance with donation limits and help citizens to recognize the ideas at stake. However, these regulations do not control or limit the ideological content.
+
+As in any complex debate, there are differing views on the EU’s regulatory strategy. Optimists point out that these rules already allow the EU to sanction companies that ignore systemic risks to elections or public debate or fail to remove illegal content on their platforms. The DSA and the EMFA also require platforms to be more transparent about the algorithmic logic behind content recommendations, giving citizens more control over what they want to see. The result is that despite not imposing a single model of moderation and control, the Commission has already opened investigations into Meta and X. The decisions of its owners – both Zuckerberg's most recent decision to change his content moderation model and Musk's seemingly permanent defiance – suggest that significant sanctions may be on the horizon. However, the European Court of Justice will ultimately determine whether the actions of both platforms comply with the “best available information and scientific insights” on risk reduction. Zuckerberg's communication about abandoning fact-checking in favor of community verification as a better-functioning alternative anticipates a potential line of defense for the company.
+
+Pessimists, however, point to the gaps in European rules and the structural position of these companies in the EU’s approach. The EU strategy relied on VLOPs’ interest in collaborating with regulators and assumed that the digital space cannot be managed without them or against them. In this context, the Commission's call for X to remain politically neutral suggests a concern that X may be manipulating its algorithm with an ideological bias, which may not be easy to avoid under existing rules. For critics, the DSA does not sufficiently break with the tradition of platform regulation exonerating platforms from liability for user-generated content, as long as they were unaware of its illegal, or now harmful, nature. This model, which is supported by most defenders of freedom of expression and digital rights, has allowed platforms to grow. EU law establishes platform neutrality as a prerequisite for liability, but this has not so far prevented them from curating content with their algorithms.
+
+A further reason to doubt the EU’s ability to respond to the tech moguls’ offensive is that some of the norms adopted in the previous legislature are still not legally in force: for example, several aspects of the political ads regulation will only be binding in the fall, and the date for transposition of the anti-SLAPP directive is also beyond the next German election.
+
+One key issue for critics is that on some platforms, especially X, the algorithm acts de facto as an editorial line, managing and prioritizing content. Therefore, platforms could be subjected to the same rules of content regulation as other public space actors, such as written or audiovisual media, or be subject to controls on the balance between different forces in electoral periods. Although this idea was discarded during the DSA's drafting in 2021, the new reality may demand a review of this approach. Other regulatory alternatives include promoting a more active role for the public sector in digital communication, greater oversight from civil society, or greater interoperability between platforms. However, these ideas do not prevail in the current regulatory consensus and adopting them may lead to clashes not only with powerful industry lobbies but also with a U.S. administration that supports, at least for now, the tech moguls.
+
+## The threat of the concentration of power
+
+But despite their limitations, existing regulations are better than allowing platforms to be unaccountable for their negative effects on democracies. It also seems more reasonable to regulate rather than to ban companies like X and Meta in Europe, as some campaigns have already proposed. Let us not forget that there are already governments and political forces with authoritarian temptations in the EU that would be enthusiastic about employing more restrictive approaches to online expression against their opponents. The combination of the DSA’s strong obligation to eliminate illegal content and existing national speech limitations – with up to 10 Member States having different speech limitations – could mean that, for example, Hungary can use the DSA to request the removal of content supposedly harming a public interest.
+
+In conclusion, the debate must go beyond legal considerations and address the broader threat that concentrated power in the hands of a few poses to democracy. This means focusing not only on risks to public debate, such as disinformation, but also on how a few companies can shape political processes and entire policy sectors through their technological – and increasingly political – dominance.
+
+ 
+
+This comment is part of the authors' work for the Horizon Europe project RECLAIM. The contents of this article are the sole responsibility of the authors. It does not reflect the opinion of the European Union. The Research Executive Agency is not responsible for any use that may be made of the information it contains.

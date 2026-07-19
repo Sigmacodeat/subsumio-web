@@ -1,0 +1,31 @@
+---
+title: Verfassungsblog — Linguistic Defense and Offense
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2016-02-19'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/linguistic-defense-and-offense/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Linguistic Defense and Offense
+
+When I first wrote about linguistic self-defense (discussed in Liav Orgad’s book pp. 198-200) I had a conception of languages in danger, The most visible potential victim were the French in Quebec. But with the help of Charles de Gaulle, the Quebecois have held on well to their culture (majority at home, minority at large, but supported by a large nation in Europe). One form of linguistic self-defense I proposed at the time was insisting on speaking your language in commercial transactions. For the sake of profit, store keepers would play along. Also, public advertising is a critical mode of making a language seem like the background state of normalcy. The key case in Quebec, as I recall, was called Chaussures Brown Shoes. That was the way they wanted their sign to read. The Anglophones objected and lost.
+
+It is hard to know how important linguistic self-defense is these days. We used to have a theory about how many languages there are in the world, but even that number is open to question. The more we problem isolated jungles the more we discover. But the number should not matter. Each language represents a distinct cultural heritage. As the number of living organic species concern, we want to avoid the avoid the contraction of organic diversity – of living beings and living cultures.
+
+The question today is whether it is worth fighting for a language on the verge of distinction in the fact of an aggressive dominant language like English. The quandary of the Navajos provides a good example. Within the last few years there has been a dispute about whether the new chief of the tribe should speak fluent Navajo. However that was resolved, the conflict highlights a question of fact and one of principle. The fact is that a language like Navajo is a unique culture heritage. Because of its complexity, it played a unique role in World War II. The enemy could not comprehend spoken Navajo and there was no time for code-breaking in person to person communication. Therefore, native Navajos played a key military role as agents of communication. It is also a fact that today in the face of English all around them, the locals are losing their core culture. For that reason, I think it made sense to insist that the chief of he tribe speak the language fluently. After all, the policies of all politicians are dubious but their role as figureheads to inspire the young is a critical culture force. Insisting that the chief speak the language fluently is a form of linguistic self-defense.
+
+There is a similar issue built into the United States Constitution. There is no explicit requirement that the president speak English, indeed English has no official status as the country’s lingua franca. The outdated requirement that the president be native born was simply a hedge against the British reclaiming power in the new world. Beyond that limited point, Americans are suspicious of presidential candidates with foreign ties. Jeb Bush speaks fluent Spanish but it does not help him, as Mitt Romney’s presumably fluent French was irrelevant to his campaign. No president since the Civil Wars has spoken a foreign language fluently. This prejudice is surely one of the weakest aspects of the American personality. Angela Merkel speaks Russian fluently and it only adds to her attractive set of skills.
+
+All things considered, however, the story of the last half century has been one of linguistic offense. The English-speakers have manages to replace French as the language of diplomacy and of international law. The Rome statute is written in English. Although there are six official languages in the UN, the dominant one is English. This means that unique words in the English legal vocabulary like ‘fairness,’ and ‘reasonableness’ have become essential in international legal discourse. At Davos, I assume, the international leaders speak to each other in English. This makes the world a little more efficent – a value presumably respected more by the majority culture of the United States than by, say, the Navajos.
+
+Is there a downside to these trends? Well, there is a long-standing dispute about whether the language we speak influences the way we think. This might be true for our native languages but the evidence is hard to muster. I don’t think the gender differences – and the different alignment of genders say, in German and French – make any difference. Whether ‘la guere’ or ‘der Krieg’, war is just as brutal. Peace is better whether it is ‘la paix’ or ‘der Frieden.’ Yet there is another side to this argument, one advanced by Benjamin Lee Whorf and recently by Guy Deutscher, that in some cases syntax and perhaps some semantic differences do affect the way we think. Whorf focussed on the way some Indian languages (with which this whole field of inquiry would suffer!) describe actions and concluded that the conception of action was different. This, unfortunately, is not subject to any proof that I can think of. Deutscher’s example of some cases of locating object relative to the place of the sun might be more convincing. When we say ‘left’ or ‘right’ we are not interested in the place of the sun. These propositions remind us of claims about the relative impact of legal doctrines and the behavior of judges. We know that the law has some impact of judicial decisions but we do not know how much.
+
+In the final analysis, linguistic differences – like other cultural differences – add to the richness of our lives. Should we struggle, then, to hold onto to dying languages? Yes. as much as we care about dying organic species. In the spirit of Orgad’s work, however, we should not ignore the importance of ‘majority’ or ‘plurality’ languages Not only English, but Chinese, Spanish, Indonesian, and many more – too numerous to name – are indispensable to the unified infrastructure of the world.

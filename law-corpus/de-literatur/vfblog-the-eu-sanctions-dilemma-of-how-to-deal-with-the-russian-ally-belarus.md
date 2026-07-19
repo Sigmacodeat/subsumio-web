@@ -1,0 +1,72 @@
+---
+title: >-
+  Verfassungsblog — The EU sanctions dilemma of how to deal with the Russian
+  ally Belarus
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2022-12-21'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/the-eu-sanctions-dilemma-of-how-to-deal-with-the-russian-ally-belarus/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# The EU sanctions dilemma of how to deal with the Russian ally Belarus
+
+“I have three homes: my Belarusian land, the homeland of my father, where I have lived my whole life; Ukraine, the homeland of my mother, where I was born; and Russia’s great culture, without which I cannot imagine myself. All are very dear to me. But in this day and age it is difficult to talk about love.”
+
+Sviatlana Alexievich, Nobel Lecture, 2015
+
+The dramatic events taking place in Ukraine and growing security threats to the EU itself led to a mini-revolution in the EU sanctions policy. Now the EU sanctions toolbox includes some novel measures, such as broadcast bans, which were previously under the discretion of national authorities. The EU also resorts to broad economic measures that are anything but targeted. Furthermore, the Union tightens its policy on sanctions circumvention.
+
+The above-mentioned changes put the EU in a double dilemma with respect to Belarus. First, it needs to decouple Belarusians from their authorities to preserve the human dimension of EU-Belarus relations. Second, it has to differentiate Belarus from Russia. While the rationale for increasing the alignment of sanctions against Belarus and Russia is understandable, one must admit that Belarus is not Russia. To ensure this, the EU needs a more calibrated, strategic and a country-specific approach with respect to Belarus.
+
+## Belarus as a co-aggressor
+
+Much ink has been spilled on EU sanctions against Russia following the Russian war against Ukraine. Belarus is, however, often omitted from academic and policy debates. This is surprising given that the EU extended most of its sanctions against Russia to Belarus as its closest ally. The EU was also likely to include Belarus in its next sanctions package against Russia for both the role it plays in the circumvention of sanctions by Russia and its support for the Russian war against Ukraine. Nevertheless, the final version of the nineth package of sanctions against Russia did not affect Belarus.
+
+The country was labelled a co-aggressor since Aleksandr Lukashenko allowed the use of the Belarusian territory by the Russian troops for the invasion of Ukraine. After the end of joint military exercises in February 2022, Belarus has become a transit point for Russian forces. Some questioned whether Belarus is still a sovereign state given its overwhelming dependence on Russia. Some even proposed to recognize Belarus as an occupied territory. This argument is easily discarded. Belarus and Russia are the closest allies with a long history of military cooperation, including within the framework of the Collective Security Treaty Organization and the Union State of Russia and Belarus.
+
+In October 2022, the Belarusian leader announced the deployment by Russia and Belarus of a joint regional group of forces in Belarus to protect the Union State borders. The joint regional group remained inactive since its first mention in the 1999 Treaty establishing the Union State of Belarus and Russia and more recently in the 2021 military doctrine of the Union State. The (expected) arrival of around 9000 Russian soldiers to Belarus further exacerbates the erosion of the Belarusian sovereignty. Despite the Belarusian officials’ insistence on the purely defensive character of the regional group, concerns are growing with respect to the probability of another attack on Kyiv and the involvement of the Belarusian forces in the fighting.
+
+Aliaksandr Lukashenka performs a difficult balancing act: he fosters his militaristic rhetoric but still resists to sending his own troops in Ukraine amidst the chaotic mobilization in Russia. Both the lack of domestic support for the Belarus involvement in the Russian war against Ukraine and the threat of new sanctions are sufficient deterrents from this risky adventure.
+
+Belarus is already one of the most sanctioned states worldwide. Prior to February 2022, the EU enacted five Belarus-specific sanctions packages that comprised targeted measures, a flight ban and sectoral restrictions on potash, oil and tobacco products. First three EU sanctions packages against Belarus were introduced on democracy related grounds. After the Ryanair plane incident the EU sanctions against Belarus pursued inter alia security related objectives. As from March 2022, the EU sanctions on Belarus mirror most Russia related restrictive measures and target the Belarusian financial sector, the export of dual-use goods as well as the import of wood, cement, steel and rubber products. Since such unprecedented measures may lead to unintended consequences, the EU faces a dilemma as to how to deal with Belarus knowing that Belarusians are hostages of their repressive regime.
+
+## Uneasy delimitation between the authorities and citizens
+
+The mirroring of far-reaching sanctions against Russia with respect to Belarus raises questions as to whether sanctions are well-calibrated measures. On the one hand, the EU sanctions are not meant to target a country or a population but a specific conduct or a policy. On the other hand, the diversification of the EU sanctions toolbox and the broadening of its scope entail inevitably repercussions for the population of the country. And with respect to Belarus this uneasy delimitation between the authorities and the population is even more sensitive than in the Russian case.
+
+Differences between the Belarusian and Russian societies are difficult to overlook. Even more so if one thinks about the Belarusian resistance in August 2020. Furthermore, the Belarusian and Russian societies diverge in their views on war. According to the latest sociological data by Professor Vardamatski, Belarusians are opposed to the war, despite a small shift in opinions under the influence of the official rhetoric. In September 2022, 80,9% of Belarusians were opposed to the potential Belarusian involvement in the war in Ukraine in contrast to 85% in March 2022. Similarly, the quantity of those disapproving the use of the Belarusian territory by the Russian troops dropped from 61,9% to 51,40%. In contrast, Chatham House results on Belarusians’ view on the war note the drop of support for the Russian war in Ukraine. These numbers differ from the opinion polls in Russia that have shown overwhelming 70% support for the so-called “special military operation” in Ukraine (recent opinion poll by Chronicles note that the support for the “special military operation” continues to fall in Russia and now equals 51%).
+
+The delimitation between the authorities and the Belarusian population is also more complex given the ongoing mini-revolution in the EU sanctions practice rooted in the changing security context. The EU is shifting from so called “smart” or targeted sanctions to more comprehensive measures due to a triple phenomenon. First, the EU increases the scope of its sanctions through the broadening and updating of listing criteria. In the case of Belarus, they were updated to target those involved in the migrants crisis and Russian aggression against Ukraine. Second, we witness the “sectoralisation” of EU restrictive measures. The EU is less reluctant to target sensitive sectors of the Belarusian economy, e.g. oil and potash products.
+
+Last but not least, the EU added novel measures to its sanctions toolbox. One of them is the prohibition to have deposits exceeding 100.000 Euros that affects all Belarusian passport holders without a permanent or temporary residence permit in the EU, EEA or Switzerland. Another novel measure of the EU sanctions toolbox is a broadcast ban. At the moment, Belarusian media are only subject to national bans in Poland and Baltic States. However, given the similarity of narratives on war both in Belarus and Russia, the EU wide broadcast ban on some Belarusian news outlets seems to be just a question of time. At the moment, the EU limited itself to targeted asset freezes against Belteleradio Company (National State Television and Radio Company of the Republic of Belarus).
+
+## Constitutional significance of the EU sanctions design evolution 
+
+The changing design of EU restrictive measures raises questions of constitutional significance. First, with respect to the limits to the Council’s enjoyment of broad discretion as to a type of sanction measures chosen under the Common Foreign and Security Policy. This is particularly relevant with respect to broadcast bans that have been previously dealt with by national audiovisual authorities. In the much debated Russia Today France case, the General Court confirmed the broad discretionary powers of the Council as to a scope of a chosen measure. It also recognized the informational security as an integral part of the EU security and public order that in this specific case can be better realized at EU level than at national level.
+
+Secondly, the far-reaching consequences of EU restrictive measures raise questions as to whether they can still be viewed as targeted measures. The enormous fertilizers shortage and potential negative humanitarian consequences of sanctions on Belarusian fertilizers are not only discussed at the political level but are also presented as one of the claims in front of the Court in Luxembourg. Belaruskali (largest state-owned companies of Belarus accounting for 20% global supply of potash fertilizers) contested its inclusion on the EU sanctions list and relied among other reasons on the fact that sanctions are not targeted. More specifically, the company claims that the EU acts setting out sanctions violate the principle requiring the measures to be targeted because in reality “they affect the civilian population not only in Belarus, but throughout the world”. To my knowledge, this is the first time that the Court will deal with this specific claim on the targeted nature of restrictive measures. Against the backdrop of massive sanctions enacted by the EU in the past few months, some clarification of the concept “targeted measures” would be useful.
+
+## Sanctions circumvention: uneasy decoupling of Belarus from Russia
+
+Even if Minsk was not included in the nineth sanctions package against Russia, Brussels is likely to keep extending its Russia related sanctions to Belarus if the latter does not restrain from providing its support for attacks against Ukraine. The alignment of sanctions on two countries is also meant to prevent the circumvention of sanctions by Russia through Belarus. Russian citizens could allegedly avoid financial restrictions via the so-called “banking tourism” to Belarus. There are also concerns that Belarus could be used as a proxy for bypassing some export restrictions by Russia.
+
+This thinking is legitimate given the erosion of the Belarusian sovereignty and the relaunch of 28 Union State programs leading to the signature of the tax harmonization agreement between two countries. Belarus de facto lost its autonomy in indirect taxes and provided Russia the access to all data on indirect taxes.  Against this backdrop, the inclusion of Belarus in Russia related sanctions responds to the EU objective of preventing any potential sanctions violations by Russia and closing all the available loopholes.
+
+The European Union has put the fight against the evasion of sanctions at the forefront of its foreign policy. Its recent sanctions framework against Russia now provides for the possibility to introduce restrictive measures against those who facilitate the circumvention of sanctions. The concrete measures have been undertaken to qualify the violation of sanctions as a crime under the EU law and proceed with seizing frozen funds. In the past the EU already tried to prevent the circumvention of restrictive measures by extending sanctions on subsidiaries of sanctioned entities or family members of sanctioned individuals.
+
+Nevertheless, the alignment of sanctions regimes of two countries in order to prevent the potential violation of restrictive measures through Belarus is an absolute novelty that could considerably extend the territorial reach of EU sanctions. One may wonder whether the EU would act similarly with respect to other countries that could be used by Russia for bypassing the Western pressure. The emergency context rooted in the ongoing war in Europe may serve as a trigger for more far-reaching and unexpected measures.
+
+## Concluding remarks
+
+The changing design of EU sanctions put the EU in a double dilemma with respect to Belarus. First, it needs to decouple Belarusians from their authorities, since the human dimension plays an important role for the future of EU-Belarus relations. Second, it needs to differentiate Belarus from Russia. While the rationale for increasing the alignment of sanctions against Belarus and Russia is understandable, Belarus  should be treated as a separate subject of the EU policy and not as an integral part of the EU agenda on Russia.
+
+Some preliminary work in this direction could include, on the one hand, support for the Belarusian democratic forces by formalizing the cooperation with them within the Eastern Partnership and the European Political Community (EPC). On the other hand, the EU could reflect on updating the October 2020 conditions under which EU sanctions against Belarus could be eased in the future, assuming a settlement has been reached between Ukraine and Russia and Russia fully withdrew its troops from Ukraine. The EU will also need to define which sanctions frameworks could be relaxed in the future given that the EU enacted six Belarus specific sanctions packages and a set of measures in response to Belarus support for the Russian war in Ukraine. Some of them are democracy promotion related measures, others have security related objectives. Even though this type of preparatory analytical work might seem premature in the present context, we shall not forget that “The Times They Are A-Changin”.

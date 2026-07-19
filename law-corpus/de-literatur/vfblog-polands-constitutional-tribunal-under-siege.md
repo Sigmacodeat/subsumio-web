@@ -1,0 +1,35 @@
+---
+title: Verfassungsblog — Poland's Constitutional Tribunal under Siege
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2015-12-04'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/polands-constitutional-tribunal-under-siege/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Poland's Constitutional Tribunal under Siege
+
+A constitutional crisis? A coup d’état? Whatever it is Poland is going through right now, the constitutional situation is far from normal. After a fierce political brawl about the election of five new judges to the Constitutional Tribunal, that same Tribunal declared yesterday the legal basis upon which two of them were elected unconstitutional.
+
+The situation in Poland after the recent national elections brings up memories of a dark chapter in the history of Austria. In 1929 a constitutional amendment shifted the power to appoint the judges of the Verfassungsgerichtshof from the Bundestag to the Bundespräsident. In 1934 the Verfassungsgerichtshof was abolished entirely. Note that the Austrian Constitutional Court was paralyzed in 1933 due to the lack of capacity to adjudicate. Certainly the scenario of paralyzing, or changing the competences of the Constitutional Tribunal, and the Constitution is a very tempting strategy if one thinks about elimination of all internal control mechanisms against tyranny of the majority.
+
+For the moment the analogy between Poland and pre-war Austria ends here because the President of the Republic in Poland acted not upon a formal constitutional amendment, but a series of legal pronouncements that have dubious constitutional underpinnings. They include resolutions of the Sejm adopted at night of 26 and 27 November 2015 which aim to annul the election of 5 judges by the former Sejm, and the amendment of the Constitutional Tribunal Act of 19 November 2015 which has not yet came into force but already served as a basis of the appointment of 5 judges by the present Sejm. Their nomination and election took place on 2 December 2015. Notably, the President took the oath from 4 judges already on 3 December 2015, at dawn, before the Constitutional Tribunal render its judgment on the partial constitutionality of the Constitutional Tribunal Act, the legal basis on which the outgoing Sejm appointed “its” judges.
+
+The Constitutional Tribunal found that the transitionary provisions of the Constitutional Tribunal Act which allowed for appointment of 5 judges of the Constitutional Tribunal by the outgoing Sejm before the 9-year individual term of 5 judges expired on 6 November, 2 December and 9 December was unconstitutional only with respect to 2 judges appointed for the seats vacated in December.[i] In the remaining scope the transitionary provisions were constitutional as they were meant to enable the Constitutional Tribunal to operate in its full capacity of 15 judges notwithstanding the parliamentary elections. Note also that the Constitutional Tribunal decided this case by a panel of 5 judges because it lacked the capacity to sit in the full bench. Out of 15 judges, 4 have already ended their term, and the Chief Justice and the Vice-Presidents of the Court excluded themselves from this proceedings for the reason that they have officially consulted the drafting of the challenged Act in the previous term of the Parliament.
+
+The reminiscence of constitutional changes happening overnight is certainly very gloomy. The Constitutional Tribunal in the opinion of Justice Zubik (one of the rapporteurs) was very clear that negligent destabilization of the constitutional system devastates the efforts of sovereign people who have been building it for decades. The Constitutional Tribunal also held that the provision of the Act regarding the oath needs to be read as the obligation of the President to take the oath from judges appointed by the Sejm without any delay. In case of doubts as to the constitutionality of the act in pursuance to which the judges were appointed the President should have initiated the proceedings of constitutional review. In absence of such action, there was a presumption of constitutionality of the law which could be rebutted only and exclusively by the Constitutional Tribunal.
+
+The remaining question is how (by which constitutional organ) this judgment of the Constitutional Tribunal will be executed. There are currently 20 judges – 11 are current members of the Constitutional Tribunal; 5 judges have been appointed, although the election of 2 was deemed unconstitutional; and 5 additional judges have been recently selected, among whom 4 were already sworn. According to the Constitution Tribunal, one becomes a judge of the Constitutional Tribunal at the moment of appointment, however, the official capacity of a judge is acquired upon taking the oath. Therefore, the procedure of selection of judges who would be formally eligible to adjudicate has not been completed. For that same reason the Constitutional Tribunal found possibility to review transitionary provisions of the Constitutional Tribunal Act that could be otherwise considered as “consumed” by the act of selection of judges by the outgoing Sejm. The fact that the procedure of selection was not completed by taking the oath allowed the Tribunal to review these norms as Judge Kieres lucidly explained.
+
+Next week the Constitutional Tribunal will decide on the constitutionality of the amended Act of 19 November 2015 in pursuance to which the additional 5 judges were recently elected and sworn. It needs to be emphasized that the Constitutional Tribunal may only rule the law upon which the Sejm pursued the selection unconstitutional. Its ruling does not invalidate judicial appointments as such. It is far from clear which procedure should be used to extinct the term in office of any of them, or whether they have any legal remedy to claim their instatement, remuneration, and status-related benefits.
+
+One could wonder what the reasons and causes of such dramatic developments are. This question relates to area of interest of the Facebook group “Why We Study Eastern Europe”? To my mind, the reasons why to study Eastern Europe, and why such unprecedented constitutional events happen in this region are historic. This is the region where democracy is 25 years old, but there are still no solid rule of law traditions that would lay foundations not only to the democratic government, but to the idea of the state, statehood, and statesmen and stateswomen who could raise above the narrow interest of one’s political group and seek compromise for the common good. In Poland 123 years of servitude under the foreign rule, and 50 years of Communism have just petrified the feeling that the state is not “ours.” Instead the rhetoric of Nation, and the Nationhood is something inherited and understood as the concept that prevails over the law.
+
+[i] Jugdment of 3 December 2015, Case no. K 34/15, available at: http://trybunal.gov.pl/

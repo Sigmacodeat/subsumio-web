@@ -1,0 +1,65 @@
+---
+title: Verfassungsblog — Rejecting Lip Service or Validating 1930s Family Values?
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2024-03-27'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/rejecting-lip-service/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Rejecting Lip Service or Validating 1930s Family Values?
+
+On 8th March 2024, the Irish people rejected two separate constitutional referendums on family and care in an overwhelming no vote. These amendments aimed to update a conservative and gendered ideal of family found in Article 41. The rejection of both amendments reverses a voting trend towards a more socially inclusive Ireland seen by overwhelming yes votes for constitutional changes to allow abortion rights in 2018 and equal marriage rights in 2015. But in these previous referendums the constitution presented a clear barrier to immediate legal reforms. The family and care referendums involved more abstract statements of directive constitutional values. The result of the referendums is a win for voter confusion, anger towards the government and the NoNo campaign. It is also a loss for political constitutionalism.
+
+## A remnant of 1930s Catholic values
+
+Article 41 of Bunreacht na hÉireann, recognises the family as the fundamental basis of Irish society and requires the state to protect the family in its constitution and authority. The Article reflects 1930s Catholic values, limiting the definition of the family to that based on marriage. This understanding of the marital family is one with clear gendered roles; Article 41.2 recognises the value of the life of women within the home and requires the state to “endeavour to ensure that mothers shall not be obliged by economic necessity to engage in labour to the neglect of the duties in the home”. Article 41.3 further requires the state to protect the institution of marriage “from attack”. In its original form, Article 41.3 prohibited the legalisation of divorce.
+
+Article 41 had already been the subject of four referendums including two highly divisive divorce referendums. In 1986, the Irish people voted to retain the constitutional ban on divorce by 63%, rejecting a proposal to introduce no-fault divorce. Following extensive family law reform, in 1995 a second referendum to introduce divorce was passed by a tiny margin of 50.28% of Irish voters. A third divorce referendum in 2019 to liberalise divorce by removing the constitutional requirement to live apart for a mandatory separation period was passed by 82% of Irish Voters. These referendums were necessary to allow modern divorce legislation to be introduced, reflecting a major change in Irish culture where marital breakdown was an accepted reality and provision for remarriage was desirable. In 2015, Article 41 was amended to allow for same sex marriage. These progressive changes to reflect the modern realities of marriage sit uncomfortably with the anachronistic value statements about women’s “duties in the home”.
+
+## Who is deserving of constitutional “family” status?
+
+The Family Amendment proposed recognition of the family “whether founded on marriage on or other durable relationships”. It retained the State obligation to protect marriage against attack creating a new social value hierarchy in which a broader range of relationships were recognised and valued as families, but marriage was still special. It was rejected by 67% of voters.
+
+The Irish Supreme Court has repeatedly held that non-marital families are not recognised under the constitution (most recently in the O’Meara decision in late January) and moreover that giving constitutional protection to non-marital families is not compatible with the constitutional requirement to protect marriage (Nicolaou v Ireland (1966) and McD v L (2009)). Article 41 fails to recognise the growing numbers of cohabiting families and single parents in Ireland and dates from an era when such relationships were socially vilified. Ireland has only started coming to terms with a past where single mothers were forcibly separated from their children by the state because such relationships were not viewed as family. This constitutional pedestaling of marriage caused delays in the modernisation of Irish family law, perceived as a legal obstacle to statutory protection for cohabitants and to the equal treatment of children regardless of the marital status of their parents.
+
+The idea of extending the constitutional understanding of the family beyond marriage had been suggested by multiple constitutional review groups since the 1990s but rejected as too socially divisive. Less controversial workarounds were introduced. The Children’s Rights Referendum in 2012 ensured that children were treated equally in adoption and child protection proceedings. The Civil Partnership and Certain Rights and Obligations of Cohabitants Act 2010 provides some financial protection for cohabitants on relationship breakdown. The Supreme Court recently held in O’Meara that non-marital families cannot be subject to arbitrary and capricious discrimination. These reforms work around a constitutional myopia of the reality of family life that does not give such families moral constitutional value as a fundamental basis of Irish society.
+
+The term “durable relationships” within the Family Amendment caused huge voter confusion. It was chosen by government to ensure that transient relationships were not given constitutional protection and had been considered by the Irish Supreme Court in relation to the Citizenship Directive to mean a relationship which has continued for some time and to which the parties are committed. It had never been considered in relation to parent/child relationships.
+
+## How should care be valued in the constitution?
+
+The care referendum was intended to address criticisms by United Nations treaty monitoring bodies that Article 41.2 perpetuated gender stereotypes. The Care Amendment sought to remove Article 41.2 entirely and replace it with Article 42B: “The State recognises that the provision of care, by members of a family to one another by reason of the bonds that exist among them, gives to Society a support without which the common good cannot be achieved, and shall strive to support such provision.” The amendment reframed women’s duties in the home as care work. It was rejected by 73% of voters.
+
+Article 41.2 is justiciable but functions more like a directive principle of social policy rather than a socio-economic right. It had never provided useful economic support for women. The Irish courts rejected legislation to give property rights in the family home to married women as an unwarranted intrusion into the authority of the marital family and had called the wording of Article 41.2 “weak”. However, Irish courts have always been very reluctant to make the state take positive action to vindicate constitutional rights because of how the separation of powers doctrine has been constructed.
+
+The Citizen’s Assembly had voted in favour of gender-neutral wording but also stronger obligations on the state to support “care” within families and more broadly within Irish society. This was an attempt to create stronger justiciable socio-economic rights for carers. The final government decision to limit the Care Amendment to care within the family caused great disappointment. The new requirement to “strive to support” such care, while arguably placing a greater duty on the state as a directive principle was not a meaningful entrenchment of socio-economic rights.
+
+## Voter confusion: YesYes, NoNo, or YesNo?
+
+The three referendum campaigns represented divisions in Irish society as to whether the new wording was merely a directive principle or had the potential for meaningful legal change and whether the new constitutional values were already reflected in Irish culture.
+
+The YesYes campaign, supported by all major political parties and Civil Society groups, focused on the need for the constitution to reflect the current values of modern Ireland by broadening the definition of family to include single parents and cohabitants and the need for gender neutral language to value the care done in families by men and women. They promoted the value of political constitutionalism.
+
+The NoNo campaign, spearheaded by Senator Micheal McDowell and supported by the social conservative political party Aontu, the Irish Catholic Bishops and trans exclusionary conservative feminist groups such as the Countess argued that the new wording did not reflect the current values of modern Ireland and would bring about unpredictable legal changes in family law, inheritance and immigration. Such groups argued that removal of Article 41.2 would erase mothers from the constitution and leave their societal contribution unacknowledged.
+
+The YesNo campaign argued that the care referendum did not go far enough to provide justiciable rights and that the ableist framing was a step backward for Irish social values. Free Legal Advice Centres issued a statement that the new wording gave effect to a stereotype of disabled people as the subject of family care rather than autonomous rights holders. YesNo campaigners further argued that the wording risked infringing the rights of disabled people by placing the burden of care on the family rather than the state. Many YesNo supporters lamented the conflict between women’s rights and the rights of disabled people created by the wording and wanted the option of simply removing Article 41.2. In response to public challenge over the government’s poor track record on providing support for disabled people Taoiseach (head of government) Leo Varadkar committed to ratifying the optional protocol for the UN Convention on the Rights of People with Disabilities during the term of government.
+
+Early polling suggested a YesYes victory but by the week of the referendum many voters remained confused about the issues and unsure how to vote. A last minute leak of the Attorney General’s fuelled public confusion and outrage. This advice warned that it was unclear how the courts would interpret the obligation “to strive” and that this could result in litigation by carers and disabled people and significant financial implications for the State. The turnout for the family and care referendums was 44.36%, considerably lower than for the abortion referendum in 2018 (66.4%) and the marriage equality referendum in 2015 (61%) or any of the divorce referendums (61% in 1986, 62% in 1995 and 51% in 2019).
+
+## Beyond constitutional symbolism
+
+The government failed to run a decent public legal education campaign about the need for the constitutional changes and their likely effect. Were the changes offered as mere updates to directive social policy or were they supposed to effect meaningful legal change? Were they attempts to shift Irish social values or to reflect shifts that had already happened? Many rejected the changes as “woke lip service” that did nothing tangible to support families, carers or disabled people. Political constitutionalism was not enough. Deeply conservative and religious views re-emerged suggesting that Irish society is not as socially progressive as we like to think when it comes to traditional families and gender roles. Although the referendums followed lengthy consultative processes, a Citizens’ Assembly and a Joint Oireachtas Committee on Gender Equality and a final public consultation, they felt rushed. Article 41 is very unlikely to be revisited any time soon with political parties already distancing themselves from future referendums on these issues. In the aftermath, Taoiseach Leo Varadkar has resigned from office.
+
+Irish family law already regulates intimate relationships between adults that are not based on marriage, and parent-child relationships. Valuing such families within the constitution is important legal symbolism reflecting the modernisation work that had already been done and acknowledging a shift in Irish social culture away from shame and stigma for non-martial families but was seen by many as redundant.
+
+The changes to Article 41.2 were rejected because there was no consensus about how care work should be valued in Irish society. Should our constitutional values reflect the reality that this work is mostly done by women or set a gender-neutral aspiration that this work should be shared? Is “care” even the best way of understanding reproductive labour?
+
+Disability rights to autonomy outside the family need to be clearly separated from acknowledging labour such as child rearing which most appropriately happens in families. It is hoped that the public pressure on the Government to properly support the rights of disabled people will continue. But it is not clear that constitutional values are the best way to do so.

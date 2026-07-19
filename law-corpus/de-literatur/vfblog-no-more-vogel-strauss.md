@@ -1,0 +1,79 @@
+---
+title: Verfassungsblog — No More Vogel-Strauß
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2024-04-19'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/no-more-vogel-strauss/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# No More Vogel-Strauß
+
+Die Eizellspende ist in Deutschland seit 1990 ausdrücklich und ausnahmslos verboten – strafbewehrt. Vorstöße aus Wissenschaft und Politik, das Verbot zu kippen, gab es in den vergangenen Jahren immer wieder; geändert hat sich bisher nichts.
+
+Erfreulich ist vor diesem Hintergrund, dass die von der Bundesregierung Anfang 2023 eingesetzte interdisziplinäre „Kommission zur Reproduktiven Selbstbestimmung und Fortpflanzungsmedizin“ in ihrem am 15. April vorgelegten Bericht zumindest zu dem Ergebnis kommt: Das Verbot der Eizellspende ist verfassungsrechtlich nicht geboten (ebd., S. 551). Das aber geht nicht weit genug, denn: Das bestehende Verbot ist verfassungsrechtlich – auch unter Berücksichtigung des dem Gesetzgeber zustehenden Spielraums – nicht haltbar. Die Eizellspende muss demnach zugelassen werden.
+
+## Konstellationen der Eizellspende
+
+Wenn im Folgenden von einer „Eizellspende“ die Rede ist, können sich dahinter verschiedene Konstellationen verbergen. Gemein ist ihnen, dass eine Frau ihre Eizelle hergibt, um mit dieser bei einer anderen Frau eine Schwangerschaft herbeizuführen. Der statistisch vermutlich häufigste Fall ist dabei jener, in dem die eine Frau ihre Eizelle als „echte“ Spende abgibt, also insbesondere keine rechtliche und soziale Elternrolle anstrebt. Die soziale und rechtliche Elternschaft des Kindes einzunehmen wünscht vielmehr die Empfängerin der Spende, also die das Kind später gebärende Frau. Ganz anders motiviert sind die Beteiligten etwa im Fall der „reziproken Spende“ innerhalb einer lesbischen Partnerschaft; hier gibt die Frau ihre Eizelle als „Spenderin“ her, damit mit dieser bei ihrer Partnerin eine Schwangerschaft eintreten kann. Anders als bei der echten Spende möchten in diesem Fall beide Frauen die rechtliche und soziale Elternschaft für das später geborene Kind übernehmen (die Kommission ordnet diese Konstellation der Gruppe der „nicht rein fremdnützige Eizellspende“ zu, siehe Bericht, S. 602).
+
+Bestraft wird nach den einschlägigen Vorschriften des Embryonenschutzgesetztes (ESchG) unter anderem, wer auf eine Frau eine fremde, d. h. von einer anderen Frau stammende unbefruchtete Eizelle überträgt (§ 1 Abs. 1 Nr. 1 EschG) oder wer die Eizelle einer Frau künstlich befruchtet, um eine Schwangerschaft bei einer anderen Frau einzuleiten (vgl. § 1 Abs. 1 Nr. 2 EschG). Sowohl die Empfängerin als auch die Spenderin der Eizelle werden strafrechtlich nicht belangt (§ 1 Abs. 3 Nr. 1 EschG).
+
+Gewichtigste Maßstäbe bei der verfassungsrechtlichen Beurteilung des Verbots der Eizellspende sind die grundrechtlichen Freiheiten der Wunschmutter sowie jene des aus der Eizellspende ggfs. hervorgehenden Kindes; ebenfalls besonders zu berücksichtigen sind die freiheitlich geschützten Positionen der Eizellspenderin (zu weiteren im Kontext der Eizellspende ggfs. relevanten, verfassungsrechtlich geschützten Gütern siehe Bericht, S. 556).
+
+## Schwerwiegender Eingriff in die Fortpflanzungsfreiheit der Wunschmutter
+
+Nach hier vertretener Auffassung kann sich die Wunschmutter bezüglich ihres Wunsches, mittels einer Eizellspende Mutter eines Kindes zu werden, auf die im Allgemeinen Persönlichkeitsrecht (Art. 2 Abs. 1 i.V.m. Art. 1 Abs. 1 GG) zu verortende „Freiheit zur Nutzung verfügbaren Fortpflanzungspotentials“ stützen (ausführlich dazu bereits Klein, S. 58 ff.). Eingriffe in dieses Grundrecht können wegen des höchstpersönlichen Charakters der Entscheidung für oder gegen ein Leben mit Kind ausschließlich mit dem Schutz kollidierender Grundrechte Dritter oder anderer Werte mit Verfassungsrang gerechtfertigt werden.
+
+Der mit dem Verbot der Eizellspende einhergehende Eingriff in die grundrechtliche Freiheit der Wunschmutter wiegt schwer. So stellt auch die Kommission fest: „In psychologisch orientierten Analysen zu den Anforderungen und Belastungen ungewollter Kinderlosigkeit wurde festgestellt, dass diese zu den gravierendsten Lebensereignissen gehört, welche einer Person widerfahren können“ (Bericht, S. 444).“
+
+## &#8230; zum Wohle des Kindes I
+
+Zur Begründung des Verbots führte der Gesetzgeber des Jahres 1990 aus, dass „keine Erkenntnisse darüber vor[liegen], wie junge Menschen – etwa in der Pubertätszeit – seelisch den Umstand zu verarbeiten vermögen, dass ihre Existenz gleichsam durch eine genetische, wie eine plazentale Mutter bedingt ist. Unter diesen Umständen liege die Annahme nahe, dass die Identitätsfindung des Kindes wesentlich erschwert werde.“
+
+Festzuhalten ist zunächst: Der vom Gesetzgeber mit dem Verbot verfolgte Schutz des Wohls des (nicht) künftigen Kindes als Ausprägung dessen allgemeinen Persönlichkeitsrechts (Art. 2 Abs. 1 i. V. m. Art. 1 Abs. 1 GG) und verstanden als das „was jedes Kind für eine gesunde Entwicklung braucht“ (Bericht, S. 546), stellt – jedenfalls grundsätzlich – ein legitimes Ziel zur Rechtfertigung von Eingriffen in Grundrechte Dritter dar.
+
+Geht es um das Verbot der Eizellspende, kann das Kindeswohl jedoch nicht dazu dienen, etwaige Eingriffe in Grundrechte Dritter zu rechtfertigen. Dem liegt die simple wie überzeugende Einschätzung zugrunde, dass das vom Gesetzgeber zum vermeintlichen Schutz des Kindes eingesetzte Mittel – die Verhinderung der Existenz des Kindes – normativ betrachtet kein geeignetes Mittel zu dessen Schutz, vielmehr widersprüchlich und diskriminierend ist (dazu bereits Klein, S. 205 ff.; vgl. auch Sacksofsky, in: Merkur 859 (2020), 32 ff., 38: „Die Annahme aber, dass ein Leben mit Leid schlechter ist als gar kein Leben, ist ein prinzipiell unzulässiges Argument“).
+
+## …zum Wohle des Kindes II
+
+Darüber hinaus folgt aus der empirischen Forschung zu nach Ei- bzw. Gametenspende geborenen Kindern, dass das geltende Verbot zum Schutze des Wohls des künftigen Kindes nicht erforderlich, jedenfalls aber unangemessen ist.
+
+Vorwegzuschicken ist, dass eine (normative) Gefährdung des Kindeswohls von vorneherein (die Gefahr von) Beeinträchtigungen voraussetzt, die „keinem Kind zugemutet werden dürften“ (Bericht, S. 546; sog. „negativer Standard“ in Abgrenzung zum – stets ein individuelles Kind voraussetzenden – „positiven Standard“). Derartige Gefährdungen lassen sich aus mittlerweile vorliegender Forschung allerdings nicht ableiten.
+
+Die Studienlage zu nach Eizellspende geborenen Kindern mag vor allem quantitativ nach wie vor nicht umfassend sein. Vorliegende Ergebnisse (siehe dazu Bericht, S. 455 ff.). weisen aber klar darauf hin, dass nach Ei- bzw. Gametenspende geborene Kinder aufgrund der bloßen Tatsache, dass sie mittels einer Spende gezeugt wurden, nicht per se in ihrer Persönlichkeitsentwicklung beeinträchtigt werden. Zudem zeigt die Forschung deutlich, dass sich etwaigen Beeinträchtigungen vorbeugen lässt, indem die Eltern die Zeugung mittels Spende gegenüber dem Kind frühzeitig offenlegen. Zurecht bezeichnet deshalb auch die Kommission die Befürchtungen des Gesetzgebers als „überholt“ (Bericht, S. 553). Nicht unterschätzt werden darf auch, dass es sich bei Kindern, die mittels einer Gametenspende gezeugt wurden, stets um Wunschkinder handelt (so auch der Bericht, S. 581).
+
+Dies zugrundelegend, wird man das Verbot der Eizellspende auch dann als verfassungswidrig ansehen müssen, wenn man die Freiheit der Wunschmutter, ihren Kinderwunsch mittels einer Eizellspende zu verwirklichen, anders als hier dem Schutzbereich des Art. 6 Abs. 2 Satz 1 GG unterstellt. Zu einem anderen Ergebnis kommt man möglicherweise, wenn man die Freiheit der Wunschmutter (nur) als Teilgehalt der Allgemeinen Handlungsfreiheit (Art. 2 Abs. 1 GG) begreift (so und ausdrücklich gegen eine Verortung im Allgemeinen Persönlichkeitsrecht Sacksofsky, in: Merkur 859 (2020), 32 ff., 38 f.).
+
+Auch andere betroffene Grundrechte können den mit dem Verbot verbundenen Eingriff in die Freiheit der Wunschmutter aktuell nicht rechtfertigen. Dies gilt insbesondere trotz etwaiger psychologischer, psycho-sozialer oder medizinischer Risiken für das Kind, die Wunschmutter oder die Eizellspenderin (Schutzdimension des Art. 2 Abs. 2 Satz 1 GG; zu den verschiedenen Risiken siehe Bericht, S. 452 ff.), zumal es sich in Bezug auf Wunschmutter und Spenderin um einen oktroyierten Selbstschutz handeln würde (siehe auch Bericht, S. 554).
+
+## Reproduktionstourismus eindämmen
+
+Auch der in der Praxis zu verzeichnende „Reproduktionstourismus“ spricht dafür, das Verbot der Eizellspende aufzuheben: Frauen oder Paare, die eine Eizellspende in Anspruch nehmen möchte, bereise das (europäische) Ausland und lassen die Schwangerschaft dort einleiten. Denn die Eizellspende ist mittlerweile in fast allen europäischen Ländern erlaubt. Dabei besteht in der Mehrzahl dieser Länder die Möglichkeit, die Eizellspende anonym vorzunehmen (zum Ganzen S. 479 ff. des Berichts). Nimmt man aber das Recht des künftigen Kindes auf Kenntnis seiner eigenen Abstammung (Art. 2 Abs. 1 i. V. m. Art. 1 Abs. 1 GG; hierzu sogleich) auch jenseits formal-juristischer Bindungen ernst, spricht alles dafür, die Zahl der im Ausland durchgeführten Behandlungen durch eine (nicht anonymisierte) Zulassung der Eizellspende in Deutschland zu verringern; dies auch, um die Frage der Fortpflanzung nicht noch mehr von der ökonomischen Situation der Wunscheltern abhängig zu machen.
+
+## Ungleichbehandlung von Ei- und Samenzellspende
+
+Anders als die Eizellspende ist die Samenspende in Deutschland erlaubt. Einen Verstoß gegen die Gehalte aus Art. 3 GG kann die Kommission trotz dieser unterschiedlichen Rechtslage nicht feststellen (Bericht, S. 557 f.). Im Hinblick auf Art. 3 Abs. 1 GG wenig überzeugt dabei die Auffassung, wonach fraglich sei, ob die Verfahren der Samen- und der Eizellspende „mit Blick auf die spendende Person tatsächlich vergleichbar in dem Sinne sind, dass sie wesentlich gleiche Sachverhalte darstellen“ (Bericht, S. 557). Der „körperliche Aufwand jedenfalls“ sei im Fall der Samenspende „deutlich geringer“ als bei der Eizellspende (ebd.). Letzteres trifft zwar zweifelsohne zu. Aus dieser Sachlage aber den normativen Schluss zu ziehen, es handele sich womöglich nicht um wesentlich gleiche Sachverhalte, ist angesichts der insgesamt niedrigen medizinischen Risiken bei der Abgabe einer Eizellspende verfehlt und wäre oktroyierter Selbstschutz der Spenderin (s. o.) durch die Hintertür.
+
+Ungeachtet dessen muss man selbstverständlich zur Kenntnis nehmen, dass nur die biologische Mutter-, nicht aber die biologische Vaterschaft im Sinne einer „körperlichen“ (plazentalen) und einer genetischen Mutterschaft auseinanderfallen kann. Die aktuelle Ungleichbehandlung zwischen der Samen- und der Eizellspende lässt sich aber auch mit diesem Befund nicht rechtfertigen. Denn ebenso wie bei der freiheitsrechtlichen Beurteilung des Verbots gilt auch hier, dass die befürchteten Identitätsfindungsstörungen des nach einer Eizellspende geborenen Kindes – auch im Vergleich zu nach einem nach einer Samenzellspende geborenen Kind (s. o.) – eine bloße Fantasie bleibt.
+
+Zu suchen ist der Grund für die Ungleichbehandlung zwischen Samen- und Eizellspende vermutlich im rein gesellschafspolitischen Bereich. Gemeinsam ist beiden Formen der Gametenspende, dass die genetische und die (gewollte) rechtlich-soziale Elternschaft auseinanderfallen. Doch während in Bezug auf eine auf der normativen Idealvorstellung einer Ehe gründenden (sozialen und rechtlichen) Elternschaft schon 1990 hinlänglich bekannt gewesen sein dürfte, dass genetische und rechtlich-soziale Vaterschaft auseinanderfallen können (die berühmten „Kuckuckskinder“), war die mit der Technik der Eizellspende geschaffene Möglichkeit der „gespaltenen“ Mutterschaft seinerzeit ein Novum. Hinzu kommt, dass die Eizellspende durch die unbedingt erforderliche medizinisch-technische Assistenz stets den Bereich des Privaten verlässt und schon hierdurch eine zusätzliche Dimension aufweist, die zumindest eine gänzlich private Samenspende („Becherspende“) nicht hat. Dies und die Tatsache, dass auch die Samenspende durchaus kontrovers diskutiert wurde, mag erklären, warum der Gesetzgeber von 1990 gegenüber der Eizellspende zurückhaltend war. Die Ungleichbehandlung gegenüber der Samenspende rechtfertigt dies jedoch nicht.
+
+## Der Gesetzgeber muss Regelungen treffen
+
+Die Pflicht des Gesetzgebers erschöpft sich nicht darin, das verfassungswidrige Verbot der Eizellspende aufzuheben. Vielmehr ist er gehalten, Voraussetzungen, Verfahren und familienrechtliche Folgen einer Spende zu regeln (zu den Empfehlungen der Kommission siehe Bericht, S. 602 f.).
+
+Verfassungsrechtlich gesichert werden muss vor allem das Recht des künftigen Kindes auf Kenntnis der eigenen (genetischen) Abstammung (so auch der Bericht, S. 547). Dies impliziert auch ein Verbot, anonyme Eizellspenden im Ausland vorzunehmen (siehe auch Bericht, S. 439). Auch sollte hinreichend gewürdigt werden, wie wichtig es ist, die Zeugung mittels einer Spende gegenüber dem Kind frühzeitig offenzulegen. Dies bedeutet jedenfalls, dass die Wunschmutter vor einer Behandlung entsprechend aufgeklärt und (ggfs. auch nach der Geburt des Kindes) beraten wird; zumindest diskutiert werden sollte eine Pflicht, die Spende offenzulegen, auch, wenn eine solche Pflicht auf Grundlage der vorliegenden Forschungsergebnisse verfassungsrechtlich nicht geboten erscheint. Verpflichtet, den jeweiligen Forschungsstand zu beobachten und die Regelungen zu evaluieren, ist der Gesetzgeber ohnehin. Zu sichern ist zudem, dass die Spende freiwillig erfolgt, insbesondere einer Ausbeutung der Spenderin vorgebeugt wird.
+
+Dringend erforderlich sind auch familienrechtliche Regelungen. Diese betreffen zum einen die rechtliche Stellung der („echten“) Spenderin, die ihre Eizelle nur unter der Voraussetzung abgibt, keine Verantwortung für das mit der Spende gezeugte Kind zu übernehmen. Auch darf man sich nicht damit zufriedengeben, dass § 1591 BGB im Falle der „echten“ Spende insoweit das von allen Beteiligten gewollte Ergebnis garantiert, als die Wunschmutter als das Kind gebärende Frau stets rechtliche Mutter des Kindes ist. Regeln muss der Gesetzgeber vielmehr auch den Fall, in dem die „Spenderin“ ihre Eizelle deshalb hergibt, um auch eine rechtliche Elternstellung für das Kind zu erlangen, namentlich bei der reziproken Spende (s. o.). Nach aktueller Rechtslage ist selbst die ihre Eizelle hergebende (Ehe-) Partnerin der das Kind gebärenden Frau auf eine Adoption des – genetisch von ihr abstammenden – Kindes angewiesen; diese Rechtslage ist unhaltbar.
+
+Denkbar ist auch, dass die Eizellspenderin im Leben des Kindes eine Rolle einnehmen soll, die nicht mit der rechtlichen Elternstellung einhergeht. Gewollt sein kann beispielsweise ein Umgangsrecht. Derartige Konstellationen sollte der Gesetzgeber – soweit mit dem stets maßgeblichen Kindeswohl vereinbar – rechtliche Anerkennung verleihen. Die jüngste Entscheidung des Bundesverfassungsgerichts zur Vaterschaftsanfechtung hat ihm hierfür nicht nur weitere Leitplanken aufgezeigt, sondern auch hinreichende Freiheiten gelassen. Erfreulicherweise aufgegeben hat das Gericht darin insbesondere die lange Jahre verfolgte „Zwei-Eltern-Doktrin“ ( dazu Klein, S. 152 ff.), wonach maximal zwei Personen „Träger“ der elterlichen Verantwortung aus Art. 6 Abs. 2 Satz 1 GG sein konnten.
+
+Zu hoffen bleibt nach alledem, dass der Gesetzgeber die Gunst der Stunde nutzt und die Eizellspende – trotz der fortgeschrittenen Legislaturperiode – endlich regelt; auch das Verfassungsrecht drängt darauf.

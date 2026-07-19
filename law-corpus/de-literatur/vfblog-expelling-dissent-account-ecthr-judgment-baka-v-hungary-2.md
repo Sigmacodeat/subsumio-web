@@ -1,0 +1,56 @@
+---
+title: >-
+  Verfassungsblog — Expelling dissent: On account of the ECtHR judgment in Baka
+  v Hungary
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2014-06-03'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/expelling-dissent-account-ecthr-judgment-baka-v-hungary-2/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Expelling dissent: On account of the ECtHR judgment in Baka v Hungary
+
+The European courts have been rather active in finding Hungary in violation of European constitutional and human rights minimum standards in April and in May 2014. In the most recent judgment in this line of cases, Baka v Hungary, the ECtHR found that the last chief justice of the Hungarian Supreme Court, András Baka, had been removed from office through constitution-making before the end of his term due to his criticism of the government’s judicial reforms. In the word of the ECtHR the
+
+facts and the sequence of events in their entirety corroborate the applicant’s version of events, namely that the early termination of his mandate as President of the Supreme Court was not the result of a justified restructuring of the supreme judicial authority in Hungary, but in fact was set up on account of the views and criticisms that he had publicly expressed in his professional capacity on the legislative reforms concerned (para 96, emphasis added).
+
+Indeed, the Baka case is symptomatic of a fundamental shortcoming of Hungary’s new constitutional reality: the suppression and expulsion of dissent from the domestic political sphere. Sadly, the timing of the ECtHR’s judgment is perfect, as it comes at a time when the government is taking intense legal steps and other measures silence dissenting voices even further.
+
+The removal of András Baka from his position as the last chief justice of the Supreme Court is a fine case study in context-sensitive constitutional engineering. Hungary’s new Fundamental Law renamed the Supreme Court to its historic name, Kúria. In its very first opinion on the new Fundamental Law in July 2011 the Venice Commission requested the adoption of transitional provisions before the entry into force of the new constitution and reminded that it “should not be used as a means to put an end to the term of office of persons elected or appointed under the previous Constitution” (para 140). Originally the change of the supreme court’s name was not meant to affect the sitting chief justices, as voices close to the constitution-making process confirmed to the public in the press (see para 18). In the course of 2011, however, Baka criticized several governmental initiatives affecting the judiciary: including the structural reform of the judiciary and judicial administration, the early retirement of judges as well as the nullification of certain sentences by the force of law (paras 12 -16). Suddenly, in November 2011 (before the entry into force of the new Fundamental Law) a succession of bills were tabled in parliament (paras 18-22) amending the old Constitution, adding Transitional Provisions to the new Fundamental law and amending various legal rules on the judiciary to permit the election of a new chief justice to the Kúria. In order to ensure that Baka was not even in the running for the post, eligibility rules for chief justice were amended to require five years of professional experience, to which Baka’s 17 years on the ECtHR did not count.
+
+The restructuring of the Hungarian judiciary was followed closely by the European Commission as well as by the Council of Europe and its Venice Commission. The issue of forced early retirement of judges landed before the CJEU (C-286/12, Commission v Hungary) which found a violation of the Employment Equality Directive. The broader reform of the judiciary was a matter of discussion between the government and the Council of Europe, and the Venice Commission used rather strong wording when the Fourth Amendment to the Fundamental Law undercut the understandings reached, saying that the
+
+progress achieved through the dialogue with the Secretary General is jeopardised by the Fourth Amendment. The Fourth Amendment represents a step back … (para 71).
+
+The saga of the deposed Hungarian chief justice landed before the ECtHR because there was no domestic remedy available to contest this removal from office through constitutional reform. Consequently, the ECtHR found the violation of Article 6(1) in the case. More importantly, the ECtHR found a violation of Article 10, as in the assessment of the European judges the applicant was removed from office due to his criticism of the government. The ECtHR reminded that these critical opinions were not expressed by Baka as a private citizen: it was his legal obligation as chief justice to offer his opinion on legislation and reforms affecting the judiciary (para 99).
+
+There is no evidence to conclude that the views expressed by the applicant went beyond mere criticism from a strictly professional perspective, or that they contained gratuitous personal attacks or insults (para 100).
+
+The ECtHR emphasized in the case that
+
+issues concerning the functioning of the justice system constitute questions of public interest, the debate of which enjoys the protection of Article 10. Even if an issue under debate has political implications, this is not in itself sufficient to prevent a judge from making a statement on the matter (para 99).
+
+In the proportionality analysis the Court noted that
+
+the fear of sanction has a “chilling effect” on the exercise of freedom of expression and in particular risks discouraging judges from making critical remarks about public institutions or policies, for fear of losing their judicial office. This effect, which works to the detriment of society as a whole… (para 101).
+
+This judgment comes at a time when the Hungarian public space is undergoing major transformation to suppress opposition forces and expel dissenting voices in the era of the Fundamental Law. The parliamentary elections of April 2014 took place under an entirely new election system, which was clearly designed to maximize the votes cast for the incumbent coalition. As the OSCE’s short-term election observers noted, in the parliamentary elections of 2014 “the ruling party still enjoyed an undue advantage, including in biased media coverage.” In the new parliament the government’s tight 2/3 majority was secured by mandates which were won as a result of awarding compensatory seats to winners under the new election rules. The concept of winner-compensation was found constitutional by the Constitutional Court (3141/2014. (V. 9.) AB decision, in Hungarian). Even this way the government’s supermajority depended on one vote in the newly elected parliament. In order to ensure the government’s 2/3 majority in parliament at all times, legislators decided to depart from the long-held ideal of the speaker abstaining from voting (unless to break a tie). On June 2, 2014 parliament with a 2/3 majority amended the House Rules so as to empower the speaker to vote.
+
+Under the Fundamental Law ordinary legislation can be passed by majority vote, supermajority is only necessary to adopt and adjust cardinal laws listed in the Fundamental Law and the Fundamental Law itself. The amendment of the House Rules sends a clear message: the government is not willing to risk having to bargain or cooperate with anyone (not an independent MP, and not from the opposition) from outside its rows even on rare occasions. Being prepared for immediate constitutional reorganization, however, is a far cry from insisting on a secure majority in parliament in order to perform daily politics and legislative tasks.
+
+Within the already constricted political space civil society organizations also have to face mounting pressure from the government. With the marginalization of the parliamentary opposition the watchdog function of civil society organizations have become all the more important. NGOs became the visible in the public debate (to the extent the Hungarian media space permits), reminding the public about constitutional minimums and human rights standard, and also using freedom of information requests to ensure at least a minimal level of transparency of governmental operation. As a result of limitations on meaningful public debates on the national level, European monitoring and control mechanisms have become crucial for voicing dissent against domestic developments. Thus, it is not a surprise that in the Baka case leading Hungarian civil society organizations (the Hungarian Helsinki Committee, the Hungarian Civil Liberties Union and the Eötvös Károly Institute) acted as interveners, and were joined by the Polish Helsinki Foundation.
+
+To be sure, these NGOs have been known to frequently and successfully appear before the ECtHR for years, before the idea of the Hungarian Fundamental Law was even conceived. It was in a case brought by a Hungarian NGO when the ECtHR confirmed that civil society organizations perform a social watchdog function (TASZ v Hungary, para 27), to which access to information is vital. What has changed in the era of the Fundamental Law is that instead of performing a corrective function through public interest litigation and awareness raising campaigns, civil society organizations are increasingly undertaking key functions of dissent in matters of shared public concern, a role traditionally performed by the parliamentary opposition. Due to the transformation of the Hungarian constitutional space and public sphere, European institutions have become the fora of processing dissent expelled systematically from the domestic public debate.
+
+It is certainly not surprising that recently civil society organizations, and especially sources of their funding, have become a matter of special concern for the Hungarian government. Due to concerns about foreign interference in domestic politics the operation of the EEA/Norwegian NGO Funds has come under close scrutiny. As a foreign donor financing among others civil society watchdogs in Hungary, the Norwegian Funds are an important source of non-governmental funding for those Hungarian NGOs which take their watchdog function seriously. The government’s new eagerness in monitoring the resources of civil society organizations certainly fits the behavioral pattern of a constitutional regime which does not welcome dissent.
+
+In addition to the apparent free speech concerns which are confirmed by the ECtHR, additional concerns may be voiced from a freedom of association perspective. Note that the Hungarian government’s attempts to discipline the Norwegian Funds come at a time when the UN Special Rapporteur on freedom of assembly and association called access to financial resources “a vital part of the right to freedom of association” in her annual report to the UN Human Right Council in April 2013. More recently the special rapporteur is partnering in a two-year long project on access to resources – with funding provided by the Swedish Ministry of Foreign Affairs.

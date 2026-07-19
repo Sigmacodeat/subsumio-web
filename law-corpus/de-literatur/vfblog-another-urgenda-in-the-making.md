@@ -1,0 +1,43 @@
+---
+title: Verfassungsblog — Another Urgenda in the making
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2020-11-25'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/another-urgenda-in-the-making/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Another Urgenda in the making
+
+The landmark Urgenda decision of the Hoge Raad – the Netherlands’ Supreme Court – in 2019 paved the way for high-stakes litigation against states and governments to force them to scale up climate action. Last week in Commune de Grande Synthe I, the Conseil d’Etat – France’s highest administrative court – delivered a powerful ruling on France’s obligation to reduce greenhouse gas emissions. It is symptomatic of this new trend of enhanced environmental rights in light of climate change.
+
+Commune de Grande Synthe I sets a landmark precedent for climate litigation in France. Moreover, it could inspire other courts across Europe, including the European Court of Justice (ECJ), to pursue the way opened by Urgenda and accept more climate-related challenges.
+
+## The Conseil d’Etat’s reasoning in Commune de Grande Synthe I
+
+In Commune de Grande Synthe I, the municipality of Grande Synthe, a Northern French city next to Dunkerque (Dunkirk), and its Green mayor Damien Carême asked the government to take all measures necessary to reduce greenhouse gas (GHG) emissions and respect France’s international commitments, and to make climate change “a binding priority”. The tacit refusal of the government was challenged by the municipality of Grande Synthe and Damien Carême before the Conseil d’Etat – a classic form of remedy afforded by French administrative law, provided that the government is competent, and that the applicant is directly and personally affected by its refusal. This sets the stage for France’s first “climate litigation” case, according to the Conseil d’Etat’s rapporteur public.
+
+In this case, the Conseil d’Etat made a series of determinations that have the potential to transform French environmental and administrative law in the same manner as the Urgenda case in the Netherlands. Firstly, although it found the application of Damien Carême in personam inadmissible despite his current residence in an area exposed to climate change, the Conseil d’Etat considered that the municipality of Grande Synthe had the right to challenge the government’s tacit refusal, as its locus standi resulted from the impact of its “direct and certain” exposure to climate change, and more particularly sea rise. Besides, the Conseil d’Etat notably accepted the interventions in this case of the Paris and Grenoble municipalities, due to their “very strong” exposure to climate-related risks.
+
+The second landmark determination made by the Conseil d’Etat considered the relevant normative framework to review the legality of the government’s tacit refusal. In this respect, the Conseil d’Etat dismissed the request of making climate change “a binding priority” as unfounded. By contrast, it found that the request related to GHG emissions reductions has a strong basis in law. This results from a combined reading of International, European, and national law, which all set obligations for GHG emissions reduction. Although the Conseil d’Etat conceded that both the United Nations Framework Convention on Climate Change (UNFCC) and the Paris Agreement lack direct effect, it considered these international agreements to be relevant for the interpretation of European and national law which refer to and implement them. It noted that both the EU’s first Energy-Climate package of 2009 and second Energy-Climate package of 2018 set precise limits of GHG emissions for France (-14% for 2020 and -37% for 2030, compared to 2005). National law upholds these obligations and provides, in addition, that France should reach “climate neutrality” by 2050 and sets a “carbon budget” for every five-year-period.
+
+Based on this normative framework, the Conseil d’Etat found that the objectives of GHG emissions reductions are enforceable against the government. In this respect, it noted that France substantially exceeded its first “carbon budget” set for the period prior to 2020. It also cited the 2019 and 2020 annual reports of France’s High Council on Climate, an independent administrative body of experts. The Conseil d’Etat also pointed out that the government substantially raised by decree the ceiling of its second carbon budget for the 2019-2023 period, while postponing the bulk of the effort to the period before 2030, a pathway that, according to the Conseil d’Etat, “has never been reached until now”. This contrasts with the conclusions of the International Panel on Climate Change referred to by the Conseil d’Etat, which highlight the mounting climate-related risks at constant temperatures. The European Climate Law proposal of the European Commission is also mentioned by the Conseil d’Etat, as it would substantially increase the effort required by limiting European GHG emissions to -55% for 2030 compared to 1990 (from the previous target of -40% for 2030 compared to 1990).
+
+Yet, the Conseil d’Etat fell short of deciding on the merits of this case. Instead, it ordered further investigation by requiring the government to submit within three months evidence that its position is compatible with France’s objectives of GHG emissions reduction. Were the government to fail to justify its pathway, the Conseil d’Etat could order it to take all measures necessary to correct France’s trajectory.
+
+## European courts are getting involved in environmental protection
+
+This first ruling in Commune de Grande Synthe is part of a greater European trend of courts getting actively involved in protecting environmental rights in light of climate change. In France, it represents a breakthrough similar to the recent finding of the Constitutional Council in UIPP that the protection of the environment represents an objective of constitutional value. The Conseil d’Etat’s ruling has laid the foundation of a French Urgenda, as the Conseil d’Etat signaled its readiness to ordering the French government to take all measures necessary to comply with its climate-related commitments. By considering the GHG emission limits enforceable against the government, France’s highest administrative court also followed the example of the Hoge Raad.
+
+It is particularly striking that these supreme national courts contradict the European precedent set by the ECJ in 2011. In Air Transport Association of America et al. v Secretary of State for Energy and Climate Change, the ECJ’s grand chamber rejected the claim that the targets set by the Kyoto Protocol to the UNFCC could be relied upon for the purpose of assessing the validity of EU law, as “the parties to the protocol may comply with their obligations in the manner and at the speed upon which they agree”. Although EU law now refers extensively to the UNFCC and the Paris Agreement, and the European Climate Law will enhance the incorporation of their principles, it remains unclear whether that would be enough for the ECJ to reconsider its position.
+
+The Conseil d’Etat’s ruling may convince the ECJ to take a more open position regarding locus standi. The ECJ’s position for measures adopted by EU institutions, first spelled out in Plaumann in 1962, has long been criticized as too restrictive. However, a challenge of the municipalities of Paris, Brussels and Madrid against a Commission delegated regulation on oxides of nitrogen emissions limits has been recently admitted by the General Court and is currently being appealed before the European Court of Justice. This may be the occasion for the ECJ to adopt a reasoning similar to the Conseil d’Etat’s in Commune de Grande Synthe I.
+
+Commune de Grande Synthe I, thus, sets a landmark precedent for climate litigation in France and follows the European pathway opened by the Hoge Raad in Urgenda. Yet, the Conseil d’Etat’s ruling falls short of the Urgenda ruling. Unlike the Hoge Raad, the Conseil d’Etat shied away from referring to the European Convention of Human Rights and particularly its articles 2 and 8 (on rights to life and to privacy and family life) and, thus, did not recognize a general, enforceable right to the protection against climate change. Finally, it remains to be seen whether the Conseil d’Etat will take the last step in a forthcoming Commune de Grande Synthe II decision and order the French government to take all measures necessary to correct France’s climate pathway.

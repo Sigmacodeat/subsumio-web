@@ -1,0 +1,40 @@
+---
+title: Verfassungsblog — Transnational Partisanship vs Transnational Democracy
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2018-05-25'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/transnational-partisanship-vs-transnational-democracy/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Transnational Partisanship vs Transnational Democracy
+
+A common criticism levelled at European Parliament elections is that they are mainly national political contests. And who could disagree? European Parliament elections are usually fought by national political parties on national issues. Part of the problem is that the elections are for the most part governed by national laws: The fact that there are multiple national laws is often said to cement the national character of European Parliament elections. Many who would like to see the EU’s supranational electoral channel strengthened therefore support the creation of a more uniform electoral process.
+
+The legal basis for reforming the electoral procedure of European Parliament elections is enshrined in Article 223 of the Treaty on the Functioning of the European Union (TFEU). According to that Article, the European Parliament itself can draft a proposal for election law reform and submit it to the Council, which in turn can adopt its decision by unanimity after obtaining the consent of the Parliament. In line with this procedure, the European Parliament adopted on 11 November 2015 a resolution on the amendment of the so-called “Electoral Act” of 20 September 1976 concerning the election of the Members of the European Parliament by direct and universal suffrage.
+
+That resolution directly responds to the aforementioned concerns regarding the adverse implications of insufficiently uniform electoral rules for democracy in the EU. Its most radical, interesting and ambitious proposal is the creation of a European cross-border constituency, a transnational list of candidates from across the continent. This idea has been around for some time, and it was recently popularised by French president Emmanuel Macron, who sees transnational candidate lists as a way of raising citizens’ interest in European Parliament elections.
+
+Perhaps the strongest argument for a transnational constituency is that it makes it easier for citizens to know what they actually are voting for in European Parliament elections. Consider first that, so long as European Parliament elections are contested on a state-by-state basis, national parties have little incentive to emphasise the European dimension of their activities – for example with whom they form alliances in the European Parliament, how much voice they will have within these alliances, and what the alliances can be expected to achieve. This means that many, if not most, voters will be insufficiently aware of the EU-level consequences of their vote – which is what European Parliament elections are ultimately about. And as long as the relative gains of remaining silent over their actions in the European Parliament are greater than the losses, most parties cannot be expected to do anything about it.
+
+A cross-border constituency in which the transnational parties that already exist in the European Parliament campaign on unified European platforms would create a powerful counter-dynamic. If, for instance, EPP, S&D, ALDE, etc. formulated genuinely pan-European platforms that emphasised what they aim to achieve at the European level where they are operating, voters would be able to get a clearer idea of what European parties actually seek to do in the European Parliament – which, again, is what European Parliament elections are fundamentally about. So, Commission President Jean-Claude Juncker was definitely right when he said that transnational lists would enhance “democracy and clarity” in the EU.
+
+Despite Juncker’s endorsement, his co-partisans of the powerful European People’s Party (EPP) heavily campaigned against the proposal of transnational party lists and ultimately rejected it in the Parliament on 7 February. As observed by Votewatch.eu, one reason why the EPP is happy with the status quo of the electoral system is that “the group is the most likely to win a plurality of seats in 2019 and keep the Presidency of the European Commission after the upcoming EP elections.” Different justifications are of course offered by the EPP’s representatives. Manfred Weber, the leader of the EPP group, said that transnational lists would increase, rather than decrease, the distance between voters and their EU-level representatives. Ivan Štefanec, a Slovakian EPP MEP, cautioned moreover that the “list would probably be utilized by populist movements that would then get further visibility and capitalize on their extremist views around Europe.”
+
+Štefanec’s complaint is a bit rich coming from a grouping that tolerates, indeed protects, Viktor Orbán’s Fidesz party. But one might still wonder whether Weber has a point when he says that a transnational party group would aggravate the problem that EU-level representatives are “far away” from citizens. Would confronting voters with a list of candidates from other EU countries, on the one hand, and pan-European parties they might never have heard of, on the other, not likely increase their sense of alienation from EU politics?
+
+Evidence suggests that this challenge must be taken seriously. In an experiment about voting in a cross-border constituency, for example, Damien Bol and his colleagues could show that the presence or absence of co-nationals on the list has a great impact on voting behaviour. Many people are simply more likely to participate in a transnational election with a single list if they know the candidates and their parties from their own country. This seems to confirm Weber’s worry; but does it mean that his objection provides all-things-considered argument against transnational party lists?
+
+Probably not – at least if one accepts that voters can adapt to changing political environments and learn about political actors outside their member state, just as they can learn about new national political parties. There are likewise good reasons to doubt that the existing electoral system is doing a very good job at decreasing the distance between citizens and EU politics, given declining turnouts in European Parliament elections and an overall crisis of trust in EU institutions. So wanting to preserve the status quo, as the EPP does, makes little sense if one cares about a better representative-constituent relationship in the EU. These considerations reveal as spurious the EPP’s claim that they “want Europe to get closer to citizens,” as Weber put it.
+
+All that is left now of the original proposals for strengthening transnational democracy in the EU is a (very) modest revision of Article 3 of the Act concerning the election of the Members of the European Parliament by direct and universal suffrage. The new Article 3e(1) would accordingly state that “Member States may allow for the display, on ballot papers, of the name or logo of the European political party to which the national political party or individual candidate is affiliated.” Thus reads the relevant proposal for a Council Decision of 12 April 2018. A less ambitious effort to create a stronger link between national and EU-level politics is difficult to imagine.
+
+It may be possible to think of the EPP’s rejection of transnational party lists in European Parliament elections as itself being a powerful manifestation of the importance of transnational partisanship in the EU. As the biggest European party, the EPP can play a pivotal role in the European Parliament and in this case it has again done so. Plausibly any future attempt at reforming democracy in the EU will depend on the EPP’s assent. In this light, the common wisdom that transnational democracy requires transnational parties acquires a new, perhaps unexpected meaning.

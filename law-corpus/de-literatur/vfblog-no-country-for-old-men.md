@@ -1,0 +1,37 @@
+---
+title: Verfassungsblog — No Country for ‘Old Men’
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2021-06-15'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/no-country-for-old-men/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# No Country for ‘Old Men’
+
+On 2 June 2021, Ukraine’s President Volodymyr Zelensky submitted a bill on the status of oligarchs before the Ukrainian parliament. To ensure its swift adoption by the parliament, the President marked the legislative proposal as an urgent matter pertaining to the issue of national security. By tackling political influence of business moguls, the bill builds up on a distinct legal-political trend of recent months in Ukraine. The bill would have wide-ranging implications. It does not only provide a definition of who counts as an oligarch but also provides measures to reduce the influence of oligarchs in media and public life.
+
+## The New Bill
+
+Since the very beginning of its post-communist transformation, Ukraine has been riddled with pervasive patrimonialism and corruption on its way towards the rule of law and good governance. As claimed by many observers and political scientists, the roots of these problems lie in the entanglement of big business and politics in the country. Likewise, both major TV channels and the media market are in the grip of private interests, leading to a highly problematic influence of oligarchic interests on the formation of public opinions.
+
+President Zelensky’s bill is meant to tackle these concerns by defining and dealing with ‘excessive influence’ of powerful business in Ukrainian politics and society. The draft law envisages four criteria of ‘considerable economic or political weight in societal life’: participation in political life; considerable influence on media; owning or being a beneficiary of a large monopoly as defined by the protection of competition legislation; or owning financial assets bigger than the average monthly living wages as set up by the government annually in the beginning of a calendar year multiplied with a million (that is around 2 billions in hryvnias, the Ukrainian currency). To qualify as an oligarch, a person should meet at least 3 out of 4 criteria according to the draft law. Participation in political life is defined as being either an incumbent high-profile official (president, minister, parliamentarian etc.), belonging to the leadership of a political party, or financing the activities of a political party or of political agitation. According to Article 4 of the draft law, media is considerably influenced if someone is a beneficiary or a ‘controller’ of mass media. Insiders have already reported that these provisions are most likely to target 13 powerful business moguls in Ukraine, including former Ukrainian president Petro Poroshenko (in office: 2014-2019). Being a wealthy businessman himself, the former president was the main contester of Volodymyr Zelensky in the 2019 presidential election and currently heads a faction in the parliament.
+
+Regarding the procedure for being classified as an oligarch, the bill rests the authority to declare a person an oligarch with the National Defense and Security Council (RNBO), a body under the leadership and oversight by the President. The procedure either starts if a member of the RNBO initiates a respective motion or the Council is requested by the Cabinet of Ministers, the National Bank, the Antimonopoly Committee or the Security Service (SBU) to declare somebody an Oligarch. Whoever is declared an Oligarch shall be part of a publicly available register, compiled and administered by the RNBO. Furthermore, Article 8 of the bill requires high- and middle-profile civil servants to report contacts with oligarchs. The provision concerns a vast array of officials, ranging from the President himself to the heads of regional administrations and to ordinary judges. Whenever a public servant holds a private meeting with an oligarch or a person representing an oligarch, she is not only required to report the time and date as well as the topics discussed in the meeting to the RNBO. The declaration of contacts form will even be available at the official website of the RNBO. Though the bill does not specify a sanction for failing to submit such a declaration the bill states that such failure leads to ‘disciplinary’ liability.
+
+As to more effective and less symbolic measures, the new bill forbids oligarchs to make any donations to political parties and to buy or benefit from large-scale enterprises in the context of privatization processes. Moreover, the bill intends to limit the influence over media by powerful businessmen which is simultaneously the main reason for the legislative proposal. Finally, Article 9 of the draft law contains a procedure for getting delisted from the Oligarch register: if a person does not meet two criteria listed in Article 2 anymore, the RNBO shall delist the person from the register. This goes along with an interesting incentive since getting delisted would require powerful individuals either to sell assets in mass media or, alternatively, to step down from politics (note that media cannot be sold from one oligarch to another since the bill does not allow such transactions between two oligarchs in order to achieve an oligarch-free media landscape in the future).
+
+## A credible solution? 
+
+Though the bill might appear as a radical rupture at first glance, it builds upon a longer legal-political trend. One of its key aims is to rest the process of ‘deoligarchization’ with the RNBO and thus to insulate the fight against oligarchic influence from political pressure. The reason for this decision is quite clear. In the semi-presidential republic of Ukraine, cabinets, prime ministers, and individual ministers are constantly changing, sometimes in fundamental ways. Vesting the decision-making process with the national security bureaucrats thus might ‘save’ the process of ‘deoligarchization’ from political influence.
+
+On a different note, in recent months, President Zelensky overwhelmingly relied on the administrative capacities of RNBO to push his decisions through. This considers, for instance,  sanctioning individuals allegedly involved in smuggling, or reducing the influence of pro-Russian media. All of these decisions were developed and drafted by the RNBO and enacted by presidential degrees citing pressing national security concerns.
+
+Finally, if enacted, the effectiveness of the new law is unclear. So far, there are no actual sanctions envisaged by the legislative proposal except for (declaratory) bans to make party donations or participate in privatization. Largely, the bill’s aim is rather symbolic in that it aims to delegitimize oligarchs in public discourse. Most certainly, the new law should be supplemented with other regulatory pieces of legislation (e.g. party finance legislation) to turn it into an effective and credible piece of legislation. As Oleksiy Danilov, secretary of the RNBO pointed out, the new bill is the first in a series of 11 planned legal acts to reduce the power of oligarchs in the country. Ultimately, time will show if the new bill and these other promises withstand parliamentary scrutiny.

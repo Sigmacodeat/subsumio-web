@@ -1,0 +1,67 @@
+---
+title: Verfassungsblog — Bulgaria's Mafia State and the Failure of the CVM
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2023-06-13'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/bulgarias-mafia-state-and-the-failure-of-cvm/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Bulgaria's Mafia State and the Failure of the CVM
+
+In light of persistent rule of law challenges, Bulgaria has variously been called a “captured state”, an “autocracy”, a “mafia state”, and a “FrankenState.” Yet, recent events have brought the true extent of its governmental decay to the fore. In particular, the war between the highest-ranking prosecutors in the country, public testimonies by participants in crime syndicates implicating senior magistrates and politicians, and the brutal murders of potential witnesses against organized crime demonstrate that the line between organized crime, the judiciary, and the political apparatus is increasingly difficult to draw. Below I argue that the current escalation of Bulgaria’s rule of law crisis lays bare the European Commission’s continued mismanagement of the Cooperation and Verification Mechanism (CVM). While the mechanism was designed to help Bulgaria catch up with other Member States in the areas of the rule of law and the fight against corruption, the Commission has not only chosen to render it nearly defunct, but has also turned a blind eye to Bulgaria’s continued rule of law backsliding.
+
+## Confessions Straight from the Horse’s Mouth
+
+The War between the Two Highest-Ranking Prosecutors
+
+Bulgaria’s rule of law crisis spun out of control when Borislav Sarafov, the Head of the Investigation Department and Vice General Prosecutor of Bulgaria, publicly accused General Prosecutor Ivan Geshev of extortion, corruption, and abuses of office. Sarafov has also asked for physical protection by the Ministry of Justice because he fears for his safety, arguing Geshev is “unstable”. Moreover, Sarafov has submitted a formal complaint against Geshev to the Sofia Prosecutor’s Office, demanding an urgent investigation into a series of crimes he allegedly committed. He has also demanded the dismissal of the Vice Head of the Investigation Department Yasen Todorov before the Supreme Judicial Council (SJC). Geshev, meanwhile, has demanded disciplinary proceedings against Sarafov before the same institution.
+
+The War between Ivan Geshev and former Prime Minister Boyko Borissov
+
+Soon thereafter, on 12 May 2023, six members of SJC’s 11-member Prosecutorial College demanded Geshev’s dismissal from office, arguing “serious breaches or systematic failure to perform official duties, as well as actions that undermine the prestige of the judiciary” (Article 129(3), point 5 of Bulgaria’s Constitution). On 22 May 2023, four members of the same college submitted an additional request demanding Geshev’s dismissal on the same legal grounds, but in relation to different facts. On 12 June 2023, the SJC ultimately decided to dismiss Geshev. To many, these events provide further evidence of the political dependencies of the SJC. Not only the same Prosecutorial College had unanimously proposed Geshev as a candidate for General Prosecutor despite mass protests by Bulgarian citizens in 2019, but also the same SJC had shielded him from two much better-argued requests for his dismissal by two Ministers of Justice in 2022.
+
+It is telling that all implicated parties are threatening one another with revealing incriminating information to the public. Since a magistrate shielding someone from criminal liability commits a crime against justice (see Articles 286 and subsequent of Bulgaria’s Criminal Code), these parties are thereby incriminating themselves, too. During the sitting of SJC's Plenum on 18 May 2023, Geshev stated that if proceedings against him be opened, he would reveal information that would make some of SJC’s members “ashamed”. This, of course, begs the question why Geshev intends to make such disclosures only now after these members of the SJC demand his dismissal. Coincidentally or not, media defending his case leaked information about the alleged inexplicable wealth of direct relatives of SJC’s members.
+
+In parallel, at a press conference on 15 May 2023, Geshev complained that he was threatened with the release of further compromising information about him if he did not resign voluntarily. He also warned that it was high time to “sweep away the political trash in parliament”, implicating former Prime Minister Boyko Borissov. This threat came shortly after former EU Commissioner Mariya Gabriel from the GERB party, which formed a government with the PPDB coalition, declared she would seek Geshev’s removal from office if elected to lead. Shortly thereafter, on 30 May 2023, Bulgaria’s Prosecutor’s Office demanded that Borissov’s parliamentary immunity be lifted, so that it could charge him for money-laundering in relation to the infamous BarcelonaGate scandal. Yet, last year, when the Ministry of Interior under Kiril Petkov arrested Borissov in relation to BarcelonaGate, the Prosecutor’s Office under Geshev’s leadership refused to press charges due to lack of evidence. It appears that for years Geshev had shielded Borissov from criminal liability because BarcelonaGate emerged from the YanevaGate scandal of 2015.
+
+Crime Syndicates Implicating Senior Magistrates
+
+These public feuds took a more sinister turn when two members of crime syndicates provided testimonies to Bulgaria’s Anti-Corruption Fund and a TV station, respectively, alleging that Geshev and Sarafov are part of an organized criminal group trading in influence. These syndicates arguably control Bulgarian magistrates either by bribing them or by promising career development via the SJC or by racketeering them with kompromats. This corroborates prior testimonials concerning a network of magistrates and assistants that “create or solve” problems for Bulgarian citizens with the justice system in exchange for payment (see, for instance, the “Eight Dwarfs” scandal). One witness admits to having filmed magistrates to acquire compromising information and to have participated in arson aimed at intimidation. The other claims that the syndicate is capable of inventing and planting proof, thus framing innocent, but inconvenient people.
+
+Four Ruthless Murders
+
+May also saw the ruthless murders of four Bulgarian citizens in South Africa which Geshev was quick to dismiss as an instance of gangsters settling accounts. However, journalists from Bird, partner of the Organized Crime and Corruption Reporting Project, disclosed that one of the victims was a source who had helped Bird acquire vital evidence showing that Bulgaria's Prosecutor’s Office has been covering up the murder of Ruja Ignatova, one of FBI’s most wanted. This amounts to a crime against justice. Bird’s journalists also claim that the same victim had given a testimony about the crimes of Bulgarian law enforcement authorities to foreign services earlier this year.
+
+## The Magnitsky Effect   
+
+The current events reveal the depth of Bulgaria’s rule of law crisis and the degree to which organized crime is embedded in Bulgarian government institutions. This should be of little surprise to those who have paid attention to the dire state of Bulgaria’s rule of law over the years. Bulgarians have witnessed years of controversial law reforms, suspicious institutional behavior, complaints by victims of harassment, including judges, or illegal wiretappings evidencing crimes at the highest ranks of government and the judiciary leaked to the media, such as the YanevaGate tapes.
+
+For the first time, however, there are confessions by direct participants in the assault on Bulgaria’s rule of law. The reason why key figures of Bulgaria’s mafia state are now choosing to publicly denounce one another appears to be that the US has started to pay attention. Thus, Bulgaria is the only EU Member State which is explicitly mentioned in the United States Strategy on Countering Corruption from 2021. Moreover, in 2021 and earlier this year, the US government sanctioned key figures from Bulgaria’s autocracy for corruption under the Global Magnitsky Act, including a person who served as Minister of Finance in Borissov’s second and third government and as Vice Minister of Finance in Borissov’s first government. Earlier this year, the UK government replicated some of these sanctions under the Global Anti-Corruption Sanctions Regulations. Because Bulgaria’s Prosecutor’s Office was shielding these people from criminal liability, in early 2023, the Head of the Office of Sanctions Coordination at the US Department of State paid a visit to Bulgaria insisting on judicial reform.
+
+## CVM’s Failure under the Spotlight
+
+Regrettably, the US evinces more concern about Bulgaria’s rule of law challenges than the European Commission. This failure is both surprising and egregious in view of the  CVM. As Bulgaria (and Romania) did not fulfill the accession criteria on the rule of law, they were placed under this special mechanism.
+
+The CVM puts Bulgaria and Romania in a different position under EU law when it comes to addressing their rule of law challenges than other Members States, such as Hungary or Poland. First, the mechanism emerged from EU conditionality and reflects a self-imposed obligation on the part of the Commission to help Bulgaria (and Romania) catch up with other Member States in the area of the rule of law. Second, it allows the Commission to engage in closer monitoring and to make concrete recommendations about what reforms should be carried out to tackle corruption and organized crime, and to strengthen judicial independence and human rights. In particular, under the guidance of the Commission, Bulgaria had to fulfill six benchmarks – judicial independence, legal framework, continued reform, general corruption, high-level corruption, and organized crime.
+
+Instead of disciplining Bulgaria and encouraging meaningful in-depth reforms, the Commission consistently produced sugar-coated reports, legitimizing assaults on the rule of law as progress and ignoring long-standing challenges to Bulgaria’s rule of law (see here). The CVM neither addressed the excessive powers of the Prosecutor’s Office that are not subjected to checks and balances, nor the heavily politicized SJC, nor the persistent threats to judicial independence. It even made some of these problems worse. At one point, the Commission suggested that the Prosecutor’s Office should reform itself, and consistently praised it for self-increasing its powers (see here). Moreover,  the Commission completely ignored the complaints of judges harassed by the same criminal syndicates mentioned above (see here).
+
+## The Gradual Impairment of the CVM 
+
+Even more worrisome is the fact that the Commission has gradually impaired the CVM, perhaps to cover up its own omissions.
+
+In 2018, then Commissioner for the Rule of Law Frans Timmermans provisionally closed three out of the six benchmarks set for Bulgaria– judicial independence, legal framework, and organized crime, provoking fervent criticism by civil society. In 2019, the Commission curiously established further progress and provisionally closed the remaining three benchmarks: continued reform, high-level corruption, general corruption, despite continued rule of law backsliding. In 2020, amidst mass protests against the corruption of Borissov’s third government and General Prosecutor Ivan Geshev, the then new Commissioner for the Rule of Law Vera Jourova refused to reconsider CVM’s conclusions. This indirectly signaled the Commission’s intention to substitute the CVM with the new Rule of Law reports mechanism, throwing the former into limbo: while the CVM has not been formally terminated, no new reports have been produced for Bulgaria since 2019.
+
+Jourova’s decision is problematic for several reasons. First, the CVM and the Rule of Law reports have very different scopes and purposes. Second, the European Commission’s stubbornness to reconsider its conclusions raises concerns about the integrity and objectivity of its assessments. Third, in recent case law concerning Romania’s CVM, the CJEU held that the decision setting up the CVM is “binding” (see Joined Cases C‑83/19, C‑127/19, C‑195/19, C‑291/19, C‑355/19 and C‑397/19, para 178). By analogy, Decision 2006/929/EC setting up the CVM for Bulgaria is binding, too. As recently argued by Adelina Marini, “[b]y silently replacing the hard law CVM with the soft law [Rule of Law mechanism], the Commission is removing a conditionality without the consent of the main stakeholders of EU accession – the Member States, which are the addressee of Decisions 2006/928/EC and 2006/929/EC”.
+
+## Time for Accountability
+
+CVM’s failure is not merely a Bulgarian problem. The Commission's failure to fulfill its own self-imposed obligations under the CVM and its mishandling of Bulgaria’s rule of law crisis raises doubts whether it can adequately handle other rule of law crises, or manage future accession talks with integrity and objectivity. To this end, the Commission should take action to remedy the consequences of its flagrant omissions. A good start would be to produce a new CVM report on Bulgaria which reflects the reality on the ground.

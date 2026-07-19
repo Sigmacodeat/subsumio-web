@@ -1,0 +1,67 @@
+---
+title: Verfassungsblog — Facebook, der Hass und seine Regeln
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2021-07-24'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: https://verfassungsblog.de/facebook-der-hass-und-seine-regeln/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Facebook, der Hass und seine Regeln
+
+Seit Donnerstag verhandelt der BGH über die Grenzen der Meinungsfreiheit in sozialen Netzwerken. Konkret geht es darum, ob Facebook Inhalte löschen darf, die gegen die unternehmenseigenen Vorgaben zum Verbot von Hassrede verstoßen und in diesem Kontext auch Nutzerkonten sperren kann. Kern des Problems ist die Frage, in welchem Ausmaß Facebook und andere große soziale Netzwerke Rücksicht auf die Meinungsfreiheit ihrer Nutzer zu nehmen haben. Nach vorläufiger Auffassung des III. Zivilsenats darf Facebook auch Inhalte unterhalb der Strafbarkeitsschwelle sanktionieren. Das mag manche Verteidiger der Meinungsfreiheit verwundern und verärgern, ist in der Sache aber richtig.
+
+## Die bisherige Linie der Zivilgerichte
+
+Welche Bedeutung die aktuell durch den BGH verhandelten Fragen haben, wird erst dann vollends deutlich, wenn man sie in ihren rechtlichen Kontext einordnet: Das Regelwerk von Facebeook, bestehend aus Nutzungsbedingungen und Gemeinschaftsstandards, enthält Verhaltensanforderungen gegenüber den Nutzern, deren Verletzung das Löschen von Inhalten und das Sperren von Konten nach sich ziehen kann. Untersagt ist neben vielen anderen Kategorien in der Rubrik „anstößige Inhalte“ auch die „Hassrede“. Allein zwischen Juli und September 2020 hat Facebook nach eigenen Angaben weltweit rund 21 Millionen als Hassrede eingestufte Inhalte entfernt. In Deutschland dürfte es alljährlich zu hunderttausenden solcher Löschungen kommen. Ein kleiner Teil der von Sanktionen betroffenen Nutzer zieht vor die Zivilgerichte, um diese Maßnahmen für rechtswidrig erklärt zu wissen und ggf. ihre Rückgängigmachung zu erreichen. Erstmals ist nun der BGH mit derartigen Ansprüchen befasst.
+
+Die bisherige Entscheidungslinie der Zivilgerichte ist in weiten Teilen einheitlich: Die als AGB in das Vertragsverhältnis zwischen Facebook und seinen Nutzern einbezogenen Regeln seien so präzise zu formulieren, dass Nutzer erkennen können, welche Inhalte untersagt sind. Sanktionen dürften nur bei einem tatsächlichen Verstoß des jeweiligen Inhalts gegen diese Regeln erfolgen. Handele es sich also bei einem Inhalt gar nicht um „Hassrede“ in der Definition der Gemeinschaftsstandards, dürfe Facebook diesen Inhalt auch nicht als Hassrede entfernen. Eine solche Konstellation lag auch einem oft missverstandenen Beschluss des OLG München von 2018 zugrunde, das erklärte, Facebook dürfe „zulässige Meinungsäußerungen“ nicht von der Plattform entfernen. Gemeint ist damit zunächst nur, dass Inhalte, die mit den Gemeinschaftsstandards in Einklang stehen, nicht sanktioniert werden dürfen. Auch das sogenannte „virtuelle Hausrecht“ erlaubt Facebook keine über die ausformulierten Regeln hinausgehenden Sanktionen. Diese Punkte dürfte wohl auch der BGH so sehen.
+
+Entscheidender Punkt der Diskussion ist, dass Facebook in seinen eigenen Regeln die Grenzen des Zulässigen enger zieht als das geltende Recht. Herzstück der Überlegungen sind damit diejenigen Inhalte, die gegen Gemeinschaftsstandards verstoßen, aber von Art. 5 Abs. 1 GG geschützt werden und also strafrechtlich nicht von Relevanz sind.
+
+## Hassrede in Facebooks Gemeinschaftsstandards
+
+Hassrede – wie sie im konkreten Fall vor dem BGH verhandelt wird und häufigster Grund für durch Facebook entfernten Inhalte ist – ist ein unscharfer Begriff, der im geltenden deutschen Recht nicht durch einen eigenen Tatbestand erfasst wird. Typischerweise handelt es sich um Fälle der Beleidigung, der üblen Nachrede, der Bedrohung und der Volksverhetzung. Das Äußerungsrecht ist dabei geprägt von komplizierten, mehrstufigen Abwägungsentscheidungen und Kontextualisierungen im jeweiligen Einzelfall – eine konkrete Vorgabe zu dem, was geäußert werden darf, kann es vor diesem Hintergrund nicht enthalten.
+
+Ganz anders die Gemeinschaftsstandards von Facebook: Sie definieren Hassrede als „direkten Angriff auf Personen aufgrund geschützter Eigenschaften“ und erläutern den Begriff anhand sehr konkreter Beispielkataloge. Untersagt sind etwa „unqualifizierte Äußerungen zu oder über Schmutz, Bakterien, Krankheiten und Fäkalien“, „entmenschlichende Vergleiche“ wie die Bezeichnung von „Frauen als Haushaltsgegenstände“ sowie abwertende Äußerungen wie „Freak“ und andere Beschimpfungen.
+
+Damit verbleibt ein Spektrum von Äußerungen, die von Facebook sanktioniert werden, im öffentlichen Raum aber zulässig wären. Das entspricht der Verfassungsdogmatik: Wer einen privaten Raum betreibt, darf üblicherweise die dort geltenden Regeln aufstellen und ist dabei – anders als der Staat – nicht unmittelbar den Grundrechten verpflichtet.
+
+## Grundrechtsbindung für Facebook?
+
+Die Dualität der grundsätzlichen Freiheit der grundrechtsberechtigten nichtstaatlichen Akteure einerseits und des grundrechtsgebundenen Staates andererseits wird allerdings nicht völlig stringent durchgehalten. In bestimmten Konstellationen haben auch Private die Grundrechte staatsähnlich zu berücksichtigen, außerdem finden die Grundrechte über das Konstrukt der „mittelbaren Grundrechtswirkung“ Eingang in die Rechtsbeziehungen zwischen Privatrechtssubjekten. Ausschlaggebend ist typischerweise eine Bedrohung bürgerlicher Freiheiten durch die Machtposition eines privaten Akteurs. Aus der unbestreitbaren Bedeutung Facebooks für die gesellschaftliche Kommunikation könnte nun auf die Notwendigkeit einer staatsgleichen oder jedenfalls staatsähnlichen Grundrechtsbindung mit Blick auf die Meinungsfreiheit geschlossen werden. Gemeinschaftsstandards, die über das geltende Recht hinausgehen, wären dann unzulässig und ein Gleichlauf der internen Regeln marktmächtiger Plattformbetreiber mit Art. 5 Abs. 1 GG zwingend.
+
+Doch was sind die genauen Kriterien, um eine solche staatsgleiche Grundrechtsbindung besonders mächtiger sozialer Netzwerke bestimmen zu können? Das BVerfG war zwar mit der konkreten Frage der Grundrechtsbindung sozialer Netzwerke noch nicht befasst, hat aber in einigen Entscheidungen mögliche Kriterien jedenfalls angedeutet: Die marktbeherrschende Stellung einer Plattform könnte ebenso entscheidungserheblich sein wie ihre kommunikative Ausrichtung, der Grad der Angewiesenheit der Nutzer auf die konkrete Plattform, ihre Funktion als öffentlicher Marktplatz und schließlich ihre Übernahme von Funktionen der Daseinsvorsorge.
+
+Während die marktbeherrschende Stellung von Facebook außer Frage steht, lässt sich über alle weiteren Kriterien und deren Übertragbarkeit auf das Unternehmen streiten. Doch selbst wenn sie allesamt als erfüllt angenommen würden, bleiben die Konsequenzen unklar: Besteht eine rechtliche Notwendigkeit, daraus die Forderung nach einer völligen Kongruenz der Gemeinschaftsstandards mit der durch den Staat gezogenen Grenze der Meinungsfreiheit abzuleiten? Und wäre eine solche Schlussfolgerung – so sie denn rechtlich nicht bereits zwingend wäre – politisch sinnvoll? Im Ergebnis spricht weder das Recht für eine notwendige „Punktlandung“ der Gemeinschaftsstandards auf Art. 5 Abs. 1 GG noch wäre diese rechtspolitisch erstrebenswert. Richtig scheint ein Mittelweg der Freiheit zur Gestaltung plattformeigener Regeln innerhalb eines gewissen Rahmens, der über Art. 5 Abs. 1 GG hinausgehende Vorgaben zulässt.
+
+## Der Blick auf das BVerfG
+
+Keinesfalls bedingen verfassungsrechtliche Überlegungen und die Entscheidungen des BVerfG einen zwingenden Gleichlauf der Gemeinschaftsstandards von Facebook mit Art. 5 Abs. 1 GG. Vielmehr ließ das BVerfG ausdrücklich offen, was aus einer gesteigerten Grundrechtsbindung für ein Unternehmen wie Facebook folgen könnte. Zu kurz greift insbesondere der alleinige Blick auf das vom BVerfG in seiner Entscheidung zur politischen Meinungskundgabe auf dem Frankfurter Flughafen (sog. Fraport-Urteil) aufgestellte obiter dictum, das seitdem viel zitiert wird. Das Gericht betonte hier, die nur mittelbare Grundrechtsbindung Privater könne in gewissen Konstellationen der unmittelbaren Grundrechtsbindung des Staates nahe- oder gleichkommen und nannte ausdrücklich das (für Facebook sicher anzunehmende) Beispiel der „Bereitstellung […] der Rahmenbedingungen öffentlicher Kommunikation“. Verkürzt ist auch die Argumentation auf Grundlage zweier nur auf den ersten Blick aufschlussreicher Eilbeschlüsse des BVerfG („Flashmob“ und „III. Weg“), die bereits aufgrund der prozessualen Besonderheiten von Eilverfahren kaum als Anknüpfungspunkt für Überlegungen einer intensiveren Grundrechtsbindung sozialer Netzwerke taugen.
+
+Es liegt näher, die bisherigen Ausführungen des BVerfG dahingehend zu verstehen, dass die plattforminterne Regulierung der Kommunikation durch Unternehmen mit herausragender Marktmacht sich an Gemeinwohlzwecken zu orientieren hat. Eine derart intensivierte Grundrechtsbindung ist mit Blick auf die Bedeutung von Facebook für die gesellschaftliche Kommunikation folgerichtig.
+
+Dabei aber – das führte das BVerfG mit Blick auf die Regeln der Fraport-AG als Betreiberin des Frankfurter Flughafens in aller Deutlichkeit aus – dürfen eigene Rechte des (im Fall der Fraport AG aufgrund überwiegend öffentlicher Trägerschaft) sogar unmittelbar grundrechtsgebundenen) Privatunternehmens nicht gänzlich verdrängt werden. Beschränkungen der Meinungsfreiheit zum Schutz individueller Rechtsgüter seien ebenso zulässig wie zur Verfolgung legitimer, hinreichend gewichtiger öffentlicher Zwecke. Ausdrücklich betonte das BVerfG, die Fraport-AG könne zum Schutz der Fluggäste, Besucher und des Flugbetriebes Vorgaben zur Nutzung ihrer Flächen machen, die strenger sind als im öffentlichen Straßenraum, wenn sie dabei die Bedeutung der Meinungsfreiheit berücksichtige.
+
+Fraport-AG und Facebook dürfte insoweit gleichermaßen daran gelegen sein, durch selbstbestimmte Regeln gewisse Gefährdungen ihres Hoheitsbereiches zu vermeiden. Beim Verbot auch rechtmäßiger Hassrede in den unternehmenseigenen Standards handelt es sich um einen Schutzmechanismus für Individuen und die gesamtgesellschaftliche Kommunikation. Dass die Motivation zu derartigen Vorgaben im Kern nicht etwa demokratisch und altruistisch, sondern primär ökonomisch sein dürfte, ist zwar nicht von der Hand zu weisen, aber unerheblich.
+
+Dabei darf nicht in Vergessenheit geraten, dass gegen das Schwergewicht der Meinungsfreiheit jedenfalls auch die eigenen Grundrechte des Unternehmens in der Waagschale liegen. Auch eine gesteigerte Rücksichtnahmepflicht auf die Grundrechte der Nutzer kann nicht dazu führen, dass Eigentums- und Berufsfreiheit des Unternehmens gar keine Berücksichtigung mehr finden.
+
+Gerade bei der gezielten Diffamierung Dritter jenseits sachlicher Auseinandersetzung handelt es sich auch nicht um bloße Belästigungen: Hassrede, auch in ihrer rechtlich noch nicht relevanten Form, verdrängt nachweisbar bestimmte Gruppen aus dem gesellschaftlichen Diskurs und unterwandert damit die öffentliche Diskussion als Kernelement von Art. 5 Abs. 1 GG. Die Meinungsfreiheit bei Facebook um jeden Preis zu verteidigen, erweist sich deshalb unter Umständen als Bärendienst an eben dieser.
+
+## Regeln für die Regelsetzung
+
+Keinesfalls geht es um einen Freifahrtschein für Facebook bei der Formulierung der eigenen Standards. Das wäre weder rechtlich haltbar noch politisch wünschenswert. Eindeutige Grenzen der Gestaltung ergeben sich aus dem angesprochenen Erfordernis, legitime Gemeinwohlzwecke zu berücksichtigen. Willkürliche Regeln dürften deshalb ebenso unzulässig sein wie der gezielte Ausschluss politischer Gesinnungen. Wenn und solange das Regelwerk von Facebook nicht die Sprache subjektiver weltanschaulicher Präferenzen spricht, sondern diffamierende Äußerungen jedweder Art untersagt, sollte es dem Unternehmen aber freistehen, das auch unterhalb der Schwelle des Strafbaren zu tun.
+
+Ein solches rechtliches Ergebnis entspricht auch dem politisch Sinnvollen. Der Aufschrei im Namen der Meinungsfreiheit verliert aus dem Blick, dass diese möglicherweise durch Hassrede stärker bedroht wird als durch maßvolle Verhaltensregeln. Den zwangsläufig mit den Inhaltsmassen befassten Plattformen auch Regeln zu erlauben, die willkürfrei für einen friedlichen Diskurs sorgen, ist deshalb kein Fauxpas fehlgeleiteter Regulierungsfans.
+
+Zu kontrollieren, ob Facebook und Konsorten bei alledem innerhalb des ihnen aufgrund ihrer Machtposition vorgegebenen Rahmens bleiben, ist wiederum Aufgabe der Zivilgerichte im Rahmen der AGB-Kontrolle. An dieser Stelle ist auch Raum für Überlegungen in Richtung neuer Konstrukte wie etwa unabhängiger AGB-Zertifizierungsstellen für diskursbeherrschende Unternehmen. So ließe sich jenseits nur vereinzelter AGB-Kontrollen durch die Zivilgerichtsbarkeit Rechtssicherheit für Unternehmen und Nutzer gleichermaßen erreichen.
+
+All das ist Zukunftsmusik. Zunächst gilt es abzuwarten, wie der BGH sich in wenigen Wochen abschließend positionieren wird und welche Argumente die Richter ihrer Beurteilung zugrunde legen. Die Diskussion um die Meinungsfreiheit in sozialen Netzwerken wird aber auch durch das Urteil BGH noch lange nicht am Ende sein.

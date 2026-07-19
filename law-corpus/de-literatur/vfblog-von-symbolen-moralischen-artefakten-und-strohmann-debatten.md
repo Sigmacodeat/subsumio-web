@@ -1,0 +1,82 @@
+---
+title: Verfassungsblog — Von Symbolen, moralischen Artefakten und Strohmann-Debatten
+type: literatur
+genre: aufsatz
+jurisdiction: de
+work: Verfassungsblog
+content_scope: full
+version_date: '2025-08-14'
+retrieved_at: '2026-07-18'
+source: verfassungsblog-wp
+source_url: >-
+  https://verfassungsblog.de/von-symbolen-moralischen-artefakten-und-strohmann-debatten/
+license: >-
+  CC BY-SA 4.0 (Standard-Lizenz des Verfassungsblogs; einzelne Beiträge können
+  abweichen). Namensnennung + Share-Alike erforderlich.
+---
+
+# Von Symbolen, moralischen Artefakten und Strohmann-Debatten
+
+Zahlreiche Begriffe aus dem strafrechtlichen Fachdiskurs sind zu politischen Kampfbegriffen geworden. Als kalkuliert eingesetzte „Buzz-Words“ entfalten sie in öffentlichen Debatten symbolische Wirkung. Sie schaffen keine rechtliche Präzision, sondern dienen der moralischen Abgrenzung, politischen Mobilisierung und emotionalen Polarisierung. Das strafrechtliche Vokabular wird so zum Baukasten für Ideologieunternehmer.
+
+Strafrechtliche (Fach-)Begriffe sollen eigentlich dabei helfen, komplexe gesellschaftliche Konflikte rechtlich zu ordnen und zur sachlichen Verständigung beizutragen. Doch je intensiver sie in den politischen Debatten zirkulieren, desto mehr werden sie zu Werkzeugen der diskursiven Aufrüstung im Streit um die Deutungshoheit. Im Zentrum des Beitrags steht damit die These, dass die Rezeption strafrechtlicher Begriffe in der politischen Kommunikation (immer) weniger der sinnstiftenden Verständigung über rechtliche Themen als vielmehr dem politischen Kulturkampf dient. Drei Beispiele – „Clan-Kriminalität“, „Beleidigungen“ und der Umgang mit dem Begriff „Genozid“ – sollen zeigen, wie sich strafrechtliche Fachsprache mit politischen Agenden aufblähen lässt und welche gefährlichen Ambivalenzen daraus entstehen.
+
+## Sprache im Strafrecht und Sprache des Strafrechts
+
+Die Sprache des Strafrechts ist eine der Abgrenzung. Sie definiert den Regelbruch, buchstabiert die individuelle Schuld und benennt die angemessene Sanktion. Die systemimmanenten Anforderungen an Bestimmtheit und Kohärenz sichern die rationale Entscheidungsfindung. Als schärfstes Instrument staatlicher Verhaltenssteuerung muss das Strafrecht sich mäßigen, um seinen Platz als „letztes Mittel“ zu wahren.
+
+Genau diese Zurückhaltung erzeugt die Anschubwirkung für einen kaum steuerbaren Erwartungsdruck: Fundamentalbegriffe wie „Täter“, „Verbrechen“ und „Unrecht“ sind nicht nur Bestandteile eines präzise geordneten dogmatischen Systems, sondern auch Träger gesellschaftlicher Werte. Strafrechtliche Sachverhalte lösen regelmäßig heftige Emotionen aus. Die Fachsprache des Strafrechts versucht diese zu kanalisieren, indem sie verknappt, abstrahiert und umdeutet. Diese semantische Dichte macht die Fachsprache anfällig für Bedeutungsverschiebungen, sobald ihre Begrifflichkeiten den juristischen Kontext verlassen.
+
+## Strafrechtliche Semantik in der Politik
+
+Politische Rhetorik lebt von emotionaler Mobilisierung. Das ist weder verwerflich noch ungewöhnlich, sondern Wesenskern der Binnenlogik dieses gesellschaftlichen Teilsystems. Zugleich zieht politische Kommunikation Begriffe aus anderen Systemen in diese Mechaniken hinein: In politischen Diskursen werden strafrechtliche Termini typischerweise ihrer technischen Präzision entkleidet und systemfremd aufgeladen. Sie dienen dann als symbolische Marker und Signale, als Affektverstärker und als Legitimationsformeln für politische Positionen.
+
+Ihre Verwendung verschiebt sich dadurch vom juristischen Fach- zum rhetorischen Kampfbegriff und erzeugt doppelte Resonanz: Strafrechtliche Terminologie verleiht politischen Positionen den Anschein von Autorität. Wenn (angeblich) sogar das Recht etwas wie behauptet vorsieht, wirkt das vorgetragene Argument gewichtiger. Zum anderen mobilisiert die Strafrechtssprache den „fühligen Bauch“, suggeriert Dringlichkeit und strukturiert die Wahrnehmung gesellschaftlicher Konflikte entlang pseudo-juristischer Kategorien. Die politische Rhetorik eignet sich auf diese Weise das symbolische Kapital des Strafrechts an, allerdings nicht zu Zwecken der Rechtsanwendung, sondern zur (partei-)politischen Selbstdarstellung. Die Folgen können verheerend sein: Wird das Strafrecht als moralischer Resonanzraum politisch instrumentalisiert, verliert es seine juristische Differenziertheit zugunsten eines affektiv-manipulativen Agenda-Settings.
+
+Als jüngste Beispiele einer solchen Entlehnung drängen sich die kontrovers diskutierten Themenfelder „Clan-Kriminalität“, „Beleidigung“ und „Genozid“ auf.
+
+## „Clan-Kriminalität“ als ethnisierende Zuschreibung von Ressentiments
+
+Der Begriff der „Clan-Kriminalität“ hat sich in den vergangenen Jahren zu einem festen Topos in den innenpolitischen Debatten des Bundes und der Länder entwickelt. Die Phänomenbeschreibung wurde von politischen Akteuren rasch aufgegriffen und für Wahlkampfkampagnen munitioniert. Der Begriff suggeriert nicht nur eine bestimmte Form – zum Teil tatsächlich existenter – organisierter Kriminalität, sondern evoziert Vorstellungen von Herkunft und kultureller Fremdheit. Politische Stellungnahmen über „Clans“ operieren mit pauschalen Gesamtzuschreibungen, in denen sich Kriminalität und kulturelle Zugehörigkeit überlagern. Es werden nicht Einzelne wegen verbotener Handlungen adressiert, sondern Familien, Herkunftsgruppen oder ganze ethnische Gemeinschaften als Kollektive inkriminiert.
+
+Der Begriff ist auch deshalb ein so gutes Beispiel für eine „Entlehnung“, weil er im strafrechtlichen Kosmos im Grunde nicht einmal existiert: Das StGB kennt zwar die mittäterschaftliche Begehung (§ 25 Abs. 2 StGB), die Bande (u.a. § 244, § 260 Abs. 1 Nr. 2 StGB) und die (kriminelle oder terroristische) Vereinigung (§§ 129 ff. StGB). Der „Clan“ und das Baukastenwort der sog. „Clan-Kriminalität“ tauchen jedoch allenfalls in der kriminologischen Betrachtung bei der Erklärung systemischer Kriminalität auf, entstammen sie doch ursprünglich polizeilichen und sicherheitsbehördlichen Lagebildern und damit dem operativen Geschäft der Gefahrenabwehr. Der Begriff fungiert politisch daher auch nicht als analytische Kategorie, sondern als Chiffre für Kontrollverlust, Parallelgesellschaften und mangelnde Integrationsleistungen. Er soll sicherheitspolitische Narrative mobilisieren. Mit der Rede von der „Clan-Kriminalität“ wird ein Bedrohungsszenario entworfen, das nach außerordentlichen Maßnahmen verlangt: von verschärfter Überwachung über kriminalitätsunabhängige Vermögensabschöpfung bis hin zur Forderung nach dem Staatsbürgerschaftsentzug. Die Folge ist eine ethnisierende Kriminalitätsdebatte, in der das Strafrecht als Instrument kultureller Selbstvergewisserung für die „eigene Gruppe“ zweckentfremdet wird.
+
+## „Beleidigung“ als moralinsaure Strafrechtssemantik in polarisierten Debattenräumen
+
+Ein weiteres Beispiel für die diskursive Umcodierung strafrechtlicher Begriffe zeigt sich im Begriff der „Beleidigung“.
+
+Obwohl – oder gerade weil – er semantisch unscharf und vom volatil-porösen Rechtsgut der „Ehre“ abhängig ist, wird der Begriff der „Beleidigung“ im politischen Diskurs mehr und mehr als Kampfbegriff genutzt. In den hitzigen Auseinandersetzungen über Meinungsfreiheit, Diskriminierung und Identitätspolitik hat der Begriff eine bemerkenswerte Aufladung erfahren. In diesen Kontexten wird „Beleidigung“ häufig nicht mehr als strafrechtlich definierte Ehrverletzung nach Maßgabe des § 185 StGB verstanden, sondern als Ausdruck kollektiver Abwertung, symbolischer Gewalt oder ideologischer Aggression. Beleidigung – und das Bestehen darauf, beleidigt worden zu sein – wird zum Signal für „strukturelles Unrecht“ und für gesamtgesellschaftliche Missstände. Die strafrechtliche Dimension des Vorwurfs tritt dabei oftmals in den Hintergrund und weicht einer symbolischen Klassifikation.
+
+Die Bezugnahme auf einen strafrechtlich aufgeladenen Begriff verleiht der Kritik an Äußerungen dabei die Aura rechtlicher Legitimität, selbst wenn die Grenzen zur noch zulässigen Meinungsäußerung inhaltlich oft schwer zu bestimmen sind. Der Wunsch, moralisch zu sanktionieren, überlagert die Prüfung der Voraussetzungen des sozial-ethischen Tadels. Weitet der Gesetzgeber die Vorschriftenriege sogar noch aus (vgl. nur § 188 StGB), stärkt das diejenigen Stimmen, die zum eigenen Nutzen die Sorge der Bevölkerung vor einer Verengung des Meinungskorridors befeuern. An sich zulässige Herrschaftskritik lässt sich auf diese Weise jedenfalls leichter domestizieren, das ist den Kritikern zuzugestehen. Durch das auf offener Bühne ausgetragene Gezänk um das richtige Maß verschiebt sich die juristisch prüfbare Normverletzung jedoch zu einem politisch überformten Sanktionsanspruch der „richtigen“ gegen die „falschen“ Auffassungen.
+
+Diese Umwidmung geht nicht selten mit einer impliziten Abwertung rechtsstaatlicher Prinzipien einher. Teile des Diskurses eignen sich dabei die strafrechtliche Semantik an, ohne deren rechtsstaatliche Voraussetzungen ernsthaft einhalten zu wollen, etwa die Gewähr der Unschuldsvermutung oder die Pflicht zur Führung eines Tatnachweises. Wer auf die von Art. 5 Abs. 1 S. 1 Alt. 1 GG aufgespannte Differenzierung zwischen strafbarer Meinungsäußerung und (bloß) moralischer oder sittlicher Kränkung Dritter hinweist, gerät schnell unter den Verdacht, zu relativieren oder „Komplize“ zu sein. Der Verhältnismäßigkeitsgrundsatz (vor allem in Bezug auf strafprozessuale Zwangsmaßnahmen) erscheint manchen Stimmen nicht als rechtsstaatlicher Mindeststandard, sondern als bloßes Hindernis der umfänglichen Aufarbeitung. All dies macht den Begriff der „Beleidigung“ in der politischen Rhetorik so wirksam und dadurch so ambivalent: Er ist Anklage, Diagnose und politische Handlungsaufforderung in einem und scheint sich dem Strafrecht, dem er sich entlehnt, immer weniger verpflichtet zu fühlen.
+
+## „Genozid“ zwischen juristischer Einordnung und politischer Eskalation
+
+Der „Genozid“ gilt als crime of all crimes. Er wurde erstmals in der UN-Völkermordkonvention von 1948 rechtlich definiert und setzt das Handeln zur (Teil-)Zerstörung von nationalen, ethnischen, rassischen oder religiösen Gruppen voraus. Die verheerenden Folgen und die Verstrickung in die Entwicklungsgeschichte moderner Gesellschaften erschweren es, den Völkermord als einheitliche Deliktsform zu erfassen. Es liegen Welten zwischen der emotionslos konzipierten „Endlösung“ der nationalsozialistischen Führung mithilfe der in Osteuropa flächendeckend installierten Tötungsfabriken und dem brachialen „Griff nach der Machete“ der Schlächter von Ruanda. Zugleich eint die Ereignisse die bewusste Verletzung des zivilisatorischen Minimums.1)
+
+Die rechtliche Schwelle, die für die Anerkennung eines Völkermords überschritten werden muss, ist hoch, die Beweislast stets komplex. Vor allem das Merkmal der „Zerstörungsabsicht“ spielt eine maßgebliche Rolle. Es greift früh ein, nämlich sobald sich im Kopf des Täters der Wille zur Zerstörung einer geschützten Gruppe formiert. Gleichwohl schichtet es Taten ab, die zwar den Grad eines makro-kriminellen Gesamtunrechtszusammenhangs erfüllen, dabei aber nicht der gezielten Zerstörung einer geschützten Gruppe dienen.
+
+Trotz seiner definitorischen Enge – gerade im Vergleich zu den Verbrechen gegen die Menschlichkeit und den Kriegsverbrechen – wird der Begriff in politischen Debatten häufig vorschnell verwendet, um Gräueltaten, Massaker oder systematische Gewaltakte zu etikettieren.2) Der Vorwurf des „Genozid“ zielt dabei auf die höchste moralische Eskalationsstufe und stellt die Anklage mit der größtmöglichen Dämonisierungswirkung dar. Die Option, es anders sehen zu können (oder zu dürfen), wird komplett ausgeschaltet. Der Völkermordvorwurf entzieht sich dadurch dem egalitären Diskurs, was zu Polarisierung und zu um sich greifender Ratlosigkeit im Umgang führt.
+
+Aus der semantischen Explosionskraft speisen sich sodann diplomatische und gesellschaftspolitische Unwägbarkeiten. Wird der Vorwurf des „Genozid“ viel zu früh oder gar inflationär verwendet, droht zunächst eine Entwertung. Zwar kann er Menschlichkeitsverbrechen durch ein „Over-Labelling“ schneller in den Fokus der Weltöffentlichkeit rücken. Nicht unterschätzt werden sollten allerdings die Ernüchterung und sogar kontraproduktive „Bestätigung“ der Täter in Fällen, in denen Gerichte oder andere staatliche Behörden einem zu extensiven Verständnis des Völkermords entgegentreten und „nur“ wegen Verbrechen gegen die Menschlichkeit verurteilen. Zugleich entsteht ein bis über die Grenzen der Rationalität hinausweisender Legitimationsdruck: Wenn (vorgeblich) ein Völkermord vorliegt, erscheinen (auch militärische) Interventionen geboten. Die politische Rhetorik kann die maximale normative Schärfe eines juristischen Begriffs dadurch ohne weiteres nutzen, um eine ansonsten u.U. fragwürdige Außenpolitik zu legitimieren.
+
+## Symbolische Herrschaft auf Kosten der semantischen Erosion
+
+Die drei Beispiele zeigen unterschiedliche Modi, mit denen sich politische Akteure strafrechtliche Fachbegriffe aneignen: als Chiffre für ethnisierende Kriminalität („Clan-Kriminalität“), als moralisches Kulturkampfmittel („Beleidigung“) und als höchste Stufe politischer Schuldzuweisung („Genozid“). Gemeinsam ist den Phänomenen, dass sie sich von rechtsdogmatischer Genauigkeit loslösen, um rhetorisch wirkmächtig zu sein – regelmäßig auf Kosten der fachlichen Redlichkeit.
+
+Diese Aneignungen verändern nicht nur die politische Kommunikation, sondern wirken auch auf das Verständnis der strafrechtlichen Begriffe zurück. Wird das Strafrecht zur politischen Metaphorik, verliert es an semantischer Schärfe. Juristische Differenzierungsleistungen weichen moralischen Eindeutigkeiten. Entlehnt-deformierte Begriffe werden „zurückgespielt“, um daraus Gesetzgebungsnotwendigkeiten abzuleiten. Ein selbstabdichtender Verstärkerkreislauf aus Missverstehen und Missverständnis entsteht. Zugleich steigt der an das Strafrecht adressierte Erwartungsdruck: Es soll nicht (mehr) nur Unrecht sanktionieren, sondern Ordnung und kulturelle Einheit versprechen, Identität stiften und Geschichte bewältigen. Es droht dadurch eine Überdehnung des strafrechtlichen Denkens. Wer das Strafrecht und dessen Begriffe auf seiner Seite wähnt, der glaubt, sich auch die Deutungshoheit über „Gut“ und „Böse“ sichern zu können. Es verformt sich nach und nach zur Projektionsfläche für politische Agenden und verkommt letztlich zum Steigbügel symbolischer Herrschaft.
+
+## Zusammenfassung und Wege aus dem Fliegenglas
+
+Strafrechtliche Begriffe sind juristische Werkzeuge. Sie dienen der Beantwortung rechtlicher Fragestellungen. In der politischen Rhetorik werden sie jedoch häufig jenseits ihrer rechtsförmlichen Einbindung als Chiffren, Kampfbegriffe oder Argumentationsattrappen verwendet. Dies macht sie politisch wirksam, aber auch hochgradig ambivalent. Die politisierte Verwendung strafrechtlicher Begriffe ist dabei Ausdruck eines breit angelegten Symbolisierungsprozesses gesellschaftlicher Konflikte. Je unübersichtlicher die soziale Wirklichkeit erscheint, desto attraktiver werden vorgeblich klare Kategorien, moralisch durchtränkte Handlungsmaximen und „objektive“ Begriffe. Das Strafrecht bietet als „wert- und moralnahes“ Rechtsgebiet hierfür eine besonders anschlussfähige Sprache. Doch diese Anschlussfähigkeit ist unheilvoll: Wo die Begriffe entgrenzt werden, entgleitet ihnen nicht nur ihre Präzision; sie verlieren auch ihre Legitimität als rechtliche Kategorie. Das Autoritätsargument verkommt zum Strohmann.
+
+Die Uhren lassen sich nicht mehr zurückdrehen. Der politische Diskurs ist an neuralgischen Punkten schrill, (doppel-)moralisch und unverschämt geworden. Mit diesen neuen Gesetzmäßigkeiten müssen alle Beteiligten umgehen lernen. Politische Akteure sollten sich dabei zumindest der Schlagkraft strafrechtlicher Begriffe bewusst sein, (Straf-)Juristinnen und (Straf-)Juristen wiederum der politischen Wirkmacht ihrer Worte. Sie sind angehalten, ihre Fachterminologie besser vor Zweckentfremdung, Instrumentalisierung und Perversion zu schützen. Dafür müssen sie im Umgang mit den Begriffen trittsicher sein. Nur durch eine Sensibilität für die Sprache im Recht und das Sprechen mit dem Recht lässt sich die Entwertungsspirale der strafrechtlichen Begriffe aufhalten.
+
+ References[+]
+
+ References  
+
+ &#8593;1 Umfassend LK-StGB/Gerson, 13. Aufl. 2023, § 6 VStGB Rn. 1 ff.
+
+ &#8593;2 LK-StGB/Gerson, 13. Aufl. 2023, § 6 VStGB Rn. 25.
