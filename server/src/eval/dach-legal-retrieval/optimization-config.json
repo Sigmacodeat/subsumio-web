@@ -1,0 +1,70 @@
+{
+  "recommended": {
+    "rrf_k": 60,
+    "llm_rerank": {
+      "enabled": true,
+      "top_n_in": 25,
+      "model": "openrouter:deepseek/deepseek-chat",
+      "timeout_ms": 15000
+    },
+    "chunk_size_words": 250,
+    "chunk_overlap_words": 30,
+    "chunk_max_chars": 6000,
+    "dedup": {
+      "cosine_threshold": 0.88,
+      "max_per_page": 5
+    },
+    "court_decision_boost": {
+      "recency": 1.08,
+      "area": 1.06,
+      "court": 1.05
+    },
+    "legal_para_boost": 1.1,
+    "statute_area_boost": 1.08,
+    "compiled_truth_boost": 2.0
+  },
+  "sweep_configs": [
+    { "name": "baseline-k60" },
+    { "name": "rrf-k40", "rrfK": 40 },
+    { "name": "rrf-k50", "rrfK": 50 },
+    { "name": "rrf-k80", "rrfK": 80 },
+    { "name": "rrf-k100", "rrfK": 100 },
+    { "name": "rerank-top15", "llmRerankEnabled": true, "llmRerankTopN": 15 },
+    { "name": "rerank-top20", "llmRerankEnabled": true, "llmRerankTopN": 20 },
+    { "name": "rerank-top25", "llmRerankEnabled": true, "llmRerankTopN": 25 },
+    { "name": "rerank-top30", "llmRerankEnabled": true, "llmRerankTopN": 30 },
+    { "name": "rerank-top40", "llmRerankEnabled": true, "llmRerankTopN": 40 },
+    { "name": "dedup-cos085", "dedupCosineThreshold": 0.85 },
+    { "name": "dedup-cos090", "dedupCosineThreshold": 0.9 },
+    { "name": "dedup-cos095", "dedupCosineThreshold": 0.95 },
+    { "name": "dedup-max3", "dedupMaxPerPage": 3 },
+    { "name": "dedup-max5", "dedupMaxPerPage": 5 },
+    { "name": "dedup-max8", "dedupMaxPerPage": 8 },
+    { "name": "combo-k50-rerank25", "rrfK": 50, "llmRerankEnabled": true, "llmRerankTopN": 25 },
+    { "name": "combo-k40-rerank20", "rrfK": 40, "llmRerankEnabled": true, "llmRerankTopN": 20 },
+    {
+      "name": "combo-k50-rerank30-dedup5",
+      "rrfK": 50,
+      "llmRerankEnabled": true,
+      "llmRerankTopN": 30,
+      "dedupMaxPerPage": 5
+    }
+  ],
+  "notes": {
+    "rrf_k": "Lower K (40-50) boosts top-ranked results more — better for paragraph-level precision. Higher K (80-100) flattens contributions — better for broad recall. Default 60 is balanced.",
+    "llm_rerank_top_n": "topN=25 is the sweet spot — enough candidates for the LLM to re-order effectively without excessive token cost. topN=15 may miss relevant chunks; topN=40 dilutes with noise.",
+    "chunk_size": "250 words is optimal for legal text — dense enough for context, small enough for precise embedding matching. Smaller chunks (200) lose context; larger (300+) dilute relevance.",
+    "dedup_cosine": "0.88 is the default — higher values (0.95) preserve more near-duplicates (may help recall); lower values (0.85) collapse more aggressively (may hurt diversity).",
+    "dedup_max_per_page": "5 is the default — ensures diversity. Lower (3) may miss relevant paragraphs from the same law; higher (8) may flood results with one-law chunks."
+  },
+  "previous_results": {
+    "de_benchmark": {
+      "hit_at_5": "96.0% (without rerank) → 100.0% (with LLM rerank)",
+      "mrr": "0.842 → improved"
+    },
+    "at_benchmark": {
+      "hit_at_5": "61.7% (without rerank) → 86.7% (with LLM rerank)",
+      "mrr": "0.370 → 0.670"
+    }
+  }
+}

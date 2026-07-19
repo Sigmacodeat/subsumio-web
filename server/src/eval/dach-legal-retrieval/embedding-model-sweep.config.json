@@ -1,0 +1,48 @@
+{
+  "comment": "Embedding-Model-Sweep für DACH Legal Retrieval. Baseline = bestehende Prod-Spalte 'embedding' (kein Re-Embedding nötig). Alle Kandidaten werden auf IDENTISChem Chunk-Subset verglichen. Preise: grobe Richtwerte USD/1M Token für Kostenschätzung, vor Lauf gegen Provider-Preisliste prüfen.",
+  "subset": {
+    "max_chunks": 150000,
+    "sources_by_jurisdiction": {
+      "at": ["law-at", "law-eu"],
+      "de": ["law-de", "law-eu"]
+    }
+  },
+  "candidates": [
+    {
+      "id": "baseline-te3s-1536",
+      "column": "embedding",
+      "embeddingModel": "openrouter:openai/text-embedding-3-small",
+      "dimensions": 1536,
+      "prepare": false,
+      "price_per_mtok_usd": 0.02,
+      "note": "Aktueller Prod-Stand. Vektoren existieren bereits (nach Embedding-Backlog)."
+    },
+    {
+      "id": "te3l-3072",
+      "column": "embedding_te3l",
+      "embeddingModel": "openrouter:openai/text-embedding-3-large",
+      "dimensions": 3072,
+      "prepare": true,
+      "price_per_mtok_usd": 0.13,
+      "note": "Gleicher Provider, stärkeres Multilingual. Einfachster A/B-Test."
+    },
+    {
+      "id": "voyage3l-1024",
+      "column": "embedding_voyage3l",
+      "embeddingModel": "voyage:voyage-3-large",
+      "dimensions": 1024,
+      "prepare": true,
+      "price_per_mtok_usd": 0.18,
+      "note": "Gateway unterstützt Voyage nativ (asymmetrisch query/document)."
+    },
+    {
+      "id": "zembed1-1280",
+      "column": "embedding_ze1280",
+      "embeddingModel": "zeroentropyai:zembed-1",
+      "dimensions": 1280,
+      "prepare": true,
+      "price_per_mtok_usd": 0.1,
+      "note": "Gewinner des internen v0.36-Evals (11/20 Wins vs OpenAI 6, Voyage 4). 1280 = valider ZE-Matryoshka-Schritt."
+    }
+  ]
+}
