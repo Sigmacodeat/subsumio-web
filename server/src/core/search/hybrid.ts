@@ -2207,6 +2207,12 @@ export async function hybridSearch(
   query: string,
   opts?: HybridSearchOpts
 ): Promise<SearchResult[]> {
+  console.error(
+    "[HYBRID-SEARCH] called with llmRerank:",
+    JSON.stringify(opts?.llmRerank),
+    "limit:",
+    opts?.limit
+  );
   // v0.32.3 search-lite mode: resolve the active mode + per-key overrides
   // once at entry. Mode supplies DEFAULTS for intentWeighting, tokenBudget,
   // expansion, and searchLimit when the caller leaves those undefined.
