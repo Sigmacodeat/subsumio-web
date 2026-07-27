@@ -18,31 +18,46 @@ describe("v0.37 Lane A — defaults sweep", () => {
   test("A.0: gateway re-exports DEFAULT_EMBEDDING_MODEL + DEFAULT_EMBEDDING_DIMENSIONS", async () => {
     // CDX2-1: these were file-private const; Lane A consumers (schema
     // helpers, registry) need them exported. Importing here is the test.
+    // Asserted against ai/defaults.ts rather than a hardcoded pair, so this
+    // stays a re-export check and does not have to be edited every time the
+    // product default moves (it moved once already: ZE zembed-1@1280 →
+    // OpenAI text-embedding-3-small@1536).
     const { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } =
       await import("../src/core/ai/gateway.ts");
-    expect(DEFAULT_EMBEDDING_MODEL).toBe("zeroentropyai:zembed-1");
-    expect(DEFAULT_EMBEDDING_DIMENSIONS).toBe(1280);
+    const defaults = await import("../src/core/ai/defaults.ts");
+    expect(DEFAULT_EMBEDDING_MODEL).toBe(defaults.DEFAULT_EMBEDDING_MODEL);
+    expect(DEFAULT_EMBEDDING_DIMENSIONS).toBe(defaults.DEFAULT_EMBEDDING_DIMENSIONS);
   });
 
   test("A.0: ai/defaults.ts is the canonical source (leaf module, no SDK pulls)", async () => {
+    // The one place the literal values are pinned, so changing the shipped
+    // default stays a deliberate edit. Current default is OpenAI 1536d: the
+    // deployed corpus is embedded at 1536 and SUBSUMIO_EMBEDDING_MODEL is
+    // authoritative over DB config (see server/.env.example), so the former
+    // ZE 1280d default only produced dim mismatches on fresh installs.
     const defaults = await import("../src/core/ai/defaults.ts");
-    expect(defaults.DEFAULT_EMBEDDING_MODEL).toBe("zeroentropyai:zembed-1");
-    expect(defaults.DEFAULT_EMBEDDING_DIMENSIONS).toBe(1280);
+    expect(defaults.DEFAULT_EMBEDDING_MODEL).toBe("openrouter:openai/text-embedding-3-small");
+    expect(defaults.DEFAULT_EMBEDDING_DIMENSIONS).toBe(1536);
   });
 
-  // T-11 / T-12: registry + schema defaults track gateway constants.
-  test("A.1: getPGLiteSchema() default-args produce a vector(1280) column", async () => {
+  // T-11 / T-12: registry + schema defaults track gateway constants. Asserted
+  // against DEFAULT_EMBEDDING_DIMENSIONS so this keeps testing "the schema
+  // helpers follow the canonical default" instead of one snapshot of it.
+  test("A.1: getPGLiteSchema() default-args produce a vector(DEFAULT_DIMS) column", async () => {
     const { getPGLiteSchema } = await import("../src/core/pglite-schema.ts");
+    const { DEFAULT_EMBEDDING_DIMENSIONS } = await import("../src/core/ai/defaults.ts");
     const sql = getPGLiteSchema(); // no args — uses defaults
-    expect(sql).toContain("vector(1280)");
-    expect(sql).not.toContain("vector(1536)");
+    expect(sql).toContain(`vector(${DEFAULT_EMBEDDING_DIMENSIONS})`);
+    // No other width leaks in: 2048 is a Voyage-only override width.
+    expect(sql).not.toContain("vector(2048)");
   });
 
-  test("A.2: getPostgresSchema() default-args produce a vector(1280) column", async () => {
+  test("A.2: getPostgresSchema() default-args produce a vector(DEFAULT_DIMS) column", async () => {
     const { getPostgresSchema } = await import("../src/core/postgres-engine.ts");
+    const { DEFAULT_EMBEDDING_DIMENSIONS } = await import("../src/core/ai/defaults.ts");
     const sql = getPostgresSchema();
-    expect(sql).toContain("vector(1280)");
-    expect(sql).not.toContain("vector(1536)");
+    expect(sql).toContain(`vector(${DEFAULT_EMBEDDING_DIMENSIONS})`);
+    expect(sql).not.toContain("vector(2048)");
   });
 
   test("A.2: getPostgresSchema() with explicit args still routes the override", async () => {
@@ -53,18 +68,20 @@ describe("v0.37 Lane A — defaults sweep", () => {
     expect(sql).toContain("voyage:voyage-4-large");
   });
 
-  test("A.5: embedding-column registry builtin defaults to ZE/1280 on empty config + gateway", async () => {
+  test("A.5: embedding-column registry falls through to the canonical default on empty config + gateway", async () => {
     // The registry's resolution chain is cfg > gateway > DEFAULT. With
     // no cfg AND no gateway, it should fall through to the canonical
-    // default (ZE/1280). Reset gateway first to exercise that path.
+    // default in ai/defaults.ts. Reset gateway first to exercise that path.
     const { resetGateway } = await import("../src/core/ai/gateway.ts");
     const { getEmbeddingColumnRegistry } = await import("../src/core/search/embedding-column.ts");
+    const { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } =
+      await import("../src/core/ai/defaults.ts");
     resetGateway();
     try {
       const reg = getEmbeddingColumnRegistry({ engine: "pglite" } as any);
       expect(reg["embedding"]).toBeDefined();
-      expect(reg["embedding"].provider).toBe("zeroentropyai:zembed-1");
-      expect(reg["embedding"].dimensions).toBe(1280);
+      expect(reg["embedding"].provider).toBe(DEFAULT_EMBEDDING_MODEL);
+      expect(reg["embedding"].dimensions).toBe(DEFAULT_EMBEDDING_DIMENSIONS);
     } finally {
       // Re-apply legacy preload defaults so the rest of the file's tests
       // (and subsequent files in this shard) see a configured gateway.
@@ -272,6 +289,21 @@ describe("v0.37 Lane D.2 — embed pre-flight dim mismatch", () => {
   });
 });
 
+/**
+ * Pull the string members out of a `new Set([...])` body.
+ *
+ * These used to be asserted with a raw `body.toContain("'sync'")`, which broke
+ * the moment Prettier normalised cli.ts from single to double quotes — the
+ * entries were still there, the test just looked for the wrong quote character.
+ * Line comments are stripped first because several carry apostrophes
+ * ("skillopt's detailed HELP") that would otherwise be read as quotes.
+ */
+function setMembers(body: string): string[] {
+  return (body.replace(/\/\/[^\n]*/g, "").match(/["']([^"']+)["']/g) ?? []).map((s) =>
+    s.slice(1, -1)
+  );
+}
+
 // Lane D.4 — sync help dispatch
 describe("v0.37 Lane D.4 — sync --help dispatch", () => {
   test("CDX2-12: sync is in CLI_ONLY_SELF_HELP", async () => {
@@ -281,8 +313,7 @@ describe("v0.37 Lane D.4 — sync --help dispatch", () => {
     // Match the CLI_ONLY_SELF_HELP set definition.
     const setMatch = src.match(/const CLI_ONLY_SELF_HELP = new Set\(\[([\s\S]*?)\]\)/);
     expect(setMatch).not.toBeNull();
-    const body = setMatch![1];
-    expect(body).toContain(`'sync'`);
+    expect(setMembers(setMatch![1])).toContain("sync");
   });
 });
 
@@ -292,11 +323,11 @@ describe("v0.37 deferred TODO shipped — gbrain reinit-pglite", () => {
     const src = readFileSync(join(__dirname, "..", "src", "cli.ts"), "utf-8");
     const onlyMatch = src.match(/const CLI_ONLY = new Set\(\[([\s\S]*?)\]\)/);
     expect(onlyMatch).not.toBeNull();
-    expect(onlyMatch![1]).toContain(`'reinit-pglite'`);
+    expect(setMembers(onlyMatch![1])).toContain("reinit-pglite");
 
     const selfHelpMatch = src.match(/const CLI_ONLY_SELF_HELP = new Set\(\[([\s\S]*?)\]\)/);
     expect(selfHelpMatch).not.toBeNull();
-    expect(selfHelpMatch![1]).toContain(`'reinit-pglite'`);
+    expect(setMembers(selfHelpMatch![1])).toContain("reinit-pglite");
   });
 
   test("reinit-pglite module exports runReinitPglite", async () => {
