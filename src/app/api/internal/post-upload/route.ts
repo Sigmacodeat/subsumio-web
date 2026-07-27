@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL, enginePatchPage, engineHeadersForBrain } from "@/lib/engine";
-import { requireInternalSecret } from "@/lib/auth/internal";
+import { requireInternalSecret } from "@/lib/auth/internal-guard";
 import { NextRequest } from "next/server";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 

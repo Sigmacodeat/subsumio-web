@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireInternalSecret } from "@/lib/auth/internal";
+import { requireInternalSecret } from "@/lib/auth/internal-guard";
 import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";

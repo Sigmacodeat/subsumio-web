@@ -1,5 +1,12 @@
 import type { NextRequest } from "next/server";
-import { hit, clientIp } from "@/lib/auth/rate-limit";
+
+/**
+ * NOTE: this module is imported by `middleware.ts`, which Next compiles for the
+ * Edge runtime. It must stay free of Node-only imports (`node:fs` and friends)
+ * — `@/lib/auth/rate-limit` pulls `node:fs` for its file-backed fallback, so
+ * importing it here breaks the middleware build and 404s every route. The
+ * rate-limited guard lives in `internal-guard.ts` for exactly that reason.
+ */
 
 /**
  * Constant-time comparison of the x-internal-secret header against the
@@ -26,25 +33,4 @@ export function hasValidInternalSecret(req: NextRequest): boolean {
     diff |= presented.charCodeAt(i) ^ expected.charCodeAt(i);
   }
   return diff === 0;
-}
-
-/**
- * Rate-limited internal-secret guard for standalone routes that skip
- * createHandler entirely (no session, no RBAC, no built-in rate limit).
- * Returns a 429/401 Response to short-circuit the caller, or null when
- * the request may proceed.
- */
-export async function requireInternalSecret(req: NextRequest): Promise<Response | null> {
-  const ip = clientIp(req.headers);
-  const rate = await hit(`internal-secret:${ip}`, 30, 60_000);
-  if (!rate.ok) {
-    return Response.json(
-      { error: "rate_limited", message: "Too many requests." },
-      { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } }
-    );
-  }
-  if (!hasValidInternalSecret(req)) {
-    return Response.json({ error: "unauthorized" }, { status: 401 });
-  }
-  return null;
 }
