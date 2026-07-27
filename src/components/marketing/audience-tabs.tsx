@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import {
@@ -21,6 +21,9 @@ import { EASE } from "./motion-system";
 
 export default function AudienceTabs({ lang }: { lang: Lang }) {
   const [active, setActive] = useState<SolutionSlug>(SOLUTION_SLUGS[0]);
+  // Tab switching keeps its crossfade under reduced motion — only the
+  // translate is dropped, since that is the vestibular part.
+  const reduce = useReducedMotion();
   const labels = SOLUTION_CROSS_LINKS[lang];
   const content = SOLUTIONS[lang][active];
 
@@ -57,9 +60,9 @@ export default function AudienceTabs({ lang }: { lang: Lang }) {
         <AnimatePresence mode="wait">
           <motion.div
             key={active}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: reduce ? 0 : 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            exit={{ opacity: 0, y: reduce ? 0 : -10 }}
             transition={{ duration: 0.25, ease: EASE.out }}
             className="rounded-2xl border [border-color:var(--mk-border)] p-8 [background:var(--mk-surface)] md:p-10"
           >

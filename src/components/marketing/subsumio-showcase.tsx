@@ -27,6 +27,7 @@ import {
 import { ICONS, Section, accentTile, H2_CTA_CLASS } from "./chrome";
 import { VERTICALS } from "@/content/verticals";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
+import { EASE } from "./motion-system";
 import { UI_STRINGS, type Lang } from "@/content/site";
 
 const _deShowcase = {
@@ -163,7 +164,7 @@ const reveal = (i: number, reduce = false) => ({
   transition: {
     duration: 0.5,
     delay: Math.min(i * 0.06, 0.4),
-    ease: [0.21, 0.5, 0.27, 1] as const,
+    ease: EASE.spring,
   },
 });
 
@@ -448,7 +449,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                   <motion.div
                     initial={reduce ? false : { opacity: 0, y: 12, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ duration: 0.35, ease: [0.21, 0.5, 0.27, 1] }}
+                    transition={{ duration: 0.35, ease: EASE.spring }}
                     className={isUser ? "flex justify-end" : "flex justify-start"}
                   >
                     <div
@@ -591,7 +592,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                   initial={{ opacity: 0, y: 10, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.2 } }}
-                  transition={{ duration: 0.3, ease: [0.21, 0.5, 0.27, 1] }}
+                  transition={{ duration: 0.3, ease: EASE.spring }}
                   className="flex justify-start"
                 >
                   <div

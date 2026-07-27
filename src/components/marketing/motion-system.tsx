@@ -227,7 +227,22 @@ export function Reveal({
   onViewportEnter,
   id,
 }: RevealProps) {
-  const variants = REVEAL[variant](delay);
+  // Reduced motion: keep the opacity fade (it carries no vestibular risk and
+  // preserves the "content arrives" cue) but drop every translate/scale. The
+  // CSS @media (prefers-reduced-motion: reduce) blocks in globals.css only
+  // reach CSS keyframe animations — framer writes inline transforms, so this
+  // has to be handled here. StaggerContainer already does the same.
+  const reduce = useReducedMotion();
+  const base = REVEAL[variant](delay);
+  const variants: Variants = reduce
+    ? {
+        hidden: { opacity: 0 },
+        visible: {
+          opacity: 1,
+          transition: { duration: 0.2, ease: EASE.out, delay },
+        },
+      }
+    : base;
   const MotionTag = motion[Tag];
   return (
     <MotionTag
@@ -417,6 +432,7 @@ export function GlowCard({
   }, []);
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- pointer position only drives a decorative glow gradient; there is nothing here to activate, so no keyboard equivalent applies.
     <div
       ref={ref}
       onMouseMove={handleMouseMove}

@@ -321,7 +321,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
 
         <Section
           tone="light"
-          className="px-4 py-20 sm:px-6 lg:px-8"
+          className="px-4 py-24 sm:px-6 lg:px-8"
           aria-label={lang === "en" ? "Choose access" : "Zugang wählen"}
         >
           <motion.div {...reveal} className="mx-auto max-w-6xl">

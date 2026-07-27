@@ -25,6 +25,7 @@ import {
   Database,
   FileText,
 } from "lucide-react";
+import { EASE } from "./motion-system";
 import { UI_STRINGS, type Lang } from "@/content/site";
 
 interface MarqueeItem {
@@ -114,7 +115,7 @@ function MarqueeRow({
           reduce
             ? { duration: 0 }
             : paused
-              ? { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
+              ? { duration: 0.5, ease: EASE.out }
               : { duration, ease: "linear", repeat: Infinity }
         }
       >

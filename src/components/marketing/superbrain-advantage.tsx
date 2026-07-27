@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 import { ArrowRight, FileSearch, LockKeyhole, ShieldCheck } from "lucide-react";
 import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { Button } from "@/components/ui/button";
@@ -83,30 +83,20 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
       <div className="brand-glow-bg absolute inset-x-0 top-16 h-72 opacity-25 blur-3xl" />
 
       <div className="mx-auto max-w-5xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="mb-12 text-center"
-        >
+        <Reveal className="mb-12 text-center">
           <p className="brand-text mb-4 font-mono text-sm tracking-wider uppercase">{t.eyebrow}</p>
           <h2 className={`${H2_CTA_CLASS} mb-5`}>{t.title}</h2>
           <p className="text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
             {t.sub}
           </p>
-        </motion.div>
+        </Reveal>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          {t.pillars.map((pillar, i) => {
+        <StaggerContainer className="grid gap-6 md:grid-cols-3">
+          {t.pillars.map((pillar) => {
             const Icon = pillar.icon;
             return (
-              <motion.div
+              <StaggerItem
                 key={pillar.title}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
                 className="flex flex-col items-start rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface-2)]"
               >
                 <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border [border-color:var(--mk-border-strong)] [background:var(--mk-surface)]">
@@ -118,24 +108,18 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
                 <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
                   {pillar.desc}
                 </p>
-              </motion.div>
+              </StaggerItem>
             );
           })}
-        </div>
+        </StaggerContainer>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, amount: 0.5 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="mt-10 text-center"
-        >
+        <Reveal variant="subtle" className="mt-10 text-center">
           <Link href={p(lang, "/features")} className="inline-flex">
             <Button variant="outline" size="sm">
               {t.cta} <ArrowRight size={15} />
             </Button>
           </Link>
-        </motion.div>
+        </Reveal>
       </div>
     </section>
   );

@@ -1,9 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Star, Quote } from "lucide-react";
 import { UI_STRINGS, type Lang } from "@/content/site";
-import { EASE } from "./motion-system";
+import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 import { H2_CTA_CLASS } from "./chrome";
 import { TESTIMONIALS } from "./testimonials-data";
 
@@ -19,13 +18,7 @@ export function TestimonialsSection({ lang }: { lang?: Lang } = {}) {
       style={{ background: "var(--mk-bg)" }}
     >
       <div className="mx-auto max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
-          transition={{ duration: 0.5 }}
-          className="mb-14 text-center"
-        >
+        <Reveal className="mb-14 text-center">
           <div className="mb-5 flex items-center justify-center gap-1">
             {[1, 2, 3, 4, 5].map((i) => (
               <Star
@@ -39,18 +32,13 @@ export function TestimonialsSection({ lang }: { lang?: Lang } = {}) {
           <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
             {ui.testimonialsSub}
           </p>
-        </motion.div>
+        </Reveal>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          {TESTIMONIALS.map((t, i) => (
-            <motion.div
+        <StaggerContainer className="grid gap-6 md:grid-cols-3">
+          {TESTIMONIALS.map((t) => (
+            <StaggerItem
               key={t.author}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
-              transition={{ duration: 0.5, delay: i * 0.1, ease: EASE.out }}
-              className="rounded-2xl border border-[color:var(--mk-border)] bg-[color:var(--mk-surface)] p-6"
-              style={{ boxShadow: "var(--mk-card-shadow)" }}
+              className="rounded-2xl border border-[color:var(--mk-border)] bg-[color:var(--mk-surface)] p-6 [box-shadow:var(--mk-card-shadow)]"
             >
               <Quote size={24} className="mb-4 text-[color:var(--brand-text)]" aria-hidden />
               <div className="mb-4 flex gap-1">
@@ -72,9 +60,9 @@ export function TestimonialsSection({ lang }: { lang?: Lang } = {}) {
                   {t.firm ? ` · ${t.firm}` : ""}
                 </p>
               </div>
-            </motion.div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       </div>
     </section>
   );

@@ -5,7 +5,6 @@
 // (no glows), deliberate signal accents. This is the section that signals
 // "trustworthy partner" rather than "tech startup" to a legal audience.
 
-import { motion } from "framer-motion";
 import {
   ShieldCheck,
   Lock,
@@ -18,7 +17,7 @@ import {
 } from "lucide-react";
 import { UI_STRINGS, type Lang } from "@/content/site";
 import { profileForIndustry } from "@/lib/industry-pack";
-import { GlowCard, EASE } from "./motion-system";
+import { GlowCard, Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 import { H2_CTA_CLASS } from "./chrome";
 
 const _deTrustCopy = {
@@ -139,13 +138,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
       style={{ background: "var(--mk-bg)" }}
     >
       <div className="mx-auto max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
-          transition={{ duration: 0.5 }}
-          className="mb-14 text-center"
-        >
+        <Reveal className="mb-14 text-center">
           <span
             className="mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold"
             style={{
@@ -163,20 +156,14 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
           <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
             {sub}
           </p>
-        </motion.div>
+        </Reveal>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {c.pillars.map((pillar, i) => {
             const Icon = pillar.icon;
             const sig = SIGNAL[pillar.signal];
             return (
-              <motion.div
-                key={pillar.t}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
-                transition={{ duration: 0.5, delay: i * 0.09, ease: EASE.out }}
-              >
+              <StaggerItem key={pillar.t}>
                 <GlowCard
                   glowColor={sig.text}
                   intensity={0.12}
@@ -198,19 +185,13 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
                     </p>
                   </div>
                 </GlowCard>
-              </motion.div>
+              </StaggerItem>
             );
           })}
-        </div>
+        </StaggerContainer>
 
         {/* Certification badges — SOC 2 prep, ISO 27001 planned, GDPR, EU cloud */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-12 flex flex-wrap items-center justify-center gap-3"
-        >
+        <Reveal variant="subtle" className="mt-12 flex flex-wrap items-center justify-center gap-3">
           {c.badges.map((badge) => {
             const BadgeIcon = BADGE_ICONS[badge.icon] ?? BadgeCheck;
             return (
@@ -223,7 +204,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
               </span>
             );
           })}
-        </motion.div>
+        </Reveal>
       </div>
     </section>
   );

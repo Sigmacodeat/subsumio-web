@@ -758,6 +758,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                   const sectionActive = isSectionActive(sIdx);
                   const isOpen = openSection === sIdx;
                   return (
+                    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- hover is a shortcut for opening the mega menu; the inner <button> below carries the real (keyboard-reachable) control with aria-expanded.
                     <div
                       key={section.label}
                       className="relative"
@@ -797,9 +798,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
                             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
                             transition={
-                              reduceMotion
-                                ? { duration: 0 }
-                                : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
+                              reduceMotion ? { duration: 0 } : { duration: 0.2, ease: EASE.out }
                             }
                             className="absolute top-full left-1/2 z-50 mt-2 -translate-x-1/2"
                             style={{
@@ -846,7 +845,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                             : {
                                                 duration: 0.2,
                                                 delay: iIdx * 0.03,
-                                                ease: [0.22, 1, 0.36, 1],
+                                                ease: EASE.out,
                                               }
                                         }
                                       >
@@ -1069,9 +1068,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
               initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
               animate={reduceMotion ? { opacity: 1 } : { opacity: 1 }}
               exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
-              transition={
-                reduceMotion ? { duration: 0 } : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
-              }
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.3, ease: EASE.out }}
               className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-md lg:hidden"
               onClick={() => setMobileOpen(false)}
             />
@@ -1175,9 +1172,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, height: "auto" }}
                             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
                             transition={
-                              reduceMotion
-                                ? { duration: 0 }
-                                : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
+                              reduceMotion ? { duration: 0 } : { duration: 0.2, ease: EASE.out }
                             }
                             className="overflow-hidden"
                           >
@@ -1232,7 +1227,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                                         : {
                                             duration: 0.2,
                                             delay: iIdx * 0.03,
-                                            ease: [0.22, 1, 0.36, 1],
+                                            ease: EASE.out,
                                           }
                                     }
                                   >

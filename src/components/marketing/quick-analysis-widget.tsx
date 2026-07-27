@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Upload,
   FileText,
@@ -34,6 +34,9 @@ export function QuickAnalysisWidget({
   pricingTiers: NichePricingTier[];
 }) {
   const [state, setState] = useState<WidgetState>("idle");
+  // State-machine crossfades stay (pure opacity is safe); only the result
+  // panel's slide-up is dropped for reduced-motion users.
+  const reduce = useReducedMotion();
   const [caseText, setCaseText] = useState("");
   const [email, setEmail] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -283,7 +286,7 @@ export function QuickAnalysisWidget({
           {state === "result" && result && (
             <motion.div
               key="result"
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: reduce ? 0 : 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               className="space-y-5"

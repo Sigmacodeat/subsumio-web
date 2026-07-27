@@ -131,6 +131,7 @@ export default function DocsWorkflowShowcase({ lang }: { lang: Lang }) {
     <Section tone="light" className="px-4 pb-24 sm:px-6 lg:px-8">
       <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14">
         {/* Left: Interactive workflow selector */}
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- hover only pauses the auto-advance so the reader can finish a step; the steps themselves are keyboard-reachable buttons below. */}
         <div
           className="order-2 lg:order-1"
           onMouseEnter={() => setPaused(true)}
