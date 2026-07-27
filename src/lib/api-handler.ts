@@ -119,7 +119,12 @@ export interface HandlerOptions<
   /** Cache-Control max-age for GET responses (seconds). */
   cacheMaxAge?: number;
   /** Custom auth guard function. If provided, replaces default session auth. */
-  customAuth?: (req: NextRequest) => Response | { context: Record<string, unknown> };
+  customAuth?: (
+    req: NextRequest
+  ) =>
+    | Response
+    | { context: Record<string, unknown> }
+    | Promise<Response | { context: Record<string, unknown> }>;
   /** Audit spec — logged after successful handler execution. */
   audit?: (
     ctx: HandlerContext,
@@ -305,7 +310,7 @@ export function createHandler<
       ctx = internalContext;
     } else if (options.customAuth) {
       // Use custom auth guard (e.g., SCIM Bearer token)
-      const customResult = options.customAuth(req);
+      const customResult = await options.customAuth(req);
       if (customResult instanceof Response) {
         return withCorsHeaders(customResult, options.cors ?? false, req);
       }
@@ -518,7 +523,12 @@ export function createScimHandler<
   Q extends z.ZodTypeAny | undefined = undefined,
 >(
   options: Omit<HandlerOptions<B, Q>, "action" | "public" | "skipCsrf"> & {
-    customAuth: (req: NextRequest) => Response | { context: Record<string, unknown> };
+    customAuth: (
+      req: NextRequest
+    ) =>
+      | Response
+      | { context: Record<string, unknown> }
+      | Promise<Response | { context: Record<string, unknown> }>;
   },
   handler: (
     ctx: Record<string, unknown>,
@@ -623,7 +633,7 @@ export function createCronHandler(
     if (corsResponse) return corsResponse;
 
     // Cron auth
-    const authError = validateCronAuth(req);
+    const authError = await validateCronAuth(req);
     if (authError) return authError;
 
     // Handler

@@ -27,6 +27,7 @@ import { logAudit } from "@/lib/audit";
 import { provisionBrainAsync } from "@/lib/provision";
 import { externalFetchTimeout } from "@/lib/retry";
 import { revokeAllSessions } from "@/lib/auth/session";
+import { hit, clientIp } from "@/lib/auth/rate-limit";
 
 // ── SCIM 2.0 Constants ────────────────────────────────────────────────
 
@@ -233,9 +234,24 @@ export function resolveScimOrgId(req: Request): string | null {
 
 /**
  * Middleware-like guard for SCIM routes.
- * Returns the resolved orgId if authorized, or a 401 Response if not.
+ * Returns the resolved orgId if authorized, or a 401/429 Response if not.
+ *
+ * Rate-limited by IP: this is the single choke point every /api/scim/*
+ * route passes through (via createScimHandler's customAuth), so limiting
+ * here bounds brute-force guesses against any org's SCIM_BEARER_TOKENS
+ * entry across all SCIM endpoints in one place. The limit is generous
+ * (IdPs like Okta/Azure AD can burst across Users + Groups during a full
+ * directory sync).
  */
-export function requireScimAuth(req: Request): { orgId: string } | Response {
+export async function requireScimAuth(req: Request): Promise<{ orgId: string } | Response> {
+  const ip = clientIp(req.headers);
+  const rate = await hit(`scim-auth:${ip}`, 60, 60_000);
+  if (!rate.ok) {
+    return Response.json(
+      { error: "rate_limited", message: "Too many requests." },
+      { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } }
+    );
+  }
   const orgId = resolveScimOrgId(req);
   if (!orgId) {
     return scimError(401, "Invalid or missing bearer token");

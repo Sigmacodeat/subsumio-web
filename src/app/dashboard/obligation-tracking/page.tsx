@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ClipboardList,
   Loader2,
@@ -19,8 +19,8 @@ import type { ObligationExtractionResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
-import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
+import { CitationPanel } from "@/components/legal/CitationPanel";
 
 const URGENCY_STYLES: Record<string, string> = {
   low: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
@@ -51,11 +51,7 @@ export default function ObligationTrackingPage() {
   const [result, setResult] = useState<ObligationExtractionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const {
-    grounding: summaryGrounding,
-    isGrounding: isGroundingSummary,
-    groundAnswer: groundSummary,
-  } = useGroundedAnswer();
+  const { grounding, groundAnswer } = useGroundedAnswer();
 
   async function run() {
     setLoading(true);
@@ -67,18 +63,26 @@ export default function ObligationTrackingPage() {
         jurisdiction,
       });
       setResult(res);
-      const groundingText = [
-        res.summary ?? "",
-        ...res.obligations.map((o) => o.description),
-        ...res.warnings,
-      ].join("\n\n");
-      groundSummary(groundingText).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : t("obligations.error_failed"));
     } finally {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!result) return;
+    const groundingText = [
+      result.summary,
+      ...result.obligations.map((o) => o.description),
+      ...result.renewal_dates.map((r) => r.description),
+      ...result.payment_terms.map((p) => p.description),
+    ]
+      .filter(Boolean)
+      .join(" ");
+    if (groundingText.trim()) void groundAnswer(groundingText);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   const canRun = mode === "slug" ? slug.trim().length > 0 : text.trim().length > 0;
 
@@ -88,7 +92,7 @@ export default function ObligationTrackingPage() {
         title={t("obligations.title")}
         description={t("obligations.description")}
         breadcrumbs={[
-          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: "Dashboard", href: "/dashboard" },
           { label: t("obligations.breadcrumb") },
         ]}
       />
@@ -132,7 +136,7 @@ export default function ObligationTrackingPage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={t("obligations.placeholder_contract_text")}
-            className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+            className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none"
           />
         )}
 
@@ -180,17 +184,6 @@ export default function ObligationTrackingPage() {
           {result.summary && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <p className="text-sm text-[color:var(--ds-text)]">{result.summary}</p>
-              <div className="mt-4">
-                <CitationPanel
-                  data={
-                    {
-                      grounding: summaryGrounding ?? null,
-                      isStreaming: isGroundingSummary,
-                    } satisfies CitationPanelData
-                  }
-                  compact
-                />
-              </div>
             </div>
           )}
 
@@ -342,6 +335,8 @@ export default function ObligationTrackingPage() {
               ))}
             </div>
           )}
+
+          <CitationPanel data={{ grounding, citations: [], isStreaming: false }} compact />
         </div>
       )}
     </div>

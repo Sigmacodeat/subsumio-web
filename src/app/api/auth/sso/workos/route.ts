@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthorizationUrl, isConfigured } from "@/lib/workos";
 import { createPublicHandler } from "@/lib/api-handler";
+import { clientIp } from "@/lib/auth/rate-limit";
 import { env } from "@/lib/env";
 import { z } from "zod";
 
@@ -22,6 +23,9 @@ const ssoWorkosSchema = z.object({
 export const GET = createPublicHandler(
   {
     query: ssoWorkosSchema,
+    rateLimitKey: (req) => `sso-workos:ip:${clientIp(req.headers)}`,
+    rateLimitMax: 20,
+    rateLimitWindowMs: 60_000,
   },
   async (req, _body, query) => {
     if (!isConfigured()) {

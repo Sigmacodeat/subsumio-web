@@ -1,19 +1,19 @@
 import { NextRequest } from "next/server";
-import { hasValidInternalSecret } from "@/lib/auth/internal";
+import { requireInternalSecret } from "@/lib/auth/internal";
 import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
 /**
  * POST /api/internal/alert — internal endpoint for the engine to send alerts.
- * Authenticated via x-internal-secret header (timing-safe comparison).
+ * Authenticated via x-internal-secret header (timing-safe comparison),
+ * rate-limited per IP to bound brute-force guesses against the shared secret.
  * Writes the alert to the audit log for traceability and notifies admins.
  */
 
 export async function POST(req: NextRequest) {
-  if (!hasValidInternalSecret(req)) {
-    return Response.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const authError = await requireInternalSecret(req);
+  if (authError) return authError;
 
   try {
     const body = (await req.json()) as {

@@ -27,6 +27,8 @@ import { useLang } from "@/lib/use-lang";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { api } from "@/lib/api";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
+import { CitationPanel } from "@/components/legal/CitationPanel";
 
 interface Commentary {
   id: string;
@@ -320,7 +322,7 @@ export default function CommentariesPage() {
 
         {/* Loading */}
         {loading && (
-          <div className="flex items-center justify-center py-16" role="status" aria-live="polite">
+          <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
           </div>
         )}
@@ -441,6 +443,16 @@ function CommentaryDetail({
   onBack: () => void;
   onDelete: () => void;
 }) {
+  const { grounding, groundAnswer } = useGroundedAnswer();
+  const isSynthetic = commentary.commentary_type === "synthetic";
+
+  useEffect(() => {
+    if (!isSynthetic) return;
+    const text = [commentary.content, ...(commentary.key_holdings ?? [])].filter(Boolean).join(" ");
+    if (text.trim()) void groundAnswer(text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commentary.id, isSynthetic]);
+
   return (
     <div className="min-h-screen bg-[color:var(--ds-bg)]">
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
@@ -542,6 +554,12 @@ function CommentaryDetail({
           <div className="prose prose-sm dark:prose-invert max-w-none">
             <div className="text-sm leading-relaxed whitespace-pre-wrap">{commentary.content}</div>
           </div>
+
+          {isSynthetic && (
+            <div className="mt-4">
+              <CitationPanel data={{ grounding, citations: [], isStreaming: false }} compact />
+            </div>
+          )}
 
           {/* Key holdings */}
           {commentary.key_holdings && commentary.key_holdings.length > 0 && (

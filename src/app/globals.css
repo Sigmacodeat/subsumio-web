@@ -1,12 +1,7 @@
 /* Fonts are self-hosted via next/font (layout.tsx) — no runtime requests
    to Google (GDPR) and no render-blocking @import. The --font-inter,
    --font-grotesk and --font-jetbrains variables are set on <html>. */
-/* Scan application sources only. Tailwind's workspace-wide auto detection also
-   picked up migration-script comments such as `var(--ds-*-border)`, which it
-   interpreted as an arbitrary class and emitted invalid CSS. It also scanned
-   multi-gigabyte legal corpora that can never contain UI classes. */
-@import "tailwindcss" source(none);
-@source "../";
+@import "tailwindcss";
 
 /* ── BrainAvatar animations — Copilot identity ─────────────────────────
    Modern AI-style motion:
@@ -877,7 +872,11 @@
   --ds-control-border: var(--neutral-400);
   --ds-text: var(--neutral-900);
   --ds-text-muted: var(--neutral-600);
-  --ds-text-subtle: var(--neutral-500);
+  /* neutral-500 measured 3.74:1 on --ds-surface-2 (neutral-100) — under WCAG
+     AA 4.5:1 (axe color-contrast, Playwright a11y suite). neutral-600 is the
+     smallest bump that clears it (5.35:1); same fix already applied to the
+     marketing [data-tone] --mk-text-subtle above. */
+  --ds-text-subtle: var(--neutral-600);
   --ds-ring: var(--brand-600);
   --ds-accent: var(--brand-primary);
   --brand-primary: var(--brand-600);
@@ -903,7 +902,10 @@
   --ds-success-border: color-mix(in srgb, var(--signal-success-500) 24%, var(--ds-surface));
   --ds-success-solid: var(--signal-success-600);
   --ds-success-solid-hover: var(--signal-success-700);
-  --ds-warning-text: var(--signal-warning-700);
+  /* signal-warning-700 measured 4.34:1 on --ds-warning-bg — just under WCAG
+     AA 4.5:1 (axe color-contrast, Playwright a11y suite). signal-warning-800
+     is the smallest bump that clears it (6.85:1). */
+  --ds-warning-text: var(--signal-warning-800);
   --ds-warning-bg: color-mix(in srgb, var(--signal-warning-500) 10%, var(--ds-surface));
   --ds-warning-border: color-mix(in srgb, var(--signal-warning-500) 24%, var(--ds-surface));
   --ds-warning-solid: var(--signal-warning-600);

@@ -834,6 +834,11 @@ export function attributeKnob<K extends keyof ModeBundle>(
 // hard-exclude set for a given jurisdiction changed, so a pre-widening cached
 // row (which may contain foreign judikatur/landesrecht) must not be served to
 // a post-widening lookup. One-time global cold-miss on upgrade.
+//
+// bump 14→15 (v0.48, buildLegalMetadataClause): court/legalArea/decisionDate
+// filters narrow the candidate SQL (see sql-ranking.ts buildLegalMetadataClause),
+// so a filtered read must never be served an unfiltered or differently-filtered
+// cache row — same contamination class as jurisdiction/asOfDate above.
 export const KNOBS_HASH_VERSION = 15;
 
 /**
@@ -873,7 +878,12 @@ export interface KnobsHashContext {
   jurisdiction?: string;
   /** Historical legal cutoff; different dates resolve different statute versions. */
   asOfDate?: string;
-  /** v0.48 — legal metadata filters for court decisions. */
+  /**
+   * v=15 (v0.48, buildLegalMetadataClause): court/legal-area/decision-date
+   * filters applied to the candidate SQL. A filtered read must not be served
+   * an unfiltered or differently-filtered cache row. Undefined folds in as
+   * 'all'/'none' for backward compat with callers that don't filter.
+   */
   court?: string;
   legalArea?: string;
   decisionDateFrom?: string;
@@ -978,11 +988,9 @@ export function knobsHash(knobs: ResolvedSearchKnobs, ctx?: KnobsHashContext): s
     `jur=${ctx?.jurisdiction ?? "all"}`,
     // v=13: historical legal cutoff isolation.
     `asof=${ctx?.asOfDate ?? "current"}`,
-    // v=15 additions (v0.48, append-only): legal metadata filters. A
-    // court/area/date-filtered read must NOT be served from an unfiltered
-    // cache row — different candidate sets. ONE-TIME cold-miss on upgrade.
-    `court=${ctx?.court ?? "any"}`,
-    `area=${ctx?.legalArea ?? "any"}`,
+    // v=15 (v0.48): court/legal-area/decision-date metadata filter isolation.
+    `crt=${ctx?.court ?? "all"}`,
+    `la=${ctx?.legalArea ?? "all"}`,
     `ddf=${ctx?.decisionDateFrom ?? "none"}`,
     `ddt=${ctx?.decisionDateTo ?? "none"}`,
   ];

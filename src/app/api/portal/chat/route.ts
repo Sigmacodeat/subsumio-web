@@ -4,6 +4,7 @@ import { verifyPortalToken } from "@/lib/portal-token";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { groundAnswerCitations } from "@/lib/citation-gate";
+import { emptyGroundingMetadata } from "@/lib/citation-gate-client";
 import type { BrainPage } from "@/lib/types";
 
 const chatSchema = z.object({
@@ -106,6 +107,7 @@ export const POST = createPublicHandler(
       return Response.json({
         answer: refusal,
         grounded: false,
+        grounding: emptyGroundingMetadata(),
         escalated: false,
       });
     }
@@ -170,6 +172,7 @@ export const POST = createPublicHandler(
           answer:
             "Ich kann derzeit keine Antwort generieren. Bitte kontaktieren Sie Ihre Kanzlei direkt.",
           grounded: false,
+          grounding: emptyGroundingMetadata(),
           escalated: false,
         });
       }
@@ -185,10 +188,19 @@ export const POST = createPublicHandler(
         "Es ist ein technischer Fehler aufgetreten. Bitte versuchen Sie es später erneut oder kontaktieren Sie Ihre Kanzlei.";
     }
 
-    // Verify any statute/citation claims in the answer against the corpus —
-    // this was previously hardcoded to `grounded: true` regardless of whether
-    // verification actually ran, which showed clients a false assurance badge.
-    const grounding = await groundAnswerCitations(answer);
+    // Verify the AI-generated answer's statute/literature citations against the
+    // law corpus before ever telling the client it is "grounded" — never
+    // hardcode this. Errors fail closed to unverified, not to a false "true".
+    let grounding;
+    try {
+      grounding = await groundAnswerCitations(answer);
+    } catch (err) {
+      console.error(
+        "[portal/chat] grounding failed:",
+        err instanceof Error ? err.message : String(err)
+      );
+      grounding = emptyGroundingMetadata();
+    }
     const grounded = grounding.corpus_checked && !grounding.has_unverified;
 
     const slug = `portal-chat/${payload.case_slug}/${Date.now()}`;
@@ -215,6 +227,7 @@ export const POST = createPublicHandler(
     return Response.json({
       answer,
       grounded,
+      grounding,
       escalated: false,
     });
   }

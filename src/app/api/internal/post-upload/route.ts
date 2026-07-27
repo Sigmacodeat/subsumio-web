@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL, enginePatchPage, engineHeadersForBrain } from "@/lib/engine";
-import { hasValidInternalSecret } from "@/lib/auth/internal";
+import { requireInternalSecret } from "@/lib/auth/internal";
 import { NextRequest } from "next/server";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 
@@ -22,6 +22,8 @@ export const dynamic = "force-dynamic";
  *
  * Auth: x-internal-secret header (shared HMAC secret, same as all
  * other internal server-to-server calls). Never exposed to the browser.
+ * Rate-limited per IP via requireInternalSecret to bound brute-force
+ * guesses against the shared secret.
  */
 
 const bodySchema = z.object({
@@ -40,9 +42,8 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  if (!hasValidInternalSecret(req)) {
-    return Response.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const authError = await requireInternalSecret(req);
+  if (authError) return authError;
 
   let rawBody: unknown;
   try {

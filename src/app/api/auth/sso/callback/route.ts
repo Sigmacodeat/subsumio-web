@@ -5,6 +5,7 @@ import { createSession, SESSION_COOKIE } from "@/lib/auth/session";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { env } from "@/lib/env";
 import { timingSafeCompare } from "@/lib/crypto-utils";
+import { clientIp } from "@/lib/auth/rate-limit";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,9 @@ const ssoCallbackSchema = z.object({
 export const GET = createPublicHandler(
   {
     query: ssoCallbackSchema,
+    rateLimitKey: (req) => `sso-callback:ip:${clientIp(req.headers)}`,
+    rateLimitMax: 20,
+    rateLimitWindowMs: 60_000,
   },
   async (req, _body, query) => {
     const { code, state, error } = query;

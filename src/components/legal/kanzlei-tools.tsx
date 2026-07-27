@@ -31,10 +31,11 @@ const CAPABILITIES = [
     href: "/dashboard/peer-benchmark",
   },
   {
-    name: "DATEV Direct",
-    description: "Buchungsdaten übertragen",
+    name: "DATEV-Direktanbindung",
+    description: "Geplant — noch keine echte DATEV-API-Anbindung, siehe DATEV-Export für CSV",
     key: "createDatevExport",
     href: "/dashboard/datev-direct",
+    comingSoon: true,
   },
   {
     name: "KYC",

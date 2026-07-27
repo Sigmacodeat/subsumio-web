@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
@@ -61,23 +62,21 @@ export default function DatevDirectPage() {
       <PageHeader
         title={tr("workspace.datev.title")}
         description={tr("workspace.datev.description")}
-        breadcrumbs={[
-          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
-          { label: "DATEV Direct" },
-        ]}
+        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "DATEV Direct" }]}
       />
       <div className="rounded-xl border border-amber-500 bg-amber-50 p-4 text-sm dark:bg-amber-950/30">
         <div className="flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
           <div>
             <p className="font-medium text-amber-800 dark:text-amber-300">
-              CSV-Export — keine Live-Schnittstelle
+              {tr("workspace.datev.notice_title")}
             </p>
             <p className="mt-1 text-xs text-amber-700 dark:text-amber-400/80">
-              Dieser Bereich erzeugt DATEV-kompatible CSV-Datensätze, die Sie manuell in DATEV
-              Unternehmen online importieren. Eine direkte API-Verbindung zu DATEV ist nicht
-              implementiert. Die Statusanzeige {"\u201esent\u201c"} bedeutet lediglich, dass der
-              Datensatz erstellt wurde — es findet kein automatischer Transfer statt.
+              {tr("workspace.datev.notice_body")}{" "}
+              <Link href="/dashboard/datev-export" className="underline">
+                {tr("workspace.datev.notice_link")}
+              </Link>
+              .
             </p>
           </div>
         </div>

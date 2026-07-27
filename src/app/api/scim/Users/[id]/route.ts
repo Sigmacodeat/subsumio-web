@@ -62,8 +62,8 @@ const patchRequestSchema = z.object({
  */
 export const GET = createScimHandler(
   {
-    customAuth: (req) => {
-      const auth = requireScimAuth(req);
+    customAuth: async (req) => {
+      const auth = await requireScimAuth(req);
       if (auth instanceof Response) return auth;
       return { context: { orgId: auth.orgId } };
     },
@@ -90,8 +90,8 @@ export const GET = createScimHandler(
 export const PUT = createScimHandler(
   {
     body: updateUserSchema,
-    customAuth: (req) => {
-      const auth = requireScimAuth(req);
+    customAuth: async (req) => {
+      const auth = await requireScimAuth(req);
       if (auth instanceof Response) return auth;
       return { context: { orgId: auth.orgId } };
     },
@@ -137,8 +137,8 @@ export const PUT = createScimHandler(
 export const PATCH = createScimHandler(
   {
     body: patchRequestSchema,
-    customAuth: (req) => {
-      const auth = requireScimAuth(req);
+    customAuth: async (req) => {
+      const auth = await requireScimAuth(req);
       if (auth instanceof Response) return auth;
       return { context: { orgId: auth.orgId } };
     },
@@ -190,8 +190,8 @@ export const PATCH = createScimHandler(
  */
 export const DELETE = createScimHandler(
   {
-    customAuth: (req) => {
-      const auth = requireScimAuth(req);
+    customAuth: async (req) => {
+      const auth = await requireScimAuth(req);
       if (auth instanceof Response) return auth;
       return { context: { orgId: auth.orgId } };
     },

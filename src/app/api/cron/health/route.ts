@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
  * Auth: Bearer CRON_SECRET (same as all cron endpoints).
  */
 export async function GET(req: NextRequest) {
-  const authError = validateCronAuth(req);
+  const authError = await validateCronAuth(req);
   if (authError) return authError;
 
   const checks: Record<string, { ok: boolean; detail?: string }> = {};

@@ -487,8 +487,14 @@ API `src/app/api/credit-checks/route.ts` (POST mit GDPR-Consent-Prüfung, GET li
 UI in `src/components/legal/kanzlei-tools.tsx` (CreditCard mit Score-Eingabe + Risiko-Klassifikation).
 Provider: Creditreform/Manual/Opted-out. DSGVO-Hinweispflicht in der UI.
 
-**F10 — DATEV-Direktanbindung** ✅ IMPLEMENTIERT. CSV-Export existiert, dazu DATEV-Rechnungsdatenservice
-/ Buchungsdatenservice. `datev-export`, `api/datev/import` vorhanden.
+**F10 — DATEV-Direktanbindung** ⚠️ TEILWEISE, UI-Label war irreführend. CSV-Export
+(`datev-export`, `api/datev/import`) ist real implementiert und funktioniert. Die
+separate "DATEV Direct"-Seite (`datev-direct`, `api/datev-direct`) rief jedoch nie
+eine DATEV-Rechnungsdatenservice-/Buchungsdatenservice-API auf — sie prüfte nur, ob
+DATEV-Env-Vars gesetzt sind, und setzte den Status dann lokal auf "sent", ohne
+Übertragung. Korrigiert: Status bleibt "pending", UI zeigt "geplant" +
+"In Entwicklung"-Hinweis, Nav-Eintrag als `comingSoon` markiert. Für eine echte
+Direktanbindung siehe `docs/DATEV_DIRECT_INTEGRATION_GAP.md`.
 
 **F11 — FAO-Fortbildungs-Tracking** ✅ IMPLEMENTIERT. `src/app/dashboard/fao-tracking/page.tsx`
 mit 15-Stunden-Pflicht (§ 15 FAO) pro Fachanwaltstitel, Nachweise hochladen, Jahresstand,

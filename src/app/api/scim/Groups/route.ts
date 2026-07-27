@@ -32,8 +32,8 @@ const createGroupSchema = z.object({
 export const GET = createScimHandler(
   {
     query: listQuerySchema,
-    customAuth: (req) => {
-      const auth = requireScimAuth(req);
+    customAuth: async (req) => {
+      const auth = await requireScimAuth(req);
       if (auth instanceof Response) return auth;
       return { context: { orgId: auth.orgId } };
     },
@@ -58,8 +58,8 @@ export const GET = createScimHandler(
 export const POST = createScimHandler(
   {
     body: createGroupSchema,
-    customAuth: (req) => {
-      const auth = requireScimAuth(req);
+    customAuth: async (req) => {
+      const auth = await requireScimAuth(req);
       if (auth instanceof Response) return auth;
       return { context: { orgId: auth.orgId } };
     },

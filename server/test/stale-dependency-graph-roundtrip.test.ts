@@ -37,9 +37,7 @@ import {
   hashFullText,
   hashPerParagraph,
 } from "../src/core/legal/novella-detection.ts";
-import {
-  type CorpusReceipt,
-} from "../src/core/legal/corpus-receipt.ts";
+import { type CorpusReceipt } from "../src/core/legal/corpus-receipt.ts";
 
 // ── Test DB Setup ─────────────────────────────────────────────────────
 
@@ -47,18 +45,23 @@ const DATABASE_URL = process.env.DATABASE_URL;
 const HAS_PG = !!DATABASE_URL && DATABASE_URL.includes("5434");
 
 let pgPool: Pool | null = null;
-let pgliteEngine: PGLiteEngine | null = null;
 
 // PGLite helper: get a Pool-like interface wrapping engine.db.query()
 // SnapshotStore uses pool.connect() → client.query("BEGIN"/"COMMIT"/"ROLLBACK") → client.release()
 // PGLite supports transaction control via sequential query() calls.
 interface PoolLikeClient {
-  query(text: string, params?: unknown[]): Promise<{ rows: Record<string, unknown>[]; rowCount: number | null }>;
+  query(
+    text: string,
+    params?: unknown[]
+  ): Promise<{ rows: Record<string, unknown>[]; rowCount: number | null }>;
   release(): void;
 }
 
 interface PoolLike {
-  query(text: string, params?: unknown[]): Promise<{ rows: Record<string, unknown>[]; rowCount: number | null }>;
+  query(
+    text: string,
+    params?: unknown[]
+  ): Promise<{ rows: Record<string, unknown>[]; rowCount: number | null }>;
   connect(): Promise<PoolLikeClient>;
 }
 
@@ -82,14 +85,6 @@ function makePGLitePool(engine: PGLiteEngine): PoolLike {
       };
     },
   };
-}
-
-async function setupPGLite(): Promise<{ engine: PGLiteEngine; pool: PoolLike }> {
-  const engine = new PGLiteEngine();
-  await engine.connect({});
-  await engine.initSchema();
-  pgliteEngine = engine;
-  return { engine, pool: makePGLitePool(engine) };
 }
 
 async function setupPG(): Promise<Pool> {
@@ -246,7 +241,8 @@ describe("Stale Dependency Graph — Round-Trip", () => {
 
     it("detectNovellaFromSource returns error when fetch fails", async () => {
       const fakePool = { query: () => Promise.resolve({ rows: [] }) } as unknown as Pool;
-      const mockFetch = (() => Promise.reject(new Error("Network error"))) as unknown as typeof fetch;
+      const mockFetch = (() =>
+        Promise.reject(new Error("Network error"))) as unknown as typeof fetch;
       const report = await detectNovellaFromSource(fakePool, "DE", "BGB", mockFetch);
       // fetchDeStatute catches errors internally and returns null,
       // so detectNovellaFromSource sees a null result → "Failed to fetch"
@@ -256,10 +252,11 @@ describe("Stale Dependency Graph — Round-Trip", () => {
 
     it("detectNovellaFromSource returns error when fetch returns null", async () => {
       const fakePool = { query: () => Promise.resolve({ rows: [] }) } as unknown as Pool;
-      const mockFetch = (() => Promise.resolve({
-        ok: false,
-        text: () => Promise.resolve(""),
-      })) as unknown as typeof fetch;
+      const mockFetch = (() =>
+        Promise.resolve({
+          ok: false,
+          text: () => Promise.resolve(""),
+        })) as unknown as typeof fetch;
       const report = await detectNovellaFromSource(fakePool, "AT", "ABGB", mockFetch);
       expect(report.error).toContain("Failed to fetch");
       expect(report.changed).toBe(false);
@@ -272,9 +269,11 @@ describe("Stale Dependency Graph — Round-Trip", () => {
     let pgliteEngineInstance: PGLiteEngine;
 
     beforeAll(async () => {
-      const result = await setupPGLite();
-      pgliteEngineInstance = result.engine;
-      pool = result.pool;
+      const engine = new PGLiteEngine();
+      await engine.connect({});
+      await engine.initSchema();
+      pgliteEngineInstance = engine;
+      pool = makePGLitePool(engine);
     });
 
     afterAll(async () => {
@@ -379,11 +378,7 @@ describe("Stale Dependency Graph — Round-Trip", () => {
       expect(depsFinal[0].reverify_notes).toContain("823");
 
       // 8. Get attorney diff
-      const diff = await depStore.getDiff(
-        BGB_SLUG,
-        "823",
-        depsFinal[0].triggering_amendment_id!
-      );
+      const diff = await depStore.getDiff(BGB_SLUG, "823", depsFinal[0].triggering_amendment_id!);
       expect(diff).not.toBeNull();
       expect(diff!.change_type).toBe("modified");
       expect(diff!.paragraph_ref).toBe("823");
@@ -416,7 +411,9 @@ describe("Stale Dependency Graph — Round-Trip", () => {
       });
 
       // Simulate change that only affects § 824 (new paragraph)
-      const amendedText = INITIAL_BGB_TEXT + `
+      const amendedText =
+        INITIAL_BGB_TEXT +
+        `
 ## § 825 Besondere Schadensarten
 Verletzt jemand die Menschenwürde eines anderen, so ist er zum Ersatze verpflichtet.
 `;
@@ -461,7 +458,9 @@ Verletzt jemand die Menschenwürde eines anderen, so ist er zum Ersatze verpflic
       });
 
       // Simulate change that only adds a new paragraph (§ 824)
-      const amendedText = INITIAL_BGB_TEXT + `
+      const amendedText =
+        INITIAL_BGB_TEXT +
+        `
 ## § 824 Ehrverletzung
 Wer der Wahrheit zuwider Tatsachen behauptet, die einen anderen
 in der Ehre verletzen, ist dem anderen zum Ersatze verpflichtet.

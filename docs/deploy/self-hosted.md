@@ -47,15 +47,15 @@ docker compose exec web npx tsx scripts/create-admin.ts --email admin@yourfirm.c
 
 ### Optional Integrations
 
-| Variable               | Description               |
-| ---------------------- | ------------------------- |
-| `MS365_CLIENT_ID`      | Microsoft Graph (Outlook) |
-| `MS365_CLIENT_SECRET`  | Microsoft Graph (Outlook) |
-| `MS365_TENANT_ID`      | Microsoft Graph (Outlook) |
-| `DOCUSIGN_CLIENT_ID`   | DocuSign e-signature      |
-| `DOCUSIGN_PRIVATE_KEY` | DocuSign private key      |
-| `STRIPE_SECRET_KEY`    | Stripe billing            |
-| `DATEV_API_KEY`        | DATEV direct API          |
+| Variable               | Description                                                                                                                                                   |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MS365_CLIENT_ID`      | Microsoft Graph (Outlook)                                                                                                                                     |
+| `MS365_CLIENT_SECRET`  | Microsoft Graph (Outlook)                                                                                                                                     |
+| `MS365_TENANT_ID`      | Microsoft Graph (Outlook)                                                                                                                                     |
+| `DOCUSIGN_CLIENT_ID`   | DocuSign e-signature                                                                                                                                          |
+| `DOCUSIGN_PRIVATE_KEY` | DocuSign private key                                                                                                                                          |
+| `STRIPE_SECRET_KEY`    | Stripe billing                                                                                                                                                |
+| `DATEV_API_KEY`        | Reserved for a future DATEV direct API integration (not yet implemented — setting this does not connect to DATEV; see `docs/DATEV_DIRECT_INTEGRATION_GAP.md`) |
 
 ## License Check
 

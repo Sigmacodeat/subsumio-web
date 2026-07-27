@@ -1,6 +1,7 @@
 import { createPublicHandler } from "@/lib/api-handler";
 import { getStore } from "@/lib/auth/store";
 import { verifyActionToken, bindFragment } from "@/lib/auth/tokens";
+import { clientIp } from "@/lib/auth/rate-limit";
 import { env } from "@/lib/env";
 import { z } from "zod";
 
@@ -11,6 +12,9 @@ const verifySchema = z.object({
 export const GET = createPublicHandler(
   {
     query: verifySchema,
+    rateLimitKey: (req) => `auth-verify:ip:${clientIp(req.headers)}`,
+    rateLimitMax: 20,
+    rateLimitWindowMs: 60_000,
   },
   async (_req, _body, query) => {
     const { token } = query;

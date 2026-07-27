@@ -7,7 +7,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const REPO_ROOT = resolve(__dirname, "../..");
 
-function loadFixture(path: string): any[] {
+interface SubsumptionCase {
+  case_id: string;
+  jurisdiction: string;
+  facts?: string;
+  question?: string;
+  expected_law: string;
+  expected_section: string;
+  expected_keywords?: string[];
+  expected_conclusion: string;
+  audit_status?: string;
+  audit_issue?: string;
+  audit_note?: string;
+}
+
+function loadFixture(path: string): SubsumptionCase[] {
   if (!existsSync(path)) return [];
   return readFileSync(path, "utf-8")
     .split("\n")
@@ -65,13 +79,20 @@ describe("T2.2 Subsumption Case Audit", () => {
 
   it("expected_section exists in the referenced law corpus file (excluding known errors)", () => {
     const KNOWN_ERRORS = new Set([
-      "sub-at-019", "sub-at-025", "sub-at-031", "sub-at-035",
-      "sub-at-036", "sub-at-038", "sub-at-040", "sub-at-041",
+      "sub-at-019",
+      "sub-at-025",
+      "sub-at-031",
+      "sub-at-035",
+      "sub-at-036",
+      "sub-at-038",
+      "sub-at-040",
+      "sub-at-041",
     ]);
     const AT_ALIASES: Record<string, string> = { stgb: "stgb-at", zpo: "zpo-at" };
     for (const c of [...deCases, ...atCases]) {
       if (KNOWN_ERRORS.has(c.case_id)) continue;
-      const resolved = c.jurisdiction === "at" ? (AT_ALIASES[c.expected_law] ?? c.expected_law) : c.expected_law;
+      const resolved =
+        c.jurisdiction === "at" ? (AT_ALIASES[c.expected_law] ?? c.expected_law) : c.expected_law;
       const corpusPath = join(REPO_ROOT, "law-corpus", c.jurisdiction, `${resolved}.md`);
       if (!existsSync(corpusPath)) continue;
       const corpusText = readFileSync(corpusPath, "utf-8");
@@ -104,7 +125,14 @@ describe("T2.2 Subsumption Case Audit", () => {
   });
 
   it("regression fixtures have corrected expected_section", () => {
-    const knownErrors = ["sub-at-019", "sub-at-025", "sub-at-031", "sub-at-035", "sub-at-038", "sub-at-040"];
+    const knownErrors = [
+      "sub-at-019",
+      "sub-at-025",
+      "sub-at-031",
+      "sub-at-035",
+      "sub-at-038",
+      "sub-at-040",
+    ];
     for (const id of knownErrors) {
       const regCase = regressionCases.find((c) => c.case_id === id);
       expect(regCase).toBeDefined();

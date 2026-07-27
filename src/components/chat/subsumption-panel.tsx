@@ -17,6 +17,9 @@ import {
   FileText,
 } from "lucide-react";
 import type { ProvenanceResult, DocumentConfidence } from "@/lib/types";
+import { api } from "@/lib/api";
+import { CitationPanel } from "@/components/legal/CitationPanel";
+import type { GroundingMetadata } from "@/lib/citation-gate-client";
 
 const STORAGE_KEY = "subsumio:subsumption-sessions";
 
@@ -69,6 +72,7 @@ interface Message {
   isStreaming?: boolean;
   provenance?: ProvenanceResult;
   documentConfidence?: DocumentConfidence;
+  grounding?: GroundingMetadata;
 }
 
 /** Detect structured subsumption sections in the answer */
@@ -290,6 +294,37 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
   const [isStreaming, setIsStreaming] = useState(false);
   const [followUp, setFollowUp] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+  const groundingRequested = useRef<Set<number>>(new Set());
+
+  // Ground each completed AI subsumption answer's statute citations against
+  // the law corpus before it is trusted — never show legal AI freetext
+  // without corpus verification (see CLAUDE.md grounding invariant).
+  useEffect(() => {
+    messages.forEach((msg, idx) => {
+      if (
+        msg.role !== "assistant" ||
+        msg.isStreaming ||
+        !msg.content ||
+        msg.grounding ||
+        groundingRequested.current.has(idx)
+      ) {
+        return;
+      }
+      groundingRequested.current.add(idx);
+      void api.legal
+        .ground(msg.content)
+        .then((grounding) => {
+          setMessages((m) =>
+            m.map((mm, i) =>
+              i === idx ? { ...mm, grounding: grounding as GroundingMetadata } : mm
+            )
+          );
+        })
+        .catch(() => {
+          // Non-fatal — the message still renders without a grounding badge.
+        });
+    });
+  }, [messages]);
 
   // Persistence state
   const [sessions, setSessions] = useState<SavedSession[]>([]);
@@ -896,6 +931,15 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                   </div>
                 )}
 
+                {/* Corpus grounding for statute citations in the answer */}
+                {isAssistant && !msg.isStreaming && msg.content && (
+                  <CitationPanel
+                    data={{ grounding: msg.grounding ?? null, citations: [], isStreaming: false }}
+                    compact
+                    className="mt-3"
+                  />
+                )}
+
                 {/* Claim-level provenance + confidence */}
                 {isAssistant && !msg.isStreaming && (
                   <ClaimProvenanceDisplay
@@ -946,7 +990,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
               onChange={(e) => setScenario(e.target.value)}
               placeholder="Beschreiben Sie den Sachverhalt... Beispiel: 'Mein Mandant wurde bei einem Hundebiss verletzt. Der Hund gehört dem Nachbarn und war nicht angeleint.'"
               rows={4}
-              className="w-full resize-none rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 py-3 text-sm text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              className="w-full resize-none rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 py-3 text-sm text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus:border-[var(--brand-primary)] focus:outline-none"
               disabled={isStreaming}
             />
             <div className="flex items-center justify-between">
@@ -984,7 +1028,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                 value={followUp}
                 onChange={(e) => setFollowUp(e.target.value)}
                 placeholder="Follow-up: z.B. 'Prüfe auch Mitverschulden' oder 'Welche OGH-Judikatur gibt es?'"
-                className="flex-1 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 py-2 text-sm text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                className="flex-1 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 py-2 text-sm text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus:border-[var(--brand-primary)] focus:outline-none"
                 disabled={isStreaming}
               />
               {isStreaming ? (

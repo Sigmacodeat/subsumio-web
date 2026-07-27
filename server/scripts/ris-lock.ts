@@ -1,30 +1,38 @@
 /**
- * Global RIS API Lock — ensures only ONE process talks to RIS at any time.
+ * RIS Lock — cross-process advisory lock for RIS (Rechtsinformationssystem)
+ * single-connection scraping.
  *
- * RIS OGD guidelines require 1.5s between requests and single-connection.
- * The pipeline has an in-process guard, but manually started scripts bypass it.
- * This file-based lock is the last line of defense: every RIS script must
- * acquire it before making any request to data.bka.gv.at or ris.bka.gv.at.
+ * RIS OGD guidelines require at most one active connection when no proxy pool
+ * is configured (see `ris-proxy.ts`). `backfill-corpus-text.ts` and
+ * `backfill-landesrecht.ts` can both be launched independently (e.g. one per
+ * cron job, one run manually), so a machine-wide lock file — not just an
+ * in-process flag — is needed to serialize them.
+ *
+ * Uses the same atomic-mkdir + PID-liveness pattern as
+ * `src/core/pglite-lock.ts`, but blocks (polls) until the lock is free rather
+ * than throwing on timeout: a backfill run is expected to wait its turn
+ * behind another one, not fail.
  *
  * Usage:
- *   import { acquireRisLock, releaseRisLock } from "./ris-lock";
- *   await acquireRisLock();  // blocks until no other RIS process is running
- *   // ... do RIS requests ...
- *   releaseRisLock();        // release on exit
- *
- * The lock auto-expires after 30 minutes (in case a process crashes without
- * releasing). A stale lock from a dead PID is detected and reclaimed.
+ *   await acquireRisLock();
+ *   try { ... } finally { releaseRisLock(); }
  */
 
-import { existsSync, writeFileSync, readFileSync, unlinkSync, statSync } from "fs";
+import { mkdirSync, existsSync, readFileSync, writeFileSync, rmSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
 
-const LOCK_FILE = "/tmp/ris-api.lock";
-const LOCK_TIMEOUT_MS = 30 * 60 * 1000; // 30 min auto-expire
-const POLL_INTERVAL_MS = 500;
+const LOCK_DIR = join(tmpdir(), "subsumio-ris-lock");
+const LOCK_FILE = "lock";
+const STALE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes — RIS backfills can run long
+const POLL_MS = 2000;
+const LOG_EVERY_MS = 30_000;
 
-/** Check if a PID is alive (works on Linux/POSIX). */
-function isPidAlive(pid: number): boolean {
+let heldByThisProcess = false;
+
+function isProcessAlive(pid: number): boolean {
   try {
+    // Signal 0 checks existence without actually sending a signal.
     process.kill(pid, 0);
     return true;
   } catch {
@@ -32,81 +40,88 @@ function isPidAlive(pid: number): boolean {
   }
 }
 
-/** Read the PID from the lock file. Returns 0 if invalid. */
-function readLockPid(): number {
-  if (!existsSync(LOCK_FILE)) return 0;
+function readLockData(): { pid: number; acquired_at: number; command: string } | null {
   try {
-    const content = readFileSync(LOCK_FILE, "utf-8").trim();
-    const pid = parseInt(content, 10);
-    return isNaN(pid) ? 0 : pid;
+    return JSON.parse(readFileSync(join(LOCK_DIR, LOCK_FILE), "utf-8"));
   } catch {
-    return 0;
+    return null;
   }
 }
 
-/** Check if the lock is stale (holder dead or timeout expired). */
-function isLockStale(): boolean {
-  if (!existsSync(LOCK_FILE)) return true;
-  const pid = readLockPid();
-  if (pid === 0) return true;
-  // Lock holder process is dead → stale
-  if (!isPidAlive(pid)) return true;
-  // Lock file is older than timeout → stale
-  try {
-    const stat = statSync(LOCK_FILE);
-    if (Date.now() - stat.mtimeMs > LOCK_TIMEOUT_MS) return true;
-  } catch {
-    return true;
+function clearStaleLockIfAny(): void {
+  if (!existsSync(LOCK_DIR)) return;
+  const data = readLockData();
+  if (!data) {
+    // Corrupt/unreadable lock file — remove it.
+    try {
+      rmSync(LOCK_DIR, { recursive: true, force: true });
+    } catch {
+      /* race condition, ignore */
+    }
+    return;
   }
-  return false;
+  const stale = !isProcessAlive(data.pid) || Date.now() - data.acquired_at > STALE_THRESHOLD_MS;
+  if (stale) {
+    try {
+      rmSync(LOCK_DIR, { recursive: true, force: true });
+    } catch {
+      /* race condition, ignore */
+    }
+  }
 }
 
 /**
- * Acquire the global RIS lock. Blocks until the lock is available.
- * Writes the current PID to the lock file.
+ * Block until the RIS lock is acquired by this process. Polls indefinitely
+ * (no timeout) — RIS backfills are expected to queue behind each other
+ * rather than fail. Stale locks (dead PID, or held past `STALE_THRESHOLD_MS`)
+ * are cleaned up automatically.
  */
 export async function acquireRisLock(): Promise<void> {
+  let lastLog = 0;
+
   for (;;) {
-    if (isLockStale()) {
-      // Try to acquire by writing our PID
-      try {
-        writeFileSync(LOCK_FILE, String(process.pid));
-        // Verify we actually got it (race condition check)
-        const heldPid = readLockPid();
-        if (heldPid === process.pid) return;
-      } catch {
-        // File write failed — retry
+    clearStaleLockIfAny();
+
+    try {
+      mkdirSync(LOCK_DIR, { recursive: false });
+      writeFileSync(
+        join(LOCK_DIR, LOCK_FILE),
+        JSON.stringify({
+          pid: process.pid,
+          acquired_at: Date.now(),
+          command: process.argv.slice(1).join(" "),
+        }),
+        { mode: 0o644 }
+      );
+      heldByThisProcess = true;
+      return;
+    } catch {
+      // Someone else holds it — wait and retry.
+      const now = Date.now();
+      if (now - lastLog > LOG_EVERY_MS) {
+        const data = readLockData();
+        console.log(
+          data
+            ? `⏳ RIS lock held by PID ${data.pid} (${data.command}) since ${new Date(data.acquired_at).toISOString()} — waiting...`
+            : "⏳ Waiting for RIS lock..."
+        );
+        lastLog = now;
       }
+      await new Promise((r) => setTimeout(r, POLL_MS));
     }
-    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
   }
 }
 
 /**
- * Release the global RIS lock. Only removes the file if we hold it.
+ * Release the RIS lock if held by this process. Safe to call even if the
+ * lock was never acquired (no-op).
  */
 export function releaseRisLock(): void {
-  const pid = readLockPid();
-  if (pid === process.pid) {
-    try {
-      unlinkSync(LOCK_FILE);
-    } catch {
-      // Already removed
-    }
+  if (!heldByThisProcess) return;
+  try {
+    rmSync(LOCK_DIR, { recursive: true, force: true });
+  } catch {
+    /* already removed (e.g. stale cleanup from another process), fine */
   }
-}
-
-/**
- * Touch the lock file to update its mtime (prevents stale timeout
- * during long-running backfills). Call periodically.
- */
-export function touchRisLock(): void {
-  const pid = readLockPid();
-  if (pid === process.pid) {
-    try {
-      writeFileSync(LOCK_FILE, String(process.pid));
-    } catch {
-      // ignore
-    }
-  }
+  heldByThisProcess = false;
 }

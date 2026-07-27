@@ -244,14 +244,14 @@ describe("requireScimAuth", () => {
     const req = new Request("https://example.com/api/scim/Users", {
       headers: { Authorization: "Bearer valid-token" },
     });
-    expect(fresh(req)).toEqual({ orgId: "org-a" });
+    expect(await fresh(req)).toEqual({ orgId: "org-a" });
   });
 
   test("returns 401 Response when not authorized", async () => {
     process.env.SCIM_BEARER_TOKENS = "org-a:valid-token";
     const { requireScimAuth: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users");
-    const result = fresh(req);
+    const result = await fresh(req);
     expect(result).toBeInstanceOf(Response);
     expect((result as Response).status).toBe(401);
   });

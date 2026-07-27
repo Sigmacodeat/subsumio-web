@@ -16,11 +16,13 @@ import {
   ArrowUpCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { CitationPanel } from "@/components/legal/CitationPanel";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
 import type { DashboardKey } from "@/content/dashboard";
+import type { GroundingMetadata } from "@/lib/citation-gate-client";
 
 interface PortalCase {
   slug: string;
@@ -112,7 +114,7 @@ export default function PortalPage() {
   const [documentRequests, setDocumentRequests] = useState<PortalDocumentRequest[]>([]);
   const [activeTab, setActiveTab] = useState<"info" | "chat">("info");
   const [chatMessages, setChatMessages] = useState<
-    Array<{ role: "user" | "bot"; text: string; grounded?: boolean }>
+    Array<{ role: "user" | "bot"; text: string; grounding?: GroundingMetadata }>
   >([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -318,7 +320,11 @@ export default function PortalPage() {
       const data = await res.json();
       setChatMessages((prev) => [
         ...prev,
-        { role: "bot", text: data.answer || "Keine Antwort verfügbar.", grounded: data.grounded },
+        {
+          role: "bot",
+          text: data.answer || "Keine Antwort verfügbar.",
+          grounding: data.grounding as GroundingMetadata | undefined,
+        },
       ]);
     } catch {
       setChatMessages((prev) => [
@@ -371,7 +377,7 @@ export default function PortalPage() {
         data-tone="dark"
         className="flex min-h-screen items-center justify-center [background:var(--mk-bg)]"
       >
-        <div className="space-y-3 text-center" role="status" aria-live="polite">
+        <div className="space-y-3 text-center">
           <Loader2 size={32} className="mx-auto animate-spin text-violet-400" />
           <p className="text-sm [color:var(--mk-text-muted)]">{t("portal.loading")}</p>
         </div>
@@ -736,7 +742,7 @@ export default function PortalPage() {
                     if (e.key === "Enter" && !sendingMessage) void sendMessage(caseData.slug);
                   }}
                   placeholder={t("portal.message_placeholder")}
-                  className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-violet-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                  className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-violet-500/50 focus:outline-none"
                 />
                 <button
                   onClick={() => void sendMessage(caseData.slug)}
@@ -768,17 +774,19 @@ export default function PortalPage() {
                       className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${msg.role === "user" ? "border border-violet-500/20 bg-violet-600/15 text-violet-200" : "border [border-color:var(--mk-border)] [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"}`}
                     >
                       <p className="whitespace-pre-wrap">{msg.text}</p>
-                      {msg.grounded && <p className="mt-1 text-xs text-emerald-400/70">grounded</p>}
+                      {msg.role === "bot" && msg.grounding && (
+                        <CitationPanel
+                          data={{ grounding: msg.grounding, citations: [], isStreaming: false }}
+                          compact
+                          className="mt-2"
+                        />
+                      )}
                     </div>
                   </div>
                 ))}
                 {chatLoading && (
                   <div className="flex justify-start">
-                    <div
-                      className="rounded-xl border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"
-                      role="status"
-                      aria-live="polite"
-                    >
+                    <div className="rounded-xl border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]">
                       <Loader2 size={14} className="animate-spin" />
                     </div>
                   </div>
@@ -799,7 +807,7 @@ export default function PortalPage() {
                   if (e.key === "Enter" && !chatLoading) void sendChatMessage();
                 }}
                 placeholder={t("portal.chat_placeholder")}
-                className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-violet-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-violet-500/50 focus:outline-none"
               />
               <button
                 onClick={() => void sendChatMessage()}

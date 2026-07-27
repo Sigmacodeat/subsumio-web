@@ -23,7 +23,7 @@ describe("validateCronAuth", () => {
 
   it("returns 503 when CRON_SECRET is not configured", async () => {
     delete process.env.CRON_SECRET;
-    const res = validateCronAuth(request("Bearer anything"));
+    const res = await validateCronAuth(request("Bearer anything"));
     expect(res).not.toBeNull();
     expect(res!.status).toBe(503);
     await expect(res!.json()).resolves.toEqual({ error: "cron_not_configured" });
@@ -31,24 +31,24 @@ describe("validateCronAuth", () => {
 
   it("returns 401 when the Authorization header is missing", async () => {
     process.env.CRON_SECRET = "s3cr3t";
-    const res = validateCronAuth(request());
+    const res = await validateCronAuth(request());
     expect(res!.status).toBe(401);
     await expect(res!.json()).resolves.toEqual({ error: "unauthorized" });
   });
 
-  it("returns 401 for a wrong bearer token", () => {
+  it("returns 401 for a wrong bearer token", async () => {
     process.env.CRON_SECRET = "s3cr3t";
-    expect(validateCronAuth(request("Bearer wrong"))!.status).toBe(401);
+    expect((await validateCronAuth(request("Bearer wrong")))!.status).toBe(401);
   });
 
-  it("returns 401 for the right secret without the Bearer prefix", () => {
+  it("returns 401 for the right secret without the Bearer prefix", async () => {
     process.env.CRON_SECRET = "s3cr3t";
-    expect(validateCronAuth(request("s3cr3t"))!.status).toBe(401);
+    expect((await validateCronAuth(request("s3cr3t")))!.status).toBe(401);
   });
 
-  it("passes (null) for a correct Bearer token", () => {
+  it("passes (null) for a correct Bearer token", async () => {
     process.env.CRON_SECRET = "s3cr3t";
-    expect(validateCronAuth(request("Bearer s3cr3t"))).toBeNull();
+    expect(await validateCronAuth(request("Bearer s3cr3t"))).toBeNull();
   });
 });
 

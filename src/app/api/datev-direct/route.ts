@@ -49,8 +49,11 @@ export const POST = createHandler(
       record_count: records.length,
       total_amount: totalAmount,
     });
-    exportRecord.status = "generated";
-    exportRecord.sent_at = new Date().toISOString();
+    // NOTE: no DATEV API call happens here or anywhere in this route — see
+    // src/lib/datev-direct.ts and docs/DATEV_DIRECT_INTEGRATION_GAP.md.
+    // The record always stays "pending"; it must never be flipped to
+    // "sent"/"confirmed" based on isDatevConfigured() alone, since that env
+    // check does not verify a live connection and no transfer occurs.
     await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { ...ctx.headers, "Content-Type": "application/json" },

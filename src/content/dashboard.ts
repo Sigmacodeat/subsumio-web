@@ -7514,7 +7514,11 @@ export const D = {
   "nav.court_analytics": { de: "Entscheider-Analytics", en: "Court Analytics" },
   "nav.online_booking": { de: "Online-Termine", en: "Online Booking" },
   "nav.bulk_cases": { de: "Massenakten", en: "Bulk Cases" },
-  "nav.datev_direct": { de: "DATEV Direct", en: "DATEV Direct" },
+  "nav.datev_direct": { de: "DATEV Direct (geplant)", en: "DATEV Direct (planned)" },
+  "nav.tooltip.datev_direct": {
+    de: "Geplante direkte DATEV-API-Anbindung — noch nicht umgesetzt, überträgt aktuell nichts an DATEV",
+    en: "Planned direct DATEV API link — not yet implemented, currently transfers nothing to DATEV",
+  },
   "nav.legal_insurance": { de: "Rechtsschutz", en: "Legal insurance" },
   "nav.peer_benchmark": { de: "Peer-Benchmark", en: "Peer benchmark" },
   "nav.white_label": { de: "White-Label PWA", en: "White-label PWA" },
@@ -7557,19 +7561,23 @@ export const D = {
     de: "Noch keine Gruppe erfüllt die k-Anonymität.",
     en: "No group meets the k-anonymity threshold yet.",
   },
-  "workspace.datev.title": { de: "DATEV Direct", en: "DATEV Direct" },
+  "workspace.datev.title": {
+    de: "DATEV-Direktanbindung (geplant)",
+    en: "DATEV direct link (planned)",
+  },
   "workspace.datev.description": {
-    de: "Rechnungs- und Buchungsdaten direkt an DATEV übertragen",
-    en: "Transfer invoice and accounting data directly to DATEV",
+    de: "Geplante direkte DATEV-API-Anbindung — noch nicht umgesetzt",
+    en: "Planned direct DATEV API link — not yet implemented",
   },
-  "workspace.datev.configured": {
-    de: "DATEV-Zugang konfiguriert — Exporte werden direkt gesendet.",
-    en: "DATEV access configured — exports are sent directly.",
+  "workspace.datev.notice_title": {
+    de: "In Entwicklung — keine Verbindung zu DATEV",
+    en: "In development — no connection to DATEV",
   },
-  "workspace.datev.missing": {
-    de: "DATEV-Zugang fehlt — Exporte werden als ausstehend gespeichert.",
-    en: "DATEV access is missing — exports are stored as pending.",
+  "workspace.datev.notice_body": {
+    de: "Diese Seite legt nur einen internen Testdatensatz an. Es findet keine Übertragung an DATEV statt, unabhängig davon, ob DATEV-Zugangsdaten hinterlegt sind. Für einen echten CSV-Export nutze",
+    en: "This page only creates an internal record. No data is transferred to DATEV, regardless of whether DATEV credentials are configured. For a real CSV export use",
   },
+  "workspace.datev.notice_link": { de: "DATEV-Export", en: "DATEV Export" },
   "workspace.datev.start": { de: "Export starten", en: "Start export" },
   "workspace.datev.create": { de: "Export erzeugen", en: "Create export" },
   "workspace.datev.history": { de: "Übertragungen", en: "Transfers" },

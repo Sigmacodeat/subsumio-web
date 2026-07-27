@@ -483,7 +483,9 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/dashboard/datev-direct",
         icon: FileSpreadsheet,
         labelKey: "nav.datev_direct",
-        keywords: "datev direct api rechnungsdaten buchungsdaten",
+        keywords: "datev direct api rechnungsdaten buchungsdaten geplant",
+        tooltipKey: "nav.tooltip.datev_direct",
+        comingSoon: true,
         audienceTier: "dach-integration",
       },
       {
@@ -2836,6 +2838,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             aria-orientation="vertical"
             aria-label={t("sidebar.resize")}
             tabIndex={0}
+            aria-valuenow={expandedWidth}
+            aria-valuemin={200}
+            aria-valuemax={320}
             onMouseDown={handleMouseDown}
             onTouchStart={handleMouseDown}
             className="absolute inset-y-0 right-0 z-50 w-1 cursor-col-resize bg-transparent transition-colors hover:bg-[color:var(--brand-primary)] focus:bg-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"

@@ -18,7 +18,7 @@ const INACTIVITY_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
  * Runs every 5 minutes to check if users have been inactive for > 30 minutes.
  */
 export async function POST(req: NextRequest) {
-  const authError = validateCronAuth(req);
+  const authError = await validateCronAuth(req);
   if (authError) return authError;
 
   try {
