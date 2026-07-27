@@ -178,7 +178,7 @@ export function WhatsAppInbox() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
         <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );

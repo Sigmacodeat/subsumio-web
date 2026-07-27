@@ -2658,8 +2658,12 @@ export async function checkEvalDrift(engine: BrainEngine): Promise<Check> {
  * for the embed pipeline running there.
  */
 async function checkEmbeddingEnvOverride(engine: BrainEngine): Promise<Check> {
-  const envModel = (process.env.SUBSUMIO_EMBEDDING_MODEL ?? process.env.GBRAIN_EMBEDDING_MODEL)?.trim();
-  const envDim = (process.env.SUBSUMIO_EMBEDDING_DIMENSIONS ?? process.env.GBRAIN_EMBEDDING_DIMENSIONS)?.trim();
+  const envModel = (
+    process.env.SUBSUMIO_EMBEDDING_MODEL ?? process.env.GBRAIN_EMBEDDING_MODEL
+  )?.trim();
+  const envDim = (
+    process.env.SUBSUMIO_EMBEDDING_DIMENSIONS ?? process.env.GBRAIN_EMBEDDING_DIMENSIONS
+  )?.trim();
   if (!envModel && !envDim) {
     return {
       name: "embedding_env_override",
@@ -7476,6 +7480,20 @@ export async function buildChecks(
     checks.push(await checkLawCorpusCompleteness(engine));
   }
 
+  // v0.45 — Chunk & Embedding Quality Audit checks (4 checks).
+  // Surfaces chunk-text quality, embedding model/dim consistency,
+  // chunker version staleness, and legal metadata coverage.
+  if (engine) {
+    progress.heartbeat("chunk_quality");
+    checks.push(await checkChunkQuality(engine));
+    progress.heartbeat("embedding_model_consistency");
+    checks.push(await checkEmbeddingModelConsistency(engine));
+    progress.heartbeat("chunker_version_distribution");
+    checks.push(await checkChunkerVersionDistribution(engine));
+    progress.heartbeat("legal_metadata_coverage");
+    checks.push(await checkLegalMetadataCoverage(engine));
+  }
+
   progress.finish();
 
   return checks;
@@ -8250,6 +8268,330 @@ async function checkSchemaPackSourceDrift(engine: BrainEngine): Promise<Check> {
   } catch (e) {
     return {
       name: "schema_pack_source_drift",
+      status: "ok",
+      message: `Skipped: ${(e as Error).message}`,
+    };
+  }
+}
+
+// =================================================================
+// v0.45 — Chunk & Embedding Quality Audit checks
+// =================================================================
+// Four checks that surface chunk-text quality, embedding model
+// consistency, chunker version staleness, and legal metadata
+// coverage. Designed for DACH/EU legal corpora but applicable to
+// any brain. All are warn-only; never fail-block.
+
+/**
+ * Check for empty, oversized, encoding-issue, and duplicate chunks.
+ * Surfaces data-quality problems in content_chunks that would degrade
+ * retrieval precision or cause embedding API errors.
+ */
+export async function checkChunkQuality(engine: BrainEngine): Promise<Check> {
+  try {
+    const issues: string[] = [];
+
+    // Empty/whitespace-only chunks
+    const emptyRows = await engine.executeRaw<{ n: number }>(
+      `SELECT count(*)::int AS n FROM content_chunks WHERE LENGTH(TRIM(chunk_text)) = 0`
+    );
+    const emptyCount = Number(emptyRows?.[0]?.n ?? 0);
+    if (emptyCount > 0) {
+      issues.push(`${emptyCount} empty/whitespace-only chunks`);
+    }
+
+    // Oversized chunks (> 6000 chars — exceeds maxChars cap)
+    const overRows = await engine.executeRaw<{ n: number }>(
+      `SELECT count(*)::int AS n FROM content_chunks WHERE LENGTH(chunk_text) > 6000`
+    );
+    const overCount = Number(overRows?.[0]?.n ?? 0);
+    if (overCount > 0) {
+      issues.push(`${overCount} chunks exceed 6000 chars (maxChars cap violation)`);
+    }
+
+    // Encoding issues: replacement char or HTML entities
+    const encRows = await engine.executeRaw<{ n: number }>(
+      `SELECT count(*)::int AS n FROM content_chunks
+       WHERE chunk_text LIKE '%' || chr(65533) || '%'
+          OR chunk_text LIKE '%&amp;%'
+          OR chunk_text LIKE '%&lt;%'
+          OR chunk_text LIKE '%&gt;%'`
+    );
+    const encCount = Number(encRows?.[0]?.n ?? 0);
+    if (encCount > 0) {
+      issues.push(`${encCount} chunks with encoding issues (replacement chars or HTML entities)`);
+    }
+
+    // Duplicate chunk texts
+    const dupRows = await engine.executeRaw<{ n: number }>(
+      `SELECT count(*)::int AS n FROM (
+         SELECT chunk_text FROM content_chunks GROUP BY chunk_text HAVING count(*) > 1
+       ) t`
+    );
+    const dupCount = Number(dupRows?.[0]?.n ?? 0);
+    if (dupCount > 0) {
+      issues.push(`${dupCount} duplicate chunk texts`);
+    }
+
+    if (issues.length === 0) {
+      return {
+        name: "chunk_quality",
+        status: "ok",
+        message: "No empty, oversized, encoding-issue, or duplicate chunks detected.",
+      };
+    }
+    return {
+      name: "chunk_quality",
+      status: "warn",
+      message: `Chunk quality issues: ${issues.join("; ")}.`,
+    };
+  } catch (e) {
+    return {
+      name: "chunk_quality",
+      status: "ok",
+      message: `Skipped: ${(e as Error).message}`,
+    };
+  }
+}
+
+/**
+ * Check for embedding model and dimension consistency across chunks.
+ * Mixed models or dimensions indicate a partial migration or config
+ * drift that will produce inconsistent search results.
+ */
+export async function checkEmbeddingModelConsistency(engine: BrainEngine): Promise<Check> {
+  try {
+    // Distinct models in content_chunks
+    const modelRows = await engine.executeRaw<{ model: string; n: number }>(
+      `SELECT model, count(*)::int AS n FROM content_chunks
+       WHERE embedding IS NOT NULL
+       GROUP BY model ORDER BY count(*) DESC`
+    );
+    if (!modelRows || modelRows.length === 0) {
+      return {
+        name: "embedding_model_consistency",
+        status: "ok",
+        message: "No embedded chunks — model consistency N/A.",
+      };
+    }
+    const distinctModels = modelRows.length;
+    const modelSummary = modelRows.map((r) => `${r.model} (${r.n})`).join(", ");
+
+    // Distinct embedding dimensions (sampled for performance)
+    const dimRows = await engine.executeRaw<{ dims: number; n: number }>(
+      `SELECT vector_dims(embedding) AS dims, count(*)::int AS n
+       FROM content_chunks WHERE embedding IS NOT NULL
+       GROUP BY vector_dims(embedding) ORDER BY count(*) DESC`
+    );
+    const distinctDims = dimRows?.length ?? 0;
+    const dimSummary = dimRows ? dimRows.map((r) => `${r.dims}d (${r.n})`).join(", ") : "unknown";
+
+    // Embedding signature distribution
+    const sigRows = await engine.executeRaw<{ sig: string | null; n: number }>(
+      `SELECT embedding_signature, count(*)::int AS n
+       FROM pages WHERE deleted_at IS NULL
+       GROUP BY embedding_signature ORDER BY count(*) DESC`
+    );
+    const distinctSigs = sigRows?.filter((r) => r.sig !== null).length ?? 0;
+    const nullSigCount = sigRows?.find((r) => r.sig === null)?.n ?? 0;
+
+    const issues: string[] = [];
+    if (distinctModels > 1) {
+      issues.push(`${distinctModels} embedding models in use: ${modelSummary}`);
+    }
+    if (distinctDims > 1) {
+      issues.push(`${distinctDims} embedding dimensions: ${dimSummary}`);
+    }
+    if (distinctSigs > 1) {
+      issues.push(`${distinctSigs} distinct embedding signatures on pages`);
+    }
+
+    if (issues.length === 0) {
+      return {
+        name: "embedding_model_consistency",
+        status: "ok",
+        message: `Single model (${modelSummary}), ${dimSummary}, signature consistent${nullSigCount > 0 ? ` (${nullSigCount} pages with NULL signature — grandfathered)` : ""}.`,
+      };
+    }
+    return {
+      name: "embedding_model_consistency",
+      status: "warn",
+      message: `Embedding inconsistency: ${issues.join("; ")}. Run \`gbrain embed --stale\` to re-embed under the current model.`,
+    };
+  } catch (e) {
+    return {
+      name: "embedding_model_consistency",
+      status: "ok",
+      message: `Skipped: ${(e as Error).message}`,
+    };
+  }
+}
+
+/**
+ * Check for pages still running on old chunker versions.
+ * Stale chunker versions mean chunks were built with outdated
+ * splitting logic — re-chunking improves retrieval precision.
+ */
+export async function checkChunkerVersionDistribution(engine: BrainEngine): Promise<Check> {
+  try {
+    const rows = await engine.executeRaw<{ version: string | null; n: number }>(
+      `SELECT chunker_version::text, count(*)::int AS n
+       FROM pages WHERE deleted_at IS NULL
+       GROUP BY chunker_version ORDER BY chunker_version`
+    );
+    if (!rows || rows.length === 0) {
+      return {
+        name: "chunker_version_distribution",
+        status: "ok",
+        message: "No pages — chunker version distribution N/A.",
+      };
+    }
+    const total = rows.reduce((a, r) => a + r.n, 0);
+    const stale = rows.filter((r) => {
+      if (!r.version) return false;
+      const v = parseInt(r.version, 10);
+      return v < 3;
+    });
+    const staleCount = stale.reduce((a, r) => a + r.n, 0);
+    const nullCount = rows.find((r) => r.version === null)?.n ?? 0;
+
+    const versionStr = rows
+      .map((r) => `v${r.version ?? "NULL"}: ${r.n} (${Math.round((r.n / total) * 100)}%)`)
+      .join(", ");
+
+    if (staleCount > 0) {
+      return {
+        name: "chunker_version_distribution",
+        status: "warn",
+        message: `${staleCount} pages on chunker version < 3 (${versionStr}). Run \`gbrain reindex --markdown\` to re-chunk with the current pipeline.`,
+      };
+    }
+    if (nullCount > 0) {
+      return {
+        name: "chunker_version_distribution",
+        status: "warn",
+        message: `${nullCount} pages with NULL chunker_version (${versionStr}). These predate version stamping — re-index to populate.`,
+      };
+    }
+    return {
+      name: "chunker_version_distribution",
+      status: "ok",
+      message: `All pages on current chunker versions (${versionStr}).`,
+    };
+  } catch (e) {
+    return {
+      name: "chunker_version_distribution",
+      status: "ok",
+      message: `Skipped: ${(e as Error).message}`,
+    };
+  }
+}
+
+/**
+ * Check legal metadata coverage: §-metadata, jurisdiction,
+ * abbreviation, and contextual retrieval mode for legal pages.
+ * Missing metadata degrades legal retrieval precision.
+ */
+export async function checkLegalMetadataCoverage(engine: BrainEngine): Promise<Check> {
+  try {
+    // Page type distribution
+    const typeRows = await engine.executeRaw<{ type: string | null; n: number }>(
+      `SELECT type, count(*)::int AS n FROM pages
+       WHERE deleted_at IS NULL GROUP BY type ORDER BY count(*) DESC`
+    );
+    const statutePages =
+      typeRows
+        ?.filter((r) => r.type === "law" || r.type === "statute")
+        .reduce((a, r) => a + r.n, 0) ?? 0;
+    const courtPages =
+      typeRows
+        ?.filter((r) => r.type === "court_decision" || r.type === "judgement")
+        .reduce((a, r) => a + r.n, 0) ?? 0;
+    const legalTotal = statutePages + courtPages;
+
+    if (legalTotal === 0) {
+      return {
+        name: "legal_metadata_coverage",
+        status: "ok",
+        message: "No legal pages (type: law/statute/court_decision) — metadata coverage N/A.",
+      };
+    }
+
+    const issues: string[] = [];
+
+    // §-metadata coverage
+    if (statutePages > 0) {
+      const paraRows = await engine.executeRaw<{ n: number }>(
+        `SELECT count(*)::int AS n FROM pages
+         WHERE deleted_at IS NULL AND type IN ('law','statute')
+           AND frontmatter->>'paragraph' IS NOT NULL`
+      );
+      const withPara = Number(paraRows?.[0]?.n ?? 0);
+      const pct = Math.round((withPara / statutePages) * 100);
+      if (pct < 90) {
+        issues.push(
+          `${statutePages - withPara} statute pages missing §-metadata (${pct}% coverage)`
+        );
+      }
+
+      const abbrRows = await engine.executeRaw<{ n: number }>(
+        `SELECT count(*)::int AS n FROM pages
+         WHERE deleted_at IS NULL AND type IN ('law','statute')
+           AND frontmatter->>'abbreviation' IS NOT NULL`
+      );
+      const withAbbr = Number(abbrRows?.[0]?.n ?? 0);
+      const abbrPct = Math.round((withAbbr / statutePages) * 100);
+      if (abbrPct < 90) {
+        issues.push(
+          `${statutePages - withAbbr} statute pages missing abbreviation (${abbrPct}% coverage)`
+        );
+      }
+    }
+
+    // Jurisdiction coverage
+    const jurRows = await engine.executeRaw<{ n: number }>(
+      `SELECT count(*)::int AS n FROM pages
+       WHERE deleted_at IS NULL
+         AND type IN ('law','statute','court_decision','judgement')
+         AND frontmatter->>'jurisdiction' IS NOT NULL`
+    );
+    const withJur = Number(jurRows?.[0]?.n ?? 0);
+    const jurPct = Math.round((withJur / legalTotal) * 100);
+    if (jurPct < 90) {
+      issues.push(`${legalTotal - withJur} legal pages missing jurisdiction (${jurPct}% coverage)`);
+    }
+
+    // Court decision metadata
+    if (courtPages > 0) {
+      const courtRows = await engine.executeRaw<{ n: number }>(
+        `SELECT count(*)::int AS n FROM pages
+         WHERE deleted_at IS NULL AND type IN ('court_decision','judgement')
+           AND frontmatter->>'court' IS NOT NULL`
+      );
+      const withCourt = Number(courtRows?.[0]?.n ?? 0);
+      const courtPct = Math.round((withCourt / courtPages) * 100);
+      if (courtPct < 80) {
+        issues.push(
+          `${courtPages - withCourt} court decisions missing court name (${courtPct}% coverage)`
+        );
+      }
+    }
+
+    if (issues.length === 0) {
+      return {
+        name: "legal_metadata_coverage",
+        status: "ok",
+        message: `Legal metadata coverage good: ${statutePages} statutes, ${courtPages} court decisions, jurisdiction ${jurPct ?? 100}%.`,
+      };
+    }
+    return {
+      name: "legal_metadata_coverage",
+      status: "warn",
+      message: `Legal metadata gaps: ${issues.join("; ")}. Check frontmatter in source files.`,
+    };
+  } catch (e) {
+    return {
+      name: "legal_metadata_coverage",
       status: "ok",
       message: `Skipped: ${(e as Error).message}`,
     };

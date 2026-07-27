@@ -64,7 +64,7 @@ import {
 } from "@/lib/regulatory-monitors";
 
 const inputCls =
-  "w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]";
+  "w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus:border-[color:var(--brand-primary)]";
 const selectCls = inputCls;
 const labelCls = "block text-xs text-[color:var(--ds-text-muted)] mb-1 font-medium";
 
@@ -440,6 +440,11 @@ function MonitorCard({
                 ? t("monitoring.card_pause")
                 : t("monitoring.card_activate")
             }
+            aria-label={
+              monitor.status === "active"
+                ? t("monitoring.card_pause")
+                : t("monitoring.card_activate")
+            }
             className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
           >
             {monitor.status === "active" ? <Pause size={14} /> : <Play size={14} />}
@@ -447,6 +452,7 @@ function MonitorCard({
           <button
             onClick={onEdit}
             title={t("monitoring.card_edit")}
+            aria-label={t("monitoring.card_edit")}
             className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
           >
             <Pencil size={14} />
@@ -454,6 +460,7 @@ function MonitorCard({
           <button
             onClick={onDelete}
             title={t("monitoring.card_delete")}
+            aria-label={t("monitoring.card_delete")}
             className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-danger-text)]"
           >
             <Trash2 size={14} />
@@ -813,7 +820,11 @@ export default function MonitoringPage() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-sm text-[color:var(--ds-text-muted)]">
+        <div
+          className="flex items-center justify-center py-16 text-sm text-[color:var(--ds-text-muted)]"
+          role="status"
+          aria-live="polite"
+        >
           <Loader2 size={18} className="mr-2 animate-spin" /> {t("monitoring.loading")}
         </div>
       ) : (
@@ -900,7 +911,7 @@ export default function MonitoringPage() {
                 <select
                   value={severityFilter}
                   onChange={(e) => setSeverityFilter(e.target.value as Severity | "all")}
-                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 >
                   <option value="all">{t("monitoring.filter_all_severities")}</option>
                   <option value="high">{t("monitoring.severity_high")}</option>
@@ -910,7 +921,7 @@ export default function MonitoringPage() {
                 <select
                   value={sourceFilter}
                   onChange={(e) => setSourceFilter(e.target.value)}
-                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 >
                   <option value="all">{t("monitoring.filter_all_sources")}</option>
                   {availableSources.map((s) => (
@@ -922,7 +933,7 @@ export default function MonitoringPage() {
                 <select
                   value={monitorFilter}
                   onChange={(e) => setMonitorFilter(e.target.value)}
-                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 >
                   <option value="all">{t("monitoring.filter_all_monitors")}</option>
                   {monitors.map((m) => (

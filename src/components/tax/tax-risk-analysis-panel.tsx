@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,8 @@ import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import { ShieldAlert, Loader2, AlertTriangle, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
 interface TaxRiskAnalysisPanelProps {
   clientSlug?: string;
@@ -41,6 +43,7 @@ export function TaxRiskAnalysisPanel({ clientSlug, returnSlug }: TaxRiskAnalysis
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RiskResult | null>(null);
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
 
   async function analyze() {
     setLoading(true);
@@ -55,6 +58,18 @@ export function TaxRiskAnalysisPanel({ clientSlug, returnSlug }: TaxRiskAnalysis
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!result) return;
+    const groundingText = [
+      ...result.risks.map((r) =>
+        [r.category, r.description, r.mitigation, r.legal_basis].filter(Boolean).join(" — ")
+      ),
+      ...result.recommendations,
+    ].join("\n\n");
+    groundAnswer(groundingText).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   const levelColor =
     result?.overall_risk_level === "high"
@@ -174,6 +189,17 @@ export function TaxRiskAnalysisPanel({ clientSlug, returnSlug }: TaxRiskAnalysis
               </ul>
             </div>
           )}
+
+          <CitationPanel
+            data={
+              {
+                grounding: grounding ?? null,
+                citations: [],
+                isStreaming: isGrounding,
+              } satisfies CitationPanelData
+            }
+            compact
+          />
         </div>
       )}
     </Card>

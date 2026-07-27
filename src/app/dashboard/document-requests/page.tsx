@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
+import { useToast } from "@/components/ui/toast";
 import type { Lang } from "@/content/site";
 
 type RequestStatus = "draft" | "sent" | "partially_fulfilled" | "fulfilled" | "expired";
@@ -78,6 +79,7 @@ function createdLabel(lang: Lang, value: string): string {
 
 export default function DocumentRequestsPage() {
   const { t, lang } = useLang();
+  const { addToast } = useToast();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<"all" | RequestStatus>("all");
   const [search, setSearch] = useState("");
@@ -98,6 +100,13 @@ export default function DocumentRequestsPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["document-requests", "list"] });
     },
+    onError: (err) => {
+      addToast({
+        type: "error",
+        title: t("docreq.toast_update_failed"),
+        description: err instanceof Error ? err.message : undefined,
+      });
+    },
   });
 
   const createMutation = useMutation({
@@ -109,6 +118,14 @@ export default function DocumentRequestsPage() {
         items: "",
         message_draft: "",
         include_portal_link: true,
+      });
+      addToast({ type: "success", title: t("docreq.toast_created") });
+    },
+    onError: (err) => {
+      addToast({
+        type: "error",
+        title: t("docreq.toast_create_failed"),
+        description: err instanceof Error ? err.message : undefined,
       });
     },
   });
@@ -169,9 +186,12 @@ export default function DocumentRequestsPage() {
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Dokumentenanfragen"
-        description="Offene Unterlagenanforderungen, Versandstatus und Fulfillment im Blick"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Dokumentenanfragen" }]}
+        title={t("docreq.title")}
+        description={t("docreq.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: "Dokumentenanfragen" },
+        ]}
         actions={
           <Button
             variant="secondary"
@@ -217,7 +237,7 @@ export default function DocumentRequestsPage() {
               id="doc-req-case"
               value={createForm.case_slug}
               onChange={(e) => setCreateForm((prev) => ({ ...prev, case_slug: e.target.value }))}
-              placeholder="Akte, z. B. legal/cases/2026-014"
+              placeholder={t("docreq.ph_slug")}
             />
           </div>
           <div className="space-y-1.5 md:col-span-2">
@@ -228,9 +248,9 @@ export default function DocumentRequestsPage() {
               id="doc-req-items"
               value={createForm.items}
               onChange={(e) => setCreateForm((prev) => ({ ...prev, items: e.target.value }))}
-              placeholder="Unterlagen, eine pro Zeile"
+              placeholder={t("docreq.ph_items")}
               rows={3}
-              className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-border-strong)] focus:outline-none"
+              className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
           </div>
           <div className="space-y-1.5 md:col-span-2">
@@ -243,9 +263,9 @@ export default function DocumentRequestsPage() {
               onChange={(e) =>
                 setCreateForm((prev) => ({ ...prev, message_draft: e.target.value }))
               }
-              placeholder="Nachrichtenentwurf"
+              placeholder={t("docreq.ph_message")}
               rows={3}
-              className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-border-strong)] focus:outline-none"
+              className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
           </div>
         </div>
@@ -302,14 +322,18 @@ export default function DocumentRequestsPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Dokumentenanfrage suchen…"
+            placeholder={t("docreq.ph_search")}
             className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)]"
           />
         </div>
       </div>
 
       {listQuery.isLoading ? (
-        <div className="flex items-center justify-center py-20 text-[color:var(--ds-text-muted)]">
+        <div
+          className="flex items-center justify-center py-20 text-[color:var(--ds-text-muted)]"
+          role="status"
+          aria-live="polite"
+        >
           <Loader2 size={20} className="mr-2 animate-spin" /> Lade Dokumentenanfragen…
         </div>
       ) : filtered.length === 0 ? (

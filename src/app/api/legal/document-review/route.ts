@@ -20,6 +20,7 @@ export const POST = createEngineProxy({
   enginePath: "/api/legal/document-review",
   body: documentReviewSchema,
   quota: "queries",
+  credits: "document_analysis",
   stream: true,
   citationGate: true,
   receiptProductType: "vertragsreview",

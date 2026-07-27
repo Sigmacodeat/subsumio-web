@@ -33,7 +33,10 @@ export default function BulkCasesPage() {
       <PageHeader
         title={tr("workspace.bulk.title")}
         description={tr("workspace.bulk.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Massenakten" }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: "Massenakten" },
+        ]}
       />
       <section className="space-y-3 rounded-xl border p-5">
         <div className="flex justify-between">

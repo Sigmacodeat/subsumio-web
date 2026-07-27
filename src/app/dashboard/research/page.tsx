@@ -588,7 +588,7 @@ function ResearchPageInner() {
             value={jurisdiction}
             onChange={(e) => setJurisdiction(e.target.value)}
             aria-label="Rechtsordnung"
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           >
             <option value="de">🇩🇪 Deutschland</option>
             <option value="at">🇦🇹 Österreich</option>
@@ -604,8 +604,8 @@ function ResearchPageInner() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && runResearch()}
-              placeholder="Rechtsfrage eingeben… (z.B. 'Wann ist eine AGB-Klausel nach § 307 BGB unwirksam?')"
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              placeholder={t("research.ph_query")}
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
           </div>
           <Button
@@ -626,7 +626,11 @@ function ResearchPageInner() {
           </Button>
         </div>
         {loading && researchPhase && (
-          <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-4 py-3 text-sm text-[color:var(--ds-muted)]">
+          <div
+            className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-4 py-3 text-sm text-[color:var(--ds-muted)]"
+            role="status"
+            aria-live="polite"
+          >
             <Loader2 size={13} className="shrink-0 animate-spin text-[color:var(--brand)]" />
             <span>{researchPhase}</span>
             {researchJobId && (
@@ -774,7 +778,7 @@ function ResearchPageInner() {
                 value={savedSearch}
                 onChange={(e) => setSavedSearch(e.target.value)}
                 placeholder={t("research.placeholder_search")}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
             </div>
             <div className="flex gap-1">
@@ -946,7 +950,11 @@ export default function ResearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]">
+        <div
+          className="flex items-center justify-center py-20 text-sm text-[color:var(--ds-text-muted)]"
+          role="status"
+          aria-live="polite"
+        >
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       }

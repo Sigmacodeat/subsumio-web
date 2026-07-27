@@ -36,8 +36,8 @@ const ROW_TOP: Record<string, MarqueeItem[]> = {
   de: [
     { icon: ShieldCheck, label: "DSGVO-konform" },
     { icon: ScrollText, label: "§ 203 StGB" },
-    { icon: BadgeCheck, label: "SOC 2 Type II" },
-    { icon: FileCheck, label: "ISO 27001" },
+    { icon: BadgeCheck, label: "SOC 2 Vorbereitung" },
+    { icon: FileCheck, label: "ISO 27001 geplant" },
     { icon: Globe, label: "EU-Cloud" },
     { icon: Server, label: "On-Premise" },
     { icon: Lock, label: "Kein Training auf deinen Daten" },
@@ -45,8 +45,8 @@ const ROW_TOP: Record<string, MarqueeItem[]> = {
   en: [
     { icon: ShieldCheck, label: "GDPR-ready" },
     { icon: ScrollText, label: "Professional Secrecy" },
-    { icon: BadgeCheck, label: "SOC 2 Type II" },
-    { icon: FileCheck, label: "ISO 27001" },
+    { icon: BadgeCheck, label: "SOC 2 preparation" },
+    { icon: FileCheck, label: "ISO 27001 planned" },
     { icon: Globe, label: "EU-Cloud" },
     { icon: Server, label: "On-Premise" },
     { icon: Lock, label: "No training on your data" },
@@ -153,6 +153,7 @@ export default function LogoMarquee({ lang }: { lang: Lang }) {
   const heading = UI_STRINGS[lang].trustHeading;
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- purely decorative hover-to-pause on an auto-scrolling marquee; not a control that needs a keyboard equivalent (motion already respects prefers-reduced-motion via useReducedMotion above).
     <section
       aria-label={eyebrow}
       data-tone="light"

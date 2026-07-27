@@ -102,9 +102,13 @@ export function CaseCloseChecklistDialog({
           <DialogDescription>{t("cases.close_checklist_desc" as DashboardKey)}</DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 space-y-3 overflow-y-auto px-6 py-2">
+        <div
+          className="flex-1 space-y-3 overflow-y-auto px-6 py-2"
+          role="status"
+          aria-live="polite"
+        >
           {loading ? (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-8" role="status" aria-live="polite">
               <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
             </div>
           ) : checklist ? (

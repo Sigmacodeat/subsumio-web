@@ -10,6 +10,14 @@ import { verifySession, SESSION_COOKIE } from "@/lib/auth/session";
 import { getStore, getOrgStore, type Plan, type User } from "@/lib/auth/store";
 import { can, forbidden, type RouteAction } from "@/lib/permissions";
 import { checkQuota, incQuota, quotaExceeded, type QuotaType } from "@/lib/plans";
+import {
+  checkCredits,
+  deductCredits,
+  insufficientCreditsResponse,
+  CREDIT_COSTS,
+  type CreditOperation,
+  type OwnerType,
+} from "@/lib/billing/credits";
 import { requireApiRate, type RateTier } from "@/lib/rate-limit-api";
 import { createHmac } from "node:crypto";
 import { env } from "@/lib/env";
@@ -144,10 +152,7 @@ export function unauthorized(): Response {
  * TTL: 60 seconds — balances freshness with performance for rapid
  * successive queries on the same case.
  */
-const caseJurisdictionCache = new Map<
-  string,
-  { jurisdiction: string; expiresAt: number }
->();
+const caseJurisdictionCache = new Map<string, { jurisdiction: string; expiresAt: number }>();
 const CASE_JURISDICTION_CACHE_TTL_MS = 60_000;
 
 /**
@@ -313,7 +318,8 @@ export async function requireEngineContext(
   req: Request,
   action: RouteAction,
   rateTier: RateTier,
-  quotaField?: QuotaType
+  quotaField?: QuotaType,
+  creditOp?: CreditOperation
 ): Promise<GuardedContext | Response> {
   const ctx = await engineContext();
   if (!ctx) return unauthorized();
@@ -327,7 +333,17 @@ export async function requireEngineContext(
   const rateCheck = await requireApiRate(ctx.user.id, rateTier);
   if (rateCheck) return rateCheck;
 
-  // 3. Quota (optional)
+  // 3. Credits (optional — checked before quota)
+  if (creditOp && CREDIT_COSTS[creditOp] > 0) {
+    const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
+    const ownerId = ctx.user.orgId ?? ctx.user.id;
+    const creditCheck = await checkCredits(ownerId, ownerType, CREDIT_COSTS[creditOp]);
+    if (!creditCheck.ok) {
+      return insufficientCreditsResponse(creditCheck.balance, creditCheck.required);
+    }
+  }
+
+  // 4. Quota (optional)
   if (quotaField) {
     const quota = await checkQuota(ctx.brainId, ctx.plan, quotaField);
     if (!quota.ok) {
@@ -348,6 +364,29 @@ export async function recordQuota(
   amount = 1
 ): Promise<void> {
   await incQuota(ctx.brainId, field, amount);
+}
+
+/**
+ * Record credit consumption after a successful AI operation.
+ * Fire-and-forget; errors are logged but not thrown.
+ * Credits are only deducted after the operation succeeds (no charge for failed queries).
+ */
+export async function recordCreditConsumption(
+  ctx: GuardedContext,
+  operation: CreditOperation,
+  caseSlug?: string
+): Promise<void> {
+  const cost = CREDIT_COSTS[operation];
+  if (cost <= 0) return;
+  const ownerType: OwnerType = ctx.user.orgId ? "org" : "user";
+  const ownerId = ctx.user.orgId ?? ctx.user.id;
+  try {
+    await deductCredits(ownerId, ownerType, cost, { operation, caseSlug });
+  } catch (err) {
+    console.error(
+      `[credits] consumption record failed: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
 }
 
 /**

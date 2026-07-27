@@ -329,7 +329,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
         title={t("strategy.title")}
         description={t("strategy.description")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("strategy.breadcrumb") },
         ]}
       />
@@ -378,7 +378,11 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
             </h2>
           </div>
           {loadingCases ? (
-            <div className="py-8 text-center text-sm text-[color:var(--ds-text-muted)]">
+            <div
+              className="py-8 text-center text-sm text-[color:var(--ds-text-muted)]"
+              role="status"
+              aria-live="polite"
+            >
               <Loader2 size={20} className="mx-auto mb-2 animate-spin" />
               {t("strategy.loading_cases")}
             </div>
@@ -396,7 +400,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
               <select
                 value={selectedSlug}
                 onChange={(e) => setSelectedSlug(e.target.value)}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               >
                 <option value="">{t("strategy.select_placeholder")}</option>
                 {cases.map((c) => (
@@ -716,7 +720,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
         <div className="space-y-4">
           {generatingDrafts && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2" role="status" aria-live="polite">
                 <Loader2 size={18} className="brand-text animate-spin" />
                 <span className="text-sm text-[color:var(--ds-text-muted)]">
                   {t("strategy.drafts_generating")}

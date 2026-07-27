@@ -46,6 +46,9 @@ import {
   type BlockchainType,
 } from "@/lib/rciid-client";
 import { BLOCKCHAIN_LABELS, BLOCKCHAIN_COLORS } from "@/lib/crypto-wallet-detector";
+import { RciidQualityScore } from "@/components/dashboard/rciid-quality-score";
+import { RciidWalletSuggestion } from "@/components/dashboard/rciid-wallet-suggestion";
+import { ScanSearch } from "lucide-react";
 
 interface RciidCaseRow {
   case_id: string;
@@ -89,6 +92,8 @@ export default function CryptoForensicsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [showSubmit, setShowSubmit] = useState(false);
   const [showDetect, setShowDetect] = useState(false);
+  const [showScanCase, setShowScanCase] = useState(false);
+  const [scanCaseSlug, setScanCaseSlug] = useState("");
   const [toast, setToast] = useState<string | null>(null);
 
   // Submit form state
@@ -248,7 +253,7 @@ export default function CryptoForensicsPage() {
         title={t("crypto_forensics.title" as DashboardKey)}
         description={t("crypto_forensics.description" as DashboardKey)}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("crypto_forensics.breadcrumb" as DashboardKey) },
         ]}
         actions={
@@ -264,6 +269,17 @@ export default function CryptoForensicsPage() {
             <Button variant="ghost" size="sm" onClick={() => setShowDetect(true)}>
               <Search size={14} />
               {t("crypto_forensics.detect_wallets" as DashboardKey)}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setScanCaseSlug("");
+                setShowScanCase(true);
+              }}
+            >
+              <ScanSearch size={14} />
+              Fall scannen
             </Button>
             <Button size="sm" onClick={() => setShowSubmit(true)}>
               <Plus size={14} />
@@ -412,6 +428,18 @@ export default function CryptoForensicsPage() {
                     />
                   </div>
                 </div>
+                {/* Quality Score for active cases */}
+                {isRciidCaseActive(c.status) && (
+                  <div className="mt-2">
+                    <RciidQualityScore
+                      rciidCaseId={c.case_id}
+                      onImproveData={(missing) => {
+                        setScanCaseSlug(c.case_id);
+                        setShowScanCase(true);
+                      }}
+                    />
+                  </div>
+                )}
                 <div className="flex shrink-0 items-center gap-2">
                   {isRciidCaseDone(c.status) && (
                     <Button
@@ -477,7 +505,7 @@ export default function CryptoForensicsPage() {
                 <Input
                   value={caseTitle}
                   onChange={(e) => setCaseTitle(e.target.value)}
-                  placeholder="Mustermann vs. Betrüger"
+                  placeholder={t("crypto.ph_case_name")}
                 />
               </div>
             </div>
@@ -490,7 +518,7 @@ export default function CryptoForensicsPage() {
                 <Input
                   value={clientRef}
                   onChange={(e) => setClientRef(e.target.value)}
-                  placeholder="Mandant Mustermann"
+                  placeholder={t("crypto.ph_client")}
                 />
               </div>
               <div>
@@ -517,7 +545,7 @@ export default function CryptoForensicsPage() {
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Verdacht auf Krypto-Betrug via Phishing..."
+                placeholder={t("crypto.ph_suspicion")}
                 className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
                 rows={3}
               />
@@ -584,7 +612,7 @@ export default function CryptoForensicsPage() {
                 <Input
                   value={newWalletLabel}
                   onChange={(e) => setNewWalletLabel(e.target.value)}
-                  placeholder="Label"
+                  placeholder={t("crypto.ph_label")}
                   className="w-32"
                 />
                 <Button
@@ -636,7 +664,7 @@ export default function CryptoForensicsPage() {
               <textarea
                 value={detectText}
                 onChange={(e) => setDetectText(e.target.value)}
-                placeholder="Fügen Sie hier den Text aus Fall-Dokumenten ein..."
+                placeholder={t("crypto.ph_text")}
                 className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 font-mono text-sm"
                 rows={8}
               />
@@ -702,6 +730,67 @@ export default function CryptoForensicsPage() {
                 <Search size={14} className="mr-2" />
               )}
               {t("crypto_forensics.scan" as DashboardKey)}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Scan Case Dialog */}
+      <Dialog open={showScanCase} onOpenChange={setShowScanCase}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ScanSearch size={18} />
+              Fall nach Krypto-Adressen scannen
+            </DialogTitle>
+            <DialogDescription>
+              Alle Dokumente eines Falls werden automatisch nach Krypto-Wallet-Adressen durchsucht.
+              Gefundene Adressen können direkt für die forensische Analyse übernommen werden.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+                Fall-ID (Slug)
+              </label>
+              <Input
+                value={scanCaseSlug}
+                onChange={(e) => setScanCaseSlug(e.target.value)}
+                placeholder="case-2026-001"
+              />
+            </div>
+
+            {scanCaseSlug.trim() && (
+              <RciidWalletSuggestion
+                caseSlug={scanCaseSlug.trim()}
+                onAcceptWallets={(acceptedWallets) => {
+                  // Add accepted wallets to the submit form
+                  const newWallets = acceptedWallets.map((w) => ({
+                    address: w.address,
+                    blockchain: w.blockchain,
+                    label: w.isKnownFraud ? "Known Fraud" : "",
+                  }));
+                  // Deduplicate against existing wallets
+                  const existing = new Set(wallets.map((w) => w.address));
+                  const toAdd = newWallets.filter((w) => !existing.has(w.address));
+                  if (toAdd.length > 0) {
+                    setWallets([...wallets, ...toAdd]);
+                    showToast(`${toAdd.length} Adresse(n) übernommen`);
+                    setShowScanCase(false);
+                    setShowSubmit(true);
+                    if (!caseSlug) setCaseSlug(scanCaseSlug.trim());
+                  } else {
+                    showToast("Alle Adressen bereits vorhanden");
+                  }
+                }}
+              />
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowScanCase(false)}>
+              {t("crypto_forensics.close" as DashboardKey)}
             </Button>
           </DialogFooter>
         </DialogContent>

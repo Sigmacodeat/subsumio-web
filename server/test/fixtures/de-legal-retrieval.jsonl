@@ -98,3 +98,33 @@
 {"question_id":"de-098","question":"Was ist die Untersuchungshaft und wann wird sie angeordnet?","answer_slug":"stpo","expected_section":"§ 112","legal_area":"stpo","question_type":"procedural"}
 {"question_id":"de-099","question":"Welche Rechtsschutzmöglichkeiten gibt es im Verwaltungsrecht?","answer_slug":"vwgo","expected_section":"§ 40","legal_area":"vwgo","question_type":"procedural"}
 {"question_id":"de-100","question":"Was ist der verwaltungsgerichtliche Rechtsweg?","answer_slug":"vwgo","expected_section":"§ 40","legal_area":"vwgo","question_type":"procedural"}
+{"question_id":"de-101","question":"Was ist eine Pflichtverletzung im Schuldverhältnis?","answer_slug":"bgb","expected_section":"§ 280","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-102","question":"Wann kann vom Vertrag zurückgetreten werden?","answer_slug":"bgb","expected_section":"§ 323","legal_area":"bgb","question_type":"vertragsrecht"}
+{"question_id":"de-103","question":"Was ist der Schadensersatz statt der Leistung?","answer_slug":"bgb","expected_section":"§ 281","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-104","question":"Wann ist eine Willenserklärung wegen Täuschung anfechtbar?","answer_slug":"bgb","expected_section":"§ 123","legal_area":"bgb","question_type":"vertragsrecht"}
+{"question_id":"de-105","question":"Was ist die Geschäftsfähigkeit einer Person?","answer_slug":"bgb","expected_section":"§ 104","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-106","question":"Wann ist ein Rechtsgeschäft sittenwidrig und nichtig?","answer_slug":"bgb","expected_section":"§ 138","legal_area":"bgb","question_type":"definition"}
+{"question_id":"de-107","question":"Was ist die Verjährung von Ansprüchen im deutschen BGB?","answer_slug":"bgb","expected_section":"§ 195","legal_area":"bgb","question_type":"verjaehrung"}
+{"question_id":"de-108","question":"Was ist die Haftung des Vermieters für Mängel der Mietsache?","answer_slug":"bgb","expected_section":"§ 535","legal_area":"bgb","question_type":"gewaehrleistung"}
+{"question_id":"de-109","question":"Wann kann eine Kündigung des Mietvertrags erfolgen?","answer_slug":"bgb","expected_section":"§ 573","legal_area":"bgb","question_type":"vertragsrecht"}
+{"question_id":"de-110","question":"Was ist die Haftung für unerlaubte Handlungen?","answer_slug":"bgb","expected_section":"§ 823","legal_area":"bgb","question_type":"schadenersatz"}
+{"question_id":"de-111","question":"Was ist die Haftung des Tierhalters?","answer_slug":"bgb","expected_section":"§ 833","legal_area":"bgb","question_type":"schadenersatz"}
+{"question_id":"de-112","question":"Was ist die Haftung des Gebäudebesitzers?","answer_slug":"bgb","expected_section":"§ 836","legal_area":"bgb","question_type":"schadenersatz"}
+{"question_id":"de-113","question":"Welche Rechte hat der Käufer bei Mängeln der Kaufsache?","answer_slug":"bgb","expected_section":"§ 437","legal_area":"bgb","question_type":"gewaehrleistung"}
+{"question_id":"de-114","question":"Was ist die Verjährung der Gewährleistungsansprüche beim Kauf?","answer_slug":"bgb","expected_section":"§ 438","legal_area":"bgb","question_type":"verjaehrung"}
+{"question_id":"de-115","question":"Was ist das Rücktrittsrecht beim Verbrauchsgüterkauf?","answer_slug":"bgb","expected_section":"§ 355","legal_area":"bgb","question_type":"vertragsrecht"}
+{"question_id":"de-116","question":"Was ist die Pflicht des Arbeitgebers zur Beschäftigung?","answer_slug":"betrvg","expected_section":"§ 2","legal_area":"betrvg","question_type":"definition"}
+{"question_id":"de-117","question":"Welche Mitbestimmungsrechte hat der Betriebsrat?","answer_slug":"betrvg","expected_section":"§ 87","legal_area":"betrvg","question_type":"definition"}
+{"question_id":"de-118","question":"Wie wird der Betriebsrat gewählt?","answer_slug":"betrvg","expected_section":"§ 7","legal_area":"betrvg","question_type":"procedural"}
+{"question_id":"de-119","question":"Was ist das Insolvenzverfahren und wann wird es eröffnet?","answer_slug":"inso","expected_section":"§ 1","legal_area":"inso","question_type":"definition"}
+{"question_id":"de-120","question":"Welche Voraussetzungen liegen für die Eröffnung des Insolvenzverfahrens vor?","answer_slug":"inso","expected_section":"§ 17","legal_area":"inso","question_type":"procedural"}
+{"question_id":"de-121","question":"Was ist der Insolvenzplan?","answer_slug":"inso","expected_section":"§ 217","legal_area":"inso","question_type":"procedural"}
+{"question_id":"de-122","question":"Was ist die Restschuldbefreiung?","answer_slug":"inso","expected_section":"§ 286","legal_area":"inso","question_type":"procedural"}
+{"question_id":"de-123","question":"Welche Verfahren gibt es im Familienverfahrensrecht?","answer_slug":"famfg","expected_section":"§ 1","legal_area":"famfg","question_type":"institutional"}
+{"question_id":"de-124","question":"Wie wird ein Betreuungsverfahren eingeleitet?","answer_slug":"famfg","expected_section":"§ 276","legal_area":"famfg","question_type":"procedural"}
+{"question_id":"de-125","question":"Was ist das Urheberrecht und was schützt es?","answer_slug":"urhg","expected_section":"§ 1","legal_area":"urhg","question_type":"definition"}
+{"question_id":"de-126","question":"Welche Rechte hat der Urheber eines Werkes?","answer_slug":"urhg","expected_section":"§ 15","legal_area":"urhg","question_type":"definition"}
+{"question_id":"de-127","question":"Wann ist eine Vervielfältigung zulässig ohne Zustimmung des Urhebers?","answer_slug":"urhg","expected_section":"§ 44a","legal_area":"urhg","question_type":"definition"}
+{"question_id":"de-128","question":"Was ist die Schutzfrist für urheberrechtliche Werke?","answer_slug":"urhg","expected_section":"§ 64","legal_area":"urhg","question_type":"verjaehrung"}
+{"question_id":"de-129","question":"Was ist die Zuständigkeit des Amtsgerichts?","answer_slug":"zpo","expected_section":"§ 23","legal_area":"zpo","question_type":"procedural"}
+{"question_id":"de-130","question":"Was ist die Zuständigkeit des Landgerichts?","answer_slug":"zpo","expected_section":"§ 71","legal_area":"zpo","question_type":"procedural"}

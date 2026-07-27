@@ -34,7 +34,7 @@ export default function CaseDetailPage() {
 
   if (ctx.loading) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="flex h-full items-center justify-center" role="status" aria-live="polite">
         <Loader2 size={24} className="brand-text animate-spin" />
       </div>
     );

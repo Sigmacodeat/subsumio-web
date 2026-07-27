@@ -20,6 +20,7 @@ export const POST = createEngineProxy({
   enginePath: "/api/legal/contract-draft",
   body: contractDraftSchema,
   quota: "queries",
+  credits: "agent",
   stream: true,
   citationGate: true,
   receiptProductType: "draft",

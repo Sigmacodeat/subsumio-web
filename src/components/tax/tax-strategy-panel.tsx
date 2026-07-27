@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
 interface TaxStrategyPanelProps {
   returnSlug: string;
@@ -57,6 +59,7 @@ export function TaxStrategyPanel({ returnSlug }: TaxStrategyPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<StrategyResult | null>(null);
   const [showRisks, setShowRisks] = useState(false);
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
 
   async function generate() {
     setLoading(true);
@@ -71,6 +74,19 @@ export function TaxStrategyPanel({ returnSlug }: TaxStrategyPanelProps) {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!result) return;
+    const groundingText = [
+      result.summary,
+      result.recommended,
+      result.recommendedApproach,
+      ...result.risks.map((r) => `${r.description} — ${r.mitigation}`),
+      ...result.next_steps,
+    ].join("\n\n");
+    groundAnswer(groundingText).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   return (
     <Card className="p-5">
@@ -221,6 +237,17 @@ export function TaxStrategyPanel({ returnSlug }: TaxStrategyPanelProps) {
               </ul>
             </div>
           )}
+
+          <CitationPanel
+            data={
+              {
+                grounding: grounding ?? null,
+                citations: [],
+                isStreaming: isGrounding,
+              } satisfies CitationPanelData
+            }
+            compact
+          />
         </div>
       )}
     </Card>

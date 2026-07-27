@@ -11,7 +11,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isQuarantinedLegalSource } from "../src/core/legal/corpus-policy.ts";
 
-const ROOT = join(import.meta.dir, "..", "..", "law-corpus");
+const ROOT = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
 const JURISDICTIONS = new Set(["at", "de", "ch", "eu"]);
 const reportOnly = Bun.argv.includes("--report-only");
 
@@ -53,7 +53,8 @@ for (const jurisdiction of JURISDICTIONS) {
     const versionDate = fm.version_date ?? "";
     const sourceUrl = fm.source_url ?? "";
 
-    if (declared !== jurisdiction) errors.push(`${relative}: jurisdiction=${declared || "missing"}`);
+    if (declared !== jurisdiction)
+      errors.push(`${relative}: jurisdiction=${declared || "missing"}`);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(versionDate)) {
       errors.push(`${relative}: version_date missing or invalid`);
     }
@@ -73,6 +74,8 @@ for (const [key, files] of keys) {
   if (files.length > 1) errors.push(`duplicate legal version ${key}: ${files.join(", ")}`);
 }
 
-console.log(`[legal-corpus-manifest] healthy=${entries.length} quarantined=${quarantined} versions=${keys.size} errors=${errors.length}`);
+console.log(
+  `[legal-corpus-manifest] healthy=${entries.length} quarantined=${quarantined} versions=${keys.size} errors=${errors.length}`
+);
 for (const error of errors) console.log(`  ${error}`);
 if (errors.length > 0 && !reportOnly) process.exit(1);

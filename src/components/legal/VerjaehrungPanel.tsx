@@ -182,7 +182,7 @@ export function VerjaehrungPanel({ caseSlug }: VerjaehrungPanelProps) {
   if (loading) {
     return (
       <section className="rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" role="status" aria-live="polite">
           <Clock size={16} className="text-[color:var(--brand-primary)]" />
           <h3 className="text-sm font-semibold">
             {lang === "en" ? "Statute of Limitations" : "Verjährung"}

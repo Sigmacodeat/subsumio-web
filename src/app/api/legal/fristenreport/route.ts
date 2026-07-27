@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
-import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
+import { createHandler, apiError, recordQuota, recordCreditConsumption } from "@/lib/api-handler";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { storeReceipt, type WorkProductReceipt } from "@/lib/work-product-receipt-store";
 
@@ -20,6 +20,7 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "heavy",
     quota: "queries",
+    credits: "deadline_detect",
     body: fristenreportSchema,
     audit: (_ctx, b) => ({
       action: "legal.fristenreport" as const,
@@ -34,6 +35,7 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, _req) => {
     void recordQuota(ctx, "queries");
+    void recordCreditConsumption(ctx, "deadline_detect", body.case_slug);
 
     const payload = sanitizeObjectStrings({
       case_slug: body.case_slug,

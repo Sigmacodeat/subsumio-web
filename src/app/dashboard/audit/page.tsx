@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Shield,
   Search,
@@ -142,6 +142,55 @@ export default function AuditLogPage() {
   const [page, setPage] = useState(0);
   const [selectedEntry, setSelectedEntry] = useState<AuditEntry | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+
+  // A11y for the detail drawer: autofocus on open, focus restoration on
+  // close. Self-contained — the global dashboard focus trap only covers
+  // layout-registered overlays.
+  const drawerRef = useRef<HTMLDivElement | null>(null);
+  const drawerCloseRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (!selectedEntry) return;
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const frame = requestAnimationFrame(() => drawerCloseRef.current?.focus());
+    return () => {
+      cancelAnimationFrame(frame);
+      previouslyFocused?.focus();
+    };
+  }, [selectedEntry]);
+
+  // Keyboard handling for the detail drawer: Escape closes, Tab cycles focus
+  // within the dialog.
+  useEffect(() => {
+    if (!selectedEntry) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setSelectedEntry(null);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const dialog = drawerRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [selectedEntry]);
 
   const {
     data: auditData,
@@ -287,7 +336,7 @@ export default function AuditLogPage() {
               setPage(0);
             }}
             placeholder={t("audit.search_placeholder")}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-10 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)] focus:outline-none"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-10 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
           {search && (
             <button
@@ -325,7 +374,7 @@ export default function AuditLogPage() {
                   setFilterAction(e.target.value);
                   setPage(0);
                 }}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               >
                 <option value="">Alle Aktionen</option>
                 {uniqueActions.map((a) => (
@@ -345,7 +394,7 @@ export default function AuditLogPage() {
                   setFilterEntityType(e.target.value);
                   setPage(0);
                 }}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               >
                 <option value="">Alle Typen</option>
                 {uniqueEntityTypes.map((t) => (
@@ -371,7 +420,7 @@ export default function AuditLogPage() {
                     setFilterFrom(e.target.value);
                     setPage(0);
                   }}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
               </div>
             </div>
@@ -391,7 +440,7 @@ export default function AuditLogPage() {
                     setFilterTo(e.target.value);
                     setPage(0);
                   }}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
               </div>
             </div>
@@ -418,7 +467,11 @@ export default function AuditLogPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-24">
+        <div
+          className="flex flex-col items-center justify-center gap-3 py-24"
+          role="status"
+          aria-live="polite"
+        >
           <Loader2 size={28} className="brand-text animate-spin" />
           <p className="text-sm text-[color:var(--ds-text-muted)]">Audit-Log wird geladen…</p>
         </div>
@@ -578,20 +631,31 @@ export default function AuditLogPage() {
 
       {/* Detail drawer */}
       {selectedEntry && (
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Backdrop click-to-close; keyboard users close via Escape or the close button.
         <div
           className="fixed inset-0 z-50 flex justify-end bg-black/60"
-          onClick={() => setSelectedEntry(null)}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedEntry(null);
+          }}
         >
           <div
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="audit-entry-detail-title"
             className="h-full w-full max-w-md overflow-y-auto border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-            onClick={(e) => e.stopPropagation()}
           >
             <div className="sticky top-0 flex items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-6 py-4">
-              <h2 className="text-sm font-bold text-[color:var(--ds-text)]">
+              <h2
+                id="audit-entry-detail-title"
+                className="text-sm font-bold text-[color:var(--ds-text)]"
+              >
                 Audit-Eintrag Details
               </h2>
               <button
+                ref={drawerCloseRef}
                 onClick={() => setSelectedEntry(null)}
+                aria-label={t("common.close")}
                 className="text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
               >
                 <X size={18} />

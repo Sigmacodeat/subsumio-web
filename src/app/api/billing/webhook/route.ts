@@ -16,6 +16,7 @@ import {
   buildDunningEmailBody,
   buildReactivationEmailBody,
 } from "@/lib/billing/dunning";
+import { addCredits, getCreditPack, type OwnerType } from "@/lib/billing/credits";
 import { isDuplicateEvent, markEventProcessed } from "./helpers";
 
 export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => {
@@ -49,13 +50,59 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
   const obj = (event.data?.object ?? {}) as {
     client_reference_id?: string;
     customer?: string;
-    metadata?: { plan?: string; user_id?: string };
+    metadata?: {
+      plan?: string;
+      user_id?: string;
+      purchase_type?: string;
+      pack_id?: string;
+      credits?: string;
+    };
     items?: { data?: Array<{ price?: { id?: string } }> };
+    payment_intent?: string;
+    id?: string;
   };
 
   switch (event.type) {
     case "checkout.session.completed": {
       const userId = obj.client_reference_id ?? obj.metadata?.user_id;
+      const purchaseType = obj.metadata?.purchase_type;
+
+      // ── Credit Purchase (one-time payment) ──────────────────────────
+      if (userId && purchaseType === "credits") {
+        const packId = obj.metadata?.pack_id;
+        const creditsAmount = parseInt(obj.metadata?.credits ?? "0", 10);
+        const pack = packId ? getCreditPack(packId) : undefined;
+        const credits = pack ? pack.credits : creditsAmount;
+
+        if (credits > 0) {
+          // Resolve owner type: if user has orgId, credits go to org pool
+          const user = await store.getById(userId);
+          const ownerType: OwnerType = user?.orgId ? "org" : "user";
+          const ownerId = user?.orgId ?? userId;
+
+          await addCredits(ownerId, ownerType, credits, {
+            type: "purchase",
+            stripeSessionId: obj.id ?? undefined,
+            stripePaymentIntent:
+              typeof obj.payment_intent === "string" ? obj.payment_intent : undefined,
+            description: pack
+              ? `Credit pack: ${pack.name} (${pack.credits} credits)`
+              : `Credit purchase: ${credits} credits`,
+          });
+
+          // Update stripeCustomerId if not yet set
+          if (user && !user.stripeCustomerId && typeof obj.customer === "string") {
+            await store.update(userId, { stripeCustomerId: obj.customer });
+          }
+
+          console.info(
+            `[stripe-webhook] credit purchase: user=${userId} pack=${packId ?? "custom"} credits=${credits}`
+          );
+        }
+        break;
+      }
+
+      // ── Subscription Purchase (existing logic) ───────────────────────
       const plan = obj.metadata?.plan;
       if (userId && (plan === "pro" || plan === "team")) {
         await store.update(userId, {

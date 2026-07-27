@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -97,6 +97,7 @@ export function DataTable<T>({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmAction, setConfirmAction] = useState<BulkAction | null>(null);
+  const confirmDialogRef = useRef<HTMLDivElement>(null);
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(() => {
     const pinned = columns.filter((c) => c.pinLeft).map((c) => c.key);
     return pinned.length > 0 ? { left: pinned } : {};
@@ -218,6 +219,35 @@ export function DataTable<T>({
     }
   }, [confirmAction, selected]);
 
+  useEffect(() => {
+    if (!confirmAction) return;
+    const dialog = confirmDialogRef.current;
+    if (!dialog) return;
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusable = Array.from(
+      dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    );
+    if (focusable.length > 0) focusable[0]?.focus();
+    const trap = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || focusable.length === 0) return;
+      if (e.shiftKey && document.activeElement === focusable[0]) {
+        e.preventDefault();
+        focusable[focusable.length - 1].focus();
+      } else if (!e.shiftKey && document.activeElement === focusable[focusable.length - 1]) {
+        e.preventDefault();
+        focusable[0].focus();
+      }
+    };
+    dialog.addEventListener("keydown", trap);
+    return () => {
+      dialog.removeEventListener("keydown", trap);
+      previouslyFocused?.focus();
+    };
+  }, [confirmAction]);
+
   if (!loading && data.length === 0) {
     return (
       <EmptyState
@@ -290,13 +320,16 @@ export function DataTable<T>({
 
       {/* Confirmation dialog for destructive bulk actions */}
       {confirmAction && (
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Backdrop click-to-close; keyboard users cancel via the dialog's buttons.
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={() => setConfirmAction(null)}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setConfirmAction(null);
+          }}
         >
           <div
+            ref={confirmDialogRef}
             className="w-full max-w-sm space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6"
-            onClick={(e) => e.stopPropagation()}
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="bulk-confirm-title"
@@ -320,7 +353,6 @@ export function DataTable<T>({
                 variant={confirmAction.variant === "destructive" ? "danger" : "primary"}
                 size="sm"
                 onClick={executeConfirmedAction}
-                autoFocus
               >
                 Bestätigen
               </Button>
@@ -357,52 +389,54 @@ export function DataTable<T>({
                     <th
                       key={col.key}
                       className={cn(
-                        "px-4 py-3 text-left text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase",
-                        col.sortable &&
-                          "cursor-pointer transition-colors select-none hover:text-[color:var(--ds-text)]",
+                        "group px-4 py-3 text-left text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase",
                         col.width,
                         isPinned &&
                           "sticky left-0 z-10 bg-[color:var(--ds-surface-2)] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]"
                       )}
-                      onClick={
-                        col.sortable
-                          ? () => {
-                              const header = table
-                                .getHeaderGroups()[0]
-                                ?.headers.find((h) => h.id === col.key);
-                              header?.column.toggleSorting();
-                            }
-                          : undefined
-                      }
                       aria-sort={
                         sortEntry ? (sortEntry.desc ? "descending" : "ascending") : undefined
                       }
                     >
                       <span className="inline-flex items-center gap-1">
-                        {col.header}
-                        {col.sortable && (
-                          <span className="shrink-0">
-                            {sortEntry ? (
-                              sortEntry.desc ? (
-                                <ChevronDown size={12} />
+                        {col.sortable ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const header = table
+                                .getHeaderGroups()[0]
+                                ?.headers.find((h) => h.id === col.key);
+                              header?.column.toggleSorting();
+                            }}
+                            className="inline-flex cursor-pointer items-center gap-1 text-left uppercase transition-colors select-none [font:inherit] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+                          >
+                            {col.header}
+                            <span className="shrink-0">
+                              {sortEntry ? (
+                                sortEntry.desc ? (
+                                  <ChevronDown size={12} />
+                                ) : (
+                                  <ChevronUp size={12} />
+                                )
                               ) : (
-                                <ChevronUp size={12} />
-                              )
-                            ) : (
-                              <ChevronsUpDown
-                                size={12}
-                                className="text-[color:var(--ds-text-subtle)]"
-                              />
-                            )}
-                          </span>
+                                <ChevronsUpDown
+                                  size={12}
+                                  className="text-[color:var(--ds-text-subtle)]"
+                                />
+                              )}
+                            </span>
+                          </button>
+                        ) : (
+                          col.header
                         )}
                         {col.sortable && (
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               togglePin(col.key);
                             }}
-                            className="ml-1 opacity-0 transition-opacity group-hover:opacity-100 hover:text-[color:var(--ds-text)]"
+                            className="ml-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:text-[color:var(--ds-text)] focus-visible:opacity-100"
                             aria-label={isPinned ? "Spalte lösen" : "Spalte anheften"}
                             title={isPinned ? "Spalte lösen" : "Spalte anheften"}
                           >
@@ -449,6 +483,18 @@ export function DataTable<T>({
                           height: `${virtualRow.size}px`,
                         }}
                         onClick={() => onRowClick?.(row.original)}
+                        onKeyDown={
+                          onRowClick
+                            ? (e) => {
+                                if (e.target !== e.currentTarget) return;
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  onRowClick(row.original);
+                                }
+                              }
+                            : undefined
+                        }
+                        tabIndex={onRowClick ? 0 : undefined}
                         className={cn(
                           "group border-b border-[color:var(--ds-border)] transition-colors duration-120 last:border-0",
                           onRowClick &&
@@ -457,7 +503,9 @@ export function DataTable<T>({
                           isSelected ? "brand-soft/30" : "border-l-2 border-l-transparent",
                           onRowClick &&
                             !isSelected &&
-                            "hover:border-l-2 hover:border-l-[color:var(--brand-primary)]"
+                            "hover:border-l-2 hover:border-l-[color:var(--brand-primary)]",
+                          onRowClick &&
+                            "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--brand-primary)]"
                         )}
                       >
                         {selectable && (
@@ -498,6 +546,18 @@ export function DataTable<T>({
                     <tr
                       key={key}
                       onClick={() => onRowClick?.(row.original)}
+                      onKeyDown={
+                        onRowClick
+                          ? (e) => {
+                              if (e.target !== e.currentTarget) return;
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                onRowClick(row.original);
+                              }
+                            }
+                          : undefined
+                      }
+                      tabIndex={onRowClick ? 0 : undefined}
                       className={cn(
                         "group border-b border-[color:var(--ds-border)] transition-colors duration-120 last:border-0",
                         onRowClick &&
@@ -506,7 +566,9 @@ export function DataTable<T>({
                         isSelected ? "brand-soft/30" : "border-l-2 border-l-transparent",
                         onRowClick &&
                           !isSelected &&
-                          "hover:border-l-2 hover:border-l-[color:var(--brand-primary)]"
+                          "hover:border-l-2 hover:border-l-[color:var(--brand-primary)]",
+                        onRowClick &&
+                          "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--brand-primary)]"
                       )}
                     >
                       {selectable && (
@@ -558,22 +620,10 @@ export function DataTable<T>({
           : rows.map((row, i) => {
               const key = row.id;
               const isSelected = selected.has(key);
-              return (
-                <div
-                  key={key}
-                  onClick={() => onRowClick?.(row.original)}
-                  className={cn(
-                    "space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-150 duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                    onRowClick &&
-                      "cursor-pointer hover:border-[color:var(--brand-primary)]/40 active:scale-[0.99]",
-                    isSelected && "brand-border brand-soft/30"
-                  )}
-                >
+              const cardBody = (
+                <>
                   {selectable && (
-                    <div
-                      className="flex items-center justify-between"
-                      onClick={(e) => e.stopPropagation()}
-                    >
+                    <div className="flex items-center justify-between" data-row-selection>
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => toggleRow(key)}
@@ -604,6 +654,42 @@ export function DataTable<T>({
                         )}
                       </div>
                     ))}
+                </>
+              );
+              const cardClass = cn(
+                "space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-150 duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                isSelected && "brand-border brand-soft/30"
+              );
+              if (!onRowClick) {
+                return (
+                  <div key={key} className={cardClass}>
+                    {cardBody}
+                  </div>
+                );
+              }
+              return (
+                <div
+                  key={key}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("[data-row-selection]")) return;
+                    onRowClick(row.original);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onRowClick(row.original);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className={cn(
+                    cardClass,
+                    "cursor-pointer hover:border-[color:var(--brand-primary)]/40 active:scale-[0.99]",
+                    "focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+                  )}
+                >
+                  {cardBody}
                 </div>
               );
             })}

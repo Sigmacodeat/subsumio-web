@@ -95,7 +95,7 @@ export function DeadlinesTasksTab() {
                 <input
                   {...ctx.deadlineForm.register("title")}
                   placeholder={t("cases.detail_dl_title_ph")}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 {ctx.deadlineForm.formState.errors.title && (
                   <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
@@ -110,7 +110,7 @@ export function DeadlinesTasksTab() {
                 <input
                   type="date"
                   {...ctx.deadlineForm.register("due_date")}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 {ctx.deadlineForm.formState.errors.due_date && (
                   <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
@@ -126,7 +126,7 @@ export function DeadlinesTasksTab() {
                 </label>
                 <select
                   {...ctx.deadlineForm.register("type")}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 >
                   <option value="deadline">{t("cases.detail_dl_type_deadline")}</option>
                   <option value="hearing">{t("cases.detail_dl_type_hearing")}</option>
@@ -151,7 +151,7 @@ export function DeadlinesTasksTab() {
                     }
                     ctx.deadlineForm.setValue("status", val as never);
                   }}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 >
                   <option value="pending">{t("cases.detail_dl_status_pending")}</option>
                   <option value="warning">{t("cases.detail_dl_status_warning")}</option>
@@ -169,7 +169,7 @@ export function DeadlinesTasksTab() {
                 {...ctx.deadlineForm.register("description")}
                 rows={2}
                 placeholder={t("cases.detail_dl_description_ph")}
-                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
             </div>
 
@@ -200,7 +200,7 @@ export function DeadlinesTasksTab() {
                 <input
                   type="date"
                   {...ctx.deadlineForm.register("erv_zustelldatum")}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
                   {t("deadlines.erv_date_hint")}
@@ -223,7 +223,7 @@ export function DeadlinesTasksTab() {
                 <select
                   value={ctx.deadlineRuleKey}
                   onChange={(e) => ctx.setDeadlineRuleKey(e.target.value)}
-                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 >
                   {DEADLINE_RULES.map((rule) => (
                     <option key={rule.key} value={rule.key}>
@@ -235,7 +235,7 @@ export function DeadlinesTasksTab() {
                   type="date"
                   value={ctx.deadlineStartDate}
                   onChange={(e) => ctx.setDeadlineStartDate(e.target.value)}
-                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 <Button
                   variant="secondary"
@@ -314,7 +314,7 @@ export function DeadlinesTasksTab() {
             onChange={(e) => ctx.setAiDetectText(e.target.value)}
             rows={3}
             placeholder={t("cases.detail_dl_ai_ph")}
-            className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-info-border)] focus:outline-none"
+            className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-info-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
           <div className="flex flex-wrap gap-2">
             <Button
@@ -771,7 +771,7 @@ export function DeadlinesTasksTab() {
               placeholder={t("cases.new_task")}
               aria-label={t("cases.new_task")}
               disabled={caseData?.status === "archived"}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none disabled:opacity-50"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:opacity-50"
             />
           </div>
           <Button
@@ -864,14 +864,14 @@ export function DeadlinesTasksTab() {
 
       {/* P0: Vier-Augen second-check confirmation modal for Notfristen */}
       {secondCheckIndex !== null && (
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Backdrop click-to-close; keyboard users close via the dialog's close button.
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => !secondCheckBusy && setSecondCheckIndex(null)}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !secondCheckBusy) setSecondCheckIndex(null);
+          }}
         >
-          <div
-            className="w-full max-w-md rounded-2xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-surface)] p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="w-full max-w-md rounded-2xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-surface)] p-6 shadow-xl">
             <div className="mb-4 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--ds-warning-bg)]">
                 <ShieldCheck size={20} className="text-[color:var(--ds-warning-text)]" />

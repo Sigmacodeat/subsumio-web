@@ -361,7 +361,7 @@ export default function ImportKanzleiPage() {
         title={t("importkanzlei.title")}
         description={t("importkanzlei.description")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("importkanzlei.breadcrumb") },
         ]}
       />
@@ -435,7 +435,7 @@ export default function ImportKanzleiPage() {
                     id={`map-${f.key}`}
                     value={mapping[f.key] ?? -1}
                     onChange={(e) => setMapping((m) => ({ ...m, [f.key]: Number(e.target.value) }))}
-                    className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--ds-info-border)] focus:outline-none"
+                    className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--ds-info-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                   >
                     <option value={-1}>— nicht importieren —</option>
                     {headers.map((h, i) => (

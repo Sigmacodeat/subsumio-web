@@ -27,12 +27,14 @@ import { mkdirSync, writeFileSync, existsSync, readFileSync, readdirSync } from 
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { dump as yamlDump } from "js-yaml";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
 
 // ── Config ─────────────────────────────────────────────────────────────
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const RIS_UA = {
-  "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)",
+  "User-Agent": getUserAgent(),
 };
 const RATE_LIMIT_MS = 200;
 const MAX_RETRIES = 3;
@@ -44,8 +46,9 @@ const phaseIdx = args.indexOf("--phase");
 const PHASE = phaseIdx >= 0 ? args[phaseIdx + 1] : "all";
 
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
-const SERVER_LAW_CORPUS = join(_scriptDir, "..", "law-corpus");
-const FRONTEND_LAW_CORPUS = join(_scriptDir, "..", "..", "law-corpus");
+const _corpusRoot = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
+const SERVER_LAW_CORPUS = _corpusRoot;
+const FRONTEND_LAW_CORPUS = _corpusRoot;
 const RETRIEVED_AT = new Date().toISOString().slice(0, 10);
 
 // ── Court configs for missing judikatur ────────────────────────────────
@@ -63,10 +66,30 @@ interface CourtConfig {
 // AsylGH = Asylgerichtshof (predecessor of BVwG for asylum, 2008-2020)
 // Uvs = Unabhängige Verwaltungssenate (predecessors of LVwG, pre-2014)
 const NEW_COURTS: Record<string, CourtConfig> = {
-  bvwg: { applikation: "Bvwg", outDir: "at-judikatur-bvwg", label: "BVwG (Bundesverwaltungsgericht)", target: 500 },
-  lvwg: { applikation: "Lvwg", outDir: "at-judikatur-lvwg", label: "LVwG (Landesverwaltungsgerichte)", target: 500 },
-  asylgh: { applikation: "AsylGH", outDir: "at-judikatur-asylgh", label: "AsylGH (Asylgerichtshof, historisch)", target: 200 },
-  uvs: { applikation: "Uvs", outDir: "at-judikatur-uvs", label: "Uvs (Unabhängige Verwaltungssenate, historisch)", target: 200 },
+  bvwg: {
+    applikation: "Bvwg",
+    outDir: "at-judikatur-bvwg",
+    label: "BVwG (Bundesverwaltungsgericht)",
+    target: 500,
+  },
+  lvwg: {
+    applikation: "Lvwg",
+    outDir: "at-judikatur-lvwg",
+    label: "LVwG (Landesverwaltungsgerichte)",
+    target: 500,
+  },
+  asylgh: {
+    applikation: "AsylGH",
+    outDir: "at-judikatur-asylgh",
+    label: "AsylGH (Asylgerichtshof, historisch)",
+    target: 200,
+  },
+  uvs: {
+    applikation: "Uvs",
+    outDir: "at-judikatur-uvs",
+    label: "Uvs (Unabhängige Verwaltungssenate, historisch)",
+    target: 200,
+  },
 };
 
 // ── Austrian states (Bundesländer) for Landesrecht ─────────────────────
@@ -86,19 +109,57 @@ const AT_STATES = [
 // ── Search terms for judikatur (norm-prioritized) ──────────────────────
 
 const JUDIKATUR_SEARCH_TERMS: string[] = [
-  "ABGB", "B-VG", "Baupolizei", "Baurecht", "Gewerbeordnung",
-  "GewO", "AVG", "VStG", "VVG", "AsylG", "AufenthG", "FPG",
-  "SPG", "WaffG", "SMG", "StVO", "Wasserrecht", "WRG",
-  "Abfall", "AWG", "ForstG", "Umwelt", "Naturschutz",
-  "Jagd", "Fischerei", "Bauleitplan", "Raumordnung",
-  "Schulrecht", "Beamte", "BDG", "Verfassungsrecht",
-  "Grundrechte", "Verwaltungsvollstreckung", "Finanzstraf",
-  "FinStrG", "BAO", "BewG", "UStG", "EStG", "KStG",
-  "Gebührengesetz", "GebG", "Zoll", "Maut",
-  "Amtshaftung", "AHG", "Sicherheitspolizeigesetz",
-  "Fremdenrecht", "Ausländer", "Integration",
+  "ABGB",
+  "B-VG",
+  "Baupolizei",
+  "Baurecht",
+  "Gewerbeordnung",
+  "GewO",
+  "AVG",
+  "VStG",
+  "VVG",
+  "AsylG",
+  "AufenthG",
+  "FPG",
+  "SPG",
+  "WaffG",
+  "SMG",
+  "StVO",
+  "Wasserrecht",
+  "WRG",
+  "Abfall",
+  "AWG",
+  "ForstG",
+  "Umwelt",
+  "Naturschutz",
+  "Jagd",
+  "Fischerei",
+  "Bauleitplan",
+  "Raumordnung",
+  "Schulrecht",
+  "Beamte",
+  "BDG",
+  "Verfassungsrecht",
+  "Grundrechte",
+  "Verwaltungsvollstreckung",
+  "Finanzstraf",
+  "FinStrG",
+  "BAO",
+  "BewG",
+  "UStG",
+  "EStG",
+  "KStG",
+  "Gebührengesetz",
+  "GebG",
+  "Zoll",
+  "Maut",
+  "Amtshaftung",
+  "AHG",
+  "Sicherheitspolizeigesetz",
+  "Fremdenrecht",
+  "Ausländer",
+  "Integration",
 ];
-
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -129,7 +190,9 @@ interface LandesrechtDoc {
 function slugify(s: string): string {
   return s
     .toLowerCase()
-    .replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u")
+    .replace(/ä/g, "a")
+    .replace(/ö/g, "o")
+    .replace(/ü/g, "u")
     .replace(/ß/g, "ss")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
@@ -137,7 +200,10 @@ function slugify(s: string): string {
 }
 
 function normalize(s: string): string {
-  return s.replace(/\u00A0/g, " ").replace(/\s+/g, " ").trim();
+  return s
+    .replace(/\u00A0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function stripHtmlSimple(html: string): string {
@@ -157,25 +223,67 @@ function stripHtmlSimple(html: string): string {
     .trim();
 }
 
+/** Decode numeric and named HTML entities (same as backfill-corpus-text.ts). */
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(parseInt(n, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'");
+}
+
+/** RIS OGD XML (risdok) → plain text. Same parser as backfill-corpus-text.ts. */
+function risXmlToText(xml: string): string {
+  const nutz = xml.match(/<nutzdaten>([\s\S]*?)<\/nutzdaten>/);
+  if (!nutz) return "";
+  let t = nutz[1];
+  t = t.replace(/<kzinhalt[^>]*>[\s\S]*?<\/kzinhalt>/g, "");
+  t = t.replace(/<fzinhalt[^>]*>[\s\S]*?<\/fzinhalt>/g, "");
+  t = t.replace(/<ueberschrift[^>]*>([\s\S]*?)<\/ueberschrift>/g, "\n## $1\n");
+  t = t.replace(/<absatz[^>]*>/g, "\n").replace(/<\/absatz>/g, "\n");
+  t = t.replace(/<[^>]+>/g, "");
+  t = decodeEntities(t);
+  return t
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/** Identity check: verify fetched text contains the document's case_number or ECLI.
+ *  Same guard as backfill-corpus-text.ts / fetch-all-at-judikatur.ts — prevents
+ *  silent mislabeling when RIS serves a generic/fallback page on 200 OK. */
+function contentMatchesDocument(text: string, caseNum: string, ecli: string): boolean {
+  const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase();
+  const normText = normalize(text);
+  if (caseNum && normText.includes(normalize(caseNum))) return true;
+  if (ecli && normText.includes(normalize(ecli))) return true;
+  if (!caseNum && !ecli) return true;
+  return false;
+}
+
 function frontmatter(fields: Record<string, string>): string {
   const lines = Object.entries(fields).map(([k, v]) => `${k}: ${JSON.stringify(v)}`);
   return `---\n${lines.join("\n")}\n---\n`;
 }
 
-async function fetchWithRetry(
-  url: string,
-  maxRetries: number = MAX_RETRIES
-): Promise<Response> {
+async function fetchWithRetry(url: string, maxRetries: number = MAX_RETRIES): Promise<Response> {
   let lastErr: Error | null = null;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const res = await fetch(url, {
         headers: RIS_UA,
         signal: AbortSignal.timeout(30_000),
+        ...proxyFetchOptions(),
       });
       if (res.status === 429 || res.status >= 500) {
         const backoff = RETRY_BASE_MS * Math.pow(2, attempt);
-        console.warn(`  ⚠ HTTP ${res.status}, retrying in ${backoff}ms (attempt ${attempt + 1}/${maxRetries})`);
+        console.warn(
+          `  ⚠ HTTP ${res.status}, retrying in ${backoff}ms (attempt ${attempt + 1}/${maxRetries})`
+        );
         await new Promise((r) => setTimeout(r, backoff));
         continue;
       }
@@ -193,8 +301,9 @@ async function fetchWithRetry(
 // ── Extract references from RIS search results ─────────────────────────
 
 function extractRisReferences(data: Record<string, unknown>): Array<Record<string, unknown>> {
-  const result = (data.OgdSearchResult as Record<string, unknown>)
-    ?.OgdDocumentResults as Record<string, unknown> | undefined;
+  const result = (data.OgdSearchResult as Record<string, unknown>)?.OgdDocumentResults as
+    | Record<string, unknown>
+    | undefined;
   if (!result) return [];
   let refs = result.OgdDocumentReference;
   if (!refs) return [];
@@ -241,9 +350,13 @@ function mapRisReference(ref: Record<string, unknown>): {
   // BVwG/LVwG/AsylGH/Uvs: judikatur.Bvwg / .Lvwg / .AsylGH / .Uvs with Geschaeftszahl as {item: "..."}
   const judikatur = meta.Judikatur as Record<string, unknown> | undefined;
   if (judikatur) {
-    const justiz = (judikatur.Justiz ?? judikatur.Vfgh ?? judikatur.Vwgh ??
-      judikatur.Bvwg ?? judikatur.Lvwg ?? judikatur.AsylGH ?? judikatur.Uvs) as
-      Record<string, unknown> | undefined;
+    const justiz = (judikatur.Justiz ??
+      judikatur.Vfgh ??
+      judikatur.Vwgh ??
+      judikatur.Bvwg ??
+      judikatur.Lvwg ??
+      judikatur.AsylGH ??
+      judikatur.Uvs) as Record<string, unknown> | undefined;
     if (!justiz) return null;
 
     // Geschaeftszahl can be string or {item: "..."} or {item: ["...", "..."]}
@@ -258,14 +371,10 @@ function mapRisReference(ref: Record<string, unknown>): {
     }
 
     // ECLI: OGH uses "Ecli", BVwG/LVwG use "EuropeanCaseLawIdentifier"
-    const ecli = String(
-      judikatur.EuropeanCaseLawIdentifier ?? judikatur.Ecli ?? justiz.Ecli ?? ""
-    );
+    const ecli = String(judikatur.EuropeanCaseLawIdentifier ?? judikatur.Ecli ?? justiz.Ecli ?? "");
 
     // Entscheidungsdatum is on judikatur level for BVwG/LVwG, on justiz for OGH
-    const decisionDate = String(
-      judikatur.Entscheidungsdatum ?? justiz.Entscheidungsdatum ?? ""
-    );
+    const decisionDate = String(judikatur.Entscheidungsdatum ?? justiz.Entscheidungsdatum ?? "");
 
     // Schlagworte (keywords) — on judikatur level for BVwG/LVwG
     const keywords: string[] = [];
@@ -311,16 +420,67 @@ function mapRisReference(ref: Record<string, unknown>): {
   return null;
 }
 
-async function fetchRisFullText(htmlUrl: string): Promise<string> {
-  if (!htmlUrl) return "";
-  try {
-    const res = await fetchWithRetry(htmlUrl);
-    if (!res.ok) return "";
-    const html = await res.text();
-    return stripHtmlSimple(html);
-  } catch {
-    return "";
+async function fetchRisFullText(
+  htmlUrl: string,
+  sourceUrl: string = "",
+  caseNum: string = "",
+  ecli: string = ""
+): Promise<string> {
+  // Extract Abfrage and DokNr from source_url for deterministic URLs
+  const abfrageMatch = sourceUrl.match(/Abfrage=([^&]+)/);
+  const dokNrMatch = sourceUrl.match(/Dokumentnummer=([^&]+)/);
+
+  // Strategy 1: XML URL — structured, clean, most reliable
+  if (abfrageMatch && dokNrMatch) {
+    const abfrage = abfrageMatch[1];
+    const dokNr = dokNrMatch[1];
+    const xmlUrl = `https://www.ris.bka.gv.at/Dokumente/${abfrage}/${dokNr}/${dokNr}.xml`;
+    try {
+      const res = await fetchWithRetry(xmlUrl);
+      if (res.ok) {
+        const candidate = risXmlToText(await res.text());
+        if (candidate.length >= 50 && contentMatchesDocument(candidate, caseNum, ecli)) {
+          return candidate;
+        }
+      }
+    } catch {
+      /* try next */
+    }
   }
+
+  // Strategy 2: Deterministic HTML URL
+  if (abfrageMatch && dokNrMatch) {
+    const abfrage = abfrageMatch[1];
+    const dokNr = dokNrMatch[1];
+    const directHtmlUrl = `https://www.ris.bka.gv.at/Dokumente/${abfrage}/${dokNr}/${dokNr}.html`;
+    try {
+      const res = await fetchWithRetry(directHtmlUrl);
+      if (res.ok) {
+        const candidate = stripHtmlSimple(await res.text());
+        if (candidate.length >= 50 && contentMatchesDocument(candidate, caseNum, ecli)) {
+          return candidate;
+        }
+      }
+    } catch {
+      /* try next */
+    }
+  }
+
+  // Strategy 3: API-provided HTML URL (original approach — least reliable)
+  if (htmlUrl) {
+    try {
+      const res = await fetchWithRetry(htmlUrl);
+      if (!res.ok) return "";
+      const candidate = stripHtmlSimple(await res.text());
+      if (candidate.length >= 50 && contentMatchesDocument(candidate, caseNum, ecli)) {
+        return candidate;
+      }
+    } catch {
+      /* all strategies failed */
+    }
+  }
+
+  return "";
 }
 
 // ── Judikatur: search + fetch ──────────────────────────────────────────
@@ -329,7 +489,7 @@ async function fetchJudikaturSearch(
   query: string,
   page: number,
   applikation: string,
-  dateFrom?: string,
+  dateFrom?: string
 ): Promise<Array<Record<string, unknown>>> {
   const url = new URL(`${RIS_BASE}/judikatur`);
   url.searchParams.set("Applikation", applikation);
@@ -375,29 +535,59 @@ async function fetchJudikaturForCourt(courtKey: string, court: CourtConfig): Pro
 
   // AsylGH-specific search terms (asylum court, 2008-2020)
   const ASYLGH_SEARCH_TERMS = [
-    "Asyl", "Fremdenrecht", "Aufenthalt", "Abschiebung",
-    "Flüchtling", "subsidiär", "internationaler Schutz",
-    "AsylG", "AufenthG", "FPG", "Genfer Flüchtlingskonvention",
-    "Dublin", "Verfahren", "B-VG", "Menschenrechte",
+    "Asyl",
+    "Fremdenrecht",
+    "Aufenthalt",
+    "Abschiebung",
+    "Flüchtling",
+    "subsidiär",
+    "internationaler Schutz",
+    "AsylG",
+    "AufenthG",
+    "FPG",
+    "Genfer Flüchtlingskonvention",
+    "Dublin",
+    "Verfahren",
+    "B-VG",
+    "Menschenrechte",
   ];
   // Uvs-specific search terms (historical, pre-2014)
   const UVS_SEARCH_TERMS = [
-    "AVG", "VStG", "Gewerbe", "Baurecht", "Bau",
-    "Fremdenrecht", "Aufenthalt", "Asyl", "SPG",
-    "WaffG", "SMG", "StVO", "Wasser", "Abfall",
-    "Naturschutz", "Jagd", "Forst", "Schulrecht",
-    "Beamte", "Verfassung", "Grundrechte", "AsylG",
+    "AVG",
+    "VStG",
+    "Gewerbe",
+    "Baurecht",
+    "Bau",
+    "Fremdenrecht",
+    "Aufenthalt",
+    "Asyl",
+    "SPG",
+    "WaffG",
+    "SMG",
+    "StVO",
+    "Wasser",
+    "Abfall",
+    "Naturschutz",
+    "Jagd",
+    "Forst",
+    "Schulrecht",
+    "Beamte",
+    "Verfassung",
+    "Grundrechte",
+    "AsylG",
   ];
 
-  const searchTerms = courtKey === "asylgh" ? ASYLGH_SEARCH_TERMS
-    : courtKey === "uvs" ? UVS_SEARCH_TERMS
-    : JUDIKATUR_SEARCH_TERMS;
+  const searchTerms =
+    courtKey === "asylgh"
+      ? ASYLGH_SEARCH_TERMS
+      : courtKey === "uvs"
+        ? UVS_SEARCH_TERMS
+        : JUDIKATUR_SEARCH_TERMS;
   const target = court.target;
   const perNormLimit = Math.ceil(target / searchTerms.length) + 10;
   // Historical courts: use earlier date range
-  const dateFrom = courtKey === "asylgh" ? "2008-01-01"
-    : courtKey === "uvs" ? "2000-01-01"
-    : "2015-01-01";
+  const dateFrom =
+    courtKey === "asylgh" ? "2008-01-01" : courtKey === "uvs" ? "2000-01-01" : "2015-01-01";
 
   let totalFetched = 0;
   let totalWritten = 0;
@@ -429,7 +619,10 @@ async function fetchJudikaturForCourt(courtKey: string, court: CourtConfig): Pro
         if (!item) continue;
 
         const id = item.id.replace(/^ris-/, "");
-        if (seen.has(id)) { totalSkipped++; continue; }
+        if (seen.has(id)) {
+          totalSkipped++;
+          continue;
+        }
         seen.add(id);
         totalFetched++;
         normCount++;
@@ -439,7 +632,10 @@ async function fetchJudikaturForCourt(courtKey: string, court: CourtConfig): Pro
         const filename = `${slugDate}-${slugAz}.md`;
         const filepath = join(outDir, filename);
 
-        if (existsSync(filepath)) { totalSkipped++; continue; }
+        if (existsSync(filepath)) {
+          totalSkipped++;
+          continue;
+        }
 
         if (DRY) {
           console.log(`  [DRY] ${item.court} ${item.az} (${slugDate})`);
@@ -447,7 +643,12 @@ async function fetchJudikaturForCourt(courtKey: string, court: CourtConfig): Pro
           continue;
         }
 
-        const fullText = await fetchRisFullText(extractHtmlUrl(ref));
+        const fullText = await fetchRisFullText(
+          extractHtmlUrl(ref),
+          item.url,
+          item.az ?? "",
+          item.ecli ?? ""
+        );
 
         const doc: JudikaturDoc = {
           id,
@@ -467,7 +668,9 @@ async function fetchJudikaturForCourt(courtKey: string, court: CourtConfig): Pro
 
         if (totalWritten % 50 === 0 || totalWritten <= 3) {
           const textPreview = fullText ? `${fullText.length} chars` : "no text";
-          console.log(`  [${totalWritten}] ${item.court} ${item.az} (${slugDate}) — ${textPreview}`);
+          console.log(
+            `  [${totalWritten}] ${item.court} ${item.az} (${slugDate}) — ${textPreview}`
+          );
         }
 
         await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
@@ -481,7 +684,9 @@ async function fetchJudikaturForCourt(courtKey: string, court: CourtConfig): Pro
     if (totalFetched < target) await new Promise((r) => setTimeout(r, 300));
   }
 
-  console.log(`  ${court.label}: Fetched=${totalFetched} Written=${totalWritten} Skipped=${totalSkipped}`);
+  console.log(
+    `  ${court.label}: Fetched=${totalFetched} Written=${totalWritten} Skipped=${totalSkipped}`
+  );
 }
 
 // ── Staatsverträge: fetch from BrKons ──────────────────────────────────
@@ -491,9 +696,16 @@ async function fetchStaatsvertraege(): Promise<void> {
   mkdirSync(outDir, { recursive: true });
 
   const searchTerms = [
-    "Staatsvertrag", "Übereinkommen", "Abkommen",
-    "Konvention", "Protokoll", "Europäische Menschenrechtskonvention",
-    "EMRK", "UN-Konvention", "Hague", "Haager",
+    "Staatsvertrag",
+    "Übereinkommen",
+    "Abkommen",
+    "Konvention",
+    "Protokoll",
+    "Europäische Menschenrechtskonvention",
+    "EMRK",
+    "UN-Konvention",
+    "Hague",
+    "Haager",
   ];
 
   let totalWritten = 0;
@@ -547,12 +759,18 @@ async function fetchStaatsvertraege(): Promise<void> {
         if (!isStaatsvertrag) continue;
 
         const id = gnr || kurztitel;
-        if (seen.has(id)) { totalSkipped++; continue; }
+        if (seen.has(id)) {
+          totalSkipped++;
+          continue;
+        }
         seen.add(id);
 
         const filename = `${slugify(kurztitel)}.md`;
         const filepath = join(outDir, filename);
-        if (existsSync(filepath)) { totalSkipped++; continue; }
+        if (existsSync(filepath)) {
+          totalSkipped++;
+          continue;
+        }
 
         if (DRY) {
           console.log(`  [DRY] ${kurztitel}`);
@@ -587,9 +805,12 @@ async function fetchStaatsvertraege(): Promise<void> {
           abbreviation: kurztitel.split(" ")[0].replace(/[(),.]/g, ""),
           version_date: RETRIEVED_AT,
           retrieved_at: RETRIEVED_AT,
-          source_url: htmlUrl || `https://data.bka.gv.at/ris/api/v2.6/Bundesrecht?Applikation=BrKons&Gesetzesnummer=${gnr}`,
+          source_url:
+            htmlUrl ||
+            `https://data.bka.gv.at/ris/api/v2.6/Bundesrecht?Applikation=BrKons&Gesetzesnummer=${gnr}`,
           gesetzesnummer: gnr,
-          license: "Quelle: RIS OGD (data.bka.gv.at), Bundeskanzleramt Österreich — Open Government Data, Namensnennung.",
+          license:
+            "Quelle: RIS OGD (data.bka.gv.at), Bundeskanzleramt Österreich — Open Government Data, Namensnennung.",
         });
 
         writeFileSync(filepath, `${fm}\n${fullText}\n`, "utf-8");
@@ -693,9 +914,7 @@ async function fetchLandesrecht(): Promise<void> {
       if (!bundesland) continue;
 
       // Match to our state list
-      const stateMatch = AT_STATES.find(s =>
-        bundesland.toLowerCase() === s.name.toLowerCase()
-      );
+      const stateMatch = AT_STATES.find((s) => bundesland.toLowerCase() === s.name.toLowerCase());
       if (!stateMatch) continue;
 
       const gnr = String(land.Gesetzesnummer ?? "");
@@ -709,13 +928,19 @@ async function fetchLandesrecht(): Promise<void> {
       if (kurztitel.trim().length < 10) continue;
 
       const id = `${stateMatch.abbr}-${gnr || kurztitel}`;
-      if (seen.has(id)) { totalSkipped++; continue; }
+      if (seen.has(id)) {
+        totalSkipped++;
+        continue;
+      }
       seen.add(id);
 
       const stateDir = join(outDir, stateMatch.abbr);
       const filename = `${slugify(kurztitel)}.md`;
       const filepath = join(stateDir, filename);
-      if (existsSync(filepath)) { totalSkipped++; continue; }
+      if (existsSync(filepath)) {
+        totalSkipped++;
+        continue;
+      }
 
       if (DRY) {
         console.log(`  [DRY] ${stateMatch.abbr}/${kurztitel}`);
@@ -750,7 +975,8 @@ async function fetchLandesrecht(): Promise<void> {
         retrieved_at: RETRIEVED_AT,
         source_url: htmlUrl || "",
         gesetzesnummer: gnr,
-        license: "Quelle: RIS OGD (data.bka.gv.at), Landesrecht konsolidiert — Open Government Data, Namensnennung.",
+        license:
+          "Quelle: RIS OGD (data.bka.gv.at), Landesrecht konsolidiert — Open Government Data, Namensnennung.",
       });
 
       writeFileSync(filepath, `${fm}\n${fullText}\n`, "utf-8");
@@ -759,7 +985,9 @@ async function fetchLandesrecht(): Promise<void> {
       stateCounts[stateMatch.abbr] = (stateCounts[stateMatch.abbr] || 0) + 1;
 
       if (totalWritten % 50 === 0 || pageCount <= 2) {
-        console.log(`  [${totalWritten}] ${stateMatch.abbr}/${kurztitel} (${Math.round(fullText.length / 1024)} KB)`);
+        console.log(
+          `  [${totalWritten}] ${stateMatch.abbr}/${kurztitel} (${Math.round(fullText.length / 1024)} KB)`
+        );
       }
 
       await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
@@ -783,6 +1011,11 @@ async function fetchLandesrecht(): Promise<void> {
 // ── Main ───────────────────────────────────────────────────────────────
 
 async function main() {
+  // Global RIS lock — ensures no other RIS script runs simultaneously
+  console.log("🔒 Acquiring RIS lock...");
+  await acquireRisLock();
+  console.log("✅ RIS lock acquired.");
+
   console.log("╔══════════════════════════════════════════════════════════╗");
   console.log("║  Subsumio — Fetch Complete AT Legal Corpus               ║");
   console.log("║  BVwG + BFG + LVwG + Staatsverträge + Landesrecht        ║");
@@ -837,7 +1070,12 @@ async function main() {
   console.log("═══════════════════════════════════════════════════════════");
 }
 
-main().catch((err) => {
-  console.error("Fatal error:", err);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    releaseRisLock();
+  })
+  .catch((err) => {
+    console.error("Fatal error:", err);
+    releaseRisLock();
+    process.exit(1);
+  });

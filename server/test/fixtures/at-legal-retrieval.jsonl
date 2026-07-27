@@ -23,7 +23,7 @@
 {"question_id":"at-023","question":"Was ist das Grundkapital einer Aktiengesellschaft?","expected_slug":"legal/statutes/at/aktg/p-7","legal_area":"aktg_at","question_type":"gesellschaftsrecht"}
 {"question_id":"at-024","question":"Welche Aufgaben hat der Vorstand einer Aktiengesellschaft?","expected_slug":"legal/statutes/at/aktg/p-70","legal_area":"aktg_at","question_type":"gesellschaftsrecht"}
 {"question_id":"at-025","question":"Wann kann ein Ehegatte die Scheidung wegen unheilbarer Zerrüttung der Ehe nach dreijähriger Aufhebung der häuslichen Gemeinschaft begehren?","expected_slug":"legal/statutes/at/eheg/p-55","legal_area":"eheg","question_type":"familienrecht"}
-{"question_id":"at-026","question":"Welche Fristen gelten im außerstreitigen Verfahren für die Rekurserhebung?","expected_slug":"legal/statutes/at/au-strg/p-46","legal_area":"au_strg","question_type":"verfahren"}
+{"question_id":"at-026","question":"Welche Fristen gelten im außerstreitigen Verfahren für die Rekurserhebung?","expected_slug":"legal/statutes/at/au-strg/p-13","legal_area":"au_strg","question_type":"verfahren"}
 {"question_id":"at-027","question":"Was ist Einkommen im Sinne des österreichischen Einkommensteuergesetzes?","expected_slug":"legal/statutes/at/estg/p-2","legal_area":"estg_at","question_type":"steuerrecht"}
 {"question_id":"at-028","question":"Welche Einkünfte gelten als Einkünfte aus Gewerbebetrieb?","expected_slug":"legal/statutes/at/estg/p-23","legal_area":"estg_at","question_type":"steuerrecht"}
 {"question_id":"at-029","question":"Was unterliegt der Umsatzsteuer in Österreich?","expected_slug":"legal/statutes/at/ustg/p-1","legal_area":"ustg_at","question_type":"steuerrecht"}
@@ -58,3 +58,23 @@
 {"question_id":"at-058","question":"Was ist die Verarbeitung personenbezogener Daten im Sinne des Datenschutzgesetzes?","expected_slug":"legal/statutes/at/dsg/art-2-4","legal_area":"dsg","question_type":"datenschutzrecht"}
 {"question_id":"at-059","question":"Welche Rechte haben Asylwerber im österreichischen Asylverfahren?","expected_slug":"legal/statutes/at/asylg/p-1","legal_area":"asylg","question_type":"asylrecht"}
 {"question_id":"at-060","question":"Was ist der Asylantrag und wie wird er gestellt?","expected_slug":"legal/statutes/at/asylg/p-1","legal_area":"asylg","question_type":"asylrecht"}
+{"question_id":"at-061","question":"Was sind die Voraussetzungen für eine Ehescheidung wegen Verschuldens?","expected_slug":"legal/statutes/at/eheg/p-43","legal_area":"eheg","question_type":"familienrecht"}
+{"question_id":"at-062","question":"Wann kann ein Ehegatte Unterhalt verlangen?","expected_slug":"legal/statutes/at/eheg/p-66","legal_area":"eheg","question_type":"familienrecht"}
+{"question_id":"at-063","question":"Was ist die Vermögensauseinandersetzung nach einer Scheidung?","expected_slug":"legal/statutes/at/eheg/p-81","legal_area":"eheg","question_type":"familienrecht"}
+{"question_id":"at-064","question":"Wann ist ein Insolvenzverfahren zu eröffnen?","expected_slug":"legal/statutes/at/io/p-69","legal_area":"io","question_type":"insolvenzrecht"}
+{"question_id":"at-065","question":"Was ist der Sanierungsplan im Insolvenzverfahren?","expected_slug":"legal/statutes/at/io/p-140","legal_area":"io","question_type":"insolvenzrecht"}
+{"question_id":"at-066","question":"Welche Voraussetzungen gelten für die Gewerbeberechtigung?","expected_slug":"legal/statutes/at/gewo/p-7","legal_area":"gewo","question_type":"gewerberecht"}
+{"question_id":"at-067","question":"Wann kann eine Gewerbeuntersagung ausgesprochen werden?","expected_slug":"legal/statutes/at/gewo/p-87","legal_area":"gewo","question_type":"gewerberecht"}
+{"question_id":"at-068","question":"Was ist die Anmeldepflicht bei einem Zusammenschluss nach dem Kartellgesetz?","expected_slug":"legal/statutes/at/kartg/p-7","legal_area":"kartg","question_type":"kartellrecht"}
+{"question_id":"at-069","question":"Wann liegt ein marktbeherrschendes Verhalten vor?","expected_slug":"legal/statutes/at/kartg/p-5","legal_area":"kartg","question_type":"kartellrecht"}
+{"question_id":"at-070","question":"Welche Leistungen bietet die Krankenversicherung?","expected_slug":"legal/statutes/at/asvg/p-102","legal_area":"asvg","question_type":"sozialrecht"}
+{"question_id":"at-071","question":"Wann entsteht ein Pensionsanspruch nach dem ASVG?","expected_slug":"legal/statutes/at/asvg/p-245","legal_area":"asvg","question_type":"sozialrecht"}
+{"question_id":"at-072","question":"Was ist die Kündigung eines Arbeitsverhältnisses nach dem ArbVG?","expected_slug":"legal/statutes/at/arbvg/p-105","legal_area":"arbvg","question_type":"arbeitsrecht"}
+{"question_id":"at-073","question":"Wann ist eine Entlassung eines Dienstnehmers gerechtfertigt?","expected_slug":"legal/statutes/at/arbvg/p-105","legal_area":"arbvg","question_type":"arbeitsrecht"}
+{"question_id":"at-074","question":"Was ist der Anspruch auf Abfertigung nach dem ArbVG?","expected_slug":"legal/statutes/at/arbvg/p-97","legal_area":"arbvg","question_type":"arbeitsrecht"}
+{"question_id":"at-075","question":"Was ist die Haftung der Geschäftsführer einer Aktiengesellschaft?","expected_slug":"legal/statutes/at/aktg/p-84","legal_area":"aktg","question_type":"gesellschaftsrecht"}
+{"question_id":"at-076","question":"Welche Vorschriften gelten für die Hauptversammlung einer AG?","expected_slug":"legal/statutes/at/aktg/p-101","legal_area":"aktg","question_type":"gesellschaftsrecht"}
+{"question_id":"at-077","question":"Was ist die sachliche Zuständigkeit der Gerichte nach der JN?","expected_slug":"legal/statutes/at/jn/p-1","legal_area":"jn","question_type":"procedural"}
+{"question_id":"at-078","question":"Was ist der Streitwert und wie wird er berechnet nach der JN?","expected_slug":"legal/statutes/at/jn/p-7a","legal_area":"jn","question_type":"procedural"}
+{"question_id":"at-079","question":"Was ist die Pflicht zur Rechnungslegung nach dem UGB?","expected_slug":"legal/statutes/at/ugb/p-189","legal_area":"ugb","question_type":"definition"}
+{"question_id":"at-080","question":"Wer ist Kaufmann nach dem Unternehmensgesetzbuch?","expected_slug":"legal/statutes/at/ugb/p-343","legal_area":"ugb","question_type":"definition"}

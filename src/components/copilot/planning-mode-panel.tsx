@@ -280,7 +280,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
                 : "Was möchtest du planen? z.B. 'Vorbereitung der mündlichen Verhandlung am 15.08.2026'"
             }
             rows={2}
-            className="w-full rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-[11px] text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="w-full rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-[11px] text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
           <div className="flex items-center justify-end gap-1.5">
             <button
@@ -318,7 +318,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
                 : "z.B. 'Füge einen Schritt für Beweissicherung hinzu'"
             }
             rows={2}
-            className="w-full rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-[11px] text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="w-full rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-[11px] text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
           <div className="flex items-center justify-end gap-1.5">
             <button
@@ -341,7 +341,7 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
 
       {/* Active plan display */}
       {loading ? (
-        <div className="flex items-center gap-2 py-3">
+        <div className="flex items-center gap-2 py-3" role="status" aria-live="polite">
           <Loader2 size={12} className="animate-spin text-[color:var(--brand-primary)]" />
           <span className="text-[10px] text-[color:var(--ds-text-muted)]">
             {isEn ? "Loading plans..." : "Pläne werden geladen..."}

@@ -474,7 +474,7 @@ export function ContractRedlineViewer({
         {loading && redlineText && (
           <div className="mx-auto max-w-4xl">
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <div className="mb-3 flex items-center gap-2">
+              <div className="mb-3 flex items-center gap-2" role="status" aria-live="polite">
                 <Loader2 size={14} className="brand-text animate-spin" />
                 <span className="text-xs text-[color:var(--ds-text-muted)]">
                   Streaming Analyse…
@@ -511,10 +511,21 @@ export function ContractRedlineViewer({
                 >
                   {/* Clause header — clickable to collapse */}
                   <div
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={!clause.collapsed}
+                    onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        toggleClause(idx);
+                      }
+                    }}
                     className={cn(
                       "flex cursor-pointer items-center gap-2 border-b px-4 py-2.5 select-none",
                       riskCfg.border,
-                      riskCfg.bg
+                      riskCfg.bg,
+                      "focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none focus-visible:ring-inset"
                     )}
                     onClick={() => toggleClause(idx)}
                   >

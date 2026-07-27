@@ -23,6 +23,8 @@ import { mkdirSync, writeFileSync, existsSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { dump as yamlDump } from "js-yaml";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
 import {
   extractRisReferences,
   mapRisReference,
@@ -158,6 +160,20 @@ const COURT_CONFIGS: Record<string, CourtConfig> = {
     defaultFrom: 2000,
     knownTotal: 3000,
   },
+  ubas: {
+    applikation: "Ubas",
+    outDir: "at-judikatur-ubas",
+    label: "UBAS",
+    defaultFrom: 2000,
+    knownTotal: 4052,
+  },
+  umse: {
+    applikation: "Umse",
+    outDir: "at-judikatur-umse",
+    label: "UmSE",
+    defaultFrom: 2001,
+    knownTotal: 742,
+  },
 };
 
 interface JudikaturDoc {
@@ -180,8 +196,9 @@ async function fetchWithRetry(url: string, maxRetries: number = MAX_RETRIES): Pr
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const res = await fetch(url, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; Subsumio-Legal-Import/1.0)" },
+        headers: { "User-Agent": getUserAgent() },
         signal: AbortSignal.timeout(30_000),
+        ...proxyFetchOptions(),
       });
       if (res.status === 429 || res.status >= 500) {
         const backoff = RETRY_BASE_MS * Math.pow(2, attempt);
@@ -547,6 +564,11 @@ async function fullScanCourt(
 // ── Main ───────────────────────────────────────────────────────────────
 
 async function main() {
+  // Global RIS lock — ensures no other RIS script runs simultaneously
+  console.log("🔒 Acquiring RIS lock...");
+  await acquireRisLock();
+  console.log("✅ RIS lock acquired.");
+
   const args = process.argv.slice(2);
   const courtIdx = args.indexOf("--court");
   const courtArg = courtIdx >= 0 ? args[courtIdx + 1] : "all";
@@ -612,7 +634,12 @@ async function main() {
   console.log(`  3. Embed:          bun scripts/embed-pending-at.ts --source <source_id>`);
 }
 
-main().catch((err) => {
-  console.error("Fatal:", err);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    releaseRisLock();
+  })
+  .catch((err) => {
+    console.error("Fatal:", err);
+    releaseRisLock();
+    process.exit(1);
+  });

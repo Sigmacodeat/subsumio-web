@@ -210,7 +210,7 @@ function tr(key: string, lang: Lang): string {
 type View = "messages" | "review" | "tax";
 
 export default function CommunicationsPage() {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const { addToast } = useToast();
   const qc = useQueryClient();
   const [view, setView] = useState<View>("messages");
@@ -221,7 +221,8 @@ export default function CommunicationsPage() {
   // directly (used by sidebar badge + dashboard action banner).
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get("view");
-    if (requested === "review" || requested === "messages" || requested === "tax") setView(requested);
+    if (requested === "review" || requested === "messages" || requested === "tax")
+      setView(requested);
   }, []);
 
   const batchQuery = useQuery({
@@ -322,7 +323,10 @@ export default function CommunicationsPage() {
       <PageHeader
         title={tr("title", lang)}
         description={tr("description", lang)}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: tr("title", lang) }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: tr("title", lang) },
+        ]}
         actions={
           <Button
             variant="ghost"
@@ -430,7 +434,7 @@ export default function CommunicationsPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={tr("search_placeholder", lang)}
                 aria-label={tr("search_placeholder", lang)}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-9 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-9 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
               {search && (
                 <button

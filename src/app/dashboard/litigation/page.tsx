@@ -329,7 +329,7 @@ export default function LitigationFlowPage() {
 
   if (loading && matters.length === 0) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
+      <div className="flex h-[60vh] items-center justify-center" role="status" aria-live="polite">
         <Loader2 className="h-6 w-6 animate-spin text-[color:var(--brand-primary)]" />
       </div>
     );
@@ -759,7 +759,7 @@ export default function LitigationFlowPage() {
               <Input
                 value={newCaseTitle}
                 onChange={(e) => setNewCaseTitle(e.target.value)}
-                placeholder="Muster ./. Beispiel"
+                placeholder={t("litigation.ph_parties")}
               />
             </div>
             <div>

@@ -49,10 +49,8 @@ export const POST = createHandler(
       record_count: records.length,
       total_amount: totalAmount,
     });
-    if (isDatevConfigured()) {
-      exportRecord.status = "sent";
-      exportRecord.sent_at = new Date().toISOString();
-    }
+    exportRecord.status = "generated";
+    exportRecord.sent_at = new Date().toISOString();
     await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { ...ctx.headers, "Content-Type": "application/json" },

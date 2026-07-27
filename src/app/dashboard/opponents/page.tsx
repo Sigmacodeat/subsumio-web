@@ -120,7 +120,7 @@ export default function OpponentsPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
-      <PageHeader title="Gegner-Analyse" description="Intelligence über Gegner aus allen Akten" />
+      <PageHeader title={t("opponents.title")} description={t("opponents.desc")} />
 
       {capped && <CappedResultsNotice limit={CASES_LIMIT} />}
 
@@ -128,23 +128,31 @@ export default function OpponentsPage() {
       {opponents.length > 0 && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">Gegner gesamt</div>
+            <div className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("opponents.stat_total")}
+            </div>
             <div className="text-xl font-bold text-[color:var(--ds-text)]">{opponents.length}</div>
           </div>
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">Häufigster Gegner</div>
+            <div className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("opponents.stat_most_frequent")}
+            </div>
             <div className="truncate text-sm font-bold text-[color:var(--ds-text)]">
               {opponents[0]?.name}
             </div>
           </div>
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">Gesamt-Akten</div>
+            <div className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("opponents.stat_total_cases")}
+            </div>
             <div className="text-xl font-bold text-[color:var(--ds-text)]">
               {opponents.reduce((s, o) => s + o.caseCount, 0)}
             </div>
           </div>
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">Gewonnen</div>
+            <div className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("opponents.stat_wins")}
+            </div>
             <div className="text-xl font-bold text-[color:var(--ds-success-text)]">
               {opponents.reduce((s, o) => s + o.wins, 0)}
             </div>
@@ -174,7 +182,7 @@ export default function OpponentsPage() {
             }}
             className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
-            <RotateCcw size={13} /> Erneut versuchen
+            <RotateCcw size={13} /> {t("opponents.retry")}
           </Button>
         </div>
       )}
@@ -190,15 +198,15 @@ export default function OpponentsPage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Gegner suchen…"
-            aria-label="Gegner suchen"
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-9 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+            placeholder={t("opponents.search_placeholder")}
+            aria-label={t("opponents.search_aria")}
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-9 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
           {query && (
             <button
               onClick={() => setQuery("")}
               className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
-              aria-label="Suche löschen"
+              aria-label={t("opponents.search_clear")}
             >
               <X size={15} />
             </button>
@@ -218,12 +226,8 @@ export default function OpponentsPage() {
       ) : opponents.length === 0 ? (
         <div className="space-y-4 py-20 text-center">
           <ShieldAlert size={48} className="mx-auto text-[color:var(--ds-border)]" />
-          <p className="text-[color:var(--ds-text-muted)]">
-            Noch keine Gegner in den Akten erfasst.
-          </p>
-          <p className="text-sm text-[color:var(--ds-text-muted)]">
-            Füge Gegner bei der Akten-Erstellung hinzu.
-          </p>
+          <p className="text-[color:var(--ds-text-muted)]">{t("opponents.empty_title")}</p>
+          <p className="text-sm text-[color:var(--ds-text-muted)]">{t("opponents.empty_desc")}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -233,7 +237,7 @@ export default function OpponentsPage() {
                 onClick={() => setSelectedOpponent(null)}
                 className="text-sm text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
               >
-                ← Zurück zur Übersicht
+                {t("opponents.back")}
               </button>
 
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -241,7 +245,9 @@ export default function OpponentsPage() {
                   {selectedOpponent.name}
                 </h2>
                 <div className="mt-1 flex items-center gap-3 text-sm text-[color:var(--ds-text-muted)]">
-                  <span>{selectedOpponent.caseCount} Akten</span>
+                  <span>
+                    {selectedOpponent.caseCount} {t("opponents.cases_count")}
+                  </span>
                   <span
                     className={
                       selectedOpponent.winRate >= 0.5
@@ -249,7 +255,7 @@ export default function OpponentsPage() {
                         : "text-[color:var(--ds-danger-text)]"
                     }
                   >
-                    {Math.round(selectedOpponent.winRate * 100)}% Siegquote
+                    {Math.round(selectedOpponent.winRate * 100)}% {t("opponents.win_rate")}
                   </span>
                 </div>
               </div>
@@ -259,26 +265,32 @@ export default function OpponentsPage() {
                   <div className="text-xl font-bold text-[color:var(--ds-success-text)]">
                     {selectedOpponent.wins}
                   </div>
-                  <div className="text-xs text-[color:var(--ds-text-muted)]">Gewonnen</div>
+                  <div className="text-xs text-[color:var(--ds-text-muted)]">
+                    {t("opponents.stat_wins")}
+                  </div>
                 </div>
                 <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-center">
                   <div className="text-xl font-bold text-[color:var(--ds-danger-text)]">
                     {selectedOpponent.losses}
                   </div>
-                  <div className="text-xs text-[color:var(--ds-text-muted)]">Verloren</div>
+                  <div className="text-xs text-[color:var(--ds-text-muted)]">
+                    {t("opponents.lost")}
+                  </div>
                 </div>
                 <div className="rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-3 text-center">
                   <div className="text-xl font-bold text-[color:var(--ds-info-text)]">
                     {selectedOpponent.settlements}
                   </div>
-                  <div className="text-xs text-[color:var(--ds-text-muted)]">Erledigt</div>
+                  <div className="text-xs text-[color:var(--ds-text-muted)]">
+                    {t("opponents.settled")}
+                  </div>
                 </div>
               </div>
 
               {selectedOpponent.preferredAreas.length > 0 && (
                 <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
                   <h3 className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]">
-                    Rechtsgebiete
+                    {t("opponents.legal_areas")}
                   </h3>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedOpponent.preferredAreas.map((area) => (
@@ -295,7 +307,9 @@ export default function OpponentsPage() {
               )}
 
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-                <h3 className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]">Akten</h3>
+                <h3 className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]">
+                  {t("opponents.case_list")}
+                </h3>
                 <div className="space-y-2">
                   {selectedOpponent.recentCases.map((c) => {
                     const statusColor =
@@ -316,11 +330,11 @@ export default function OpponentsPage() {
                         <div className="flex items-center gap-2">
                           <span className={`text-xs ${statusColor}`}>
                             {c.status === "won"
-                              ? "Gewonnen"
+                              ? t("opponents.stat_wins")
                               : c.status === "lost"
-                                ? "Verloren"
+                                ? t("opponents.lost")
                                 : c.status === "settled"
-                                  ? "Erledigt"
+                                  ? t("opponents.settled")
                                   : c.status}
                           </span>
                           <ChevronRight
@@ -348,7 +362,8 @@ export default function OpponentsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="font-medium text-[color:var(--ds-text)]">{o.name}</div>
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      {o.caseCount} Akten · {o.preferredAreas.slice(0, 2).join(", ")}
+                      {o.caseCount} {t("opponents.cases_count")} ·{" "}
+                      {o.preferredAreas.slice(0, 2).join(", ")}
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
@@ -362,7 +377,9 @@ export default function OpponentsPage() {
                     >
                       {Math.round(o.winRate * 100)}%
                     </div>
-                    <div className="text-xs text-[color:var(--ds-text-muted)]">Siegquote</div>
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("opponents.win_rate")}
+                    </div>
                   </div>
                   <ChevronRight
                     size={16}

@@ -224,7 +224,7 @@ export function ChatInput({
             }
             rows={1}
             maxLength={50000}
-            className="min-h-[36px] w-full resize-none bg-transparent px-3 pt-2.5 pb-1 text-[14px] leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none disabled:opacity-50"
+            className="min-h-[36px] w-full resize-none bg-transparent px-3 pt-2.5 pb-1 text-[14px] leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:opacity-50"
             aria-label={t("chat.input.enter_message")}
           />
 

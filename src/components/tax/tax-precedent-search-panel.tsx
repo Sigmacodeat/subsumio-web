@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import { Search, Loader2, AlertTriangle, Scale, Gavel } from "lucide-react";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
 interface TaxPrecedentSearchPanelProps {
   initialQuery?: string;
@@ -31,6 +33,7 @@ export function TaxPrecedentSearchPanel({ initialQuery = "" }: TaxPrecedentSearc
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<Precedent[]>([]);
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
 
   async function search() {
     if (query.trim().length < 2) return;
@@ -48,6 +51,22 @@ export function TaxPrecedentSearchPanel({ initialQuery = "" }: TaxPrecedentSearc
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (results.length === 0) return;
+    const groundingText = results
+      .map((p) =>
+        [
+          `${p.court} ${p.file_number} (${p.date})`,
+          p.summary,
+          ...p.key_holdings,
+          ...p.legal_basis,
+        ].join(" — ")
+      )
+      .join("\n\n");
+    groundAnswer(groundingText).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [results]);
 
   return (
     <Card className="p-5">
@@ -158,6 +177,16 @@ export function TaxPrecedentSearchPanel({ initialQuery = "" }: TaxPrecedentSearc
               )}
             </div>
           ))}
+          <CitationPanel
+            data={
+              {
+                grounding: grounding ?? null,
+                citations: [],
+                isStreaming: isGrounding,
+              } satisfies CitationPanelData
+            }
+            compact
+          />
         </div>
       )}
     </Card>

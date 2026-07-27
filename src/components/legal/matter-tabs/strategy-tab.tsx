@@ -139,7 +139,11 @@ function ProzessOekonomieSection({ caseSlug, lang }: { caseSlug: string; lang: s
         )}
       </div>
       {loading ? (
-        <div className="flex items-center gap-2 py-3 text-sm text-[color:var(--ds-text-secondary)]">
+        <div
+          className="flex items-center gap-2 py-3 text-sm text-[color:var(--ds-text-secondary)]"
+          role="status"
+          aria-live="polite"
+        >
           <Loader2 size={14} className="animate-spin" />
           {lang === "en" ? "Loading analyses..." : "Analysen werden geladen..."}
         </div>
@@ -298,7 +302,7 @@ export function StrategyTab() {
       <div className="max-w-3xl">
         <Suspense
           fallback={
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-8" role="status" aria-live="polite">
               <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" />
             </div>
           }
@@ -484,7 +488,11 @@ export function StrategyTab() {
             )}
           </div>
           {ctx.probeLoading ? (
-            <div className="flex items-center gap-2 py-4 text-sm text-[color:var(--ds-text-secondary)]">
+            <div
+              className="flex items-center gap-2 py-4 text-sm text-[color:var(--ds-text-secondary)]"
+              role="status"
+              aria-live="polite"
+            >
               <Loader2 size={14} className="animate-spin" />
               {lang === "en"
                 ? "Loading contradiction findings..."
@@ -640,7 +648,7 @@ export function StrategyTab() {
         <ActIntelligencePanel caseSlug={caseData.slug} />
         <Suspense
           fallback={
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-8" role="status" aria-live="polite">
               <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" />
             </div>
           }
@@ -658,7 +666,7 @@ export function StrategyTab() {
       <div className="max-w-3xl space-y-4">
         <Suspense
           fallback={
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-8" role="status" aria-live="polite">
               <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" />
             </div>
           }
@@ -702,7 +710,11 @@ export function StrategyTab() {
         <div className="h-[500px]">
           <Suspense
             fallback={
-              <div className="flex items-center justify-center py-8">
+              <div
+                className="flex items-center justify-center py-8"
+                role="status"
+                aria-live="polite"
+              >
                 <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" />
               </div>
             }
@@ -751,7 +763,7 @@ export function StrategyTab() {
                 placeholder={t("cases.detail_query_ph")}
                 aria-label={t("cases.ask_case")}
                 disabled={caseData?.status === "archived"}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none disabled:opacity-50"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:opacity-50"
               />
             </div>
             <Button

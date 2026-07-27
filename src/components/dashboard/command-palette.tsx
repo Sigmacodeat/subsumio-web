@@ -77,6 +77,7 @@ const CMD_LABEL_KEYS: Record<string, DashboardKey> = {
   "review-queue": "nav.review_queue",
   "version-history": "nav.version_history",
   monitoring: "nav.monitoring",
+  "ai-quality": "nav.ai_quality",
   sources: "nav.sources",
   // Schriftsätze & Abrechnung
   drafting: "nav.drafting",
@@ -754,7 +755,7 @@ export function CommandPalette({
                   setActiveIndex(0);
                 }}
                 placeholder={t("cmd.placeholder")}
-                className="flex-1 bg-transparent text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
+                className="flex-1 bg-transparent text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 aria-label={t("cmd.search_aria")}
                 role="combobox"
                 aria-expanded="true"

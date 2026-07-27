@@ -262,7 +262,11 @@ export default function ClientPortalPage() {
 
       {/* Cases */}
       {loading ? (
-        <div className="py-20 text-center text-[color:var(--ds-text-muted)]">
+        <div
+          className="py-20 text-center text-[color:var(--ds-text-muted)]"
+          role="status"
+          aria-live="polite"
+        >
           <Loader2 size={24} className="mx-auto mb-3 animate-spin" />
           {t("client_portal.loading")}
         </div>

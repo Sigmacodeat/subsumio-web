@@ -22,7 +22,7 @@ import { fileURLToPath } from "url";
 
 const DRY = process.argv.includes("--dry-run");
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
-const CORPUS_ROOT = join(_scriptDir, "..", "..", "law-corpus");
+const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
 
 const AFFECTED_DIRS = [
   "at-judikatur-bvwg",

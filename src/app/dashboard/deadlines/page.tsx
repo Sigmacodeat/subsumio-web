@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   CalendarClock,
@@ -128,6 +128,60 @@ export default function DeadlinesPage() {
   const [rechtsraum, setRechtsraum] = useState<{ state?: string; country?: string }>({});
   const [secondCheckTarget, setSecondCheckTarget] = useState<DeadlineItem | null>(null);
   const [secondCheckBusy, setSecondCheckBusy] = useState(false);
+  const secondCheckConfirmRef = useRef<HTMLButtonElement | null>(null);
+  // Mirror of secondCheckBusy so the Escape handler (registered on open) sees
+  // the current value without re-registering the listener.
+  const secondCheckBusyRef = useRef(false);
+  secondCheckBusyRef.current = secondCheckBusy;
+
+  // A11y for the four-eyes modal: autofocus on open, focus restoration on
+  // close. Self-contained — the global dashboard focus trap only covers
+  // layout-registered overlays.
+  useEffect(() => {
+    if (!secondCheckTarget) return;
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const frame = requestAnimationFrame(() => secondCheckConfirmRef.current?.focus());
+    return () => {
+      cancelAnimationFrame(frame);
+      previouslyFocused?.focus();
+    };
+  }, [secondCheckTarget]);
+
+  // Keyboard handling for the four-eyes modal: Escape closes (unless busy),
+  // Tab cycles focus within the dialog.
+  useEffect(() => {
+    if (!secondCheckTarget) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (!secondCheckBusyRef.current) {
+          event.preventDefault();
+          setSecondCheckTarget(null);
+        }
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const dialog = document.getElementById("second-check-dialog");
+      if (!dialog) return;
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [secondCheckTarget]);
   const [showCalc, setShowCalc] = useState(false);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [calcTemplate, setCalcTemplate] = useState<DeadlineRule>(DEADLINE_RULES[0]);
@@ -668,7 +722,10 @@ export default function DeadlinesPage() {
       <PageHeader
         title={t("deadlines.title")}
         description={`${deadlines.length} ${t("deadlines.count")}`}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("deadlines.title") }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("deadlines.title") },
+        ]}
         actions={
           <div className="flex items-center gap-2.5">
             <Button
@@ -856,7 +913,7 @@ export default function DeadlinesPage() {
               onChange={(e) => setAiText(e.target.value)}
               placeholder={t("deadlines.detect_placeholder")}
               rows={4}
-              className="flex-1 resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              className="flex-1 resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
           </div>
           <button
@@ -1063,20 +1120,30 @@ export default function DeadlinesPage() {
 
       {/* P0: Vier-Augen second-check confirmation modal */}
       {secondCheckTarget && (
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Backdrop click-to-close; keyboard users close via Escape or the close button.
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => !secondCheckBusy && setSecondCheckTarget(null)}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !secondCheckBusy) setSecondCheckTarget(null);
+          }}
         >
           <div
+            id="second-check-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="second-check-title"
+            aria-describedby="second-check-desc"
             className="w-full max-w-md rounded-2xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-surface)] p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--ds-warning-bg)]">
                 <ShieldCheck size={20} className="text-[color:var(--ds-warning-text)]" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                <h3
+                  id="second-check-title"
+                  className="text-sm font-semibold text-[color:var(--ds-text)]"
+                >
                   {t("deadlines.second_check")}
                 </h3>
                 <p className="text-xs text-[color:var(--ds-text-muted)]">
@@ -1084,7 +1151,7 @@ export default function DeadlinesPage() {
                 </p>
               </div>
             </div>
-            <p className="mb-4 text-sm text-[color:var(--ds-text-muted)]">
+            <p id="second-check-desc" className="mb-4 text-sm text-[color:var(--ds-text-muted)]">
               {lang === "en"
                 ? "This is a statutory deadline (Notfrist). Marking it as done requires a second confirmation by a different person (four-eyes principle). By confirming, you attest that you have verified the deadline completion."
                 : "Dies ist eine Notfrist. Die Erledigung erfordert eine zweite Bestätigung durch eine weitere Person (Vier-Augen-Prinzip). Mit der Bestätigung belegen Sie, dass Sie die Fristwahrung geprüft haben."}
@@ -1104,6 +1171,7 @@ export default function DeadlinesPage() {
                 {lang === "en" ? "Cancel" : "Abbrechen"}
               </Button>
               <Button
+                ref={secondCheckConfirmRef}
                 size="sm"
                 disabled={secondCheckBusy}
                 onClick={() => void confirmSecondCheck(secondCheckTarget)}

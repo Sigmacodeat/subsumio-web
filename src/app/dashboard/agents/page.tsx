@@ -625,7 +625,11 @@ function JobDetail({
 
           {sendMutation.isPending && (
             <div className="flex flex-row-reverse gap-2.5">
-              <div className="brand-soft flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+              <div
+                className="brand-soft flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+                role="status"
+                aria-live="polite"
+              >
                 <Loader2 size={12} className="brand-text animate-spin" />
               </div>
               <div className="brand-soft brand-border rounded-xl border px-3 py-2 text-sm text-[color:var(--ds-text)]">
@@ -830,7 +834,7 @@ export default function AgentsPage() {
                   onChange={(e) => setSubmitPrompt(e.target.value)}
                   placeholder={t("agents.task_placeholder")}
                   aria-label={t("agents.task_placeholder")}
-                  className="focus:brand-border/40 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none"
+                  className="focus:brand-border/40 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 <Button
                   type="submit"
@@ -890,7 +894,11 @@ export default function AgentsPage() {
             {/* Job list */}
             <div className="flex-1 space-y-1 overflow-y-auto p-2">
               {loading && jobs.length === 0 && (
-                <div className="flex items-center justify-center py-8">
+                <div
+                  className="flex items-center justify-center py-8"
+                  role="status"
+                  aria-live="polite"
+                >
                   <Loader2 size={20} className="brand-text animate-spin" />
                 </div>
               )}

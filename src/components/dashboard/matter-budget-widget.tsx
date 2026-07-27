@@ -145,7 +145,7 @@ export function MatterBudgetWidget() {
             {isEn ? "Matter Budgets" : "Akten-Budgets"}
           </span>
         </div>
-        <div className="flex h-20 items-center justify-center">
+        <div className="flex h-20 items-center justify-center" role="status" aria-live="polite">
           <Loader2 size={18} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       </section>

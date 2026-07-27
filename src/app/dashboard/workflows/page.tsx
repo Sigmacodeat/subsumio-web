@@ -289,7 +289,7 @@ export default function WorkflowsPage() {
                           setCaseSlug("");
                         }}
                       >
-                        Abbrechen
+                        {t("workflows.cancel")}
                       </Button>
                     </div>
 
@@ -317,7 +317,7 @@ export default function WorkflowsPage() {
                         htmlFor="wf-prompt"
                         className="text-xs font-medium text-[color:var(--ds-text)]"
                       >
-                        Aufgabe (optional anpassen)
+                        {t("workflows.task_label")}
                       </Label>
                       <textarea
                         id="wf-prompt"
@@ -325,7 +325,7 @@ export default function WorkflowsPage() {
                         onChange={(e) => setCustomPrompt(e.target.value)}
                         rows={3}
                         placeholder={template.prompt}
-                        className="focus:brand-border/40 w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none"
+                        className="focus:brand-border/40 w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                       />
                     </div>
 
@@ -335,7 +335,7 @@ export default function WorkflowsPage() {
                         htmlFor="wf-case"
                         className="text-xs font-medium text-[color:var(--ds-text)]"
                       >
-                        Zugehörige Akte (optional)
+                        {t("workflows.case_label")}
                       </Label>
                       <Input
                         id="wf-case"
@@ -352,7 +352,7 @@ export default function WorkflowsPage() {
                       ) : (
                         <Play size={16} />
                       )}
-                      {starting ? "Starte..." : "Workflow starten"}
+                      {starting ? t("workflows.starting") : t("workflows.start_button")}
                     </Button>
                   </>
                 );
@@ -432,7 +432,7 @@ export default function WorkflowsPage() {
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center">
               <p className="text-sm text-[color:var(--ds-text-muted)]">
-                Keine Workflows in diesem Filter.
+                {t("workflows.empty_filter")}
               </p>
             </div>
           ) : (
@@ -610,6 +610,7 @@ function WorkflowCard({
 // ── StepRow ───────────────────────────────────────────────────────────
 
 function StepRow({ step, index }: { step: WorkflowStep; index: number }) {
+  const { t } = useLang();
   const Icon = actionIcons[step.action_type];
   const StatusIcon = stepStatusIcons[step.status];
   const statusColor = stepStatusColors[step.status];
@@ -643,7 +644,7 @@ function StepRow({ step, index }: { step: WorkflowStep; index: number }) {
         <a
           href={`/dashboard/brain/${encodeURIComponent(step.agent_action_slug)}`}
           className="brand-text shrink-0 font-mono text-xs hover:underline"
-          title="Agent-Action ansehen"
+          title={t("workflows.aria_view_action")}
         >
           →
         </a>

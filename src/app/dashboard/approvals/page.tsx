@@ -181,7 +181,7 @@ export default function ApprovalsPage() {
                         rows={2}
                         placeholder={t("approvals.reject_placeholder")}
                         aria-label={t("approvals.reject_reason")}
-                        className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-danger-border)] focus:outline-none"
+                        className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-danger-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                       />
                       <div className="flex items-center gap-2">
                         <Button

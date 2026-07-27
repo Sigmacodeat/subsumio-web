@@ -1907,8 +1907,15 @@ export async function registerBuiltinHandlers(
     await import("../core/minions/handlers/extract-document.ts");
   worker.register("extract-document", makeExtractDocumentHandler({ engine }));
 
+  // Async arm of Tabular Review: the web-api start/retry routes persist a
+  // tabular_review run-state page, then enqueue this job to process the
+  // run's pending rows (one chat call per document, quote-grounded cells,
+  // per-row frontmatter progress). PROTECTED via PROTECTED_JOB_NAMES.
+  const { makeTabularReviewHandler } = await import("../core/minions/handlers/tabular-review.ts");
+  worker.register("tabular-review", makeTabularReviewHandler({ engine }));
+
   process.stderr.write(
-    "[minion worker] subagent + supervisor + legal-pipeline + extract-document handlers enabled\n"
+    "[minion worker] subagent + supervisor + legal-pipeline + extract-document + tabular-review handlers enabled\n"
   );
 
   // ============================================================

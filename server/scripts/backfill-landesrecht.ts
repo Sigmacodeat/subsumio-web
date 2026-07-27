@@ -20,6 +20,14 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, renameSync } from
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
+import {
+  stripHtmlComplete,
+  validateFetchedText,
+  validateLegalStructure,
+  contentHash,
+  atomicWrite as atomicWriteUtil,
+} from "./backfill-utils";
 
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 2000;
@@ -30,9 +38,11 @@ const args = process.argv.slice(2);
 const limitIdx = args.indexOf("--limit");
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : 0;
 const dryRun = args.includes("--dry-run");
+const forceReFetch = args.includes("--force-refetch");
 
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
-const ABS_DIR = join(_scriptDir, "..", "..", "law-corpus", "at-landesrecht");
+const _corpusRoot = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
+const ABS_DIR = join(_corpusRoot, "at-landesrecht");
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -41,12 +51,13 @@ async function fetchWithRetry(url: string): Promise<Response | null> {
     try {
       const res = await fetch(url, {
         headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; Subsumio-Legal-Import/1.0)",
+          "User-Agent": getUserAgent(),
           Accept: "text/html,application/xhtml+xml",
           "Accept-Language": "de",
         },
         redirect: "follow",
         signal: AbortSignal.timeout(TIMEOUT_MS),
+        ...proxyFetchOptions(),
       });
       if (res.status === 429 || res.status >= 500) {
         if (attempt < MAX_RETRIES) {
@@ -118,14 +129,26 @@ function extractRisContent(html: string): string {
   // RIS-specific: remove known non-content divs by ID
   content = content.replace(/<div[^>]*id="header"[^>]*>[\s\S]*?<\/div>\s*<\/div>/gi, "");
   content = content.replace(/<div[^>]*id="TopPageNavigation"[^>]*>[\s\S]*?<\/div>/gi, "");
-  content = content.replace(/<div[^>]*id="TopDocumentNavigation_ContainerPanel"[^>]*>[\s\S]*?<\/div>/gi, "");
-  content = content.replace(/<div[^>]*id="BottomDocumentNavigation_ContainerPanel"[^>]*>[\s\S]*?<\/div>/gi, "");
+  content = content.replace(
+    /<div[^>]*id="TopDocumentNavigation_ContainerPanel"[^>]*>[\s\S]*?<\/div>/gi,
+    ""
+  );
+  content = content.replace(
+    /<div[^>]*id="BottomDocumentNavigation_ContainerPanel"[^>]*>[\s\S]*?<\/div>/gi,
+    ""
+  );
   content = content.replace(/<div[^>]*id="footer"[^>]*>[\s\S]*?<\/div>/gi, "");
   content = content.replace(/<div[^>]*id="Topline"[^>]*>[\s\S]*?<\/div>/gi, "");
 
   // RIS-specific: remove navigation lists
-  content = content.replace(/<ul[^>]*class="[^"]*(?:nav|menu|access|skip|tabStrip)[^"]*"[^>]*>[\s\S]*?<\/ul>/gi, "");
-  content = content.replace(/<div[^>]*class="[^"]*(?:tabStrip|nav|menu|breadcrumb|sidebar)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
+  content = content.replace(
+    /<ul[^>]*class="[^"]*(?:nav|menu|access|skip|tabStrip)[^"]*"[^>]*>[\s\S]*?<\/ul>/gi,
+    ""
+  );
+  content = content.replace(
+    /<div[^>]*class="[^"]*(?:tabStrip|nav|menu|breadcrumb|sidebar)[^"]*"[^>]*>[\s\S]*?<\/div>/gi,
+    ""
+  );
 
   // Strategy 1: RIS document pages use <div class="paperw"> for the actual law text
   let mainMatch = content.match(/<div[^>]*class="paperw"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i);
@@ -299,7 +322,11 @@ async function fetchLandesrechtText(eliUrl: string, lgblId: string): Promise<str
           const arr = Array.isArray(docs) ? docs : [docs];
           for (const d of arr) {
             const contentRefs = d.Data?.Dokumentliste?.ContentReference;
-            const refArr = Array.isArray(contentRefs) ? contentRefs : contentRefs ? [contentRefs] : [];
+            const refArr = Array.isArray(contentRefs)
+              ? contentRefs
+              : contentRefs
+                ? [contentRefs]
+                : [];
             for (const ref of refArr) {
               if (ref.ContentType !== "MainDocument") continue;
               const urls = ref.Urls?.ContentUrl;
@@ -320,7 +347,12 @@ async function fetchLandesrechtText(eliUrl: string, lgblId: string): Promise<str
                   const docRes = await fetchWithRetry(u.Url);
                   if (docRes && docRes.ok) {
                     const xmlText = await docRes.text();
-                    const text = stripHtml(xmlText.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+                    const text = stripHtml(
+                      xmlText
+                        .replace(/<[^>]+>/g, " ")
+                        .replace(/\s+/g, " ")
+                        .trim()
+                    );
                     if (text.length >= 100) return text;
                   }
                 }
@@ -363,7 +395,8 @@ async function main() {
   for (const f of allFiles) {
     const content = readFileSync(join(ABS_DIR, f), "utf-8");
     const { body } = parseFrontmatter(content);
-    if (isPlaceholder(body)) placeholders.push(f);
+    if (isPlaceholder(body) || (forceReFetch && !content.includes("content_hash:")))
+      placeholders.push(f);
   }
 
   console.log(`\n═══════════════════════════════════════════════════════════`);
@@ -396,10 +429,45 @@ async function main() {
     const text = await fetchLandesrechtText(sourceUrl, lgblId);
 
     if (text.length >= 100) {
+      // Validate fetched text before writing
+      const validation = validateFetchedText(text);
+      if (!validation.valid) {
+        console.error(`  ⚠️ validation failed for ${filename}: ${validation.reason}`);
+        fail++;
+        await new Promise((r) => setTimeout(r, DELAY_MS));
+        continue;
+      }
+      const cleanText = validation.cleanedText;
+
+      // Structure validation for state legislation — skip for short Verordnungen
+      // Many Landesrecht documents are short metadata-only entries without §/Art. structure
+      const docType = fm.match(/^type:\s*(\S+)/m)?.[1] ?? "state_legislation";
+      if (cleanText.length > 2000) {
+        const structResult = validateLegalStructure(cleanText, docType);
+        if (!structResult.valid) {
+          console.error(`  ⚠️ structure validation failed for ${filename}: ${structResult.reason}`);
+          fail++;
+          await new Promise((r) => setTimeout(r, DELAY_MS));
+          continue;
+        }
+      }
+
       if (!dryRun) {
-        const newBody = body.replace(/\*Volltext nicht abrufbar — siehe Quelle\.\*/, text);
-        const updated = `---\n${fm}\n---\n${newBody}`;
-        atomicWrite(filepath, updated);
+        // Inject content_hash into frontmatter
+        const hash = contentHash(cleanText);
+        const fmWithHash = fm.includes("content_hash:")
+          ? fm.replace(/content_hash:\s*"?[^"]*"?/, `content_hash: "${hash}"`)
+          : `${fm}\ncontent_hash: "${hash}"`;
+        const newBody = body.replace(/\*Volltext nicht abrufbar — siehe Quelle\.\*/, cleanText);
+        const updated = `---\n${fmWithHash}\n---\n${newBody}`;
+        try {
+          atomicWriteUtil(filepath, updated);
+        } catch (e: any) {
+          console.error(`  ⚠️ write failed for ${filename}: ${e?.message}`);
+          fail++;
+          await new Promise((r) => setTimeout(r, DELAY_MS));
+          continue;
+        }
       }
       ok++;
     } else {
@@ -425,10 +493,12 @@ async function main() {
   console.log(`═══════════════════════════════════════════════════════════`);
 }
 
-main().then(() => {
-  releaseRisLock();
-}).catch((err) => {
-  console.error("Fatal error:", err);
-  releaseRisLock();
-  process.exit(1);
-});
+main()
+  .then(() => {
+    releaseRisLock();
+  })
+  .catch((err) => {
+    console.error("Fatal error:", err);
+    releaseRisLock();
+    process.exit(1);
+  });

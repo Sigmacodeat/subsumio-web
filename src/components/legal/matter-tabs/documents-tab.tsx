@@ -119,7 +119,7 @@ export function DocumentsTab() {
           if (files.length > 0 && caseData) ctx.handleMultiUpload(files);
         }}
         className={cn(
-          "rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-center transition-colors focus:border-[color:var(--brand-primary)] focus:outline-none",
+          "rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-center transition-colors focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1",
           caseData?.status === "archived" && "pointer-events-none opacity-50"
         )}
         tabIndex={caseData?.status === "archived" ? -1 : 0}
@@ -339,7 +339,7 @@ export function DocumentsTab() {
           <select
             value={ctx.docTypeFilter}
             onChange={(e) => ctx.setDocTypeFilter(e.target.value)}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           >
             <option value="all">Alle Typen</option>
             <option value="Vollmacht">Vollmacht</option>
@@ -406,7 +406,7 @@ export function DocumentsTab() {
                 }
               }}
               placeholder={t("casesdetail.search_placeholder")}
-              className="mb-3 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              className="mb-3 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               autoFocus
             />
             {ctx.linkSearching && (

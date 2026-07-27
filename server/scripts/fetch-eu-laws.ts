@@ -92,7 +92,10 @@ async function fetchWithRetry(
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const res = await fetch(url, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; Subsumio-Legal-Import/1.0)", ...headers },
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; Subsumio-Legal-Import/1.0)",
+          ...headers,
+        },
         signal: AbortSignal.timeout(60_000),
       });
       if (res.status === 429 || res.status >= 500) {
@@ -114,14 +117,8 @@ async function fetchWithRetry(
   throw lastErr ?? new Error("fetchWithRetry exhausted");
 }
 
-function buildSparqlQuery(
-  resourceTypes: string[],
-  offset: number,
-  limit: number
-): string {
-  const typeFilter = resourceTypes
-    .map((t) => `?type=<${t}>`)
-    .join("||\n  ");
+function buildSparqlQuery(resourceTypes: string[], offset: number, limit: number): string {
+  const typeFilter = resourceTypes.map((t) => `?type=<${t}>`).join("||\n  ");
 
   return `PREFIX cdm: <http://publications.europa.eu/ontology/cdm#>
   select distinct ?work ?celex where {
@@ -138,10 +135,7 @@ interface EUWork {
   cellarId: string;
 }
 
-async function fetchSparqlPage(
-  resourceTypes: string[],
-  offset: number
-): Promise<EUWork[]> {
+async function fetchSparqlPage(resourceTypes: string[], offset: number): Promise<EUWork[]> {
   const query = buildSparqlQuery(resourceTypes, offset, SPARQL_PAGE_SIZE);
   const url = new URL(SPARQL_ENDPOINT);
   url.searchParams.set("query", query);
@@ -179,10 +173,12 @@ function stripHtmlSimple(html: string): string {
 }
 
 function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "unknown";
+  return (
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "unknown"
+  );
 }
 
 function buildMarkdown(celex: string, text: string, workUri: string): string {
@@ -288,8 +284,38 @@ async function fetchEUType(
             "Accept-Language": "de",
           });
           if (res.ok) {
-            const html = await res.text();
-            text = stripHtmlSimple(html);
+            const ct = res.headers.get("content-type") || "";
+            // RDF/XML = metadata-only entry, not digital content.
+            // Stripping "HTML" tags from RDF/XML produces garbage — skip it.
+            if (!ct.includes("rdf+xml") && !ct.includes("application/rdf")) {
+              const html = await res.text();
+              // Only accept responses that are actually HTML or XHTML
+              if (
+                ct.includes("text/html") ||
+                ct.includes("xhtml") ||
+                html.trimStart().startsWith("<!DOCTYPE html") ||
+                html.trimStart().startsWith("<html")
+              ) {
+                text = stripHtmlSimple(html);
+                // CELEX identity check: the fetched text must contain the
+                // CELEX number (or its numeric core) to guard against the
+                // API serving a generic/fallback page on 200 OK.
+                if (text.length > 0 && work.celex) {
+                  const norm = (s: string) => s.replace(/\s+/g, "").toLowerCase();
+                  const normText = norm(text);
+                  const normCelex = norm(work.celex);
+                  const celexCore = normCelex.replace(/^3/, "");
+                  if (
+                    !normText.includes(normCelex) &&
+                    !(celexCore.length > 4 && normText.includes(celexCore)) &&
+                    text.length < 500
+                  ) {
+                    // Identity check failed and text is short — likely wrong content
+                    text = "";
+                  }
+                }
+              }
+            }
           }
         } catch {
           // text stays empty
@@ -312,7 +338,9 @@ async function fetchEUType(
     await new Promise((r) => setTimeout(r, 500));
   }
 
-  console.log(`\n  ${config.label} SUMMARY: ${written} written, ${skipped} skipped, ${existingCount} pre-existing`);
+  console.log(
+    `\n  ${config.label} SUMMARY: ${written} written, ${skipped} skipped, ${existingCount} pre-existing`
+  );
   return { written, skipped };
 }
 
@@ -326,9 +354,8 @@ async function main() {
   const targetIdx = args.indexOf("--target");
   const targetOverride = targetIdx >= 0 ? parseInt(args[targetIdx + 1], 10) : 0;
 
-  const typesToRun = typeArg === "all"
-    ? Object.keys(TYPE_CONFIGS)
-    : typeArg.split(",").map((t) => t.trim());
+  const typesToRun =
+    typeArg === "all" ? Object.keys(TYPE_CONFIGS) : typeArg.split(",").map((t) => t.trim());
 
   let grandWritten = 0;
   let grandSkipped = 0;

@@ -164,7 +164,7 @@ export default function TaxReturnsPage() {
         title={t("tax.returns.title")}
         description={t("tax.returns.desc")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("tax.returns.title") },
         ]}
         actions={
@@ -218,7 +218,7 @@ export default function TaxReturnsPage() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("tax.returns.search")}
               aria-label={t("tax.returns.search")}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
             {search && (
               <button
@@ -233,7 +233,7 @@ export default function TaxReturnsPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as TaxReturnType | "all")}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           >
             <option value="all">{t("tax.returns.all_types")}</option>
             {Object.entries(typeLabels).map(([k, v]) => (
@@ -245,7 +245,7 @@ export default function TaxReturnsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as TaxReturnStatus | "all")}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           >
             <option value="all">{t("tax.returns.all_status")}</option>
             {Object.entries(statusFilterLabels).map(([k, v]) => (

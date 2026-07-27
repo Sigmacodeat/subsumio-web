@@ -47,7 +47,7 @@ export default function AIModelSettingsPage() {
 
   if (query.isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
+      <div className="flex h-64 items-center justify-center" role="status" aria-live="polite">
         <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );
@@ -60,7 +60,7 @@ export default function AIModelSettingsPage() {
           title={t("settings.aimodel.title")}
           description={t("settings.aimodel.description")}
           breadcrumbs={[
-            { label: "Settings", href: "/dashboard/settings" },
+            { label: t("settings.title"), href: "/dashboard/settings" },
             { label: t("settings.aimodel.breadcrumb") },
           ]}
         />
@@ -85,12 +85,16 @@ export default function AIModelSettingsPage() {
         title={t("settings.aimodel.title")}
         description={t("settings.aimodel.description")}
         breadcrumbs={[
-          { label: "Settings", href: "/dashboard/settings" },
+          { label: t("settings.title"), href: "/dashboard/settings" },
           { label: t("settings.aimodel.breadcrumb") },
         ]}
         actions={
           saving ? (
-            <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+            <div
+              className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]"
+              role="status"
+              aria-live="polite"
+            >
               <Loader2 size={12} className="animate-spin" />
               {t("settings.kanzlei.btn_saving")}
             </div>
@@ -105,8 +109,18 @@ export default function AIModelSettingsPage() {
 
       {/* Auto / Default card */}
       <div
+        role="button"
+        tabIndex={0}
+        aria-pressed={activeId === "auto"}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleSelect("auto");
+          }
+        }}
         className={cn(
-          "mb-4 cursor-pointer rounded-2xl border-2 p-5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+          "mb-4 cursor-pointer rounded-2xl border-2 p-5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
           activeId === "auto"
             ? "brand-border brand-soft"
             : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
@@ -161,8 +175,18 @@ export default function AIModelSettingsPage() {
           return (
             <div
               key={model.id}
+              role="button"
+              tabIndex={0}
+              aria-pressed={isActive}
+              onKeyDown={(e) => {
+                if (e.target !== e.currentTarget) return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleSelect(model.id);
+                }
+              }}
               className={cn(
-                "group cursor-pointer rounded-2xl border-2 p-5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                "group cursor-pointer rounded-2xl border-2 p-5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
                 isActive
                   ? "brand-border brand-soft"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
@@ -206,7 +230,7 @@ export default function AIModelSettingsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2" role="status" aria-live="polite">
                   {isSavingThis && (
                     <Loader2 size={14} className="animate-spin text-[color:var(--ds-text-muted)]" />
                   )}

@@ -179,7 +179,7 @@ export default function TeamMeetingPage() {
         title={t("team_meeting.title")}
         description={t("team_meeting.desc")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("team_meeting.title") },
         ]}
         actions={
@@ -197,7 +197,7 @@ export default function TeamMeetingPage() {
       />
 
       {loading ? (
-        <div className="flex justify-center py-20">
+        <div className="flex justify-center py-20" role="status" aria-live="polite">
           <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : meetings.length === 0 ? (

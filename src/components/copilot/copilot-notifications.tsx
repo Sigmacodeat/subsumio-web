@@ -137,7 +137,11 @@ export function CopilotNotifications() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 text-xs text-[color:var(--ds-text-muted)]">
+      <div
+        className="flex items-center gap-2 px-3 py-2 text-xs text-[color:var(--ds-text-muted)]"
+        role="status"
+        aria-live="polite"
+      >
         <Loader2 size={12} className="animate-spin" />
         {isEn ? "Loading notifications..." : "Benachrichtigungen laden..."}
       </div>
@@ -181,6 +185,7 @@ export function CopilotNotifications() {
           disabled={refreshing}
           className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)] disabled:opacity-50"
           title={isEn ? "Refresh" : "Aktualisieren"}
+          aria-label={isEn ? "Refresh" : "Aktualisieren"}
         >
           {refreshing ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
         </button>

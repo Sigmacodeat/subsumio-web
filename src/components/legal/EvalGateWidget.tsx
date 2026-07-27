@@ -94,7 +94,11 @@ export function EvalGateWidget() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+      <div
+        className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+        role="status"
+        aria-live="polite"
+      >
         <Loader2 size={16} className="animate-spin text-[color:var(--ds-text-muted)]" />
         <span className="text-sm text-[color:var(--ds-text-muted)]">{t("evalgate.loading")}</span>
       </div>

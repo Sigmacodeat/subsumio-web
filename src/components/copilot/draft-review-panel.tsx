@@ -218,7 +218,7 @@ export function DraftReviewPanel({
             <X size={12} />
           </button>
         </div>
-        <div className="flex items-center gap-2 py-4">
+        <div className="flex items-center gap-2 py-4" role="status" aria-live="polite">
           <Loader2 size={14} className="animate-spin text-[color:var(--brand-primary)]" />
           <span className="text-xs text-[color:var(--ds-text-muted)]">
             {isEn ? "Reviewing draft..." : "Entwurf wird geprüft..."}

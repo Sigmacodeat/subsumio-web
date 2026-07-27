@@ -243,8 +243,12 @@ export default function TemplateLibraryPage() {
       setTemplates((prev) => prev.filter((t) => t.slug !== slug));
       if (selectedTemplate?.slug === slug) setSelectedTemplate(null);
       addToast({ type: "success", title: t("templates.toast_deleted" as DashboardKey) });
-    } catch {
-      // best-effort
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: t("templates.toast_delete_failed" as DashboardKey),
+        description: err instanceof Error ? err.message : undefined,
+      });
     }
   }
 
@@ -262,7 +266,10 @@ export default function TemplateLibraryPage() {
       <PageHeader
         title={t("templates.title")}
         description={t("templates.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("templates.title") }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("templates.title") },
+        ]}
         actions={
           <Button
             onClick={startCreate}
@@ -319,7 +326,7 @@ export default function TemplateLibraryPage() {
 
       {/* Loading */}
       {loading && (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
           <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       )}
@@ -516,7 +523,7 @@ export default function TemplateLibraryPage() {
                   id="tpl-desc"
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
-                  placeholder="Kurze Beschreibung der Vorlage"
+                  placeholder={t("templates.ph_desc")}
                 />
               </div>
 
@@ -528,7 +535,7 @@ export default function TemplateLibraryPage() {
                   value={formBody}
                   onChange={(e) => setFormBody(e.target.value)}
                   rows={10}
-                  placeholder="Vorlagen-Text mit {{variablen}}…"
+                  placeholder={t("templates.ph_body")}
                   className="font-mono text-sm"
                 />
               </div>

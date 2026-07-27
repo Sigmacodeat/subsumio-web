@@ -16,6 +16,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 import { cn } from "@/lib/utils";
 
 // ─── Types (mirror /api/monitoring/corpus-pipeline) ─────────────────────
@@ -78,6 +79,7 @@ function fmtTime(iso: string | null): string {
 // ─── Page ───────────────────────────────────────────────────────────────
 
 export default function CorpusPipelinePage() {
+  const { t } = useLang();
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -117,17 +119,14 @@ export default function CorpusPipelinePage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Korpus-Pipeline"
-        description="Supervisor-Zustand je Source: Backfill → Import → Embed → Reconcile. Pause/Resume wirkt ab dem nächsten Zyklus (≤10 min)."
-      />
+      <PageHeader title={t("admin.pipeline.title")} description={t("admin.pipeline.desc")} />
 
       {/* ── Steuerleiste ── */}
       <Card>
         <CardContent className="flex flex-wrap items-center gap-3 p-4">
           {data?.paused ? (
             <>
-              <Badge className="bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)] border-[color:var(--ds-warning-border)]">
+              <Badge className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]">
                 <Pause className="mr-1 h-3 w-3" /> Pausiert
               </Badge>
               {data.paused_reason ? (
@@ -145,7 +144,7 @@ export default function CorpusPipelinePage() {
             </>
           ) : (
             <>
-              <Badge className="bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] border-[color:var(--ds-success-border)]">
+              <Badge className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">
                 <CheckCircle2 className="mr-1 h-3 w-3" /> Aktiv
               </Badge>
               <Button
@@ -164,7 +163,7 @@ export default function CorpusPipelinePage() {
           )}
           <div className="ml-auto flex items-center gap-3">
             {totalAlerts > 0 ? (
-              <Badge className="bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]">
+              <Badge className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">
                 <AlertTriangle className="mr-1 h-3 w-3" /> {totalAlerts} Alert
                 {totalAlerts === 1 ? "" : "s"}
               </Badge>
@@ -183,7 +182,11 @@ export default function CorpusPipelinePage() {
 
       {/* ── Source-Tabelle ── */}
       {isLoading ? (
-        <div className="flex items-center gap-2 p-6 text-sm text-[color:var(--ds-text-subtle)]">
+        <div
+          className="flex items-center gap-2 p-6 text-sm text-[color:var(--ds-text-subtle)]"
+          role="status"
+          aria-live="polite"
+        >
           <Loader2 className="h-4 w-4 animate-spin" /> Lade Pipeline-Zustand…
         </div>
       ) : error ? (
@@ -260,7 +263,7 @@ export default function CorpusPipelinePage() {
                         </td>
                         <td className="px-4 py-2">
                           {s.alert_flags.length > 0 ? (
-                            <Badge className="bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] border-[color:var(--ds-danger-border)]">
+                            <Badge className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">
                               {s.alert_flags.length}
                             </Badge>
                           ) : (
@@ -277,12 +280,9 @@ export default function CorpusPipelinePage() {
                             {s.alert_flags.length > 0 ? (
                               <div className="mb-3 space-y-1">
                                 {s.alert_flags.map((a, i) => (
-                                  <p
-                                    key={i}
-                                    className="text-xs text-[color:var(--ds-danger-text)]"
-                                  >
-                                    <AlertTriangle className="mr-1 inline h-3 w-3" />
-                                    [{a.severity}] {a.type}: {a.message}{" "}
+                                  <p key={i} className="text-xs text-[color:var(--ds-danger-text)]">
+                                    <AlertTriangle className="mr-1 inline h-3 w-3" />[{a.severity}]{" "}
+                                    {a.type}: {a.message}{" "}
                                     <span className="text-[color:var(--ds-text-subtle)]">
                                       ({fmtTime(a.raised_at)})
                                     </span>

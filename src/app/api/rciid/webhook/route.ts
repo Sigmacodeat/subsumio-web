@@ -8,6 +8,9 @@ import {
   type RciidWebhookEvent,
 } from "@/lib/rciid";
 import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
+
+const log = logger("rciid-webhook");
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -15,7 +18,13 @@ export const maxDuration = 30;
 const webhookSchema = z.object({
   event_id: z.string().min(1),
   case_id: z.string().min(1),
-  event_type: z.enum(["status_changed", "phase_completed", "report_ready", "case_rejected"]),
+  event_type: z.enum([
+    "status_changed",
+    "phase_completed",
+    "report_ready",
+    "case_rejected",
+    "quality_feedback",
+  ]),
   status: z.enum([
     "none",
     "submitted",
@@ -102,6 +111,20 @@ export const POST = createWebhookHandler(
     if (event.event_type === "report_ready" && isConfigured()) {
       // TODO: Trigger background report download and save as case document
       // For now, the dashboard will pick this up via polling
+    }
+
+    // 5. If quality feedback received, store it for the dashboard to display
+    if (event.event_type === "quality_feedback" && event.data) {
+      // The quality feedback data (score, missing_data, suggestions) is stored
+      // in the event.data field. The dashboard will retrieve it via the status
+      // or feedback API endpoint.
+      log.info("Quality feedback received", {
+        caseId: event.case_id,
+        score: event.data.score,
+        missingDataCount: Array.isArray(event.data.missing_data)
+          ? event.data.missing_data.length
+          : 0,
+      });
     }
 
     return apiSuccess({

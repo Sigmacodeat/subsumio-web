@@ -143,7 +143,11 @@ export function CopilotMemoryPanel() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 text-xs text-[color:var(--ds-text-muted)]">
+      <div
+        className="flex items-center gap-2 px-3 py-2 text-xs text-[color:var(--ds-text-muted)]"
+        role="status"
+        aria-live="polite"
+      >
         <Loader2 size={12} className="animate-spin" />
         {isEn ? "Loading memory..." : "Gedächtnis laden..."}
       </div>
@@ -179,7 +183,7 @@ export function CopilotMemoryPanel() {
           <select
             value={newType}
             onChange={(e) => setNewType(e.target.value as CopilotMemoryEntry["type"])}
-            className="w-full rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none"
+            className="w-full rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           >
             {Object.entries(isEn ? TYPE_LABELS_EN : TYPE_LABELS_DE).map(([key, label]) => (
               <option key={key} value={key}>
@@ -194,14 +198,14 @@ export function CopilotMemoryPanel() {
             placeholder={
               isEn ? "Key (e.g., 'preferred_language')" : "Schlüssel (z.B. 'bevorzugte_sprache')"
             }
-            className="w-full rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs focus:outline-none"
+            className="w-full rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
           <textarea
             value={newValue}
             onChange={(e) => setNewValue(e.target.value)}
             placeholder={isEn ? "Value..." : "Wert..."}
             rows={2}
-            className="w-full resize-none rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs focus:outline-none"
+            className="w-full resize-none rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
           <div className="flex items-center justify-end gap-1.5">
             <button
@@ -272,7 +276,7 @@ export function CopilotMemoryPanel() {
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
                           rows={2}
-                          className="min-w-0 flex-1 resize-none rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-1 text-[11px] focus:outline-none"
+                          className="min-w-0 flex-1 resize-none rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-1 text-[11px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                         />
                         <button
                           onClick={() => saveEdit(m.id)}

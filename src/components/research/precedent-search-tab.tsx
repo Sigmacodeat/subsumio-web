@@ -20,6 +20,8 @@ import type { PrecedentSearchResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
 interface PipelinePrecedentPage {
   slug: string;
@@ -156,6 +158,16 @@ export default function PrecedentSearchPage() {
   const [result, setResult] = useState<PrecedentSearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
+
+  useEffect(() => {
+    if (!result || result.results.length === 0) return;
+    const groundingText = result.results
+      .map((r) => `${r.court} ${r.date} — ${r.title} — ${r.keyHolding}`)
+      .join("\n\n");
+    groundAnswer(groundingText).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   async function run() {
     if (!query.trim()) return;
@@ -374,6 +386,17 @@ export default function PrecedentSearchPage() {
               ))}
             </div>
           )}
+
+          <CitationPanel
+            data={
+              {
+                grounding: grounding ?? null,
+                citations: [],
+                isStreaming: isGrounding,
+              } satisfies CitationPanelData
+            }
+            compact
+          />
         </div>
       )}
     </div>

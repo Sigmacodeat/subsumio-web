@@ -134,7 +134,7 @@ function StickyCategoryNav({
               }}
               aria-label={t.docsSearchPlaceholder ?? "Search features…"}
               placeholder={t.docsSearchPlaceholder ?? "Search features…"}
-              className="w-full rounded-lg border [border-color:var(--mk-border)] bg-[var(--mk-surface)] px-3 py-1.5 text-sm text-[var(--mk-text)] placeholder:text-[var(--mk-text-subtle)] focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] focus:outline-none sm:w-56"
+              className="w-full rounded-lg border [border-color:var(--mk-border)] bg-[var(--mk-surface)] px-3 py-1.5 text-sm text-[var(--mk-text)] placeholder:text-[var(--mk-text-subtle)] focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 sm:w-56"
             />
             {search ? (
               <button

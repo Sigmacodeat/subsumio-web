@@ -320,7 +320,7 @@ export default function CommentariesPage() {
 
         {/* Loading */}
         {loading && (
-          <div className="flex items-center justify-center py-16">
+          <div className="flex items-center justify-center py-16" role="status" aria-live="polite">
             <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
           </div>
         )}

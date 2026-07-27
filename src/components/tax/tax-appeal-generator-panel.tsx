@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,8 @@ import {
   ListChecks,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
 interface AppealPanelProps {
   assessmentSlug: string;
@@ -67,6 +69,7 @@ export function TaxAppealGeneratorPanel({ assessmentSlug }: AppealPanelProps) {
   const [contestedPoints, setContestedPoints] = useState("");
   const [showDraft, setShowDraft] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
 
   async function generate() {
     setLoading(true);
@@ -84,6 +87,22 @@ export function TaxAppealGeneratorPanel({ assessmentSlug }: AppealPanelProps) {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!result) return;
+    const groundingText = [
+      result.assessment_summary,
+      `Frist-Rechtsgrundlage: ${result.deadline_legal_basis}`,
+      ...result.contested_points.map((cp) =>
+        [cp.position, cp.tax_office_view, cp.taxpayer_view, cp.legal_basis].join(" — ")
+      ),
+      result.draft_letter.body,
+      result.success_prospect_summary,
+      ...result.recommendations,
+    ].join("\n\n");
+    groundAnswer(groundingText).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   function copyDraft() {
     if (!result) return;
@@ -132,7 +151,7 @@ export function TaxAppealGeneratorPanel({ assessmentSlug }: AppealPanelProps) {
             onChange={(e) => setContestedPoints(e.target.value)}
             rows={3}
             placeholder={t("tax.appeal.contested_placeholder")}
-            className="focus:brand-border/40 w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none"
+            className="focus:brand-border/40 w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
         </div>
       )}
@@ -381,6 +400,17 @@ export function TaxAppealGeneratorPanel({ assessmentSlug }: AppealPanelProps) {
               </ul>
             </div>
           )}
+
+          <CitationPanel
+            data={
+              {
+                grounding: grounding ?? null,
+                citations: [],
+                isStreaming: isGrounding,
+              } satisfies CitationPanelData
+            }
+            compact
+          />
         </div>
       )}
     </Card>

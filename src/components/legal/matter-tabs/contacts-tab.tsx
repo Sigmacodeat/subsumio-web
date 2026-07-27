@@ -238,7 +238,11 @@ export function ContactsTab() {
 
         {/* Loading State */}
         {ctx.contactsLoading && (
-          <div className="flex items-center gap-2 py-8 text-sm text-[color:var(--ds-text-muted)]">
+          <div
+            className="flex items-center gap-2 py-8 text-sm text-[color:var(--ds-text-muted)]"
+            role="status"
+            aria-live="polite"
+          >
             <Loader2 size={16} className="animate-spin" />
             {t("cases.detail_contacts_loading")}
           </div>

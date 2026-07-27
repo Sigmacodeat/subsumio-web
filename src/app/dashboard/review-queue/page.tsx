@@ -286,7 +286,11 @@ export default function ReviewQueuePage() {
           )}
 
           {loading && (
-            <div className="flex h-40 items-center justify-center rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+            <div
+              className="flex h-40 items-center justify-center rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+              role="status"
+              aria-live="polite"
+            >
               <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
             </div>
           )}

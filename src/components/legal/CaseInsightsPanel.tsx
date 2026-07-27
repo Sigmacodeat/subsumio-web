@@ -129,7 +129,11 @@ export function CaseInsightsPanel({ caseSlug, className }: CaseInsightsPanelProp
         </div>
 
         {loading && !data && (
-          <div className="flex items-center justify-center gap-2 py-6 text-sm text-[color:var(--ds-text-muted)]">
+          <div
+            className="flex items-center justify-center gap-2 py-6 text-sm text-[color:var(--ds-text-muted)]"
+            role="status"
+            aria-live="polite"
+          >
             <Loader2 size={16} className="animate-spin" />
             {lang === "en" ? "Loading insights…" : "Lade Insights…"}
           </div>

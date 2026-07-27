@@ -237,7 +237,7 @@ export default function TaxAssessmentsPage() {
         title={t("tax.assessments.title")}
         description={t("tax.assessments.desc")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("tax.assessments.title") },
         ]}
         actions={
@@ -290,7 +290,7 @@ export default function TaxAssessmentsPage() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("tax.assessments.search")}
               aria-label={t("tax.assessments.search")}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
             {search && (
               <button
@@ -305,7 +305,7 @@ export default function TaxAssessmentsPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as AssessmentType | "all")}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           >
             <option value="all">{t("tax.assessments.all_types")}</option>
             {Object.entries(typeLabels).map(([k, v]) => (
@@ -317,7 +317,7 @@ export default function TaxAssessmentsPage() {
           <select
             value={taxTypeFilter}
             onChange={(e) => setTaxTypeFilter(e.target.value as TaxReturnType | "all")}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           >
             <option value="all">{t("tax.assessments.all_tax_types")}</option>
             {Object.entries(taxTypeLabels).map(([k, v]) => (
@@ -506,7 +506,7 @@ export default function TaxAssessmentsPage() {
                   onChange={(e) =>
                     setCreateForm((p) => ({ ...p, type: e.target.value as AssessmentType }))
                   }
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 >
                   {Object.entries(typeLabels).map(([k, v]) => (
                     <option key={k} value={k}>
@@ -587,7 +587,7 @@ export default function TaxAssessmentsPage() {
                   onChange={(e) =>
                     setCreateForm((p) => ({ ...p, taxType: e.target.value as TaxReturnType }))
                   }
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 >
                   {Object.entries(taxTypeLabels).map(([k, v]) => (
                     <option key={k} value={k}>
@@ -605,7 +605,7 @@ export default function TaxAssessmentsPage() {
                 value={createForm.notes}
                 onChange={(e) => setCreateForm((p) => ({ ...p, notes: e.target.value }))}
                 rows={2}
-                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
             </div>
           </div>

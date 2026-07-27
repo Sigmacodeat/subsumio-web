@@ -68,6 +68,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
   if (!open) return null;
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Backdrop click-to-close; keyboard users close via the header close button.
     <div
       className="fixed inset-0 z-[60] flex flex-col bg-black/80 backdrop-blur-sm"
       onClick={(e) => {
@@ -145,7 +146,7 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
       {/* PDF Content */}
       <div ref={containerRef} className="flex-1 overflow-auto bg-gray-900">
         {loading && !error && (
-          <div className="flex h-full items-center justify-center">
+          <div className="flex h-full items-center justify-center" role="status" aria-live="polite">
             <Loader2 size={32} className="animate-spin text-[color:var(--ds-text-muted)]" />
           </div>
         )}

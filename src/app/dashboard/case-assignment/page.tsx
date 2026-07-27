@@ -58,7 +58,7 @@ async function fetchCaseAssignments(): Promise<CaseAssignment[]> {
 
 export default function CaseAssignmentPage() {
   const { addToast } = useToast();
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const isEn = lang === "en";
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -152,7 +152,7 @@ export default function CaseAssignmentPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
         <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );
@@ -168,7 +168,7 @@ export default function CaseAssignmentPage() {
             : "Weisen Sie Akten Teammitgliedern zu und sehen Sie die Arbeitslastverteilung auf einen Blick."
         }
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: isEn ? "Team & Assignments" : "Team & Zuweisungen" },
         ]}
       />
@@ -350,7 +350,7 @@ export default function CaseAssignmentPage() {
                                 );
                               }
                             }}
-                            className="shrink-0 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                            className="shrink-0 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                           >
                             <option value="">{isEn ? "Assign..." : "Zuweisen..."}</option>
                             {teamMembers.map((m) => (
@@ -409,7 +409,7 @@ export default function CaseAssignmentPage() {
                             selected.email
                           );
                       }}
-                      className="shrink-0 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none"
+                      className="shrink-0 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                     >
                       <option value="">{isEn ? "Assign..." : "Zuweisen..."}</option>
                       {teamMembers.map((m) => (

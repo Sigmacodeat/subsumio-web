@@ -381,7 +381,7 @@ export default function JudgementsDbPage() {
 
   if (selectedId && detailLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="flex h-full items-center justify-center" role="status" aria-live="polite">
         <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );
@@ -519,7 +519,7 @@ export default function JudgementsDbPage() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (pipelineMode ? runPipelineSearch() : search())}
             placeholder="Suche nach Schlagwort, Aktenzeichen, Thema..."
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-4 pl-10 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-4 pl-10 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
         </div>
         <button
@@ -855,7 +855,7 @@ function PipelinePanel({ result }: { result: PipelineResultData }) {
                     "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
                 )}
               >
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5" role="status" aria-live="polite">
                   <Icon className="h-3 w-3" />
                   <span className="font-medium text-[color:var(--ds-text)]">{label}</span>
                   {step.status === "running" && <Loader2 className="h-3 w-3 animate-spin" />}

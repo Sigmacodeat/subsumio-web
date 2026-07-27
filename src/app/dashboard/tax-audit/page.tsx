@@ -25,7 +25,12 @@ import {
   ShieldAlert,
   Euro,
 } from "lucide-react";
-import { TaxStatCard, TaxRiskAnalysisPanel, TaxBfhFeedPanel, TaxTriagePanel } from "@/components/tax";
+import {
+  TaxStatCard,
+  TaxRiskAnalysisPanel,
+  TaxBfhFeedPanel,
+  TaxTriagePanel,
+} from "@/components/tax";
 import {
   Dialog,
   DialogContent,
@@ -223,7 +228,10 @@ export default function TaxAuditPage() {
       <PageHeader
         title={t("tax.audit.title")}
         description={t("tax.audit.desc")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("tax.audit.title") }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("tax.audit.title") },
+        ]}
         actions={
           <Button onClick={() => setCreateOpen(true)} className="brand-bg gap-2 text-white">
             <Plus size={16} />
@@ -274,7 +282,7 @@ export default function TaxAuditPage() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("tax.audit.search")}
               aria-label={t("tax.audit.search")}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
             {search && (
               <button
@@ -289,7 +297,7 @@ export default function TaxAuditPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as AuditType | "all")}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           >
             <option value="all">{t("tax.audit.all_types")}</option>
             {Object.entries(auditTypeLabels).map(([k, v]) => (
@@ -301,7 +309,7 @@ export default function TaxAuditPage() {
           <select
             value={phaseFilter}
             onChange={(e) => setPhaseFilter(e.target.value as TaxAuditPhase | "all")}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           >
             <option value="all">{t("tax.audit.all_phases")}</option>
             {Object.entries(phaseLabels).map(([k, v]) => (
@@ -486,7 +494,7 @@ export default function TaxAuditPage() {
                   onChange={(e) =>
                     setCreateForm((p) => ({ ...p, type: e.target.value as AuditType }))
                   }
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 >
                   {Object.entries(auditTypeLabels).map(([k, v]) => (
                     <option key={k} value={k}>
@@ -530,7 +538,7 @@ export default function TaxAuditPage() {
                   onChange={(e) =>
                     setCreateForm((p) => ({ ...p, phase: e.target.value as TaxAuditPhase }))
                   }
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 >
                   {Object.entries(phaseLabels).map(([k, v]) => (
                     <option key={k} value={k}>
@@ -570,7 +578,7 @@ export default function TaxAuditPage() {
                 value={createForm.notes}
                 onChange={(e) => setCreateForm((p) => ({ ...p, notes: e.target.value }))}
                 rows={2}
-                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
             </div>
           </div>

@@ -115,16 +115,14 @@ export function QuickAnalysisWidget({
   return (
     <div
       id="quick-check"
-      className="relative overflow-hidden rounded-3xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] shadow-xl"
+      className="relative overflow-hidden rounded-3xl border [border-color:var(--mk-border)] shadow-xl [background:var(--mk-surface)]"
     >
       {/* Header */}
       <div className="brand-bg px-6 py-5 text-white md:px-8">
         <div className="flex items-center gap-3">
           <Sparkles className="size-5 shrink-0" />
           <div>
-            <h2 className="text-lg font-bold leading-tight md:text-xl">
-              Kostenloser AI-Fallcheck
-            </h2>
+            <h2 className="text-lg leading-tight font-bold md:text-xl">Kostenloser AI-Fallcheck</h2>
             <p className="text-sm text-white/80">
               In 5 Minuten wissen Sie, ob Ihr Fall aussichtsreich ist
             </p>
@@ -159,7 +157,7 @@ export function QuickAnalysisWidget({
                   rows={4}
                   maxLength={1000}
                   placeholder="Was ist passiert? Wann? Welche Unterlagen haben Sie?"
-                  className="w-full resize-none rounded-xl border [border-color:var(--mk-border)] bg-white px-4 py-3 text-sm [color:var(--mk-text)] outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                  className="focus:border-brand-500 focus:ring-brand-500/20 w-full resize-none rounded-xl border [border-color:var(--mk-border)] bg-white px-4 py-3 text-sm [color:var(--mk-text)] transition outline-none focus:ring-2"
                 />
                 <div className="mt-1 flex justify-between text-xs [color:var(--mk-text-subtle)]">
                   <span>Mindestens 20 Zeichen</span>
@@ -173,10 +171,19 @@ export function QuickAnalysisWidget({
                   Dokumente hochladen (optional)
                 </label>
                 <div
+                  role="button"
+                  tabIndex={0}
                   onDrop={handleDrop}
                   onDragOver={(e) => e.preventDefault()}
                   onClick={() => fileInputRef.current?.click()}
-                  className="cursor-pointer rounded-xl border-2 border-dashed [border-color:var(--mk-border)] px-4 py-6 text-center transition hover:border-brand-500 hover:bg-brand-50/30"
+                  onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  className="hover:border-brand-500 hover:bg-brand-50/30 focus-visible:ring-brand-500 cursor-pointer rounded-xl border-2 border-dashed [border-color:var(--mk-border)] px-4 py-6 text-center transition focus-visible:ring-2 focus-visible:outline-none"
                 >
                   <input
                     ref={fileInputRef}
@@ -198,7 +205,7 @@ export function QuickAnalysisWidget({
                       {files.map((file, i) => (
                         <span
                           key={i}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-3 py-1.5 text-xs font-medium [color:var(--mk-text)]"
+                          className="bg-brand-50 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium [color:var(--mk-text)]"
                         >
                           <FileText className="size-3.5" />
                           {file.name}
@@ -223,7 +230,7 @@ export function QuickAnalysisWidget({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ihre@email.de"
-                  className="w-full rounded-xl border [border-color:var(--mk-border)] bg-white px-4 py-3 text-sm [color:var(--mk-text)] outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                  className="focus:border-brand-500 focus:ring-brand-500/20 w-full rounded-xl border [border-color:var(--mk-border)] bg-white px-4 py-3 text-sm [color:var(--mk-text)] transition outline-none focus:ring-2"
                 />
               </div>
 
@@ -231,7 +238,7 @@ export function QuickAnalysisWidget({
               <Button
                 size="lg"
                 variant="primary"
-                className="group w-full min-h-[52px]"
+                className="group min-h-[52px] w-full"
                 onClick={handleSubmit}
               >
                 <Sparkles className="mr-2 size-4" />
@@ -262,7 +269,7 @@ export function QuickAnalysisWidget({
               exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center py-12"
             >
-              <Loader2 className="mb-4 size-10 animate-spin brand-text" />
+              <Loader2 className="brand-text mb-4 size-10 animate-spin" />
               <p className="text-sm font-semibold [color:var(--mk-text)]">
                 AI analysiert Ihren Fall…
               </p>
@@ -330,7 +337,7 @@ export function QuickAnalysisWidget({
                       key={i}
                       className="flex items-start gap-2 text-sm [color:var(--mk-text-muted)]"
                     >
-                      <ArrowRight className="mt-0.5 size-3.5 shrink-0 brand-text" />
+                      <ArrowRight className="brand-text mt-0.5 size-3.5 shrink-0" />
                       {step}
                     </li>
                   ))}
@@ -338,10 +345,8 @@ export function QuickAnalysisWidget({
               </div>
 
               {/* Pricing Upsell */}
-              <div className="rounded-2xl border [border-color:var(--mk-border)] bg-gradient-to-br from-brand-50/40 to-transparent p-5">
-                <p className="mb-3 text-sm font-bold [color:var(--mk-text)]">
-                  Jetzt weitergehen:
-                </p>
+              <div className="from-brand-50/40 rounded-2xl border [border-color:var(--mk-border)] bg-gradient-to-br to-transparent p-5">
+                <p className="mb-3 text-sm font-bold [color:var(--mk-text)]">Jetzt weitergehen:</p>
                 <div className="grid gap-3 sm:grid-cols-3">
                   {pricingTiers.map((tier) => (
                     <div
@@ -353,16 +358,12 @@ export function QuickAnalysisWidget({
                       }`}
                     >
                       {tier.highlighted && (
-                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full brand-bg px-2.5 py-0.5 text-[10px] font-bold text-white">
+                        <span className="brand-bg absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white">
                           EMPFOHLEN
                         </span>
                       )}
-                      <p className="text-xs font-bold [color:var(--mk-text)]">
-                        {tier.name}
-                      </p>
-                      <p className="my-1 text-lg font-bold brand-text">
-                        {tier.price}
-                      </p>
+                      <p className="text-xs font-bold [color:var(--mk-text)]">{tier.name}</p>
+                      <p className="brand-text my-1 text-lg font-bold">{tier.price}</p>
                       <p className="mb-2 text-[10px] [color:var(--mk-text-subtle)]">
                         {tier.priceNote}
                       </p>

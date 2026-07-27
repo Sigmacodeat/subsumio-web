@@ -2,8 +2,10 @@ import { z } from "zod";
 import { createHandler, apiSuccess } from "@/lib/api-handler";
 import {
   detectWallets,
+  detectAndValidateWallets,
   classifyBlockchain,
   isKnownFraudWallet,
+  validateWalletAddress,
 } from "@/lib/crypto-wallet-detector";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +37,7 @@ export const POST = createHandler(
   },
   async (_ctx, body) => {
     if (body.text) {
-      const wallets = detectWallets(body.text);
+      const wallets = detectAndValidateWallets(body.text);
       return apiSuccess({
         ok: true,
         wallets: wallets.map((w) => ({
@@ -44,6 +46,8 @@ export const POST = createHandler(
           confidence: w.confidence,
           context: w.context,
           isKnownFraud: isKnownFraudWallet(w.address),
+          checksumValid: w.checksumValid ?? false,
+          checksumError: w.checksumError,
         })),
         count: wallets.length,
       });
@@ -70,6 +74,26 @@ export const GET = createHandler(
     return apiSuccess({
       ok: true,
       supportedBlockchains: ["BTC", "ETH", "USDT", "SOL", "LTC", "XRP", "TRX"],
+    });
+  }
+);
+
+const validateSchema = z.object({
+  address: z.string().min(10).max(120),
+  blockchain: z.enum(["BTC", "ETH", "USDT", "SOL", "LTC", "XRP", "TRX", "UNKNOWN"]),
+});
+
+export const PUT = createHandler(
+  {
+    action: "brain.read",
+    rateTier: "standard",
+    body: validateSchema,
+  },
+  async (_ctx, body) => {
+    const result = validateWalletAddress(body.address, body.blockchain);
+    return apiSuccess({
+      ok: true,
+      ...result,
     });
   }
 );

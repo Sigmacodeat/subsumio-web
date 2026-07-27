@@ -23,9 +23,11 @@ CREATE TABLE IF NOT EXISTS pipeline_state (
     'import-pending',
     'importing',
     'waiting-for-statutes',
+    'waiting-for-ris-slot',
     'done',
     'failed',
-    'exhausted'
+    'exhausted',
+    'ok'
   )),
   -- Last successful import timestamp (files newer than this ⇒ re-import needed)
   last_import_success  TIMESTAMPTZ,

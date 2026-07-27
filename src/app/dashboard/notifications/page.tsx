@@ -23,6 +23,7 @@ import {
 import { tracking } from "@/lib/tracking";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useToast } from "@/components/ui/toast";
+import { useLang } from "@/lib/use-lang";
 import { useRealtime } from "@/lib/realtime";
 import { api } from "@/lib/api";
 
@@ -153,6 +154,7 @@ function getNotificationMessage(n: NotificationItem): {
 
 export default function NotificationCenterPage() {
   const { addToast } = useToast();
+  const { t } = useLang();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -196,7 +198,7 @@ export default function NotificationCenterPage() {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: (err: Error) => {
-      addToast({ title: "Fehler", description: err.message, type: "error" });
+      addToast({ title: t("notifications.error"), description: err.message, type: "error" });
     },
   });
 
@@ -205,10 +207,10 @@ export default function NotificationCenterPage() {
     onSuccess: () => {
       tracking.notifications.markAllRead();
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      addToast({ title: "Alle als gelesen markiert", type: "success" });
+      addToast({ title: t("notifications.all_marked"), type: "success" });
     },
     onError: (err: Error) => {
-      addToast({ title: "Fehler", description: err.message, type: "error" });
+      addToast({ title: t("notifications.error"), description: err.message, type: "error" });
     },
   });
 
@@ -217,10 +219,10 @@ export default function NotificationCenterPage() {
     onSuccess: (_data, id) => {
       tracking.notifications.deleted(id);
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      addToast({ title: "Benachrichtigung gelöscht", type: "success" });
+      addToast({ title: t("notifications.deleted"), type: "success" });
     },
     onError: (err: Error) => {
-      addToast({ title: "Fehler", description: err.message, type: "error" });
+      addToast({ title: t("notifications.error"), description: err.message, type: "error" });
     },
   });
 
@@ -229,12 +231,12 @@ export default function NotificationCenterPage() {
     onSuccess: (result: { ok: boolean; deleted: number }) => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       addToast({
-        title: `${result.deleted} gelesene Benachrichtigungen gelöscht`,
+        title: `${result.deleted} ${t("notifications.deleted_read")}`,
         type: "success",
       });
     },
     onError: (err: Error) => {
-      addToast({ title: "Fehler", description: err.message, type: "error" });
+      addToast({ title: t("notifications.error"), description: err.message, type: "error" });
     },
   });
 
@@ -253,8 +255,8 @@ export default function NotificationCenterPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Benachrichtigungen"
-        description="Alle Ihre Benachrichtigungen an einem Ort"
+        title={t("notifications.title")}
+        description={t("notifications.desc")}
         actions={[
           <Button
             key="mark-all-read"
@@ -264,7 +266,7 @@ export default function NotificationCenterPage() {
             disabled={unreadCount === 0 || markAllReadMutation.isPending}
           >
             <CheckCheck className="mr-2 h-4 w-4" />
-            Alle gelesen
+            {t("notifications.mark_all_read")}
           </Button>,
           <Button
             key="delete-read"
@@ -274,7 +276,7 @@ export default function NotificationCenterPage() {
             disabled={deleteAllReadMutation.isPending}
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            Gelesene löschen
+            {t("notifications.delete_read")}
           </Button>,
         ]}
       />
@@ -282,7 +284,7 @@ export default function NotificationCenterPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ungelesen</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("notifications.unread")}</CardTitle>
             <Bell className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
@@ -291,7 +293,7 @@ export default function NotificationCenterPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gesamt</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("notifications.total")}</CardTitle>
             <Bell className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
@@ -300,7 +302,7 @@ export default function NotificationCenterPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gefiltert</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("notifications.filtered")}</CardTitle>
             <Search className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
@@ -313,13 +315,13 @@ export default function NotificationCenterPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm font-medium">
             <Search className="h-4 w-4" />
-            Filter
+            {t("notifications.filter")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
             <Input
-              placeholder="Suche..."
+              placeholder={t("notifications.search_placeholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-xs"
@@ -329,7 +331,7 @@ export default function NotificationCenterPage() {
               onChange={(e) => setTypeFilter(e.target.value)}
               className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
             >
-              <option value="">Alle Typen</option>
+              <option value="">{t("notifications.all_types")}</option>
               {availableTypes.map((t) => (
                 <option key={t} value={t}>
                   {TYPE_META[t]?.label ?? t}
@@ -342,23 +344,25 @@ export default function NotificationCenterPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="all">Alle</TabsTrigger>
+          <TabsTrigger value="all">{t("notifications.tab_all")}</TabsTrigger>
           <TabsTrigger value="unread">
-            Ungelesen
+            {t("notifications.tab_unread")}
             {unreadCount > 0 && (
               <span className="ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[color:var(--ds-danger-text)] px-1 text-xs font-bold text-white">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="read">Gelesen</TabsTrigger>
+          <TabsTrigger value="read">{t("notifications.tab_read")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4">
           <Card>
             <CardContent className="p-0">
               {isLoading ? (
-                <div className="text-muted-foreground p-8 text-center">Laden...</div>
+                <div className="text-muted-foreground p-8 text-center">
+                  {t("notifications.loading")}
+                </div>
               ) : filtered.length > 0 ? (
                 <div className="divide-y divide-[color:var(--ds-border)]">
                   {filtered.map((n: NotificationItem) => {
@@ -385,12 +389,26 @@ export default function NotificationCenterPage() {
                               <span className="h-2 w-2 rounded-full bg-[color:var(--ds-danger-text)]" />
                             )}
                           </div>
-                          <p
-                            className={`mt-1 text-sm text-[color:var(--ds-text-muted)] ${meta.href ? "cursor-pointer hover:text-[color:var(--ds-text)]" : ""}`}
-                            onClick={() => handleNavigate(meta.href)}
-                          >
-                            {meta.message}
-                          </p>
+                          {meta.href ? (
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              className="mt-1 cursor-pointer text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--brand-primary)]"
+                              onClick={() => handleNavigate(meta.href)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  handleNavigate(meta.href);
+                                }
+                              }}
+                            >
+                              {meta.message}
+                            </div>
+                          ) : (
+                            <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
+                              {meta.message}
+                            </p>
+                          )}
                           <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
                             {formatDate(n.createdAt)}
                           </p>
@@ -402,7 +420,7 @@ export default function NotificationCenterPage() {
                               variant="ghost"
                               onClick={() => markReadMutation.mutate(n.id)}
                               disabled={markReadMutation.isPending}
-                              aria-label="Als gelesen markieren"
+                              aria-label={t("notifications.aria_mark_read")}
                             >
                               <Check className="h-4 w-4" />
                             </Button>
@@ -412,7 +430,7 @@ export default function NotificationCenterPage() {
                             variant="ghost"
                             onClick={() => deleteMutation.mutate(n.id)}
                             disabled={deleteMutation.isPending}
-                            aria-label="Löschen"
+                            aria-label={t("notifications.aria_delete")}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -425,14 +443,14 @@ export default function NotificationCenterPage() {
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <Bell className="mb-3 h-10 w-10 text-[color:var(--ds-border-strong)]" />
                   <p className="font-medium text-[color:var(--ds-text)]">
-                    Keine Benachrichtigungen
+                    {t("notifications.empty_title")}
                   </p>
                   <p className="text-sm text-[color:var(--ds-text-muted)]">
                     {activeTab === "unread"
-                      ? "Sie haben keine ungelesenen Benachrichtigungen."
+                      ? t("notifications.empty_unread")
                       : activeTab === "read"
-                        ? "Sie haben keine gelesenen Benachrichtigungen."
-                        : "Es gibt keine Benachrichtigungen."}
+                        ? t("notifications.empty_read")
+                        : t("notifications.empty_all")}
                   </p>
                 </div>
               )}

@@ -22,6 +22,7 @@ import {
   Gavel,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 interface PipelineGuardrailStats {
   total_pipelines: number;
@@ -102,20 +103,20 @@ function MetricCard({
   color?: string;
 }) {
   return (
-    <Card className="bg-[var(--ds-surface-1)] border-[var(--ds-border)]">
+    <Card className="border-[var(--ds-border)] bg-[var(--ds-surface-1)]">
       <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium text-[var(--ds-text-muted)] uppercase tracking-wide">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-xs font-medium tracking-wide text-[var(--ds-text-muted)] uppercase">
             {label}
           </span>
-          <Icon className={`w-4 h-4 ${color}`} />
+          <Icon className={`h-4 w-4 ${color}`} />
         </div>
         <div className="text-2xl font-bold text-[var(--ds-text)]">{value}</div>
         {trend && (
           <div className="mt-1 flex items-center gap-1 text-xs">
-            {trend === "up" && <TrendingUp className="w-3 h-3 text-green-500" />}
-            {trend === "down" && <TrendingDown className="w-3 h-3 text-red-500" />}
-            {trend === "neutral" && <Activity className="w-3 h-3 text-[var(--ds-text-muted)]" />}
+            {trend === "up" && <TrendingUp className="h-3 w-3 text-green-500" />}
+            {trend === "down" && <TrendingDown className="h-3 w-3 text-red-500" />}
+            {trend === "neutral" && <Activity className="h-3 w-3 text-[var(--ds-text-muted)]" />}
           </div>
         )}
       </CardContent>
@@ -133,23 +134,27 @@ function WarningBadge({ warning }: { warning: string }) {
     ? "success"
     : isFlagged
       ? "danger"
-    : isRegen
+      : isRegen
         ? "warning"
         : isSkipped
           ? "default"
           : "info";
 
   return (
-    <Badge variant={variant} className="text-xs font-mono">
+    <Badge variant={variant} className="font-mono text-xs">
       {warning.length > 60 ? warning.slice(0, 60) + "…" : warning}
     </Badge>
   );
 }
 
-function Sparkline({ hourly }: { hourly: Array<{ hour: string; total: number; passed: number; flagged: number }> }) {
+function Sparkline({
+  hourly,
+}: {
+  hourly: Array<{ hour: string; total: number; passed: number; flagged: number }>;
+}) {
   if (hourly.length === 0) {
     return (
-      <div className="flex items-center justify-center h-32 text-sm text-[var(--ds-text-muted)]">
+      <div className="flex h-32 items-center justify-center text-sm text-[var(--ds-text-muted)]">
         Keine Daten in diesem Zeitraum
       </div>
     );
@@ -159,14 +164,14 @@ function Sparkline({ hourly }: { hourly: Array<{ hour: string; total: number; pa
   const barWidth = 100 / hourly.length;
 
   return (
-    <div className="flex items-end gap-0.5 h-32 px-2">
+    <div className="flex h-32 items-end gap-0.5 px-2">
       {hourly.map((h, i) => {
         const passedH = (h.passed / maxVal) * 100;
         const flaggedH = (h.flagged / maxVal) * 100;
         return (
           <div
             key={i}
-            className="flex flex-col justify-end relative group flex-shrink-0"
+            className="group relative flex flex-shrink-0 flex-col justify-end"
             style={{ width: `${barWidth}%`, minWidth: "4px" }}
           >
             <div
@@ -177,7 +182,7 @@ function Sparkline({ hourly }: { hourly: Array<{ hour: string; total: number; pa
               className="rounded-t bg-green-500/60 transition-all"
               style={{ height: `${passedH}%`, minHeight: h.passed > 0 ? "2px" : "0" }}
             />
-            <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-[var(--ds-surface-2)] text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap z-10">
+            <div className="absolute -top-8 left-1/2 z-10 hidden -translate-x-1/2 rounded bg-[var(--ds-surface-2)] px-2 py-1 text-xs whitespace-nowrap shadow-lg group-hover:block">
               {formatTime(h.hour)}: {h.total} total, {h.passed} ok, {h.flagged} flagged
             </div>
           </div>
@@ -188,6 +193,7 @@ function Sparkline({ hourly }: { hourly: Array<{ hour: string; total: number; pa
 }
 
 export default function GuardrailDashboardPage() {
+  const { t } = useLang();
   const [hours, setHours] = useState(24);
 
   const { data, isLoading, refetch, isFetching } = useQuery<GuardrailStats>({
@@ -223,11 +229,8 @@ export default function GuardrailDashboardPage() {
   const stats = data;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-6xl mx-auto">
-      <PageHeader
-        title="Guardrail Monitoring"
-        description="Tier-0 (deterministic) + Tier-1 (Cross-Model Verification) Metriken"
-      />
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 p-6">
+      <PageHeader title={t("admin.guardrails.title")} description={t("admin.guardrails.desc")} />
 
       {/* Time range selector */}
       <div className="flex items-center gap-2">
@@ -242,25 +245,20 @@ export default function GuardrailDashboardPage() {
           </Button>
         ))}
         <div className="flex-1" />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetch()}
-          disabled={isFetching}
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
+        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
           Aktualisieren
         </Button>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <RefreshCw className="w-6 h-6 animate-spin text-[var(--ds-text-muted)]" />
+          <RefreshCw className="h-6 w-6 animate-spin text-[var(--ds-text-muted)]" />
         </div>
       ) : stats ? (
         <>
           {/* Metric cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <MetricCard
               label="Total Queries"
               value={stats.total.toString()}
@@ -291,7 +289,7 @@ export default function GuardrailDashboardPage() {
           </div>
 
           {/* Regeneration rates */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             <MetricCard
               label="Tier-0 Regeneration"
               value={formatPercent(stats.tier_0_regeneration_rate)}
@@ -304,13 +302,13 @@ export default function GuardrailDashboardPage() {
               icon={Zap}
               color={stats.tier_1_regeneration_rate < 0.05 ? "text-green-500" : "text-orange-500"}
             />
-            <Card className="bg-[var(--ds-surface-1)] border-[var(--ds-border)]">
+            <Card className="border-[var(--ds-border)] bg-[var(--ds-surface-1)]">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-[var(--ds-text-muted)] uppercase tracking-wide">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs font-medium tracking-wide text-[var(--ds-text-muted)] uppercase">
                     Jurisdictions
                   </span>
-                  <Scale className="w-4 h-4 text-[var(--ds-text)]" />
+                  <Scale className="h-4 w-4 text-[var(--ds-text)]" />
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(stats.by_jurisdiction).map(([jur, data]) => (
@@ -331,20 +329,20 @@ export default function GuardrailDashboardPage() {
           </div>
 
           {/* Hourly chart */}
-          <Card className="bg-[var(--ds-surface-1)] border-[var(--ds-border)]">
+          <Card className="border-[var(--ds-border)] bg-[var(--ds-surface-1)]">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Clock className="w-4 h-4 text-[var(--ds-text-muted)]" />
+              <div className="mb-3 flex items-center gap-2">
+                <Clock className="h-4 w-4 text-[var(--ds-text-muted)]" />
                 <h3 className="text-sm font-semibold text-[var(--ds-text)]">
                   Query Volumen (stündlich)
                 </h3>
                 <div className="flex-1" />
                 <div className="flex items-center gap-3 text-xs text-[var(--ds-text-muted)]">
                   <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded bg-green-500/60" /> Passed
+                    <span className="h-2 w-2 rounded bg-green-500/60" /> Passed
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded bg-red-500/60" /> Flagged
+                    <span className="h-2 w-2 rounded bg-red-500/60" /> Flagged
                   </span>
                 </div>
               </div>
@@ -353,10 +351,10 @@ export default function GuardrailDashboardPage() {
           </Card>
 
           {/* Recent flagged queries */}
-          <Card className="bg-[var(--ds-surface-1)] border-[var(--ds-border)]">
+          <Card className="border-[var(--ds-border)] bg-[var(--ds-surface-1)]">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <ShieldAlert className="w-4 h-4 text-orange-500" />
+              <div className="mb-3 flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 text-orange-500" />
                 <h3 className="text-sm font-semibold text-[var(--ds-text)]">
                   Zuletzt markierte Queries
                 </h3>
@@ -366,17 +364,17 @@ export default function GuardrailDashboardPage() {
               </div>
               {stats.recent_flags.length === 0 ? (
                 <div className="flex items-center justify-center py-8 text-sm text-[var(--ds-text-muted)]">
-                  <ShieldCheck className="w-5 h-5 mr-2 text-green-500" />
+                  <ShieldCheck className="mr-2 h-5 w-5 text-green-500" />
                   Keine markierten Queries — alle Guardrails bestanden!
                 </div>
               ) : (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
+                <div className="max-h-96 space-y-2 overflow-y-auto">
                   {stats.recent_flags.map((flag) => (
                     <div
                       key={flag.id}
                       className="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] p-3"
                     >
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="mb-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-[var(--ds-text-muted)]">
                             {formatTime(flag.created_at)}
@@ -424,10 +422,10 @@ export default function GuardrailDashboardPage() {
 
           {/* Pipeline Guardrail Metrics (AP-9) */}
           {pipelineStats && pipelineStats.total_pipelines > 0 && (
-            <Card className="bg-[var(--ds-surface-1)] border-[var(--ds-border)]">
+            <Card className="border-[var(--ds-border)] bg-[var(--ds-surface-1)]">
               <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Layers className="w-4 h-4 text-[var(--ds-text-muted)]" />
+                <div className="mb-3 flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-[var(--ds-text-muted)]" />
                   <h3 className="text-sm font-semibold text-[var(--ds-text)]">
                     Pipeline Guardrail Metriken
                   </h3>
@@ -437,25 +435,25 @@ export default function GuardrailDashboardPage() {
                 </div>
                 <div className="space-y-2">
                   {pipelineStats.by_layer.map((ls) => (
-                    <div key={ls.layer} className="flex items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] p-2">
-                      <span className="text-xs font-medium text-[var(--ds-text)] w-20">
+                    <div
+                      key={ls.layer}
+                      className="flex items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] p-2"
+                    >
+                      <span className="w-20 text-xs font-medium text-[var(--ds-text)]">
                         Layer {ls.layer}
                       </span>
-                      <div className="flex-1 flex items-center gap-2">
-                        <div className="flex-1 h-2 rounded-full bg-[var(--ds-border)] overflow-hidden">
+                      <div className="flex flex-1 items-center gap-2">
+                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--ds-border)]">
                           <div
                             className={ls.pass_rate > 0.9 ? "bg-green-500/60" : "bg-orange-500/60"}
                             style={{ width: `${ls.pass_rate * 100}%`, height: "100%" }}
                           />
                         </div>
-                        <span className="text-xs text-[var(--ds-text-muted)] w-16 text-right">
+                        <span className="w-16 text-right text-xs text-[var(--ds-text-muted)]">
                           {formatPercent(ls.pass_rate)}
                         </span>
                       </div>
-                      <Badge
-                        variant={ls.flagged > 0 ? "danger" : "success"}
-                        className="text-xs"
-                      >
+                      <Badge variant={ls.flagged > 0 ? "danger" : "success"} className="text-xs">
                         {ls.passed}✓ / {ls.flagged}⚠
                       </Badge>
                       {ls.total_flags > 0 && (
@@ -467,17 +465,24 @@ export default function GuardrailDashboardPage() {
                   ))}
                   {pipelineStats.cross_verify.total > 0 && (
                     <div className="flex items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] p-2">
-                      <span className="text-xs font-medium text-[var(--ds-text)] w-20">
+                      <span className="w-20 text-xs font-medium text-[var(--ds-text)]">
                         Cross-Verify
                       </span>
-                      <div className="flex-1 flex items-center gap-2">
-                        <div className="flex-1 h-2 rounded-full bg-[var(--ds-border)] overflow-hidden">
+                      <div className="flex flex-1 items-center gap-2">
+                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--ds-border)]">
                           <div
-                            className={pipelineStats.cross_verify.clean_rate > 0.85 ? "bg-green-500/60" : "bg-orange-500/60"}
-                            style={{ width: `${pipelineStats.cross_verify.clean_rate * 100}%`, height: "100%" }}
+                            className={
+                              pipelineStats.cross_verify.clean_rate > 0.85
+                                ? "bg-green-500/60"
+                                : "bg-orange-500/60"
+                            }
+                            style={{
+                              width: `${pipelineStats.cross_verify.clean_rate * 100}%`,
+                              height: "100%",
+                            }}
                           />
                         </div>
-                        <span className="text-xs text-[var(--ds-text-muted)] w-16 text-right">
+                        <span className="w-16 text-right text-xs text-[var(--ds-text-muted)]">
                           {formatPercent(pipelineStats.cross_verify.clean_rate)}
                         </span>
                       </div>
@@ -498,10 +503,10 @@ export default function GuardrailDashboardPage() {
 
           {/* Fristen-Engine Stats (AP5) */}
           {fristenStats && fristenStats.total > 0 && (
-            <Card className="bg-[var(--ds-surface-1)] border-[var(--ds-border)]">
+            <Card className="border-[var(--ds-border)] bg-[var(--ds-surface-1)]">
               <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <CalendarClock className="w-4 h-4 text-[var(--ds-text-muted)]" />
+                <div className="mb-3 flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4 text-[var(--ds-text-muted)]" />
                   <h3 className="text-sm font-semibold text-[var(--ds-text)]">
                     Fristen-Engine Metriken
                   </h3>
@@ -511,9 +516,9 @@ export default function GuardrailDashboardPage() {
                 </div>
 
                 {/* Summary metrics */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
                   <div className="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] p-3">
-                    <div className="text-xs text-[var(--ds-text-muted)] mb-1">Deterministisch</div>
+                    <div className="mb-1 text-xs text-[var(--ds-text-muted)]">Deterministisch</div>
                     <div className="text-lg font-bold text-green-500">
                       {fristenStats.deterministic}
                     </div>
@@ -522,7 +527,7 @@ export default function GuardrailDashboardPage() {
                     </div>
                   </div>
                   <div className="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] p-3">
-                    <div className="text-xs text-[var(--ds-text-muted)] mb-1">LLM Fallback</div>
+                    <div className="mb-1 text-xs text-[var(--ds-text-muted)]">LLM Fallback</div>
                     <div className="text-lg font-bold text-blue-500">
                       {fristenStats.by_source.llm_detected ?? 0}
                     </div>
@@ -531,16 +536,22 @@ export default function GuardrailDashboardPage() {
                     </div>
                   </div>
                   <div className="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] p-3">
-                    <div className="text-xs text-[var(--ds-text-muted)] mb-1">Kritisch / Überfällig</div>
+                    <div className="mb-1 text-xs text-[var(--ds-text-muted)]">
+                      Kritisch / Überfällig
+                    </div>
                     <div className="text-lg font-bold text-red-500">
-                      {fristenStats.by_classification.kritisch + fristenStats.by_classification.ueberfaellig}
+                      {fristenStats.by_classification.kritisch +
+                        fristenStats.by_classification.ueberfaellig}
                     </div>
                     <div className="text-xs text-[var(--ds-text-muted)]">
-                      {fristenStats.by_classification.kritisch} krit / {fristenStats.by_classification.ueberfaellig} überf
+                      {fristenStats.by_classification.kritisch} krit /{" "}
+                      {fristenStats.by_classification.ueberfaellig} überf
                     </div>
                   </div>
                   <div className="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] p-3">
-                    <div className="text-xs text-[var(--ds-text-muted)] mb-1">Vorfrist erreicht</div>
+                    <div className="mb-1 text-xs text-[var(--ds-text-muted)]">
+                      Vorfrist erreicht
+                    </div>
                     <div className="text-lg font-bold text-orange-500">
                       {fristenStats.by_classification.vorfrist}
                     </div>
@@ -552,71 +563,99 @@ export default function GuardrailDashboardPage() {
 
                 {/* Classification bar */}
                 <div className="mb-4">
-                  <div className="text-xs font-medium text-[var(--ds-text-muted)] uppercase tracking-wide mb-2">
+                  <div className="mb-2 text-xs font-medium tracking-wide text-[var(--ds-text-muted)] uppercase">
                     Fristen-Status (Ampel)
                   </div>
-                  <div className="flex h-6 rounded-full overflow-hidden">
+                  <div className="flex h-6 overflow-hidden rounded-full">
                     {fristenStats.by_classification.ok > 0 && (
                       <div
-                        className="bg-green-500/60 flex items-center justify-center"
-                        style={{ width: `${(fristenStats.by_classification.ok / fristenStats.total) * 100}%` }}
+                        className="flex items-center justify-center bg-green-500/60"
+                        style={{
+                          width: `${(fristenStats.by_classification.ok / fristenStats.total) * 100}%`,
+                        }}
                       >
-                        <span className="text-xs text-white font-medium">{fristenStats.by_classification.ok}</span>
+                        <span className="text-xs font-medium text-white">
+                          {fristenStats.by_classification.ok}
+                        </span>
                       </div>
                     )}
                     {fristenStats.by_classification.vorfrist > 0 && (
                       <div
-                        className="bg-orange-500/60 flex items-center justify-center"
-                        style={{ width: `${(fristenStats.by_classification.vorfrist / fristenStats.total) * 100}%` }}
+                        className="flex items-center justify-center bg-orange-500/60"
+                        style={{
+                          width: `${(fristenStats.by_classification.vorfrist / fristenStats.total) * 100}%`,
+                        }}
                       >
-                        <span className="text-xs text-white font-medium">{fristenStats.by_classification.vorfrist}</span>
+                        <span className="text-xs font-medium text-white">
+                          {fristenStats.by_classification.vorfrist}
+                        </span>
                       </div>
                     )}
                     {fristenStats.by_classification.kritisch > 0 && (
                       <div
-                        className="bg-red-500/70 flex items-center justify-center"
-                        style={{ width: `${(fristenStats.by_classification.kritisch / fristenStats.total) * 100}%` }}
+                        className="flex items-center justify-center bg-red-500/70"
+                        style={{
+                          width: `${(fristenStats.by_classification.kritisch / fristenStats.total) * 100}%`,
+                        }}
                       >
-                        <span className="text-xs text-white font-medium">{fristenStats.by_classification.kritisch}</span>
+                        <span className="text-xs font-medium text-white">
+                          {fristenStats.by_classification.kritisch}
+                        </span>
                       </div>
                     )}
                     {fristenStats.by_classification.ueberfaellig > 0 && (
                       <div
-                        className="bg-red-700/80 flex items-center justify-center"
-                        style={{ width: `${(fristenStats.by_classification.ueberfaellig / fristenStats.total) * 100}%` }}
+                        className="flex items-center justify-center bg-red-700/80"
+                        style={{
+                          width: `${(fristenStats.by_classification.ueberfaellig / fristenStats.total) * 100}%`,
+                        }}
                       >
-                        <span className="text-xs text-white font-medium">{fristenStats.by_classification.ueberfaellig}</span>
+                        <span className="text-xs font-medium text-white">
+                          {fristenStats.by_classification.ueberfaellig}
+                        </span>
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-[var(--ds-text-muted)]">
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-green-500/60" /> OK</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-orange-500/60" /> Vorfrist</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-red-500/70" /> Kritisch</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-red-700/80" /> Überfällig</span>
+                  <div className="mt-2 flex items-center gap-3 text-xs text-[var(--ds-text-muted)]">
+                    <span className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded bg-green-500/60" /> OK
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded bg-orange-500/60" /> Vorfrist
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded bg-red-500/70" /> Kritisch
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded bg-red-700/80" /> Überfällig
+                    </span>
                   </div>
                 </div>
 
                 {/* By Fristart */}
                 {fristenStats.by_art.length > 0 && (
                   <div className="mb-4">
-                    <div className="text-xs font-medium text-[var(--ds-text-muted)] uppercase tracking-wide mb-2">
+                    <div className="mb-2 text-xs font-medium tracking-wide text-[var(--ds-text-muted)] uppercase">
                       Nach Fristart
                     </div>
                     <div className="space-y-1.5">
                       {fristenStats.by_art.slice(0, 8).map((item) => (
                         <div key={item.art} className="flex items-center gap-2">
-                          <Gavel className="w-3 h-3 text-[var(--ds-text-muted)] flex-shrink-0" />
-                          <span className="text-xs text-[var(--ds-text)] w-32 truncate">
+                          <Gavel className="h-3 w-3 flex-shrink-0 text-[var(--ds-text-muted)]" />
+                          <span className="w-32 truncate text-xs text-[var(--ds-text)]">
                             {item.art.replace(/_/g, " ")}
                           </span>
-                          <div className="flex-1 h-1.5 rounded-full bg-[var(--ds-border)] overflow-hidden">
+                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--ds-border)]">
                             <div
-                              className={item.deterministic_rate > 0.8 ? "bg-green-500/60" : "bg-orange-500/60"}
+                              className={
+                                item.deterministic_rate > 0.8
+                                  ? "bg-green-500/60"
+                                  : "bg-orange-500/60"
+                              }
                               style={{ width: `${item.deterministic_rate * 100}%`, height: "100%" }}
                             />
                           </div>
-                          <span className="text-xs text-[var(--ds-text-muted)] w-12 text-right">
+                          <span className="w-12 text-right text-xs text-[var(--ds-text-muted)]">
                             {item.deterministic}/{item.total}
                           </span>
                         </div>
@@ -628,7 +667,7 @@ export default function GuardrailDashboardPage() {
                 {/* By Regime + Source */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <div className="text-xs font-medium text-[var(--ds-text-muted)] uppercase tracking-wide mb-2">
+                    <div className="mb-2 text-xs font-medium tracking-wide text-[var(--ds-text-muted)] uppercase">
                       Rechtsgebiet
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -640,7 +679,7 @@ export default function GuardrailDashboardPage() {
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs font-medium text-[var(--ds-text-muted)] uppercase tracking-wide mb-2">
+                    <div className="mb-2 text-xs font-medium tracking-wide text-[var(--ds-text-muted)] uppercase">
                       Quelle
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -661,30 +700,30 @@ export default function GuardrailDashboardPage() {
           )}
 
           {/* Guardrail architecture info */}
-          <Card className="bg-[var(--ds-surface-1)] border-[var(--ds-border)]">
+          <Card className="border-[var(--ds-border)] bg-[var(--ds-surface-1)]">
             <CardContent className="p-4">
-              <h3 className="text-sm font-semibold text-[var(--ds-text)] mb-3">
+              <h3 className="mb-3 text-sm font-semibold text-[var(--ds-text)]">
                 Guardrail Architektur
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-green-500" />
+                    <ShieldCheck className="h-4 w-4 text-green-500" />
                     <span className="font-medium text-[var(--ds-text)]">Tier-0: Deterministic</span>
                   </div>
-                  <p className="text-xs text-[var(--ds-text-muted)] pl-6">
+                  <p className="pl-6 text-xs text-[var(--ds-text-muted)]">
                     Regex-basierte §-Citation-Prüfung, Law-Validation, Hedging-Detection,
                     Cross-Law-Contamination. Zero LLM cost.
                   </p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Brain className="w-4 h-4 text-blue-500" />
+                    <Brain className="h-4 w-4 text-blue-500" />
                     <span className="font-medium text-[var(--ds-text)]">Tier-1: Cross-Verify</span>
                   </div>
-                  <p className="text-xs text-[var(--ds-text-muted)] pl-6">
-                    Grok 4.3 semantische Verifikation aller §-Zitate gegen Kontext.
-                    ~$0.003/check. Regeneration bei high-severity flags.
+                  <p className="pl-6 text-xs text-[var(--ds-text-muted)]">
+                    Grok 4.3 semantische Verifikation aller §-Zitate gegen Kontext. ~$0.003/check.
+                    Regeneration bei high-severity flags.
                   </p>
                 </div>
               </div>

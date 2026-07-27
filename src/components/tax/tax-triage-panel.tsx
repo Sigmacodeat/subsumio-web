@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
 interface TriageResult {
   card: {
@@ -114,6 +116,24 @@ export function TaxTriagePanel() {
   const [messages, setMessages] = useState<MessageInput[]>([
     { source: "email", subject: "", body: "", sender: "" },
   ]);
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
+
+  useEffect(() => {
+    if (!results || results.length === 0) return;
+    const groundingText = results
+      .map((r) =>
+        [
+          r.card.summary,
+          r.enrichment?.deadline_legal_basis,
+          ...(r.enrichment?.required_actions ?? []),
+        ]
+          .filter(Boolean)
+          .join(" — ")
+      )
+      .join("\n\n");
+    groundAnswer(groundingText).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [results]);
 
   const addMessage = useCallback(() => {
     setMessages((prev) => [...prev, { source: "email", subject: "", body: "", sender: "" }]);
@@ -161,7 +181,7 @@ export function TaxTriagePanel() {
   }
 
   return (
-    <Card className="p-6 space-y-4">
+    <Card className="space-y-4 p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -175,8 +195,11 @@ export function TaxTriagePanel() {
             <Label className="text-xs text-[color:var(--ds-text-muted)]">
               {t("tax.triage.jurisdiction")}
             </Label>
-            <Select value={jurisdiction} onValueChange={(v) => setJurisdiction(v as "de" | "at" | "ch")}>
-              <SelectTrigger className="w-24 h-8 text-xs">
+            <Select
+              value={jurisdiction}
+              onValueChange={(v) => setJurisdiction(v as "de" | "at" | "ch")}
+            >
+              <SelectTrigger className="h-8 w-24 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -200,14 +223,11 @@ export function TaxTriagePanel() {
         {messages.map((msg, idx) => (
           <div
             key={idx}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-1)] p-3 space-y-2"
+            className="space-y-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-1)] p-3"
           >
             <div className="flex items-center gap-2">
-              <Select
-                value={msg.source}
-                onValueChange={(v) => updateMessage(idx, "source", v)}
-              >
-                <SelectTrigger className="w-28 h-8 text-xs">
+              <Select value={msg.source} onValueChange={(v) => updateMessage(idx, "source", v)}>
+                <SelectTrigger className="h-8 w-28 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -222,7 +242,7 @@ export function TaxTriagePanel() {
                 placeholder={t("tax.triage.subject")}
                 value={msg.subject}
                 onChange={(e) => updateMessage(idx, "subject", e.target.value)}
-                className="flex-1 h-8 text-sm"
+                className="h-8 flex-1 text-sm"
               />
               {messages.length > 1 && (
                 <Button
@@ -240,19 +260,19 @@ export function TaxTriagePanel() {
                 placeholder="Absender (optional)"
                 value={msg.sender}
                 onChange={(e) => updateMessage(idx, "sender", e.target.value)}
-                className="w-48 h-8 text-xs"
+                className="h-8 w-48 text-xs"
               />
               <Textarea
                 placeholder={t("tax.triage.body")}
                 value={msg.body}
                 onChange={(e) => updateMessage(idx, "body", e.target.value)}
-                className="flex-1 min-h-[60px] text-sm resize-y"
+                className="min-h-[60px] flex-1 resize-y text-sm"
               />
             </div>
           </div>
         ))}
         <Button variant="outline" size="sm" onClick={addMessage} className="text-xs">
-          <Plus className="h-3.5 w-3.5 mr-1" />
+          <Plus className="mr-1 h-3.5 w-3.5" />
           {t("tax.triage.add_message")}
         </Button>
       </div>
@@ -260,12 +280,12 @@ export function TaxTriagePanel() {
       <Button onClick={analyze} disabled={loading} className="w-full">
         {loading ? (
           <>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             {t("tax.triage.analyzing")}
           </>
         ) : (
           <>
-            <Inbox className="h-4 w-4 mr-2" />
+            <Inbox className="mr-2 h-4 w-4" />
             {t("tax.triage.analyze")}
           </>
         )}
@@ -283,7 +303,9 @@ export function TaxTriagePanel() {
         <div className="grid grid-cols-4 gap-2">
           <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-2 text-center">
             <div className="text-lg font-bold text-red-600">{summary.critical}</div>
-            <div className="text-xs text-[color:var(--ds-text-muted)]">{t("tax.triage.critical")}</div>
+            <div className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("tax.triage.critical")}
+            </div>
           </div>
           <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-2 text-center">
             <div className="text-lg font-bold text-orange-600">{summary.high}</div>
@@ -291,7 +313,9 @@ export function TaxTriagePanel() {
           </div>
           <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2 text-center">
             <div className="text-lg font-bold text-amber-600">{summary.medium}</div>
-            <div className="text-xs text-[color:var(--ds-text-muted)]">{t("tax.triage.medium")}</div>
+            <div className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("tax.triage.medium")}
+            </div>
           </div>
           <div className="rounded-lg border border-slate-500/20 bg-slate-500/5 p-2 text-center">
             <div className="text-lg font-bold text-slate-600">{summary.low}</div>
@@ -311,19 +335,26 @@ export function TaxTriagePanel() {
             return (
               <div
                 key={r.card.id}
-                className={cn(
-                  "rounded-lg border p-3 transition-all",
-                  urgencyStyle
-                )}
+                className={cn("rounded-lg border p-3 transition-all", urgencyStyle)}
               >
                 <div
-                  className="flex items-start justify-between gap-2 cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isExpanded}
+                  className="flex cursor-pointer items-start justify-between gap-2 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
                   onClick={() => setExpandedIdx(isExpanded ? null : idx)}
+                  onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setExpandedIdx(isExpanded ? null : idx);
+                    }
+                  }}
                 >
-                  <div className="flex items-start gap-2 min-w-0 flex-1">
-                    <UrgencyIcon className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div className="flex min-w-0 flex-1 items-start gap-2">
+                    <UrgencyIcon className="mt-0.5 h-4 w-4 shrink-0" />
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="default" className="text-xs">
                           {SOURCE_LABELS[r.card.source] ?? r.card.source}
                         </Badge>
@@ -336,8 +367,8 @@ export function TaxTriagePanel() {
                           </Badge>
                         )}
                       </div>
-                      <p className="mt-1 text-sm font-medium truncate">{r.card.title}</p>
-                      <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)] line-clamp-2">
+                      <p className="mt-1 truncate text-sm font-medium">{r.card.title}</p>
+                      <p className="mt-0.5 line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
                         {r.card.summary}
                       </p>
                     </div>
@@ -426,10 +457,10 @@ export function TaxTriagePanel() {
 
                         {r.enrichment.required_actions.length > 0 && (
                           <div>
-                            <div className="text-[color:var(--ds-text-muted)] mb-1">
+                            <div className="mb-1 text-[color:var(--ds-text-muted)]">
                               {t("tax.triage.required_actions")}:
                             </div>
-                            <ul className="list-disc list-inside space-y-0.5">
+                            <ul className="list-inside list-disc space-y-0.5">
                               {r.enrichment.required_actions.map((action, i) => (
                                 <li key={i}>{action}</li>
                               ))}
@@ -453,12 +484,22 @@ export function TaxTriagePanel() {
               </div>
             );
           })}
+          <CitationPanel
+            data={
+              {
+                grounding: grounding ?? null,
+                citations: [],
+                isStreaming: isGrounding,
+              } satisfies CitationPanelData
+            }
+            compact
+          />
         </div>
       )}
 
       {!results && !loading && !error && (
-        <div className="text-center py-8 text-sm text-[color:var(--ds-text-muted)]">
-          <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+        <div className="py-8 text-center text-sm text-[color:var(--ds-text-muted)]">
+          <FileText className="mx-auto mb-2 h-8 w-8 opacity-50" />
           {t("tax.triage.empty")}
         </div>
       )}

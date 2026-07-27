@@ -565,7 +565,11 @@ export function WidgetBoard() {
       )}
 
       {!loaded ? (
-        <div className="flex min-h-[200px] items-center justify-center">
+        <div
+          className="flex min-h-[200px] items-center justify-center"
+          role="status"
+          aria-live="polite"
+        >
           <Loader2 className="h-5 w-5 animate-spin text-[color:var(--ds-text-subtle)]" />
         </div>
       ) : !hasVisible && !editMode ? (

@@ -23,6 +23,8 @@
 
 import type { BrainEngine } from "../core/engine.ts";
 import { MARKDOWN_CHUNKER_VERSION } from "../core/chunkers/recursive.ts";
+import { LEGAL_CHUNKER_VERSION } from "../core/chunkers/legal-statute.ts";
+import { LEGAL_DECISION_CHUNKER_VERSION } from "../core/chunkers/legal-decision.ts";
 import { importFromContent, importFromFile } from "../core/import-file.ts";
 import { serializeMarkdown } from "../core/markdown.ts";
 import { createProgress } from "../core/progress.ts";
@@ -114,9 +116,20 @@ async function countPending(engine: BrainEngine): Promise<number> {
     `SELECT COUNT(*)::bigint AS count
        FROM pages
       WHERE page_kind = 'markdown'
-        AND (chunker_version < $1 OR contextual_retrieval_mode IS NULL)
+        AND (
+          COALESCE(chunker_version, 0) < CASE
+            WHEN type IN ('law', 'statute')
+              OR frontmatter->>'type' IN ('law', 'statute')
+              THEN $2
+            WHEN type IN ('court_decision', 'judgement')
+              OR frontmatter->>'type' IN ('court_decision', 'judgement')
+              THEN $3
+            ELSE $1
+          END
+          OR contextual_retrieval_mode IS NULL
+        )
         AND deleted_at IS NULL`,
-    [MARKDOWN_CHUNKER_VERSION]
+    [MARKDOWN_CHUNKER_VERSION, LEGAL_CHUNKER_VERSION, LEGAL_DECISION_CHUNKER_VERSION]
   );
   return Number(rows[0]?.count ?? 0);
 }
@@ -136,11 +149,22 @@ async function readBatch(
     `SELECT slug, source_path, compiled_truth, source_id
        FROM pages
       WHERE page_kind = 'markdown'
-        AND (chunker_version < $1 OR contextual_retrieval_mode IS NULL)
+        AND (
+          COALESCE(chunker_version, 0) < CASE
+            WHEN type IN ('law', 'statute')
+              OR frontmatter->>'type' IN ('law', 'statute')
+              THEN $3
+            WHEN type IN ('court_decision', 'judgement')
+              OR frontmatter->>'type' IN ('court_decision', 'judgement')
+              THEN $4
+            ELSE $1
+          END
+          OR contextual_retrieval_mode IS NULL
+        )
         AND deleted_at IS NULL
       ORDER BY id ASC
       LIMIT $2`,
-    [MARKDOWN_CHUNKER_VERSION, batchSize]
+    [MARKDOWN_CHUNKER_VERSION, batchSize, LEGAL_CHUNKER_VERSION, LEGAL_DECISION_CHUNKER_VERSION]
   );
 }
 

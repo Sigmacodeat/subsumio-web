@@ -570,7 +570,7 @@ export default function BeaPage() {
               onChange={(e) => setBody(e.target.value)}
               rows={6}
               placeholder={t("bea.body_placeholder")}
-              className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-info-border)] focus:outline-none"
+              className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-info-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
           </div>
           {/* EU AI Act Art. 50: Nutzer markiert KI-generierten Inhalt, damit der

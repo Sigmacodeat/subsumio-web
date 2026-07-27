@@ -100,14 +100,17 @@ const CARDS = [
 ];
 
 export default function AnalyticsHubPage() {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
 
   return (
     <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={tr("title", lang)}
         description={tr("description", lang)}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: tr("title", lang) }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: tr("title", lang) },
+        ]}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useToast } from "@/components/ui/toast";
+import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 
 type FeatureFlag = {
@@ -57,6 +58,7 @@ function formatDate(dateStr: string): string {
 export default function FeatureFlagsPage() {
   const qc = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useLang();
   const [showCreate, setShowCreate] = useState(false);
   const [editingFlag, setEditingFlag] = useState<FeatureFlag | null>(null);
   const [deleteKey, setDeleteKey] = useState<string | null>(null);
@@ -71,11 +73,11 @@ export default function FeatureFlagsPage() {
       api.featureFlags.update(key, input as Parameters<typeof api.featureFlags.update>[1]),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["feature-flags"] });
-      addToast({ title: "Flag aktualisiert", type: "success" });
+      addToast({ title: t("admin.flags.updated"), type: "success" });
       setEditingFlag(null);
     },
     onError: () => {
-      addToast({ title: "Fehler beim Aktualisieren", type: "error" });
+      addToast({ title: t("admin.flags.err_update"), type: "error" });
     },
   });
 
@@ -84,11 +86,11 @@ export default function FeatureFlagsPage() {
       api.featureFlags.create(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["feature-flags"] });
-      addToast({ title: "Flag erstellt", type: "success" });
+      addToast({ title: t("admin.flags.created"), type: "success" });
       setShowCreate(false);
     },
     onError: () => {
-      addToast({ title: "Fehler beim Erstellen", type: "error" });
+      addToast({ title: t("admin.flags.err_create"), type: "error" });
     },
   });
 
@@ -96,11 +98,11 @@ export default function FeatureFlagsPage() {
     mutationFn: (key: string) => api.featureFlags.delete(key),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["feature-flags"] });
-      addToast({ title: "Flag gelöscht", type: "success" });
+      addToast({ title: t("admin.flags.deleted"), type: "success" });
       setDeleteKey(null);
     },
     onError: () => {
-      addToast({ title: "Fehler beim Löschen", type: "error" });
+      addToast({ title: t("admin.flags.err_delete"), type: "error" });
     },
   });
 
@@ -113,11 +115,11 @@ export default function FeatureFlagsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Feature Flags"
-        description="Verwalte Feature-Freigaben, Rollout-Prozentsätze und Plan/Rollen-Beschränkungen"
+        title={t("admin.flags.title")}
+        description={t("admin.flags.desc")}
         actions={
           <Button onClick={() => setShowCreate(true)} size="sm">
-            <Plus size={14} /> Neuer Flag
+            <Plus size={14} /> {t("admin.flags.new")}
           </Button>
         }
       />
@@ -127,7 +129,7 @@ export default function FeatureFlagsPage() {
           <CardContent className="flex items-center gap-3 pt-6">
             <AlertCircle size={16} className="text-[color:var(--ds-danger-text)]" />
             <p className="text-sm text-[color:var(--ds-danger-text)]">
-              Fehler beim Laden der Feature Flags.
+              {t("admin.flags.err_load")}
             </p>
           </CardContent>
         </Card>
@@ -148,9 +150,9 @@ export default function FeatureFlagsPage() {
         <Card>
           <CardContent className="flex flex-col items-center gap-3 pt-12 pb-12">
             <Flag size={32} className="text-muted-foreground" />
-            <p className="text-muted-foreground text-sm">Keine Feature Flags vorhanden.</p>
+            <p className="text-muted-foreground text-sm">{t("admin.flags.empty")}</p>
             <Button onClick={() => setShowCreate(true)} size="sm" variant="outline">
-              <Plus size={14} /> Ersten Flag erstellen
+              <Plus size={14} /> {t("admin.flags.create_first")}
             </Button>
           </CardContent>
         </Card>
@@ -167,7 +169,7 @@ export default function FeatureFlagsPage() {
                       <button
                         onClick={() => toggleFlag(flag)}
                         className="flex items-center gap-1.5 transition-opacity hover:opacity-80"
-                        title={flag.enabled ? "Deaktivieren" : "Aktivieren"}
+                        title={flag.enabled ? t("admin.flags.disable") : t("admin.flags.enable")}
                       >
                         {flag.enabled ? (
                           <ToggleRight size={22} className="text-[color:var(--ds-success-text)]" />
@@ -185,7 +187,7 @@ export default function FeatureFlagsPage() {
                     )}
                     <div className="flex flex-wrap items-center gap-2 pt-1.5">
                       <Badge variant={flag.enabled ? "success" : "default"} className="text-xs">
-                        {flag.enabled ? "Aktiv" : "Inaktiv"}
+                        {flag.enabled ? t("admin.flags.active") : t("admin.flags.inactive")}
                       </Badge>
                       {flag.rolloutPercentage < 100 && (
                         <Badge variant="accent" className="gap-1 text-xs">
@@ -204,12 +206,13 @@ export default function FeatureFlagsPage() {
                       )}
                     </div>
                     <p className="text-muted-foreground pt-1 text-xs">
-                      Aktualisiert von {flag.updatedBy} am {formatDate(flag.updatedAt)}
+                      {t("admin.flags.updated_by")} {flag.updatedBy} {t("admin.flags.on")}{" "}
+                      {formatDate(flag.updatedAt)}
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
                     <Button size="sm" variant="ghost" onClick={() => setEditingFlag(flag)}>
-                      Bearbeiten
+                      {t("admin.flags.edit")}
                     </Button>
                     <Button
                       size="sm"
@@ -254,22 +257,19 @@ export default function FeatureFlagsPage() {
       <Dialog open={!!deleteKey} onOpenChange={(v) => !v && setDeleteKey(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Feature Flag löschen?</DialogTitle>
-            <DialogDescription>
-              Der Flag <code className="font-mono">{deleteKey}</code> wird entfernt. Features, die
-              diesen Flag prüfen, sind danach standardmäßig deaktiviert.
-            </DialogDescription>
+            <DialogTitle>{t("admin.flags.delete_title")}</DialogTitle>
+            <DialogDescription>{t("admin.flags.delete_desc")}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDeleteKey(null)}>
-              Abbrechen
+              {t("admin.flags.cancel")}
             </Button>
             <Button
               variant="danger"
               onClick={() => deleteKey && deleteMutation.mutate(deleteKey)}
               disabled={deleteMutation.isPending}
             >
-              <Trash2 size={14} /> Löschen
+              <Trash2 size={14} /> {t("admin.flags.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -287,6 +287,7 @@ function CreateFlagDialog({
   onCreate: (input: Parameters<typeof api.featureFlags.create>[0]) => void;
   isCreating: boolean;
 }) {
+  const { t } = useLang();
   const [key, setKey] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -324,8 +325,8 @@ function CreateFlagDialog({
     <Dialog open onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Neuer Feature Flag</DialogTitle>
-          <DialogDescription>Erstelle einen neuen Feature Flag.</DialogDescription>
+          <DialogTitle>{t("admin.flags.create_title")}</DialogTitle>
+          <DialogDescription>{t("admin.flags.create_desc")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div>
@@ -334,7 +335,7 @@ function CreateFlagDialog({
               type="text"
               value={key}
               onChange={(e) => setKey(e.target.value)}
-              placeholder="z.B. deep_analysis"
+              placeholder={t("admin.flags.key_placeholder")}
               className="w-full rounded-lg border px-3 py-2 text-sm"
             />
           </div>
@@ -344,18 +345,18 @@ function CreateFlagDialog({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="z.B. Deep Analysis Tool"
+              placeholder={t("admin.flags.name_placeholder")}
               className="w-full rounded-lg border px-3 py-2 text-sm"
             />
           </div>
           <div>
             <label className="text-muted-foreground mb-1.5 block text-xs font-medium">
-              Beschreibung
+              {t("admin.flags.desc_label")}
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Kurze Beschreibung des Features..."
+              placeholder={t("admin.flags.desc_placeholder")}
               className="w-full rounded-lg border px-3 py-2 text-sm"
               rows={2}
             />
@@ -367,12 +368,12 @@ function CreateFlagDialog({
               ) : (
                 <ToggleLeft size={20} className="text-muted-foreground" />
               )}
-              <span className="text-sm">Aktiviert</span>
+              <span className="text-sm">{t("admin.flags.activated")}</span>
             </button>
           </div>
           <div>
             <label className="text-muted-foreground mb-1.5 block text-xs font-medium">
-              Rollout: {rolloutPercentage}%
+              {t("admin.flags.rollout")}: {rolloutPercentage}%
             </label>
             <input
               type="range"
@@ -385,7 +386,7 @@ function CreateFlagDialog({
           </div>
           <div>
             <label className="text-muted-foreground mb-1.5 block text-xs font-medium">
-              Erlaubte Pläne (leer = alle)
+              {t("admin.flags.plans_label")}
             </label>
             <div className="flex flex-wrap gap-2">
               {PLAN_OPTIONS.map((plan) => (
@@ -405,7 +406,7 @@ function CreateFlagDialog({
           </div>
           <div>
             <label className="text-muted-foreground mb-1.5 block text-xs font-medium">
-              Erlaubte Rollen (leer = alle)
+              {t("admin.flags.roles_label")}
             </label>
             <div className="flex flex-wrap gap-2">
               {ROLE_OPTIONS.map((role) => (
@@ -426,10 +427,10 @@ function CreateFlagDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Abbrechen
+            {t("admin.flags.cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={isCreating || !key || !name}>
-            <Save size={14} /> Erstellen
+            <Save size={14} /> {t("admin.flags.create_btn")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -448,6 +449,7 @@ function EditFlagDialog({
   onSave: (input: Partial<Parameters<typeof api.featureFlags.update>[1]>) => void;
   isSaving: boolean;
 }) {
+  const { t } = useLang();
   const [name, setName] = useState(flag.name);
   const [description, setDescription] = useState(flag.description);
   const [enabled, setEnabled] = useState(flag.enabled);
@@ -482,8 +484,10 @@ function EditFlagDialog({
     <Dialog open onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Flag bearbeiten: {flag.key}</DialogTitle>
-          <DialogDescription>Passe die Einstellungen für diesen Feature Flag an.</DialogDescription>
+          <DialogTitle>
+            {t("admin.flags.edit_title")}: {flag.key}
+          </DialogTitle>
+          <DialogDescription>{t("admin.flags.edit_desc")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div>
@@ -513,12 +517,14 @@ function EditFlagDialog({
               ) : (
                 <ToggleLeft size={20} className="text-muted-foreground" />
               )}
-              <span className="text-sm">{enabled ? "Aktiviert" : "Deaktiviert"}</span>
+              <span className="text-sm">
+                {enabled ? t("admin.flags.activated") : t("admin.flags.deactivated")}
+              </span>
             </button>
           </div>
           <div>
             <label className="text-muted-foreground mb-1.5 block text-xs font-medium">
-              Rollout: {rolloutPercentage}%
+              {t("admin.flags.rollout")}: {rolloutPercentage}%
             </label>
             <input
               type="range"
@@ -531,7 +537,7 @@ function EditFlagDialog({
           </div>
           <div>
             <label className="text-muted-foreground mb-1.5 block text-xs font-medium">
-              Erlaubte Pläne (leer = alle)
+              {t("admin.flags.plans_label")}
             </label>
             <div className="flex flex-wrap gap-2">
               {PLAN_OPTIONS.map((plan) => (
@@ -551,7 +557,7 @@ function EditFlagDialog({
           </div>
           <div>
             <label className="text-muted-foreground mb-1.5 block text-xs font-medium">
-              Erlaubte Rollen (leer = alle)
+              {t("admin.flags.roles_label")}
             </label>
             <div className="flex flex-wrap gap-2">
               {ROLE_OPTIONS.map((role) => (
@@ -572,10 +578,10 @@ function EditFlagDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Abbrechen
+            {t("admin.flags.cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={isSaving}>
-            <Save size={14} /> Speichern
+            <Save size={14} /> {t("admin.flags.save")}
           </Button>
         </DialogFooter>
       </DialogContent>

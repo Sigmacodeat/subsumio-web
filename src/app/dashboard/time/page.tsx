@@ -296,13 +296,13 @@ export default function TimeEntriesPage() {
         <CardContent>
           <div className="flex gap-4">
             <Input
-              placeholder="Suche..."
+              placeholder={t("time.ph_search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-xs"
             />
             <Input
-              placeholder="Case..."
+              placeholder={t("time.ph_case")}
               value={selectedCase}
               onChange={(e) => setSelectedCase(e.target.value)}
               className="max-w-xs"
@@ -375,7 +375,7 @@ export default function TimeEntriesPage() {
       <Dialog open={!!editEntry} onOpenChange={(open) => !open && setEditEntry(null)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Zeiteintrag bearbeiten</DialogTitle>
+            <DialogTitle>{t("time.edit_title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -418,24 +418,24 @@ export default function TimeEntriesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-billable">Abrechenbar</Label>
+                <Label htmlFor="edit-billable">{t("time.billable")}</Label>
                 <Button
                   id="edit-billable"
                   variant={editForm.billable ? "primary" : "outline"}
                   className="w-full"
                   onClick={() => setEditForm({ ...editForm, billable: !editForm.billable })}
                 >
-                  {editForm.billable ? "Ja" : "Nein"}
+                  {editForm.billable ? t("time.yes") : t("time.no")}
                 </Button>
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditEntry(null)}>
-              Abbrechen
+              {t("time.cancel")}
             </Button>
             <Button onClick={handleSaveEdit} disabled={editMutation.isPending}>
-              {editMutation.isPending ? "Speichern..." : "Speichern"}
+              {editMutation.isPending ? t("time.saving") : t("time.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -445,22 +445,19 @@ export default function TimeEntriesPage() {
       <Dialog open={!!deleteEntry} onOpenChange={(open) => !open && setDeleteEntry(null)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Zeiteintrag löschen</DialogTitle>
+            <DialogTitle>{t("time.delete_title")}</DialogTitle>
           </DialogHeader>
-          <p className="text-muted-foreground py-4 text-sm">
-            Möchten Sie den Eintrag &ldquo;{deleteEntry?.description}&rdquo; wirklich löschen? Diese
-            Aktion kann nicht rückgängig gemacht werden.
-          </p>
+          <p className="text-muted-foreground py-4 text-sm">{t("time.delete_confirm")}</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteEntry(null)}>
-              Abbrechen
+              {t("time.cancel")}
             </Button>
             <Button
               variant="danger"
               onClick={handleConfirmDelete}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? "Löschen..." : "Löschen"}
+              {deleteMutation.isPending ? t("time.deleting") : t("time.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

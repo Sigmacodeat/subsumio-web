@@ -14,6 +14,7 @@ export const POST = createEngineProxy({
   enginePath: "/api/legal/auto-playbook",
   body: autoPlaybookSchema,
   quota: "queries",
+  credits: "agent",
   label: "auto-playbook",
   transformBody: (b) => ({
     contract_slug: b.contract_slug,

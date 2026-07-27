@@ -274,7 +274,7 @@ export default function VerfahrensdokuPage() {
           {...dokuForm.register(name)}
           placeholder={placeholder}
           rows={3}
-          className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+          className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         />
       ) : (
         <Input type="text" {...dokuForm.register(name)} placeholder={placeholder} />
@@ -293,7 +293,7 @@ export default function VerfahrensdokuPage() {
         title={t("verfahrensdoku.title")}
         description={t("verfahrensdoku.description")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("verfahrensdoku.breadcrumb") },
         ]}
         actions={

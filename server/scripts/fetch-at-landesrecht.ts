@@ -23,7 +23,8 @@ const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 1000;
 
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
-const OUT_DIR = join(_scriptDir, "..", "..", "law-corpus", "at-landesrecht");
+const _corpusRoot = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
+const OUT_DIR = join(_corpusRoot, "at-landesrecht");
 
 async function fetchWithRetry(url: string): Promise<Response> {
   let lastErr: Error | null = null;
@@ -51,28 +52,75 @@ async function fetchWithRetry(url: string): Promise<Response> {
 }
 
 function stripHtmlSimple(html: string): string {
-  return html
+  let text = html
+    // Remove script/style blocks
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    // Remove nav/header/footer/aside blocks entirely
+    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, "")
+    .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, "")
+    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, "")
+    .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, "")
+    // Convert breaks/paragraphs
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/p>/gi, "\n\n")
     .replace(/<\/div>/gi, "\n")
+    // Strip remaining tags
     .replace(/<[^>]+>/g, "")
+    // Decode HTML entities
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
+    .replace(/&#228;/g, "ä")
+    .replace(/&#246;/g, "ö")
+    .replace(/&#252;/g, "ü")
+    .replace(/&#196;/g, "Ä")
+    .replace(/&#214;/g, "Ö")
+    .replace(/&#220;/g, "Ü")
+    .replace(/&#223;/g, "ß")
+    .replace(/&#8211;/g, "–")
+    .replace(/&#8212;/g, "—")
+    .replace(/&#8222;/g, "„")
+    .replace(/&#8220;/g, "„")
+    .replace(/&#8217;/g, "'")
+    .replace(/&#180;/g, "'")
+    // Remove RIS navigation noise lines
+    .split("\n")
+    .filter((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return false;
+      // Skip RIS navigation/accessibility boilerplate
+      if (
+        /^(Zum Inhalt|Zur Navigationsleiste|Kontakt|Impressum|Datenschutzerkl|Barrierefreiheitserkl|Sitemap|English|Seitenbereiche|Navigationsleiste|Startseite|Bund|Länder|Bezirke|Gemeinden|Judikatur|Kundmachungen|Gesamtabfrage|Druckansicht|Navigation im Suchergebnis|Zum Seitenanfang|Über diese Seite)\b/.test(
+          trimmed
+        )
+      )
+        return false;
+      if (/Accesskey\s*[0-9A-Z]/i.test(trimmed)) return false;
+      if (/^\.\s*$/.test(trimmed)) return false;
+      return true;
+    })
+    .join("\n")
+    // Collapse excessive blank lines
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+
+  // If after cleaning there's almost no content left, return empty (triggers placeholder)
+  if (text.length < 50) return "";
+
+  return text;
 }
 
 function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "unknown";
+  return (
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "unknown"
+  );
 }
 
 function extractContentUrl(ref: Record<string, unknown>): string {
@@ -222,7 +270,9 @@ ${body}
   }
 
   console.log(`\n═══════════════════════════════════════════════════════════`);
-  console.log(`  SUMMARY: ${written} written, ${skipped} skipped, ${existing.size - written} pre-existing`);
+  console.log(
+    `  SUMMARY: ${written} written, ${skipped} skipped, ${existing.size - written} pre-existing`
+  );
   console.log(`═══════════════════════════════════════════════════════════`);
 }
 

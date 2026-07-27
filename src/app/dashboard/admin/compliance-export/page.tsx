@@ -19,6 +19,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 import { type ReasoningTrace as TraceData } from "@/lib/ai-reasoning-trace";
 import { exportTracesHTML } from "@/lib/ai-reasoning-trace-export";
 
@@ -59,6 +60,7 @@ interface TracesResponse {
 }
 
 export default function ComplianceExportPage() {
+  const { t } = useLang();
   const [limit, setLimit] = useState(50);
 
   const { data, isLoading, refetch } = useQuery<TracesResponse>({
@@ -123,8 +125,8 @@ export default function ComplianceExportPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Compliance Audit Log"
-        description="EU AI Act Art. 12 — Reasoning Traces"
+        title={t("admin.compliance_export.title")}
+        description={t("admin.compliance_export.desc")}
         actions={
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => refetch()}>
@@ -266,8 +268,18 @@ function TraceRow({ trace }: { trace: ReasoningTrace }) {
 
   return (
     <div
-      className="hover:bg-muted/50 cursor-pointer rounded-lg border p-3 transition-colors"
+      role="button"
+      tabIndex={0}
+      aria-expanded={expanded}
+      className="hover:bg-muted/50 cursor-pointer rounded-lg border p-3 transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
       onClick={() => setExpanded(!expanded)}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setExpanded(!expanded);
+        }
+      }}
     >
       <div className="flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-3">

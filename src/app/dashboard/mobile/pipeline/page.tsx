@@ -147,7 +147,11 @@ export default function MobilePipelinePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[color:var(--ds-bg)]">
+      <div
+        className="flex min-h-screen items-center justify-center bg-[color:var(--ds-bg)]"
+        role="status"
+        aria-live="polite"
+      >
         <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-info-text)]" />
       </div>
     );
@@ -182,7 +186,11 @@ export default function MobilePipelinePage() {
 
   if (outputLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[color:var(--ds-bg)]">
+      <div
+        className="flex min-h-screen items-center justify-center bg-[color:var(--ds-bg)]"
+        role="status"
+        aria-live="polite"
+      >
         <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-info-text)]" />
       </div>
     );

@@ -3,61 +3,24 @@
 // Shared pricing grid — used by the landing page section and /pricing page.
 // Includes a monthly/annual billing toggle. Annual is default (−20%).
 
-import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PRICING, UI_STRINGS, p, type Lang } from "@/content/site";
+import { professionalPricing } from "@/content/audiences";
+import { UI_STRINGS, p, type Lang } from "@/content/site";
 import { StaggerContainer, StaggerItem } from "./motion-system";
 
-type Billing = "annual" | "monthly";
-
 export function PricingGrid({ lang }: { lang: Lang }) {
-  const pricing = PRICING[lang];
+  const pricing = professionalPricing(lang);
   const ui = UI_STRINGS[lang];
-  const [billing, setBilling] = useState<Billing>("annual");
 
   return (
     <>
-      {/* Billing toggle */}
-      <div className="mb-10 flex items-center justify-center gap-3">
-        <button
-          onClick={() => setBilling("annual")}
-          className={`text-sm font-medium transition-colors ${billing === "annual" ? "brand-text" : "[color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"}`}
-          aria-pressed={billing === "annual"}
-        >
-          {ui.billingAnnual}
-          <span className="brand-text brand-soft ml-1.5 rounded-full px-1.5 py-0.5 text-sm">
-            −20%
-          </span>
-        </button>
-        <div className="relative h-6 w-12 rounded-full transition-colors [background:var(--mk-border-strong)]">
-          <button
-            onClick={() => setBilling(billing === "annual" ? "monthly" : "annual")}
-            role="switch"
-            aria-checked={billing === "monthly"}
-            aria-label={ui.toggleBilling}
-            className={`brand-bg absolute top-0.5 h-5 w-5 rounded-full shadow-sm transition-transform ${billing === "monthly" ? "translate-x-6" : "translate-x-0.5"}`}
-          />
-        </div>
-        <button
-          onClick={() => setBilling("monthly")}
-          className={`text-sm font-medium transition-colors ${billing === "monthly" ? "brand-text" : "[color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"}`}
-          aria-pressed={billing === "monthly"}
-        >
-          {ui.billingMonthly}
-        </button>
-      </div>
-
       <StaggerContainer
         className={`grid gap-6 md:grid-cols-2 ${pricing.tiers.length >= 4 ? "lg:grid-cols-4" : "mx-auto max-w-5xl lg:grid-cols-3"}`}
         stagger={0.1}
       >
         {pricing.tiers.map((tier) => {
-          const displayPrice =
-            billing === "monthly" && tier.priceMonthly ? tier.priceMonthly : tier.price;
-          const displayPeriod =
-            billing === "monthly" && tier.periodMonthly ? tier.periodMonthly : tier.period;
           return (
             <StaggerItem
               key={tier.id}
@@ -95,10 +58,8 @@ export function PricingGrid({ lang }: { lang: Lang }) {
                     {tier.name}
                   </p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold [color:var(--mk-text)]">
-                      {displayPrice}
-                    </span>
-                    <span className="text-sm [color:var(--mk-text-muted)]">{displayPeriod}</span>
+                    <span className="text-3xl font-bold [color:var(--mk-text)]">{tier.price}</span>
+                    <span className="text-sm [color:var(--mk-text-muted)]">{tier.period}</span>
                   </div>
                   <p className="mt-2 text-sm leading-relaxed [color:var(--mk-text-muted)]">
                     {tier.blurb}

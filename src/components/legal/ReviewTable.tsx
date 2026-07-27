@@ -11,9 +11,11 @@
 
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { ChevronDown, ChevronRight, Flag, MessageSquare, Loader2 } from "lucide-react";
 import { csrfFetch } from "@/lib/csrf";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
 export interface ReviewCell {
   value: string;
@@ -57,6 +59,13 @@ export function ReviewTable({ data, caseSlug }: ReviewTableProps) {
   const [askQuery, setAskQuery] = useState("");
   const [askResponse, setAskResponse] = useState<string | null>(null);
   const [askLoading, setAskLoading] = useState(false);
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
+
+  useEffect(() => {
+    if (!askResponse) return;
+    groundAnswer(askResponse).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [askResponse]);
 
   const toggleCell = useCallback((rowId: string, colKey: string) => {
     const key = `${rowId}:${colKey}`;
@@ -193,7 +202,7 @@ export function ReviewTable({ data, caseSlug }: ReviewTableProps) {
               onChange={(e) => setAskQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAsk()}
               placeholder="z.B. Welche Schadensposition ist am höchsten?"
-              className="flex-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="flex-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:ring-2 focus:ring-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
             <button
               onClick={handleAsk}
@@ -209,8 +218,20 @@ export function ReviewTable({ data, caseSlug }: ReviewTableProps) {
             </button>
           </div>
           {askResponse && (
-            <div className="rounded-md bg-[color:var(--ds-surface-hover)] px-3 py-2 text-sm text-[color:var(--ds-text)]">
-              {askResponse}
+            <div className="space-y-2">
+              <div className="rounded-md bg-[color:var(--ds-surface-hover)] px-3 py-2 text-sm text-[color:var(--ds-text)]">
+                {askResponse}
+              </div>
+              <CitationPanel
+                data={
+                  {
+                    grounding: grounding ?? null,
+                    citations: [],
+                    isStreaming: isGrounding,
+                  } satisfies CitationPanelData
+                }
+                compact
+              />
             </div>
           )}
         </div>

@@ -37,7 +37,10 @@ export default function CourtAnalyticsPage() {
       <PageHeader
         title={t("court_an.title")}
         description={t("court_an.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Analytics" }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: "Analytics" },
+        ]}
       />
 
       <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-[color:var(--ds-warning-solid)] p-3 text-xs text-[color:var(--ds-warning-text)]">
@@ -46,7 +49,7 @@ export default function CourtAnalyticsPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
           <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : data.length === 0 ? (

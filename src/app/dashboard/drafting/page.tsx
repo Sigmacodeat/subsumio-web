@@ -459,7 +459,7 @@ export default function DraftingPage() {
             </label>
             <Input
               {...register("klaeger")}
-              placeholder="Name"
+              placeholder={t("drafting.ph_name")}
               aria-label={t("drafting.name")}
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
@@ -470,7 +470,7 @@ export default function DraftingPage() {
             </label>
             <Input
               {...register("beklagter")}
-              placeholder="Name"
+              placeholder={t("drafting.ph_name")}
               aria-label={t("drafting.name")}
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
@@ -485,7 +485,7 @@ export default function DraftingPage() {
             rows={4}
             placeholder={t("drafting.describe_case")}
             aria-label={t("drafting.describe_case")}
-            className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
           {f.formState.errors.facts && (
             <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
@@ -500,7 +500,7 @@ export default function DraftingPage() {
           <select
             {...register("selectedCaseSlug")}
             aria-label={t("drafting.label_link_case")}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           >
             <option value="">
               {casesError ? t("drafting.cases_load_error") : t("drafting.no_case")}

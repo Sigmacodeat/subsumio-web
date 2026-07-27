@@ -127,7 +127,10 @@ export default function LegalHoldPage() {
             ? "Manage litigation holds and preservation orders across all matters. Documents under hold cannot be deleted, archived, or modified."
             : "Verwaltung von Beweisbeschlüssen und Aufbewahrungsanordnungen für alle Akten. Dokumente unter Hold können nicht gelöscht, archiviert oder geändert werden."
         }
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Legal Hold" }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: "Legal Hold" },
+        ]}
       />
 
       {/* Stats */}
@@ -209,7 +212,7 @@ export default function LegalHoldPage() {
 
       {/* Case list */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
           <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : filtered.length === 0 ? (

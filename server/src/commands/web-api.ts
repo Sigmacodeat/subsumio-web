@@ -39,6 +39,7 @@ import {
   ConnectionError as EngineConnectionError,
 } from "../core/engine-errors.ts";
 import type { ThinkResult } from "../core/think/index.ts";
+import { persistTrace } from "../core/reasoning-trace.ts";
 import { formatCitationTitle } from "../core/think/ogh-format.ts";
 import { MinionQueue } from "../core/minions/queue.ts";
 import {
@@ -2883,6 +2884,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const userJurHeader = req.headers["x-subsumio-jurisdiction"] as string | undefined;
       const jurisdiction = (caseJurHeader ?? userJurHeader)?.toUpperCase();
 
+      const thinkStartTime = Date.now();
       const result = await runThink(engine, {
         question: query,
         remote: false,
@@ -2936,9 +2938,27 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             claim_confidences: result.documentConfidence.claim_confidences,
           }
         : undefined;
-      res.write(`data: ${JSON.stringify({ citations, gaps, provenance, documentConfidence })}\n\n`);
+      // Send warnings + trace_id in the final SSE chunk so the frontend
+      // interceptor can log guardrail metrics and the dashboard can link to
+      // the trace for attorney feedback / calibration.
+      const warnings = result.warnings ?? [];
+      const traceId = result.reasoningTrace?.trace_id;
+      res.write(
+        `data: ${JSON.stringify({ citations, gaps, provenance, documentConfidence, warnings, trace_id: traceId })}\n\n`
+      );
       res.write("data: [DONE]\n\n");
       res.end();
+
+      // Persist reasoning trace to DB (fire-and-forget, non-blocking).
+      // This populates subsumio_reasoning_traces for hallucination metrics,
+      // quality reports, and EU AI Act Art. 12 compliance audits.
+      if (result.reasoningTrace && result.synthesisOk !== false) {
+        const traceWithLatency = {
+          ...result.reasoningTrace,
+          latency_ms: Date.now() - thinkStartTime,
+        };
+        void persistTrace(engine, traceWithLatency);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
       if (res.headersSent) {
@@ -6523,8 +6543,19 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
         const truncated = docs.length >= limit;
 
-        // 2. Pro Dokument eine LLM-Anfrage über alle Fragen.
-        const numbered = questions.map((q, i) => `${i + 1}. ${q}`).join("\n");
+        // 2. Pro Dokument eine LLM-Anfrage über alle Fragen. Die eigentliche
+        // Prompt-/Parse-/Zell-Logik liegt im Shared Core
+        // (core/legal/tabular-review.ts) — Verhalten dieser Route ist
+        // unverändert (16k-Clip, maxTokens 1200, Dokument-Zitate).
+        const { reviewTabularDocumentSync } = await import("../core/legal/tabular-review.ts");
+        const llm = async (opts: { system: string; user: string; maxTokens?: number }) => {
+          const r = await chat({
+            system: opts.system,
+            messages: [{ role: "user", content: opts.user }],
+            maxTokens: opts.maxTokens ?? 1200,
+          });
+          return r.text;
+        };
         const runOne = async (doc: { slug: string; title: string }) => {
           try {
             const pageRaw = await invokeOp(
@@ -6539,41 +6570,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             );
             const page = pageRaw as Record<string, unknown>;
             const title = String(page.title ?? doc.title);
-            const content = String(page.compiled_truth ?? page.content ?? "").slice(0, 16000);
-            if (!content.trim()) {
-              return {
-                slug: doc.slug,
-                title,
-                cells: questions.map(() => ({ answer: "—", citations: [] })),
-              };
-            }
-            const result = await chat({
-              system:
-                "Du beantwortest Fragen ausschließlich auf Basis des bereitgestellten Dokuments. " +
-                'Antworte knapp und faktisch. Wenn das Dokument eine Frage nicht beantwortet, schreibe genau "nicht im Dokument". ' +
-                "Antworte als JSON-Array von Strings, je ein Eintrag pro Frage in Reihenfolge.",
-              messages: [
-                {
-                  role: "user",
-                  content: `DOKUMENT "${title}":\n\n${content}\n\nFRAGEN:\n${numbered}`,
-                },
-              ],
-              maxTokens: 1200,
+            const content = String(page.compiled_truth ?? page.content ?? "");
+            return await reviewTabularDocumentSync(llm, {
+              slug: doc.slug,
+              title,
+              questions,
+              text: content,
             });
-            let answers: string[] = [];
-            try {
-              const m = result.text.match(/\[[\s\S]*\]/);
-              const parsed = m ? JSON.parse(m[0]) : [];
-              answers = Array.isArray(parsed) ? parsed.map((a) => String(a)) : [];
-            } catch {
-              /* fällt unten auf '—' */
-            }
-            const cells = questions.map((_, i) => {
-              const answer = answers[i] ?? "—";
-              const grounded = answer && answer !== "—" && !/^nicht im dokument$/i.test(answer);
-              return { answer, citations: grounded ? [{ slug: doc.slug, title }] : [] };
-            });
-            return { slug: doc.slug, title, cells };
           } catch (e) {
             const msg = e instanceof Error ? e.message : "unknown";
             return {
@@ -6607,6 +6610,322 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       } catch (e) {
         const msg = e instanceof Error ? e.message : "unknown";
         res.status(500).json({ error: "tabular_review_failed", message: msg });
+      }
+    }
+  );
+
+  // ── Tabular Review (async) ─────────────────────────────────────────────
+  // Mass analysis: N documents × M questions → persisted result table with
+  // quote-grounded citations. The start route resolves documents (priority:
+  // slugs > case_slug > type/limit fallback), persists a run-state page
+  // (type tabular_review, slug tabular_review/<id>) and enqueues the
+  // `tabular-review` Minion job. GET reads the persisted run state (no
+  // computation); retry re-queues failed rows. Auth/ACL mirrors the sync
+  // route above (source_id header, matter-scope asserts, ACL groups via op
+  // layer). The sync route stays fully functional.
+
+  app.post(
+    "/api/legal/tabular-review/start",
+    express.json({ limit: "512kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const body = req.body as Record<string, unknown>;
+        const questions = (Array.isArray(body.questions) ? body.questions : [])
+          .map((q) => String(q).trim())
+          .filter(Boolean)
+          .slice(0, 50); // Spalten-Cap (async)
+        if (questions.length === 0) {
+          res.status(400).json({ error: "missing_questions" });
+          return;
+        }
+        const sourceId = requestSourceId(req);
+        const explicitSlugs = Array.isArray(body.slugs)
+          ? body.slugs.map((s) => String(s).trim()).filter(Boolean)
+          : null;
+        if (explicitSlugs && explicitSlugs.length > 500) {
+          res.status(400).json({ error: "too_many_slugs", message: "slugs is capped at 500." });
+          return;
+        }
+        const caseSlug =
+          typeof body.case_slug === "string" && body.case_slug.trim()
+            ? body.case_slug.trim()
+            : null;
+        const type = body.type ? String(body.type) : undefined;
+        const limit = Math.min(Number(body.limit) || 25, 500); // Fallback-Limit
+        const concurrency = Math.max(1, Math.min(Math.floor(Number(body.concurrency) || 4), 8));
+        const runTitle =
+          typeof body.title === "string" && body.title.trim()
+            ? body.title.trim().slice(0, 200)
+            : null;
+
+        const { isAvailable, getChatModel } = await import("../core/ai/gateway.ts");
+        if (!isAvailable("chat")) {
+          res.status(503).json({
+            error: "llm_unavailable",
+            message:
+              "Tabular Review benötigt einen konfigurierten Chat-Provider (z. B. ANTHROPIC_API_KEY).",
+          });
+          return;
+        }
+
+        // 1. Dokumente auflösen — Priorität: slugs > case_slug > Fallback.
+        let docs: Array<{ slug: string; title: string }> = [];
+        let truncated = false;
+        if (explicitSlugs && explicitSlugs.length > 0) {
+          for (const s of explicitSlugs) assertMatterScope(req.matterScope, s);
+          docs = explicitSlugs.map((s) => ({ slug: s, title: s }));
+        } else if (caseSlug) {
+          assertMatterScope(req.matterScope, caseSlug);
+          // Akten-Dokumente aus frontmatter.documents[] — derselbe Mechanismus
+          // wie beim legal-pipeline-Trigger.
+          const casePage = await engine.getPage(
+            caseSlug,
+            sourceId !== "default" ? { sourceId } : undefined
+          );
+          const fm = (casePage?.frontmatter ?? {}) as Record<string, unknown>;
+          const documents = Array.isArray(fm.documents)
+            ? (fm.documents as Array<Record<string, unknown>>)
+            : [];
+          docs = documents
+            .map((d) => ({
+              slug: String(d.slug ?? ""),
+              title: String(d.name ?? d.title ?? d.slug ?? ""),
+            }))
+            .filter((d) => d.slug)
+            .slice(0, 500);
+          truncated = documents.length > 500;
+          for (const d of docs) assertMatterScope(req.matterScope, d.slug, caseSlug);
+        } else {
+          const raw = await invokeOp(
+            engine,
+            "list_pages",
+            {
+              limit,
+              ...(type ? { type } : {}),
+              sort: "updated_desc",
+            },
+            sourceId,
+            undefined,
+            req.matterScope ?? "all",
+            req.aclGroups ?? "all",
+            req.userId
+          );
+          docs = (Array.isArray(raw) ? raw : [])
+            .map((p) => {
+              const pg = p as Record<string, unknown>;
+              return { slug: String(pg.slug ?? ""), title: String(pg.title ?? pg.slug ?? "") };
+            })
+            .filter((d) => d.slug);
+          truncated = docs.length >= limit;
+        }
+        if (docs.length === 0) {
+          res.status(400).json({
+            error: "no_documents",
+            message: "No documents resolved for this tabular review run.",
+          });
+          return;
+        }
+
+        // 2. Titel + Textlängen in EINER Query — Grundlage für die Schätzung.
+        const metaRows = await engine.executeRaw<{ slug: string; title: string; len: number }>(
+          `SELECT slug, title, length(COALESCE(compiled_truth, '')) AS len
+             FROM pages
+            WHERE slug = ANY($1::text[]) AND source_id = $2 AND deleted_at IS NULL`,
+          [docs.map((d) => d.slug), sourceId]
+        );
+        const meta = new Map(
+          metaRows.map((r) => [r.slug, { title: r.title, len: Number(r.len) || 0 }])
+        );
+        for (const d of docs) {
+          const m = meta.get(d.slug);
+          if (m?.title) d.title = m.title;
+        }
+
+        const { estimateTabularRun, newTabularRunState, writeTabularRun, patchTabularRun } =
+          await import("../core/legal/tabular-review.ts");
+        const estimate = estimateTabularRun({
+          questions,
+          docChars: docs.map((d) => meta.get(d.slug)?.len ?? 0),
+          modelId: getChatModel(),
+        });
+
+        // 3. Run-State-Page anlegen, dann Job enqueuen (Page-first, damit der
+        // Worker den State immer vorfindet).
+        const runId = `${new Date().toISOString().replace(/[-:]/g, "").replace("T", "").slice(0, 14)}-${randomUUID().slice(0, 8)}`;
+        const runSlug = `tabular_review/${runId}`;
+        const state = newTabularRunState({
+          run_slug: runSlug,
+          title: runTitle ?? `Tabular Review ${new Date().toISOString().slice(0, 10)}`,
+          questions,
+          docs,
+          estimate,
+          concurrency,
+          source_id: sourceId,
+          ...(req.userId ? { created_by_user_id: req.userId } : {}),
+          ...(req.matterScope !== undefined ? { matter_scope: req.matterScope } : {}),
+          ...(req.aclGroups !== undefined ? { acl_groups: req.aclGroups } : {}),
+          truncated,
+        });
+        await writeTabularRun(engine, state);
+
+        const queue = new MinionQueue(engine);
+        const job = await queue.add(
+          "tabular-review",
+          {
+            run_slug: runSlug,
+            concurrency,
+            _source_id: sourceId,
+            ...(req.matterScope !== undefined ? { matter_scope: req.matterScope } : {}),
+            ...(req.aclGroups !== undefined ? { acl_groups: req.aclGroups } : {}),
+            ...(req.userId ? { user_id: req.userId } : {}),
+          },
+          { timeout_ms: 60 * 60 * 1000, max_attempts: 3, max_stalled: 3 },
+          { allowProtectedSubmit: true }
+        );
+        await patchTabularRun(engine, runSlug, sourceId, (s) => {
+          s.job_id = String(job.id);
+        });
+
+        res.json({
+          run_slug: runSlug,
+          job_id: String(job.id),
+          document_count: docs.length,
+          estimate,
+          status: "queued",
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        const status = e instanceof EngineNotFoundError ? 404 : 500;
+        res.status(status).json({ error: "tabular_review_start_failed", message: msg });
+      }
+    }
+  );
+
+  // GET liest NUR den persistierten Run-State (keine Berechnung). Der Slug
+  // enthält ein "/" (tabular_review/<id>), daher Wildcard-Param.
+  app.get("/api/legal/tabular-review/{*slug}", async (req: Request, res: Response) => {
+    try {
+      const slugParam = (req.params as Record<string, unknown>).slug;
+      const slug = Array.isArray(slugParam) ? slugParam.join("/") : String(slugParam ?? "");
+      if (!slug || !slug.startsWith("tabular_review/")) {
+        res.status(404).json({ error: "run_not_found" });
+        return;
+      }
+      const sourceId = requestSourceId(req);
+      const page = await engine.getPage(slug, sourceId !== "default" ? { sourceId } : undefined);
+      if (!page || page.type !== "tabular_review") {
+        res.status(404).json({ error: "run_not_found" });
+        return;
+      }
+      const { parseTabularRunState, tabularRunToApiResponse } =
+        await import("../core/legal/tabular-review.ts");
+      const state = parseTabularRunState(page.frontmatter);
+      if (!state) {
+        res
+          .status(500)
+          .json({ error: "run_state_corrupt", message: "Run state is not parseable." });
+        return;
+      }
+      const response = tabularRunToApiResponse(state);
+      // Matter-scope: Zeilen außerhalb des Scopes werden ausgefiltert —
+      // dieselbe Postur wie bei der Suchergebnis-Filterung.
+      if (req.matterScope && req.matterScope !== "all") {
+        response.rows = filterByMatterScope(state.rows, req.matterScope);
+      }
+      res.json(response);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "tabular_review_status_failed", message: msg });
+    }
+  });
+
+  // Retry: setzt die genannten Zeilen (default: alle mit status=error) auf
+  // pending und enqueuet einen neuen tabular-review-Job gegen denselben Run.
+  app.post(
+    "/api/legal/tabular-review/{*slug}/retry",
+    express.json({ limit: "256kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const slugParam = (req.params as Record<string, unknown>).slug;
+        const slug = Array.isArray(slugParam) ? slugParam.join("/") : String(slugParam ?? "");
+        if (!slug || !slug.startsWith("tabular_review/")) {
+          res.status(404).json({ error: "run_not_found" });
+          return;
+        }
+        const body = (req.body ?? {}) as Record<string, unknown>;
+        const requested = Array.isArray(body.slugs)
+          ? body.slugs.map((s) => String(s).trim()).filter(Boolean)
+          : null;
+        const sourceId = requestSourceId(req);
+        const page = await engine.getPage(slug, sourceId !== "default" ? { sourceId } : undefined);
+        if (!page || page.type !== "tabular_review") {
+          res.status(404).json({ error: "run_not_found" });
+          return;
+        }
+        const { parseTabularRunState, patchTabularRun } =
+          await import("../core/legal/tabular-review.ts");
+        const state = parseTabularRunState(page.frontmatter);
+        if (!state) {
+          res
+            .status(500)
+            .json({ error: "run_state_corrupt", message: "Run state is not parseable." });
+          return;
+        }
+
+        const targets =
+          requested && requested.length > 0
+            ? requested.filter((s) => state.rows.some((r) => r.slug === s))
+            : state.rows.filter((r) => r.status === "error").map((r) => r.slug);
+        if (targets.length === 0) {
+          res.status(400).json({
+            error: "nothing_to_retry",
+            message: "No rows to retry (pass slugs or leave empty for all error rows).",
+          });
+          return;
+        }
+        for (const s of targets) assertMatterScope(req.matterScope, s);
+
+        await patchTabularRun(engine, slug, sourceId, (st) => {
+          for (const r of st.rows) {
+            if (targets.includes(r.slug)) {
+              r.status = "pending";
+              r.error = null;
+              r.cells = [];
+            }
+          }
+          st.status = "queued";
+          st.error = null;
+          st.finished_at = null;
+        });
+
+        // Der Job läuft mit den Request-Stamps des RETRIERS (Fallback: die
+        // ursprünglichen Run-Stamps), damit ACL/Matter des aktuellen Aufrufs gelten.
+        const queue = new MinionQueue(engine);
+        const job = await queue.add(
+          "tabular-review",
+          {
+            run_slug: slug,
+            only_slugs: targets,
+            concurrency: state.concurrency,
+            _source_id: sourceId,
+            matter_scope: req.matterScope ?? state.matter_scope,
+            acl_groups: req.aclGroups ?? state.acl_groups,
+            ...((req.userId ?? state.created_by_user_id)
+              ? { user_id: req.userId ?? state.created_by_user_id }
+              : {}),
+          },
+          { timeout_ms: 60 * 60 * 1000, max_attempts: 3, max_stalled: 3 },
+          { allowProtectedSubmit: true }
+        );
+        await patchTabularRun(engine, slug, sourceId, (st) => {
+          st.job_id = String(job.id);
+        });
+
+        res.json({ job_id: String(job.id), retried: targets.length, status: "queued" });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        const status = e instanceof EngineNotFoundError ? 404 : 500;
+        res.status(status).json({ error: "tabular_review_retry_failed", message: msg });
       }
     }
   );

@@ -25,6 +25,7 @@ import { useMe } from "@/lib/queries/auth";
 import { useUsage, useCheckout } from "@/lib/queries/settings";
 import { useBrainStats } from "@/lib/queries/brain";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { CreditCard as CreditCardWidget } from "@/components/dashboard/credit-card";
 import { useLang } from "@/lib/use-lang";
 import { getModelById, formatCost } from "@/lib/model-config";
 import { csrfFetch } from "@/lib/csrf";
@@ -230,6 +231,7 @@ function BillingInner() {
   const { t } = useLang();
   const params = useSearchParams();
   const status = params.get("status");
+  const creditStatus = params.get("credit_status");
   const meQuery = useMe();
   const checkoutMutation = useCheckout();
   const [busy, setBusy] = useState<string | null>(null);
@@ -311,6 +313,24 @@ function BillingInner() {
           <p className="text-sm text-[color:var(--ds-warning-text)]">{t("billing.cancelled")}</p>
         </div>
       )}
+      {creditStatus === "success" && (
+        <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4">
+          <CheckCircle2 size={16} className="text-[color:var(--ds-success-text)]" />
+          <p className="text-sm text-[color:var(--ds-success-text)]">
+            {t("billing.credit_success") ||
+              "Credits erfolgreich gekauft — dein Saldo wurde aktualisiert."}
+          </p>
+        </div>
+      )}
+      {creditStatus === "cancelled" && (
+        <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
+          <AlertTriangle size={16} className="text-[color:var(--ds-warning-text)]" />
+          <p className="text-sm text-[color:var(--ds-warning-text)]">
+            {t("billing.credit_cancelled") ||
+              "Credit-Kauf abgebrochen — es wurden keine Credits abgebucht."}
+          </p>
+        </div>
+      )}
       {notice && (
         <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-4">
           <CreditCard size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-info-text)]" />
@@ -320,6 +340,7 @@ function BillingInner() {
 
       <UsageCard />
       <ModelBreakdownCard />
+      <CreditCardWidget />
 
       {/* Current plan */}
       <Card>

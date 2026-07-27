@@ -61,7 +61,10 @@ export default function OnlineBookingPage() {
       <PageHeader
         title={t("booking.title")}
         description={t("booking.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Termine" }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: "Termine" },
+        ]}
       />
 
       <section className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
@@ -109,7 +112,7 @@ export default function OnlineBookingPage() {
       </section>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
           <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : slots.length === 0 ? (

@@ -13,8 +13,7 @@ const _deLegal = {
   privacy: "Datenschutz",
   terms: "AGB",
   imprint: "Impressum",
-  draftNotice:
-    "Entwurf — fachlich vollständig, vor Launch anwaltlich final prüfen. Felder in [eckigen Klammern] ausfüllen.",
+  draftNotice: "Entwurf — fachlich vollständig, vor Launch anwaltlich final prüfen.",
   imprintTitle: "Impressum",
   imprintSubtitle: "Angaben gemäß § 5 DDG (DE) bzw. § 5 ECG (AT), Art. 3 UWG (CH)",
   privacyTitle: "Datenschutzerklärung",
@@ -30,8 +29,7 @@ const T = {
     privacy: "Privacy Policy",
     terms: "Terms of Service",
     imprint: "Imprint",
-    draftNotice:
-      "Draft — professionally complete, but have a lawyer review before launch. Fill in fields marked [brackets].",
+    draftNotice: "Draft — professionally complete, but have a lawyer review before launch.",
     imprintTitle: "Imprint",
     imprintSubtitle: "Provider information per § 5 DDG (DE), § 5 ECG (AT), Art. 3 UWG (CH)",
     privacyTitle: "Privacy Policy",
@@ -132,9 +130,15 @@ export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lan
         <H2>Authorized representatives</H2>
         <p>Ismet Mesic — Founder &amp; President</p>
         <H2>Commercial register</H2>
-        <p>Registered association (Verein) — registration details available on request.</p>
+        <p>
+          Registered association (Verein) — Zentralvereinsregister-Nummer: ZVR 1266935562.
+          Registergericht: Bezirkshauptmannschaft für den 1. und 5. Bezirk in Wien.
+        </p>
         <H2>VAT identification number</H2>
-        <p>ATU-Nummer gemäß § 48 UStG — available on request.</p>
+        <p>
+          ATU-Nummer gemäß § 48 UStG: wird bei Aufnahme umsatzsteuerpflichtiger Tätigkeit
+          zugewiesen.
+        </p>
         <H2>Consumer dispute resolution</H2>
         <p>
           We are not willing or obliged to participate in dispute resolution proceedings before a
@@ -156,7 +160,7 @@ export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lan
       <p>
         RCIID — Rocket Chain Investigation &amp; Intelligence Division
         <br />
-        Hauslabgasse 42/3/21
+        Hauslabgasse 42/3/2
         <br />
         1050 Wien, Österreich
       </p>
@@ -169,9 +173,14 @@ export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lan
       <H2>Vertretungsberechtigt</H2>
       <p>Ismet Mesic — Gründer &amp; Präsident</p>
       <H2>Registereintrag</H2>
-      <p>Eingetragener Verein (Verein) — Registrierungsdaten auf Anfrage.</p>
+      <p>
+        Eingetragener Verein (Verein) — Zentralvereinsregister-Nummer: ZVR 1266935562.
+        Registerbehörde: Bezirkshauptmannschaft für den 1. und 5. Bezirk in Wien.
+      </p>
       <H2>Umsatzsteuer-ID</H2>
-      <p>ATU-Nummer gemäß § 48 UStG — auf Anfrage.</p>
+      <p>
+        ATU-Nummer gemäß § 48 UStG: wird bei Aufnahme umsatzsteuerpflichtiger Tätigkeit zugewiesen.
+      </p>
       <H2>Verbraucherstreitbeilegung</H2>
       <p>
         Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer
@@ -202,16 +211,17 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         <p className="mt-2">
           RCIID — Rocket Chain Investigation &amp; Intelligence Division
           <br />
-          Hauslabgasse 42/3/21
+          Hauslabgasse 42/3/2
           <br />
           1050 Vienna, Austria
           <br />
           Email: help@rciid.at
         </p>
         <p className="mt-2">
-          Data Protection Officer (if appointed): [Name, contact]. Appointment is required e.g. when
-          processing special categories of personal data on a large scale (Art. 37 GDPR; DE: § 38
-          BDSG; AT: § 9 DSG; CH: n/a — DSG does not require a DPO).
+          No Data Protection Officer has been appointed at this time. Appointment is required e.g.
+          when processing special categories of personal data on a large scale (Art. 37 GDPR; DE: §
+          38 BDSG; AT: § 9 DSG; CH: n/a — DSG does not require a DPO). Privacy inquiries can be
+          directed to help@rciid.at.
         </p>
 
         <H2>2. Principle: data minimisation and operating models</H2>
@@ -281,14 +291,16 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
           <li>Optional: distributed rate-limiting service</li>
         </ul>
         <p className="mt-2">
-          Before launch, specify: [providers with seat country and transfer basis].
+          Current providers: Hosting via EU data centres (Hetzner, DE); LLM via OpenRouter (US, EU
+          Standard Contractual Clauses); Embeddings via OpenRouter (US, SCCs); Payment via Stripe
+          (US, SCCs); Email via Resend (US, SCCs). All processors are bound by DPAs.
         </p>
 
         <H2>8. Retention period</H2>
         <p>
           Account data for the duration of the contract; deletion after termination, subject to
           retention obligations (DE: § 147 AO, § 257 HGB; AT: § 132 BAO; CH: OR 962). Content is
-          deleted on your instruction or at contract end. Server logs after [e.g. 14 days].
+          deleted on your instruction or at contract end. Server logs are retained for 14 days.
         </p>
 
         <H2>9. Your rights</H2>
@@ -317,16 +329,17 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
       <p className="mt-2">
         RCIID — Rocket Chain Investigation &amp; Intelligence Division
         <br />
-        Hauslabgasse 42/3/21
+        Hauslabgasse 42/3/2
         <br />
         1050 Wien, Österreich
         <br />
         E-Mail: help@rciid.at
       </p>
       <p className="mt-2">
-        Datenschutzbeauftragte/r (sofern bestellt): [Name, Kontakt]. Eine Bestellpflicht besteht u.
-        a. bei umfangreicher Verarbeitung besonderer Kategorien personenbezogener Daten (Art. 37
-        DSGVO i. V. m. § 38 BDSG (DE) / § 9 DSG (AT); CH: keine DPO-Pflicht nach DSG).
+        Es wurde aktuell kein Datenschutzbeauftragter bestellt. Eine Bestellpflicht besteht u. a.
+        bei umfangreicher Verarbeitung besonderer Kategorien personenbezogener Daten (Art. 37 DSGVO
+        i. V. m. § 38 BDSG (DE) / § 9 DSG (AT); CH: keine DPO-Pflicht nach DSG).
+        Datenschutz-Anfragen richten Sie bitte an help@rciid.at.
       </p>
 
       <H2>2. Grundsatz: Datensparsamkeit und Betriebsmodelle</H2>
@@ -396,15 +409,17 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         <li>Optional: Dienst zur verteilten Ratenbegrenzung</li>
       </ul>
       <p className="mt-2">
-        Vor Launch konkret benennen: [Anbieter mit Sitzland und Transfergrundlage].
+        Aktuelle Anbieter: Hosting über EU-Rechenzentren (Hetzner, DE); LLM über OpenRouter (US,
+        EU-Standardvertragsklauseln); Embeddings über OpenRouter (US, SCCs); Zahlung über Stripe
+        (US, SCCs); E-Mail über Resend (US, SCCs). Alle Auftragsverarbeiter sind durch AVV gebunden.
       </p>
 
       <H2>8. Speicherdauer</H2>
       <p>
         Kontodaten für die Vertragsdauer; Löschung nach Kündigung, soweit keine
         Aufbewahrungspflichten (DE: § 147 AO, § 257 HGB; AT: § 132 BAO; CH: OR 962) entgegenstehen.
-        Inhalte werden auf deine Weisung bzw. mit Vertragsende gelöscht. Server-Logs nach [z. B. 14
-        Tagen].
+        Inhalte werden auf deine Weisung bzw. mit Vertragsende gelöscht. Server-Logs werden 14 Tage
+        aufbewahrt.
       </p>
 
       <H2>9. Deine Rechte</H2>
@@ -497,8 +512,7 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
           (1) Unlimited liability for intent and gross negligence and for damages from injury to
           life, body or health. (2) For simple negligence only in case of breach of a cardinal
           obligation, limited to the typically foreseeable damage. (3) Otherwise liability is
-          excluded. (4) The Product Liability Act remains unaffected. [Optional monetary limit to be
-          reviewed by a lawyer.]
+          excluded. (4) The Product Liability Act remains unaffected.
         </p>
 
         <H2>§ 9 Partner programme</H2>
@@ -507,7 +521,7 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
         <H2>§ 10 Final provisions</H2>
         <p>
           (1) German law applies, excluding the UN Convention on Contracts for the International
-          Sale of Goods (CISG). (2) Exclusive venue for merchants is [Provider&apos;s seat]. (3)
+          Sale of Goods (CISG). (2) Exclusive venue for merchants is Vienna, Austria. (3)
           Severability clause. (4) Changes are communicated with reasonable notice and deemed
           accepted if the Customer does not object; the significance of silence is separately
           pointed out.
@@ -590,7 +604,7 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
         Verletzung von Leben, Körper oder Gesundheit. (2) Bei einfacher Fahrlässigkeit nur bei
         Verletzung einer Kardinalpflicht, begrenzt auf den vertragstypisch vorhersehbaren Schaden.
         (3) Im Übrigen ist die Haftung ausgeschlossen. (4) Das Produkthaftungsgesetz bleibt
-        unberührt. [Optionale betragsmäßige Begrenzung anwaltlich prüfen.]
+        unberührt.
       </p>
 
       <H2>§ 9 Partnerprogramm</H2>
@@ -601,9 +615,9 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
       <H2>§ 10 Schlussbestimmungen</H2>
       <p>
         (1) Es gilt deutsches Recht unter Ausschluss des UN-Kaufrechts. (2) Ausschließlicher
-        Gerichtsstand für Kaufleute ist [Sitz des Anbieters]. (3) Salvatorische Klausel. (4)
-        Änderungen werden mit angemessener Frist mitgeteilt und gelten als angenommen, wenn der
-        Kunde nicht widerspricht; auf die Bedeutung des Schweigens wird gesondert hingewiesen.
+        Gerichtsstand für Kaufleute ist Wien, Österreich. (3) Salvatorische Klausel. (4) Änderungen
+        werden mit angemessener Frist mitgeteilt und gelten als angenommen, wenn der Kunde nicht
+        widerspricht; auf die Bedeutung des Schweigens wird gesondert hingewiesen.
       </p>
 
       <LegalLinks home={home} exclude="terms" lang={lang} />

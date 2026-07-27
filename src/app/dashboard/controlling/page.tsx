@@ -94,9 +94,12 @@ export default function ControllingPage() {
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Leistungskennzahlen"
-        description="Übersicht über Anwälte, Stunden und Umsatz"
-        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Leistungskennzahlen" }]}
+        title={t("controlling.title")}
+        description={t("controlling.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("controlling.title") },
+        ]}
         actions={
           <div className="flex gap-2">
             {(["month", "quarter", "year"] as const).map((p) => (
@@ -106,7 +109,11 @@ export default function ControllingPage() {
                 variant={period === p ? "outline" : "secondary"}
                 onClick={() => setPeriod(p)}
               >
-                {p === "month" ? "Monat" : p === "quarter" ? "Quartal" : "Jahr"}
+                {p === "month"
+                  ? t("controlling.period_month")
+                  : p === "quarter"
+                    ? t("controlling.period_quarter")
+                    : t("controlling.period_year")}
               </Button>
             ))}
           </div>
@@ -135,11 +142,10 @@ export default function ControllingPage() {
             <BarChart3 size={26} className="text-[color:var(--ds-text-subtle)]" />
           </div>
           <h3 className="text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
-            Keine Daten verfügbar
+            {t("controlling.empty_title")}
           </h3>
           <p className="mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-            Es wurden noch keine Akten mit Zeiterfassung angelegt. Lege Akten an und erfasse Zeiten,
-            um hier Auswertungen zu sehen.
+            {t("controlling.empty_desc")}
           </p>
         </div>
       ) : (
@@ -149,7 +155,7 @@ export default function ControllingPage() {
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <div className="mb-2 flex items-center gap-2 text-[color:var(--ds-text-muted)]">
                 <Users size={14} />
-                <span className="text-xs">Anwälte</span>
+                <span className="text-xs">{t("controlling.kpi_lawyers")}</span>
               </div>
               <div className="text-2xl font-semibold text-[color:var(--ds-text)]">
                 {stats.length}
@@ -158,7 +164,7 @@ export default function ControllingPage() {
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <div className="mb-2 flex items-center gap-2 text-[color:var(--ds-text-muted)]">
                 <Clock size={14} />
-                <span className="text-xs">Gesamtstunden</span>
+                <span className="text-xs">{t("controlling.kpi_total_hours")}</span>
               </div>
               <div className="text-2xl font-semibold text-[color:var(--ds-text)]">
                 {totalHours.toFixed(1)} h
@@ -167,7 +173,7 @@ export default function ControllingPage() {
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <div className="mb-2 flex items-center gap-2 text-[color:var(--ds-text-muted)]">
                 <Euro size={14} />
-                <span className="text-xs">Gesamtumsatz</span>
+                <span className="text-xs">{t("controlling.kpi_total_revenue")}</span>
               </div>
               <div className="text-2xl font-semibold text-[color:var(--ds-success-text)]">
                 {totalRevenue.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
@@ -179,7 +185,7 @@ export default function ControllingPage() {
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <div className="mb-2 flex items-center gap-2 text-[color:var(--ds-text-muted)]">
                 <TrendingUp size={14} />
-                <span className="text-xs">Ø Stundensatz</span>
+                <span className="text-xs">{t("controlling.kpi_avg_rate")}</span>
               </div>
               <div className="text-2xl font-semibold text-[color:var(--ds-text)]">
                 {totalHours > 0 ? Math.round(totalRevenue / totalHours) : 0} €
@@ -192,16 +198,20 @@ export default function ControllingPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]">
-                  <th className="px-4 py-3 text-left font-medium">Anwalt</th>
-                  <th className="hidden px-4 py-3 text-right font-medium md:table-cell">Akten</th>
-                  <th className="px-4 py-3 text-right font-medium">Stunden</th>
+                  <th className="px-4 py-3 text-left font-medium">{t("controlling.col_lawyer")}</th>
+                  <th className="hidden px-4 py-3 text-right font-medium md:table-cell">
+                    {t("controlling.col_cases")}
+                  </th>
+                  <th className="px-4 py-3 text-right font-medium">{t("controlling.col_hours")}</th>
                   <th className="hidden px-4 py-3 text-right font-medium lg:table-cell">
-                    Abrechenbar
+                    {t("controlling.col_billable")}
                   </th>
                   <th className="hidden px-4 py-3 text-right font-medium md:table-cell">
-                    Auslastung
+                    {t("controlling.col_utilization")}
                   </th>
-                  <th className="px-4 py-3 text-right font-medium">Umsatz</th>
+                  <th className="px-4 py-3 text-right font-medium">
+                    {t("controlling.col_revenue")}
+                  </th>
                 </tr>
               </thead>
               <tbody>

@@ -139,6 +139,7 @@ export function ChronologyTimeline({ chronology }: ChronologyTimelineProps) {
             onClick={handleExportMarkdown}
             className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-surface-hover)]"
             title="Als Markdown exportieren"
+            aria-label="Als Markdown exportieren"
           >
             <Download size={12} /> MD
           </button>
@@ -146,6 +147,7 @@ export function ChronologyTimeline({ chronology }: ChronologyTimelineProps) {
             onClick={handleExportJSON}
             className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-surface-hover)]"
             title="Als JSON exportieren"
+            aria-label="Als JSON exportieren"
           >
             <Download size={12} /> JSON
           </button>
@@ -153,6 +155,7 @@ export function ChronologyTimeline({ chronology }: ChronologyTimelineProps) {
             onClick={handleExportWord}
             className="inline-flex items-center gap-1 rounded-md bg-[color:var(--ds-info-solid)] px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-[color:var(--ds-info-solid)]"
             title="Als Word-Dokument exportieren"
+            aria-label="Als Word-Dokument exportieren"
           >
             <Download size={12} /> Word
           </button>

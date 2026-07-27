@@ -990,6 +990,8 @@ export interface BrainEngine {
 
   // Search
   searchKeyword(query: string, opts?: SearchOpts): Promise<SearchResult[]>;
+  /** v0.49 — BM25 keyword search via ParadeDB pg_search. Falls back to searchKeyword. */
+  searchKeywordBM25?(query: string, opts?: SearchOpts): Promise<SearchResult[]>;
   searchVector(embedding: Float32Array, opts?: SearchOpts): Promise<SearchResult[]>;
   /**
    * Hydrate embeddings for chunks already known by id. v0.36 (D9):

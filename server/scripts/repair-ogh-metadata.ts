@@ -37,8 +37,13 @@ if (!DATABASE_URL) {
 const sql = postgres(DATABASE_URL, { max: 2, prepare: false });
 
 function parseMeta(body: string): { date: string; gzs: string[] } | null {
-  const dateMatch = /##\s*Entscheidungsdatum\s*\n+\s*(\d{2})\.(\d{2})\.(\d{4})/.exec(body);
-  const gzMatch = /##\s*Geschäftszahl\s*\n+\s*([^\n]+)/.exec(body);
+  // Format 1: "## Entscheidungsdatum\n\n DD.MM.YYYY" (well-structured pages)
+  // Format 2: "EntscheidungsdatumDD.MM.YYYY" (concatenated, no separator)
+  const dateMatch =
+    /(?:##\s*Entscheidungsdatum\s*\n+\s*|Entscheidungsdatum)(\d{2})\.(\d{2})\.(\d{4})/.exec(body);
+  // Format 1: "## Geschäftszahl\n\n 1Ob52/00d" → capture until newline
+  // Format 2: "Geschäftszahl1Ob52/00d" → capture until end of token (next label or newline)
+  const gzMatch = /(?:##\s*Geschäftszahl\s*\n+\s*|Geschäftszahl)([^\n]+)/.exec(body);
   if (!dateMatch || !gzMatch) return null;
   const [, dd, mm, yyyy] = dateMatch;
   const year = parseInt(yyyy, 10);

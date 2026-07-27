@@ -4,7 +4,19 @@ import { createHash } from "crypto";
 import { marked } from "marked";
 import type { BrainEngine, FileSpec } from "./engine.ts";
 import { parseMarkdown } from "./markdown.ts";
-import { chunkText } from "./chunkers/recursive.ts";
+import { chunkText, MARKDOWN_CHUNKER_VERSION } from "./chunkers/recursive.ts";
+import {
+  chunkLegalSection,
+  formatLegalSectionEmbeddingContext,
+  LEGAL_CHUNKER_VERSION,
+  type LegalChunkMetadata,
+} from "./chunkers/legal-statute.ts";
+import {
+  chunkLegalDecision,
+  formatLegalDecisionEmbeddingContext,
+  LEGAL_DECISION_CHUNKER_VERSION,
+  type LegalDecisionChunkMetadata,
+} from "./chunkers/legal-decision.ts";
 import {
   chunkCodeText,
   chunkCodeTextFull,
@@ -23,8 +35,36 @@ import {
   MAX_DOCUMENT_FILE_SIZE,
 } from "./extract-document.ts";
 import type { ChunkInput, PageInput, PageType } from "./types.ts";
+
+/**
+ * Detect natural language from frontmatter jurisdiction or source_id.
+ * Returns ISO 639-1 code ("de", "fr", "it", "en") or null if unknown.
+ */
+function detectNaturalLanguage(
+  frontmatter: Record<string, unknown>,
+  sourceId?: string
+): string | null {
+  const jur = frontmatter?.jurisdiction as string | undefined;
+  const sid = sourceId ?? "";
+  // AT, DE, CH → German (legal texts are in German)
+  if (
+    jur === "at" ||
+    jur === "de" ||
+    jur === "ch" ||
+    sid.startsWith("law-at") ||
+    sid.startsWith("law-de") ||
+    sid.startsWith("law-ch")
+  )
+    return "de";
+  // EU → German (our EU corpus is German-language)
+  if (jur === "eu" || sid.startsWith("law-eu")) return "de";
+  if (jur === "fr" || sid.startsWith("law-fr")) return "fr";
+  if (jur === "it" || sid.startsWith("law-it")) return "it";
+  if (jur === "en" || sid.startsWith("law-en")) return "en";
+  return null;
+}
 import { computeEffectiveDate } from "./effective-date.ts";
-import { MARKDOWN_CHUNKER_VERSION } from "./chunkers/recursive.ts";
+// MARKDOWN_CHUNKER_VERSION now imported from chunkers/recursive.ts above (v0.43 legal chunker integration)
 import { logSlugFallback } from "./audit-slug-fallback.ts";
 import { resolveContextualRetrievalMode } from "./contextual-retrieval-resolver.ts";
 import { assessContentSanity, ContentSanityBlockError } from "./content-sanity.ts";
@@ -43,6 +83,7 @@ import {
   buildContextualPrefix,
   buildLegalContextualPrefix,
   isLegalPage,
+  isCourtDecisionPage,
   modeRequiresHaiku,
   modeRequiresWrapper,
   sanitizeTitle,
@@ -53,6 +94,7 @@ import { normalizeAliasList } from "./search/alias-normalize.ts";
 import { isUndefinedTableError, warnOncePerProcess } from "./utils.ts";
 import { computeCorpusGeneration } from "./contextual-retrieval-service.ts";
 import { runGuardrails } from "./guardrails.ts";
+import { warnOnEmbeddingMismatch } from "./embedding-consistency-guard.ts";
 
 // --- Config cache: avoid 6 sequential DB queries per page during bulk import ---
 // loadConfigWithEngine makes ~6 async engine.getConfig() calls per invocation.
@@ -61,6 +103,51 @@ import { runGuardrails } from "./guardrails.ts";
 // engine for 60 seconds, reducing the overhead to ~1 DB round-trip per minute.
 const _configCache = new WeakMap<object, { cfg: any; ts: number }>();
 const CONFIG_CACHE_TTL_MS = 60_000;
+
+// v0.43.0 (INDUSTRIENIVEAU): Poly-Vector canonical label builders for legal chunks.
+function buildStatuteLabel(m: LegalChunkMetadata): string {
+  const ref = m.paragraph_ref ? `§ ${m.paragraph_ref}` : "Norm";
+  const abs = m.absatz ? ` Abs. ${m.absatz}` : "";
+  return `${m.statute_abbr || "unbekannt"} ${ref}${abs}`.trim();
+}
+function buildStatuteLabels(
+  m: LegalChunkMetadata
+): { type: string; text: string; display: string }[] {
+  const labels: { type: string; text: string; display: string }[] = [];
+  if (m.statute_abbr && m.paragraph_ref) {
+    labels.push({
+      type: "statute",
+      text: `${m.statute_abbr} § ${m.paragraph_ref}`,
+      display: `${m.statute_abbr} § ${m.paragraph_ref}`,
+    });
+    if (m.absatz) {
+      labels.push({
+        type: "paragraph",
+        text: `${m.statute_abbr} § ${m.paragraph_ref} Abs. ${m.absatz}`,
+        display: `${m.statute_abbr} § ${m.paragraph_ref} Abs. ${m.absatz}`,
+      });
+    }
+  } else if (m.statute_abbr) {
+    labels.push({ type: "statute", text: m.statute_abbr, display: m.statute_abbr });
+  }
+  return labels;
+}
+function buildDecisionLabels(
+  m: LegalDecisionChunkMetadata
+): { type: string; text: string; display: string }[] {
+  const labels: { type: string; text: string; display: string }[] = [];
+  if (m.court && m.case_number) {
+    labels.push({
+      type: "court_case",
+      text: `${m.court} ${m.case_number}`,
+      display: `${m.court} ${m.case_number}`,
+    });
+  }
+  if (m.ecli) {
+    labels.push({ type: "ecli", text: m.ecli, display: m.ecli });
+  }
+  return labels;
+}
 
 /**
  * v0.20.0 Cathedral II Layer 8 D2 — markdown fence extraction helper.
@@ -387,6 +474,13 @@ export async function importFromContent(
     },
   });
 
+  // v0.43 Embedding-Lock: warn once per process if existing pages were
+  // embedded with a different model than the current gateway. Prevents
+  // silent model mixing during bulk import.
+  if (!opts.noEmbed) {
+    await warnOnEmbeddingMismatch(engine).catch(() => {});
+  }
+
   // v0.41 content-sanity gate. Runs AFTER parseMarkdown so the assessor
   // sees the parsed body (compiled_truth + timeline), title, and
   // frontmatter; runs BEFORE the hash compute so a soft-block that
@@ -702,19 +796,116 @@ export async function importFromContent(
   // is NOT here — flagged pages chunk + embed normally, they just carry a
   // warning marker.)
   const embedSkipped = isEmbedSkipped(parsed.frontmatter) || isQuarantined(parsed.frontmatter);
+  // Detect natural language for markdown chunks (code chunks set their own).
+  const natLang = detectNaturalLanguage(parsed.frontmatter, sourceId);
   if (!embedSkipped) {
     if (parsed.compiled_truth.trim()) {
-      for (const c of chunkText(parsed.compiled_truth)) {
-        chunks.push({
-          chunk_index: chunks.length,
-          chunk_text: c.text,
-          chunk_source: "compiled_truth",
+      // v0.43 Legal Chunker: for legal statute pages (type: law/statute),
+      // use the §-aware legal chunker that preserves paragraph metadata
+      // and splits at Absatz boundaries instead of arbitrary word counts.
+      // For court decisions (type: court_decision), use the structure-aware
+      // decision chunker that splits at Rechtssatz/Entscheidungstexte/etc.
+      const legalPage =
+        isLegalPage(parsed.frontmatter) || parsed.type === "law" || parsed.type === "statute";
+      const courtDecision =
+        isCourtDecisionPage(parsed.frontmatter) ||
+        parsed.type === "court_decision" ||
+        parsed.type === "judgement";
+      if (courtDecision) {
+        const court = typeof parsed.frontmatter.court === "string" ? parsed.frontmatter.court : "";
+        const caseNumber =
+          typeof parsed.frontmatter.case_number === "string" ? parsed.frontmatter.case_number : "";
+        const decisionDate =
+          typeof parsed.frontmatter.decision_date === "string"
+            ? parsed.frontmatter.decision_date
+            : "";
+        const ecli = typeof parsed.frontmatter.ecli === "string" ? parsed.frontmatter.ecli : "";
+        const legalArea =
+          typeof parsed.frontmatter.legal_area === "string" ? parsed.frontmatter.legal_area : "";
+        const jurisdiction =
+          typeof parsed.frontmatter.jurisdiction === "string"
+            ? parsed.frontmatter.jurisdiction
+            : "";
+        const decisionChunks = chunkLegalDecision(parsed.compiled_truth, {
+          court,
+          case_number: caseNumber,
+          decision_date: decisionDate,
+          ecli,
+          legal_area: legalArea,
+          jurisdiction,
         });
+        for (const c of decisionChunks) {
+          chunks.push({
+            chunk_index: chunks.length,
+            chunk_text: c.text,
+            chunk_source: "compiled_truth",
+            language: natLang ?? undefined,
+            embedding_context: formatLegalDecisionEmbeddingContext(c.metadata),
+            document_type: "decision",
+            court: c.metadata.court || undefined,
+            case_number: c.metadata.case_number || undefined,
+            ecli: c.metadata.ecli || undefined,
+            decision_date: c.metadata.decision_date || undefined,
+            legal_area: c.metadata.legal_area || undefined,
+            chunk_role: c.metadata.chunk_role || undefined,
+            canonical_label:
+              c.metadata.court && c.metadata.case_number
+                ? `${c.metadata.court} ${c.metadata.case_number}`
+                : undefined,
+            labels: buildDecisionLabels(c.metadata),
+          });
+        }
+      } else if (legalPage) {
+        const paragraphRef =
+          typeof parsed.frontmatter.paragraph === "string" ? parsed.frontmatter.paragraph : "";
+        const statuteAbbr =
+          typeof parsed.frontmatter.abbreviation === "string"
+            ? parsed.frontmatter.abbreviation
+            : "";
+        const jurisdiction =
+          typeof parsed.frontmatter.jurisdiction === "string"
+            ? parsed.frontmatter.jurisdiction
+            : "";
+        const legalChunks = chunkLegalSection(parsed.compiled_truth, {
+          paragraph_ref: paragraphRef,
+          statute_abbr: statuteAbbr,
+          jurisdiction,
+        });
+        for (const c of legalChunks) {
+          chunks.push({
+            chunk_index: chunks.length,
+            chunk_text: c.text,
+            chunk_source: "compiled_truth",
+            language: natLang ?? undefined,
+            embedding_context: formatLegalSectionEmbeddingContext(c.metadata),
+            document_type: "statute",
+            statute_abbr: c.metadata.statute_abbr || undefined,
+            paragraph_ref: c.metadata.paragraph_ref || undefined,
+            absatz: c.metadata.absatz || undefined,
+            chunk_role: c.metadata.chunk_role || undefined,
+            canonical_label: buildStatuteLabel(c.metadata),
+            labels: buildStatuteLabels(c.metadata),
+          });
+        }
+      } else {
+        for (const c of chunkText(parsed.compiled_truth)) {
+          chunks.push({
+            chunk_index: chunks.length,
+            chunk_text: c.text,
+            chunk_source: "compiled_truth",
+            language: natLang ?? undefined,
+          });
+        }
       }
     }
     if (parsed.timeline?.trim()) {
       for (const c of chunkText(parsed.timeline)) {
-        chunks.push({ chunk_index: chunks.length, chunk_text: c.text, chunk_source: "timeline" });
+        chunks.push({
+          chunk_index: chunks.length,
+          chunk_text: c.text,
+          chunk_source: "timeline",
+          language: natLang ?? undefined,
+        });
       }
     }
 
@@ -765,16 +956,25 @@ export async function importFromContent(
 
   if (!opts.noEmbed && chunks.length > 0) {
     const safeTitle = sanitizeTitle(parsed.title);
-    const legalPage = isLegalPage(parsed.frontmatter);
+    const legalPage =
+      isLegalPage(parsed.frontmatter) ||
+      isCourtDecisionPage(parsed.frontmatter) ||
+      parsed.type === "law" ||
+      parsed.type === "statute" ||
+      parsed.type === "court_decision" ||
+      parsed.type === "judgement";
     const prefix =
       modeRequiresWrapper(effectiveCRMode) && !modeRequiresHaiku(effectiveCRMode)
         ? legalPage
           ? buildLegalContextualPrefix(safeTitle, parsed.frontmatter, null)
           : buildContextualPrefix(safeTitle, null)
         : null;
-    const wrappedTexts = prefix
-      ? chunks.map((c) => wrapChunkForEmbedding(c.chunk_text, prefix, c.chunk_source))
-      : chunks.map((c) => c.chunk_text);
+    const wrappedTexts = chunks.map((c) => {
+      const pageWrapped = prefix
+        ? wrapChunkForEmbedding(c.chunk_text, prefix, c.chunk_source)
+        : c.chunk_text;
+      return c.embedding_context ? `${c.embedding_context}\n\n${pageWrapped}` : pageWrapped;
+    });
     const embeddings = await embedBatch(wrappedTexts);
     for (let i = 0; i < chunks.length; i++) {
       chunks[i].embedding = embeddings[i];
@@ -836,7 +1036,17 @@ export async function importFromContent(
         // reindex sweep can find pre-bump pages via `chunker_version < 2`.
         // Also capture the repo-relative source path so sync's delete/rename
         // code can resolve frontmatter-fallback slugs back to their files.
-        chunker_version: MARKDOWN_CHUNKER_VERSION,
+        // v0.43: legal pages use LEGAL_CHUNKER_VERSION so reindex can find
+        // pre-legal-chunker pages and rebuild them on the new §-aware shape.
+        // Court decisions use LEGAL_DECISION_CHUNKER_VERSION (same value=4).
+        chunker_version:
+          isCourtDecisionPage(parsed.frontmatter) ||
+          parsed.type === "court_decision" ||
+          parsed.type === "judgement"
+            ? LEGAL_DECISION_CHUNKER_VERSION
+            : isLegalPage(parsed.frontmatter) || parsed.type === "law" || parsed.type === "statute"
+              ? LEGAL_CHUNKER_VERSION
+              : MARKDOWN_CHUNKER_VERSION,
         source_path: opts.sourcePath ?? null,
         // v0.39.3.0 provenance write-through (WARN-8). Engine layer applies
         // COALESCE-preserve UPDATE so omitting these on a later put_page
@@ -1222,6 +1432,12 @@ export async function importCodeFile(
       language: lang,
     },
   });
+
+  // v0.43 Embedding-Lock: warn once per process if existing pages were
+  // embedded with a different model than the current gateway.
+  if (!opts.noEmbed) {
+    await warnOnEmbeddingMismatch(engine).catch(() => {});
+  }
 
   // Hash for idempotency. CHUNKER_VERSION is folded in so chunker shape
   // changes across releases force clean re-chunks without sync --force.

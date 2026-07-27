@@ -78,8 +78,8 @@ export default function RciidSettingsPage() {
       <PageHeader
         title={t("crypto_forensics.settings_title" as DashboardKey)}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Settings", href: "/dashboard/settings" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("settings.title" as DashboardKey), href: "/dashboard/settings" },
           { label: t("crypto_forensics.settings_title" as DashboardKey) },
         ]}
         actions={
@@ -157,7 +157,7 @@ export default function RciidSettingsPage() {
               type="password"
               value={webhookSecret}
               onChange={(e) => setWebhookSecret(e.target.value)}
-              placeholder="HMAC-SHA256 Secret"
+              placeholder={t("settings.rciid.ph_hmac")}
             />
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
               Environment variable: <code className="font-mono">RCIID_WEBHOOK_SECRET</code>

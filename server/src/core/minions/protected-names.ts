@@ -75,6 +75,12 @@ export const PROTECTED_JOB_NAMES: ReadonlySet<string> = new Set([
   // (with allowProtectedSubmit) after persisting the original bytes; an
   // MCP/OAuth caller must not be able to queue arbitrary extraction work.
   "extract-document",
+  // Tabular Review (async arm): bulk document analysis — one chat call per
+  // document row, up to 500 rows per run. Only the trusted web-api
+  // start/retry routes submit it (with allowProtectedSubmit) after
+  // matter-scope/ACL validation; an MCP/OAuth caller must not queue
+  // arbitrary bulk LLM spend.
+  "tabular-review",
   // v0.46 — Incremental consolidation trigger (Hindsight). Runs
   // extract_facts + consolidate for specific slugs after ingest. Current
   // v0.31 consolidate is deterministic (no LLM), but v0.32 will add Sonnet

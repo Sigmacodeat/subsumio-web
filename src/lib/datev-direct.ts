@@ -1,13 +1,13 @@
 /**
- * DATEV-Direktanbindung — API statt Datei
- * =========================================
- * Extends existing CSV export with DATEV Rechnungsdatenservice /
- * Buchungsdatenservice API integration.
+ * DATEV-Export — CSV-kompatible Datensätze
+ * ========================================
+ * Erzeugt DATEV-kompatible CSV-Datensätze für manuellen Import in DATEV
+ * Unternehmen online. Keine direkte API-Verbindung zu DATEV.
  */
 
 export type DatevExportType = "invoices" | "bookings" | "master_data";
 
-export type DatevExportStatus = "pending" | "sent" | "confirmed" | "failed";
+export type DatevExportStatus = "pending" | "generated" | "sent" | "confirmed" | "failed";
 
 export interface DatevDirectExport {
   id: string;

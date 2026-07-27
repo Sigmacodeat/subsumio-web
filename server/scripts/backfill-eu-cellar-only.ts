@@ -32,13 +32,13 @@ const concIdx = args.indexOf("--concurrency");
 const limitIdx = args.indexOf("--limit");
 const dryRun = args.includes("--dry-run");
 
-const TARGET_DIR = dirIdx >= 0 ? args[dirIdx + 1] : "law-corpus/eu/regulations";
+const _targetDir = dirIdx >= 0 ? args[dirIdx + 1] : "law-corpus/eu/regulations";
+const _corpusRoot = process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "..", "law-corpus");
+const TARGET_DIR = _targetDir;
+const ABS_DIR = join(_corpusRoot, _targetDir.replace(/^law-corpus\//, ""));
 const CONCURRENCY = concIdx >= 0 ? parseInt(args[concIdx + 1], 10) : 5;
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : 0;
 const RATE_LIMIT_MS = 500;
-
-const _scriptDir = dirname(fileURLToPath(import.meta.url));
-const ABS_DIR = join(_scriptDir, "..", "..", TARGET_DIR);
 
 // ── Helpers ────────────────────────────────────────────────────────────
 

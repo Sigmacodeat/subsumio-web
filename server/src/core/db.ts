@@ -173,6 +173,18 @@ export function resolveSessionTimeouts(): Record<string, string> {
   // managed pooler tiers reject unknown startup parameters. Users can enable
   // it explicitly once they know their Postgres version supports it.
   add("GBRAIN_CLIENT_CHECK_INTERVAL", "client_connection_check_interval", "");
+
+  // HNSW GUCs — applied as startup parameters so they cover ALL vector search
+  // paths (searchVector, searchTakesVector, findCandidateDuplicates,
+  // query_cache.lookup), not just those wrapped in sql.begin() transactions.
+  // pgvector 0.8.0+ features: ef_search controls candidate list size at query
+  // time (default 40 → 100 for better recall), iterative_scan prevents
+  // incomplete results on filtered queries, max_scan_tuples bounds the scan.
+  // Override via env or set to '0'/'off' to disable.
+  add("GBRAIN_HNSW_EF_SEARCH", "hnsw.ef_search", "100");
+  add("GBRAIN_HNSW_ITERATIVE_SCAN", "hnsw.iterative_scan", "relaxed_order");
+  add("GBRAIN_HNSW_MAX_SCAN_TUPLES", "hnsw.max_scan_tuples", "20000");
+
   return out;
 }
 
@@ -242,7 +254,7 @@ export async function connect(config: EngineConfig): Promise<boolean> {
     const opts: Record<string, unknown> = {
       max: resolvePoolSize(),
       idle_timeout: 20,
-      connect_timeout: 10,
+      connect_timeout: 60,
       types: {
         // Register pgvector type
         bigint: postgres.BigInt,

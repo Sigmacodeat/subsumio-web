@@ -19,6 +19,7 @@ import {
   Server,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 interface BackupTarget {
   type: string;
@@ -97,6 +98,7 @@ function formatDate(iso: string | null): string {
 }
 
 export default function DRPage() {
+  const { t } = useLang();
   const queryClient = useQueryClient();
   const [actionResult, setActionResult] = useState<string | null>(null);
 
@@ -142,10 +144,10 @@ export default function DRPage() {
   return (
     <div className="container mx-auto max-w-6xl space-y-6 p-6">
       <PageHeader
-        title="Backups & Disaster Recovery"
-        description="Backup-Manifeste, Restore-Drills, RPO/RTO-Compliance und Wiederherstellung"
+        title={t("admin.dr.title")}
+        description={t("admin.dr.desc")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: "Admin", href: "/dashboard/admin" },
           { label: "DR" },
         ]}

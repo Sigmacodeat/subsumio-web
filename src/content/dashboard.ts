@@ -114,10 +114,10 @@ export const D = {
   "nav.graph": { de: "Graph", en: "Graph" },
   "nav.upload": { de: "Upload", en: "Upload" },
   "nav.rag_eval": { de: "RAG-Eval", en: "RAG Eval" },
-  "nav.portfolio_insights": { de: "Portfolio Insights", en: "Portfolio Insights" },
+  "nav.portfolio_insights": { de: "Portfolio-Analysen", en: "Portfolio Insights" },
   "nav.analytics_hub": { de: "Berichte & Insights", en: "Reports & Insights" },
   "nav.deep_analysis": { de: "Cross-Doc Analyse", en: "Cross-Doc Analysis" },
-  "nav.adoption_analytics": { de: "Adoption Analytics", en: "Adoption Analytics" },
+  "nav.adoption_analytics": { de: "Nutzungsanalysen", en: "Adoption Analytics" },
   "nav.shared_spaces": { de: "Geteilte Räume", en: "Shared Spaces" },
 
   // ── Sidebar: nav items (cases & deadlines) ──
@@ -150,7 +150,7 @@ export const D = {
   "nav.commentaries": { de: "Kommentierungen", en: "Commentaries" },
   "nav.kollisionspruefung": { de: "Kollisionsprüfung", en: "Conflict Check" },
   "nav.tabular_review": { de: "Massen-Review", en: "Bulk Review" },
-  "nav.obligation_tracking": { de: "Obligation Tracking", en: "Obligation Tracking" },
+  "nav.obligation_tracking": { de: "Verpflichtungs-Tracking", en: "Obligation Tracking" },
   "nav.case_scanner": { de: "Akten-Scanner", en: "Case Scanner" },
   "nav.clause_library": { de: "Klausel-Bibliothek", en: "Clause Library" },
   "nav.templates": { de: "Vorlagen", en: "Templates" },
@@ -362,6 +362,10 @@ export const D = {
   "nav.tooltip.ai_model": {
     de: "KI-Modell-Auswahl und Provider-Konfiguration — selten geändert, bewusst im System-Tier",
     en: "AI model selection and provider configuration — rarely changed, intentionally in system tier",
+  },
+  "nav.tooltip.corpus_dashboard": {
+    de: "Chunking, Embedding-Coverage und Retrieval-Qualität überwachen — Corpus-Gesundheit und Re-Chunk-Empfehlungen",
+    en: "Monitor chunking, embedding coverage and retrieval quality — corpus health and re-chunk recommendations",
   },
 
   // ── Sidebar: nav items (industries — coming soon) ──
@@ -775,7 +779,10 @@ export const D = {
   },
   "tax.triage.analyze": { de: "Analysieren", en: "Analyze" },
   "tax.triage.analyzing": { de: "Wird analysiert...", en: "Analyzing..." },
-  "tax.triage.error": { de: "Triage konnte nicht durchgeführt werden", en: "Triage analysis failed" },
+  "tax.triage.error": {
+    de: "Triage konnte nicht durchgeführt werden",
+    en: "Triage analysis failed",
+  },
   "tax.triage.empty": {
     de: "Nachrichten eingeben und auf 'Analysieren' klicken.",
     en: "Enter messages and click 'Analyze'.",
@@ -1030,8 +1037,8 @@ export const D = {
   "sidebar.brand": { de: "Subsumio", en: "Subsumio" },
   "sidebar.brand_tax": { de: "Subsumio Tax", en: "Subsumio Tax" },
   "sidebar.brain_status": { de: "Wissensbasis", en: "Knowledge base" },
-  "sidebar.active": { de: "Active", en: "Active" },
-  "sidebar.pages_entities": { de: "pages", en: "pages" },
+  "sidebar.active": { de: "Aktiv", en: "Active" },
+  "sidebar.pages_entities": { de: "Seiten", en: "pages" },
   "sidebar.changes_pending": { de: "Änderung(en) ausstehend", en: "change(s) pending" },
   "sidebar.sync_now": { de: "Jetzt syncen", en: "Sync now" },
   "sidebar.syncing": { de: "Sync…", en: "Syncing…" },
@@ -1289,7 +1296,7 @@ export const D = {
   "cockpit.stat_cases_desc": { de: "aktive Mandate", en: "active matters" },
   "cockpit.stat_inbox": { de: "Eingang", en: "Inbox" },
   "cockpit.stat_inbox_desc": { de: "zu triagieren", en: "to triage" },
-  "cockpit.stat_reviews": { de: "Reviews", en: "Reviews" },
+  "cockpit.stat_reviews": { de: "Prüfungen", en: "Reviews" },
   "cockpit.stat_reviews_desc": { de: "Freigaben offen", en: "pending approvals" },
   "cockpit.stat_review_inbox": { de: "Eingang prüfen", en: "Review inbox" },
   "cockpit.stat_billing": { de: "Abrechnung", en: "Billing" },
@@ -1313,9 +1320,9 @@ export const D = {
   "cockpit.ai_control_title": { de: "Qualitätskontrolle", en: "Quality Control" },
   "cockpit.open": { de: "Öffnen", en: "Open" },
   "cockpit.plan": { de: "Planen", en: "Plan" },
-  "cockpit.triage": { de: "Triage", en: "Triage" },
+  "cockpit.triage": { de: "Eingang prüfen", en: "Triage" },
   "cockpit.review": { de: "Prüfen", en: "Review" },
-  "cockpit.check": { de: "Check", en: "Check" },
+  "cockpit.check": { de: "Prüfen", en: "Check" },
   "cockpit.analyze": { de: "Analyse", en: "Analyze" },
   "cockpit.overdue": { de: "Überfällig", en: "Overdue" },
   "cockpit.no_deadlines": {
@@ -1760,6 +1767,17 @@ export const D = {
   "calendar.save_error": { de: "Speichern fehlgeschlagen", en: "Save failed" },
   "calendar.delete_error": { de: "Löschen fehlgeschlagen", en: "Delete failed" },
   "calendar.created": { de: "Termin erstellt", en: "Appointment created" },
+  "calendar.outlook_created": { de: "Outlook-Termin erstellt", en: "Outlook appointment created" },
+  "calendar.create_error": { de: "Fehler beim Erstellen", en: "Failed to create" },
+  "calendar.outlook_title": { de: "Outlook-Termin erstellen", en: "Create Outlook appointment" },
+  "calendar.subject": { de: "Betreff", en: "Subject" },
+  "calendar.subject_placeholder": {
+    de: "Termin mit Mandant Müller",
+    en: "Appointment with client Müller",
+  },
+  "calendar.start": { de: "Start", en: "Start" },
+  "calendar.end": { de: "Ende", en: "End" },
+  "calendar.desc_optional": { de: "Beschreibung (optional)", en: "Description (optional)" },
   "calendar.updated": { de: "Termin aktualisiert", en: "Appointment updated" },
   "calendar.deleted": { de: "Termin gelöscht", en: "Appointment deleted" },
   "calendar.more": { de: "weitere", en: "more" },
@@ -2182,6 +2200,10 @@ export const D = {
     de: "Qualitätsbewertung der KI-Antworten",
     en: "Quality evaluation of AI responses",
   },
+  "settings.tile_ai_quality_desc": {
+    de: "Halluzinations-Metriken, Guardrail-Stats und ECE-Kalibrierung",
+    en: "Hallucination metrics, guardrail stats and ECE calibration",
+  },
   "settings.tile_chat_analytics_desc": {
     de: "Nutzungsstatistiken der KI-Chat-Funktion",
     en: "Usage statistics for AI chat features",
@@ -2371,6 +2393,36 @@ export const D = {
     de: "RCIID ist nicht konfiguriert. Bitte API-Key setzen.",
     en: "RCIID is not configured. Please set API key.",
   },
+  "crypto_forensics.case_context": { de: "Fallkontext", en: "Case Context" },
+  "crypto_forensics.case_context_desc": {
+    de: "Strukturierte Falldaten für RCIID übermitteln",
+    en: "Submit structured case data to RCIID",
+  },
+  "crypto_forensics.quality_score": { de: "Datenqualität", en: "Data Quality" },
+  "crypto_forensics.quality_score_low": {
+    de: "Niedrig — Daten ergänzen für bessere Automatisierung",
+    en: "Low — supplement data for better automation",
+  },
+  "crypto_forensics.improve_data": { de: "Daten ergänzen", en: "Improve Data" },
+  "crypto_forensics.scan_case": { de: "Fall scannen", en: "Scan Case" },
+  "crypto_forensics.scan_case_desc": {
+    de: "Alle Dokumente nach Krypto-Adressen durchsuchen",
+    en: "Search all documents for crypto addresses",
+  },
+  "crypto_forensics.scan_results": { de: "Scan-Ergebnisse", en: "Scan Results" },
+  "crypto_forensics.accept_suggestion": {
+    de: "Für Analyse übernehmen",
+    en: "Accept for Analysis",
+  },
+  "crypto_forensics.checksum_valid": { de: "Prüfsumme gültig", en: "Checksum Valid" },
+  "crypto_forensics.checksum_invalid": { de: "Prüfsumme ungültig", en: "Checksum Invalid" },
+  "crypto_forensics.target_addresses": { de: "Target-Adressen", en: "Target Addresses" },
+  "crypto_forensics.victim_deposits": { de: "Opfer-Einzahlungen", en: "Victim Deposits" },
+  "crypto_forensics.known_recipients": { de: "Bekannte Empfänger", en: "Known Recipients" },
+  "crypto_forensics.exchange_links": { de: "Exchange-Konten", en: "Exchange Links" },
+  "crypto_forensics.evidence_refs": { de: "Beweismittel", en: "Evidence" },
+  "crypto_forensics.timeline": { de: "Timeline", en: "Timeline" },
+  "crypto_forensics.summary": { de: "Zusammenfassung", en: "Summary" },
   "settings.tab_brain": { de: "Wissensbasis", en: "Knowledge Base" },
   "settings.tab_api": { de: "API Keys", en: "API Keys" },
   "settings.tab_dream": { de: "Dream Cycle", en: "Dream Cycle" },
@@ -2570,6 +2622,14 @@ export const D = {
     de: "E-Mail-Adresse im From-Feld",
     en: "Email address in the From field",
   },
+  "settings.aria_email": { de: "E-Mail", en: "Email" },
+  "settings.aria_phone": { de: "Telefon", en: "Phone" },
+  "settings.aria_chamber": { de: "Kammer", en: "Bar association / chamber" },
+  "settings.aria_bank": { de: "Bank", en: "Bank" },
+  "settings.aria_iban": { de: "IBAN", en: "IBAN" },
+  "settings.aria_bic": { de: "BIC", en: "BIC" },
+  "settings.aria_smtp_host": { de: "SMTP-Host", en: "SMTP host" },
+  "settings.aria_smtp_port": { de: "SMTP-Port", en: "SMTP port" },
   "settings.save_fail": { de: "Speichern fehlgeschlagen:", en: "Save failed:" },
   "settings.save": { de: "Einstellungen speichern", en: "Save settings" },
   "settings.kanzlei_save_fail": {
@@ -3207,6 +3267,10 @@ export const D = {
   "error.rag-eval_title": {
     de: "RAG-Eval konnte nicht geladen werden",
     en: "RAG eval could not be loaded",
+  },
+  "error.ai_quality_title": {
+    de: "KI-Qualitätsmonitoring konnte nicht geladen werden",
+    en: "AI quality monitoring could not be loaded",
   },
   "error.rechtsprechung_title": {
     de: "Rechtsprechung konnte nicht geladen werden",
@@ -4451,9 +4515,34 @@ export const D = {
   },
   "billing.contact_us": { de: "Sprich mit uns", en: "Talk to us" },
   "billing.annual_note": {
-    de: "Jahreszahlung −20 % — im Checkout wählbar.",
-    en: "Annual billing −20% — selectable at checkout.",
+    de: "Monatliche Abrechnung — monatlich kündbar.",
+    en: "Monthly billing — cancel monthly.",
   },
+  "billing.credit_success": {
+    de: "Credits erfolgreich gekauft — dein Saldo wurde aktualisiert.",
+    en: "Credits purchased successfully — your balance has been updated.",
+  },
+  "billing.credit_cancelled": {
+    de: "Credit-Kauf abgebrochen — es wurden keine Credits abgebucht.",
+    en: "Credit purchase cancelled — no credits were charged.",
+  },
+  "billing.credits_title": { de: "Credits", en: "Credits" },
+  "billing.credits_remaining": { de: "Credits verfügbar", en: "credits available" },
+  "billing.low_credits": {
+    de: "Wenige Credits übrig — kaufe ein Paket, um KI-Funktionen weiter zu nutzen.",
+    en: "Few credits remaining — buy a pack to continue using AI features.",
+  },
+  "billing.buy_credits": { de: "Credits kaufen", en: "Buy credits" },
+  "billing.buy": { de: "Kaufen", en: "Buy" },
+  "billing.credit_costs": { de: "Kosten pro Operation", en: "Cost per operation" },
+  "billing.auto_reload": { de: "Automatisch aufladen", en: "Auto reload" },
+  "billing.auto_reload_desc": {
+    de: "Automatisch Credits kaufen, wenn der Saldo unter den Schwellwert fällt",
+    en: "Automatically buy credits when the balance falls below the threshold",
+  },
+  "billing.save": { de: "Speichern", en: "Save" },
+  "billing.transaction_history": { de: "Transaktionsverlauf", en: "Transaction history" },
+  "billing.export_case_usage": { de: "KI-Kosten pro Akte", en: "AI costs per matter" },
   "billing.checkout_failed": {
     de: "Checkout fehlgeschlagen. Bitte erneut versuchen.",
     en: "Checkout failed. Please try again.",
@@ -4570,6 +4659,15 @@ export const D = {
     en: "Benchmark, gate check and human review for assistant responses",
   },
   "rag_eval.breadcrumb": { de: "Retrieval-Qualität", en: "Retrieval Quality" },
+
+  // ── AI Quality page ──
+  "ai_quality.title": { de: "KI-Qualitätsmonitoring", en: "AI Quality Monitoring" },
+  "ai_quality.desc": {
+    de: "Halluzinations-Metriken, Guardrail-Stats, ECE-Kalibrierung und Reasoning Traces",
+    en: "Hallucination metrics, guardrail stats, ECE calibration and reasoning traces",
+  },
+  "ai_quality.breadcrumb": { de: "KI-Qualität", en: "AI Quality" },
+  "nav.ai_quality": { de: "KI-Qualität", en: "AI Quality" },
 
   // ── Review Queue page ──
   "review_queue.title": { de: "Freigaben", en: "Approvals" },
@@ -5242,6 +5340,15 @@ export const D = {
   "workflows.filter_completed": { de: "Abgeschlossen", en: "Completed" },
   "workflows.templates": { de: "Ablauf-Vorlagen", en: "Workflow templates" },
   "workflows.start": { de: "Ablauf starten", en: "Start workflow" },
+  "workflows.cancel": { de: "Abbrechen", en: "Cancel" },
+  "workflows.task_label": { de: "Aufgabe (optional anpassen)", en: "Task (optional, customize)" },
+  "workflows.start_button": { de: "Workflow starten", en: "Start workflow" },
+  "workflows.starting": { de: "Starte...", en: "Starting..." },
+  "workflows.empty_filter": {
+    de: "Keine Workflows in diesem Filter.",
+    en: "No workflows in this filter.",
+  },
+  "workflows.case_label": { de: "Zugehörige Akte (optional)", en: "Associated case (optional)" },
 
   // ── RAG Eval page: additional strings ──
   "rag_eval.history": { de: "Historie", en: "History" },
@@ -6168,8 +6275,8 @@ export const D = {
   // ── Tabular Review page ──
   "tabular.title": { de: "Massen-Review", en: "Bulk Review" },
   "tabular.description": {
-    de: "Eine Prüffrage gegen viele Dokumente — Antworten im Raster, jede Zelle mit Quelle",
-    en: "One review question across many documents — answers in a grid, each cell with source",
+    de: "Viele Dokumente × mehrere Prüffragen — Antworten im Raster, jede Zelle mit verifiziertem Zitat",
+    en: "Many documents × multiple review questions — answers in a grid, each cell with a verified quote",
   },
   "tabular.breadcrumb": { de: "Massen-Review", en: "Bulk Review" },
   "tabular.doc_type": { de: "Dokumenttyp (Zeilen)", en: "Document type (rows)" },
@@ -6179,7 +6286,7 @@ export const D = {
   "tabular.type_decisions": { de: "Urteile", en: "Decisions" },
   "tabular.type_all": { de: "Alle Typen", en: "All types" },
   "tabular.max_docs": { de: "Max. Dokumente", en: "Max documents" },
-  "tabular.questions_label": { de: "Fragen (Spalten, max. 8)", en: "Questions (columns, max 8)" },
+  "tabular.questions_label": { de: "Fragen (Spalten, max. 20)", en: "Questions (columns, max 20)" },
   "tabular.question_placeholder": { de: "Frage {{n}}", en: "Question {{n}}" },
   "tabular.add_question": { de: "Frage hinzufügen", en: "Add question" },
   "tabular.btn_run": { de: "Review starten", en: "Start review" },
@@ -6209,6 +6316,91 @@ export const D = {
     de: "Welche Fristen werden genannt?",
     en: "Which deadlines are mentioned?",
   },
+
+  // ── Tabular Review: async run flow (start / polling / retry) ──
+  "tabular.source_label": { de: "Dokumentauswahl", en: "Document selection" },
+  "tabular.source_type": { de: "Nach Dokumenttyp", en: "By document type" },
+  "tabular.source_case": { de: "Akte", en: "Case" },
+  "tabular.case_select_placeholder": { de: "Akte wählen…", en: "Select case…" },
+  "tabular.cases_loading": { de: "Akten werden geladen…", en: "Loading cases…" },
+  "tabular.error_no_case": { de: "Bitte eine Akte auswählen.", en: "Please select a case." },
+  "tabular.title_label": { de: "Titel (optional)", en: "Title (optional)" },
+  "tabular.title_placeholder": {
+    de: "z. B. Zeugenfragen Q3-Bericht",
+    en: "e.g. Witness questions Q3 report",
+  },
+  "tabular.remove_question": { de: "Frage {{n}} entfernen", en: "Remove question {{n}}" },
+  "tabular.btn_starting": { de: "Starte Run…", en: "Starting run…" },
+  "tabular.run_started": {
+    de: "Review-Run gestartet — Ergebnisse erscheinen laufend.",
+    en: "Review run started — results appear as they complete.",
+  },
+  "tabular.run_loading": { de: "Run wird geladen…", en: "Loading run…" },
+  "tabular.run_error_load": { de: "Run konnte nicht geladen werden.", en: "Could not load run." },
+  "tabular.run_clear": { de: "Ansicht schließen", en: "Close view" },
+  "tabular.new_run": { de: "Neuer Run", en: "New run" },
+  "tabular.last_run_title": { de: "Letzten Run fortsetzen", en: "Resume last run" },
+  "tabular.last_run_open": { de: "Öffnen", en: "Open" },
+  "tabular.last_run_dismiss": { de: "Verwerfen", en: "Dismiss" },
+  "tabular.run_created": { de: "Erstellt: {{date}}", en: "Created: {{date}}" },
+  "tabular.status_queued": { de: "In Warteschlange", en: "Queued" },
+  "tabular.status_running": { de: "Läuft", en: "Running" },
+  "tabular.status_done": { de: "Abgeschlossen", en: "Done" },
+  "tabular.status_partial": { de: "Teilweise abgeschlossen", en: "Partially done" },
+  "tabular.status_failed": { de: "Fehlgeschlagen", en: "Failed" },
+  "tabular.progress_label": { de: "Fortschritt", en: "Progress" },
+  "tabular.progress_summary": {
+    de: "{{done}} von {{total}} Dokumenten analysiert",
+    en: "{{done}} of {{total}} documents analyzed",
+  },
+  "tabular.progress_failed": { de: "{{count}} fehlgeschlagen", en: "{{count}} failed" },
+  "tabular.elapsed": { de: "Laufzeit {{time}}", en: "Elapsed {{time}}" },
+  "tabular.eta": { de: "ca. {{time}} verbleibend", en: "approx. {{time}} remaining" },
+  "tabular.estimate_label": { de: "Kostenschätzung", en: "Cost estimate" },
+  "tabular.estimate_summary": {
+    de: "{{calls}} LLM-Aufrufe · ~{{input}} Input-Token · ~{{output}} Output-Token",
+    en: "{{calls}} LLM calls · ~{{input}} input tokens · ~{{output}} output tokens",
+  },
+  "tabular.estimate_cost": { de: "~{{usd}} (geschätzt)", en: "~{{usd}} (estimated)" },
+  "tabular.retry_row": { de: "Erneut versuchen", en: "Retry" },
+  "tabular.retry_all": { de: "Alle Fehler erneut versuchen", en: "Retry all errors" },
+  "tabular.retry_failed": { de: "Retry fehlgeschlagen.", en: "Retry failed." },
+  "tabular.partial_banner": {
+    de: "{{count}} Dokument(e) konnten nicht analysiert werden. Du kannst nur die Fehler erneut versuchen — fertige Ergebnisse bleiben erhalten.",
+    en: "{{count}} document(s) could not be analyzed. You can retry only the failures — completed results are kept.",
+  },
+  "tabular.failed_banner": {
+    de: "Der Run ist fehlgeschlagen: {{error}}",
+    en: "The run failed: {{error}}",
+  },
+  "tabular.filter_doc_placeholder": { de: "Dokument filtern…", en: "Filter documents…" },
+  "tabular.filter_errors_only": { de: "Nur Fehler", en: "Errors only" },
+  "tabular.filters_reset": { de: "Filter zurücksetzen", en: "Reset filters" },
+  "tabular.rows_shown": { de: "{{shown}} von {{total}} Zeilen", en: "{{shown}} of {{total}} rows" },
+  "tabular.no_rows_match": {
+    de: "Keine Zeilen entsprechen den Filtern.",
+    en: "No rows match the filters.",
+  },
+  "tabular.filter_col_label": { de: "Filter: {{question}}", en: "Filter: {{question}}" },
+  "tabular.filter_col_all": { de: "Alle", en: "All" },
+  "tabular.filter_col_found": { de: "Gefunden", en: "Found" },
+  "tabular.filter_col_not_found": { de: "Nicht gefunden", en: "Not found" },
+  "tabular.row_pending": { de: "Wartet auf Analyse…", en: "Waiting for analysis…" },
+  "tabular.row_error_label": { de: "Fehler", en: "Error" },
+  "tabular.col_status": { de: "Status", en: "Status" },
+  "tabular.cell_not_found_chip": { de: "nicht im Dokument", en: "not in document" },
+  "tabular.cell_no_quote_chip": { de: "ohne Zitat", en: "no quote" },
+  "tabular.cell_citations_count": { de: "{{count}} Zitat(e)", en: "{{count}} citation(s)" },
+  "tabular.cell_answer_label": { de: "Antwort", en: "Answer" },
+  "tabular.cell_quotes_label": {
+    de: "Verifizierte Zitate aus dem Dokument",
+    en: "Verified quotes from the document",
+  },
+  "tabular.cell_no_quotes": {
+    de: "Keine Zitate verfügbar — Antwort ohne wörtlichen Beleg, bitte besonders prüfen.",
+    en: "No quotes available — answer without verbatim evidence, please review carefully.",
+  },
+  "tabular.cell_open_document": { de: "Dokument öffnen", en: "Open document" },
 
   // ── Clause Library page ──
   "clauses.title": { de: "Klausel-Bibliothek", en: "Clause Library" },
@@ -7595,6 +7787,7 @@ export const D = {
   },
   "templates.toast_saved": { de: "Vorlage gespeichert", en: "Template saved" },
   "templates.toast_deleted": { de: "Vorlage gelöscht", en: "Template deleted" },
+  "templates.toast_delete_failed": { de: "Löschen fehlgeschlagen", en: "Delete failed" },
   "templates.toast_error": { de: "Fehler", en: "Error" },
   "templates.cat_pleading": { de: "Schriftsatz", en: "Pleading" },
   "templates.cat_contract": { de: "Vertrag", en: "Contract" },
@@ -7650,12 +7843,34 @@ export const D = {
   // ── Judgements Sync page strings ──
   "judgements.imported": { de: "Urteile importiert", en: "judgements imported" },
   "judgements.no_new": { de: "Keine neuen Urteile", en: "No new judgements" },
+  "judgements.sync_title": { de: "Rechtsprechungs-Sync", en: "Case Law Sync" },
+  "judgements.sync_desc": {
+    de: "OGH, BGH, EuGH Urteile ins Brain laden",
+    en: "Load OGH, BGH, EuGH rulings into Brain",
+  },
+  "judgements.sync_button": { de: "Jetzt synchronisieren", en: "Sync now" },
+  "judgements.syncing": { de: "Synchronisiere…", en: "Syncing…" },
+  "judgements.stat_in_brain": { de: "Im Brain", en: "In Brain" },
+  "judgements.stat_sources": { de: "Quellen", en: "Sources" },
+  "judgements.stat_courts": { de: "Gerichte", en: "Courts" },
+  "judgements.cli_title": { de: "CLI-Befehle", en: "CLI Commands" },
+  "judgements.copy": { de: "Kopieren", en: "Copy" },
+  "judgements.loading": { de: "Lädt…", en: "Loading…" },
+  "judgements.error_prefix": { de: "Fehler:", en: "Error:" },
+  "judgements.notice_title": { de: "Hinweis zur Datenaktualität", en: "Data freshness notice" },
+  "judgements.notice_body": {
+    de: "Öffentliche Rechtsprechungsdatenbanken aktualisieren sich täglich. Der Konnektor führt ein Delta-Sync durch — bereits vorhandene Urteile werden nicht dupliziert. Für produktive Nutzung empfehlen wir einen täglichen Cron-Job:",
+    en: "Public case law databases update daily. The connector performs a delta sync — existing rulings are not duplicated. For production use, we recommend a daily cron job:",
+  },
 
   // ── Opponents page strings ──
   "opponents.error_load": { de: "Fehler", en: "Error" },
 
   // ── Document Requests page strings ──
   "docreq.no_message": { de: "Keine Nachricht gespeichert.", en: "No message saved." },
+  "docreq.toast_created": { de: "Dokumentanfrage erstellt", en: "Document request created" },
+  "docreq.toast_create_failed": { de: "Erstellung fehlgeschlagen", en: "Creation failed" },
+  "docreq.toast_update_failed": { de: "Aktualisierung fehlgeschlagen", en: "Update failed" },
 
   // ── Compliance page strings ──
   "compliance.error_save": {
@@ -8175,6 +8390,10 @@ export const D = {
 
   // ── Workflow Builder page strings ──
   "builder.back": { de: "Zurück", en: "Back" },
+  "builder.save": { de: "Workflow speichern", en: "Save workflow" },
+  "builder.close_inspector": { de: "Inspektor schließen", en: "Close inspector" },
+  "builder.workflow_name": { de: "Workflow-Name", en: "Workflow name" },
+  "builder.workflow_description": { de: "Beschreibung (optional)", en: "Description (optional)" },
   "builder.depends_on": { de: "Hängt ab von", en: "Depends on" },
   "builder.delete_step": { de: "Step löschen", en: "Delete step" },
   "builder.step.risk": { de: "Risiko prüfen", en: "Check risk" },
@@ -9274,6 +9493,20 @@ export const D = {
     en: "Shared workspaces for teams and clients",
   },
   "shared.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+  "shared.new_title": { de: "Neuer Shared Space", en: "New Shared Space" },
+  "shared.label_title": { de: "Titel", en: "Title" },
+  "shared.title_placeholder": {
+    de: "z.B. Kooperation Müller & Partner",
+    en: "e.g. Cooperation Müller & Partner",
+  },
+  "shared.label_desc": { de: "Beschreibung (optional)", en: "Description (optional)" },
+  "shared.desc_placeholder": {
+    de: "Kurze Beschreibung des Zwecks dieses Spaces",
+    en: "Brief description of this space's purpose",
+  },
+  "shared.cancel": { de: "Abbrechen", en: "Cancel" },
+  "shared.create": { de: "Erstellen", en: "Create" },
+  "shared.creating": { de: "Wird erstellt…", en: "Creating…" },
 
   "deep_analysis.title": { de: "Tiefenanalyse", en: "Deep Analysis" },
   "deep_analysis.description": {
@@ -9382,6 +9615,667 @@ export const D = {
   "weekly.inbox": { de: "Posteingang bearbeitet", en: "Inbox processed" },
   "weekly.bea": { de: "beA-Nachrichten beantwortet", en: "beA messages answered" },
   "weekly.complete": { de: "Review abschließen", en: "Complete review" },
+
+  // ── Controlling page strings ──
+  "controlling.title": { de: "Leistungskennzahlen", en: "Performance metrics" },
+  "controlling.desc": {
+    de: "Übersicht über Anwälte, Stunden und Umsatz",
+    en: "Overview of lawyers, hours and revenue",
+  },
+  "controlling.period_month": { de: "Monat", en: "Month" },
+  "controlling.period_quarter": { de: "Quartal", en: "Quarter" },
+  "controlling.period_year": { de: "Jahr", en: "Year" },
+  "controlling.empty_title": { de: "Keine Daten verfügbar", en: "No data available" },
+  "controlling.empty_desc": {
+    de: "Es wurden noch keine Akten mit Zeiterfassung angelegt. Lege Akten an und erfasse Zeiten, um hier Auswertungen zu sehen.",
+    en: "No cases with time entries have been created yet. Create cases and record times to see evaluations here.",
+  },
+  "controlling.kpi_lawyers": { de: "Anwälte", en: "Lawyers" },
+  "controlling.kpi_total_hours": { de: "Gesamtstunden", en: "Total hours" },
+  "controlling.kpi_total_revenue": { de: "Gesamtumsatz", en: "Total revenue" },
+  "controlling.kpi_avg_rate": { de: "Ø Stundensatz", en: "Avg hourly rate" },
+  "controlling.col_lawyer": { de: "Anwalt", en: "Lawyer" },
+  "controlling.col_cases": { de: "Akten", en: "Cases" },
+  "controlling.col_hours": { de: "Stunden", en: "Hours" },
+  "controlling.col_billable": { de: "Abrechenbar", en: "Billable" },
+  "controlling.col_utilization": { de: "Auslastung", en: "Utilization" },
+  "controlling.col_revenue": { de: "Umsatz", en: "Revenue" },
+
+  // ── Opponents page strings ──
+  "opponents.title": { de: "Gegner-Analyse", en: "Opponent Analysis" },
+  "opponents.desc": {
+    de: "Intelligence über Gegner aus allen Akten",
+    en: "Intelligence on opponents across all cases",
+  },
+  "opponents.stat_total": { de: "Gegner gesamt", en: "Total opponents" },
+  "opponents.stat_most_frequent": { de: "Häufigster Gegner", en: "Most frequent opponent" },
+  "opponents.stat_total_cases": { de: "Gesamt-Akten", en: "Total cases" },
+  "opponents.stat_wins": { de: "Gewonnen", en: "Won" },
+  "opponents.retry": { de: "Erneut versuchen", en: "Try again" },
+  "opponents.search_placeholder": { de: "Gegner suchen…", en: "Search opponents…" },
+  "opponents.search_aria": { de: "Gegner suchen", en: "Search opponents" },
+  "opponents.search_clear": { de: "Suche löschen", en: "Clear search" },
+  "opponents.empty_title": {
+    de: "Noch keine Gegner in den Akten erfasst.",
+    en: "No opponents recorded in cases yet.",
+  },
+  "opponents.empty_desc": {
+    de: "Füge Gegner bei der Akten-Erstellung hinzu.",
+    en: "Add opponents when creating cases.",
+  },
+  "opponents.back": { de: "← Zurück zur Übersicht", en: "← Back to overview" },
+  "opponents.cases_count": { de: "Akten", en: "Cases" },
+  "opponents.win_rate": { de: "Siegquote", en: "Win rate" },
+  "opponents.lost": { de: "Verloren", en: "Lost" },
+  "opponents.settled": { de: "Erledigt", en: "Settled" },
+  "opponents.legal_areas": { de: "Rechtsgebiete", en: "Legal areas" },
+  "opponents.case_list": { de: "Akten", en: "Cases" },
+
+  // ── Common shared strings ──
+  "common.optional": { de: "optional", en: "optional" },
+
+  // ── Time tracking page strings ──
+  "time.cancel": { de: "Abbrechen", en: "Cancel" },
+  "time.save": { de: "Speichern", en: "Save" },
+  "time.saving": { de: "Speichern...", en: "Saving..." },
+  "time.delete": { de: "Löschen", en: "Delete" },
+  "time.deleting": { de: "Löschen...", en: "Deleting..." },
+  "time.delete_title": { de: "Zeiteintrag löschen", en: "Delete time entry" },
+  "time.delete_confirm": {
+    de: "Möchten Sie den Eintrag wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    en: "Do you really want to delete this entry? This action cannot be undone.",
+  },
+  "time.edit_title": { de: "Zeiteintrag bearbeiten", en: "Edit time entry" },
+  "time.billable": { de: "Abrechenbar", en: "Billable" },
+  "time.yes": { de: "Ja", en: "Yes" },
+  "time.no": { de: "Nein", en: "No" },
+
+  // ── Memory settings page strings ──
+  "memory.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+  "memory.err_search": { de: "Suche fehlgeschlagen", en: "Search failed" },
+  "memory.pinned": { de: "Angepinnt", en: "Pinned" },
+  "memory.unpinned": { de: "Losgelöst", en: "Unpinned" },
+  "memory.err_pin": { de: "Fehler", en: "Error" },
+  "memory.deleted": { de: "Gelöscht", en: "Deleted" },
+  "memory.err_delete": { de: "Fehler beim Löschen", en: "Failed to delete" },
+  "memory.saved": { de: "Erinnerung gespeichert", en: "Memory saved" },
+  "memory.err_save": { de: "Fehler beim Speichern", en: "Failed to save" },
+  "memory.cancel": { de: "Abbrechen", en: "Cancel" },
+  "memory.delete": { de: "Löschen", en: "Delete" },
+  "memory.desc": {
+    de: "Erinnerungen, Präferenzen und Anweisungen des Copiloten verwalten",
+    en: "Manage memories, preferences and instructions of the copilot",
+  },
+  "memory.type_preference": { de: "Präferenz", en: "Preference" },
+  "memory.type_fact": { de: "Fakt", en: "Fact" },
+  "memory.type_topic": { de: "Thema", en: "Topic" },
+  "memory.type_instruction": { de: "Anweisung", en: "Instruction" },
+  "memory.type_case_note": { de: "Aktennotiz", en: "Case note" },
+  "memory.source_manual": { de: "Manuell", en: "Manual" },
+  "memory.source_inferred": { de: "Inferiert", en: "Inferred" },
+  "memory.source_agent": { de: "Agent", en: "Agent" },
+  "memory.type_all": { de: "Alle", en: "All" },
+  "memory.show_superseded": { de: "Überschriebene anzeigen", en: "Show superseded" },
+  "memory.superseded": { de: "überschrieben", en: "superseded" },
+  "memory.case_label": { de: "Akte:", en: "Case:" },
+  "memory.page_title": { de: "Gedächtnis-Verwaltung", en: "Memory Management" },
+  "memory.breadcrumb_memory": { de: "Gedächtnis", en: "Memory" },
+  "memory.refresh": { de: "Aktualisieren", en: "Refresh" },
+  "memory.type_label": { de: "Typ", en: "Type" },
+  "memory.key_label": { de: "Schlüssel", en: "Key" },
+  "memory.key_placeholder": { de: "z.B. antwortstil", en: "e.g. response_style" },
+  "memory.value_label": { de: "Wert", en: "Value" },
+  "memory.value_placeholder": { de: "z.B. Immer kurze Antworten", en: "e.g. Always short answers" },
+  "memory.save_btn": { de: "Speichern", en: "Save" },
+  "memory.new_btn": { de: "Neue Erinnerung", en: "New memory" },
+  "memory.new_title": { de: "Neue Erinnerung erstellen", en: "Create new memory" },
+  "memory.stat_total": { de: "Gesamt", en: "Total" },
+  "memory.stat_pinned": { de: "Angepinnt", en: "Pinned" },
+  "memory.stat_inferred": { de: "Inferiert", en: "Inferred" },
+  "memory.stat_agent": { de: "Agent-Aktionen", en: "Agent actions" },
+  "memory.stat_superseded": { de: "Überschrieben", en: "Superseded" },
+  "memory.search_placeholder": {
+    de: "Semantische Suche in Erinnerungen…",
+    en: "Semantic search in memories…",
+  },
+
+  // ── Webhooks settings page strings ──
+  "webhooks.title": { de: "Webhooks", en: "Webhooks" },
+  "webhooks.new": { de: "Neuer Webhook", en: "New webhook" },
+  "webhooks.register_title": { de: "Webhook registrieren", en: "Register webhook" },
+  "webhooks.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+  "webhooks.err_save": { de: "Fehler beim Speichern", en: "Failed to save" },
+  "webhooks.err_delete": { de: "Fehler beim Löschen", en: "Failed to delete" },
+  "webhooks.err_required": {
+    de: "URL, Events und Secret erforderlich",
+    en: "URL, events and secret required",
+  },
+  "webhooks.saved": { de: "Webhook registriert", en: "Webhook registered" },
+  "webhooks.deleted": { de: "Webhook gelöscht", en: "Webhook deleted" },
+  "webhooks.save": { de: "Speichern", en: "Save" },
+  "webhooks.cancel": { de: "Abbrechen", en: "Cancel" },
+  "webhooks.url_label": { de: "URL *", en: "URL *" },
+  "webhooks.events_label": { de: "Events *", en: "Events *" },
+  "webhooks.secret_label": { de: "Secret *", en: "Secret *" },
+  "webhooks.secret_placeholder": {
+    de: "Webhook-Secret (min. 16 Zeichen)",
+    en: "Webhook secret (min. 16 characters)",
+  },
+  "webhooks.desc_label": { de: "Beschreibung", en: "Description" },
+  "webhooks.desc_placeholder": { de: "Optional", en: "Optional" },
+  "webhooks.empty": { de: "Keine Webhooks registriert.", en: "No webhooks registered." },
+  "webhooks.created": { de: "Erstellt:", en: "Created:" },
+
+  // ── Ethical Wall page strings ──
+  "ethical_wall.title": { de: "Ethical Wall", en: "Ethical Wall" },
+  "ethical_wall.save": { de: "Speichern", en: "Save" },
+  "ethical_wall.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
+  "ethical_wall.err_save": { de: "Fehler beim Speichern", en: "Failed to save" },
+  "ethical_wall.saved": { de: "Ethical Wall aktualisiert", en: "Ethical Wall updated" },
+  "ethical_wall.warning": {
+    de: "Die Ethical Wall blockiert den Zugriff auf diese Akte für bestimmte Benutzer. Diese Einschränkung hat Vorrang vor normalen Berechtigungen.",
+    en: "The Ethical Wall blocks access to this case for specific users. This restriction takes precedence over normal permissions.",
+  },
+  "ethical_wall.blocked_users": { de: "Blockierte Benutzer", en: "Blocked users" },
+  "ethical_wall.user_placeholder": {
+    de: "E-Mail oder User-ID eingeben…",
+    en: "Enter email or user ID…",
+  },
+  "ethical_wall.add": { de: "Hinzufügen", en: "Add" },
+  "ethical_wall.empty": { de: "Keine blockierten Benutzer.", en: "No blocked users." },
+  "ethical_wall.changes": { de: "Änderungen", en: "Changes" },
+
+  // ── Notifications page strings ──
+  "notifications.title": { de: "Benachrichtigungen", en: "Notifications" },
+  "notifications.desc": {
+    de: "Alle Ihre Benachrichtigungen an einem Ort",
+    en: "All your notifications in one place",
+  },
+  "notifications.mark_all_read": { de: "Alle gelesen", en: "Mark all read" },
+  "notifications.delete_read": { de: "Gelesene löschen", en: "Delete read" },
+  "notifications.all_marked": { de: "Alle als gelesen markiert", en: "All marked as read" },
+  "notifications.tab_all": { de: "Alle", en: "All" },
+  "notifications.tab_unread": { de: "Ungelesen", en: "Unread" },
+  "notifications.unread": { de: "Ungelesen", en: "Unread" },
+  "notifications.aria_mark_read": { de: "Als gelesen markieren", en: "Mark as read" },
+  "notifications.aria_delete": { de: "Löschen", en: "Delete" },
+  "notifications.tab_read": { de: "Gelesen", en: "Read" },
+  "notifications.total": { de: "Gesamt", en: "Total" },
+  "notifications.error": { de: "Fehler", en: "Error" },
+  "notifications.loading": { de: "Laden...", en: "Loading..." },
+  "notifications.empty_title": { de: "Keine Benachrichtigungen", en: "No notifications" },
+  "notifications.empty_unread": {
+    de: "Sie haben keine ungelesenen Benachrichtigungen.",
+    en: "You have no unread notifications.",
+  },
+  "notifications.empty_read": {
+    de: "Sie haben keine gelesenen Benachrichtigungen.",
+    en: "You have no read notifications.",
+  },
+  "notifications.empty_all": {
+    de: "Es gibt keine Benachrichtigungen.",
+    en: "There are no notifications.",
+  },
+  "notifications.search_placeholder": { de: "Suche...", en: "Search..." },
+  "notifications.deleted": { de: "Benachrichtigung gelöscht", en: "Notification deleted" },
+  "notifications.deleted_read": {
+    de: "gelesene Benachrichtigungen gelöscht",
+    en: "read notifications deleted",
+  },
+  "notifications.filtered": { de: "Gefiltert", en: "Filtered" },
+  "notifications.filter": { de: "Filter", en: "Filter" },
+  "notifications.all_types": { de: "Alle Typen", en: "All types" },
+
+  // ── Brain detail page strings ──
+  "brain.save": { de: "Speichern", en: "Save" },
+  "brain.cancel": { de: "Abbrechen", en: "Cancel" },
+
+  // ── Litigation Analytics strings ──
+  "litigation.entry_created": { de: "Eintrag erstellt", en: "Entry created" },
+  "litigation.entry_deleted": { de: "Eintrag gelöscht", en: "Entry deleted" },
+  "litigation.create_failed": { de: "Erstellen fehlgeschlagen", en: "Failed to create" },
+  "litigation.delete_failed": { de: "Löschen fehlgeschlagen", en: "Failed to delete" },
+
+  // ── Admin: Feature Flags ──
+  "admin.flags.title": { de: "Feature Flags", en: "Feature Flags" },
+  "admin.flags.desc": {
+    de: "Verwalte Feature-Freigaben, Rollout-Prozentsätze und Plan/Rollen-Beschränkungen",
+    en: "Manage feature releases, rollout percentages and plan/role restrictions",
+  },
+  "admin.flags.new": { de: "Neuer Flag", en: "New flag" },
+  "admin.flags.err_load": {
+    de: "Fehler beim Laden der Feature Flags.",
+    en: "Failed to load feature flags.",
+  },
+  "admin.flags.empty": { de: "Keine Feature Flags vorhanden.", en: "No feature flags available." },
+  "admin.flags.create_first": { de: "Ersten Flag erstellen", en: "Create first flag" },
+  "admin.flags.disable": { de: "Deaktivieren", en: "Disable" },
+  "admin.flags.enable": { de: "Aktivieren", en: "Enable" },
+  "admin.flags.active": { de: "Aktiv", en: "Active" },
+  "admin.flags.inactive": { de: "Inaktiv", en: "Inactive" },
+  "admin.flags.updated_by": { de: "Aktualisiert von", en: "Updated by" },
+  "admin.flags.on": { de: "am", en: "on" },
+  "admin.flags.edit": { de: "Bearbeiten", en: "Edit" },
+  "admin.flags.delete_title": { de: "Feature Flag löschen?", en: "Delete feature flag?" },
+  "admin.flags.delete_desc": {
+    de: "Der Flag wird entfernt. Features, die diesen Flag prüfen, sind danach standardmäßig deaktiviert.",
+    en: "The flag will be removed. Features that check this flag will be disabled by default.",
+  },
+  "admin.flags.cancel": { de: "Abbrechen", en: "Cancel" },
+  "admin.flags.delete": { de: "Löschen", en: "Delete" },
+  "admin.flags.updated": { de: "Flag aktualisiert", en: "Flag updated" },
+  "admin.flags.err_update": { de: "Fehler beim Aktualisieren", en: "Failed to update" },
+  "admin.flags.created": { de: "Flag erstellt", en: "Flag created" },
+  "admin.flags.err_create": { de: "Fehler beim Erstellen", en: "Failed to create" },
+  "admin.flags.deleted": { de: "Flag gelöscht", en: "Flag deleted" },
+  "admin.flags.err_delete": { de: "Fehler beim Löschen", en: "Failed to delete" },
+  "admin.flags.create_title": { de: "Neuer Feature Flag", en: "New feature flag" },
+  "admin.flags.create_desc": {
+    de: "Erstelle einen neuen Feature Flag.",
+    en: "Create a new feature flag.",
+  },
+  "admin.flags.key_label": { de: "Key", en: "Key" },
+  "admin.flags.key_placeholder": { de: "z.B. deep_analysis", en: "e.g. deep_analysis" },
+  "admin.flags.name_label": { de: "Name", en: "Name" },
+  "admin.flags.name_placeholder": { de: "z.B. Deep Analysis Tool", en: "e.g. Deep Analysis Tool" },
+  "admin.flags.desc_label": { de: "Beschreibung", en: "Description" },
+  "admin.flags.desc_placeholder": {
+    de: "Kurze Beschreibung des Features...",
+    en: "Brief description of the feature...",
+  },
+  "admin.flags.activated": { de: "Aktiviert", en: "Enabled" },
+  "admin.flags.deactivated": { de: "Deaktiviert", en: "Disabled" },
+  "admin.flags.rollout": { de: "Rollout", en: "Rollout" },
+  "admin.flags.plans_label": {
+    de: "Erlaubte Pläne (leer = alle)",
+    en: "Allowed plans (empty = all)",
+  },
+  "admin.flags.roles_label": {
+    de: "Erlaubte Rollen (leer = alle)",
+    en: "Allowed roles (empty = all)",
+  },
+  "admin.flags.create_btn": { de: "Erstellen", en: "Create" },
+  "admin.flags.edit_title": { de: "Flag bearbeiten", en: "Edit flag" },
+  "admin.flags.edit_desc": {
+    de: "Passe die Einstellungen für diesen Feature Flag an.",
+    en: "Adjust the settings for this feature flag.",
+  },
+  "admin.flags.save": { de: "Speichern", en: "Save" },
+
+  // ── Admin: Backup ──
+  "admin.backup.title": { de: "Backup & Restore", en: "Backup & Restore" },
+  "admin.backup.desc": {
+    de: "Voll-Backups verwalten — erstellen, einspielen, herunterladen und löschen",
+    en: "Manage full backups — create, restore, download and delete",
+  },
+  "admin.backup.created": { de: "Backup erstellt", en: "Backup created" },
+  "admin.backup.created_desc": {
+    de: "Voll-Backup erfolgreich erstellt",
+    en: "Full backup successfully created",
+  },
+  "admin.backup.failed": { de: "Backup fehlgeschlagen", en: "Backup failed" },
+  "admin.backup.restore_done": { de: "Restore abgeschlossen", en: "Restore completed" },
+  "admin.backup.restore_failed": { de: "Restore fehlgeschlagen", en: "Restore failed" },
+  "admin.backup.deleted": { de: "Backup gelöscht", en: "Backup deleted" },
+  "admin.backup.delete_failed": { de: "Löschen fehlgeschlagen", en: "Failed to delete" },
+  "admin.backup.creating": { de: "Erstelle...", en: "Creating..." },
+  "admin.backup.new": { de: "Neues Backup", en: "New backup" },
+  "admin.backup.restore_confirm": { de: "Restore bestätigen", en: "Confirm restore" },
+  "admin.backup.restoring": { de: "Stelle wieder her...", en: "Restoring..." },
+  "admin.backup.deleting": { de: "Lösche...", en: "Deleting..." },
+  "admin.backup.delete": { de: "Löschen", en: "Delete" },
+  "admin.backup.cancel": { de: "Abbrechen", en: "Cancel" },
+  "admin.backup.aria_delete": { de: "Löschen", en: "Delete" },
+
+  // ── Admin: Feedback Triage ──
+  "admin.feedback.title": { de: "Feedback-Triage", en: "Feedback Triage" },
+  "admin.feedback.desc": {
+    de: "Nutzerfeedback → Kandidat → Jurist bestätigt Fehlerklasse, Korrektur & Root Cause",
+    en: "User feedback → Candidate → Lawyer confirms error class, correction & root cause",
+  },
+  "admin.feedback.filter_status": { de: "Filter nach Status", en: "Filter by status" },
+  "admin.feedback.choose": { de: "Wählen...", en: "Choose..." },
+  "admin.feedback.correct_placeholder": {
+    de: "Was hätte die AI antworten sollen?",
+    en: "What should the AI have answered?",
+  },
+  "admin.feedback.notes_placeholder": { de: "Optionale Notizen...", en: "Optional notes..." },
+  "admin.feedback.error_occurred": { de: "Fehler aufgetreten", en: "Error occurred" },
+
+  // ── Upload page strings ──
+  "upload.original_not_saved": {
+    de: "Originaldatei nicht gespeichert",
+    en: "Original file not saved",
+  },
+  "upload.no_text_extracted": {
+    de: "Kein durchsuchbarer Text extrahiert; Originaldatei wurde gespeichert.",
+    en: "No searchable text extracted; original file was saved.",
+  },
+  "upload.partial_extraction": {
+    de: "Dokument wurde nur teilweise extrahiert.",
+    en: "Document was only partially extracted.",
+  },
+  "upload.saved_no_pipeline": {
+    de: "Dokument gespeichert, automatische Analyse konnte aber nicht eingeplant werden.",
+    en: "Document saved, but automatic analysis could not be scheduled.",
+  },
+  "upload.processing_failed": {
+    de: "Dokumentverarbeitung fehlgeschlagen.",
+    en: "Document processing failed.",
+  },
+  "upload.password_placeholder": {
+    de: "Nur für passwortgeschützte PDF-/Office-Dateien",
+    en: "Only for password-protected PDF/Office files",
+  },
+  "upload.auto_detect": { de: "Automatisch erkennen", en: "Auto-detect" },
+  "upload.auto_classify": { de: "Automatisch klassifizieren", en: "Auto-classify" },
+  "upload.dl_from_storage": {
+    de: "Datei wird vom Storage heruntergeladen",
+    en: "File downloading from storage",
+  },
+  "upload.verifying_checksum": { de: "Prüfsumme wird verifiziert", en: "Verifying checksum" },
+  "upload.virus_scan": { de: "Virenscan wird durchgeführt", en: "Virus scan running" },
+  "upload.extracting_indexing": {
+    de: "Inhalt wird extrahiert und indexiert",
+    en: "Content being extracted and indexed",
+  },
+  "upload.server_processing": {
+    de: "Datei übertragen · Server prüft, speichert und indexiert",
+    en: "File transferred · Server checks, stores and indexes",
+  },
+
+  // ── Version History page strings ──
+  "vhist.err_load": {
+    de: "Versionshistorie konnte nicht geladen werden.",
+    en: "Version history could not be loaded.",
+  },
+  "vhist.title": { de: "Versionshistorie", en: "Version History" },
+  "vhist.desc": {
+    de: "Änderungshistorie einer Brain-Page — Audit-Trail mit Versionierung",
+    en: "Change history of a Brain page — audit trail with versioning",
+  },
+  "vhist.search_placeholder": {
+    de: "Page-Slug eingeben (z.B. case/mustermann-vs-beispiel)",
+    en: "Enter page slug (e.g. case/mustermann-vs-beispiel)",
+  },
+  "vhist.case_update": { de: "Bearbeitet", en: "Edited" },
+  "vhist.case_create": { de: "Erstellt", en: "Created" },
+  "vhist.case_delete": { de: "Gelöscht", en: "Deleted" },
+  "vhist.doc_delete": { de: "Gelöscht", en: "Deleted" },
+  "vhist.doc_upload": { de: "Hochgeladen", en: "Uploaded" },
+  "vhist.doc_review": { de: "Review", en: "Review" },
+
+  // ── Signature page strings ──
+  "sig.err_load": {
+    de: "Signatur-Anfragen konnten nicht geladen werden.",
+    en: "Signature requests could not be loaded.",
+  },
+  "sig.ext_sent": {
+    de: "Als extern versendet markiert. Der tatsächliche Versand erfolgt im Signatur-Provider.",
+    en: "Marked as sent externally. Actual sending occurs in the signature provider.",
+  },
+  "sig.err_status": {
+    de: "Status konnte nicht gespeichert werden.",
+    en: "Status could not be saved.",
+  },
+  "sig.desc": { de: "Dokumente digital unterschreiben lassen", en: "Digitally sign documents" },
+  "sig.breadcrumb": { de: "e-Signatur", en: "e-Signature" },
+  "sig.aria_ext_sent": { de: "Als extern versendet markieren", en: "Mark as sent externally" },
+  "sig.aria_brain": { de: "Brain-Seite öffnen", en: "Open Brain page" },
+  "sig.status_draft": { de: "Entwurf", en: "Draft" },
+  "sig.status_sent": { de: "Versendet", en: "Sent" },
+  "sig.status_signed": { de: "Unterschrieben", en: "Signed" },
+  "sig.status_declined": { de: "Abgelehnt", en: "Declined" },
+  "sig.status_expired": { de: "Abgelaufen", en: "Expired" },
+
+  // ── Vault page strings ──
+  "vault.deep_analysis_failed": { de: "Deep Analysis fehlgeschlagen", en: "Deep Analysis failed" },
+  "vault.run_deep_analysis": { de: "Tiefenanalyse starten", en: "Run Deep Analysis" },
+  "vault.extraction_failed": { de: "Extraktion fehlgeschlagen", en: "Extraction failed" },
+  "vault.processing": { de: "Wird verarbeitet…", en: "Processing…" },
+
+  // ── Settings/Kanzlei page strings ──
+  "kanzlei.err_load": {
+    de: "Einstellungen konnten nicht geladen werden.",
+    en: "Settings could not be loaded.",
+  },
+  "kanzlei.firm_name": { de: "Kanzleiname", en: "Firm name" },
+  "kanzlei.street": { de: "Straße", en: "Street" },
+  "kanzlei.city": { de: "Ort", en: "City" },
+  "kanzlei.phone": { de: "Telefon", en: "Phone" },
+  "kanzlei.website": { de: "Webseite", en: "Website" },
+  "kanzlei.tax_id": { de: "Steuernummer", en: "Tax number" },
+  "kanzlei.bank": { de: "Bank", en: "Bank" },
+  "kanzlei.logo_url": { de: "Logo-URL (optional)", en: "Logo URL (optional)" },
+  "kanzlei.region_label": { de: "Kanton", en: "Canton" },
+  "kanzlei.region_label_de": { de: "Bundesland", en: "State" },
+
+  // ── Settings page (billing/invoice) strings ──
+  "settings.invoice_footer_default": {
+    de: "Bitte überweisen Sie den Betrag unter Angabe der Rechnungsnummer.",
+    en: "Please transfer the amount quoting the invoice number.",
+  },
+  "settings.firm_name_placeholder": {
+    de: "Muster Rechtsanwälte Partnerschaft mbB",
+    en: "Mustermann Law Firm Partnership LLC",
+  },
+  "settings.signatory_placeholder": {
+    de: "Dr. Max Mustermann, Rechtsanwalt",
+    en: "Dr. Max Mustermann, Attorney",
+  },
+  "settings.address_placeholder": {
+    de: "Musterstraße 1\\n1010 Wien",
+    en: "Mustermann Street 1\\n1010 Vienna",
+  },
+  "settings.small_business": {
+    de: "Kleinunternehmer (§ 19 UStG)",
+    en: "Small business (§ 19 UStG)",
+  },
+  "settings.small_business_desc": {
+    de: "Keine USt-Ausweisung auf Rechnungen — relevant für E-Rechnung",
+    en: "No VAT on invoices — relevant for e-invoicing",
+  },
+  "settings.einvoice_profile": { de: "E-Rechnung Profil", en: "E-invoice profile" },
+  "settings.einvoice_profile_desc": {
+    de: "Standard-Profil für ZUGFeRD-Generierung",
+    en: "Standard profile for ZUGFeRD generation",
+  },
+  "settings.bank_placeholder": { de: "Bank", en: "Bank" },
+
+  // ── Translate page language labels ──
+  "translate.lang_de": { de: "Deutsch", en: "German" },
+  "translate.lang_en": { de: "Englisch", en: "English" },
+  "translate.lang_fr": { de: "Französisch", en: "French" },
+  "translate.lang_it": { de: "Italienisch", en: "Italian" },
+  "translate.lang_es": { de: "Spanisch", en: "Spanish" },
+  "translate.lang_nl": { de: "Niederländisch", en: "Dutch" },
+  "translate.lang_pl": { de: "Polnisch", en: "Polish" },
+  "translate.lang_tr": { de: "Türkisch", en: "Turkish" },
+  "translate.lang_ru": { de: "Russisch", en: "Russian" },
+  "translate.lang_zh": { de: "Chinesisch", en: "Chinese" },
+
+  // ── Admin: Pipeline ──
+  "admin.pipeline.title": { de: "Korpus-Pipeline", en: "Corpus Pipeline" },
+  "admin.pipeline.desc": {
+    de: "Supervisor-Zustand je Source: Backfill → Import → Embed → Reconcile. Pause/Resume wirkt ab dem nächsten Zyklus (≤10 min).",
+    en: "Supervisor state per source: Backfill → Import → Embed → Reconcile. Pause/Resume takes effect from the next cycle (≤10 min).",
+  },
+
+  // ── Admin: DR ──
+  "admin.dr.title": { de: "Backups & Disaster Recovery", en: "Backups & Disaster Recovery" },
+  "admin.dr.desc": {
+    de: "Backup-Manifeste, Restore-Drills, RPO/RTO-Compliance und Wiederherstellung",
+    en: "Backup manifests, restore drills, RPO/RTO compliance and recovery",
+  },
+
+  // ── Admin: Guardrails ──
+  "admin.guardrails.title": { de: "Guardrail Monitoring", en: "Guardrail Monitoring" },
+  "admin.guardrails.desc": {
+    de: "Tier-0 (deterministic) + Tier-1 (Cross-Model Verification) Metriken",
+    en: "Tier-0 (deterministic) + Tier-1 (Cross-Model Verification) metrics",
+  },
+
+  // ── Admin: RAG Optimizer ──
+  "admin.ragopt.title": { de: "RAG Auto-Optimizer", en: "RAG Auto-Optimizer" },
+  "admin.ragopt.desc": {
+    de: "One-Click-Recall-Optimierung & automatische Gesetzes-Ingestion",
+    en: "One-click recall optimization & automatic law ingestion",
+  },
+
+  // ── Admin: Corpus ──
+  "admin.corpus.title": { de: "Corpus & Embeddings", en: "Corpus & Embeddings" },
+  "admin.corpus.desc": {
+    de: "Chunking, Embedding-Coverage und Retrieval-Qualität überwachen",
+    en: "Monitor chunking, embedding coverage and retrieval quality",
+  },
+
+  // ── Admin: Compliance Export ──
+  "admin.compliance_export.title": { de: "Compliance Audit Log", en: "Compliance Audit Log" },
+  "admin.compliance_export.desc": {
+    de: "EU AI Act Art. 12 — Reasoning Traces",
+    en: "EU AI Act Art. 12 — Reasoning Traces",
+  },
+
+  // ── Admin: SLO ──
+  "admin.slo.title": { de: "SLO Monitoring", en: "SLO Monitoring" },
+  "admin.slo.desc": {
+    de: "Service Level Objectives für alle Workflows — Status, Alerts und Metriken",
+    en: "Service Level Objectives for all workflows — status, alerts and metrics",
+  },
+
+  // ── Calendar Export ──
+  "calexport.title": { de: "Kalender-Export", en: "Calendar Export" },
+  "calexport.desc": {
+    de: "Fristen & Termine als iCal (.ics)",
+    en: "Deadlines & appointments as iCal (.ics)",
+  },
+
+  // ── Document Requests ──
+  "docreq.title": { de: "Dokumentenanfragen", en: "Document Requests" },
+  "docreq.desc": {
+    de: "Offene Unterlagenanforderungen, Versandstatus und Fulfillment im Blick",
+    en: "Track open document requests, shipping status and fulfillment",
+  },
+
+  // ── Adoption Analytics ──
+  "adoption.title": { de: "Adoption Analytics", en: "Adoption Analytics" },
+  "adoption.desc": {
+    de: "Platform-Nutzung: Wer nutzt was, wie oft und woran — das Subsumio Command Center",
+    en: "Platform usage: Who uses what, how often and what for — the Subsumio Command Center",
+  },
+
+  // ── FIBU ──
+  "fibu.title": { de: "Finanzbuchhaltung", en: "Financial Accounting" },
+  "fibu.desc": {
+    de: "Bank-Feed, OPOS, Mahnläufe und Zahlungslinks",
+    en: "Bank feed, accounts receivable, dunning runs and payment links",
+  },
+
+  // ── Workflows ──
+  "workflows.aria_view_action": { de: "Agent-Action ansehen", en: "View agent action" },
+
+  // ── Intake ──
+  "intake.aria_details": { de: "Details öffnen", en: "Open details" },
+
+  // ── Contracts ──
+  "contracts.aria_analysis": { de: "Analyse", en: "Analysis" },
+  "contracts.aria_redline": { de: "Redline", en: "Redline" },
+  "contracts.ph_title": { de: "Titel", en: "Title" },
+  "contracts.ph_parties": { de: "Parteien", en: "Parties" },
+  "contracts.ph_type": { de: "Vertragstyp", en: "Contract type" },
+  "contracts.ph_text": { de: "Vertragstext", en: "Contract text" },
+
+  // ── Research page ──
+  "research.ph_query": {
+    de: "Rechtsfrage eingeben… (z.B. 'Wann ist eine AGB-Klausel nach § 307 BGB unwirksam?')",
+    en: "Enter legal question… (e.g. 'When is a standard term clause invalid under § 307 BGB?')",
+  },
+
+  // ── Settings/SCIM ──
+  "settings.scim.ph_token": {
+    de: "In .env als SCIM_BEARER_TOKENS (orgId:token) konfiguriert",
+    en: "Configured in .env as SCIM_BEARER_TOKENS (orgId:token)",
+  },
+
+  // ── Settings/RCIID ──
+  "settings.rciid.ph_hmac": { de: "HMAC-SHA256 Secret", en: "HMAC-SHA256 Secret" },
+
+  // ── Settings/Security ──
+  "settings.security.ph_password": { de: "Passwort", en: "Password" },
+
+  // ── Settings page extras ──
+  "settings.ph_rak_register": { de: "RAK / Register", en: "Bar association / Register" },
+
+  // ── Drafting ──
+  "drafting.ph_name": { de: "Name", en: "Name" },
+
+  // ── Absences ──
+  "absence.ph_name": { de: "Max Mustermann", en: "John Doe" },
+  "absence.ph_representative": { de: "Anna Schmidt", en: "Jane Smith" },
+
+  // ── Red Team ──
+  "redteam.ph_summary": { de: "Kurze Zusammenfassung des Falls...", en: "Brief case summary..." },
+  "redteam.ph_pleading": { de: "Schriftsatz hier einfügen...", en: "Paste pleading here..." },
+
+  // ── Contacts ──
+  "contacts.ph_leitweg": {
+    de: "Leitweg-ID für XRechnung (öffentlich-rechtlich)",
+    en: "Routing ID for XRechnung (public sector)",
+  },
+
+  // ── Cases/New ──
+  "cases.new.ph_opponent_name": {
+    de: "Name des weiteren Gegners",
+    en: "Name of additional opponent",
+  },
+  "cases.new.ph_liability": {
+    de: "Haftungsgrund (optional)",
+    en: "Ground for liability (optional)",
+  },
+  "workflows.builder.ph_name": { de: "Workflow-Name", en: "Workflow name" },
+  "workflows.builder.ph_desc": { de: "Beschreibung (optional)", en: "Description (optional)" },
+  "time.ph_search": { de: "Suche...", en: "Search..." },
+  "time.ph_case": { de: "Case...", en: "Case..." },
+  "docreq.ph_slug": {
+    de: "Akte, z. B. legal/cases/2026-014",
+    en: "Case, e.g. legal/cases/2026-014",
+  },
+  "docreq.ph_items": { de: "Unterlagen, eine pro Zeile", en: "Documents, one per line" },
+  "docreq.ph_message": { de: "Nachrichtenentwurf", en: "Message draft" },
+  "docreq.ph_search": { de: "Dokumentenanfrage suchen…", en: "Search document requests…" },
+  "templates.ph_desc": {
+    de: "Kurze Beschreibung der Vorlage",
+    en: "Brief description of the template",
+  },
+  "templates.ph_body": {
+    de: "Vorlagen-Text mit {{variablen}}…",
+    en: "Template text with {{variables}}…",
+  },
+  "litigation.ph_parties": { de: "Muster ./. Beispiel", en: "Mustermann v. Example" },
+  "fibu.ph_search": {
+    de: "Rechnungsnummer, Aktenzeichen...",
+    en: "Invoice number, file reference...",
+  },
+  "fibu.ph_invoice": { de: "Rechnung RE-2026-001", en: "Invoice INV-2026-001" },
+  "crypto.ph_case_name": { de: "Mustermann vs. Betrüger", en: "Mustermann v. Fraudster" },
+  "crypto.ph_client": { de: "Mandant Mustermann", en: "Client Mustermann" },
+  "crypto.ph_suspicion": {
+    de: "Verdacht auf Krypto-Betrug via Phishing...",
+    en: "Suspected crypto fraud via phishing...",
+  },
+  "crypto.ph_label": { de: "Label", en: "Label" },
+  "crypto.ph_text": {
+    de: "Fügen Sie hier den Text aus Fall-Dokumenten ein...",
+    en: "Paste text from case documents here...",
+  },
+  "trust.ph_account": { de: "Anderkonto Müller", en: "Trust account Müller" },
+  "trust.ph_bank": { de: "Commerzbank", en: "Commerzbank" },
+  "onboarding.ph_bank": { de: "Bank Austria", en: "Bank Austria" },
+  "whatsapp.tmpl.ph_body": {
+    de: "Hallo {{1}}, Ihr Termin am {{2}}...",
+    en: "Hello {{1}}, your appointment on {{2}}...",
+  },
+  "reviewsets.ph_name": { de: "Review-Set Q3 2026", en: "Review Set Q3 2026" },
 } satisfies Record<string, BiString>;
 
 export type DashboardKey = keyof typeof D;

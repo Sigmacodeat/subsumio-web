@@ -15,6 +15,7 @@ import {
   Gauge,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 interface SLOStatus {
   workflow: string;
@@ -109,6 +110,7 @@ function statusBadge(status: string) {
 }
 
 export default function SLOPage() {
+  const { t } = useLang();
   const { data, isLoading, refetch } = useQuery<SLOResponse>({
     queryKey: ["slo-status"],
     queryFn: async () => {
@@ -131,10 +133,10 @@ export default function SLOPage() {
   return (
     <div className="container mx-auto max-w-6xl space-y-6 p-6">
       <PageHeader
-        title="SLO Monitoring"
-        description="Service Level Objectives für alle Workflows — Status, Alerts und Metriken"
+        title={t("admin.slo.title")}
+        description={t("admin.slo.desc")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: "Admin", href: "/dashboard/admin" },
           { label: "SLO" },
         ]}

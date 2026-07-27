@@ -41,6 +41,9 @@ export const HANDLER_DEFAULT_TIMEOUT_MS: Readonly<Record<string, number>> = {
   // Async document extraction (parse + OCR + split/import). A 500MB scanned
   // PDF needing per-page OCR is the worst case — allow up to 60 min.
   "extract-document": SIXTY_MIN_MS,
+  // Tabular Review (async): up to 500 documents × one chat call each,
+  // worker-pool concurrency ≤ 8 — large runs can exceed 30 min.
+  "tabular-review": SIXTY_MIN_MS,
 };
 
 /**

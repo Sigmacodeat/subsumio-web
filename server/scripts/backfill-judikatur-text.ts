@@ -8,25 +8,24 @@
  */
 
 import { readFileSync, writeFileSync, readdirSync } from "fs";
-import { join } from "path";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
+import {
+  stripHtmlComplete,
+  contentMatchesDocument,
+  validateFetchedText,
+  validateLegalStructure,
+  contentHash,
+  atomicWrite,
+  risXmlToText,
+} from "./backfill-utils";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const RATE_LIMIT_MS = 200;
 
 function stripHtml(html: string): string {
-  return html
-    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, "")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, "\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return stripHtmlComplete(html);
 }
 
 function extractRisReferences(data: Record<string, unknown>): Array<Record<string, unknown>> {
@@ -63,8 +62,9 @@ async function fetchWithRetry(url: string, maxRetries = 3): Promise<Response> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const res = await fetch(url, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; Subsumio-Legal-Import/1.0)" },
+        headers: { "User-Agent": getUserAgent() },
         signal: AbortSignal.timeout(30_000),
+        ...proxyFetchOptions(),
       });
       if (res.status === 429 || res.status >= 500) {
         const backoff = 1000 * Math.pow(2, attempt);
@@ -81,8 +81,12 @@ async function fetchWithRetry(url: string, maxRetries = 3): Promise<Response> {
   throw new Error("fetchWithRetry exhausted");
 }
 
-/** Fetch text by RIS document number (search by Dokumentnummer). */
-async function fetchTextByDocNumber(docNumber: string): Promise<string> {
+/** Fetch text by RIS document number (search by Dokumentnummer).
+ *  Every candidate passes contentMatchesDocument() identity check. */
+async function fetchTextByDocNumber(
+  docNumber: string,
+  fmFields: { case_number: string; ecli: string; celex: string }
+): Promise<string> {
   try {
     const url = new URL(`${RIS_BASE}/judikatur`);
     url.searchParams.set("Applikation", "Justiz");
@@ -98,22 +102,91 @@ async function fetchTextByDocNumber(docNumber: string): Promise<string> {
     if (htmlUrl) {
       const htmlRes = await fetchWithRetry(htmlUrl);
       if (htmlRes.ok) {
-        const html = await htmlRes.text();
-        return stripHtml(html);
+        const candidate = stripHtml(await htmlRes.text());
+        if (candidate.length >= 50 && contentMatchesDocument(candidate, fmFields)) {
+          return candidate;
+        }
       }
     }
 
     // Fallback: inline content
-    const content = (refs[0] as Record<string, unknown>).Content as Record<string, unknown> | undefined;
+    const content = (refs[0] as Record<string, unknown>).Content as
+      | Record<string, unknown>
+      | undefined;
     if (content) {
       const dataContent = (content.Data as Record<string, unknown> | undefined) ?? {};
       const text = String(dataContent.Text ?? "");
-      if (text) return stripHtml(text);
+      if (text) {
+        const candidate = stripHtml(text);
+        if (candidate.length >= 50 && contentMatchesDocument(candidate, fmFields)) {
+          return candidate;
+        }
+      }
     }
     return "";
   } catch {
     return "";
   }
+}
+
+/** Extract frontmatter fields for identity verification. */
+function extractFmFields(content: string): { case_number: string; ecli: string; celex: string } {
+  const caseMatch = content.match(/^case_number:\s*['"]?([^\n'"]*)['"]?/m);
+  const ecliMatch = content.match(/^ecli:\s*['"]?([^\n'"]*)['"]?/m);
+  const celexMatch = content.match(/^celex:\s*['"]?([^\n'"]*)['"]?/m);
+  return {
+    case_number: caseMatch?.[1]?.trim() ?? "",
+    ecli: ecliMatch?.[1]?.trim() ?? "",
+    celex: celexMatch?.[1]?.trim() ?? "",
+  };
+}
+
+/** Try the deterministic RIS document URL from the file's source_url.
+ *  Strategy: XML first (cleanest), then HTML, then OGD search fallback.
+ *  Every candidate passes contentMatchesDocument() identity check.
+ */
+async function fetchRisFullText(content: string, docNumber: string): Promise<string> {
+  const urlMatch = content.match(/source_url:\s*"?([^\s"]+)"?/);
+  const sourceUrl = urlMatch ? urlMatch[1]!.trim() : "";
+  const abfrageMatch = sourceUrl.match(/[?&]Abfrage=([^&]+)/);
+  const dokNrMatch = sourceUrl.match(/[?&]Dokumentnummer=([^&]+)/);
+  const fmFields = extractFmFields(content);
+
+  if (abfrageMatch && dokNrMatch) {
+    const abfrage = abfrageMatch[1]!;
+    const dokNr = dokNrMatch[1]!;
+
+    // Strategy 1: XML (cleanest — structured nutzdaten, no site chrome)
+    const xmlUrl = `https://www.ris.bka.gv.at/Dokumente/${abfrage}/${dokNr}/${dokNr}.xml`;
+    try {
+      const xmlRes = await fetchWithRetry(xmlUrl);
+      if (xmlRes.ok) {
+        const candidate = risXmlToText(await xmlRes.text());
+        if (candidate.length >= 50 && contentMatchesDocument(candidate, fmFields)) {
+          return candidate;
+        }
+      }
+    } catch {
+      // XML failed — try HTML
+    }
+
+    // Strategy 2: HTML (noisier, but stripHtmlComplete handles chrome)
+    const htmlUrl = `https://www.ris.bka.gv.at/Dokumente/${abfrage}/${dokNr}/${dokNr}.html`;
+    try {
+      const htmlRes = await fetchWithRetry(htmlUrl);
+      if (htmlRes.ok) {
+        const candidate = stripHtml(await htmlRes.text());
+        if (candidate.length >= 200 && contentMatchesDocument(candidate, fmFields)) {
+          return candidate;
+        }
+      }
+    } catch {
+      // HTML failed — fall through to OGD search
+    }
+  }
+
+  // Strategy 3: OGD search by Dokumentnummer
+  return fetchTextByDocNumber(docNumber, fmFields);
 }
 
 /** Extract RIS document number from frontmatter source_url or filename. */
@@ -133,7 +206,8 @@ function extractDocNumber(content: string, filename: string): string {
 
 /** Check if a file has real text content (not just the placeholder). */
 function hasText(content: string): boolean {
-  if (content.includes("*Volltext nicht abrufbar") || content.includes("*Volltext nicht verfügbar")) return false;
+  if (content.includes("*Volltext nicht abrufbar") || content.includes("*Volltext nicht verfügbar"))
+    return false;
   const bodyMatch = content.match(/^---\n[\s\S]*?\n---\n([\s\S]*)$/);
   if (!bodyMatch) return false;
   const body = bodyMatch[1]!.trim();
@@ -141,15 +215,25 @@ function hasText(content: string): boolean {
   return true;
 }
 
-/** Inject text into an existing markdown file, preserving frontmatter. */
+/** Inject text into an existing markdown file, preserving frontmatter.
+ *  Adds content_hash to frontmatter for post-backfill verification. */
 function injectText(content: string, text: string): string {
   const fmMatch = content.match(/^(---\n[\s\S]*?\n---\n)/);
   if (!fmMatch) return content;
-  const frontmatter = fmMatch[1]!;
+  let frontmatter = fmMatch[1]!;
   const sourceMatch = content.match(/Quelle:\s*\[([^\]]+)\]\(([^\)]+)\)/);
   const sourceLine = sourceMatch ? `\n---\n*Quelle: [${sourceMatch[1]}](${sourceMatch[2]})*` : "";
   const titleMatch = content.match(/^#\s+(.+)$/m);
   const titleLine = titleMatch ? `# ${titleMatch[1]}\n\n` : "";
+
+  // Inject content_hash into frontmatter
+  const hash = contentHash(text);
+  if (frontmatter.includes("content_hash:")) {
+    frontmatter = frontmatter.replace(/content_hash:\s*"?[^"]*"?/, `content_hash: "${hash}"`);
+  } else {
+    frontmatter = frontmatter.replace(/---\n$/, `content_hash: "${hash}"\n---\n`);
+  }
+
   return `${frontmatter}\n${titleLine}${text}${sourceLine}\n`;
 }
 
@@ -161,15 +245,20 @@ async function main() {
   const batchSize = batchIdx >= 0 ? parseInt(args[batchIdx + 1]!, 10) : 5;
   const limitIdx = args.indexOf("--limit");
   const limit = limitIdx >= 0 ? parseInt(args[limitIdx + 1]!, 10) : 0;
+  const forceReFetch = args.includes("--force-refetch");
 
-  const absDir = join(import.meta.dir, "..", dir);
+  const _scriptDir = dirname(fileURLToPath(import.meta.url));
+  const _corpusRoot = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
+  const absDir = dir.startsWith("law-corpus/")
+    ? join(_corpusRoot, dir.replace(/^law-corpus\//, ""))
+    : join(_scriptDir, "..", dir);
   const files = readdirSync(absDir).filter((f) => f.endsWith(".md"));
 
   // Find files without text
   const textless: string[] = [];
   for (const file of files) {
     const content = readFileSync(join(absDir, file), "utf-8");
-    if (!hasText(content)) {
+    if (!hasText(content) || forceReFetch) {
       textless.push(file);
     }
   }
@@ -200,10 +289,23 @@ async function main() {
       const content = readFileSync(filepath, "utf-8");
       const docNumber = extractDocNumber(content, file);
       if (!docNumber) {
-        return { file, success: false, text: "" };
+        return { file, success: false, text: "", reason: "no_doc_number" };
       }
-      const text = await fetchTextByDocNumber(docNumber);
-      return { file, success: text.length > 100, text };
+      const text = await fetchRisFullText(content, docNumber);
+      if (text.length < 100) {
+        return { file, success: false, text: "", reason: "fetch_failed" };
+      }
+      // Validate fetched text before writing
+      const validation = validateFetchedText(text);
+      if (!validation.valid) {
+        return { file, success: false, text: "", reason: `validation: ${validation.reason}` };
+      }
+      // Structure validation for court decisions
+      const structResult = validateLegalStructure(validation.cleanedText, "court_decision");
+      if (!structResult.valid) {
+        return { file, success: false, text: "", reason: `structure: ${structResult.reason}` };
+      }
+      return { file, success: true, text: validation.cleanedText, reason: "" };
     });
 
     const results = await Promise.all(promises);
@@ -214,9 +316,17 @@ async function main() {
         const filepath = join(absDir, result.file);
         const content = readFileSync(filepath, "utf-8");
         const updated = injectText(content, result.text);
-        writeFileSync(filepath, updated, "utf-8");
-        success++;
+        try {
+          atomicWrite(filepath, updated);
+          success++;
+        } catch (e: any) {
+          console.error(`  ⚠️ write failed for ${result.file}: ${e?.message}`);
+          failed++;
+        }
       } else {
+        if (result.reason && result.reason !== "fetch_failed") {
+          console.error(`  ⚠️ ${result.file}: ${result.reason}`);
+        }
         failed++;
       }
     }

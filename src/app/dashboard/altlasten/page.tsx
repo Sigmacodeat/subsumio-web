@@ -339,7 +339,7 @@ export default function AltlastenPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
         <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );
@@ -534,7 +534,7 @@ export default function AltlastenPage() {
                 </td>
                 <td className="p-3">
                   {row.pipelineStatus ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2" role="status" aria-live="polite">
                       {row.pipelineStatus === "completed" || row.pipelineStatus === "done" ? (
                         <CheckCircle2 className="h-4 w-4 text-[color:var(--ds-success-text)]" />
                       ) : row.pipelineStatus === "running" || row.pipelineStatus === "resuming" ? (

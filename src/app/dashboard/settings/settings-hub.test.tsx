@@ -33,6 +33,7 @@ vi.mock("@/lib/use-lang", () => ({
         "nav.scim": "SCIM",
         "nav.agents": "Agenten",
         "nav.rag_eval": "RAG Eval",
+        "nav.ai_quality": "KI-Qualität",
         "nav.chat_analytics": "Chat Analytics",
         "nav.chat_compare": "Modellvergleich",
         "nav.reports": "Berichte",

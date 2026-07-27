@@ -51,7 +51,7 @@ export default function LegalInsurancePage() {
       <PageHeader
         title={tr("workspace.rsv.title")}
         description={tr("workspace.rsv.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "RSV" }]}
+        breadcrumbs={[{ label: t("breadcrumb.dashboard"), href: "/dashboard" }, { label: "RSV" }]}
       />
       <section className="space-y-3 rounded-xl border p-5">
         <h2 className="font-semibold">{tr("workspace.rsv.new")}</h2>

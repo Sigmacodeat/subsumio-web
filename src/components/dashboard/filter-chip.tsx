@@ -35,8 +35,16 @@ export function FilterChip({
             e.stopPropagation();
             onRemove();
           }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.stopPropagation();
+              onRemove();
+            }
+          }}
           className="-mr-0.5 ml-0.5 cursor-pointer rounded p-0.5 transition-colors hover:text-[color:var(--ds-danger-text)]"
           role="button"
+          tabIndex={0}
           aria-label={`Filter ${label} entfernen`}
         >
           <X size={13} />

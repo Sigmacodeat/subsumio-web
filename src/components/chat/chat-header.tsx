@@ -212,7 +212,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                               props.onCaseChange(e.target.value);
                               setActiveCaseSlug(e.target.value);
                             }}
-                            className="w-full appearance-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pr-7 pl-8 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                            className="w-full appearance-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pr-7 pl-8 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                             aria-label={t("chat.case_select")}
                           >
                             <option value="">{t("chat.no_case")}</option>
@@ -242,7 +242,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                             value={props.sessionSearch ?? ""}
                             onChange={(e) => props.onSessionSearchChange?.(e.target.value)}
                             placeholder={t("chat.search_sessions")}
-                            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pr-7 pl-8 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pr-7 pl-8 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                           />
                           {props.sessionSearch && (
                             <button
@@ -349,7 +349,7 @@ export function ChatHeader(props: ChatHeaderProps) {
               <select
                 value={props.selectedCaseSlug}
                 onChange={(e) => props.onCaseChange(e.target.value)}
-                className="appearance-none rounded-lg bg-transparent py-1.5 pr-7 pl-7 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)] focus:bg-[color:var(--ds-surface)] focus:outline-none"
+                className="appearance-none rounded-lg bg-transparent py-1.5 pr-7 pl-7 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)] focus:bg-[color:var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 aria-label={t("chat.case_select")}
               >
                 <option value="">{t("chat.no_case")}</option>

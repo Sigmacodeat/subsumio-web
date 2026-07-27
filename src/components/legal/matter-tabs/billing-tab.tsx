@@ -229,7 +229,7 @@ export function BillingTab() {
             <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
               {t("cases.detail_time_title")}
             </h3>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" role="status" aria-live="polite">
               {timerRunning && (
                 <span className="flex items-center gap-1.5 text-xs text-[color:var(--ds-info-text)]">
                   <Loader2 size={12} className="animate-spin" />
@@ -267,7 +267,7 @@ export function BillingTab() {
               value={newEntry.description}
               disabled={isArchived}
               onChange={(e) => setNewEntry((p) => ({ ...p, description: e.target.value }))}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none md:col-span-2"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 md:col-span-2"
             />
             <input
               type="number"
@@ -275,7 +275,7 @@ export function BillingTab() {
               value={newEntry.minutes}
               disabled={isArchived}
               onChange={(e) => setNewEntry((p) => ({ ...p, minutes: e.target.value }))}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
           </div>
           {/* Advanced fields — collapsed by default */}
@@ -285,7 +285,7 @@ export function BillingTab() {
                 value={newEntry.activity_type}
                 disabled={isArchived}
                 onChange={(e) => setNewEntry((p) => ({ ...p, activity_type: e.target.value }))}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               >
                 {ACTIVITY_TYPES.map((at) => (
                   <option key={at.value} value={at.value}>
@@ -299,7 +299,7 @@ export function BillingTab() {
                 value={newEntry.rate}
                 disabled={isArchived}
                 onChange={(e) => setNewEntry((p) => ({ ...p, rate: e.target.value }))}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
               <input
                 type="text"
@@ -307,7 +307,7 @@ export function BillingTab() {
                 value={newEntry.lawyer}
                 disabled={isArchived}
                 onChange={(e) => setNewEntry((p) => ({ ...p, lawyer: e.target.value }))}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
               <label className="flex items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)]">
                 <input
@@ -448,7 +448,7 @@ export function BillingTab() {
               {...ctx.expenseForm.register("description")}
               placeholder={t("cases.detail_exp_desc_ph")}
               disabled={isArchived}
-              className="min-w-[200px] flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              className="min-w-[200px] flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
             <input
               {...ctx.expenseForm.register("amount")}
@@ -456,7 +456,7 @@ export function BillingTab() {
               step="0.01"
               placeholder={t("cases.detail_exp_amount_ph")}
               disabled={isArchived}
-              className="w-32 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              className="w-32 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
             <label className="flex items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)]">
               <input

@@ -56,32 +56,37 @@ function WidgetCard({
   children: React.ReactNode;
   onClick?: () => void;
 }) {
-  return (
-    <div
-      onClick={onClick}
-      onKeyDown={
-        onClick
-          ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onClick();
-              }
-            }
-          : undefined
-      }
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      className={cn(
-        "rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-[var(--card-shadow)]",
-        onClick &&
-          "cursor-pointer transition-colors hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
-      )}
-    >
+  const body = (
+    <>
       <div className="mb-3 flex items-center gap-2">
         <Icon size={15} className="text-[color:var(--ds-text-muted)]" />
         <h3 className="text-[13px] font-semibold text-[color:var(--ds-text)]">{title}</h3>
       </div>
       {children}
+    </>
+  );
+  const cardClass =
+    "rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-[var(--card-shadow)]";
+  if (!onClick) {
+    return <div className={cardClass}>{body}</div>;
+  }
+  return (
+    <div
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      className={cn(
+        cardClass,
+        "cursor-pointer transition-colors hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+      )}
+    >
+      {body}
     </div>
   );
 }

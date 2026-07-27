@@ -262,6 +262,20 @@ CREATE TABLE IF NOT EXISTS content_chunks (
   token_count     INTEGER,
   embedded_at     TIMESTAMPTZ,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  -- v0.43.0 (INDUSTRIENIVEAU legal corpus): structured legal metadata.
+  document_type   TEXT,
+  statute_abbr    TEXT,
+  paragraph_ref   TEXT,
+  absatz          TEXT,
+  ziffer          TEXT,
+  literal         TEXT,
+  chunk_role      TEXT,
+  court           TEXT,
+  case_number     TEXT,
+  ecli            TEXT,
+  decision_date   TEXT,
+  legal_area      TEXT,
+  canonical_label TEXT,
   -- v0.19.0: code chunk metadata (markdown chunks leave NULL).
   language        TEXT,
   symbol_name     TEXT,
@@ -295,6 +309,33 @@ CREATE INDEX IF NOT EXISTS idx_chunks_language ON content_chunks(language) WHERE
 CREATE INDEX IF NOT EXISTS content_chunks_stale_idx
   ON content_chunks(page_id, chunk_index) WHERE embedding IS NULL;
 
+-- v0.43.0 (INDUSTRIENIVEAU): legal metadata B-tree indexes.
+CREATE INDEX IF NOT EXISTS idx_chunks_statute_abbr ON content_chunks(statute_abbr) WHERE statute_abbr IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_paragraph_ref ON content_chunks(paragraph_ref) WHERE paragraph_ref IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_absatz ON content_chunks(absatz) WHERE absatz IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_court ON content_chunks(court) WHERE court IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_case_number ON content_chunks(case_number) WHERE case_number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_ecli ON content_chunks(ecli) WHERE ecli IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_canonical_label ON content_chunks(canonical_label) WHERE canonical_label IS NOT NULL;
+
+-- v0.43.0 (INDUSTRIENIVEAU Poly-Vector Retrieval): separate label embeddings.
+CREATE TABLE IF NOT EXISTS content_chunk_labels (
+  id              SERIAL PRIMARY KEY,
+  chunk_id        INTEGER NOT NULL REFERENCES content_chunks(id) ON DELETE CASCADE,
+  label_type      TEXT    NOT NULL,
+  label_text      TEXT    NOT NULL,
+  label_display   TEXT    NOT NULL,
+  embedding       vector(__EMBEDDING_DIMS__),
+  model           TEXT    NOT NULL DEFAULT '__EMBEDDING_MODEL__',
+  embedded_at     TIMESTAMPTZ,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(chunk_id, label_type, label_text)
+);
+CREATE INDEX IF NOT EXISTS idx_chunk_labels_chunk_id ON content_chunk_labels(chunk_id);
+CREATE INDEX IF NOT EXISTS idx_chunk_labels_lookup ON content_chunk_labels(label_type, label_text);
+CREATE INDEX IF NOT EXISTS idx_chunk_labels_embedding_hnsw
+  ON content_chunk_labels USING hnsw (embedding vector_cosine_ops);
+
 -- ============================================================
 -- links: cross-references between pages
 -- ============================================================
@@ -323,16 +364,17 @@ CREATE TABLE IF NOT EXISTS links (
   valid_from     TIMESTAMPTZ NOT NULL DEFAULT now(),
   valid_to       TIMESTAMPTZ,
   superseded_by  INTEGER REFERENCES links(id) ON DELETE SET NULL,
-  CONSTRAINT links_from_to_type_source_origin_unique
-    UNIQUE NULLS NOT DISTINCT (from_page_id, to_page_id, link_type, link_source, origin_page_id)
+  -- Partial unique index below enforces uniqueness for current edges only.
 );
 
 CREATE INDEX IF NOT EXISTS idx_links_from ON links(from_page_id);
 CREATE INDEX IF NOT EXISTS idx_links_to ON links(to_page_id);
 CREATE INDEX IF NOT EXISTS idx_links_source ON links(link_source);
 CREATE INDEX IF NOT EXISTS idx_links_origin ON links(origin_page_id);
--- v0.43.0: partial index for current bi-temporal edges (valid_to IS NULL)
-CREATE INDEX IF NOT EXISTS idx_links_current ON links(from_page_id, to_page_id, link_type) WHERE valid_to IS NULL;
+-- v0.43.0: partial unique index for current bi-temporal edges (valid_to IS NULL)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_links_current_unique
+  ON links (from_page_id, to_page_id, link_type, COALESCE(link_source, ''), COALESCE(origin_page_id, -1))
+  WHERE valid_to IS NULL;
 -- v0.43.0: index for historical link lookups
 CREATE INDEX IF NOT EXISTS idx_links_history ON links(from_page_id, valid_from, valid_to);
 

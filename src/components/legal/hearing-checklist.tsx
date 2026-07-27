@@ -143,7 +143,7 @@ export function HearingChecklist() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-8">
+      <div className="flex justify-center py-8" role="status" aria-live="polite">
         <Loader2 size={20} className="animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );
@@ -220,7 +220,13 @@ export function HearingChecklist() {
           placeholder={t("mattertab.checklist_custom_placeholder")}
           className="text-sm"
         />
-        <Button size="sm" variant="outline" onClick={addCustomItem} disabled={!customLabel.trim()}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={addCustomItem}
+          disabled={!customLabel.trim()}
+          aria-label="Checklist-Eintrag hinzufügen"
+        >
           <Plus size={14} />
         </Button>
       </div>

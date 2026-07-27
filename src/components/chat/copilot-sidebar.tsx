@@ -270,6 +270,13 @@ function ProactiveAlerts({ alerts, onQuery, onDismiss, t, className }: Proactive
                   e.stopPropagation();
                   onDismiss(alertKey);
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onDismiss(alertKey);
+                  }
+                }}
                 className="flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover/alert:opacity-100 hover:bg-[color:var(--ds-hover)]"
                 aria-label={t("copilot.dismiss_hint")}
                 role="button"
@@ -914,6 +921,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       >
         {/* Resize handle — drag to resize panel width */}
         {open && (
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- WAI-ARIA separator/slider pattern: keyboard support is provided via onKeyDown + aria-valuenow/-min/-max below, not a plain non-interactive element.
           <div
             onMouseDown={handleResizeStart}
             onTouchStart={handleResizeStart}

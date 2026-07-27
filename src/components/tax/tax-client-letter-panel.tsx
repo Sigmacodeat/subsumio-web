@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,8 @@ import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import { Mail, Loader2, AlertTriangle, Copy, CheckCircle2, Send, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
 interface ClientLetterProps {
   clientSlug: string;
@@ -49,6 +51,7 @@ export function TaxClientLetterPanel({ clientSlug }: ClientLetterProps) {
   const [keyPoints, setKeyPoints] = useState("");
   const [showLetter, setShowLetter] = useState(true);
   const [copied, setCopied] = useState(false);
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
 
   async function generate() {
     setLoading(true);
@@ -69,6 +72,15 @@ export function TaxClientLetterPanel({ clientSlug }: ClientLetterProps) {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!result) return;
+    const groundingText = [result.subject, result.body, result.call_to_action]
+      .filter(Boolean)
+      .join("\n\n");
+    groundAnswer(groundingText).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   function copyLetter() {
     if (!result) return;
@@ -137,7 +149,7 @@ export function TaxClientLetterPanel({ clientSlug }: ClientLetterProps) {
               value={customOccasion}
               onChange={(e) => setCustomOccasion(e.target.value)}
               placeholder={t("tax.letter.custom_placeholder")}
-              className="focus:brand-border/40 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none"
+              className="focus:brand-border/40 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
           </div>
         )}
@@ -151,7 +163,7 @@ export function TaxClientLetterPanel({ clientSlug }: ClientLetterProps) {
             onChange={(e) => setKeyPoints(e.target.value)}
             rows={2}
             placeholder={t("tax.letter.key_points_placeholder")}
-            className="focus:brand-border/40 w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none"
+            className="focus:brand-border/40 w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
         </div>
       </div>
@@ -249,6 +261,17 @@ export function TaxClientLetterPanel({ clientSlug }: ClientLetterProps) {
               )}
             </div>
           )}
+
+          <CitationPanel
+            data={
+              {
+                grounding: grounding ?? null,
+                citations: [],
+                isStreaming: isGrounding,
+              } satisfies CitationPanelData
+            }
+            compact
+          />
         </div>
       )}
     </Card>

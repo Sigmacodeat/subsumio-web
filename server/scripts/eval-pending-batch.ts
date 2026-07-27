@@ -15,14 +15,26 @@ import { writeFileSync, readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 import { hybridSearch } from "../src/core/search/hybrid.ts";
-import { runRetrievalQuality, type SearchFn, type NamedThingQuestion } from "../src/eval/retrieval-quality/harness.ts";
+import {
+  runRetrievalQuality,
+  type SearchFn,
+  type NamedThingQuestion,
+} from "../src/eval/retrieval-quality/harness.ts";
 import { splitStatute } from "../src/core/legal/split-statute.ts";
 import type { BrainEngine } from "../src/core/engine.ts";
 import type { ChunkInput } from "../src/core/types.ts";
 
 const REPO = join(import.meta.dir, "..", "..");
-const CORPUS = join(REPO, "law-corpus");
-const METRICS_FILE = join(REPO, "server", "test", "fixtures", "retrieval-quality", "legal-at", "METRICS.md");
+const CORPUS = process.env.LAW_CORPUS_ROOT ?? join(REPO, "law-corpus");
+const METRICS_FILE = join(
+  REPO,
+  "server",
+  "test",
+  "fixtures",
+  "retrieval-quality",
+  "legal-at",
+  "METRICS.md"
+);
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,12 +59,10 @@ interface DraftEntry {
 // ── Import reviewed gold set + pending drafts ────────────────────────────────
 
 // We import from the test fixtures directly
-const { LEGAL_AT_GOLD, seedLegalAtCorpus } = await import(
-  "../test/fixtures/retrieval-quality/legal-at/corpus.ts"
-);
-const { LEGAL_AT_PENDING } = await import(
-  "../test/fixtures/retrieval-quality/legal-at/pending-review.ts"
-);
+const { LEGAL_AT_GOLD, seedLegalAtCorpus } =
+  await import("../test/fixtures/retrieval-quality/legal-at/corpus.ts");
+const { LEGAL_AT_PENDING } =
+  await import("../test/fixtures/retrieval-quality/legal-at/pending-review.ts");
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -91,21 +101,29 @@ async function seedRefs(engine: BrainEngine, refs: Ref[]): Promise<void> {
     seen.add(slug);
     const sourceId = `law-${r.jur}`;
     const body = sectionBody(r);
-    await engine.putPage(slug, {
-      type: "law" as never,
-      title: slug,
-      compiled_truth: body,
-      timeline: "",
-      frontmatter: { jurisdiction: r.jur, abbreviation: r.abbr, paragraph: r.ref },
-    }, { sourceId });
-    await engine.upsertChunks(slug, [
+    await engine.putPage(
+      slug,
       {
-        chunk_index: 0,
-        chunk_text: body,
-        chunk_source: "compiled_truth",
-        token_count: body.split(/\s+/).length,
+        type: "law" as never,
+        title: slug,
+        compiled_truth: body,
+        timeline: "",
+        frontmatter: { jurisdiction: r.jur, abbreviation: r.abbr, paragraph: r.ref },
       },
-    ] satisfies ChunkInput[], { sourceId });
+      { sourceId }
+    );
+    await engine.upsertChunks(
+      slug,
+      [
+        {
+          chunk_index: 0,
+          chunk_text: body,
+          chunk_source: "compiled_truth",
+          token_count: body.split(/\s+/).length,
+        },
+      ] satisfies ChunkInput[],
+      { sourceId }
+    );
   }
 }
 
@@ -122,7 +140,7 @@ function toQuestions(entries: DraftEntry[]): NamedThingQuestion[] {
 async function measurePurity(
   eng: PGLiteEngine,
   entries: DraftEntry[],
-  jurisdiction?: string,
+  jurisdiction?: string
 ): Promise<{ leaks: string[]; total: number }> {
   const leaks: string[] = [];
   for (const e of entries) {
@@ -173,7 +191,9 @@ for (const [, entries] of byDomain) {
 if (currentBatch.length > 0) batches.push(currentBatch);
 
 // eslint-disable-next-line no-console
-console.log(`\nEvaluating ${allEntries.length} draft questions in ${batches.length} batches of ≤${BATCH_SIZE}\n`);
+console.log(
+  `\nEvaluating ${allEntries.length} draft questions in ${batches.length} batches of ≤${BATCH_SIZE}\n`
+);
 
 const metricsLines: string[] = [];
 metricsLines.push(`# AT Legal Retrieval — Draft Question Metrics`);
@@ -230,9 +250,13 @@ for (let bi = 0; bi < batches.length; bi++) {
   const pureRate = (purity.total - purity.leaks.length) / purity.total;
 
   // eslint-disable-next-line no-console
-  console.log(`  hit@1: ${(o.hit1 * 100).toFixed(1)}%, hit@3: ${(o.hit3 * 100).toFixed(1)}%, MRR: ${o.mrr.toFixed(3)}, purity: ${(pureRate * 100).toFixed(1)}%`);
+  console.log(
+    `  hit@1: ${(o.hit1 * 100).toFixed(1)}%, hit@3: ${(o.hit3 * 100).toFixed(1)}%, MRR: ${o.mrr.toFixed(3)}, purity: ${(pureRate * 100).toFixed(1)}%`
+  );
 
-  metricsLines.push(`| ${bi + 1} | ${domains} | ${batch.length} | ${(o.hit1 * 100).toFixed(1)}% | ${(o.hit3 * 100).toFixed(1)}% | ${o.mrr.toFixed(3)} | ${(pureRate * 100).toFixed(1)}% |`);
+  metricsLines.push(
+    `| ${bi + 1} | ${domains} | ${batch.length} | ${(o.hit1 * 100).toFixed(1)}% | ${(o.hit3 * 100).toFixed(1)}% | ${o.mrr.toFixed(3)} | ${(pureRate * 100).toFixed(1)}% |`
+  );
 
   // Per-domain breakdown within batch
   const batchByDomain = new Map<string, typeof report.questions>();
@@ -276,14 +300,22 @@ metricsLines.push(`|--------|---|-------|-------|-----|`);
   for (const [domain, entries] of byDomain) {
     const questions = toQuestions(entries);
     const searchFn: SearchFn = async (q) => {
-      const results = await hybridSearch(eng, q, { limit: 10, expansion: false, jurisdiction: "at" });
+      const results = await hybridSearch(eng, q, {
+        limit: 10,
+        expansion: false,
+        jurisdiction: "at",
+      });
       return results.map((r) => r.slug);
     };
     const report = await runRetrievalQuality(questions, searchFn);
     const o = overall(report.questions);
     // eslint-disable-next-line no-console
-    console.log(`  ${domain}: n=${entries.length}, hit@1=${(o.hit1 * 100).toFixed(1)}%, hit@3=${(o.hit3 * 100).toFixed(1)}%, MRR=${o.mrr.toFixed(3)}`);
-    metricsLines.push(`| ${domain} | ${entries.length} | ${(o.hit1 * 100).toFixed(1)}% | ${(o.hit3 * 100).toFixed(1)}% | ${o.mrr.toFixed(3)} |`);
+    console.log(
+      `  ${domain}: n=${entries.length}, hit@1=${(o.hit1 * 100).toFixed(1)}%, hit@3=${(o.hit3 * 100).toFixed(1)}%, MRR=${o.mrr.toFixed(3)}`
+    );
+    metricsLines.push(
+      `| ${domain} | ${entries.length} | ${(o.hit1 * 100).toFixed(1)}% | ${(o.hit3 * 100).toFixed(1)}% | ${o.mrr.toFixed(3)} |`
+    );
   }
 
   // Overall purity

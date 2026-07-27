@@ -308,6 +308,23 @@ export async function extractDocumentText(
   return result;
 }
 
+/** Extract the /Pages /Count value from raw PDF bytes by scanning the
+ *  trailer/xref for the Pages object reference and following it to /Count.
+ *  This is a lightweight regex probe — not a full PDF parser — but it
+ *  catches truncation where unpdf silently reports fewer pages than the
+ *  file claims. Returns 0 if the count can't be determined. */
+function rawPdfPageCount(buf: Buffer): number {
+  const head = buf.subarray(0, Math.min(buf.length, 4_000_000)).toString("latin1");
+  const tail = buf.subarray(Math.max(0, buf.length - 4_000_000)).toString("latin1");
+  // Look for /Type /Pages followed by /Count N in the Pages object
+  const pagesMatch =
+    head.match(/\/Type\s*\/Pages\s*\/Count\s+(\d+)/) ||
+    tail.match(/\/Type\s*\/Pages\s*\/Count\s+(\d+)/) ||
+    head.match(/\/Count\s+(\d+)\s*\/Type\s*\/Pages/) ||
+    tail.match(/\/Count\s+(\d+)\s*\/Type\s*\/Pages/);
+  return pagesMatch ? parseInt(pagesMatch[1], 10) : 0;
+}
+
 async function extractPdf(buf: Buffer): Promise<ExtractedDocument> {
   const { getDocumentProxy, extractText } = await import("unpdf");
   // unpdf wants a standalone Uint8Array; slice detaches from Buffer pool.
@@ -334,6 +351,18 @@ async function extractPdf(buf: Buffer): Promise<ExtractedDocument> {
     [textLayer, annotations.section].filter(Boolean).join("\n\n")
   );
   const warnings: string[] = [];
+
+  // PDF page count validation: compare parser's totalPages against the
+  // raw /Pages /Count metadata from the PDF trailer. A mismatch indicates
+  // either a truncated download or a corrupt PDF where the parser silently
+  // dropped pages — both are data integrity risks for legal corpus imports.
+  const rawPages = rawPdfPageCount(buf);
+  if (rawPages > 0 && rawPages !== totalPages) {
+    warnings.push(
+      `pdf_page_count_mismatch: raw /Pages /Count=${rawPages} but parser extracted ${totalPages} page(s) — possible truncation or corruption`
+    );
+  }
+
   if (totalPages > 500) {
     warnings.push(
       `pdf_annotations_partial: annotations checked on first 500 of ${totalPages} pages`
@@ -1397,15 +1426,15 @@ function fixGermanUmlauts(text: string): string {
     "Ã¼": "ü",
     "Ã¶": "ö",
     "Ã¤": "ä",
-    "Ãœ": "Ü",
+    Ãœ: "Ü",
     "Ã–": "Ö",
     "Ã„": "Ä",
-    "ÃŸ": "ß",
+    ÃŸ: "ß",
     "Ã¡": "á",
     "Ã©": "é",
     "Ã­": "í",
     "Ã³": "ó",
-    "Ãº": "ú",
+    Ãº: "ú",
     "Ã±": "ñ",
     "Â§": "§",
     "Â¶": "¶",

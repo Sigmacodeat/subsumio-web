@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useToast } from "@/components/ui/toast";
+import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import { tracking } from "@/lib/tracking";
 
@@ -60,6 +61,7 @@ function formatDate(dateStr: string): string {
 
 export default function BackupRestorePage() {
   const { addToast } = useToast();
+  const { t } = useLang();
   const queryClient = useQueryClient();
   const [restoreTarget, setRestoreTarget] = useState<BackupItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<BackupItem | null>(null);
@@ -84,13 +86,13 @@ export default function BackupRestorePage() {
       tracking.backup.created(totalPages);
       queryClient.invalidateQueries({ queryKey: ["backups"] });
       addToast({
-        title: "Backup erstellt",
-        description: "Voll-Backup erfolgreich erstellt",
+        title: t("admin.backup.created"),
+        description: t("admin.backup.created_desc"),
         type: "success",
       });
     },
     onError: (err: Error) => {
-      addToast({ title: "Backup fehlgeschlagen", description: err.message, type: "error" });
+      addToast({ title: t("admin.backup.failed"), description: err.message, type: "error" });
     },
   });
 
@@ -106,13 +108,17 @@ export default function BackupRestorePage() {
         errors: result.errors,
       });
       addToast({
-        title: "Restore abgeschlossen",
+        title: t("admin.backup.restore_done"),
         description: `${result.restored} Pages wiederhergestellt, ${result.skipped} übersprungen, ${result.failed} fehlgeschlagen`,
         type: result.failed > 0 ? "warning" : "success",
       });
     },
     onError: (err: Error) => {
-      addToast({ title: "Restore fehlgeschlagen", description: err.message, type: "error" });
+      addToast({
+        title: t("admin.backup.restore_failed"),
+        description: err.message,
+        type: "error",
+      });
     },
   });
 
@@ -121,11 +127,11 @@ export default function BackupRestorePage() {
     onSuccess: (_data, id) => {
       tracking.backup.deleted(id);
       queryClient.invalidateQueries({ queryKey: ["backups"] });
-      addToast({ title: "Backup gelöscht", type: "success" });
+      addToast({ title: t("admin.backup.deleted"), type: "success" });
       setDeleteTarget(null);
     },
     onError: (err: Error) => {
-      addToast({ title: "Löschen fehlgeschlagen", description: err.message, type: "error" });
+      addToast({ title: t("admin.backup.delete_failed"), description: err.message, type: "error" });
     },
   });
 
@@ -157,8 +163,8 @@ export default function BackupRestorePage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Backup & Restore"
-        description="Voll-Backups verwalten — erstellen, einspielen, herunterladen und löschen"
+        title={t("admin.backup.title")}
+        description={t("admin.backup.desc")}
         actions={[
           <Button
             key="create"
@@ -168,7 +174,7 @@ export default function BackupRestorePage() {
             disabled={createMutation.isPending}
           >
             <Database className="mr-2 h-4 w-4" />
-            {createMutation.isPending ? "Erstelle..." : "Neues Backup"}
+            {createMutation.isPending ? t("admin.backup.creating") : t("admin.backup.new")}
           </Button>,
         ]}
       />
@@ -295,7 +301,7 @@ export default function BackupRestorePage() {
                       size="sm"
                       variant="ghost"
                       onClick={() => setDeleteTarget(backup)}
-                      aria-label="Löschen"
+                      aria-label={t("admin.backup.aria_delete")}
                     >
                       <Trash2 className="h-4 w-4 text-[color:var(--ds-danger-text)]" />
                     </Button>
@@ -424,7 +430,9 @@ export default function BackupRestorePage() {
                   }}
                   disabled={restoreMutation.isPending}
                 >
-                  {restoreMutation.isPending ? "Stelle wieder her..." : "Restore bestätigen"}
+                  {restoreMutation.isPending
+                    ? t("admin.backup.restoring")
+                    : t("admin.backup.restore_confirm")}
                 </Button>
               </DialogFooter>
             </>
@@ -448,7 +456,7 @@ export default function BackupRestorePage() {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              Abbrechen
+              {t("admin.backup.cancel")}
             </Button>
             <Button
               variant="danger"
@@ -457,7 +465,7 @@ export default function BackupRestorePage() {
               }}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? "Lösche..." : "Löschen"}
+              {deleteMutation.isPending ? t("admin.backup.deleting") : t("admin.backup.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -211,7 +211,11 @@ export default function BrainDetailPage() {
         </div>
 
         {loading && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 text-[color:var(--ds-text-muted)]">
+          <div
+            className="flex flex-1 flex-col items-center justify-center gap-3 text-[color:var(--ds-text-muted)]"
+            role="status"
+            aria-live="polite"
+          >
             <Loader2 size={24} className="animate-spin" />
             <p className="text-sm">Seite wird geladen…</p>
           </div>
@@ -281,15 +285,15 @@ export default function BrainDetailPage() {
                 <textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  className="h-[400px] w-full resize-y rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="h-[400px] w-full resize-y rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                   spellCheck={false}
                 />
                 <div className="flex items-center gap-2">
                   <Button size="sm" variant="glow">
-                    Speichern
+                    {t("brain.save")}
                   </Button>
                   <Button size="sm" variant="secondary" onClick={() => setEditMode(false)}>
-                    Abbrechen
+                    {t("brain.cancel")}
                   </Button>
                 </div>
               </div>
@@ -452,7 +456,11 @@ export default function BrainDetailPage() {
           <div className="mt-2 h-[500px]">
             <Suspense
               fallback={
-                <div className="flex items-center justify-center py-8">
+                <div
+                  className="flex items-center justify-center py-8"
+                  role="status"
+                  aria-live="polite"
+                >
                   <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" />
                 </div>
               }

@@ -368,7 +368,7 @@ export default function ScimSettingsPage() {
                     ? process.env.NEXT_PUBLIC_SCIM_TOKEN_PREVIEW || "••••••••"
                     : "••••••••"
                 }
-                placeholder="In .env als SCIM_BEARER_TOKENS (orgId:token) konfiguriert"
+                placeholder={t("settings.scim.ph_token")}
               />
               <div className="py-3">
                 <button

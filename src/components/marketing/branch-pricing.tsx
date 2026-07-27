@@ -8,15 +8,17 @@
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PRICING, p, UI_STRINGS, type Lang } from "@/content/site";
+import { p, UI_STRINGS, type Lang } from "@/content/site";
+import { professionalPricing } from "@/content/audiences";
 import { pricingForIndustry } from "@/content/vertical-pricing";
 import { H2_CTA_CLASS } from "./chrome";
 
 export default function BranchPricing({ lang, industry }: { lang: Lang; industry: string }) {
   const vp = pricingForIndustry(lang, industry);
-  const title = vp?.title ?? PRICING[lang].title;
-  const sub = vp?.sub ?? PRICING[lang].sub;
-  const tiers = vp?.tiers ?? PRICING[lang].tiers;
+  const professional = professionalPricing(lang);
+  const title = vp?.title ?? professional.title;
+  const sub = vp?.sub ?? professional.sub;
+  const tiers = vp?.tiers ?? professional.tiers;
 
   // Map a tier to its billable plan so the signup CTA can carry it; after
   // signup the user lands on billing with auto-checkout for that plan.
@@ -105,7 +107,7 @@ export default function BranchPricing({ lang, industry }: { lang: Lang; industry
       </div>
 
       <p className="mt-6 text-center text-sm [color:var(--mk-text-subtle)]">
-        {PRICING[lang].footnote}{" "}
+        {professional.footnote}{" "}
         <Link href={p(lang, "/pricing")} className="brand-text hover:underline">
           {UI_STRINGS[lang].fullPricingFaq}
         </Link>

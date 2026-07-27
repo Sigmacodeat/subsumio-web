@@ -291,7 +291,11 @@ export function MatterHeader() {
 
   if (loading) {
     return (
-      <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 md:px-6">
+      <div
+        className="sticky top-0 z-30 flex items-center gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 md:px-6"
+        role="status"
+        aria-live="polite"
+      >
         <Loader2 size={18} className="animate-spin text-[color:var(--ds-text-muted)]" />
         <span className="text-sm text-[color:var(--ds-text-muted)]">
           {t("matterheader.loading")}

@@ -309,7 +309,7 @@ export default function FristenbuchPage() {
         title={t("deadlines.fristenbuch")}
         description={t("deadlines.fristenbuch_desc")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("deadlines.fristenbuch") },
         ]}
         actions={
@@ -441,7 +441,7 @@ export default function FristenbuchPage() {
           <select
             value={caseFilter}
             onChange={(e) => setCaseFilter(e.target.value)}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           >
             <option value="">{t("deadlines.fristenbuch_all_cases")}</option>
             {caseSlugs.map((slug) => (

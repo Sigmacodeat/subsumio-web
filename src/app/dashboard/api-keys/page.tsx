@@ -54,7 +54,7 @@ export default function ApiKeysPage() {
         title={t("apikeys.title")}
         description={t("apikeys.description")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("apikeys.breadcrumb") },
         ]}
       />

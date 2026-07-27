@@ -3,6 +3,7 @@ import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { verifyPortalToken } from "@/lib/portal-token";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
+import { groundAnswerCitations } from "@/lib/citation-gate";
 import type { BrainPage } from "@/lib/types";
 
 const chatSchema = z.object({
@@ -184,6 +185,12 @@ export const POST = createPublicHandler(
         "Es ist ein technischer Fehler aufgetreten. Bitte versuchen Sie es später erneut oder kontaktieren Sie Ihre Kanzlei.";
     }
 
+    // Verify any statute/citation claims in the answer against the corpus —
+    // this was previously hardcoded to `grounded: true` regardless of whether
+    // verification actually ran, which showed clients a false assurance badge.
+    const grounding = await groundAnswerCitations(answer);
+    const grounded = grounding.corpus_checked && !grounding.has_unverified;
+
     const slug = `portal-chat/${payload.case_slug}/${Date.now()}`;
     await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
@@ -198,7 +205,7 @@ export const POST = createPublicHandler(
           case_slug: payload.case_slug,
           question: body.message,
           sender: "bot",
-          grounded: true,
+          grounded,
           created_at: new Date().toISOString(),
         },
       }),
@@ -207,7 +214,7 @@ export const POST = createPublicHandler(
 
     return Response.json({
       answer,
-      grounded: true,
+      grounded,
       escalated: false,
     });
   }

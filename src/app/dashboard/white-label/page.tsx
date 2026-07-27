@@ -45,7 +45,10 @@ export default function WhiteLabelPage() {
       <PageHeader
         title={tr("workspace.white.title")}
         description={tr("workspace.white.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "White Label" }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: "White Label" },
+        ]}
       />
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-3 rounded-xl border p-5">

@@ -834,7 +834,7 @@ export function attributeKnob<K extends keyof ModeBundle>(
 // hard-exclude set for a given jurisdiction changed, so a pre-widening cached
 // row (which may contain foreign judikatur/landesrecht) must not be served to
 // a post-widening lookup. One-time global cold-miss on upgrade.
-export const KNOBS_HASH_VERSION = 14;
+export const KNOBS_HASH_VERSION = 15;
 
 /**
  * v0.36 (D8 / CDX-2) — second-arg context for the cache key. The
@@ -873,6 +873,11 @@ export interface KnobsHashContext {
   jurisdiction?: string;
   /** Historical legal cutoff; different dates resolve different statute versions. */
   asOfDate?: string;
+  /** v0.48 — legal metadata filters for court decisions. */
+  court?: string;
+  legalArea?: string;
+  decisionDateFrom?: string;
+  decisionDateTo?: string;
 }
 
 export function knobsHash(knobs: ResolvedSearchKnobs, ctx?: KnobsHashContext): string {
@@ -973,6 +978,13 @@ export function knobsHash(knobs: ResolvedSearchKnobs, ctx?: KnobsHashContext): s
     `jur=${ctx?.jurisdiction ?? "all"}`,
     // v=13: historical legal cutoff isolation.
     `asof=${ctx?.asOfDate ?? "current"}`,
+    // v=15 additions (v0.48, append-only): legal metadata filters. A
+    // court/area/date-filtered read must NOT be served from an unfiltered
+    // cache row — different candidate sets. ONE-TIME cold-miss on upgrade.
+    `court=${ctx?.court ?? "any"}`,
+    `area=${ctx?.legalArea ?? "any"}`,
+    `ddf=${ctx?.decisionDateFrom ?? "none"}`,
+    `ddt=${ctx?.decisionDateTo ?? "none"}`,
   ];
   const h = createHash("sha256");
   h.update(parts.join("|"));

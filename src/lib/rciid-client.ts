@@ -72,3 +72,40 @@ export function isRciidCaseActive(status: RciidCaseStatus): boolean {
 export function isRciidCaseDone(status: RciidCaseStatus): boolean {
   return status === "completed" || status === "rejected";
 }
+
+// ── Data Quality Score ───────────────────────────────────────────────────────
+
+export type RciidDataQualityScore = 1 | 2 | 3 | 4 | 5;
+
+export const RCIID_QUALITY_LABELS_DE: Record<number, string> = {
+  1: "Sehr niedrig — manuelle Prüfung erforderlich",
+  2: "Niedrig — viele Daten fehlen",
+  3: "Mittel — teilweise automatisierbar",
+  4: "Gut — weitgehend automatisierbar",
+  5: "Ausgezeichnet — voll automatisierbar",
+};
+
+export const RCIID_QUALITY_LABELS_EN: Record<number, string> = {
+  1: "Very low — manual review required",
+  2: "Low — much data missing",
+  3: "Medium — partially automatable",
+  4: "Good — largely automatable",
+  5: "Excellent — fully automatable",
+};
+
+export const RCIID_QUALITY_COLORS: Record<number, string> = {
+  1: "#ef4444",
+  2: "#f59e0b",
+  3: "#f59e0b",
+  4: "#22c55e",
+  5: "#22c55e",
+};
+
+export function getQualityColor(score: number): string {
+  return RCIID_QUALITY_COLORS[score] ?? "#6a6a8a";
+}
+
+export function getQualityLabel(score: number, lang: "de" | "en" = "de"): string {
+  const labels = lang === "en" ? RCIID_QUALITY_LABELS_EN : RCIID_QUALITY_LABELS_DE;
+  return labels[score] ?? "Unbekannt";
+}

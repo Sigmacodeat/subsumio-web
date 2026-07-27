@@ -82,13 +82,16 @@ interface PipelineState {
   contradiction_findings?: number;
   cost_spent_usd?: number;
   total_duration_ms?: number;
-  guardrail_results?: Record<number, {
-    passed: boolean;
-    flags_count: number;
-    flag_types: string[];
-    regenerated: boolean;
-    regen_passed?: boolean;
-  }>;
+  guardrail_results?: Record<
+    number,
+    {
+      passed: boolean;
+      flags_count: number;
+      flag_types: string[];
+      regenerated: boolean;
+      regen_passed?: boolean;
+    }
+  >;
   cross_verify_results?: {
     clean: boolean;
     flags_count: number;
@@ -447,7 +450,7 @@ export function PipelinePanel({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
         <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );
@@ -607,7 +610,9 @@ export function PipelinePanel({
                         )}
                         title={`Guardrail: ${pipelineState.guardrail_results[layer.num]!.flag_types.join(", ") || "no flags"}`}
                       >
-                        {pipelineState.guardrail_results[layer.num]!.passed ? "✓ Guardrail" : `⚠ ${pipelineState.guardrail_results[layer.num]!.flags_count} Flag${pipelineState.guardrail_results[layer.num]!.flags_count > 1 ? "s" : ""}`}
+                        {pipelineState.guardrail_results[layer.num]!.passed
+                          ? "✓ Guardrail"
+                          : `⚠ ${pipelineState.guardrail_results[layer.num]!.flags_count} Flag${pipelineState.guardrail_results[layer.num]!.flags_count > 1 ? "s" : ""}`}
                       </Badge>
                     )}
                     {layer.num === 6 && pipelineState?.cross_verify_results && (
@@ -621,7 +626,9 @@ export function PipelinePanel({
                         )}
                         title={`Cross-verify: ${pipelineState.cross_verify_results.flag_types.join(", ") || "clean"}`}
                       >
-                        {pipelineState.cross_verify_results.clean ? "✓ Cross-Verify" : `⚠ Cross-Verify (${pipelineState.cross_verify_results.flags_count})`}
+                        {pipelineState.cross_verify_results.clean
+                          ? "✓ Cross-Verify"
+                          : `⚠ Cross-Verify (${pipelineState.cross_verify_results.flags_count})`}
                       </Badge>
                     )}
                     {layerState?.completed_at && (

@@ -108,7 +108,7 @@ export default function ClauseLibraryPage() {
         title={t("clauses.title")}
         description={t("clauses.description")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("clauses.breadcrumb") },
         ]}
         actions={
@@ -166,7 +166,7 @@ export default function ClauseLibraryPage() {
       )}
 
       {loading && (
-        <div className="flex h-32 items-center justify-center">
+        <div className="flex h-32 items-center justify-center" role="status" aria-live="polite">
           <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       )}
@@ -177,13 +177,22 @@ export default function ClauseLibraryPage() {
           {filtered.map((clause) => (
             <div
               key={clause.slug}
+              role="button"
+              tabIndex={0}
               className={cn(
-                "group cursor-pointer rounded-xl border p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                "group cursor-pointer rounded-xl border p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
                 selectedClause?.slug === clause.slug
                   ? "brand-border brand-soft"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
               )}
               onClick={() => setSelectedClause(clause)}
+              onKeyDown={(e) => {
+                if (e.target !== e.currentTarget) return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSelectedClause(clause);
+                }
+              }}
             >
               <div className="mb-2 flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">

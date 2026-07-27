@@ -2257,8 +2257,9 @@ export class PGLiteEngine implements BrainEngine {
     // list. Image chunks pass embedding=null + embedding_image=Float32Array
     // (1024-dim Voyage). Text/code chunks pass embedding=Float32Array +
     // embedding_image=null. Default modality='text' when omitted.
+    // v0.43.0 (INDUSTRIENIVEAU): legal metadata columns.
     const cols =
-      "(page_id, chunk_index, chunk_text, chunk_source, embedding, model, token_count, embedded_at, language, symbol_name, symbol_type, start_line, end_line, parent_symbol_path, doc_comment, symbol_name_qualified, modality, embedding_image)";
+      "(page_id, chunk_index, chunk_text, chunk_source, embedding, model, token_count, embedded_at, language, symbol_name, symbol_type, start_line, end_line, parent_symbol_path, doc_comment, symbol_name_qualified, modality, embedding_image, document_type, statute_abbr, paragraph_ref, absatz, ziffer, literal, chunk_role, court, case_number, ecli, decision_date, legal_area, canonical_label)";
     const rowParts: string[] = [];
     const params: unknown[] = [];
     let paramIdx = 1;
@@ -2286,7 +2287,10 @@ export class PGLiteEngine implements BrainEngine {
           `${embeddingPh}, $${paramIdx++}, $${paramIdx++}, ${embeddedAtPh}, ` +
           `$${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, ` +
           `$${paramIdx++}::text[], $${paramIdx++}, $${paramIdx++}, ` +
-          `$${paramIdx++}, ${embeddingImagePh})`
+          `$${paramIdx++}, ${embeddingImagePh}, ` +
+          `$${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, ` +
+          `$${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, ` +
+          `$${paramIdx++}, $${paramIdx++}, $${paramIdx++})`
       );
 
       // Param push order MUST match placeholder allocation order. Both
@@ -2309,7 +2313,20 @@ export class PGLiteEngine implements BrainEngine {
         parentPath,
         chunk.doc_comment || null,
         chunk.symbol_name_qualified || null,
-        modality
+        modality,
+        chunk.document_type || null,
+        chunk.statute_abbr || null,
+        chunk.paragraph_ref || null,
+        chunk.absatz || null,
+        chunk.ziffer || null,
+        chunk.literal || null,
+        chunk.chunk_role || null,
+        chunk.court || null,
+        chunk.case_number || null,
+        chunk.ecli || null,
+        chunk.decision_date || null,
+        chunk.legal_area || null,
+        chunk.canonical_label || null
       );
     }
 
@@ -2352,9 +2369,73 @@ export class PGLiteEngine implements BrainEngine {
          doc_comment = EXCLUDED.doc_comment,
          symbol_name_qualified = EXCLUDED.symbol_name_qualified,
          modality = EXCLUDED.modality,
-         embedding_image = COALESCE(EXCLUDED.embedding_image, content_chunks.embedding_image)`,
+         embedding_image = COALESCE(EXCLUDED.embedding_image, content_chunks.embedding_image),
+         document_type = EXCLUDED.document_type,
+         statute_abbr = EXCLUDED.statute_abbr,
+         paragraph_ref = EXCLUDED.paragraph_ref,
+         absatz = EXCLUDED.absatz,
+         ziffer = EXCLUDED.ziffer,
+         literal = EXCLUDED.literal,
+         chunk_role = EXCLUDED.chunk_role,
+         court = EXCLUDED.court,
+         case_number = EXCLUDED.case_number,
+         ecli = EXCLUDED.ecli,
+         decision_date = EXCLUDED.decision_date,
+         legal_area = EXCLUDED.legal_area,
+         canonical_label = EXCLUDED.canonical_label`,
       params
     );
+
+    // v0.43.0 (INDUSTRIENIVEAU Poly-Vector): upsert content_chunk_labels.
+    if (chunks.some((c) => c.labels && c.labels.length > 0)) {
+      const labelRows: string[] = [];
+      const labelParams: unknown[] = [];
+      let lpIdx = 1;
+      for (const chunk of chunks) {
+        if (!chunk.labels || chunk.labels.length === 0) continue;
+        const chunkIdResult = await this.db.query(
+          "SELECT id FROM content_chunks WHERE page_id = $1 AND chunk_index = $2",
+          [pageId, chunk.chunk_index]
+        );
+        const chunkId = (chunkIdResult.rows[0] as { id: number } | undefined)?.id;
+        if (!chunkId) continue;
+        for (const label of chunk.labels) {
+          const labelEmbeddingStr = label.embedding
+            ? "[" + Array.from(label.embedding).join(",") + "]"
+            : null;
+          const labelEmbeddingPh = labelEmbeddingStr ? `$${lpIdx++}::vector` : "NULL";
+          const labelEmbeddedAtPh = labelEmbeddingStr ? "now()" : "NULL";
+          labelRows.push(
+            `($${lpIdx++}, $${lpIdx++}, $${lpIdx++}, $${lpIdx++}, ${labelEmbeddingPh}, $${lpIdx++}, ${labelEmbeddedAtPh})`
+          );
+          if (labelEmbeddingStr) labelParams.push(labelEmbeddingStr);
+          labelParams.push(
+            chunkId,
+            label.type,
+            label.text,
+            label.display,
+            chunk.model || DEFAULT_EMBEDDING_MODEL
+          );
+        }
+      }
+      if (labelRows.length > 0) {
+        await this.db.query(
+          `INSERT INTO content_chunk_labels (chunk_id, label_type, label_text, label_display, embedding, model, embedded_at) VALUES ${labelRows.join(", ")}
+           ON CONFLICT (chunk_id, label_type, label_text) DO UPDATE SET
+             label_display = EXCLUDED.label_display,
+             embedding = CASE
+               WHEN EXCLUDED.embedding IS NOT NULL THEN EXCLUDED.embedding
+               ELSE content_chunk_labels.embedding
+             END,
+             model = COALESCE(EXCLUDED.model, content_chunk_labels.model),
+             embedded_at = CASE
+               WHEN EXCLUDED.embedding IS NOT NULL THEN EXCLUDED.embedded_at
+               ELSE content_chunk_labels.embedded_at
+             END`,
+          labelParams
+        );
+      }
+    }
   }
 
   async getChunks(slug: string, opts?: { sourceId?: string }): Promise<Chunk[]> {

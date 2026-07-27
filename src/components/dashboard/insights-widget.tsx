@@ -105,7 +105,11 @@ export function InsightsWidget() {
 
       {/* Loading */}
       {loading && !data && (
-        <div className="flex items-center justify-center gap-2 py-8 text-sm text-[color:var(--ds-text-muted)]">
+        <div
+          className="flex items-center justify-center gap-2 py-8 text-sm text-[color:var(--ds-text-muted)]"
+          role="status"
+          aria-live="polite"
+        >
           <Loader2 size={16} className="animate-spin" />
           Lade Insights…
         </div>

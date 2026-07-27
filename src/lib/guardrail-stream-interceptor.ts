@@ -15,6 +15,8 @@ interface WarningAccumulator {
   userId?: string;
   jurisdiction?: string;
   queryHash?: string;
+  query?: string;
+  traceId?: string;
   logged: boolean;
 }
 
@@ -32,6 +34,15 @@ function parseWarningsFromChunk(data: Record<string, unknown>): string[] {
   return warnings;
 }
 
+/** Extract trace_id and query from the final SSE data chunk. */
+function parseTraceMeta(data: Record<string, unknown>): { traceId?: string; warnings?: string[] } {
+  const traceId = typeof data.trace_id === "string" ? data.trace_id : undefined;
+  const warnings = Array.isArray(data.warnings)
+    ? data.warnings.filter((w): w is string => typeof w === "string")
+    : undefined;
+  return { traceId, warnings };
+}
+
 function classifyWarnings(warnings: string[]): Partial<GuardrailMetric> {
   const tier0Passed = warnings.some((w) => w.includes("GUARDRAIL_PASSED"));
   const tier0Flagged = warnings.some((w) => w.includes("GUARDRAIL_FLAGGED"));
@@ -39,13 +50,9 @@ function classifyWarnings(warnings: string[]): Partial<GuardrailMetric> {
     warnings.some((w) => w.includes("GUARDRAIL_REGENERATION_PASSED")) ||
     warnings.some((w) => w.includes("GUARDRAIL_REGENERATION_STILL_FLAGGED"));
   const tier1Passed = warnings.some((w) => w.includes("CROSS_VERIFY_PASSED"));
-  const tier1PassedWithNotes = warnings.some((w) =>
-    w.includes("CROSS_VERIFY_PASSED_WITH_NOTES")
-  );
+  const tier1PassedWithNotes = warnings.some((w) => w.includes("CROSS_VERIFY_PASSED_WITH_NOTES"));
   const tier1Flagged = warnings.some((w) => w.includes("CROSS_VERIFY_FLAGGED"));
-  const tier1Regenerated = warnings.some((w) =>
-    w.includes("CROSS_VERIFY_REGENERATION_DONE")
-  );
+  const tier1Regenerated = warnings.some((w) => w.includes("CROSS_VERIFY_REGENERATION_DONE"));
   const tier1Skipped = warnings.some((w) => w.includes("CROSS_VERIFY_SKIPPED"));
 
   return {
@@ -54,7 +61,8 @@ function classifyWarnings(warnings: string[]): Partial<GuardrailMetric> {
       ? warnings.filter((w) => w.includes("GUARDRAIL_FLAGGED")).map((w) => ({ type: w }))
       : [],
     tier_0_regenerated: tier0Regenerated,
-    tier_1_passed: tier1Passed || tier1PassedWithNotes || (!tier1Flagged && !tier1Skipped ? undefined : false),
+    tier_1_passed:
+      tier1Passed || tier1PassedWithNotes || (!tier1Flagged && !tier1Skipped ? undefined : false),
     tier_1_flags: tier1Flagged
       ? warnings.filter((w) => w.includes("CROSS_VERIFY_FLAGGED")).map((w) => ({ type: w }))
       : [],
@@ -74,6 +82,7 @@ export function interceptGuardrailStream(
     userId?: string;
     jurisdiction?: string;
     queryHash?: string;
+    query?: string;
   }
 ): ReadableStream<Uint8Array> {
   const acc: WarningAccumulator = {
@@ -83,11 +92,11 @@ export function interceptGuardrailStream(
     userId: opts.userId,
     jurisdiction: opts.jurisdiction,
     queryHash: opts.queryHash,
+    query: opts.query,
     logged: false,
   };
 
   const decoder = new TextDecoder();
-  const encoder = new TextEncoder();
 
   return new ReadableStream({
     async pull(controller) {
@@ -99,14 +108,16 @@ export function interceptGuardrailStream(
             // Log metrics
             if (!acc.logged) {
               acc.logged = true;
-              const classified = classifyWarnings(acc.warnings);
+              // Use warnings from the final SSE chunk if available (more complete)
+              const finalWarnings = acc.warnings;
+              const classified = classifyWarnings(finalWarnings);
               void logGuardrailMetric({
                 brain_id: acc.brainId,
                 user_id: acc.userId,
                 query_hash: acc.queryHash,
                 jurisdiction: acc.jurisdiction,
                 latency_ms: Date.now() - acc.startTime,
-                warnings: acc.warnings,
+                warnings: finalWarnings,
                 ...classified,
               });
             }
@@ -123,6 +134,13 @@ export function interceptGuardrailStream(
                 const parsed = JSON.parse(line.slice(6)) as Record<string, unknown>;
                 const ws = parseWarningsFromChunk(parsed);
                 acc.warnings.push(...ws);
+                // Capture trace_id and warnings from the final data chunk
+                const meta = parseTraceMeta(parsed);
+                if (meta.traceId) acc.traceId = meta.traceId;
+                if (meta.warnings && meta.warnings.length > 0) {
+                  // Replace accumulated warnings with the complete set from the final chunk
+                  acc.warnings = meta.warnings;
+                }
                 // Also check for done signal
                 if (parsed.done === true || parsed.done === "true") {
                   if (!acc.logged) {

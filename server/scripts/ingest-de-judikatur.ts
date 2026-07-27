@@ -18,7 +18,10 @@ import { mkdirSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { dump as yamlDump } from "js-yaml";
 
-const DEFAULT_OUT = join(import.meta.dir, "..", "law-corpus", "de-judikatur");
+const DEFAULT_OUT = join(
+  process.env.LAW_CORPUS_ROOT ?? join(import.meta.dir, "..", "law-corpus"),
+  "de-judikatur"
+);
 const DEFAULT_LIMIT = 100;
 
 interface CourtConfig {
@@ -130,7 +133,9 @@ function parseRssXml(xml: string): Array<{
   for (const item of items) {
     const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
     const linkMatch = item.match(/<link>([\s\S]*?)<\/link>/i);
-    const descMatch = item.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i);
+    const descMatch = item.match(
+      /<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i
+    );
     const dateMatch = item.match(/<pubDate>([\s\S]*?)<\/pubDate>/i);
     const guidMatch = item.match(/<guid[^>]*>([\s\S]*?)<\/guid>/i);
 
@@ -149,7 +154,9 @@ function parseRssXml(xml: string): Array<{
 /** Extract case number (Az.) from title or description */
 function extractAz(text: string): string {
   // Patterns: "I ZR 123/21", "XII ZR 123/21", "2 BvR 123/21"
-  const azMatch = text.match(/(?:\d+\s+)?(?:[IVX]+\s+)?(?:Bv[A-Z]|ZR|ZR|R|AR|VR|LR|S|R|K|R)\s+\d+\/\d+/i);
+  const azMatch = text.match(
+    /(?:\d+\s+)?(?:[IVX]+\s+)?(?:Bv[A-Z]|ZR|ZR|R|AR|VR|LR|S|R|K|R)\s+\d+\/\d+/i
+  );
   if (azMatch) return azMatch[0];
   // Try "Az. ..." pattern
   const azExplicit = text.match(/Az\.?\s*([^\s,;]+)/i);
@@ -189,13 +196,15 @@ async function fetchFullText(url: string): Promise<string> {
 }
 
 /** Fetch RSS feed and parse entries */
-async function fetchFeed(url: string): Promise<Array<{
-  title: string;
-  link: string;
-  description: string;
-  pubDate: string;
-  guid?: string;
-}>> {
+async function fetchFeed(url: string): Promise<
+  Array<{
+    title: string;
+    link: string;
+    description: string;
+    pubDate: string;
+    guid?: string;
+  }>
+> {
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; Subsumio-Legal-Import/1.0)" },
@@ -217,12 +226,24 @@ async function fetchFeed(url: string): Promise<Array<{
 
 const BGH_FEEDS: Array<{ url: string; legalArea: string; label: string }> = [
   // BGH RSS feeds per senate group
-  { url: "https://www.bundesgerichtshof.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed_BGH/Entscheidungen_Zivilsachen.xml", legalArea: "zivilrecht", label: "zivilsachen" },
-  { url: "https://www.bundesgerichtshof.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed_BGH/Entscheidungen_Strafsachen.xml", legalArea: "strafrecht", label: "strafsachen" },
+  {
+    url: "https://www.bundesgerichtshof.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed_BGH/Entscheidungen_Zivilsachen.xml",
+    legalArea: "zivilrecht",
+    label: "zivilsachen",
+  },
+  {
+    url: "https://www.bundesgerichtshof.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed_BGH/Entscheidungen_Strafsachen.xml",
+    legalArea: "strafrecht",
+    label: "strafsachen",
+  },
 ];
 
 const BVERFG_FEEDS: Array<{ url: string; legalArea: string; label: string }> = [
-  { url: "https://www.bundesverfassungsgericht.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed_BVerfG/Entscheidungen.xml", legalArea: "verfassungsrecht", label: "verfassungsrecht" },
+  {
+    url: "https://www.bundesverfassungsgericht.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed_BVerfG/Entscheidungen.xml",
+    legalArea: "verfassungsrecht",
+    label: "verfassungsrecht",
+  },
 ];
 
 const COURTS: Record<string, CourtConfig> = {

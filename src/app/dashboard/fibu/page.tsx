@@ -214,8 +214,8 @@ export default function FibuPage() {
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Finanzbuchhaltung"
-        description="Bank-Feed, OPOS, Mahnläufe und Zahlungslinks"
+        title={t("fibu.title")}
+        description={t("fibu.desc")}
         breadcrumbs={[{ label: t("breadcrumb.dashboard"), href: "/dashboard" }, { label: "FiBu" }]}
         actions={
           <div className="flex gap-2">
@@ -352,7 +352,7 @@ export default function FibuPage() {
               <Input
                 value={importForm.reference}
                 onChange={(e) => setImportForm({ ...importForm, reference: e.target.value })}
-                placeholder="Rechnungsnummer, Aktenzeichen..."
+                placeholder={t("fibu.ph_search")}
               />
             </div>
             <div className="space-y-1">
@@ -445,7 +445,7 @@ export default function FibuPage() {
               <Input
                 value={linkForm.remittance_text}
                 onChange={(e) => setLinkForm({ ...linkForm, remittance_text: e.target.value })}
-                placeholder="Rechnung RE-2026-001"
+                placeholder={t("fibu.ph_invoice")}
               />
             </div>
           </div>
@@ -457,7 +457,7 @@ export default function FibuPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-20">
+        <div className="flex justify-center py-20" role="status" aria-live="polite">
           <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : (

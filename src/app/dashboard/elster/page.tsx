@@ -116,7 +116,10 @@ export default function ElsterPage() {
       <PageHeader
         title={t("elster.title")}
         description={t("elster.desc")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("elster.title") }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("elster.title") },
+        ]}
       />
 
       {error && (

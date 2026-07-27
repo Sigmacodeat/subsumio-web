@@ -145,6 +145,7 @@ export default function IntakePage() {
   const [conversionTargets, setConversionTargets] = useState<Record<string, string>>({});
   const [createOpen, setCreateOpen] = useState(false);
   const [wizardItem, setWizardItem] = useState<IntakeRecord | null>(null);
+  const [updatingSlug, setUpdatingSlug] = useState<string | null>(null);
   const [createForm, setCreateForm] = useState({
     source: "manual" as IntakeSource,
     summary: "",
@@ -256,6 +257,7 @@ export default function IntakePage() {
   }, [items]);
 
   async function updateStatus(item: IntakeRecord, status: IntakeStatus) {
+    setUpdatingSlug(item.slug);
     try {
       await updateMutation.mutateAsync({ slug: item.slug, status });
       addToast({ type: "success", title: t("intake.toast_status_changed") });
@@ -265,6 +267,8 @@ export default function IntakePage() {
         title: t("intake.toast_update_failed"),
         description: err instanceof Error ? err.message : undefined,
       });
+    } finally {
+      setUpdatingSlug(null);
     }
   }
 
@@ -307,7 +311,10 @@ export default function IntakePage() {
       <PageHeader
         title={t("intake.title")}
         description={t("intake.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("intake.title") }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("intake.title") },
+        ]}
         actions={
           <div className="flex items-center gap-2.5">
             <Button
@@ -471,7 +478,7 @@ export default function IntakePage() {
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t("intake.search_placeholder")}
                 aria-label={t("intake.search_placeholder")}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-9 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-9 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
               {search && (
                 <button
@@ -613,6 +620,7 @@ export default function IntakePage() {
                         <DropdownMenuContent align="end" className="w-44">
                           <DropdownMenuItem
                             onClick={() => void updateStatus(item, "needs_info")}
+                            disabled={updatingSlug === item.slug}
                             className="gap-2 text-xs"
                           >
                             <AlertCircle size={13} />
@@ -620,6 +628,7 @@ export default function IntakePage() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => void updateStatus(item, "conflict_check")}
+                            disabled={updatingSlug === item.slug}
                             className="gap-2 text-xs"
                           >
                             <Clock size={13} />
@@ -627,6 +636,7 @@ export default function IntakePage() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => void updateStatus(item, "accepted")}
+                            disabled={updatingSlug === item.slug}
                             className="gap-2 text-xs"
                           >
                             <CheckCircle2 size={13} />
@@ -635,6 +645,7 @@ export default function IntakePage() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => void updateStatus(item, "rejected")}
+                            disabled={updatingSlug === item.slug}
                             className="gap-2 text-xs text-[color:var(--ds-danger-text)] focus:text-[color:var(--ds-danger-text)]"
                           >
                             <XCircle size={13} />
@@ -722,6 +733,7 @@ export default function IntakePage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => void updateStatus(item, "needs_info")}
+                                disabled={updatingSlug === item.slug}
                                 className="gap-1.5 text-xs"
                               >
                                 <AlertCircle size={13} />
@@ -751,6 +763,7 @@ export default function IntakePage() {
                                       })
                                     )
                                 }
+                                disabled={updatingSlug === item.slug}
                                 className="gap-1.5 text-xs"
                               >
                                 <Clock size={13} />
@@ -780,6 +793,7 @@ export default function IntakePage() {
                                       })
                                     )
                                 }
+                                disabled={updatingSlug === item.slug}
                                 className="gap-1.5 text-xs text-[color:var(--ds-success-text)] hover:text-[color:var(--ds-success-text)]"
                               >
                                 <CheckCircle2 size={13} />
@@ -862,7 +876,7 @@ export default function IntakePage() {
                     source: e.target.value as IntakeSource,
                   }))
                 }
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               >
                 <option value="manual">{t("intake.source_manual")}</option>
                 <option value="whatsapp">WhatsApp</option>
@@ -883,7 +897,7 @@ export default function IntakePage() {
                 placeholder={t("intake.placeholder_summary")}
                 rows={3}
                 autoFocus
-                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -1062,6 +1076,7 @@ const ACTION_ICONS: Record<string, React.ElementType> = {
 };
 
 function TriagePanel({ items }: { items: IntakeRecord[] }) {
+  const { t } = useLang();
   const [expanded, setExpanded] = useState(true);
 
   const triageCards = useMemo(() => {
@@ -1172,7 +1187,7 @@ function TriagePanel({ items }: { items: IntakeRecord[] }) {
                   <Link
                     href={`/dashboard/brain/${encodeURIComponent(card.rawSlug)}`}
                     className="shrink-0 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                    title="Details öffnen"
+                    title={t("intake.aria_details")}
                   >
                     <ChevronRight size={14} />
                   </Link>

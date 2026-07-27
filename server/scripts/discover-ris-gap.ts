@@ -23,6 +23,8 @@ import { mkdirSync, writeFileSync, existsSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { dump as yamlDump } from "js-yaml";
+import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const MAX_RETRIES = 3;
@@ -39,7 +41,7 @@ const limitIdx = args.indexOf("--limit");
 const limitArg = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : 0;
 
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
-const CORPUS_ROOT = join(_scriptDir, "..", "..", "law-corpus");
+const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
 
 interface CourtConfig {
   applikation: string;
@@ -108,8 +110,9 @@ async function fetchWithRetry(url: string): Promise<Response> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const res = await fetch(url, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; Subsumio-Legal-Import/1.0)" },
+        headers: { "User-Agent": getUserAgent() },
         signal: AbortSignal.timeout(30_000),
+        ...proxyFetchOptions(),
       });
       if (res.status === 429 || res.status >= 500) {
         if (attempt < MAX_RETRIES) {
@@ -321,6 +324,11 @@ async function scanCourt(courtKey: string, court: CourtConfig): Promise<void> {
 // ── Main ───────────────────────────────────────────────────────────────
 
 async function main() {
+  // Global RIS lock — ensures no other RIS script runs simultaneously
+  console.log("🔒 Acquiring RIS lock...");
+  await acquireRisLock();
+  console.log("✅ RIS lock acquired.");
+
   const courts = courtArg === "all" ? Object.keys(COURT_CONFIGS) : [courtArg];
 
   for (const key of courts) {
@@ -333,7 +341,12 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error("Fatal error:", err);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    releaseRisLock();
+  })
+  .catch((err) => {
+    console.error("Fatal error:", err);
+    releaseRisLock();
+    process.exit(1);
+  });

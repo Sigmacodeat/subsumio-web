@@ -69,7 +69,12 @@ AGENTIC SEARCH (iterativ):
 - Nutze traverse_graph nach der ersten Suche um verknüpfte Entitäten zu erkunden (Gerichte, Gegner, frühere Fälle).
 - Nutze get_page um die vielversprechendsten Treffer zu lesen und Zitate zu extrahieren.
 - Priorisiere Primärquellen aus dem Brain; benenne offene Punkte, statt sie zu erfinden.
-- Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".`,
+- Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".
+
+HALLUCINATION-GATE (STRIKT):
+- ERFINDE KEINE §§, Urteile oder Quellen. Jede Angabe MUSS durch search/get_page im Brain gefunden werden.
+- Wenn ein § nicht im Brain gefunden wird: benenne dies als Unsicherheit, NICHT erfinden.
+- Wenn keine relevanten Treffer gefunden werden: antworte mit dem besten verfügbaren Kontext und kennzeichne die Lücken.`,
     allowedTools: [...LEGAL_BRAIN_TOOLS, ...LEGAL_FILE_TOOLS],
     maxTurns: 25,
     modelTier: "reasoning",
@@ -101,7 +106,12 @@ AGENTIC SEARCH (iterativ):
 - Nutze traverse_graph nach der ersten Suche um Beziehungen zwischen Gerichten, Gegnern und Ergebnissen zu erkunden.
 - Nutze get_page um die vielversprechendsten Treffer zu lesen und Muster zu erkennen.
 - Nutze find_contradictions um widersprüchliche Aussagen im Fall zu identifizieren.
-- Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".`,
+- Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".
+
+HALLUCINATION-GATE (STRIKT):
+- ERFINDE KEINE Fälle, Erfolgsquoten oder Präzedenzfälle. Jede Angabe MUSS durch search/get_page im Brain gefunden werden.
+- Wenn keine ähnlichen Fälle gefunden werden: benenne dies explizit, NICHT erfinden.
+- Konfidenz-Angabe MUSS auf gefundenen Daten basieren, nicht auf Vermutungen.`,
     allowedTools: [...LEGAL_BRAIN_TOOLS, "find_contradictions"],
     maxTurns: 20,
     modelTier: "reasoning",
@@ -133,7 +143,12 @@ AGENTIC SEARCH (iterativ):
 - Maximale 3 Such-Iterationen, dann antworte mit dem besten verfügbaren Kontext.
 - Nutze traverse_graph nach der ersten Suche um Gegner-Analyse und Gerichtsbeziehungen zu erkunden.
 - Nutze get_page um die vielversprechendsten Treffer zu lesen und Strategie-Muster zu extrahieren.
-- Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".`,
+- Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".
+
+HALLUCINATION-GATE (STRIKT):
+- ERFINDE KEINE §§, Fristen oder Erfolgsquoten. Jede Angabe MUSS durch search/get_page im Brain gefunden werden.
+- Fristen: nur verbatim aus Dokumenten übernehmen, nie berechnen oder schätzen.
+- Wenn keine Daten gefunden werden: benenne die Unsicherheit, NICHT erfinden.`,
     allowedTools: LEGAL_BRAIN_TOOLS,
     maxTurns: 20,
     modelTier: "reasoning",
@@ -163,7 +178,12 @@ AGENTIC SEARCH (iterativ):
 - Maximale 3 Such-Iterationen, dann nutze den besten verfügbaren Kontext.
 - Nutze get_page um die vielversprechendsten Vorlagen zu lesen und Strukturen zu extrahieren.
 - Nutze list_pages um Vorlagen-Sammlungen zu enumerieren (z.B. list all "template/" pages).
-- Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".`,
+- Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".
+
+HALLUCINATION-GATE (STRIKT):
+- ERFINDE KEINE §§ oder Gesetzeszitate. Jeder § MUSS durch search/get_page im Brain gefunden werden.
+- Wenn ein § nicht im Brain gefunden wird: kennzeichne als [UNVERIFIZIERT], NICHT erfinden.
+- Platzhalter MÜSSEN als [PLATZHALTER] markiert werden — keine erfundenen Fakten einsetzen.`,
     allowedTools: [...LEGAL_BRAIN_TOOLS, "put_page"],
     maxTurns: 25,
     modelTier: "reasoning",
@@ -228,7 +248,13 @@ AGENTIC SEARCH (iterativ):
 - Suche iterativ: bei unklarer Stelle im Akt, nutze search mit Stichworten aus dem Zitat
   um die Originalstelle zu finden. Wenn nach 2 Iterationen nicht gefunden → halluziniert.
 - Nutze traverse_graph um Querverweise zwischen Output-Pages zu prüfen (ON-Tabelle ↔ Forensic Report).
-- Nutze find_contradictions, um bekannte Widersprüche im Fall zu finden und als Issues zu markieren.`,
+- Nutze find_contradictions, um bekannte Widersprüche im Fall zu finden und als Issues zu markieren.
+
+HALLUCINATION-GATE (STRIKT):
+- ERFINDE KEINE §§, Urteile oder Quellen. Jede zitierte Angabe MUSS durch search/get_page im Brain verifiziert werden.
+- Wenn ein § nicht in der korrekten Rechtsquelle existiert: issue severity "critical" und "§ HALLUZINIERT oder FALSCHE JURISDIKTION".
+- Wenn ein Zitat nicht im Originalakt gefunden wird: issue severity "critical" und "ZITAT HALLUZINIERT".
+- Sei STRENG — besser falsch-positiv (Markierung) als falsch-negativ (übersehen).`,
     allowedTools: [...LEGAL_BRAIN_TOOLS, "find_contradictions"],
     maxTurns: 20,
     modelTier: "deep",
@@ -283,7 +309,12 @@ AGENTIC SEARCH (iterativ):
 - Bewertung: Wenn immer noch unvollständig → Iteration 3 mit konkreten Datumsangaben oder §-Nummern.
 - Maximale 3 Such-Iterationen, dann antworte mit allen gefundenen Deadlines.
 - Nutze get_page um gefundene Treffer zu lesen und Fristen zu extrahieren.
-- Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, durchsuchte Dokumente: ...".`,
+- Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, durchsuchte Dokumente: ...".
+
+HALLUCINATION-GATE (STRIKT):
+- ERFINDE KEINE Fristen, Daten oder §§. Jede Frist MUSS wörtlich aus dem Text extrahiert werden.
+- Berechne NIEMALS Fristen selbst — nur verbatim Extraktion.
+- Wenn eine Frist unklar ist: markiere als "prüfen", NICHT erfinden.`,
     allowedTools: ["query", "search", "get_page", "put_page"],
     maxTurns: 15,
     modelTier: "utility",

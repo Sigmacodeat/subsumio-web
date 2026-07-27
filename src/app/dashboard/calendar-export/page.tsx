@@ -89,7 +89,7 @@ function escapeIcalText(s: string): string {
 }
 
 export default function CalendarExportPage() {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -226,8 +226,8 @@ export default function CalendarExportPage() {
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Kalender-Export"
-        description="Fristen & Termine als iCal (.ics)"
+        title={t("calexport.title")}
+        description={t("calexport.desc")}
         breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Kalender-Export" }]}
         actions={
           <Button

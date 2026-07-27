@@ -335,7 +335,7 @@ function NormsPageInner() {
           </div>
           <div className="max-h-[60vh] overflow-y-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
             {detailLoading ? (
-              <div className="flex items-center gap-2 py-4">
+              <div className="flex items-center gap-2 py-4" role="status" aria-live="polite">
                 <Loader2 size={14} className="brand-text animate-spin" />
                 <span className="text-xs text-[color:var(--ds-text-muted)]">
                   {t("norms.loading_detail")}

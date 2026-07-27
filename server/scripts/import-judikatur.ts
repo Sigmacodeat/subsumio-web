@@ -31,6 +31,7 @@
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { extractAllNormReferences } from "../src/core/legal/judikatur-citations.ts";
+import { extractMultiJurisdictionNormReferences } from "../src/core/legal/multi-jurisdiction-citations.ts";
 import { createProgress } from "../src/core/progress.ts";
 
 const args = process.argv.slice(2);
@@ -39,6 +40,8 @@ const NO_EMBED = args.includes("--no-embed");
 const ALL_SOURCES = args.includes("--all-sources");
 const limitIdx = args.indexOf("--limit");
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : Infinity;
+const offsetIdx = args.indexOf("--offset");
+const OFFSET = offsetIdx >= 0 ? parseInt(args[offsetIdx + 1], 10) : 0;
 const sourceIdx = args.indexOf("--source");
 const sourceKey = sourceIdx >= 0 ? args[sourceIdx + 1] : "ogh";
 // Placeholders are ALWAYS skipped — text-less stubs in the brain are retrieval
@@ -120,6 +123,24 @@ const SOURCE_CONFIGS: Record<string, SourceConfig> = {
     slugPrefix: "legal/judikatur/at/dok",
     label: "DOK",
   },
+  de: {
+    dir: "de-judikatur",
+    sourceId: "law-de-judikatur",
+    slugPrefix: "legal/judikatur/de",
+    label: "DE",
+  },
+  ch: {
+    dir: "ch-judikatur",
+    sourceId: "law-ch-judikatur",
+    slugPrefix: "legal/judikatur/ch",
+    label: "CH",
+  },
+  eu: {
+    dir: "eu-judikatur",
+    sourceId: "law-eu-judikatur",
+    slugPrefix: "legal/judikatur/eu",
+    label: "EU",
+  },
 };
 
 const sourcesToRun: string[] = ALL_SOURCES ? Object.keys(SOURCE_CONFIGS) : [sourceKey];
@@ -128,7 +149,7 @@ if (!ALL_SOURCES) {
   const srcCfg = SOURCE_CONFIGS[sourceKey];
   if (!srcCfg) {
     console.error(
-      `Unknown source: ${sourceKey}. Use ogh, vfgh, vwgh, bvwg, lvwg, asylgh, uvs, dsk, gbk, pvak, or dok.`
+      `Unknown source: ${sourceKey}. Use ogh, vfgh, vwgh, bvwg, lvwg, asylgh, uvs, dsk, gbk, pvak, dok, de, ch, or eu.`
     );
     process.exit(1);
   }
@@ -227,14 +248,26 @@ const JUDIKATUR_CODE_MAP: Record<string, string> = {
 interface ParsedDecision {
   slug: string;
   content: string;
-  normRefs: Array<{ code: string; ref: string }>;
+  normRefs: Array<{ code: string; ref: string; statuteSlug?: string }>;
 }
 
 function loadDecisions(srcCfg: SourceConfig): ParsedDecision[] {
-  const dir = join(import.meta.dir, "..", "..", "law-corpus", srcCfg.dir);
+  // Use LAW_CORPUS_ROOT if set, otherwise try both possible locations
+  const corpusRoot = process.env.LAW_CORPUS_ROOT;
+  const dir1 = corpusRoot
+    ? join(corpusRoot, srcCfg.dir)
+    : join(import.meta.dir, "..", "..", "law-corpus", srcCfg.dir);
+  const dir2 = join(import.meta.dir, "..", "law-corpus", srcCfg.dir);
+  let dir: string;
+  try {
+    const files1 = readdirSync(dir1).filter((f) => f.endsWith(".md"));
+    dir = files1.length > 0 ? dir1 : dir2;
+  } catch {
+    dir = dir2;
+  }
   const files = readdirSync(dir)
     .filter((f) => f.endsWith(".md"))
-    .slice(0, LIMIT);
+    .slice(OFFSET, OFFSET + LIMIT);
   const decisions: ParsedDecision[] = [];
   let skippedPlaceholders = 0;
   for (const f of files) {
@@ -249,7 +282,21 @@ function loadDecisions(srcCfg: SourceConfig): ParsedDecision[] {
       continue;
     }
     const slug = `${srcCfg.slugPrefix}/${f.replace(/\.md$/, "")}`;
-    const normRefs = extractAllNormReferences(content);
+    // AT decisions use the RIS-specific extractor (structured Norm section + inline fallback).
+    // DE/CH/EU decisions use the multi-jurisdiction inline extractor.
+    const jurisdiction = srcCfg.dir.startsWith("de-")
+      ? "de"
+      : srcCfg.dir.startsWith("ch-")
+        ? "ch"
+        : srcCfg.dir.startsWith("eu-")
+          ? "eu"
+          : "at";
+    let normRefs: Array<{ code: string; ref: string; statuteSlug?: string }>;
+    if (jurisdiction === "at") {
+      normRefs = extractAllNormReferences(content);
+    } else {
+      normRefs = extractMultiJurisdictionNormReferences(content, jurisdiction);
+    }
     decisions.push({ slug, content, normRefs });
   }
   if (skippedPlaceholders > 0) {
@@ -289,7 +336,7 @@ async function main() {
     for (const { decisions } of allDecisions) {
       for (const d of decisions) {
         totalNorms += d.normRefs.length;
-        mappable += d.normRefs.filter((r) => JUDIKATUR_CODE_MAP[r.code]).length;
+        mappable += d.normRefs.filter((r) => r.statuteSlug || JUDIKATUR_CODE_MAP[r.code]).length;
       }
     }
     console.log(`  Norm-Referenzen gesamt: ${totalNorms}`);
@@ -365,16 +412,35 @@ async function main() {
         }
 
         for (const r of d.normRefs) {
-          const abbr = JUDIKATUR_CODE_MAP[r.code];
-          if (!abbr) continue;
+          // AT decisions: resolve via JUDIKATUR_CODE_MAP → legal/statutes/at/<abbr>/p-<N>
+          // DE/CH/EU decisions: statuteSlug already resolved by multi-jurisdiction extractor
+          let toSlug: string;
+          let toSourceId: string;
+          if (r.statuteSlug) {
+            toSlug = r.statuteSlug;
+            // Determine target source from jurisdiction
+            const jur = r.statuteSlug.startsWith("legal/statutes/de/")
+              ? "de"
+              : r.statuteSlug.startsWith("legal/statutes/ch/")
+                ? "ch"
+                : r.statuteSlug.startsWith("legal/statutes/eu/")
+                  ? "eu"
+                  : "at";
+            toSourceId = `law-${jur}`;
+          } else {
+            const abbr = JUDIKATUR_CODE_MAP[r.code];
+            if (!abbr) continue;
+            toSlug = `legal/statutes/at/${abbr}/p-${r.ref}`;
+            toSourceId = "law-at";
+          }
           batchLinks.push({
             from_slug: d.slug,
-            to_slug: `legal/statutes/at/${abbr}/p-${r.ref}`,
+            to_slug: toSlug,
             link_type: "judikatur-cites",
             context: `${r.code} § ${r.ref}`,
             link_source: "citation-graph",
             from_source_id: srcCfg.sourceId,
-            to_source_id: "law-at",
+            to_source_id: toSourceId,
           });
         }
         progress.tick(1, `${srcCfg.label} ${pagesOk}`);

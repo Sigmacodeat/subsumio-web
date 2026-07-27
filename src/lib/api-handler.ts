@@ -41,12 +41,14 @@ import {
   engineConfigurationResponse,
   ENGINE_URL,
   recordQuota,
+  recordCreditConsumption,
   engineHeadersWithCaseJurisdiction,
   type EngineContext,
 } from "@/lib/engine";
 import type { RouteAction } from "@/lib/permissions";
 import type { RateTier } from "@/lib/rate-limit-api";
 import type { QuotaType } from "@/lib/plans";
+import type { CreditOperation } from "@/lib/billing/credits";
 import { validateCsrf, CSRF_COOKIE_NAME } from "@/lib/csrf";
 import { logAudit, type AuditAction } from "@/lib/audit";
 import { apiError, apiStream } from "@/lib/api-response";
@@ -98,6 +100,8 @@ export interface HandlerOptions<
   rateTier?: RateTier;
   /** Quota field to check before handler runs. */
   quota?: QuotaType;
+  /** Credit operation to check before handler runs (consumption-based pricing). */
+  credits?: CreditOperation;
   /** Zod schema for the request body (POST/PUT/PATCH). */
   body?: B;
   /** Zod schema for query params (GET). */
@@ -352,7 +356,8 @@ export function createHandler<
         req,
         options.action,
         options.rateTier ?? "standard",
-        options.quota
+        options.quota,
+        options.credits
       );
       if (authCtx instanceof Response) {
         // Session auth failed — try API key auth (Bearer token)
@@ -731,8 +736,22 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
   body: B;
   rateTier?: RateTier;
   quota?: QuotaType;
+  /** Credit operation to check and deduct (consumption-based pricing). */
+  credits?: CreditOperation;
   /** Custom quota amount (default: 1). */
   quotaAmount?: (body: z.infer<B>) => number;
+  /**
+   * Response-derived quota amount for JSON (non-stream) responses. When set,
+   * quota is booked AFTER the engine response has been parsed, using the
+   * returned amount (e.g. `document_count` from the engine). The callback may
+   * implement its own body-based fallback. Returning undefined or a value <= 0
+   * books nothing. Streamed responses have no parsed body, so streams always
+   * fall back to `quotaAmount` (or 1).
+   */
+  quotaAmountFromResponse?: (
+    result: Record<string, unknown>,
+    body: z.infer<B>
+  ) => number | undefined;
   /** Whether to stream the engine response (SSE). Default: false (JSON). */
   stream?: boolean;
   /** When true, wrap SSE streams with createCitationGateStream and inject _grounding into JSON responses. */
@@ -771,6 +790,7 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
       action: options.action,
       rateTier: options.rateTier ?? "heavy",
       quota: options.quota,
+      credits: options.credits,
       body: options.body,
       audit: options.audit,
       cacheMaxAge: options.cacheMaxAge,
@@ -785,7 +805,8 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
       // This injects x-subsumio-case-jurisdiction so the engine's readSourcesFor()
       // scopes the law corpus to the case's country (Case > User > Fail-Closed).
       const caseSlugValue = options.caseSlugField
-        ? String((body as Record<string, unknown>)[options.caseSlugField as string] ?? "").trim() || undefined
+        ? String((body as Record<string, unknown>)[options.caseSlugField as string] ?? "").trim() ||
+          undefined
         : undefined;
       const scopedHeaders = caseSlugValue
         ? await engineHeadersWithCaseJurisdiction(ctx.headers, caseSlugValue)
@@ -806,9 +827,22 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
           );
         }
 
-        if (options.quota) {
+        // Body-based quota is booked immediately after a successful engine
+        // response. Response-derived quota (quotaAmountFromResponse) is
+        // deferred to the JSON branch below, where the parsed engine result
+        // is available. Streams have no parsed body, so they always book here.
+        if (options.quota && (!options.quotaAmountFromResponse || options.stream)) {
           const amount = options.quotaAmount ? options.quotaAmount(body as z.infer<B>) : 1;
           void recordQuota(ctx, options.quota, amount);
+        }
+
+        if (options.credits) {
+          const caseSlugForCredits = options.caseSlugField
+            ? String(
+                (body as Record<string, unknown>)[options.caseSlugField as string] ?? ""
+              ).trim() || undefined
+            : undefined;
+          void recordCreditConsumption(ctx, options.credits, caseSlugForCredits);
         }
 
         const resolveProductType = (): WorkProductType | undefined => {
@@ -869,6 +903,13 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
           result = { error: "Invalid JSON from engine", raw: resultText.slice(0, 500) };
         }
 
+        if (options.quota && options.quotaAmountFromResponse) {
+          const amount = options.quotaAmountFromResponse(result, body as z.infer<B>);
+          if (typeof amount === "number" && amount > 0) {
+            void recordQuota(ctx, options.quota, amount);
+          }
+        }
+
         if (options.citationGate) {
           try {
             const grounding = await groundJsonResponse(result);
@@ -915,5 +956,5 @@ export {
   apiRateLimited,
   apiUnavailable,
 } from "@/lib/api-response";
-export { recordQuota } from "@/lib/engine";
+export { recordQuota, recordCreditConsumption } from "@/lib/engine";
 export type { ApiErrorBody, ApiSuccessBody } from "@/lib/api-response";

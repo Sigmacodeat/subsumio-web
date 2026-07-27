@@ -69,7 +69,7 @@ export default function MobilePage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="flex h-full items-center justify-center" role="status" aria-live="polite">
         <Loader2 size={24} className="brand-text animate-spin" />
       </div>
     );
@@ -81,7 +81,7 @@ export default function MobilePage() {
         title={t("mobile.title")}
         description={t("mobile.description")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("mobile.breadcrumb") },
         ]}
       />

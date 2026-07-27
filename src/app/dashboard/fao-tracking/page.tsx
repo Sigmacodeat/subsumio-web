@@ -173,7 +173,10 @@ export default function FAOTrackingPage() {
       <PageHeader
         title={t("fao.title")}
         description={t("fao.section_fao").replace("{hours}", String(FAO_REQUIRED_HOURS))}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("fao.title") }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("fao.title") },
+        ]}
         actions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => exportPDF()} disabled={entries.length === 0}>
@@ -313,7 +316,7 @@ export default function FAOTrackingPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-20">
+        <div className="flex justify-center py-20" role="status" aria-live="polite">
           <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : entries.length === 0 ? (

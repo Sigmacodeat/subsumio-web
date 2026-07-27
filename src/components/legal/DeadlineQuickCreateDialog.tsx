@@ -454,7 +454,11 @@ export function DeadlineQuickCreateDialog({
 
                 {/* C2: AT frist-engine hints */}
                 {atFristLoading && (
-                  <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+                  <div
+                    className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]"
+                    role="status"
+                    aria-live="polite"
+                  >
                     <Loader2 size={12} className="animate-spin" />
                     {t("deadlines.at_engine_loading")}
                   </div>

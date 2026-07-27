@@ -99,7 +99,7 @@ export default function TaxDeadlinesPage() {
         title={t("tax.deadlines.title")}
         description={t("tax.deadlines.desc")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("tax.deadlines.title") },
         ]}
       />

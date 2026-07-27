@@ -180,7 +180,7 @@ function parseFacetItem(page: BrainPage): FacetItem {
 }
 
 export default function CaseSearchPage() {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const isEn = lang === "en";
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<FacetFilters>({
@@ -336,7 +336,7 @@ export default function CaseSearchPage() {
             : "Akten suchen und filtern über mehrere Dimensionen — Status, Rechtsgebiet, Priorität, Bearbeiter, Gericht, Tags und mehr."
         }
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: isEn ? "Case Search" : "Akten-Suche" },
         ]}
       />
@@ -511,7 +511,7 @@ export default function CaseSearchPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none"
+                className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               >
                 <option value="updatedAt">{isEn ? "Last updated" : "Zuletzt aktualisiert"}</option>
                 <option value="title">{isEn ? "Title" : "Titel"}</option>
@@ -528,7 +528,11 @@ export default function CaseSearchPage() {
 
           {/* Results list */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
+            <div
+              className="flex items-center justify-center py-12"
+              role="status"
+              aria-live="polite"
+            >
               <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
             </div>
           ) : filtered.length === 0 ? (

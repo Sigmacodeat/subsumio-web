@@ -119,7 +119,10 @@ export default function KYCPage() {
       <PageHeader
         title={t("kyc.title")}
         description={t("kyc.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("kyc.title") }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("kyc.title") },
+        ]}
         actions={
           <Button onClick={() => setShowCreate(!showCreate)} className="brand-bg gap-2 text-white">
             <Plus size={16} /> KYC-Prüfung
@@ -219,7 +222,7 @@ export default function KYCPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-20">
+        <div className="flex justify-center py-20" role="status" aria-live="polite">
           <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : verifications.length === 0 ? (

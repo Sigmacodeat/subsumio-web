@@ -484,12 +484,11 @@ function TourOverlay({
         aria-labelledby={`${tooltipId}-title`}
         aria-describedby={`${tooltipId}-body`}
         tabIndex={-1}
-        className="fixed z-[101] w-80 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 shadow-2xl transition-all duration-200 ease-out focus:outline-none"
+        className="fixed z-[101] w-80 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 shadow-2xl transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         style={{
           top: tooltipPos.top,
           left: tooltipPos.left,
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="mb-3 flex items-start justify-between gap-3">

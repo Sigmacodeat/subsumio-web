@@ -60,7 +60,7 @@ export default function AnonymizePage() {
         title={t("anonymize.title")}
         description={t("anonymize.description")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("anonymize.breadcrumb") },
         ]}
       />
@@ -75,7 +75,7 @@ export default function AnonymizePage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={t("anonymize.placeholder_input")}
-            className="h-80 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none"
+            className="h-80 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
           <Button
             onClick={run}
@@ -107,7 +107,7 @@ export default function AnonymizePage() {
             readOnly
             value={result?.anonymized ?? ""}
             placeholder={t("anonymize.placeholder_output")}
-            className="h-80 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:outline-none"
+            className="h-80 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
         </div>
       </div>

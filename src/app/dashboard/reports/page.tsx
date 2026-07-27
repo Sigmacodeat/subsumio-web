@@ -402,14 +402,14 @@ function JobDetailModal({ job, t, onClose }: { job: AgentJob; t: TFunc; onClose:
   }, [onClose]);
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Backdrop click-to-close; keyboard users close via Escape or the close button.
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-      onClick={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div
-        className="max-h-[85vh] w-full max-w-3xl overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="max-h-[85vh] w-full max-w-3xl overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
           <div className="flex items-center gap-2">
@@ -640,7 +640,7 @@ export default function ReportsPage() {
 
       {/* Content */}
       {agentsQuery.isLoading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
           <Loader2 size={20} className="brand-text animate-spin" />
         </div>
       ) : tab === "by_agent" ? (

@@ -99,11 +99,11 @@ export default function JudgementsSyncPage() {
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Rechtsprechungs-Sync"
-        description="OGH, BGH, EuGH Urteile ins Brain laden"
+        title={t("judgements.sync_title")}
+        description={t("judgements.sync_desc")}
         breadcrumbs={[
-          { label: "Übersicht", href: "/dashboard" },
-          { label: "Rechtsprechungs-Sync" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("judgements.sync_title") },
         ]}
         actions={
           <Button
@@ -117,7 +117,7 @@ export default function JudgementsSyncPage() {
             ) : (
               <Play size={14} />
             )}
-            {overallStatus === "running" ? "Synchronisiere…" : "Jetzt synchronisieren"}
+            {overallStatus === "running" ? t("judgements.syncing") : t("judgements.sync_button")}
           </Button>
         }
       />
@@ -125,17 +125,23 @@ export default function JudgementsSyncPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <div className="text-xs text-[color:var(--ds-text-muted)]">Im Brain</div>
+          <div className="text-xs text-[color:var(--ds-text-muted)]">
+            {t("judgements.stat_in_brain")}
+          </div>
           <div className="brand-text text-xl font-bold">
             {existingCount.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
           </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <div className="text-xs text-[color:var(--ds-text-muted)]">Quellen</div>
+          <div className="text-xs text-[color:var(--ds-text-muted)]">
+            {t("judgements.stat_sources")}
+          </div>
           <div className="text-xl font-bold text-[color:var(--ds-text)]">{sources.length}</div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <div className="text-xs text-[color:var(--ds-text-muted)]">Gerichte</div>
+          <div className="text-xs text-[color:var(--ds-text-muted)]">
+            {t("judgements.stat_courts")}
+          </div>
           <div className="text-xl font-bold text-[color:var(--ds-text)]">
             {sources.reduce((s, src) => s + src.courts.length, 0)}
           </div>
@@ -144,7 +150,9 @@ export default function JudgementsSyncPage() {
 
       {/* CLI Reference */}
       <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-        <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">CLI-Befehle</h2>
+        <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+          {t("judgements.cli_title")}
+        </h2>
         <div className="space-y-2">
           {[
             "subsumio connector add legal-judgements --jurisdiction at --query 'Haftung'",
@@ -159,10 +167,10 @@ export default function JudgementsSyncPage() {
               <code className="brand-text flex-1 font-mono text-xs">{cmd}</code>
               <button
                 onClick={() => navigator.clipboard.writeText(cmd)}
-                aria-label={`Befehl kopieren: ${cmd}`}
+                aria-label={t("judgements.copy")}
                 className="text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
               >
-                Kopieren
+                {t("judgements.copy")}
               </button>
             </div>
           ))}
@@ -212,7 +220,7 @@ export default function JudgementsSyncPage() {
                 )}
                 {src.status === "running" && (
                   <Badge variant="default" className="brand-soft brand-text brand-border text-xs">
-                    Lädt…
+                    {t("judgements.loading")}
                   </Badge>
                 )}
                 {src.status === "error" && (
@@ -220,7 +228,7 @@ export default function JudgementsSyncPage() {
                     variant="default"
                     className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
                   >
-                    Fehler: {src.error}
+                    {t("judgements.error_prefix")} {src.error}
                   </Badge>
                 )}
               </div>
@@ -253,11 +261,9 @@ export default function JudgementsSyncPage() {
       <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3">
         <Info size={16} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
         <div className="text-sm text-[color:var(--ds-warning-text)]">
-          <p className="mb-1 font-medium">Hinweis zur Datenaktualität</p>
+          <p className="mb-1 font-medium">{t("judgements.notice_title")}</p>
           <p className="text-xs leading-relaxed">
-            Öffentliche Rechtsprechungsdatenbanken aktualisieren sich täglich. Der Konnektor führt
-            ein Delta-Sync durch — bereits vorhandene Urteile werden nicht dupliziert. Für
-            produktive Nutzung empfehlen wir einen täglichen Cron-Job:{" "}
+            {t("judgements.notice_body")}{" "}
             <code className="font-mono text-[color:var(--ds-warning-text)]">
               subsumio connector sync legal-judgements
             </code>

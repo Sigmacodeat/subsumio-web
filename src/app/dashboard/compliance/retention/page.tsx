@@ -79,7 +79,7 @@ export default function RetentionPage() {
         title={t("retention.title")}
         description={t("retention.description")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: "Compliance", href: "/dashboard/compliance" },
           { label: t("retention.breadcrumb") },
         ]}

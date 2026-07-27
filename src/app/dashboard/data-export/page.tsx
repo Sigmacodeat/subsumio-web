@@ -62,7 +62,7 @@ export default function DataExportPage() {
         title={t("dataexport.title")}
         description={t("dataexport.description")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("dataexport.breadcrumb") },
         ]}
       />

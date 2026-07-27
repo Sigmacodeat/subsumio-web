@@ -46,6 +46,7 @@ export const POST = createHandler(
     action: "tax.analyze",
     rateTier: "heavy",
     quota: "queries",
+    credits: "document_analysis",
     body: analyzeSchema,
     maxDuration: 120,
     allowInternal: true,

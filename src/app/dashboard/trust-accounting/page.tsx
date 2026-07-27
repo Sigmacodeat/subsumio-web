@@ -322,7 +322,7 @@ export default function TrustAccountingPage() {
 
   if (loading && accounts.length === 0) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
+      <div className="flex h-[60vh] items-center justify-center" role="status" aria-live="polite">
         <Loader2 className="h-6 w-6 animate-spin text-[color:var(--brand-primary)]" />
       </div>
     );
@@ -1059,7 +1059,7 @@ export default function TrustAccountingPage() {
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="Anderkonto Müller"
+                placeholder={t("trust.ph_account")}
               />
             </div>
             <div>
@@ -1079,7 +1079,7 @@ export default function TrustAccountingPage() {
               <Input
                 value={newBank}
                 onChange={(e) => setNewBank(e.target.value)}
-                placeholder="Commerzbank"
+                placeholder={t("trust.ph_bank")}
               />
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

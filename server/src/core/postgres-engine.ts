@@ -1692,11 +1692,16 @@ export class PostgresEngine implements BrainEngine {
     );
     const hardExcludeClause = buildHardExcludeClause("p.slug", hardExcludePrefixes);
 
-    const params: unknown[] = [query];
+    const sanitizedQuery =
+      query
+        .replace(/[^\p{L}\p{N}_\-\s]/gu, " ")
+        .replace(/\s+/g, " ")
+        .trim() || query;
+    const params: unknown[] = [sanitizedQuery];
     let typeClause = "";
     if (type) {
       params.push(type);
-      typeClause = `AND p.type = $${params.length}`;
+      typeClause = `AND p.type = $${params.length}::text`;
     }
     // v0.33: multi-type filter for whoknows. AND-applied alongside the
     // single-value `type` filter (callers can use either or both).
@@ -1713,7 +1718,7 @@ export class PostgresEngine implements BrainEngine {
     let languageClause = "";
     if (language) {
       params.push(language);
-      languageClause = `AND cc.language = $${params.length}`;
+      languageClause = `AND cc.language = $${params.length}::text`;
     }
     let symbolKindClause = "";
     if (symbolKind) {
@@ -1747,10 +1752,10 @@ export class PostgresEngine implements BrainEngine {
     let sourceClause = "";
     if (opts?.sourceIds && opts.sourceIds.length > 0) {
       params.push(opts.sourceIds);
-      sourceClause = `AND p.source_id = ANY($${params.length}::text[])`;
+      sourceClause = `AND cc.source_id = ANY($${params.length}::text[])`;
     } else if (opts?.sourceId) {
       params.push(opts.sourceId);
-      sourceClause = `AND p.source_id = $${params.length}`;
+      sourceClause = `AND cc.source_id = $${params.length}::text`;
     }
     const legalMetaClause = buildLegalMetadataClause(
       "p",
@@ -1828,6 +1833,151 @@ export class PostgresEngine implements BrainEngine {
   }
 
   /**
+   * v0.49 — BM25 keyword search using ParadeDB pg_search.
+   * Replaces ts_rank with real BM25 scoring (IDF weighting, term saturation,
+   * length normalization). Falls back to searchKeyword if pg_search is not
+   * available or the BM25 index doesn't exist.
+   *
+   * The @@@ operator uses Tantivy (Rust Lucene port) for scoring.
+   * pdb.score(id) returns the BM25 score for the matched row.
+   */
+  async searchKeywordBM25(query: string, opts?: SearchOpts): Promise<SearchResult[]> {
+    const sql = this.sql;
+    const limit = clampSearchLimit(opts?.limit);
+    const offset = opts?.offset || 0;
+    const type = opts?.type;
+    const excludeSlugs = opts?.exclude_slugs;
+    const detailLow = opts?.detail === "low";
+    const language = opts?.language;
+
+    const boostMap = resolveBoostMap();
+    const sourceFactorCase = buildSourceFactorCase("p.slug", boostMap, opts?.detail);
+    const hardExcludePrefixes = resolveHardExcludes(
+      opts?.exclude_slug_prefixes,
+      opts?.include_slug_prefixes
+    );
+    const hardExcludeClause = buildHardExcludeClause("p.slug", hardExcludePrefixes);
+
+    const sanitizedQuery =
+      query
+        .replace(/[^\p{L}\p{N}_\-\s]/gu, " ")
+        .replace(/\s+/g, " ")
+        .trim() || query;
+    const params: unknown[] = [sanitizedQuery];
+    let typeClause = "";
+    if (type) {
+      params.push(type);
+      typeClause = `AND p.type = $${params.length}::text`;
+    }
+    let typesClause = "";
+    if (opts?.types && opts.types.length > 0) {
+      params.push(opts.types);
+      typesClause = `AND p.type = ANY($${params.length}::text[])`;
+    }
+    let excludeSlugsClause = "";
+    if (excludeSlugs?.length) {
+      params.push(excludeSlugs);
+      excludeSlugsClause = `AND p.slug != ALL($${params.length}::text[])`;
+    }
+    let languageClause = "";
+    if (language) {
+      params.push(language);
+      languageClause = `AND cc.language = $${params.length}::text`;
+    }
+    let sourceClause = "";
+    if (opts?.sourceIds && opts.sourceIds.length > 0) {
+      params.push(opts.sourceIds);
+      sourceClause = `AND cc.source_id = ANY($${params.length}::text[])`;
+    } else if (opts?.sourceId) {
+      params.push(opts.sourceId);
+      sourceClause = `AND cc.source_id = $${params.length}::text`;
+    }
+    const legalMetaClause = buildLegalMetadataClause(
+      "p",
+      {
+        court: opts?.court,
+        legalArea: opts?.legalArea,
+        decisionDateFrom: opts?.decisionDateFrom,
+        decisionDateTo: opts?.decisionDateTo,
+      },
+      params
+    );
+
+    const innerLimit = Math.min(limit * 3, MAX_SEARCH_LIMIT * 3);
+    const bm25Limit = Math.min(innerLimit * 10, MAX_SEARCH_LIMIT * 5);
+    params.push(bm25Limit);
+    const bm25LimitParam = `$${params.length}::int`;
+    params.push(innerLimit);
+    const innerLimitParam = `$${params.length}::int`;
+    params.push(limit);
+    const limitParam = `$${params.length}::int`;
+    params.push(offset);
+    const offsetParam = `$${params.length}::int`;
+
+    const visibilityClause = buildVisibilityClause("p", "s");
+
+    const rawQuery = `
+      WITH bm25 AS (
+        SELECT
+          cc.id AS chunk_id,
+          paradedb.score(cc.id) AS raw_score
+        FROM content_chunks cc
+        WHERE cc.id @@@ paradedb.parse($1::text)
+          ${sourceClause}
+          ${languageClause}
+          ${detailLow ? `AND cc.chunk_source = 'compiled_truth'` : ""}
+          AND cc.modality = 'text'
+        ORDER BY raw_score DESC
+        LIMIT ${bm25LimitParam}
+      ),
+      ranked_chunks AS (
+        SELECT
+          p.slug, p.id as page_id, p.title, p.type, p.source_id,
+          p.frontmatter->>'case_slug' AS case_slug,
+          p.effective_date, p.effective_date_source,
+          cc.id as chunk_id, cc.chunk_index, cc.chunk_text, cc.chunk_source,
+          bm25.raw_score * ${sourceFactorCase} AS score
+        FROM bm25
+        JOIN content_chunks cc ON cc.id = bm25.chunk_id
+        JOIN pages p ON p.id = cc.page_id
+        JOIN sources s ON s.id = p.source_id
+        WHERE cc.modality = 'text'
+          ${typeClause}
+          ${typesClause}
+          ${excludeSlugsClause}
+          ${detailLow ? `AND cc.chunk_source = 'compiled_truth'` : ""}
+          ${languageClause}
+          ${sourceClause}
+          ${legalMetaClause}
+          ${hardExcludeClause}
+          ${visibilityClause}
+        ORDER BY score DESC
+        LIMIT ${innerLimitParam}
+      ),
+      ${buildBestPerPagePoolCte("ranked_chunks")}
+      SELECT slug, page_id, title, type, source_id, case_slug,
+        effective_date, effective_date_source,
+        chunk_id, chunk_index, chunk_text, chunk_source, score,
+        false AS stale
+      FROM best_per_page
+      ORDER BY score DESC
+      LIMIT ${limitParam}
+      OFFSET ${offsetParam}
+    `;
+
+    try {
+      const rows = await sql.begin(async (sqlTx) => {
+        await sqlTx.unsafe("SET LOCAL statement_timeout = '60s'", []);
+        return await sqlTx.unsafe(rawQuery, params as Parameters<typeof sql.unsafe>[1]);
+      });
+      return rows.map(rowToSearchResult);
+    } catch (err: any) {
+      console.error("[bm25-search] error, falling back to ts_rank:", err?.message ?? err);
+      return this.searchKeyword(query, opts);
+    }
+  }
+
+  /**
    * v0.20.0 Cathedral II Layer 3 (1b) chunk-grain keyword search.
    * Ranks chunks via content_chunks.search_vector WITHOUT the
    * dedup-to-page pass searchKeyword applies. Used by A2 two-pass
@@ -1864,11 +2014,16 @@ export class PostgresEngine implements BrainEngine {
     );
     const hardExcludeClause = buildHardExcludeClause("p.slug", hardExcludePrefixes);
 
-    const params: unknown[] = [query];
+    const sanitizedQuery =
+      query
+        .replace(/[^\p{L}\p{N}_\-\s]/gu, " ")
+        .replace(/\s+/g, " ")
+        .trim() || query;
+    const params: unknown[] = [sanitizedQuery];
     let typeClause = "";
     if (type) {
       params.push(type);
-      typeClause = `AND p.type = $${params.length}`;
+      typeClause = `AND p.type = $${params.length}::text`;
     }
     // v0.33: multi-type filter for whoknows. AND-applied alongside the
     // single-value `type` filter (callers can use either or both).
@@ -1885,7 +2040,7 @@ export class PostgresEngine implements BrainEngine {
     let languageClause = "";
     if (language) {
       params.push(language);
-      languageClause = `AND cc.language = $${params.length}`;
+      languageClause = `AND cc.language = $${params.length}::text`;
     }
     let symbolKindClause = "";
     if (symbolKind) {
@@ -1914,10 +2069,10 @@ export class PostgresEngine implements BrainEngine {
     let sourceClause = "";
     if (opts?.sourceIds && opts.sourceIds.length > 0) {
       params.push(opts.sourceIds);
-      sourceClause = `AND p.source_id = ANY($${params.length}::text[])`;
+      sourceClause = `AND cc.source_id = ANY($${params.length}::text[])`;
     } else if (opts?.sourceId) {
       params.push(opts.sourceId);
-      sourceClause = `AND p.source_id = $${params.length}`;
+      sourceClause = `AND cc.source_id = $${params.length}::text`;
     }
     const legalMetaClause = buildLegalMetadataClause(
       "p",
@@ -2012,7 +2167,7 @@ export class PostgresEngine implements BrainEngine {
     let typeClause = "";
     if (type) {
       params.push(type);
-      typeClause = `AND p.type = $${params.length}`;
+      typeClause = `AND p.type = $${params.length}::text`;
     }
     // v0.33: multi-type filter for whoknows. AND-applied alongside the
     // single-value `type` filter (callers can use either or both).
@@ -2029,7 +2184,7 @@ export class PostgresEngine implements BrainEngine {
     let languageClause = "";
     if (language) {
       params.push(language);
-      languageClause = `AND cc.language = $${params.length}`;
+      languageClause = `AND cc.language = $${params.length}::text`;
     }
     let symbolKindClause = "";
     if (symbolKind) {
@@ -2342,8 +2497,9 @@ export class PostgresEngine implements BrainEngine {
     // scope metadata through upserts.
     // v0.27.1 (Phase 8): added `modality` + `embedding_image` to the column
     // list. Image chunks pass embedding=null + embedding_image=Float32Array.
+    // v0.43.0 (INDUSTRIENIVEAU): legal metadata columns for §/court/role.
     const cols =
-      "(page_id, chunk_index, chunk_text, chunk_source, embedding, model, token_count, embedded_at, language, symbol_name, symbol_type, start_line, end_line, parent_symbol_path, doc_comment, symbol_name_qualified, modality, embedding_image)";
+      "(page_id, chunk_index, chunk_text, chunk_source, embedding, model, token_count, embedded_at, language, symbol_name, symbol_type, start_line, end_line, parent_symbol_path, doc_comment, symbol_name_qualified, modality, embedding_image, document_type, statute_abbr, paragraph_ref, absatz, ziffer, literal, chunk_role, court, case_number, ecli, decision_date, legal_area, canonical_label)";
     const rows: string[] = [];
     const params: unknown[] = [];
     let paramIdx = 1;
@@ -2370,7 +2526,10 @@ export class PostgresEngine implements BrainEngine {
           `${embeddingPh}, $${paramIdx++}, $${paramIdx++}, ${embeddedAtPh}, ` +
           `$${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, ` +
           `$${paramIdx++}::text[], $${paramIdx++}, $${paramIdx++}, ` +
-          `$${paramIdx++}, ${embeddingImagePh})`
+          `$${paramIdx++}, ${embeddingImagePh}, ` +
+          `$${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, ` +
+          `$${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, ` +
+          `$${paramIdx++}, $${paramIdx++}, $${paramIdx++})`
       );
 
       // Param push order MUST match placeholder allocation order.
@@ -2391,7 +2550,20 @@ export class PostgresEngine implements BrainEngine {
         parentPath,
         chunk.doc_comment || null,
         chunk.symbol_name_qualified || null,
-        modality
+        modality,
+        chunk.document_type || null,
+        chunk.statute_abbr || null,
+        chunk.paragraph_ref || null,
+        chunk.absatz || null,
+        chunk.ziffer || null,
+        chunk.literal || null,
+        chunk.chunk_role || null,
+        chunk.court || null,
+        chunk.case_number || null,
+        chunk.ecli || null,
+        chunk.decision_date || null,
+        chunk.legal_area || null,
+        chunk.canonical_label || null
       );
     }
 
@@ -2445,9 +2617,73 @@ export class PostgresEngine implements BrainEngine {
          doc_comment = EXCLUDED.doc_comment,
          symbol_name_qualified = EXCLUDED.symbol_name_qualified,
          modality = EXCLUDED.modality,
-         embedding_image = COALESCE(EXCLUDED.embedding_image, content_chunks.embedding_image)`,
+         embedding_image = COALESCE(EXCLUDED.embedding_image, content_chunks.embedding_image),
+         document_type = EXCLUDED.document_type,
+         statute_abbr = EXCLUDED.statute_abbr,
+         paragraph_ref = EXCLUDED.paragraph_ref,
+         absatz = EXCLUDED.absatz,
+         ziffer = EXCLUDED.ziffer,
+         literal = EXCLUDED.literal,
+         chunk_role = EXCLUDED.chunk_role,
+         court = EXCLUDED.court,
+         case_number = EXCLUDED.case_number,
+         ecli = EXCLUDED.ecli,
+         decision_date = EXCLUDED.decision_date,
+         legal_area = EXCLUDED.legal_area,
+         canonical_label = EXCLUDED.canonical_label`,
       params as Parameters<typeof sql.unsafe>[1]
     );
+
+    // v0.43.0 (INDUSTRIENIVEAU Poly-Vector): upsert content_chunk_labels.
+    // Labels with embeddings are inserted if provided; label embeddings are
+    // optional here (e.g. --no-embed pass) and are backfilled by embed jobs.
+    if (chunks.some((c) => c.labels && c.labels.length > 0)) {
+      const labelRows: string[] = [];
+      const labelParams: unknown[] = [];
+      let lpIdx = 1;
+      for (const chunk of chunks) {
+        if (!chunk.labels || chunk.labels.length === 0) continue;
+        const chunkIdRows =
+          await sql`SELECT id FROM content_chunks WHERE page_id = ${pageId} AND chunk_index = ${chunk.chunk_index}`;
+        const chunkId = chunkIdRows[0]?.id;
+        if (!chunkId) continue;
+        for (const label of chunk.labels) {
+          const labelEmbeddingStr = label.embedding
+            ? "[" + Array.from(label.embedding).join(",") + "]"
+            : null;
+          const labelEmbeddingPh = labelEmbeddingStr ? `$${lpIdx++}::vector` : "NULL";
+          const labelEmbeddedAtPh = labelEmbeddingStr ? "now()" : "NULL";
+          labelRows.push(
+            `($${lpIdx++}, $${lpIdx++}, $${lpIdx++}, $${lpIdx++}, ${labelEmbeddingPh}, $${lpIdx++}, ${labelEmbeddedAtPh})`
+          );
+          if (labelEmbeddingStr) labelParams.push(labelEmbeddingStr);
+          labelParams.push(
+            chunkId,
+            label.type,
+            label.text,
+            label.display,
+            chunk.model || DEFAULT_EMBEDDING_MODEL
+          );
+        }
+      }
+      if (labelRows.length > 0) {
+        await sql.unsafe(
+          `INSERT INTO content_chunk_labels (chunk_id, label_type, label_text, label_display, embedding, model, embedded_at) VALUES ${labelRows.join(", ")}
+           ON CONFLICT (chunk_id, label_type, label_text) DO UPDATE SET
+             label_display = EXCLUDED.label_display,
+             embedding = CASE
+               WHEN EXCLUDED.embedding IS NOT NULL THEN EXCLUDED.embedding
+               ELSE content_chunk_labels.embedding
+             END,
+             model = COALESCE(EXCLUDED.model, content_chunk_labels.model),
+             embedded_at = CASE
+               WHEN EXCLUDED.embedding IS NOT NULL THEN EXCLUDED.embedded_at
+               ELSE content_chunk_labels.embedded_at
+             END`,
+          labelParams as Parameters<typeof sql.unsafe>[1]
+        );
+      }
+    }
   }
 
   async getChunks(slug: string, opts?: { sourceId?: string }): Promise<Chunk[]> {

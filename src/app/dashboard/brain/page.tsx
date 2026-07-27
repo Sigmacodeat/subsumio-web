@@ -293,7 +293,7 @@ export default function BrainPage() {
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-20">
+            <div className="flex justify-center py-20" role="status" aria-live="polite">
               <Loader2 size={28} className="animate-spin text-[color:var(--ds-text-muted)]" />
             </div>
           ) : isEmpty ? (

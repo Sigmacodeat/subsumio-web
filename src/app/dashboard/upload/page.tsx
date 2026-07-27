@@ -481,20 +481,17 @@ function UploadPageInner() {
           (result as { original_persisted?: boolean; persist_error?: string })
             .original_persisted === false
             ? ((result as { persist_error?: string }).persist_error ??
-              "Originaldatei nicht gespeichert")
+              t("upload.original_not_saved"))
             : undefined;
         const extractionStatus = result.extraction_status;
         const extractionWarning =
           extractionStatus === "failed"
-            ? result.extraction_warnings ||
-              "Kein durchsuchbarer Text extrahiert; Originaldatei wurde gespeichert."
+            ? result.extraction_warnings || t("upload.no_text_extracted")
             : extractionStatus === "partial"
-              ? result.extraction_warnings || "Dokument wurde nur teilweise extrahiert."
+              ? result.extraction_warnings || t("upload.partial_extraction")
               : result.extraction_warnings;
         const pipelineWarning =
-          result.post_upload_queued === false
-            ? "Dokument gespeichert, automatische Analyse konnte aber nicht eingeplant werden."
-            : undefined;
+          result.post_upload_queued === false ? t("upload.saved_no_pipeline") : undefined;
 
         const stillProcessing = extractionStatus === "processing";
 
@@ -544,7 +541,7 @@ function UploadPageInner() {
               const message =
                 readinessError instanceof Error
                   ? readinessError.message
-                  : "Dokumentverarbeitung fehlgeschlagen.";
+                  : t("upload.processing_failed");
               setFiles((prev) =>
                 prev.map((f) =>
                   f.id === uploadFile.id
@@ -773,7 +770,7 @@ function UploadPageInner() {
           maxLength={255}
           value={documentPassword}
           onChange={(event) => setDocumentPassword(event.target.value)}
-          placeholder="Nur für passwortgeschützte PDF-/Office-Dateien"
+          placeholder={t("upload.password_placeholder")}
           disabled={!isOnline()}
         />
         <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
@@ -833,7 +830,7 @@ function UploadPageInner() {
             </Label>
             <Select value={jurisdictionOverride} onValueChange={setJurisdictionOverride}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Automatisch erkennen" />
+                <SelectValue placeholder={t("upload.auto_detect")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="at">Österreich</SelectItem>
@@ -849,7 +846,7 @@ function UploadPageInner() {
             </Label>
             <Select value={docTypeOverride} onValueChange={setDocTypeOverride}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Automatisch klassifizieren" />
+                <SelectValue placeholder={t("upload.auto_classify")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="court_judgment">Urteil</SelectItem>
@@ -1041,14 +1038,14 @@ function UploadPageInner() {
                         ) : f.status === "processing" ? (
                           <span>
                             {f.serverPhase === "downloading"
-                              ? "Datei wird vom Storage heruntergeladen"
+                              ? t("upload.dl_from_storage")
                               : f.serverPhase === "verifying"
-                                ? "Prüfsumme wird verifiziert"
+                                ? t("upload.verifying_checksum")
                                 : f.serverPhase === "scanning"
-                                  ? "Virenscan wird durchgeführt"
+                                  ? t("upload.virus_scan")
                                   : f.serverPhase === "extracting"
-                                    ? "Inhalt wird extrahiert und indexiert"
-                                    : "Datei übertragen · Server prüft, speichert und indexiert"}
+                                    ? t("upload.extracting_indexing")
+                                    : t("upload.server_processing")}
                           </span>
                         ) : (
                           <span>
@@ -1184,7 +1181,7 @@ function UploadPageInner() {
                               )
                             );
                           }}
-                          className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-[0.6875rem] text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                          className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-[0.6875rem] text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                         >
                           <option value="">Akte aus Auswahl oben</option>
                           {cases.map((c) => (

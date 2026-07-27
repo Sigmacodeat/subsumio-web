@@ -159,7 +159,7 @@ export function ClauseQuickCreateDialog({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={t("clauses.placeholder_body" as DashboardKey)}
-                className="h-32 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none"
+                className="h-32 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
             </div>
           </div>

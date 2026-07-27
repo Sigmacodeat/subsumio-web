@@ -2,6 +2,7 @@
 // provisions the legal workspace.
 
 import { type Lang, type PricingTier, deepMerge, applyReplacements } from "./site";
+import { professionalPricing } from "./audiences";
 
 export interface VerticalPricing {
   title: string;
@@ -572,5 +573,6 @@ export function pricingForIndustry(
   industry: string | null | undefined
 ): VerticalPricing | null {
   if (industry !== "legal") return null;
-  return VERTICAL_PRICING[lang].legal ?? null;
+  const pricing = professionalPricing(lang);
+  return { title: pricing.title, sub: pricing.sub, tiers: pricing.tiers };
 }

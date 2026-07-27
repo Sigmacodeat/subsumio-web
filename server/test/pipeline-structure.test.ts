@@ -14,6 +14,16 @@
 
 import { describe, it, expect } from "bun:test";
 import { EMBEDDED_SPECIALISTS, resolveSpecialist } from "../src/core/minions/specialist-defs.ts";
+import {
+  LAYER_REGISTRY,
+  validateNoHiddenContinue,
+  getMandatoryLayerIds,
+} from "../src/core/minions/pipeline-registry.ts";
+import {
+  validateAllWorkflowDefs,
+  listWorkflowIds,
+  WORKFLOW_DEFS,
+} from "../src/core/minions/workflow-defs.ts";
 import { TIER_DEFAULTS } from "../src/core/model-config.ts";
 
 // ── Pipeline layer → specialist mapping (from legal-pipeline.ts) ──────────
@@ -248,5 +258,170 @@ describe("Pipeline guardrail integration (AP-1/AP-2)", () => {
     const source = await Bun.file("./server/src/core/minions/handlers/legal-pipeline.ts").text();
     expect(source).toContain("SUBSUMIO_GUARDRAIL_HARD_BLOCK");
     expect(source).toContain("enforceGuardrailHardBlock");
+  });
+});
+
+// ── Registry vs Specialist-Defs Consistency ──────────────────────────────────
+
+describe("Registry ↔ specialist-defs consistency", () => {
+  it("every specialist referenced in LAYER_REGISTRY exists in EMBEDDED_SPECIALISTS", () => {
+    const specialistNames = new Set(EMBEDDED_SPECIALISTS.map((s) => s.name));
+    for (const layer of LAYER_REGISTRY) {
+      if (!layer.specialist) continue; // skip non-specialist layers (doc-classifier, contradiction-probe)
+      expect(
+        specialistNames.has(layer.specialist),
+        `Layer "${layer.id}" references specialist "${layer.specialist}" which does not exist in EMBEDDED_SPECIALISTS`
+      ).toBe(true);
+    }
+  });
+
+  it("every specialist prompt contains a HALLUCINATION-GATE", () => {
+    for (const s of EMBEDDED_SPECIALISTS) {
+      const hasGate =
+        s.systemPrompt.includes("HALLUCINATION-GATE") || s.systemPrompt.includes("ERFINDE KEINE");
+      expect(
+        hasGate,
+        `Specialist "${s.name}" is missing a HALLUCINATION-GATE in its system prompt`
+      ).toBe(true);
+    }
+  });
+
+  it("mandatory layers all have failurePolicy 'fail'", () => {
+    const mandatoryIds = getMandatoryLayerIds();
+    expect(mandatoryIds.length).toBeGreaterThanOrEqual(8);
+    for (const layer of LAYER_REGISTRY) {
+      if (layer.mandatory) {
+        expect(
+          layer.failurePolicy,
+          `Mandatory layer "${layer.id}" has failurePolicy "${layer.failurePolicy}" — must be "fail"`
+        ).toBe("fail");
+      }
+    }
+  });
+
+  it("validateNoHiddenContinue returns no violations", () => {
+    const violations = validateNoHiddenContinue();
+    expect(violations, violations.map((v) => v.issue).join("; ")).toEqual([]);
+  });
+
+  it("exactly 3 deep-tier specialists in EMBEDDED_SPECIALISTS", () => {
+    const deepSpecialists = EMBEDDED_SPECIALISTS.filter((s) => s.modelTier === "deep");
+    expect(deepSpecialists.length).toBe(3);
+    const names = deepSpecialists.map((s) => s.name);
+    expect(names).toContain("legal-critic");
+    expect(names).toContain("opponent-simulator");
+    expect(names).toContain("subsumption-checker");
+  });
+
+  it("exactly 4 utility-tier specialists in EMBEDDED_SPECIALISTS", () => {
+    const utilitySpecialists = EMBEDDED_SPECIALISTS.filter((s) => s.modelTier === "utility");
+    expect(utilitySpecialists.length).toBe(4);
+    const names = utilitySpecialists.map((s) => s.name);
+    expect(names).toContain("legal-deadline-extractor");
+    expect(names).toContain("on-scanner");
+    expect(names).toContain("entity-extractor");
+    expect(names).toContain("law-matcher");
+  });
+
+  it("all remaining specialists are reasoning-tier", () => {
+    const reasoningCount = EMBEDDED_SPECIALISTS.filter((s) => s.modelTier === "reasoning").length;
+    const total = EMBEDDED_SPECIALISTS.length;
+    expect(reasoningCount).toBe(total - 3 - 4);
+  });
+
+  it("LAYER_REGISTRY has at least 27 layers", () => {
+    expect(LAYER_REGISTRY.length).toBeGreaterThanOrEqual(27);
+  });
+});
+
+// ── Workflow & Cross-Cutting Validation ──────────────────────────────────────
+
+describe("Workflow definitions validation", () => {
+  it("all workflow definitions reference valid layer IDs", () => {
+    const issues = validateAllWorkflowDefs();
+    expect(issues, JSON.stringify(issues, null, 2)).toEqual([]);
+  });
+
+  it("all 4 workflow IDs are defined", () => {
+    const ids = listWorkflowIds();
+    expect(ids).toContain("memo");
+    expect(ids).toContain("fristen_report");
+    expect(ids).toContain("schriftsatz");
+    expect(ids).toContain("full_pipeline");
+    expect(ids.length).toBe(4);
+  });
+
+  it("full_pipeline includes all LAYER_REGISTRY layers", () => {
+    const fullLayers = WORKFLOW_DEFS.full_pipeline.layers;
+    expect(fullLayers.length).toBe(LAYER_REGISTRY.length);
+    for (const layer of LAYER_REGISTRY) {
+      expect(fullLayers).toContain(layer.id);
+    }
+  });
+
+  it("approval gates are subset of layers in each workflow", () => {
+    for (const id of listWorkflowIds()) {
+      const def = WORKFLOW_DEFS[id];
+      for (const gate of def.approvalGates) {
+        expect(
+          def.layers.includes(gate),
+          `Workflow "${id}" has approval gate "${gate}" not in its layers list`
+        ).toBe(true);
+      }
+    }
+  });
+});
+
+describe("Cross-cutting specialist validation", () => {
+  it("no specialist uses subagent tier", () => {
+    const subagents = EMBEDDED_SPECIALISTS.filter((s) => s.modelTier === "subagent");
+    expect(subagents, subagents.map((s) => s.name).join(", ")).toEqual([]);
+  });
+
+  it("drafting specialists have put_page tool", () => {
+    const drafters = EMBEDDED_SPECIALISTS.filter(
+      (s) => s.name === "legal-drafter" || s.name === "legal-deadline-extractor"
+    );
+    for (const d of drafters) {
+      expect(
+        d.allowedTools.includes("put_page"),
+        `Drafting specialist "${d.name}" lacks put_page tool`
+      ).toBe(true);
+    }
+  });
+
+  it("interactive copilot specialists have traverse_graph", () => {
+    const copilotSpecialists = [
+      "legal-researcher",
+      "legal-analyst",
+      "legal-strategist",
+      "legal-critic",
+    ];
+    for (const name of copilotSpecialists) {
+      const s = EMBEDDED_SPECIALISTS.find((e) => e.name === name);
+      expect(s, `Specialist "${name}" not found`).toBeDefined();
+      expect(
+        s!.allowedTools.includes("traverse_graph"),
+        `Copilot specialist "${name}" lacks traverse_graph tool`
+      ).toBe(true);
+    }
+  });
+
+  it("every specialist has non-empty allowedTools array", () => {
+    for (const s of EMBEDDED_SPECIALISTS) {
+      expect(
+        s.allowedTools.length,
+        `Specialist "${s.name}" has empty allowedTools`
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  it("every specialist has maxTurns >= 5", () => {
+    for (const s of EMBEDDED_SPECIALISTS) {
+      expect(
+        s.maxTurns,
+        `Specialist "${s.name}" has maxTurns ${s.maxTurns} — must be >= 5`
+      ).toBeGreaterThanOrEqual(5);
+    }
   });
 });

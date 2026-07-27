@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -103,6 +103,59 @@ function CalendarEditDialog({
     }
   }, [appointment, presetDate, open]);
 
+  // A11y for the edit dialog: focus restoration on close (autofocus is handled
+  // by the title input's autoFocus). Self-contained — the global dashboard
+  // focus trap only covers layout-registered overlays.
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    return () => {
+      previouslyFocused?.focus();
+    };
+  }, [open]);
+
+  // Mirror of saving/deleting so the Escape handler sees the current value
+  // without re-registering the listener.
+  const busyRef = useRef(false);
+  busyRef.current = saving || deleting;
+
+  // Keyboard handling for the edit dialog: Escape closes (unless busy), Tab
+  // cycles focus within the dialog.
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (!busyRef.current) {
+          event.preventDefault();
+          onOpenChange(false);
+        }
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, onOpenChange]);
+
   const handleSave = async () => {
     if (!form.title.trim() || !form.date) return;
     setSaving(true);
@@ -149,19 +202,30 @@ function CalendarEditDialog({
   if (!open) return null;
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Backdrop click-to-close; keyboard users close via Escape or the close button.
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) onOpenChange(false);
       }}
     >
-      <div className="w-full max-w-md rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 shadow-xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="calendar-edit-dialog-title"
+        className="w-full max-w-md rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 shadow-xl"
+      >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+          <h2
+            id="calendar-edit-dialog-title"
+            className="text-sm font-semibold text-[color:var(--ds-text)]"
+          >
             {appointment ? t("calendar.edit" as DashboardKey) : t("calendar.new" as DashboardKey)}
           </h2>
           <button
             onClick={() => onOpenChange(false)}
+            aria-label={t("common.close" as DashboardKey)}
             className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
           >
             <X size={18} />
@@ -511,7 +575,7 @@ export function CalendarInUiEditor() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
         <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );
@@ -567,57 +631,81 @@ export function CalendarInUiEditor() {
           const isToday = cell.date === today;
           const dayAppts = cell.date ? (appointmentsByDate.get(cell.date) ?? []) : [];
 
+          const cellContent = cell.day ? (
+            <>
+              <div
+                className={cn(
+                  "mb-1 text-xs font-medium",
+                  isToday ? "text-blue-600" : "text-[color:var(--ds-text-muted)]"
+                )}
+              >
+                {cell.day}
+              </div>
+              <div className="space-y-0.5">
+                {dayAppts.slice(0, 3).map((appt) => (
+                  <button
+                    key={appt.slug}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEdit(appt);
+                    }}
+                    className={cn(
+                      "block w-full truncate rounded px-1.5 py-0.5 text-left text-xs transition-colors",
+                      appt.type === "hearing"
+                        ? "bg-blue-500/10 text-blue-700 hover:bg-blue-500/20"
+                        : appt.type === "consultation"
+                          ? "bg-violet-500/10 text-violet-700 hover:bg-violet-500/20"
+                          : "bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20"
+                    )}
+                  >
+                    {appt.time && `${appt.time} `}
+                    {appt.title}
+                  </button>
+                ))}
+                {dayAppts.length > 3 && (
+                  <div className="px-1.5 text-xs text-[color:var(--ds-text-muted)]">
+                    +{dayAppts.length - 3} {t("calendar.more" as DashboardKey)}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : null;
+
+          if (!cell.date) {
+            return (
+              <div
+                key={idx}
+                className={cn(
+                  "min-h-[80px] rounded-lg border p-1 transition-colors",
+                  "border-transparent bg-transparent"
+                )}
+              >
+                {cellContent}
+              </div>
+            );
+          }
+
+          const dateStr = cell.date;
           return (
             <div
               key={idx}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.target !== e.currentTarget) return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openNew(dateStr);
+                }
+              }}
               className={cn(
                 "min-h-[80px] rounded-lg border p-1 transition-colors",
-                cell.day === null
-                  ? "border-transparent bg-transparent"
-                  : "cursor-pointer border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-surface-2)]",
+                "cursor-pointer border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-surface-2)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
                 isToday && "border-blue-500/40 ring-1 ring-blue-500/20"
               )}
-              onClick={() => cell.date && openNew(cell.date)}
+              onClick={() => openNew(dateStr)}
             >
-              {cell.day && (
-                <>
-                  <div
-                    className={cn(
-                      "mb-1 text-xs font-medium",
-                      isToday ? "text-blue-600" : "text-[color:var(--ds-text-muted)]"
-                    )}
-                  >
-                    {cell.day}
-                  </div>
-                  <div className="space-y-0.5">
-                    {dayAppts.slice(0, 3).map((appt) => (
-                      <button
-                        key={appt.slug}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEdit(appt);
-                        }}
-                        className={cn(
-                          "block w-full truncate rounded px-1.5 py-0.5 text-left text-xs transition-colors",
-                          appt.type === "hearing"
-                            ? "bg-blue-500/10 text-blue-700 hover:bg-blue-500/20"
-                            : appt.type === "consultation"
-                              ? "bg-violet-500/10 text-violet-700 hover:bg-violet-500/20"
-                              : "bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20"
-                        )}
-                      >
-                        {appt.time && `${appt.time} `}
-                        {appt.title}
-                      </button>
-                    ))}
-                    {dayAppts.length > 3 && (
-                      <div className="px-1.5 text-xs text-[color:var(--ds-text-muted)]">
-                        +{dayAppts.length - 3} {t("calendar.more" as DashboardKey)}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
+              {cellContent}
             </div>
           );
         })}

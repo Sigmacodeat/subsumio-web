@@ -100,7 +100,10 @@ export default function AbsencePage() {
       <PageHeader
         title={t("absence.title")}
         description={t("absence.desc")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("absence.title") }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("absence.title") },
+        ]}
         actions={
           <Button onClick={() => setShowCreate(!showCreate)} className="brand-bg gap-2 text-white">
             <Plus size={16} />
@@ -141,7 +144,7 @@ export default function AbsencePage() {
               <Input
                 value={form.user_name}
                 onChange={(e) => setForm({ ...form, user_name: e.target.value })}
-                placeholder="Max Mustermann"
+                placeholder={t("absence.ph_name")}
                 required
               />
             </div>
@@ -163,7 +166,7 @@ export default function AbsencePage() {
               <Input
                 value={form.delegate_name}
                 onChange={(e) => setForm({ ...form, delegate_name: e.target.value })}
-                placeholder="Anna Schmidt"
+                placeholder={t("absence.ph_representative")}
                 required
               />
             </div>
@@ -232,7 +235,7 @@ export default function AbsencePage() {
 
       {/* Absence list */}
       {loading ? (
-        <div className="flex justify-center py-20">
+        <div className="flex justify-center py-20" role="status" aria-live="polite">
           <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : absences.length === 0 ? (

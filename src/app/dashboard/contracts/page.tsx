@@ -414,7 +414,7 @@ export default function ContractsPage() {
                     )
                   }
                   placeholder={`Frage ${i + 1}`}
-                  className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 <button
                   onClick={() => setReviewQuestions((qs) => qs.filter((_, idx) => idx !== i))}
@@ -646,27 +646,27 @@ export default function ContractsPage() {
                     <input
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
-                      placeholder="Titel"
-                      className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      placeholder={t("contracts.ph_title")}
+                      className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                     />
                     <input
                       value={editParties}
                       onChange={(e) => setEditParties(e.target.value)}
-                      placeholder="Parteien"
-                      className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      placeholder={t("contracts.ph_parties")}
+                      className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                     />
                   </div>
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <input
                       value={editType}
                       onChange={(e) => setEditType(e.target.value)}
-                      placeholder="Vertragstyp"
-                      className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      placeholder={t("contracts.ph_type")}
+                      className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                     />
                     <select
                       value={editStatus}
                       onChange={(e) => setEditStatus(e.target.value as ContractItem["status"])}
-                      className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                     >
                       {Object.entries(STATUS_LABELS).map(([key, labelFn]) => (
                         <option key={key} value={key}>
@@ -679,8 +679,8 @@ export default function ContractsPage() {
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                     rows={6}
-                    placeholder="Vertragstext"
-                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    placeholder={t("contracts.ph_text")}
+                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                   />
                   {editError && (
                     <p className="text-xs text-[color:var(--ds-danger-text)]">{editError}</p>
@@ -771,7 +771,7 @@ export default function ContractsPage() {
                       onClick={() => analyzeContract(contract)}
                       disabled={isAnalyzing}
                       className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
-                      title="Analyse"
+                      title={t("contracts.aria_analysis")}
                     >
                       {isAnalyzing ? (
                         <Loader2 size={14} className="animate-spin" />
@@ -782,7 +782,7 @@ export default function ContractsPage() {
                     <button
                       onClick={() => setRedlineContract(contract)}
                       className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
-                      title="Redline"
+                      title={t("contracts.aria_redline")}
                     >
                       <GitCompare size={14} />
                     </button>
@@ -806,7 +806,11 @@ export default function ContractsPage() {
                   {contract.content.slice(0, 200)}…
                 </div>
                 {isAnalyzing && (
-                  <div className="brand-text flex items-center gap-2 text-xs">
+                  <div
+                    className="brand-text flex items-center gap-2 text-xs"
+                    role="status"
+                    aria-live="polite"
+                  >
                     <Loader2 size={14} className="animate-spin" /> KI analysiert Vertrag…
                   </div>
                 )}

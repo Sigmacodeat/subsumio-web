@@ -21,6 +21,7 @@ export const POST = createEngineProxy({
   enginePath: "/api/legal/due-diligence",
   body: dueDiligenceSchema,
   quota: "queries",
+  credits: "subsumption",
   stream: true,
   citationGate: true,
   label: "due-diligence",

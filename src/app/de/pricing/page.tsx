@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import PricingPage from "@/components/marketing/pricing-page";
 import { JsonLd, softwareApplicationLd, breadcrumbLd } from "@/components/seo/jsonld";
-import { PRICING } from "@/content/site";
+import { professionalPricing } from "@/content/audiences";
 
 export const metadata: Metadata = {
-  title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer",
+  title: "Subsumio Preise — Privat, Solo, Kanzlei und Enterprise",
   description:
-    "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Gehostete Pläne ab 890 €/Nutzer/Mon. jährlich — EU-Cloud oder On-Premise, 14 Tage volle Testversion, keine Überraschungsrechnung, kein Lock-in. DATEV-Export, Kollisionsprüfung, Fristenkontrolle inklusive.",
+    "Getrennte Preise für Privatpersonen und professionelle Aktenarbeit. Solo 179 €/Monat, Kanzlei 999 €/Monat inklusive 5 Nutzern, monatlich kündbar.",
   alternates: {
     canonical: "/pricing",
     languages: {
@@ -17,16 +17,17 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer",
+    title: "Subsumio Preise — Privat, Solo, Kanzlei und Enterprise",
     description:
-      "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Gehostete Pläne ab 890 €/Nutzer/Mon. — EU-Cloud oder On-Premise, 14 Tage volle Testversion, keine Überraschungsrechnung.",
+      "Getrennte Preise für Privatpersonen und professionelle Aktenarbeit. Solo 179 €/Monat, monatlich kündbar.",
     url: "/de/pricing",
     type: "website",
   },
 };
 
 export default function Page() {
-  const offers = PRICING.de.tiers
+  const pricing = professionalPricing("de");
+  const offers = pricing.tiers
     .filter((t) => t.id !== "ent")
     .map((t) => ({
       "@type": "Offer" as const,
@@ -50,7 +51,7 @@ export default function Page() {
                 "@type": "PriceSpecification",
                 priceCurrency: "EUR",
               },
-              description: PRICING.de.tiers.find((t) => t.id === "ent")?.blurb,
+              description: pricing.tiers.find((t) => t.id === "ent")?.blurb,
             },
           ],
         }}

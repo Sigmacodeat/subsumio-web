@@ -957,6 +957,14 @@ const ADMIN_SECTION: NavSection = {
       audienceTier: "erweitert",
     },
     {
+      href: "/dashboard/ai-quality",
+      icon: ShieldCheck,
+      labelKey: "nav.ai_quality",
+      keywords: "ai quality hallucination guardrail ece calibration reasoning trace",
+      tier: "admin",
+      audienceTier: "erweitert",
+    },
+    {
       href: "/dashboard/chat/analytics",
       icon: ChartNoAxesColumn,
       labelKey: "nav.chat_analytics",
@@ -1586,6 +1594,14 @@ const TAX_ADMIN_SECTION: NavSection = {
       audienceTier: "erweitert",
     },
     {
+      href: "/dashboard/ai-quality",
+      icon: ShieldCheck,
+      labelKey: "nav.ai_quality",
+      keywords: "ai quality hallucination guardrail ece calibration reasoning trace",
+      tier: "admin",
+      audienceTier: "erweitert",
+    },
+    {
       href: "/dashboard/chat/analytics",
       icon: ChartNoAxesColumn,
       labelKey: "nav.chat_analytics",
@@ -1708,7 +1724,10 @@ const ADMIN_GROUPS: Array<{ titleKey: DashboardKey; hrefs: string[] }> = [
       "/dashboard/settings/ai-model",
       "/dashboard/admin/feature-flags",
       "/dashboard/admin/backup",
+      "/dashboard/admin/corpus",
+      "/dashboard/admin/pipeline",
       "/dashboard/monitoring",
+      "/dashboard/ai-quality",
       "/dashboard/connectors",
       "/dashboard/api-keys",
     ],
@@ -2309,7 +2328,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("sidebar.filter_placeholder")}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-[13px] text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--ds-border-strong)] focus:ring-0 focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-[13px] text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--ds-border-strong)] focus:ring-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 aria-label={t("sidebar.filter_placeholder")}
               />
               {searchQuery && (
@@ -2811,6 +2830,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           </button>
         </div>
         {!collapsed && isDesktop && (
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- WAI-ARIA separator/slider pattern (drag-to-resize), keyboard-focusable via tabIndex/aria-orientation below.
           <div
             role="separator"
             aria-orientation="vertical"
@@ -2818,7 +2838,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             tabIndex={0}
             onMouseDown={handleMouseDown}
             onTouchStart={handleMouseDown}
-            className="absolute inset-y-0 right-0 z-50 w-1 cursor-col-resize bg-transparent transition-colors hover:bg-[color:var(--brand-primary)] focus:bg-[color:var(--brand-primary)] focus:outline-none"
+            className="absolute inset-y-0 right-0 z-50 w-1 cursor-col-resize bg-transparent transition-colors hover:bg-[color:var(--brand-primary)] focus:bg-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
         )}
       </div>

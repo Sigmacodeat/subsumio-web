@@ -1,7 +1,13 @@
 import { z } from "zod";
 import { ENGINE_URL, engineHeadersWithCaseJurisdiction } from "@/lib/engine";
 import { recordQuery } from "@/lib/usage";
-import { createHandler, apiStream, apiError, recordQuota } from "@/lib/api-handler";
+import {
+  createHandler,
+  apiStream,
+  apiError,
+  recordQuota,
+  recordCreditConsumption,
+} from "@/lib/api-handler";
 import { createCitationGateStream } from "@/lib/citation-gate";
 import { interceptGuardrailStream } from "@/lib/guardrail-stream-interceptor";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
@@ -23,6 +29,7 @@ export const POST = createHandler(
     action: "query.submit",
     rateTier: "heavy",
     quota: "queries",
+    credits: "think",
     body: thinkSchema,
     audit: (_ctx, body) => ({
       action: "query.submit" as const,
@@ -33,6 +40,7 @@ export const POST = createHandler(
   async (ctx, body, _query, _req) => {
     void recordQuery(ctx.brainId);
     void recordQuota(ctx, "queries");
+    void recordCreditConsumption(ctx, "think", body.case_slug);
 
     try {
       const safeBody = sanitizeObjectStrings(body);
@@ -74,6 +82,7 @@ export const POST = createHandler(
         userId: ctx.user.id,
         jurisdiction,
         queryHash,
+        query: safeBody.query,
       });
 
       return apiStream(createCitationGateStream(intercepted), {

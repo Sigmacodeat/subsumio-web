@@ -4,5 +4,5 @@ export const size = ogImageSize;
 export const contentType = ogImageContentType;
 
 export default function Image() {
-  return renderOgImage("Pricing — hosted plans from €890/seat/mo, 14-day reverse trial");
+  return renderOgImage("Pricing — private access, Solo €179/mo, Firm and Enterprise");
 }

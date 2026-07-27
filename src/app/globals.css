@@ -1,7 +1,12 @@
 /* Fonts are self-hosted via next/font (layout.tsx) — no runtime requests
    to Google (GDPR) and no render-blocking @import. The --font-inter,
    --font-grotesk and --font-jetbrains variables are set on <html>. */
-@import "tailwindcss";
+/* Scan application sources only. Tailwind's workspace-wide auto detection also
+   picked up migration-script comments such as `var(--ds-*-border)`, which it
+   interpreted as an arbitrary class and emitted invalid CSS. It also scanned
+   multi-gigabyte legal corpora that can never contain UI classes. */
+@import "tailwindcss" source(none);
+@source "../";
 
 /* ── BrainAvatar animations — Copilot identity ─────────────────────────
    Modern AI-style motion:

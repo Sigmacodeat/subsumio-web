@@ -565,7 +565,7 @@ export default function VaultPage() {
               </button>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" role="status" aria-live="polite">
             <Button type="submit" disabled={reviewLoading} className="gap-2">
               {reviewLoading ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -708,7 +708,7 @@ export default function VaultPage() {
                 setDeepAnalysisResult(result);
               } catch (e) {
                 setDeepAnalysisError(
-                  e instanceof Error ? e.message : "Deep Analysis fehlgeschlagen"
+                  e instanceof Error ? e.message : t("vault.deep_analysis_failed")
                 );
               } finally {
                 setDeepAnalysisLoading(false);
@@ -722,13 +722,7 @@ export default function VaultPage() {
             ) : (
               <Sparkles size={14} />
             )}
-            {deepAnalysisLoading
-              ? lang === "en"
-                ? "Analyzing..."
-                : "Analysiere..."
-              : lang === "en"
-                ? "Run Deep Analysis"
-                : "Tiefenanalyse starten"}
+            {deepAnalysisLoading ? t("vault.analyzing") : t("vault.run_deep_analysis")}
           </Button>
 
           {deepAnalysisResult && (
@@ -887,7 +881,7 @@ export default function VaultPage() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("vault.search_placeholder")}
             aria-label={t("aria.search_docs")}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
           {searching && (
             <Loader2
@@ -1096,12 +1090,12 @@ export default function VaultPage() {
                         {doc.extractionStatus === "failed" || doc.extractionStatus === "error"
                           ? lang === "en"
                             ? "Extraction failed"
-                            : "Extraktion fehlgeschlagen"
+                            : t("vault.extraction_failed")
                           : doc.extractionStatus === "processing" ||
                               doc.extractionStatus === "uploaded"
                             ? lang === "en"
                               ? "Processing…"
-                              : "Wird verarbeitet…"
+                              : t("vault.processing")
                             : doc.extractionStatus === "ocr_needed"
                               ? lang === "en"
                                 ? "OCR needed"

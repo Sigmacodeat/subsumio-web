@@ -21,7 +21,7 @@ export const POST = createHandler(
     if (!isBillingConfigured()) {
       return apiError(
         "billing_not_configured",
-        "Stripe is not connected yet. Set STRIPE_SECRET_KEY, STRIPE_PRICE_PRO and STRIPE_PRICE_TEAM to enable checkout.",
+        "Stripe is not connected yet. Set STRIPE_SECRET_KEY, STRIPE_PRICE_SOLO and STRIPE_PRICE_KANZLEI to enable checkout.",
         501
       );
     }

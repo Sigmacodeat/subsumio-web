@@ -877,14 +877,46 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     };
   }, [context.caseSlug]);
 
+  // Keep selectedCaseSlug in sync with the route-driven context prop.
+  //
+  // The desktop Copilot sidebar mounts ChatPanel ONCE in dashboard/layout.tsx
+  // and reuses the same instance across every matter page the attorney
+  // navigates to (no `key` prop) — only `context.caseSlug` changes per
+  // navigation. `selectedCaseSlug` was initialized once from `context.caseSlug`
+  // at mount and otherwise only updated by the manual case-selector dropdown,
+  // so once it held a non-empty value it won every downstream
+  // `selectedCaseSlug || context.caseSlug` fallback FOREVER — including on
+  // later navigation to a different matter. Concretely: open Mandat A's page
+  // (selectedCaseSlug="mandat-a"), then navigate to Mandat B's page
+  // (context.caseSlug becomes "mandat-b") and ask the copilot a question — it
+  // would silently keep querying/recording under "mandat-a" while the UI
+  // shows Mandat B, because the engine's matter-scope filter (server/src/
+  // commands/web-api.ts) treats the client-supplied case_slug as authoritative
+  // for narrowing an otherwise firm-wide-authorized session. Resetting here
+  // on every context.caseSlug change fixes that while still letting an
+  // in-page manual override (case selector, context.caseSlug unchanged)
+  // persist for the rest of that page visit.
+  useEffect(() => {
+    setSelectedCaseSlug(context.caseSlug ?? "");
+  }, [context.caseSlug]);
+
   // Load sessions list — filtered by matter for isolation
+  const refreshSessionsGenerationRef = useRef(0);
   const refreshSessions = useCallback(async () => {
     if (!persistHistory) return;
+    const generation = ++refreshSessionsGenerationRef.current;
     const list = await listSessions({
       caseSlug: selectedCaseSlug || context.caseSlug,
       contextType: context.type,
     });
-    setSessions(list);
+    // Stale-response guard: if selectedCaseSlug/context.caseSlug/context.type
+    // changed again (e.g. rapid matter switching) while this request was in
+    // flight, a newer call already bumped the generation counter — drop this
+    // now-stale result instead of overwriting the sessions list with the
+    // wrong matter's threads.
+    if (generation === refreshSessionsGenerationRef.current) {
+      setSessions(list);
+    }
   }, [persistHistory, selectedCaseSlug, context.caseSlug, context.type]);
 
   useEffect(() => {
@@ -1705,6 +1737,33 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           );
         }
 
+        // ── Progressive Grounding (regenerate path) ──
+        // Same non-blocking corpus-grounding pass as handleSend — every AI
+        // answer surface must carry grounding metadata, regenerated answers
+        // included (a regenerated answer is a first-class new answer, not a
+        // variant that inherits the original's grounding).
+        groundAnswer(cleanRegenAnswer)
+          .then((grounding) => {
+            if (!grounding) return;
+            setMessages((m) => {
+              const last = m[m.length - 1];
+              if (!last || last.role !== "assistant" || last.id !== assistantMsg.id) return m;
+              const updated = { ...last, grounding };
+              return [...m.slice(0, -1), updated];
+            });
+            if (persistHistory && activeSessionId) {
+              setMessages((m) => {
+                const last = m[m.length - 1];
+                if (!last || last.id !== assistantMsg.id) return m;
+                saveMessage(activeSessionId, { ...last, grounding });
+                return m;
+              });
+            }
+          })
+          .catch(() => {
+            // Grounding failure is non-fatal — the answer is still displayed
+          });
+
         // ── Copilot Tool Detection (regenerate path) ──
         const toolCalls = await detectAndExecuteTools(result.answer, {
           type: context.type,
@@ -1772,6 +1831,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       isStreaming,
       setMessages,
       userContext,
+      groundAnswer,
     ]
   );
 

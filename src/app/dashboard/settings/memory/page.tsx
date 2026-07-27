@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useToast } from "@/components/ui/toast";
+import { useLang } from "@/lib/use-lang";
 
 interface MemoryEntry {
   id: string;
@@ -38,22 +39,23 @@ interface MemoryEntry {
   updatedAt: string;
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  preference: "Präferenz",
-  fact: "Fakt",
-  topic: "Thema",
-  instruction: "Anweisung",
-  case_note: "Aktennotiz",
+const TYPE_KEYS: Record<string, string> = {
+  preference: "memory.type_preference",
+  fact: "memory.type_fact",
+  topic: "memory.type_topic",
+  instruction: "memory.type_instruction",
+  case_note: "memory.type_case_note",
 };
 
-const SOURCE_LABELS: Record<string, string> = {
-  user_explicit: "Manuell",
-  inferred: "Inferiert",
-  system: "Agent",
+const SOURCE_KEYS: Record<string, string> = {
+  user_explicit: "memory.source_manual",
+  inferred: "memory.source_inferred",
+  system: "memory.source_agent",
 };
 
 export default function MemoryManagementPage() {
   const { addToast } = useToast();
+  const { t } = useLang();
   const [memories, setMemories] = useState<MemoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,7 +72,7 @@ export default function MemoryManagementPage() {
       const res = await api.memory.list();
       setMemories(res.memories);
     } catch {
-      addToast({ title: "Fehler beim Laden", type: "error" });
+      addToast({ title: t("memory.err_load"), type: "error" });
     } finally {
       setLoading(false);
     }
@@ -90,7 +92,7 @@ export default function MemoryManagementPage() {
       const res = await api.memory.search(searchQuery);
       setSearchResults(res.results as MemoryEntry[]);
     } catch {
-      addToast({ title: "Suche fehlgeschlagen", type: "error" });
+      addToast({ title: t("memory.err_search"), type: "error" });
     } finally {
       setSearching(false);
     }
@@ -101,9 +103,9 @@ export default function MemoryManagementPage() {
       try {
         await api.memory.update(id, { pinned: !pinned });
         setMemories((m) => m.map((mem) => (mem.id === id ? { ...mem, pinned: !pinned } : mem)));
-        addToast({ title: !pinned ? "Angepinnt" : "Losgelöst", type: "success" });
+        addToast({ title: !pinned ? t("memory.pinned") : t("memory.unpinned"), type: "success" });
       } catch {
-        addToast({ title: "Fehler", type: "error" });
+        addToast({ title: t("memory.err_pin"), type: "error" });
       }
     },
     [addToast]
@@ -114,9 +116,9 @@ export default function MemoryManagementPage() {
       try {
         await api.memory.delete(id);
         setMemories((m) => m.filter((mem) => mem.id !== id));
-        addToast({ title: "Gelöscht", type: "success" });
+        addToast({ title: t("memory.deleted"), type: "success" });
       } catch {
-        addToast({ title: "Fehler beim Löschen", type: "error" });
+        addToast({ title: t("memory.err_delete"), type: "error" });
       }
     },
     [addToast]
@@ -134,9 +136,9 @@ export default function MemoryManagementPage() {
       setNewMemory({ type: "preference", key: "", value: "" });
       setShowCreateForm(false);
       await loadMemories();
-      addToast({ title: "Erinnerung gespeichert", type: "success" });
+      addToast({ title: t("memory.saved"), type: "success" });
     } catch {
-      addToast({ title: "Fehler beim Speichern", type: "error" });
+      addToast({ title: t("memory.err_save"), type: "error" });
     }
   }, [newMemory, addToast, loadMemories]);
 
@@ -158,22 +160,22 @@ export default function MemoryManagementPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 md:px-6">
       <PageHeader
-        title="Gedächtnis-Verwaltung"
-        description="Erinnerungen, Präferenzen und Anweisungen des Copiloten verwalten"
+        title={t("memory.page_title")}
+        description={t("memory.desc")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Einstellungen", href: "/dashboard/settings" },
-          { label: "Gedächtnis" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("settings.title" as never), href: "/dashboard/settings" },
+          { label: t("memory.breadcrumb_memory") },
         ]}
         actions={
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={loadMemories} disabled={loading}>
               <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-              Aktualisieren
+              {t("memory.refresh")}
             </Button>
             <Button size="sm" onClick={() => setShowCreateForm(!showCreateForm)}>
               <Plus className="h-4 w-4" />
-              Neue Erinnerung
+              {t("memory.new_btn")}
             </Button>
           </div>
         }
@@ -182,66 +184,76 @@ export default function MemoryManagementPage() {
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
         <Card className="p-4">
           <div className="text-2xl font-bold">{stats.total}</div>
-          <div className="text-xs text-[color:var(--ds-text-subtle)]">Gesamt</div>
+          <div className="text-xs text-[color:var(--ds-text-subtle)]">{t("memory.stat_total")}</div>
         </Card>
         <Card className="p-4">
           <div className="text-2xl font-bold text-[color:var(--ds-accent-text)]">
             {stats.pinned}
           </div>
-          <div className="text-xs text-[color:var(--ds-text-subtle)]">Angepinnt</div>
+          <div className="text-xs text-[color:var(--ds-text-subtle)]">
+            {t("memory.stat_pinned")}
+          </div>
         </Card>
         <Card className="p-4">
           <div className="text-2xl font-bold text-[color:var(--ds-success-text)]">
             {stats.inferred}
           </div>
-          <div className="text-xs text-[color:var(--ds-text-subtle)]">Inferiert</div>
+          <div className="text-xs text-[color:var(--ds-text-subtle)]">
+            {t("memory.stat_inferred")}
+          </div>
         </Card>
         <Card className="p-4">
           <div className="text-2xl font-bold text-[color:var(--ds-warning-text)]">
             {stats.agent}
           </div>
-          <div className="text-xs text-[color:var(--ds-text-subtle)]">Agent-Aktionen</div>
+          <div className="text-xs text-[color:var(--ds-text-subtle)]">{t("memory.stat_agent")}</div>
         </Card>
         <Card className="p-4">
           <div className="text-2xl font-bold text-[color:var(--ds-text-muted)]">
             {stats.superseded}
           </div>
-          <div className="text-xs text-[color:var(--ds-text-subtle)]">Überschrieben</div>
+          <div className="text-xs text-[color:var(--ds-text-subtle)]">
+            {t("memory.stat_superseded")}
+          </div>
         </Card>
       </div>
 
       {showCreateForm && (
         <Card className="mb-6 p-4">
-          <h3 className="mb-3 text-sm font-semibold">Neue Erinnerung erstellen</h3>
+          <h3 className="mb-3 text-sm font-semibold">{t("memory.new_title")}</h3>
           <div className="grid gap-3 md:grid-cols-3">
             <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-subtle)]">Typ</label>
+              <label className="mb-1 block text-xs text-[color:var(--ds-text-subtle)]">
+                {t("memory.type_label")}
+              </label>
               <select
                 className="w-full rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
                 value={newMemory.type}
                 onChange={(e) => setNewMemory((m) => ({ ...m, type: e.target.value }))}
               >
-                <option value="preference">Präferenz</option>
-                <option value="fact">Fakt</option>
-                <option value="topic">Thema</option>
-                <option value="instruction">Anweisung</option>
-                <option value="case_note">Aktennotiz</option>
+                <option value="preference">{t("memory.type_preference")}</option>
+                <option value="fact">{t("memory.type_fact")}</option>
+                <option value="topic">{t("memory.type_topic")}</option>
+                <option value="instruction">{t("memory.type_instruction")}</option>
+                <option value="case_note">{t("memory.type_case_note")}</option>
               </select>
             </div>
             <div>
               <label className="mb-1 block text-xs text-[color:var(--ds-text-subtle)]">
-                Schlüssel
+                {t("memory.key_label")}
               </label>
               <Input
-                placeholder="z.B. antwortstil"
+                placeholder={t("memory.key_placeholder")}
                 value={newMemory.key}
                 onChange={(e) => setNewMemory((m) => ({ ...m, key: e.target.value }))}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-subtle)]">Wert</label>
+              <label className="mb-1 block text-xs text-[color:var(--ds-text-subtle)]">
+                {t("memory.value_label")}
+              </label>
               <Input
-                placeholder="z.B. Immer kurze Antworten"
+                placeholder={t("memory.value_placeholder")}
                 value={newMemory.value}
                 onChange={(e) => setNewMemory((m) => ({ ...m, value: e.target.value }))}
               />
@@ -249,14 +261,14 @@ export default function MemoryManagementPage() {
           </div>
           <div className="mt-3 flex justify-end gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowCreateForm(false)}>
-              Abbrechen
+              {t("memory.cancel")}
             </Button>
             <Button
               size="sm"
               onClick={handleCreate}
               disabled={!newMemory.key.trim() || !newMemory.value.trim()}
             >
-              Speichern
+              {t("memory.save_btn")}
             </Button>
           </div>
         </Card>
@@ -266,7 +278,7 @@ export default function MemoryManagementPage() {
         <div className="relative flex-1">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[color:var(--ds-text-subtle)]" />
           <Input
-            placeholder="Semantische Suche in Erinnerungen..."
+            placeholder={t("memory.search_placeholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -306,7 +318,11 @@ export default function MemoryManagementPage() {
                 : "bg-[color:var(--ds-hover)] text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
             )}
           >
-            {type === "all" ? "Alle" : (TYPE_LABELS[type] ?? type)}
+            {type === "all"
+              ? t("memory.type_all")
+              : TYPE_KEYS[type]
+                ? t(TYPE_KEYS[type] as never)
+                : type}
           </button>
         ))}
         <label className="ml-auto flex items-center gap-2 text-xs text-[color:var(--ds-text-subtle)]">
@@ -316,12 +332,12 @@ export default function MemoryManagementPage() {
             onChange={(e) => setShowSuperseded(e.target.checked)}
             className="rounded"
           />
-          Überschriebene anzeigen
+          {t("memory.show_superseded")}
         </label>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
           <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-subtle)]" />
         </div>
       ) : filtered.length === 0 ? (
@@ -350,6 +366,7 @@ export default function MemoryManagementPage() {
                 onClick={() => handlePin(memory.id, memory.pinned)}
                 className="mt-0.5 shrink-0 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-accent-text)]"
                 title={memory.pinned ? "Loslösen" : "Anpinnen"}
+                aria-label={memory.pinned ? "Loslösen" : "Anpinnen"}
               >
                 {memory.pinned ? (
                   <Pin className="h-4 w-4 fill-current text-[color:var(--ds-accent-text)]" />
@@ -361,19 +378,21 @@ export default function MemoryManagementPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="default" className="shrink-0 text-[10px]">
-                    {TYPE_LABELS[memory.type] ?? memory.type}
+                    {TYPE_KEYS[memory.type] ? t(TYPE_KEYS[memory.type] as never) : memory.type}
                   </Badge>
                   <span className="text-xs text-[color:var(--ds-text-muted)]">
-                    {SOURCE_LABELS[memory.source] ?? memory.source}
+                    {SOURCE_KEYS[memory.source]
+                      ? t(SOURCE_KEYS[memory.source] as never)
+                      : memory.source}
                   </span>
                   {memory.supersededBy && (
                     <Badge variant="default" className="shrink-0 text-[10px] opacity-60">
-                      überschrieben
+                      {t("memory.superseded")}
                     </Badge>
                   )}
                   {memory.caseSlug && (
                     <Badge variant="default" className="shrink-0 text-[10px]">
-                      Akte: {memory.caseSlug}
+                      {t("memory.case_label")} {memory.caseSlug}
                     </Badge>
                   )}
                 </div>
@@ -414,7 +433,8 @@ export default function MemoryManagementPage() {
               <button
                 onClick={() => handleDelete(memory.id)}
                 className="mt-0.5 shrink-0 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-danger-text)]"
-                title="Löschen"
+                title={t("memory.delete")}
+                aria-label={t("memory.delete")}
               >
                 <Trash2 className="h-4 w-4" />
               </button>

@@ -17,6 +17,8 @@ import { createEngine } from "../src/core/engine-factory.ts";
 import { buildGatewayConfig } from "../src/core/ai/build-gateway-config.ts";
 import { configureGateway } from "../src/core/ai/gateway.ts";
 import { embedBatch, currentEmbeddingSignature } from "../src/core/embedding.ts";
+import { assertChunkModelConsistency } from "../src/core/embedding-consistency-guard.ts";
+import { randomUUID } from "node:crypto";
 
 // pgvector expects "[1,2,3,...]" string format, not JSON
 function toVectorStr(arr: Float32Array): string {
@@ -26,8 +28,11 @@ function toVectorStr(arr: Float32Array): string {
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
   options: {
-    "batch-size": { type: "string", default: "50" },
+    "batch-size": { type: "string", default: "100" },
     "dry-run": { type: "boolean", default: false },
+    "max-errors": { type: "string", default: "10" },
+    "error-log": { type: "string", default: "/tmp/embed-errors.log" },
+    "allow-mixed-models": { type: "boolean", default: false },
     help: { type: "boolean", default: false },
   },
   allowPositionals: false,
@@ -43,6 +48,9 @@ Usage:
 Options:
   --batch-size   Chunks pro Batch (default: 50)
   --dry-run      Nur anzeigen, nicht embedden
+  --max-errors   Max consecutive batch errors before exit (default: 10)
+  --error-log    Path to error log file (default: /tmp/embed-errors.log)
+  --allow-mixed-models  Repair-only override; permits adding vectors to a mixed index
   --help         Diese Hilfe
 `);
   process.exit(0);
@@ -50,10 +58,47 @@ Options:
 
 const BATCH_SIZE = parseInt(String(values["batch-size"]), 10) || 50;
 const DRY_RUN = values["dry-run"] as boolean;
+const MAX_ERRORS = parseInt(String(values["max-errors"]), 10) || 10;
+const ERROR_LOG = String(values["error-log"] || "/tmp/embed-errors.log");
+const ALLOW_MIXED_MODELS = values["allow-mixed-models"] as boolean;
+const CLAIM_TTL_MINUTES = 30;
+
+function isTransientError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /rate.?limit|429|timeout|timed.?out|503|502|500|connection|ECONNRESET|ETIMEDOUT|fetch.?failed|abort/i.test(
+    msg
+  );
+}
+
+function logError(msg: string): void {
+  const line = `[${new Date().toISOString()}] ${msg}\n`;
+  try {
+    const f = Bun.file(ERROR_LOG);
+    const writer = f.writer();
+    writer.write(line);
+    writer.flush();
+  } catch {}
+  console.error(msg);
+}
 
 interface PendingChunk {
   id: number;
   chunk_text: string;
+}
+
+async function releaseClaim(
+  engine: Awaited<ReturnType<typeof createEngine>>,
+  claim: string,
+  ids: number[],
+  targetSignature: string
+): Promise<void> {
+  if (ids.length === 0) return;
+  await engine.executeRaw(
+    `UPDATE content_chunks
+     SET model = $3, embedded_at = NULL
+     WHERE id = ANY($1::int[]) AND model = $2 AND embedding IS NULL`,
+    [ids, claim, targetSignature]
+  );
 }
 
 async function main() {
@@ -64,27 +109,36 @@ async function main() {
   console.log(`Dry-Run: ${DRY_RUN ? "JA" : "Nein"}`);
   console.log("");
 
+  const tStart = Date.now();
+  console.log(`[init] loadConfig...`);
   const cfg = loadConfig();
   if (!cfg) throw new Error("No engine configured");
+  console.log(`[init] configureGateway... (${Date.now() - tStart}ms)`);
   configureGateway(buildGatewayConfig(cfg));
+  console.log(`[init] createEngine... (${Date.now() - tStart}ms)`);
   const engine = await createEngine(toEngineConfig(cfg));
+  console.log(`[init] engine.connect... (${Date.now() - tStart}ms)`);
   await engine.connect(toEngineConfig(cfg));
-  await engine.initSchema();
+  console.log(`[init] connected! (${Date.now() - tStart}ms)`);
+  // Skip initSchema — schema already exists, avoids blocking during parallel workers
 
-  // Count pending
-  const countResult = await engine.executeRaw(
-    `SELECT count(*) as cnt FROM content_chunks WHERE embedded_at IS NULL`
-  );
-  const pendingCount = Number((countResult[0] as { cnt: number }).cnt);
-  console.log(`Pending chunks ohne Embedding: ${pendingCount}`);
-
-  if (pendingCount === 0) {
-    console.log("Alles ist bereits embedded. Nichts zu tun.");
-    await engine.disconnect();
-    return;
+  const targetSignature = currentEmbeddingSignature();
+  console.log(`[init] target embedding space: ${targetSignature}`);
+  if (!ALLOW_MIXED_MODELS) {
+    await assertChunkModelConsistency(engine, targetSignature);
+  } else {
+    console.warn("⚠️  Mixed-model guard bypassed for controlled repair.");
   }
 
+  // Skip slow count(*) — it blocks on large corpora during parallel startup.
+  // Just try to fetch a batch; if empty, we're done.
+  console.log("Skipping pending count (fast startup mode)...");
+
   if (DRY_RUN) {
+    const countResult = await engine.executeRaw(
+      `SELECT count(*) as cnt FROM content_chunks WHERE embedded_at IS NULL`
+    );
+    const pendingCount = Number((countResult[0] as { cnt: number }).cnt);
     console.log(`[DRY-RUN] Würde ${pendingCount} chunks embedden.`);
     await engine.disconnect();
     return;
@@ -92,49 +146,102 @@ async function main() {
 
   let processed = 0;
   let errors = 0;
+  let consecutiveErrors = 0;
+  const t0 = Date.now();
+  const claim = `embedding-claim:${randomUUID()}`;
 
-  while (processed < pendingCount) {
+  while (true) {
+    // Claim and return a batch in ONE statement. A plain SELECT ... FOR
+    // UPDATE through executeRaw releases its row locks as soon as that
+    // statement commits, before the network embedding call starts. The claim
+    // marker survives that boundary and prevents parallel workers from doing
+    // the same paid work. Crashed claims become eligible after the TTL.
     const rows = await engine.executeRaw(
-      `SELECT id, chunk_text FROM content_chunks WHERE embedded_at IS NULL LIMIT $1`,
-      [BATCH_SIZE]
+      `WITH candidates AS (
+         SELECT id
+         FROM content_chunks
+         WHERE embedding IS NULL
+           AND (
+             model NOT LIKE 'embedding-claim:%'
+             OR embedded_at IS NULL
+             OR embedded_at < now() - ($3::int * interval '1 minute')
+           )
+         ORDER BY id
+         FOR UPDATE SKIP LOCKED
+         LIMIT $1
+       )
+       UPDATE content_chunks AS c
+       SET model = $2, embedded_at = now()
+       FROM candidates
+       WHERE c.id = candidates.id
+       RETURNING c.id, c.chunk_text`,
+      [BATCH_SIZE, claim, CLAIM_TTL_MINUTES]
     );
     const chunks = rows as unknown as PendingChunk[];
     if (chunks.length === 0) break;
 
+    const batchNum = Math.floor(processed / BATCH_SIZE) + 1;
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
     console.log(
-      `Embedding Batch ${Math.floor(processed / BATCH_SIZE) + 1} (${chunks.length} chunks)...`
+      `Batch ${batchNum} (${chunks.length} chunks, ${elapsed}s elapsed, errors: ${errors})...`
     );
 
-    try {
-      const texts = chunks.map((c) => c.chunk_text);
-      const embeddings = await embedBatch(texts);
-      const sig = await currentEmbeddingSignature();
+    let success = false;
+    const maxRetries = 3;
+    const backoffMs = [5000, 15000, 45000];
 
-      for (let i = 0; i < chunks.length; i++) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const texts = chunks.map((c) => c.chunk_text);
+        const embeddings = await embedBatch(texts);
+        const ids = chunks.map((c) => c.id);
+        const vectors = embeddings.map((e) => toVectorStr(e));
+        const models = new Array(chunks.length).fill(targetSignature);
         await engine.executeRaw(
-          `UPDATE content_chunks
-           SET embedding = $1::vector, embedded_at = now(), model = $2
-           WHERE id = $3`,
-          [toVectorStr(embeddings[i]), sig, chunks[i].id]
+          `UPDATE content_chunks AS c
+           SET embedding = v.vec::vector, embedded_at = now(), model = v.model
+           FROM (SELECT * FROM unnest($1::int[], $2::text[], $3::text[]) AS t(id, vec, model)) AS v
+           WHERE c.id = v.id AND c.model = $4`,
+          [ids, vectors, models, claim]
         );
+        processed += chunks.length;
+        consecutiveErrors = 0;
+        success = true;
+        console.log(`  ✅ ${processed} chunks embedded (errors: ${errors})`);
+        break;
+      } catch (e) {
+        const errMsg = e instanceof Error ? e.message : String(e);
+        if (attempt < maxRetries && isTransientError(e)) {
+          console.error(
+            `  ⚠️ Batch ${batchNum} attempt ${attempt + 1}/${maxRetries + 1} failed (transient): ${errMsg}`
+          );
+          console.log(`  Retrying in ${backoffMs[attempt] / 1000}s...`);
+          await new Promise((r) => setTimeout(r, backoffMs[attempt]));
+        } else {
+          errors += chunks.length;
+          consecutiveErrors++;
+          const chunkIds = chunks.map((c) => c.id);
+          await releaseClaim(engine, claim, chunkIds, targetSignature).catch(() => {});
+          logError(
+            `Batch ${batchNum} FAILED permanently: ${errMsg} | chunk IDs: [${chunkIds[0]}..${chunkIds[chunkIds.length - 1]}] (${chunkIds.length} chunks)`
+          );
+          console.error(`  ❌ Batch ${batchNum} FAILED: ${errMsg}`);
+          break;
+        }
       }
-      processed += chunks.length;
-      console.log(`  ✅ ${processed}/${pendingCount} done`);
-    } catch (e) {
-      errors += chunks.length;
-      console.error(`Batch-Fehler: ${e instanceof Error ? e.message : String(e)}`);
-      // Skip these chunks by marking them with a dummy signature to avoid infinite loop
-      for (const c of chunks) {
-        await engine.executeRaw(
-          `UPDATE content_chunks SET model = 'FAILED' WHERE id = $1 AND embedded_at IS NULL`,
-          [c.id]
-        ).catch(() => {});
-      }
+    }
+
+    if (!success && consecutiveErrors >= MAX_ERRORS) {
+      logError(`Exiting: ${consecutiveErrors} consecutive batch failures (max: ${MAX_ERRORS})`);
+      console.error(`\n⚠️ Exiting after ${consecutiveErrors} consecutive batch failures.`);
+      break;
     }
   }
 
   console.log("");
-  console.log(`Fertig: ${processed} embedded, ${errors} Fehler.`);
+  console.log(
+    `Fertig: ${processed} embedded, ${errors} errors, ${((Date.now() - t0) / 1000).toFixed(1)}s total.`
+  );
   await engine.disconnect();
 }
 

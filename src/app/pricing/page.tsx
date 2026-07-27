@@ -1,26 +1,27 @@
 import type { Metadata } from "next";
 import PricingPage from "@/components/marketing/pricing-page";
 import { JsonLd, softwareApplicationLd, breadcrumbLd, productLd } from "@/components/seo/jsonld";
-import { PRICING } from "@/content/site";
+import { professionalPricing } from "@/content/audiences";
 import { keywordsFor } from "@/lib/seo-keywords";
 
 export const metadata: Metadata = {
-  title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer",
+  title: "Subsumio Preise — Privat, Solo, Kanzlei und Enterprise",
   description:
-    "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Ab 890 €/Nutzer/Mon. — EU-Cloud oder On-Premise, 14 Tage Testversion, keine versteckten Kosten.",
+    "Getrennte Preise für Privatpersonen und professionelle Aktenarbeit. Solo 179 €/Monat, Kanzlei 999 €/Monat inklusive 5 Nutzern, monatlich kündbar.",
   keywords: keywordsFor("pricing"),
   alternates: { canonical: "/pricing", languages: { de: "/pricing", en: "/en/pricing" } },
   openGraph: {
-    title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer",
+    title: "Subsumio Preise — Privat, Solo, Kanzlei und Enterprise",
     description:
-      "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Ab 890 €/Nutzer/Mon. — EU-Cloud oder On-Premise, 14 Tage Testversion.",
+      "Getrennte Preise für Privatpersonen und professionelle Aktenarbeit. Solo 179 €/Monat, monatlich kündbar.",
     url: "/pricing",
     type: "website",
   },
 };
 
 export default function Page() {
-  const offers = PRICING.de.tiers
+  const pricing = professionalPricing("de");
+  const offers = pricing.tiers
     .filter((t) => t.id !== "ent")
     .map((t) => ({
       "@type": "Offer" as const,
@@ -44,7 +45,7 @@ export default function Page() {
                 "@type": "PriceSpecification",
                 priceCurrency: "EUR",
               },
-              description: PRICING.de.tiers.find((t) => t.id === "ent")?.blurb,
+              description: pricing.tiers.find((t) => t.id === "ent")?.blurb,
             },
           ],
         }}
@@ -55,7 +56,7 @@ export default function Page() {
           description:
             "KI-Kanzleisoftware für Rechtsanwälte in AT, DE und CH — belegte Antworten, Fristenkontrolle, Kollisionsprüfung, DATEV-Export.",
           url: "/pricing",
-          offers: PRICING.de.tiers
+          offers: pricing.tiers
             .filter((t) => t.id !== "ent")
             .map((t) => ({
               name: t.name,

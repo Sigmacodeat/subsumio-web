@@ -129,7 +129,11 @@ export function EvidenceTab() {
             {t("cases.detail_evidence_ai_desc")}
           </p>
           {ctx.aiEvidenceLoading && (
-            <div className="mt-3 flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+            <div
+              className="mt-3 flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]"
+              role="status"
+              aria-live="polite"
+            >
               <Loader2 size={14} className="animate-spin" />
               {t("cases.detail_evidence_ai_loading")}
             </div>
@@ -328,7 +332,7 @@ export function EvidenceTab() {
                 <input
                   {...ctx.evidenceForm.register("title")}
                   placeholder={t("cases.detail_ev_title_ph")}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 {ctx.evidenceForm.formState.errors.title && (
                   <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
@@ -342,7 +346,7 @@ export function EvidenceTab() {
                 </label>
                 <select
                   {...ctx.evidenceForm.register("type")}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 >
                   <option value="">{t("cases.detail_ev_type_ph")}</option>
                   <option value="Dokument">{t("cases.detail_ev_type_document")}</option>
@@ -365,7 +369,7 @@ export function EvidenceTab() {
                 {...ctx.evidenceForm.register("description")}
                 rows={2}
                 placeholder={t("cases.detail_ev_description_ph")}
-                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -382,7 +386,7 @@ export function EvidenceTab() {
                       if (mode === "document")
                         ctx.evidenceForm.setValue("source", "", { shouldDirty: true });
                     }}
-                    className="mb-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    className="mb-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                   >
                     <option value="document">{t("cases.detail_ev_source_mode_document")}</option>
                     <option value="other">{t("cases.detail_ev_source_mode_other")}</option>
@@ -391,7 +395,7 @@ export function EvidenceTab() {
                 {ctx.evidenceSourceMode === "document" && caseData.documents.length > 0 ? (
                   <select
                     {...ctx.evidenceForm.register("source")}
-                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                   >
                     <option value="">{t("cases.detail_ev_source_select_ph")}</option>
                     {caseData.documents.map((doc) => (
@@ -404,7 +408,7 @@ export function EvidenceTab() {
                   <input
                     {...ctx.evidenceForm.register("source")}
                     placeholder={t("cases.detail_ev_source_ph")}
-                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                   />
                 )}
               </div>
@@ -482,14 +486,14 @@ export function EvidenceTab() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={lang === "en" ? "Search evidence…" : "Beweise durchsuchen…"}
-                    className="w-full rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-1.5 pr-3 pl-8 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    className="w-full rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-1.5 pr-3 pl-8 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                   />
                 </div>
                 {availableTypes.length > 1 && (
                   <select
                     value={typeFilter}
                     onChange={(e) => setTypeFilter(e.target.value)}
-                    className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                   >
                     <option value="">{lang === "en" ? "All types" : "Alle Typen"}</option>
                     {availableTypes.map((tp) => (
@@ -504,7 +508,7 @@ export function EvidenceTab() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as SortKey)}
-                    className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                   >
                     <option value="weight-desc">
                       {lang === "en" ? "Weight (high→low)" : "Gewicht (hoch→niedrig)"}

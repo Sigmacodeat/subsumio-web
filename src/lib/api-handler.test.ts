@@ -54,6 +54,19 @@ vi.mock("./auth/api-key-auth", () => ({
   verifyApiKey: vi.fn(() => null),
 }));
 
+vi.mock("./billing/credits", () => ({
+  checkCredits: vi.fn(async () => ({ ok: true, balance: 100, required: 0 })),
+  deductCredits: vi.fn(async () => ({ ok: true, balance: 97, required: 3 })),
+  CREDIT_COSTS: {
+    think: 1,
+    document_analysis: 2,
+    subsumption: 3,
+    agent: 5,
+    deadline_detect: 1,
+    frist_engine: 0,
+  },
+}));
+
 vi.mock("./auth/rate-limit", () => ({
   hit: vi.fn(async () => ({ ok: true, retryAfterSeconds: 0 })),
 }));
@@ -80,6 +93,7 @@ import { requireEngineContext } from "./engine";
 import { logAudit } from "./audit";
 import { validateCsrf } from "./csrf";
 import { hit } from "./auth/rate-limit";
+import { checkCredits } from "./billing/credits";
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -137,6 +151,8 @@ beforeEach(() => {
   vi.mocked(requireEngineContext).mockResolvedValue(mockCtx() as any);
   vi.mocked(hit).mockReset();
   vi.mocked(hit).mockResolvedValue({ ok: true, retryAfterSeconds: 0 });
+  vi.mocked(checkCredits).mockReset();
+  vi.mocked(checkCredits).mockResolvedValue({ ok: true, balance: 100, required: 0 });
 });
 
 describe("createPublicHandler", () => {
@@ -651,5 +667,55 @@ describe("createHandler allowInternal", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.headers["x-subsumio-api-key"]).toBe("test-api-key");
+  });
+});
+
+// ── Credit Enforcement Tests ───────────────────────────────────────────
+
+describe("Credit enforcement in createHandler", () => {
+  it("passes credits option to requireEngineContext for checking", async () => {
+    const handler = createHandler(
+      {
+        action: "legal.document_review" as any,
+        body: z.object({ text: z.string() }),
+        credits: "think",
+      },
+      async () => Response.json({ ok: true })
+    );
+
+    const req = makeMockRequest(
+      "POST",
+      { text: "hello" },
+      { csrfCookie: "tok", csrfHeader: "tok" }
+    );
+    const res = await handler(req);
+    expect(res.status).toBe(200);
+    expect(requireEngineContext).toHaveBeenCalledWith(
+      expect.any(Request),
+      "legal.document_review",
+      "standard",
+      undefined,
+      "think"
+    );
+  });
+
+  it("does not call requireEngineContext with credits when no credits option", async () => {
+    const handler = createHandler(
+      {
+        action: "legal.document_review" as any,
+        body: z.object({ text: z.string() }),
+      },
+      async () => Response.json({ ok: true })
+    );
+
+    const req = makeMockRequest(
+      "POST",
+      { text: "hello" },
+      { csrfCookie: "tok", csrfHeader: "tok" }
+    );
+    const res = await handler(req);
+    expect(res.status).toBe(200);
+    const callArgs = vi.mocked(requireEngineContext).mock.calls[0];
+    expect(callArgs?.[4]).toBeUndefined();
   });
 });

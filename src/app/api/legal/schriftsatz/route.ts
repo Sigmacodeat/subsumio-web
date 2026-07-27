@@ -5,16 +5,18 @@ export const maxDuration = 300;
 
 const schriftsatzSchema = z.object({
   case_slug: z.string().min(1, "case_slug_required"),
-  document_type: z.enum([
-    "klage",
-    "klageerwiderung",
-    "berufung",
-    "revision",
-    "beschwerde",
-    "antrag",
-    "antwortschrift",
-    "schriftsatz",
-  ]).default("schriftsatz"),
+  document_type: z
+    .enum([
+      "klage",
+      "klageerwiderung",
+      "berufung",
+      "revision",
+      "beschwerde",
+      "antrag",
+      "antwortschrift",
+      "schriftsatz",
+    ])
+    .default("schriftsatz"),
   court: z.string().max(300).optional(),
   file_number: z.string().max(200).optional(),
   instructions: z.string().min(1, "instructions_required").max(10_000, "instructions_too_long"),
@@ -28,6 +30,7 @@ export const POST = createEngineProxy({
   enginePath: "/api/legal/schriftsatz",
   body: schriftsatzSchema,
   quota: "queries",
+  credits: "agent",
   stream: true,
   citationGate: true,
   receiptProductType: "schriftsatz",

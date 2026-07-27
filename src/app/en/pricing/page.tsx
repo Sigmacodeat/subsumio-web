@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import PricingPage from "@/components/marketing/pricing-page";
 import { JsonLd, softwareApplicationLd, breadcrumbLd } from "@/components/seo/jsonld";
-import { PRICING } from "@/content/site";
+import { professionalPricing } from "@/content/audiences";
 
 export const metadata: Metadata = {
-  title: "Subsumio Pricing — AI legal software from €890/seat",
+  title: "Subsumio Pricing — Private, Solo, Firm and Enterprise",
   description:
-    "Transparent per-seat pricing for AI legal software. Hosted plans from €890/seat/mo billed annually — EU cloud or self-hosted, 14-day full trial, no surprise bills, no vendor lock-in. DATEV export, conflict check, deadline tracking included.",
+    "Separate pricing for private orientation and professional case work. Solo €179/month, Firm €999/month including five users, cancel monthly.",
   alternates: {
     canonical: "/en/pricing",
     languages: {
@@ -17,16 +17,17 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Subsumio Pricing — AI legal software from €890/seat",
+    title: "Subsumio Pricing — Private, Solo, Firm and Enterprise",
     description:
-      "Transparent per-seat pricing for AI legal software. Hosted plans from €890/seat/mo — EU cloud or self-hosted, 14-day full trial, no surprise bills.",
+      "Separate pricing for private orientation and professional case work. Solo €179/month, cancel monthly.",
     url: "/en/pricing",
     type: "website",
   },
 };
 
 export default function Page() {
-  const offers = PRICING.en.tiers
+  const pricing = professionalPricing("en");
+  const offers = pricing.tiers
     .filter((t) => t.id !== "ent")
     .map((t) => ({
       "@type": "Offer" as const,
@@ -50,7 +51,7 @@ export default function Page() {
                 "@type": "PriceSpecification",
                 priceCurrency: "EUR",
               },
-              description: PRICING.en.tiers.find((t) => t.id === "ent")?.blurb,
+              description: pricing.tiers.find((t) => t.id === "ent")?.blurb,
             },
           ],
         }}

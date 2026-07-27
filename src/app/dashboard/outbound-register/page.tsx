@@ -91,7 +91,10 @@ export default function OutboundRegisterPage() {
       <PageHeader
         title={t("outbound.title")}
         description={t("outbound.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("outbound.title") }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("outbound.title") },
+        ]}
         actions={
           <div className="flex gap-2">
             <a href="/api/outbound-register?format=csv" download>
@@ -182,7 +185,7 @@ export default function OutboundRegisterPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-20">
+        <div className="flex justify-center py-20" role="status" aria-live="polite">
           <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : entries.length === 0 ? (

@@ -524,6 +524,11 @@ export function MobileTabBar({
                   icon={Bell}
                   label={t("nav.monitoring")}
                 />
+                <MoreSheetLink
+                  href="/dashboard/ai-quality"
+                  icon={ShieldCheck}
+                  label={t("nav.ai_quality")}
+                />
               </MoreSheetSection>
 
               {/* Admin */}
@@ -559,6 +564,11 @@ export function MobileTabBar({
                   href="/dashboard/monitoring"
                   icon={Bell}
                   label={t("nav.monitoring")}
+                />
+                <MoreSheetLink
+                  href="/dashboard/ai-quality"
+                  icon={ShieldCheck}
+                  label={t("nav.ai_quality")}
                 />
               </MoreSheetSection>
             </div>

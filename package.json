@@ -81,6 +81,7 @@
     "capacitor-native-biometric": "^2.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "exceljs": "^4.4.0",
     "framer-motion": "^12.40.0",
     "hash-wasm": "^4.12.0",
     "isomorphic-dompurify": "^3.18.0",

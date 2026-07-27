@@ -82,7 +82,10 @@ export default function DictationPage() {
       <PageHeader
         title={t("dictation.title")}
         description={t("dictation.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("dictation.title") }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("dictation.title") },
+        ]}
         actions={
           <Button onClick={() => setShowCreate(!showCreate)} className="brand-bg gap-2 text-white">
             <Plus size={16} /> {t("dictation.new")}
@@ -160,7 +163,7 @@ export default function DictationPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-20">
+        <div className="flex justify-center py-20" role="status" aria-live="polite">
           <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : entries.length === 0 ? (

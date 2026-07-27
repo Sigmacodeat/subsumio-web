@@ -151,6 +151,7 @@ const SETTINGS_DESC_MAP: Record<string, DashboardKey> = {
   "/dashboard/settings/scim": "settings.tile_scim_desc_full",
   "/dashboard/monitoring": "settings.tile_monitoring_desc",
   "/dashboard/rag-eval": "settings.tile_rag_eval_desc",
+  "/dashboard/ai-quality": "settings.tile_ai_quality_desc",
   "/dashboard/chat/analytics": "settings.tile_chat_analytics_desc",
   "/dashboard/chat/compare": "settings.tile_chat_compare_desc",
   "/dashboard/reports": "settings.tile_reports_desc",
@@ -193,6 +194,7 @@ const ROLE_ALLOWED: Record<string, string[]> = {
   "/dashboard/import-kanzlei": ["admin"],
   "/dashboard/audit": ["admin"],
   "/dashboard/rag-eval": ["admin"],
+  "/dashboard/ai-quality": ["admin"],
   "/dashboard/connectors": ["admin"],
   "/dashboard/agents": ["admin", "lawyer"],
   "/dashboard/monitoring": ["admin"],
@@ -261,7 +263,7 @@ export function SettingsHub({ userRole }: { userRole: string }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t("settings.hub_search_placeholder")}
-          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         />
       </div>
 

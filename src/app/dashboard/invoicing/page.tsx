@@ -144,6 +144,7 @@ export default function InvoicingPage() {
   const [kanzlei, setKanzlei] = useState<KanzleiSettings | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [busySlug, setBusySlug] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string>("lawyer");
 
   const meQuery = useMe();
@@ -743,6 +744,8 @@ export default function InvoicingPage() {
   }
 
   async function sendInvoiceEmail(inv: Invoice) {
+    if (busySlug) return;
+    setBusySlug(inv.id);
     setStatusMessage(t("inv.email_sending"));
     try {
       const res = await csrfFetch("/api/invoices/send", {
@@ -764,10 +767,14 @@ export default function InvoicingPage() {
     } catch (err) {
       setStatusMessage(t("inv.email_fail"));
       console.error("[invoice-email] failed:", err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusySlug(null);
     }
   }
 
   async function sendReminder(inv: Invoice) {
+    if (busySlug) return;
+    setBusySlug(inv.id);
     setStatusMessage(t("inv.reminder_sending"));
     try {
       const res = await csrfFetch("/api/invoices/remind", {
@@ -793,10 +800,14 @@ export default function InvoicingPage() {
     } catch (err) {
       setStatusMessage(t("inv.reminder_fail"));
       console.error("[invoice-reminder] failed:", err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusySlug(null);
     }
   }
 
   async function updateStatus(inv: Invoice, status: Invoice["status"]) {
+    if (busySlug) return;
+    setBusySlug(inv.id);
     const paidPatch: Pick<Invoice, "paidAt" | "paidAmount"> =
       status === "paid"
         ? { paidAt: new Date().toISOString(), paidAmount: inv.total }
@@ -829,6 +840,8 @@ export default function InvoicingPage() {
           ? `${t("inv.status_save_fail")} ${err.message}`
           : t("inv.status_save_fail")
       );
+    } finally {
+      setBusySlug(null);
     }
   }
 
@@ -873,7 +886,10 @@ export default function InvoicingPage() {
       <PageHeader
         title={t("inv.title")}
         description={t("inv.desc")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("inv.title") }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("inv.title") },
+        ]}
         actions={
           <div className="flex items-center gap-2">
             <input
@@ -1076,6 +1092,7 @@ export default function InvoicingPage() {
                   {(userRole === "admin" || userRole === "lawyer" || userRole === "assistant") && (
                     <button
                       onClick={() => void sendInvoiceEmail(inv)}
+                      disabled={busySlug === inv.id}
                       className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-info-bg)] hover:text-[color:var(--ds-info-text)]"
                       title={t("inv.send_email")}
                     >
@@ -1085,6 +1102,7 @@ export default function InvoicingPage() {
                   {inv.status === "draft" && (
                     <button
                       onClick={() => updateStatus(inv, "sent")}
+                      disabled={busySlug === inv.id}
                       className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-info-bg)] hover:text-[color:var(--ds-info-text)]"
                       title={t("inv.mark_sent")}
                     >
@@ -1094,6 +1112,7 @@ export default function InvoicingPage() {
                   {inv.status === "sent" && (
                     <button
                       onClick={() => updateStatus(inv, "paid")}
+                      disabled={busySlug === inv.id}
                       className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-success-bg)] hover:text-[color:var(--ds-success-text)]"
                       title={t("inv.mark_paid")}
                     >
@@ -1105,6 +1124,7 @@ export default function InvoicingPage() {
                     (userRole === "admin" || userRole === "lawyer") && (
                       <button
                         onClick={() => updateStatus(inv, "cancelled")}
+                        disabled={busySlug === inv.id}
                         className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
                         title={t("inv.cancel_invoice")}
                       >
@@ -1115,6 +1135,7 @@ export default function InvoicingPage() {
                     (userRole === "admin" || userRole === "lawyer") && (
                       <button
                         onClick={() => void sendReminder(inv)}
+                        disabled={busySlug === inv.id}
                         className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-warning-bg)] hover:text-[color:var(--ds-warning-text)]"
                         title={`${inv.reminderCount ? `${inv.reminderCount}. ` : ""}${t("inv.send_reminder")}`}
                       >
@@ -1177,6 +1198,7 @@ export default function InvoicingPage() {
                         userRole === "assistant") && (
                         <DropdownMenuItem
                           onClick={() => void sendInvoiceEmail(inv)}
+                          disabled={busySlug === inv.id}
                           className="gap-2 text-xs"
                         >
                           <Mail size={13} />
@@ -1186,6 +1208,7 @@ export default function InvoicingPage() {
                       {inv.status === "draft" && (
                         <DropdownMenuItem
                           onClick={() => updateStatus(inv, "sent")}
+                          disabled={busySlug === inv.id}
                           className="gap-2 text-xs"
                         >
                           <Send size={13} />
@@ -1195,6 +1218,7 @@ export default function InvoicingPage() {
                       {inv.status === "sent" && (
                         <DropdownMenuItem
                           onClick={() => updateStatus(inv, "paid")}
+                          disabled={busySlug === inv.id}
                           className="gap-2 text-xs"
                         >
                           <CheckCircle2 size={13} />
@@ -1206,6 +1230,7 @@ export default function InvoicingPage() {
                         (userRole === "admin" || userRole === "lawyer") && (
                           <DropdownMenuItem
                             onClick={() => updateStatus(inv, "cancelled")}
+                            disabled={busySlug === inv.id}
                             className="gap-2 text-xs text-[color:var(--ds-danger-text)] focus:text-[color:var(--ds-danger-text)]"
                           >
                             <XCircle size={13} />
@@ -1216,6 +1241,7 @@ export default function InvoicingPage() {
                         (userRole === "admin" || userRole === "lawyer") && (
                           <DropdownMenuItem
                             onClick={() => void sendReminder(inv)}
+                            disabled={busySlug === inv.id}
                             className="gap-2 text-xs"
                           >
                             <AlertTriangle size={13} />

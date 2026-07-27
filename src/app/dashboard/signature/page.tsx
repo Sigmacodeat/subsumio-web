@@ -44,14 +44,14 @@ const STATUS_CONFIG: Record<
   }
 > = {
   draft: {
-    label: "Entwurf",
+    label: "sig.status_draft",
     icon: PenTool,
     iconClass: "text-gray-400",
     badgeClass: "bg-gray-500/5 border-gray-500/20 text-gray-400",
     tileClass: "bg-gray-500/10",
   },
   sent: {
-    label: "Versendet",
+    label: "sig.status_sent",
     icon: Send,
     iconClass: "text-[color:var(--ds-info-text)]",
     badgeClass:
@@ -59,7 +59,7 @@ const STATUS_CONFIG: Record<
     tileClass: "bg-[color:var(--ds-info-bg)]",
   },
   signed: {
-    label: "Unterschrieben",
+    label: "sig.status_signed",
     icon: CheckCircle2,
     iconClass: "text-[color:var(--ds-success-text)]",
     badgeClass:
@@ -67,7 +67,7 @@ const STATUS_CONFIG: Record<
     tileClass: "bg-[color:var(--ds-success-bg)]",
   },
   declined: {
-    label: "Abgelehnt",
+    label: "sig.status_declined",
     icon: XCircle,
     iconClass: "text-[color:var(--ds-danger-text)]",
     badgeClass:
@@ -75,7 +75,7 @@ const STATUS_CONFIG: Record<
     tileClass: "bg-[color:var(--ds-danger-bg)]",
   },
   expired: {
-    label: "Abgelaufen",
+    label: "sig.status_expired",
     icon: Clock,
     iconClass: "text-[color:var(--ds-warning-text)]",
     badgeClass:
@@ -113,7 +113,7 @@ export default function SignaturePage() {
           })
         );
       } catch {
-        setNotice("Signatur-Anfragen konnten nicht geladen werden.");
+        setNotice(t("sig.err_load"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -147,24 +147,21 @@ export default function SignaturePage() {
           provider: "external",
         },
       });
-      setNotice(
-        "Als extern versendet markiert. Der tatsächliche Versand erfolgt im Signatur-Provider."
-      );
+      setNotice(t("sig.ext_sent"));
     } catch (e) {
-      setNotice(
-        e instanceof Error
-          ? `Status konnte nicht gespeichert werden: ${e.message}`
-          : "Status konnte nicht gespeichert werden."
-      );
+      setNotice(e instanceof Error ? `${t("sig.err_status")}: ${e.message}` : t("sig.err_status"));
     }
   }
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="e-Signatur"
-        description="Dokumente digital unterschreiben lassen"
-        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "e-Signatur" }]}
+        title={t("sig.breadcrumb")}
+        description={t("sig.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("sig.breadcrumb") },
+        ]}
         actions={
           <div className="flex items-center gap-2">
             <a
@@ -252,7 +249,7 @@ export default function SignaturePage() {
 
       {/* List */}
       {loading ? (
-        <div className="flex justify-center py-20">
+        <div className="flex justify-center py-20" role="status" aria-live="polite">
           <Loader2 size={24} className="animate-spin text-indigo-600" />
         </div>
       ) : requests.length === 0 ? (
@@ -289,7 +286,7 @@ export default function SignaturePage() {
                       {req.documentName}
                     </span>
                     <Badge variant="default" className={cn("border text-xs", cfg.badgeClass)}>
-                      {cfg.label}
+                      {t(cfg.label as never)}
                     </Badge>
                   </div>
                   <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
@@ -302,7 +299,7 @@ export default function SignaturePage() {
                     <button
                       onClick={() => markPrepared(req)}
                       className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-indigo-500/10 hover:text-indigo-600"
-                      title="Als extern versendet markieren"
+                      title={t("sig.aria_ext_sent")}
                     >
                       <Send size={14} />
                     </button>
@@ -310,7 +307,7 @@ export default function SignaturePage() {
                   <a
                     href={`/dashboard/brain/${encodeURIComponent(req.id)}`}
                     className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)]"
-                    title="Brain-Seite öffnen"
+                    title={t("sig.aria_brain")}
                   >
                     <ExternalLink size={14} />
                   </a>

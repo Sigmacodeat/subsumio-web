@@ -3,7 +3,19 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { renderMarkdown } from "@/lib/markdown";
 import { formatCitationTitle } from "@/lib/ogh-format";
-import { Copy, Check, Download, ChevronRight, Save, FolderOpen, Trash2, ShieldCheck, ShieldAlert, ShieldQuestion, FileText } from "lucide-react";
+import {
+  Copy,
+  Check,
+  Download,
+  ChevronRight,
+  Save,
+  FolderOpen,
+  Trash2,
+  ShieldCheck,
+  ShieldAlert,
+  ShieldQuestion,
+  FileText,
+} from "lucide-react";
 import type { ProvenanceResult, DocumentConfidence } from "@/lib/types";
 
 const STORAGE_KEY = "subsumio:subsumption-sessions";
@@ -165,16 +177,14 @@ function ClaimProvenanceDisplay({
           <span className="text-xs font-semibold text-[var(--ds-text-muted)]">
             Vertrauensniveau:
           </span>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${overall.bgColor} ${overall.color}`}>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${overall.bgColor} ${overall.color}`}
+          >
             {overall.label} ({Math.round(documentConfidence.overall_confidence * 100)}%)
           </span>
-          <span className="text-xs text-[var(--ds-text-muted)]">
-            · {claims.length} Aussagen
-          </span>
+          <span className="text-xs text-[var(--ds-text-muted)]">· {claims.length} Aussagen</span>
           {unsupported.length > 0 && (
-            <span className="text-xs text-amber-600">
-              · {unsupported.length} ohne Beleg
-            </span>
+            <span className="text-xs text-amber-600">· {unsupported.length} ohne Beleg</span>
           )}
         </div>
       )}
@@ -184,9 +194,7 @@ function ClaimProvenanceDisplay({
         <div className="space-y-1.5">
           {visibleClaims.map((claim) => {
             const badge = confidenceBadgeProps(claim.level);
-            const claimLinks = links.filter(
-              (l) => l.claim_index === claim.claim_index
-            );
+            const claimLinks = links.filter((l) => l.claim_index === claim.claim_index);
             const isExpanded = expandedClaims.has(claim.claim_index);
             const hasEvidence = claimLinks.length > 0;
 
@@ -201,8 +209,8 @@ function ClaimProvenanceDisplay({
                   disabled={!hasEvidence}
                 >
                   <badge.icon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${badge.color}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs leading-relaxed text-[var(--ds-text)] line-clamp-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-xs leading-relaxed text-[var(--ds-text)]">
                       {claim.claim_text}
                     </p>
                     <div className="mt-1 flex items-center gap-1.5">
@@ -215,9 +223,7 @@ function ClaimProvenanceDisplay({
                           {isExpanded ? " ausblenden" : " anzeigen"}
                         </span>
                       ) : (
-                        <span className="text-[10px] text-amber-600">
-                          · kein Beleg
-                        </span>
+                        <span className="text-[10px] text-amber-600">· kein Beleg</span>
                       )}
                     </div>
                   </div>
@@ -259,9 +265,7 @@ function ClaimProvenanceDisplay({
           onClick={() => setShowAll((v) => !v)}
           className="mt-1.5 text-xs text-[var(--brand-primary)] hover:underline"
         >
-          {showAll
-            ? "Weniger anzeigen"
-            : `${claims.length - 5} weitere Aussagen anzeigen`}
+          {showAll ? "Weniger anzeigen" : `${claims.length - 5} weitere Aussagen anzeigen`}
         </button>
       )}
 
@@ -758,9 +762,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
             Gespeicherte Sitzungen
           </div>
           {sessions.length === 0 ? (
-            <p className="text-xs text-[var(--ds-text-muted)]">
-              Noch keine Sitzungen gespeichert.
-            </p>
+            <p className="text-xs text-[var(--ds-text-muted)]">Noch keine Sitzungen gespeichert.</p>
           ) : (
             <div className="max-h-48 space-y-1 overflow-y-auto">
               {sessions.map((s) => (
@@ -774,7 +776,8 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                   >
                     <span className="font-medium">{s.title}</span>
                     <span className="ml-2 text-xs text-[var(--ds-text-muted)]">
-                      {new Date(s.savedAt).toLocaleDateString("de-DE")} · {s.messages.length} Nachrichten
+                      {new Date(s.savedAt).toLocaleDateString("de-DE")} · {s.messages.length}{" "}
+                      Nachrichten
                     </span>
                   </button>
                   <button
@@ -943,7 +946,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
               onChange={(e) => setScenario(e.target.value)}
               placeholder="Beschreiben Sie den Sachverhalt... Beispiel: 'Mein Mandant wurde bei einem Hundebiss verletzt. Der Hund gehört dem Nachbarn und war nicht angeleint.'"
               rows={4}
-              className="w-full resize-none rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 py-3 text-sm text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus:border-[var(--brand-primary)] focus:outline-none"
+              className="w-full resize-none rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 py-3 text-sm text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               disabled={isStreaming}
             />
             <div className="flex items-center justify-between">
@@ -981,7 +984,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
                 value={followUp}
                 onChange={(e) => setFollowUp(e.target.value)}
                 placeholder="Follow-up: z.B. 'Prüfe auch Mitverschulden' oder 'Welche OGH-Judikatur gibt es?'"
-                className="flex-1 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 py-2 text-sm text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus:border-[var(--brand-primary)] focus:outline-none"
+                className="flex-1 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 py-2 text-sm text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus:border-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 disabled={isStreaming}
               />
               {isStreaming ? (

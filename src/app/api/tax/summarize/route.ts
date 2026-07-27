@@ -33,6 +33,7 @@ export const POST = createEngineProxy({
   enginePath: "/api/legal/summarize",
   body: summarizeSchema,
   quota: "queries",
+  credits: "document_analysis",
   stream: true,
   citationGate: true,
   label: "tax_summarize",

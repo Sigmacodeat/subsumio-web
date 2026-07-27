@@ -16,9 +16,9 @@ describe("BILLABLE_PLANS", () => {
   test("pro plan has correct structure", () => {
     const pro = BILLABLE_PLANS.pro;
     expect(pro.id).toBe("pro");
-    expect(pro.name).toBe("Pro");
-    expect(pro.monthlyEur).toBe(890);
-    expect(pro.stripePriceEnv).toBe("STRIPE_PRICE_PRO");
+    expect(pro.name).toBe("Solo");
+    expect(pro.monthlyEur).toBe(179);
+    expect(pro.stripePriceEnv).toBe("STRIPE_PRICE_SOLO");
     expect(pro.pages).toBe(50_000);
     expect(pro.seats).toBe(1);
   });
@@ -26,9 +26,9 @@ describe("BILLABLE_PLANS", () => {
   test("team plan has correct structure", () => {
     const team = BILLABLE_PLANS.team;
     expect(team.id).toBe("team");
-    expect(team.name).toBe("Team");
-    expect(team.monthlyEur).toBe(1290);
-    expect(team.stripePriceEnv).toBe("STRIPE_PRICE_TEAM");
+    expect(team.name).toBe("Kanzlei");
+    expect(team.monthlyEur).toBe(999);
+    expect(team.stripePriceEnv).toBe("STRIPE_PRICE_KANZLEI");
     expect(team.pages).toBe(200_000);
     expect(team.seats).toBe(5);
   });
@@ -104,14 +104,14 @@ describe("BILLING_PLANS_DISPLAY", () => {
     expect(free?.price).toContain("0");
   });
 
-  test("pro plan price contains 890", () => {
+  test("pro plan displays the Solo monthly price", () => {
     const pro = BILLING_PLANS_DISPLAY.find((p) => p.id === "pro");
-    expect(pro?.price).toContain("890");
+    expect(pro?.price).toContain("179");
   });
 
-  test("team plan price contains 1.290", () => {
+  test("team plan displays the Kanzlei monthly price", () => {
     const team = BILLING_PLANS_DISPLAY.find((p) => p.id === "team");
-    expect(team?.price).toContain("1.290");
+    expect(team?.price).toContain("999");
   });
 
   test("all feature strings are non-empty", () => {
@@ -142,45 +142,45 @@ describe("isBillingConfigured", () => {
 
 describe("stripePriceId", () => {
   test("returns null when env var is not set", () => {
-    const original = process.env.STRIPE_PRICE_PRO;
-    delete process.env.STRIPE_PRICE_PRO;
+    const original = process.env.STRIPE_PRICE_SOLO;
+    delete process.env.STRIPE_PRICE_SOLO;
     expect(stripePriceId("pro")).toBeNull();
-    if (original) process.env.STRIPE_PRICE_PRO = original;
+    if (original) process.env.STRIPE_PRICE_SOLO = original;
   });
 
   test("returns the price ID when env var is set", () => {
-    const original = process.env.STRIPE_PRICE_PRO;
-    process.env.STRIPE_PRICE_PRO = "price_abc123";
+    const original = process.env.STRIPE_PRICE_SOLO;
+    process.env.STRIPE_PRICE_SOLO = "price_abc123";
     expect(stripePriceId("pro")).toBe("price_abc123");
-    if (original) process.env.STRIPE_PRICE_PRO = original;
-    else delete process.env.STRIPE_PRICE_PRO;
+    if (original) process.env.STRIPE_PRICE_SOLO = original;
+    else delete process.env.STRIPE_PRICE_SOLO;
   });
 
   test("returns null for team when env var is not set", () => {
-    const original = process.env.STRIPE_PRICE_TEAM;
-    delete process.env.STRIPE_PRICE_TEAM;
+    const original = process.env.STRIPE_PRICE_KANZLEI;
+    delete process.env.STRIPE_PRICE_KANZLEI;
     expect(stripePriceId("team")).toBeNull();
-    if (original) process.env.STRIPE_PRICE_TEAM = original;
+    if (original) process.env.STRIPE_PRICE_KANZLEI = original;
   });
 
   test("returns the price ID for team when env var is set", () => {
-    const original = process.env.STRIPE_PRICE_TEAM;
-    process.env.STRIPE_PRICE_TEAM = "price_team_xyz";
+    const original = process.env.STRIPE_PRICE_KANZLEI;
+    process.env.STRIPE_PRICE_KANZLEI = "price_team_xyz";
     expect(stripePriceId("team")).toBe("price_team_xyz");
-    if (original) process.env.STRIPE_PRICE_TEAM = original;
-    else delete process.env.STRIPE_PRICE_TEAM;
+    if (original) process.env.STRIPE_PRICE_KANZLEI = original;
+    else delete process.env.STRIPE_PRICE_KANZLEI;
   });
 });
 
 describe("planForPriceId", () => {
-  const originalPro = process.env.STRIPE_PRICE_PRO;
-  const originalTeam = process.env.STRIPE_PRICE_TEAM;
+  const originalPro = process.env.STRIPE_PRICE_SOLO;
+  const originalTeam = process.env.STRIPE_PRICE_KANZLEI;
 
   function restore() {
-    if (originalPro) process.env.STRIPE_PRICE_PRO = originalPro;
-    else delete process.env.STRIPE_PRICE_PRO;
-    if (originalTeam) process.env.STRIPE_PRICE_TEAM = originalTeam;
-    else delete process.env.STRIPE_PRICE_TEAM;
+    if (originalPro) process.env.STRIPE_PRICE_SOLO = originalPro;
+    else delete process.env.STRIPE_PRICE_SOLO;
+    if (originalTeam) process.env.STRIPE_PRICE_KANZLEI = originalTeam;
+    else delete process.env.STRIPE_PRICE_KANZLEI;
   }
 
   test("returns null for null/undefined input", () => {
@@ -189,29 +189,29 @@ describe("planForPriceId", () => {
   });
 
   test("returns null when the price ID matches no configured plan", () => {
-    process.env.STRIPE_PRICE_PRO = "price_pro_real";
-    process.env.STRIPE_PRICE_TEAM = "price_team_real";
+    process.env.STRIPE_PRICE_SOLO = "price_pro_real";
+    process.env.STRIPE_PRICE_KANZLEI = "price_team_real";
     expect(planForPriceId("price_unknown")).toBeNull();
     restore();
   });
 
   test("resolves a price ID back to 'pro'", () => {
-    process.env.STRIPE_PRICE_PRO = "price_pro_real";
-    process.env.STRIPE_PRICE_TEAM = "price_team_real";
+    process.env.STRIPE_PRICE_SOLO = "price_pro_real";
+    process.env.STRIPE_PRICE_KANZLEI = "price_team_real";
     expect(planForPriceId("price_pro_real")).toBe("pro");
     restore();
   });
 
   test("resolves a price ID back to 'team'", () => {
-    process.env.STRIPE_PRICE_PRO = "price_pro_real";
-    process.env.STRIPE_PRICE_TEAM = "price_team_real";
+    process.env.STRIPE_PRICE_SOLO = "price_pro_real";
+    process.env.STRIPE_PRICE_KANZLEI = "price_team_real";
     expect(planForPriceId("price_team_real")).toBe("team");
     restore();
   });
 
   test("does not cross-contaminate: a stale price never resolves to the wrong plan", () => {
-    process.env.STRIPE_PRICE_PRO = "price_pro_real";
-    delete process.env.STRIPE_PRICE_TEAM;
+    process.env.STRIPE_PRICE_SOLO = "price_pro_real";
+    delete process.env.STRIPE_PRICE_KANZLEI;
     expect(planForPriceId("price_team_real")).toBeNull();
     restore();
   });

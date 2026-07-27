@@ -342,7 +342,7 @@ export function DraftEditor({
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="h-[500px] w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] p-4 text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+          className="h-[500px] w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] p-4 text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           placeholder="Schriftsatz bearbeiten..."
         />
       )}
@@ -368,7 +368,7 @@ export function DraftEditor({
                   value={emailTo}
                   onChange={(e) => setEmailTo(e.target.value)}
                   placeholder="empfaenger@gericht.gv.at"
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 {recipientName && !emailTo && recipientEmail && (
                   <button
@@ -387,7 +387,7 @@ export function DraftEditor({
                   type="text"
                   value={emailSubject}
                   onChange={(e) => setEmailSubject(e.target.value)}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
               </div>
               <div>
@@ -399,7 +399,7 @@ export function DraftEditor({
                   onChange={(e) => setEmailBody(e.target.value)}
                   rows={4}
                   placeholder="Sehr geehrte Damen und Herren, anbei übersende ich..."
-                  className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                   Der Schriftsatz wird als Text an das Begleitschreiben angehängt.

@@ -371,7 +371,11 @@ export default function WhatsAppDashboardPage() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-20 text-[color:var(--ds-text-muted)]">
+        <div
+          className="flex items-center justify-center py-20 text-[color:var(--ds-text-muted)]"
+          role="status"
+          aria-live="polite"
+        >
           <Loader2 size={20} className="mr-2 animate-spin" /> {t("whatsapp.loading")}
         </div>
       ) : (

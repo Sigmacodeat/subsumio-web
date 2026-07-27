@@ -134,7 +134,7 @@ export function PhoneNotesTab() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20">
+      <div className="flex justify-center py-20" role="status" aria-live="polite">
         <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );

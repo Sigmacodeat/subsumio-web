@@ -183,6 +183,70 @@ export interface TabularReviewResponse {
   truncated: boolean;
 }
 
+// ── Async tabular review runs (start / status / retry) ───────────────
+
+export interface TabularReviewEstimate {
+  llm_calls: number;
+  approx_input_tokens: number;
+  approx_output_tokens: number;
+  approx_usd: number;
+}
+
+export interface TabularReviewStartRequest {
+  questions: string[];
+  slugs?: string[];
+  case_slug?: string;
+  type?: string;
+  limit?: number;
+  title?: string;
+  concurrency?: number;
+}
+
+export type TabularReviewRunStatus = "queued" | "running" | "done" | "partial" | "failed";
+
+export interface TabularReviewStartResponse {
+  run_slug: string;
+  job_id: string;
+  document_count: number;
+  estimate: TabularReviewEstimate;
+  status: "queued";
+}
+
+export interface TabularReviewCell {
+  answer: string;
+  citations: string[];
+}
+
+export type TabularReviewRowStatus = "pending" | "done" | "error";
+
+export interface TabularReviewRow {
+  slug: string;
+  title: string;
+  status: TabularReviewRowStatus;
+  cells?: TabularReviewCell[];
+  error?: string;
+}
+
+export interface TabularReviewRun {
+  run_slug: string;
+  title: string;
+  status: TabularReviewRunStatus;
+  progress: { total: number; done: number; failed: number };
+  questions: string[];
+  rows: TabularReviewRow[];
+  estimate: TabularReviewEstimate;
+  created_at: string;
+  started_at?: string;
+  finished_at?: string;
+  error?: string;
+}
+
+export interface TabularReviewRetryResponse {
+  job_id: string;
+  retried: number;
+  status: "queued";
+}
+
 export type PlaybookRequiredPosition = "favorable" | "neutral" | "exclude" | "must_include";
 export type PlaybookSeverity = "low" | "medium" | "high" | "critical";
 

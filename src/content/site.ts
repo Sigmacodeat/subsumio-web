@@ -251,10 +251,17 @@ const _navDe: NavContent = {
       items: [
         {
           label: "Für Kanzleien",
-          href: "/solutions/law-firms",
-          description: "Volle Power für etablierte Kanzleien",
+          href: "/kanzlei",
+          description: "Solo, Kanzlei und Enterprise im Vergleich",
           icon: "Landmark",
           featured: true,
+        },
+        {
+          label: "Für Privatpersonen",
+          href: "/privat",
+          description: "Belegte Ersteinschätzung ohne Kanzleifunktionen",
+          icon: "User",
+          badge: "Neu",
         },
         {
           label: "Für Einzelanwälte",
@@ -774,10 +781,17 @@ const _navEn: NavContent = {
       items: [
         {
           label: "For Law Firms",
-          href: "/solutions/law-firms",
-          description: "Full power for established firms",
+          href: "/kanzlei",
+          description: "Compare Solo, Firm and Enterprise",
           icon: "Landmark",
           featured: true,
+        },
+        {
+          label: "For Individuals",
+          href: "/privat",
+          description: "Source-backed orientation without firm features",
+          icon: "User",
+          badge: "New",
         },
         {
           label: "For Solo Lawyers",
@@ -907,6 +921,8 @@ const _footerEn = {
     {
       title: "Solutions",
       links: [
+        { label: "For Individuals", href: "/privat" },
+        { label: "For Legal Professionals", href: "/kanzlei" },
         { label: "For Law Firms", href: "/solutions/law-firms" },
         { label: "For Solo Lawyers", href: "/solutions/solo" },
         { label: "For In-House", href: "/solutions/in-house" },
@@ -970,6 +986,8 @@ export const FOOTER: Record<
       {
         title: "Lösungen",
         links: [
+          { label: "Für Privatpersonen", href: "/privat" },
+          { label: "Kanzlei-Zugang", href: "/kanzlei" },
           { label: "Für Kanzleien", href: "/solutions/law-firms" },
           { label: "Für Einzelanwälte", href: "/solutions/solo" },
           { label: "Für Justiziariate", href: "/solutions/in-house" },
@@ -1023,6 +1041,8 @@ export const FOOTER: Record<
       {
         title: "Lösungen",
         links: [
+          { label: "Für Privatpersonen", href: "/privat" },
+          { label: "Kanzlei-Zugang", href: "/kanzlei" },
           { label: "Für Kanzleien", href: "/solutions/law-firms" },
           { label: "Für Einzelanwälte", href: "/solutions/solo" },
           { label: "Für Justiziariate", href: "/solutions/in-house" },
@@ -1076,6 +1096,8 @@ export const FOOTER: Record<
       {
         title: "Lösungen",
         links: [
+          { label: "Für Privatpersonen", href: "/privat" },
+          { label: "Kanzlei-Zugang", href: "/kanzlei" },
           { label: "Für Kanzleien", href: "/solutions/law-firms" },
           { label: "Für Einzelanwälte", href: "/solutions/solo" },
           { label: "Für Justiziariate", href: "/solutions/in-house" },
@@ -1611,8 +1633,8 @@ const _pricingFaqEn = {
       a: "Yes. Upgrade or downgrade from the dashboard at any time. Changes take effect at the next billing cycle — no penalties, no lock-in.",
     },
     {
-      q: "How does annual billing work?",
-      a: "Annual billing gives you 20% off the monthly price. You're billed once per year per seat. Monthly billing is available if you prefer flexibility.",
+      q: "How does monthly billing work?",
+      a: "Solo and Firm are billed monthly and can be canceled monthly. Firm includes five users; Enterprise terms are agreed individually.",
     },
     {
       q: "What happens to my data if I cancel?",
@@ -1639,8 +1661,8 @@ export const PRICING_FAQ: Record<Lang, { title: string; items: { q: string; a: s
         a: "Ja. Upgrade oder Downgrade aus dem Dashboard jederzeit möglich. Änderungen werden zum nächsten Abrechnungszeitraum wirksam — keine Strafgebühren, kein Lock-in.",
       },
       {
-        q: "Wie funktioniert die jährliche Abrechnung?",
-        a: "Jahreszahlung gibt dir 20% Rabatt auf den Monatspreis. Du wirst einmal pro Jahr pro Nutzer abgerechnet. Monatsabrechnung ist verfügbar, wenn du mehr Flexibilität möchtest.",
+        q: "Wie funktioniert die monatliche Abrechnung?",
+        a: "Solo und Kanzlei werden monatlich abgerechnet und sind monatlich kündbar. Kanzlei enthält fünf Nutzer; Enterprise-Konditionen werden individuell vereinbart.",
       },
       {
         q: "Was passiert mit meinen Daten bei Kündigung?",
@@ -1664,8 +1686,8 @@ export const PRICING_FAQ: Record<Lang, { title: string; items: { q: string; a: s
         a: "Ja. Upgrade oder Downgrade aus dem Dashboard jederzeit möglich. Änderungen werden zum nächsten Abrechnungszeitraum wirksam — keine Strafgebühren, kein Lock-in.",
       },
       {
-        q: "Wie funktioniert die jährliche Abrechnung?",
-        a: "Jahreszahlung gibt dir 20% Rabatt auf den Monatspreis. Du wirst einmal pro Jahr pro Nutzer abgerechnet. Monatsabrechnung ist verfügbar, wenn du mehr Flexibilität möchtest.",
+        q: "Wie funktioniert die monatliche Abrechnung?",
+        a: "Solo und Kanzlei werden monatlich abgerechnet und sind monatlich kündbar. Kanzlei enthält fünf Nutzer; Enterprise-Konditionen werden individuell vereinbart.",
       },
       {
         q: "Was passiert mit meinen Daten bei Kündigung?",
@@ -1689,8 +1711,8 @@ export const PRICING_FAQ: Record<Lang, { title: string; items: { q: string; a: s
         a: "Ja. Upgrade oder Downgrade aus dem Dashboard jederzeit möglich. Änderungen werden zum nächsten Abrechnungszeitraum wirksam — keine Strafgebühren, kein Lock-in.",
       },
       {
-        q: "Wie funktioniert die jährliche Abrechnung?",
-        a: "Jahreszahlung gibt dir 20% Rabatt auf den Monatspreis. Du wirst einmal pro Jahr pro Nutzer abgerechnet. Monatsabrechnung ist verfügbar, wenn du mehr Flexibilität möchtest.",
+        q: "Wie funktioniert die monatliche Abrechnung?",
+        a: "Solo und Kanzlei werden monatlich abgerechnet und sind monatlich kündbar. Kanzlei enthält fünf Nutzer; Enterprise-Konditionen werden individuell vereinbart.",
       },
       {
         q: "Was passiert mit meinen Daten bei Kündigung?",
@@ -1891,8 +1913,8 @@ const _landingDe = {
   },
   trustStripItems: [
     { icon: "ShieldCheck", label: "DSGVO-konform" },
-    { icon: "BadgeCheck", label: "SOC 2 Type II" },
-    { icon: "FileCheck", label: "ISO 27001" },
+    { icon: "BadgeCheck", label: "SOC 2 Vorbereitung" },
+    { icon: "FileCheck", label: "ISO 27001 geplant" },
     { icon: "Globe", label: "EU-Cloud" },
     { icon: "Server", label: "On-Premise" },
   ],
@@ -2153,8 +2175,8 @@ const _landingEn = {
   },
   trustStripItems: [
     { icon: "ShieldCheck", label: "GDPR-ready" },
-    { icon: "BadgeCheck", label: "SOC 2 Type II" },
-    { icon: "FileCheck", label: "ISO 27001" },
+    { icon: "BadgeCheck", label: "SOC 2 preparation" },
+    { icon: "FileCheck", label: "ISO 27001 planned" },
     { icon: "Globe", label: "EU-Cloud" },
     { icon: "Server", label: "On-Premise" },
   ],
@@ -3078,8 +3100,8 @@ const _valuePropsDe = [
     desc: "Die Engine ist Open Source. Kein Vendor Lock-in, volle Kontrolle.",
   },
   {
-    title: "Kostenlos starten",
-    desc: "Der Community-Plan ist kostenlos. Upgrade jederzeit, Downgrade auch.",
+    title: "Monatlich kündbar",
+    desc: "Solo und Kanzlei werden monatlich abgerechnet. Enterprise wird individuell vereinbart.",
   },
 ];
 
@@ -3097,8 +3119,8 @@ const _valuePropsEn = [
     desc: "The engine is open source. No vendor lock-in, full control.",
   },
   {
-    title: "Start free",
-    desc: "The Community plan is free. Upgrade anytime, downgrade too.",
+    title: "Cancel monthly",
+    desc: "Solo and Firm are billed monthly. Enterprise terms are agreed individually.",
   },
 ];
 

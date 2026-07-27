@@ -107,7 +107,11 @@ export default function SharedSpacesPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div
+        className="flex min-h-[60vh] items-center justify-center"
+        role="status"
+        aria-live="polite"
+      >
         <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );
@@ -132,7 +136,10 @@ export default function SharedSpacesPage() {
       <PageHeader
         title={t("shared.title")}
         description={t("shared.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("shared.title") }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("shared.title") },
+        ]}
         actions={
           <Button onClick={() => setShowCreate(true)} size="sm">
             <Plus className="mr-1.5 h-4 w-4" />
@@ -238,6 +245,7 @@ function CreateSpaceModal({
   onCreate: (title: string, description: string) => void;
   creating: boolean;
 }) {
+  const { t } = useLang();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
@@ -250,7 +258,7 @@ function CreateSpaceModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <Card className="w-full max-w-md p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Neuer Shared Space</h2>
+          <h2 className="text-lg font-semibold">{t("shared.new_title")}</h2>
           <button
             onClick={onClose}
             className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -260,43 +268,43 @@ function CreateSpaceModal({
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Titel</label>
+            <label className="mb-1.5 block text-sm font-medium">{t("shared.label_title")}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="z.B. Kooperation Müller & Partner"
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm focus:border-[color:var(--ds-border-strong)] focus:outline-none"
+              placeholder={t("shared.title_placeholder")}
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm focus:border-[color:var(--ds-border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               required
               maxLength={100}
               autoFocus
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Beschreibung (optional)</label>
+            <label className="mb-1.5 block text-sm font-medium">{t("shared.label_desc")}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Kurze Beschreibung des Zwecks dieses Spaces"
-              className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm focus:border-[color:var(--ds-border-strong)] focus:outline-none"
+              placeholder={t("shared.desc_placeholder")}
+              className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm focus:border-[color:var(--ds-border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               rows={3}
               maxLength={500}
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={creating}>
-              Abbrechen
+              {t("shared.cancel")}
             </Button>
             <Button type="submit" disabled={creating || !title.trim()}>
               {creating ? (
                 <>
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  Wird erstellt…
+                  {t("shared.creating")}
                 </>
               ) : (
                 <>
                   <Plus className="mr-1.5 h-4 w-4" />
-                  Erstellen
+                  {t("shared.create")}
                 </>
               )}
             </Button>

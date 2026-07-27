@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,6 @@ export default function DatevDirectPage() {
   const { t } = useLang();
   const tr = (key: string) => t(key as DashboardKey);
   const [items, setItems] = useState<DatevDirectExport[]>([]);
-  const [configured, setConfigured] = useState(false);
   const [form, setForm] = useState({
     type: "invoices",
     period_from: "",
@@ -27,7 +27,6 @@ export default function DatevDirectPage() {
     const r = await fetch("/api/datev-direct");
     const j = await r.json();
     setItems(j.data?.items ?? []);
-    setConfigured(j.data?.configured === true);
   }, []);
   useEffect(() => {
     void load();
@@ -62,12 +61,26 @@ export default function DatevDirectPage() {
       <PageHeader
         title={tr("workspace.datev.title")}
         description={tr("workspace.datev.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "DATEV Direct" }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: "DATEV Direct" },
+        ]}
       />
-      <div
-        className={`rounded-xl border p-4 text-sm ${configured ? "border-green-500" : "border-amber-500"}`}
-      >
-        {configured ? tr("workspace.datev.configured") : tr("workspace.datev.missing")}
+      <div className="rounded-xl border border-amber-500 bg-amber-50 p-4 text-sm dark:bg-amber-950/30">
+        <div className="flex items-start gap-2">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <div>
+            <p className="font-medium text-amber-800 dark:text-amber-300">
+              CSV-Export — keine Live-Schnittstelle
+            </p>
+            <p className="mt-1 text-xs text-amber-700 dark:text-amber-400/80">
+              Dieser Bereich erzeugt DATEV-kompatible CSV-Datensätze, die Sie manuell in DATEV
+              Unternehmen online importieren. Eine direkte API-Verbindung zu DATEV ist nicht
+              implementiert. Die Statusanzeige {"\u201esent\u201c"} bedeutet lediglich, dass der
+              Datensatz erstellt wurde — es findet kein automatischer Transfer statt.
+            </p>
+          </div>
+        </div>
       </div>
       <section className="space-y-3 rounded-xl border p-5">
         <h2 className="font-semibold">{tr("workspace.datev.start")}</h2>

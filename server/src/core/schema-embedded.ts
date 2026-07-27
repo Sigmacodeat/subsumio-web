@@ -69,11 +69,7 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
--- Seed the default source. 'default' is federated=true for backward compat
--- (pre-v0.17 brains behave exactly as before — every page appears in search).
--- Pre-existing sync.repo_path / sync.last_commit are copied in by the v16
--- migration, not here; fresh installs have no local_path until \`sources add\`
--- or the first \`sync\`.
+-- Versioned legal source manifest. One row per retrieved consolidated version.
 CREATE TABLE IF NOT EXISTS legal_source_versions (
   id              TEXT PRIMARY KEY,
   source_id       TEXT NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
@@ -92,6 +88,11 @@ CREATE TABLE IF NOT EXISTS legal_source_versions (
 CREATE INDEX IF NOT EXISTS legal_source_versions_lookup_idx
   ON legal_source_versions(source_id, statute_abbr, valid_from, valid_to);
 
+-- Seed the default source. 'default' is federated=true for backward compat
+-- (pre-v0.17 brains behave exactly as before — every page appears in search).
+-- Pre-existing sync.repo_path / sync.last_commit are copied in by the v16
+-- migration, not here; fresh installs have no local_path until \`sources add\`
+-- or the first \`sync\`.
 INSERT INTO sources (id, name, config)
   VALUES ('default', 'default', '{"federated": true}'::jsonb)
   ON CONFLICT (id) DO NOTHING;
@@ -182,14 +183,16 @@ CREATE TABLE IF NOT EXISTS pages (
   CONSTRAINT pages_source_slug_key UNIQUE (source_id, slug)
 );
 
--- Legal corpus write fence: statute slug jurisdiction must match its source.
-CREATE OR REPLACE FUNCTION enforce_statute_source_jurisdiction() RETURNS trigger AS \$func\$
+-- Legal corpus write fence: a statute page may only enter the source whose
+-- canonical jurisdiction matches the jurisdiction encoded in its slug.
+CREATE OR REPLACE FUNCTION enforce_statute_source_jurisdiction() RETURNS trigger AS $func$
 DECLARE
   slug_match TEXT[];
   source_jurisdiction TEXT;
 BEGIN
   slug_match := regexp_match(NEW.slug, '^legal/statutes/(at|de|ch|eu)/');
   IF slug_match IS NULL THEN RETURN NEW; END IF;
+
   SELECT jurisdiction INTO source_jurisdiction FROM sources WHERE id = NEW.source_id;
   IF source_jurisdiction IS NULL THEN
     RAISE EXCEPTION 'statute source % has no canonical jurisdiction', NEW.source_id;
@@ -200,7 +203,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-\$func\$ LANGUAGE plpgsql;
+$func$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS statute_source_jurisdiction_trg ON pages;
 CREATE TRIGGER statute_source_jurisdiction_trg
@@ -215,7 +218,7 @@ CREATE TRIGGER statute_source_jurisdiction_trg
 -- content columns IS DISTINCT FROM (allow-list widened per D6 + codex #3
 -- to include title/type/page_kind/corpus_generation/content_hash) so
 -- read-time mutations don't invalidate every cache row.
-CREATE OR REPLACE FUNCTION bump_page_generation_fn() RETURNS trigger AS \$func\$
+CREATE OR REPLACE FUNCTION bump_page_generation_fn() RETURNS trigger AS $func$
 BEGIN
   IF (TG_OP = 'INSERT') THEN
     NEW.generation := COALESCE((SELECT MAX(generation) FROM pages), 0) + 1;
@@ -234,7 +237,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-\$func\$ LANGUAGE plpgsql;
+$func$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS bump_page_generation_trg ON pages;
 CREATE TRIGGER bump_page_generation_trg
@@ -278,12 +281,12 @@ INSERT INTO page_generation_clock (id, value)
   VALUES (1, COALESCE((SELECT MAX(generation) FROM pages), 0))
   ON CONFLICT (id) DO NOTHING;
 
-CREATE OR REPLACE FUNCTION bump_page_generation_clock_fn() RETURNS trigger AS \$func\$
+CREATE OR REPLACE FUNCTION bump_page_generation_clock_fn() RETURNS trigger AS $func$
 BEGIN
   UPDATE page_generation_clock SET value = value + 1 WHERE id = 1;
   RETURN NULL;
 END;
-\$func\$ LANGUAGE plpgsql;
+$func$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS bump_page_generation_clock_trg ON pages;
 CREATE TRIGGER bump_page_generation_clock_trg
@@ -316,7 +319,7 @@ CREATE INDEX IF NOT EXISTS pages_last_retrieved_at_idx
 -- \`links_extraction_lag\` doctor check. source_id leads so source-scoped staleness
 -- scans (\`extract --stale --source X\`, \`gbrain doctor --source X\`) are indexed;
 -- the brain-wide COUNT still uses it via the leading column. NOT partial-NULL —
--- the staleness predicate has a NULL arm AND a \`< \$versionTs\` arm (B-tree sorts
+-- the staleness predicate has a NULL arm AND a \`< $versionTs\` arm (B-tree sorts
 -- NULLs to one end, covering both). The \`updated_at > links_extracted_at\` arm is
 -- a cross-column filter no index covers; acceptable for a watermark COUNT.
 CREATE INDEX IF NOT EXISTS pages_links_extracted_at_idx
@@ -342,6 +345,23 @@ CREATE TABLE IF NOT EXISTS content_chunks (
   token_count           INTEGER,
   embedded_at           TIMESTAMPTZ,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+  -- v0.43.0 (INDUSTRIENIVEAU legal corpus): structured legal metadata for
+  -- precise §/article/paragraph filtering, citation normalization, and
+  -- Poly-Vector label generation. These columns enable metadata-filtered
+  -- retrieval exactly as Lex, vLex, and Harvey do for statutes/cases.
+  document_type         TEXT,                        -- 'statute' | 'decision' | 'literature'
+  statute_abbr          TEXT,                        -- e.g. 'ABGB', 'StGB', 'BGB'
+  paragraph_ref         TEXT,                        -- e.g. '433', '1a', '5'
+  absatz                TEXT,                        -- e.g. '1', '2a'
+  ziffer                TEXT,                        -- e.g. '1', '2'
+  literal               TEXT,                        -- e.g. 'a', 'b'
+  chunk_role            TEXT,                        -- 'full' | 'absatz' | 'ziffer' | 'literal' | 'remainder' | 'preamble'
+  court                 TEXT,                        -- 'OGH', 'VfGH', 'VwGH'
+  case_number           TEXT,                        -- Aktenzeichen
+  ecli                  TEXT,                        -- European Case Law Identifier
+  decision_date         TEXT,                        -- ISO date (YYYY-MM-DD)
+  legal_area            TEXT,                        -- 'Zivilrecht', 'Strafrecht'
+  canonical_label       TEXT,                        -- e.g. 'ABGB § 433 Abs. 1'
   -- v0.19.0: code chunk metadata. Nullable — markdown chunks leave these NULL.
   -- Powers \`query --lang\`, \`code-def <symbol>\`, and \`code-refs <symbol>\`.
   language              TEXT,
@@ -368,7 +388,21 @@ CREATE TABLE IF NOT EXISTS content_chunks (
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_chunks_page_index ON content_chunks(page_id, chunk_index);
 CREATE INDEX IF NOT EXISTS idx_chunks_page ON content_chunks(page_id);
-CREATE INDEX IF NOT EXISTS idx_chunks_embedding ON content_chunks USING hnsw (embedding vector_cosine_ops);
+-- HNSW construction on a populated multi-million-row corpus can exhaust the
+-- database container and crash Postgres. Bootstrap may create it only while
+-- the table is empty; production rebuilds must use the explicit operational
+-- index command (CONCURRENTLY, with monitored memory/work_mem settings).
+DO $block$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE schemaname = current_schema()
+      AND indexname IN ('idx_chunks_embedding', 'idx_chunks_embedding_hnsw')
+  ) AND NOT EXISTS (SELECT 1 FROM content_chunks LIMIT 1) THEN
+    EXECUTE 'CREATE INDEX idx_chunks_embedding ON content_chunks USING hnsw (embedding vector_cosine_ops)';
+  END IF;
+END
+$block$;
 -- v0.19.0: partial indexes — only code chunks populate these columns.
 CREATE INDEX IF NOT EXISTS idx_chunks_symbol_name ON content_chunks(symbol_name) WHERE symbol_name IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_chunks_language ON content_chunks(language) WHERE language IS NOT NULL;
@@ -389,20 +423,52 @@ CREATE INDEX IF NOT EXISTS idx_chunks_symbol_qualified
 CREATE INDEX IF NOT EXISTS content_chunks_stale_idx
   ON content_chunks(page_id, chunk_index) WHERE embedding IS NULL;
 
+-- v0.43.0 (INDUSTRIENIVEAU): legal metadata B-tree indexes for exact-match
+-- filtering on jurisdiction/court/paragraph and label lookup.
+CREATE INDEX IF NOT EXISTS idx_chunks_statute_abbr ON content_chunks(statute_abbr) WHERE statute_abbr IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_paragraph_ref ON content_chunks(paragraph_ref) WHERE paragraph_ref IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_absatz ON content_chunks(absatz) WHERE absatz IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_court ON content_chunks(court) WHERE court IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_case_number ON content_chunks(case_number) WHERE case_number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_ecli ON content_chunks(ecli) WHERE ecli IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_canonical_label ON content_chunks(canonical_label) WHERE canonical_label IS NOT NULL;
+
+-- v0.43.0 (INDUSTRIENIVEAU Poly-Vector Retrieval): separate label embeddings.
+-- Each content chunk can carry multiple canonical labels (statute+§, §+Abs,
+-- ECLI, court+case). Each label has its own embedding so referential queries
+-- ("Was sagt § 433 ABGB?") retrieve exactly the authoritative chunk, while
+-- semantic queries still use the content embedding. See arXiv:2504.10508.
+CREATE TABLE IF NOT EXISTS content_chunk_labels (
+  id              SERIAL PRIMARY KEY,
+  chunk_id        INTEGER NOT NULL REFERENCES content_chunks(id) ON DELETE CASCADE,
+  label_type      TEXT    NOT NULL,        -- 'statute', 'paragraph', 'absatz', 'ecli', 'court_case'
+  label_text      TEXT    NOT NULL,        -- canonical text to embed, e.g. "ABGB § 433 Abs. 1"
+  label_display   TEXT    NOT NULL,        -- human readable citation
+  embedding       vector(1536),
+  model           TEXT    NOT NULL DEFAULT 'text-embedding-3-large',
+  embedded_at     TIMESTAMPTZ,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(chunk_id, label_type, label_text)
+);
+CREATE INDEX IF NOT EXISTS idx_chunk_labels_chunk_id ON content_chunk_labels(chunk_id);
+CREATE INDEX IF NOT EXISTS idx_chunk_labels_lookup ON content_chunk_labels(label_type, label_text);
+CREATE INDEX IF NOT EXISTS idx_chunk_labels_embedding_hnsw
+  ON content_chunk_labels USING hnsw (embedding vector_cosine_ops);
+
 -- v0.20.0 Cathedral II: chunk-grain FTS trigger.
 -- Weight 'A' on doc_comment + symbol_name_qualified; weight 'B' on chunk_text.
 -- NL queries ("how do we handle errors") rank doc-comment hits above body text.
 -- BEFORE INSERT OR UPDATE OF specific columns — only refires when those change,
 -- not on every chunk update (e.g., embedding refresh doesn't trigger rebuild).
-CREATE OR REPLACE FUNCTION update_chunk_search_vector() RETURNS TRIGGER AS \$fn\$
+CREATE OR REPLACE FUNCTION update_chunk_search_vector() RETURNS TRIGGER AS $fn$
 BEGIN
   NEW.search_vector :=
-    setweight(to_tsvector('german', COALESCE(NEW.doc_comment, '')), 'A') ||
-    setweight(to_tsvector('german', COALESCE(NEW.symbol_name_qualified, '')), 'A') ||
-    setweight(to_tsvector('german', COALESCE(NEW.chunk_text, '')), 'B');
+    setweight(to_tsvector('english', COALESCE(NEW.doc_comment, '')), 'A') ||
+    setweight(to_tsvector('english', COALESCE(NEW.symbol_name_qualified, '')), 'A') ||
+    setweight(to_tsvector('english', COALESCE(NEW.chunk_text, '')), 'B');
   RETURN NEW;
 END;
-\$fn\$ LANGUAGE plpgsql;
+$fn$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS chunk_search_vector_trigger ON content_chunks;
 CREATE TRIGGER chunk_search_vector_trigger
@@ -462,12 +528,24 @@ CREATE INDEX IF NOT EXISTS idx_code_edges_symbol_to
 -- ============================================================
 -- links: cross-references between pages
 -- ============================================================
--- Provenance model (v0.13, extended issue #972):
---   link_source       — 'markdown' | 'frontmatter' | 'manual' | 'wikilink-resolved' | NULL
---                       'wikilink-resolved' is the opt-in
---                       (link_resolution.global_basename) basename-match
---                       provenance — see issue #972 / migration v113.
---                       (NULL = legacy row written before v0.13; unknown source)
+-- Provenance model (v0.13; opened to kebab provenance in v114 / issue #1941):
+--   link_source       — open kebab-case provenance tag, NOT a closed allowlist.
+--                       Format gate (CHECK): ^[a-z][a-z0-9]*(-[a-z0-9]+)*$ and
+--                       char_length <= 64. NULL = legacy row (pre-v0.13).
+--                       Reconciliation-managed built-ins written internally:
+--                         'markdown'         — body markdown links
+--                         'frontmatter'      — YAML frontmatter edges (see origin_*)
+--                         'mentions'         — auto-linked body-text mentions
+--                         'wikilink-resolved'— opt-in global-basename [[name]] (#972)
+--                       User/tool-facing:
+--                         'manual'           — hand- or tool-created edges (the
+--                                              add_link op default + CLI link-add)
+--                         '<your-tag>'       — external derivers, e.g. 'citation-graph',
+--                                              stamp their own kebab tag (no migration).
+--                       The add_link OP forbids callers from passing the four
+--                       managed built-ins (they imply reconciliation semantics a
+--                       hand-created row can't honor); the DB CHECK still admits
+--                       them because internal writers use them. See operations.ts.
 --   origin_page_id    — for link_source='frontmatter', the page whose YAML
 --                       frontmatter created this edge; scopes reconciliation
 --   origin_field      — the frontmatter field name (e.g. 'key_people')
@@ -475,20 +553,20 @@ CREATE INDEX IF NOT EXISTS idx_code_edges_symbol_to
 -- The unique constraint includes link_source + origin_page_id so a manual edge
 -- and a frontmatter-derived edge with the same (from, to, type) tuple coexist.
 -- Reconciliation on put_page filters by (link_source='frontmatter' AND
--- origin_page_id = written_page) — never touches other pages' edges.
+-- origin_page_id = written_page) — never touches other pages' edges. (This is
+-- exactly why a CLI-forged 'frontmatter' row with NULL origin would be a phantom
+-- edge reconciliation never cleans — hence the op-layer guard.)
 CREATE TABLE IF NOT EXISTS links (
   id             SERIAL PRIMARY KEY,
   from_page_id   INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
   to_page_id     INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
   link_type      TEXT    NOT NULL DEFAULT '',
   context        TEXT    NOT NULL DEFAULT '',
-  -- v114 (#1941): link_source is an open kebab-case provenance, not a closed
-  -- allowlist — external derivers (e.g. 'citation-graph') stamp their own tag
-  -- without a gbrain migration. Format gate only: lowercase kebab, <=64 chars.
-  -- The reconciliation-managed built-ins ('markdown','frontmatter','mentions',
-  -- 'wikilink-resolved') still satisfy this and are written internally; the
-  -- add_link op forbids CALLERS from forging them (see operations.ts). 'manual'
-  -- is the user-facing default for hand/tool-created edges.
+  -- v0.41.18.0: 'mentions' added for auto-linked body-text mentions
+  -- (gbrain extract links --by-mention). Filtered OUT of backlink-count
+  -- for search ranking; only counts toward orphan-ratio + graph traversal.
+  -- v0.40.8.2 (#972): 'wikilink-resolved' added for opt-in global-basename
+  -- wikilink resolution (bare [[name]] resolved by slug tail).
   link_source    TEXT    CHECK (link_source IS NULL OR (link_source ~ '^[a-z][a-z0-9]*(-[a-z0-9]+)*$' AND char_length(link_source) <= 64)),
   -- v0.41.18.0: nullable link_kind distinguishes "plain body mention" from
   -- "verb-pattern-derived typed link" within link_source='mentions'.
@@ -505,22 +583,28 @@ CREATE TABLE IF NOT EXISTS links (
   resolution_type TEXT   CHECK (resolution_type IS NULL OR resolution_type IN ('qualified', 'unqualified')),
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   -- v0.43.0: bi-temporal edge support (pbrain v0.3.0 port)
+  -- valid_from = when this edge version became active
+  -- valid_to = when this edge version was superseded (NULL = current)
+  -- superseded_by = id of the newer link row that replaced this one
   valid_from     TIMESTAMPTZ NOT NULL DEFAULT now(),
   valid_to       TIMESTAMPTZ,
-  superseded_by  INTEGER REFERENCES links(id) ON DELETE SET NULL,
-  -- NULLS NOT DISTINCT (PG15+) so two rows with link_source IS NULL or
-  -- origin_page_id IS NULL collide as expected. Without this, every row with
-  -- NULL origin_page_id (markdown/manual edges) would be treated as unique.
-  CONSTRAINT links_from_to_type_source_origin_unique
-    UNIQUE NULLS NOT DISTINCT (from_page_id, to_page_id, link_type, link_source, origin_page_id)
+  superseded_by  INTEGER REFERENCES links(id) ON DELETE SET NULL
+  -- Partial unique index below enforces uniqueness for current edges only.
+  -- Historical edges (valid_to IS NOT NULL) can repeat the same (from, to,
+  -- type, source, origin) tuple, so no table-level unique constraint.
 );
 
 CREATE INDEX IF NOT EXISTS idx_links_from ON links(from_page_id);
 CREATE INDEX IF NOT EXISTS idx_links_to ON links(to_page_id);
 CREATE INDEX IF NOT EXISTS idx_links_source ON links(link_source);
 CREATE INDEX IF NOT EXISTS idx_links_origin ON links(origin_page_id);
--- v0.43.0: partial index for current bi-temporal edges (valid_to IS NULL)
-CREATE INDEX IF NOT EXISTS idx_links_current ON links(from_page_id, to_page_id, link_type) WHERE valid_to IS NULL;
+-- v0.43.0: partial unique index for current bi-temporal edges (valid_to IS NULL).
+-- COALESCE turns NULL link_source/origin_page_id into distinctable sentinel
+-- values so the unique check behaves like NULLS NOT DISTINCT within the
+-- current-edge subset.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_links_current_unique
+  ON links (from_page_id, to_page_id, link_type, COALESCE(link_source, ''), COALESCE(origin_page_id, -1))
+  WHERE valid_to IS NULL;
 -- v0.43.0: index for historical link lookups
 CREATE INDEX IF NOT EXISTS idx_links_history ON links(from_page_id, valid_from, valid_to);
 
@@ -734,8 +818,11 @@ CREATE TABLE IF NOT EXISTS op_checkpoints (
 CREATE INDEX IF NOT EXISTS op_checkpoints_updated_at_idx
   ON op_checkpoints (updated_at);
 
--- #1794: append-only delta storage (one row per completed path). FK cascade
--- drops children with the parent. Mirrors migration v115 + src/schema.sql.
+-- #1794: append-only delta storage. One row per completed path; sync's
+-- appendCompleted INSERTs only the delta instead of rewriting the whole
+-- completed_keys JSONB array each flush (O(N^2) -> O(delta)). FK cascade drops
+-- children with the parent (clearOpCheckpoint + 7-day purge). PK prefix
+-- (op,fingerprint) serves all reads; no separate index. Mirrors migration v115.
 CREATE TABLE IF NOT EXISTS op_checkpoint_paths (
   op          TEXT NOT NULL,
   fingerprint TEXT NOT NULL,
@@ -811,7 +898,7 @@ ALTER TABLE pages ADD COLUMN IF NOT EXISTS search_vector tsvector;
 CREATE INDEX IF NOT EXISTS idx_pages_search ON pages USING GIN(search_vector);
 
 -- Function to rebuild search_vector for a page
-CREATE OR REPLACE FUNCTION update_page_search_vector() RETURNS trigger AS \$\$
+CREATE OR REPLACE FUNCTION update_page_search_vector() RETURNS trigger AS $$
 DECLARE
   timeline_text TEXT;
 BEGIN
@@ -823,14 +910,14 @@ BEGIN
 
   -- Build weighted tsvector
   NEW.search_vector :=
-    setweight(to_tsvector('german', coalesce(NEW.title, '')), 'A') ||
-    setweight(to_tsvector('german', coalesce(NEW.compiled_truth, '')), 'B') ||
-    setweight(to_tsvector('german', coalesce(NEW.timeline, '')), 'C') ||
-    setweight(to_tsvector('german', coalesce(timeline_text, '')), 'C');
+    setweight(to_tsvector('english', coalesce(NEW.title, '')), 'A') ||
+    setweight(to_tsvector('english', coalesce(NEW.compiled_truth, '')), 'B') ||
+    setweight(to_tsvector('english', coalesce(NEW.timeline, '')), 'C') ||
+    setweight(to_tsvector('english', coalesce(timeline_text, '')), 'C');
 
   RETURN NEW;
 END;
-\$\$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_pages_search_vector ON pages;
 CREATE TRIGGER trg_pages_search_vector
@@ -1350,7 +1437,7 @@ CREATE INDEX IF NOT EXISTS think_ab_results_recent_idx
   ON think_ab_results (source_id, ran_at DESC);
 
 -- NOTIFY trigger for real-time job events (Postgres only, not PGLite)
-CREATE OR REPLACE FUNCTION notify_minion_job_change() RETURNS trigger AS \$\$
+CREATE OR REPLACE FUNCTION notify_minion_job_change() RETURNS trigger AS $$
 BEGIN
   PERFORM pg_notify('minion_jobs', json_build_object(
     'id', NEW.id, 'status', NEW.status, 'name', NEW.name,
@@ -1358,7 +1445,7 @@ BEGIN
   )::text);
   RETURN NEW;
 END;
-\$\$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS minion_job_notify ON minion_jobs;
 CREATE TRIGGER minion_job_notify AFTER INSERT OR UPDATE OF status ON minion_jobs
@@ -1371,7 +1458,7 @@ CREATE TRIGGER minion_job_notify AFTER INSERT OR UPDATE OF status ON minion_jobs
 -- Enabling RLS with no policies means the anon key can't read anything.
 -- Only enable if the current role actually has BYPASSRLS privilege,
 -- otherwise we'd lock ourselves out.
-DO \$\$
+DO $$
 DECLARE
   has_bypass BOOLEAN;
 BEGIN
@@ -1418,5 +1505,6 @@ BEGIN
   ELSE
     RAISE WARNING 'Skipping RLS: role % does not have BYPASSRLS privilege. Run as postgres role to enable.', current_user;
   END IF;
-END \$\$;
+END $$;
+
 `;

@@ -194,7 +194,7 @@ export default function GlobalSearchPage() {
         title={t("search.title" as DashboardKey)}
         description={t("search.description" as DashboardKey)}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("search.title" as DashboardKey) },
         ]}
       />
@@ -222,6 +222,7 @@ export default function GlobalSearchPage() {
               setResults([]);
               setHasSearched(false);
             }}
+            aria-label="Suche zurücksetzen"
             className="absolute top-1/2 right-4 -translate-y-1/2 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
           >
             <X size={18} />
@@ -269,7 +270,7 @@ export default function GlobalSearchPage() {
 
       {/* Loading */}
       {loading && (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
           <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       )}

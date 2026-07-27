@@ -32,6 +32,7 @@ export const POST = createHandler(
         pricing: status.pricing,
         timeline: status.timeline,
         updatedAt: status.updated_at,
+        dataQuality: status.data_quality,
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

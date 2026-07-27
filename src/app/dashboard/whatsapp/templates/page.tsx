@@ -150,7 +150,7 @@ export default function WhatsAppTemplatesPage() {
         title={t("wamplates.title")}
         description={t("wamplates.description")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: "WhatsApp", href: "/dashboard/whatsapp" },
           { label: t("wamplates.breadcrumb") },
         ]}
@@ -255,11 +255,11 @@ export default function WhatsAppTemplatesPage() {
                 </Label>
                 <textarea
                   id="new-tpl-body"
-                  placeholder="Hallo {{1}}, Ihr Termin am {{2}}..."
+                  placeholder={t("whatsapp.tmpl.ph_body")}
                   value={newTemplate.body}
                   onChange={(e) => setNewTemplate({ ...newTemplate, body: e.target.value })}
                   rows={4}
-                  className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-info-border)] focus:outline-none"
+                  className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-info-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
               </div>
               <Button
@@ -355,7 +355,7 @@ export default function WhatsAppTemplatesPage() {
                           value={editing.body}
                           onChange={(e) => setEditing({ ...editing, body: e.target.value })}
                           rows={4}
-                          className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-info-border)] focus:outline-none"
+                          className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-info-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                         />
                         <Button
                           variant="primary"

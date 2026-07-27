@@ -709,7 +709,7 @@ export default function OnboardingPage() {
                       id="ob-bank"
                       value={billing.bankName}
                       onChange={(e) => setBilling((b) => ({ ...b, bankName: e.target.value }))}
-                      placeholder="Bank Austria"
+                      placeholder={t("onboarding.ph_bank")}
                     />
                   </div>
                 </div>
@@ -755,6 +755,8 @@ export default function OnboardingPage() {
                   </div>
                 ) : (
                   <div
+                    role="button"
+                    tabIndex={0}
                     onDragOver={(e) => {
                       e.preventDefault();
                       setDragOver(true);
@@ -762,14 +764,25 @@ export default function OnboardingPage() {
                     onDragLeave={() => setDragOver(false)}
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
-                    className={`cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                    onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        fileInputRef.current?.click();
+                      }
+                    }}
+                    className={`cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none ${
                       dragOver
                         ? "brand-border bg-[color:var(--brand-primary)]/5"
                         : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"
                     }`}
                   >
                     {uploading ? (
-                      <div className="flex flex-col items-center gap-2">
+                      <div
+                        className="flex flex-col items-center gap-2"
+                        role="status"
+                        aria-live="polite"
+                      >
                         <Loader2 size={24} className="brand-text animate-spin" />
                         <p className="text-xs text-[color:var(--ds-text-muted)]">
                           Wird hochgeladen…
@@ -836,7 +849,7 @@ export default function OnboardingPage() {
                     onChange={(e) => setQueryText(e.target.value)}
                     placeholder={t("onboarding.step_query_placeholder")}
                     rows={3}
-                    className="w-full resize-none rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:ring-2 focus:ring-[color:var(--brand-primary)]/30 focus:outline-none"
+                    className="w-full resize-none rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:ring-2 focus:ring-[color:var(--brand-primary)]/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                         e.preventDefault();
@@ -856,7 +869,11 @@ export default function OnboardingPage() {
                 </div>
 
                 {querying && !queryAnswer && (
-                  <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+                  <div
+                    className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]"
+                    role="status"
+                    aria-live="polite"
+                  >
                     <Loader2 size={14} className="animate-spin" />
                     {t("onboarding.step_query_thinking")}
                   </div>

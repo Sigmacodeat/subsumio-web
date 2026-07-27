@@ -207,8 +207,10 @@ export function buildLegalContextualPrefix(
   frontmatter: Record<string, unknown>,
   synopsis: string | null | undefined
 ): string | null {
-  const jurisdiction = typeof frontmatter.jurisdiction === "string" ? frontmatter.jurisdiction : null;
-  const abbreviation = typeof frontmatter.abbreviation === "string" ? frontmatter.abbreviation : null;
+  const jurisdiction =
+    typeof frontmatter.jurisdiction === "string" ? frontmatter.jurisdiction : null;
+  const abbreviation =
+    typeof frontmatter.abbreviation === "string" ? frontmatter.abbreviation : null;
   const statute = typeof frontmatter.statute === "string" ? frontmatter.statute : null;
   const paragraph = typeof frontmatter.paragraph === "string" ? frontmatter.paragraph : null;
 
@@ -251,4 +253,13 @@ export function buildLegalContextualPrefix(
  */
 export function isLegalPage(frontmatter: Record<string, unknown>): boolean {
   return frontmatter?.type === "law" || frontmatter?.type === "statute";
+}
+
+/**
+ * v0.43 Legal Chunker: detect court decision pages (Urteile, Beschlüsse).
+ * These use the structure-aware legal decision chunker instead of the
+ * generic recursive chunker.
+ */
+export function isCourtDecisionPage(frontmatter: Record<string, unknown>): boolean {
+  return frontmatter?.type === "court_decision" || frontmatter?.type === "judgement";
 }

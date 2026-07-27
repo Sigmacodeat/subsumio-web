@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
+import { useLang } from "@/lib/use-lang";
 
 export default function WebhooksPage() {
   const { addToast } = useToast();
+  const { t } = useLang();
 
   const [webhooks, setWebhooks] = useState<
     Array<{
@@ -47,7 +49,7 @@ export default function WebhooksPage() {
       const data = await res.json();
       setWebhooks(data.webhooks ?? []);
     } catch {
-      addToast({ type: "error", title: "Fehler beim Laden" });
+      addToast({ type: "error", title: t("webhooks.err_load") });
     } finally {
       setLoading(false);
     }
@@ -59,7 +61,7 @@ export default function WebhooksPage() {
 
   async function save() {
     if (!form.url || form.events.length === 0 || !form.secret) {
-      addToast({ type: "error", title: "URL, Events und Secret erforderlich" });
+      addToast({ type: "error", title: t("webhooks.err_required") });
       return;
     }
     setSaving(true);
@@ -70,12 +72,12 @@ export default function WebhooksPage() {
         body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error();
-      addToast({ type: "success", title: "Webhook registriert" });
+      addToast({ type: "success", title: t("webhooks.saved") });
       setShowForm(false);
       setForm({ url: "", events: [], secret: "", description: "" });
       await load();
     } catch {
-      addToast({ type: "error", title: "Fehler beim Speichern" });
+      addToast({ type: "error", title: t("webhooks.err_save") });
     } finally {
       setSaving(false);
     }
@@ -88,10 +90,10 @@ export default function WebhooksPage() {
         method: "DELETE",
       });
       if (!res.ok) throw new Error();
-      addToast({ type: "success", title: "Webhook gelöscht" });
+      addToast({ type: "success", title: t("webhooks.deleted") });
       await load();
     } catch {
-      addToast({ type: "error", title: "Fehler beim Löschen" });
+      addToast({ type: "error", title: t("webhooks.err_delete") });
     } finally {
       setDeleting(null);
     }
@@ -108,7 +110,7 @@ export default function WebhooksPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20">
+      <div className="flex justify-center py-20" role="status" aria-live="polite">
         <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );
@@ -119,22 +121,26 @@ export default function WebhooksPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Webhook size={20} className="text-[color:var(--ds-text)]" />
-          <h1 className="text-lg font-semibold text-[color:var(--ds-text)]">Webhooks</h1>
+          <h1 className="text-lg font-semibold text-[color:var(--ds-text)]">
+            {t("webhooks.title")}
+          </h1>
         </div>
         <Button onClick={() => setShowForm(!showForm)} variant="secondary" className="gap-2">
           <Plus size={14} />
-          Neuer Webhook
+          {t("webhooks.new")}
         </Button>
       </div>
 
       {showForm && (
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-            Webhook registrieren
+            {t("webhooks.register_title")}
           </h2>
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">URL *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("webhooks.url_label")}
+              </Label>
               <Input
                 value={form.url}
                 onChange={(e) => setForm({ ...form, url: e.target.value })}
@@ -142,7 +148,9 @@ export default function WebhooksPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Events *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("webhooks.events_label")}
+              </Label>
               <div className="flex flex-wrap gap-2">
                 {eventTypes.map((evt) => (
                   <button
@@ -160,29 +168,33 @@ export default function WebhooksPage() {
               </div>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Secret *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("webhooks.secret_label")}
+              </Label>
               <Input
                 type="password"
                 value={form.secret}
                 onChange={(e) => setForm({ ...form, secret: e.target.value })}
-                placeholder="Webhook-Secret (min. 16 Zeichen)"
+                placeholder={t("webhooks.secret_placeholder")}
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Beschreibung</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("webhooks.desc_label")}
+              </Label>
               <Input
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Optional"
+                placeholder={t("webhooks.desc_placeholder")}
               />
             </div>
           </div>
           <div className="flex gap-2">
             <Button onClick={() => void save()} disabled={saving} className="brand-bg text-white">
-              {saving ? <Loader2 size={14} className="animate-spin" /> : "Speichern"}
+              {saving ? <Loader2 size={14} className="animate-spin" /> : t("webhooks.save")}
             </Button>
             <Button onClick={() => setShowForm(false)} variant="ghost">
-              Abbrechen
+              {t("webhooks.cancel")}
             </Button>
           </div>
         </div>
@@ -190,7 +202,7 @@ export default function WebhooksPage() {
 
       <div className="space-y-2">
         {webhooks.length === 0 ? (
-          <p className="text-sm text-[color:var(--ds-text-muted)]">Keine Webhooks registriert.</p>
+          <p className="text-sm text-[color:var(--ds-text-muted)]">{t("webhooks.empty")}</p>
         ) : (
           webhooks.map((wh) => (
             <div
@@ -214,7 +226,7 @@ export default function WebhooksPage() {
                   ))}
                 </div>
                 <div className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
-                  Erstellt: {new Date(wh.created_at).toLocaleString()}
+                  {t("webhooks.created")} {new Date(wh.created_at).toLocaleString()}
                 </div>
               </div>
               <Button

@@ -18,6 +18,19 @@ const eslintConfig = defineConfig([
           ignoreRestSiblings: true,
         },
       ],
+      // WCAG: enforce high-value jsx-a11y rules as errors (they are "warn" in
+      // next/core-web-vitals). eslint-disable only with a documented reason.
+      "jsx-a11y/click-events-have-key-events": "error",
+      "jsx-a11y/no-static-element-interactions": "error",
+      "jsx-a11y/no-noninteractive-element-interactions": "error",
+      "jsx-a11y/no-noninteractive-element-to-interactive-role": "error",
+      "jsx-a11y/interactive-supports-focus": "error",
+      "jsx-a11y/aria-props": "error",
+      "jsx-a11y/aria-unsupported-elements": "error",
+      "jsx-a11y/role-has-required-aria-props": "error",
+      "jsx-a11y/role-supports-aria-props": "error",
+      "jsx-a11y/no-redundant-roles": "error",
+      "jsx-a11y/anchor-is-valid": "error",
     },
   },
   // Override default ignores of eslint-config-next.

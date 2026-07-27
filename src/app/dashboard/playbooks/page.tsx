@@ -512,6 +512,7 @@ function PlaybookCard({
             onClick={() => setExpanded(!expanded)}
             className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
             title={t("playbooks.title_expand")}
+            aria-label={t("playbooks.title_expand")}
           >
             <BookOpen size={14} />
           </button>
@@ -519,6 +520,7 @@ function PlaybookCard({
             onClick={onEdit}
             className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
             title={t("playbooks.title_edit")}
+            aria-label={t("playbooks.title_edit")}
           >
             <Pencil size={14} />
           </button>
@@ -526,6 +528,7 @@ function PlaybookCard({
             onClick={onDelete}
             className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
             title={t("playbooks.title_delete")}
+            aria-label={t("playbooks.title_delete")}
           >
             <Trash2 size={14} />
           </button>
@@ -643,7 +646,7 @@ function PlaybookEditor(props: {
           onChange={(e) => props.onDescriptionChange(e.target.value)}
           rows={2}
           placeholder={t("playbooks.placeholder_description")}
-          className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+          className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -761,12 +764,13 @@ function RuleRow({
           value={rule.clause_type}
           onChange={(e) => onChange({ clause_type: e.target.value })}
           placeholder={t("playbooks.placeholder_clause_type")}
-          className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+          className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         />
         <button
           onClick={onDuplicate}
           className="hover:brand-text rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
           title={t("playbooks.title_duplicate")}
+          aria-label={t("playbooks.title_duplicate")}
         >
           <Copy size={12} />
         </button>
@@ -774,6 +778,7 @@ function RuleRow({
           onClick={onRemove}
           className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-danger-text)]"
           title={t("playbooks.title_remove")}
+          aria-label={t("playbooks.title_remove")}
         >
           <X size={12} />
         </button>
@@ -784,7 +789,7 @@ function RuleRow({
           onChange={(e) =>
             onChange({ required_position: e.target.value as PlaybookRequiredPosition })
           }
-          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         >
           {POSITION_KEYS.map((key) => (
             <option key={key} value={key}>
@@ -795,7 +800,7 @@ function RuleRow({
         <select
           value={rule.severity}
           onChange={(e) => onChange({ severity: e.target.value as PlaybookSeverity })}
-          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         >
           {SEVERITY_KEYS.map((key) => (
             <option key={key} value={key}>
@@ -808,13 +813,13 @@ function RuleRow({
         value={rule.deviation_flag}
         onChange={(e) => onChange({ deviation_flag: e.target.value })}
         placeholder={t("playbooks.placeholder_deviation_flag")}
-        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 pl-5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 pl-5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
       />
       <input
         value={rule.notes ?? ""}
         onChange={(e) => onChange({ notes: e.target.value })}
         placeholder={t("playbooks.placeholder_notes")}
-        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 pl-5 text-xs text-[color:var(--ds-text-muted)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 pl-5 text-xs text-[color:var(--ds-text-muted)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
       />
     </div>
   );

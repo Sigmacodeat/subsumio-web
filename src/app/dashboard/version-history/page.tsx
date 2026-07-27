@@ -21,15 +21,15 @@ interface AuditEntry {
 }
 
 const ACTION_LABELS: Record<string, string> = {
-  "case.update": "Bearbeitet",
-  "case.create": "Erstellt",
-  "case.delete": "Gelöscht",
-  "document.delete": "Gelöscht",
-  "document.upload": "Hochgeladen",
-  "document.review": "Review",
+  "case.update": "vhist.case_update",
+  "case.create": "vhist.case_create",
+  "case.delete": "vhist.case_delete",
+  "document.delete": "vhist.doc_delete",
+  "document.upload": "vhist.doc_upload",
+  "document.review": "vhist.doc_review",
   "brain.write": "Brain-Write",
   "brain.delete": "Brain-Delete",
-};
+} as const;
 
 const ACTION_COLORS: Record<string, string> = {
   "case.create":
@@ -45,7 +45,7 @@ const ACTION_COLORS: Record<string, string> = {
 };
 
 export default function VersionHistoryPage() {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const [slug, setSlug] = useState("");
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [page, setPage] = useState<BrainPage | null>(null);
@@ -78,7 +78,7 @@ export default function VersionHistoryPage() {
         setEntries(filtered);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Versionshistorie konnte nicht geladen werden.");
+      setError(e instanceof Error ? e.message : t("vhist.err_load"));
     } finally {
       setLoading(false);
     }
@@ -90,9 +90,12 @@ export default function VersionHistoryPage() {
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Versionshistorie"
-        description="Änderungshistorie einer Brain-Page — Audit-Trail mit Versionierung"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Versionshistorie" }]}
+        title={t("vhist.title")}
+        description={t("vhist.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("vhist.title") },
+        ]}
       />
 
       {/* Search */}
@@ -108,7 +111,7 @@ export default function VersionHistoryPage() {
             onKeyDown={(e) => {
               if (e.key === "Enter") void search();
             }}
-            placeholder="Page-Slug eingeben (z.B. case/mustermann-vs-beispiel)"
+            placeholder={t("vhist.search_placeholder")}
             className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-10 text-[color:var(--ds-text)]"
           />
         </div>
@@ -205,7 +208,9 @@ export default function VersionHistoryPage() {
                           "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
                       )}
                     >
-                      {ACTION_LABELS[entry.action] ?? entry.action}
+                      {ACTION_LABELS[entry.action]
+                        ? t(ACTION_LABELS[entry.action] as never)
+                        : entry.action}
                     </Badge>
                     <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
                       <Clock size={10} />

@@ -124,7 +124,7 @@ function formatRelative(iso: string): string {
 }
 
 export default function AdoptionAnalyticsPage() {
-  const { t: _t } = useLang();
+  const { t } = useLang();
   const [daysBack, setDaysBack] = useState(30);
 
   const {
@@ -148,9 +148,12 @@ export default function AdoptionAnalyticsPage() {
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Adoption Analytics"
-        description="Platform-Nutzung: Wer nutzt was, wie oft und woran — das Subsumio Command Center"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Adoption Analytics" }]}
+        title={t("adoption.title")}
+        description={t("adoption.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: "Adoption Analytics" },
+        ]}
         actions={
           <div className="flex items-center gap-2">
             <select
@@ -177,7 +180,7 @@ export default function AdoptionAnalyticsPage() {
       />
 
       {loading && (
-        <div className="flex items-center justify-center py-20">
+        <div className="flex items-center justify-center py-20" role="status" aria-live="polite">
           <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       )}

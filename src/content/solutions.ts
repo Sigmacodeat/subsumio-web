@@ -241,7 +241,7 @@ const _solutionsDe = {
       },
       {
         q: "Kann ich mir das als Einzelanwalt leisten?",
-        a: "Der Pro-Plan kostet 890 €/Seat/Monat — weniger als zwei abrechenbare Stunden. Der 14-Tage-Reverse-Trial bedeutet: Du siehst den echten Wert, bevor du zahlst.",
+        a: "Solo kostet 179 €/Monat und ist monatlich kündbar. Ein Nutzer, eigene Akten und belegte Dokumentanalyse sind enthalten; Massen-Ingest und Team-Administration beginnen im Kanzlei-Tarif.",
       },
       {
         q: "Was, wenn ich später wachse?",
@@ -400,7 +400,7 @@ const _solutionsDe = {
       },
       {
         q: "Was kostet das für eine mittelständische Kanzlei?",
-        a: "Team-Plan ab 1.290 €/Seat/Monat ab 5 Seats. Jahreszahlung spart 20 %. Transparente Mehrkosten — du siehst den Verbrauch live, keine Überraschungen.",
+        a: "Der Kanzlei-Tarif kostet 999 €/Monat, ist monatlich kündbar und enthält fünf Nutzer. Massen-Ingest, geteiltes Kanzleiwissen, Rollen und WhatsApp-Workflows sind enthalten.",
       },
       {
         q: "Können wir klein anfangen und wachsen?",
@@ -573,7 +573,7 @@ const _enSolutions: Record<SolutionSlug, SolutionContent> = {
       },
       {
         q: "Can I afford this as a solo?",
-        a: "The Pro plan is €890/seat/month — less than two billable hours. The 14-day reverse trial means you see real value before you pay.",
+        a: "Solo is €179/month and can be canceled monthly. It includes one user, own matters and cited document analysis; bulk ingestion and team administration start with Firm.",
       },
       {
         q: "What if I grow into a firm later?",
@@ -730,7 +730,7 @@ const _enSolutions: Record<SolutionSlug, SolutionContent> = {
       },
       {
         q: "What's the pricing for a mid-sized firm?",
-        a: "Team plan at €1,290/seat/month from 5 seats. Annual billing saves 20%. Transparent overages — you see usage live, no surprise bills.",
+        a: "Firm is €999/month, can be canceled monthly and includes five users. Bulk ingestion, shared firm knowledge, roles and WhatsApp workflows are included.",
       },
       {
         q: "Can we start small and scale?",

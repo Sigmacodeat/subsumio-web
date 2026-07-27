@@ -245,6 +245,61 @@ export class SnapshotStore {
     return result.rows[0].content_hash === contentHash;
   }
 
+  /**
+   * Get the snapshot that was valid at a specific point in time.
+   * Finds the snapshot whose valid_from ≤ asOfDate < valid_to (or valid_to IS NULL).
+   * Returns null if no snapshot existed at that date.
+   */
+  async getSnapshotAtDate(slug: string, asOfDate: string): Promise<CorpusReceipt | null> {
+    const result = await this.pool.query(
+      `SELECT receipt_json FROM corpus_snapshots
+       WHERE slug = $1
+         AND valid_from <= $2
+         AND (valid_to IS NULL OR valid_to > $2)
+       ORDER BY valid_from DESC LIMIT 1`,
+      [slug, asOfDate]
+    );
+    if (!result.rows[0]?.receipt_json) return null;
+    return deserializeReceipt(result.rows[0].receipt_json);
+  }
+
+  /**
+   * Get all snapshots that were valid at a specific point in time, across all slugs.
+   * Useful for building a point-in-time corpus view.
+   */
+  async getAllSnapshotsAtDate(asOfDate: string): Promise<CorpusReceipt[]> {
+    const result = await this.pool.query(
+      `SELECT receipt_json FROM corpus_snapshots
+       WHERE valid_from <= $1
+         AND (valid_to IS NULL OR valid_to > $1)
+       ORDER BY slug`,
+      [asOfDate]
+    );
+    return result.rows
+      .map((r) => (r.receipt_json ? deserializeReceipt(r.receipt_json) : null))
+      .filter((r): r is CorpusReceipt => r !== null);
+  }
+
+  /**
+   * Get all snapshots that were valid at a specific point in time for a jurisdiction.
+   */
+  async getSnapshotsAtDateByJurisdiction(
+    asOfDate: string,
+    jurisdiction: Jurisdiction
+  ): Promise<CorpusReceipt[]> {
+    const result = await this.pool.query(
+      `SELECT receipt_json FROM corpus_snapshots
+       WHERE jurisdiction = $1
+         AND valid_from <= $2
+         AND (valid_to IS NULL OR valid_to > $2)
+       ORDER BY statute_code`,
+      [jurisdiction, asOfDate]
+    );
+    return result.rows
+      .map((r) => (r.receipt_json ? deserializeReceipt(r.receipt_json) : null))
+      .filter((r): r is CorpusReceipt => r !== null);
+  }
+
   // ── Amendment Queries ──
 
   /**
@@ -270,6 +325,43 @@ export class SnapshotStore {
       `SELECT * FROM corpus_amendments ORDER BY detected_at DESC LIMIT $1`,
       [limit]
     );
+    return result.rows.map(rowToAmendment);
+  }
+
+  /**
+   * Get amendments detected within a date range (inclusive).
+   * Useful for periodic reports: "what changed since last run?"
+   */
+  async getAmendmentsBetween(startDate: string, endDate: string): Promise<CorpusAmendment[]> {
+    const result = await this.pool.query(
+      `SELECT * FROM corpus_amendments
+       WHERE detected_at >= $1 AND detected_at <= $2
+       ORDER BY detected_at DESC`,
+      [startDate, endDate]
+    );
+    return result.rows.map(rowToAmendment);
+  }
+
+  /**
+   * Get amendments for a jurisdiction, optionally within a date range.
+   */
+  async getAmendmentsByJurisdiction(
+    jurisdiction: Jurisdiction,
+    startDate?: string,
+    endDate?: string
+  ): Promise<CorpusAmendment[]> {
+    let query = `SELECT * FROM corpus_amendments WHERE jurisdiction = $1`;
+    const params: (string | number)[] = [jurisdiction];
+    if (startDate) {
+      params.push(startDate);
+      query += ` AND detected_at >= $${params.length}`;
+    }
+    if (endDate) {
+      params.push(endDate);
+      query += ` AND detected_at <= $${params.length}`;
+    }
+    query += ` ORDER BY detected_at DESC`;
+    const result = await this.pool.query(query, params);
     return result.rows.map(rowToAmendment);
   }
 

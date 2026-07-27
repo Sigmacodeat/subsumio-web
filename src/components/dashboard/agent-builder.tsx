@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import {
   Bot,
@@ -148,7 +148,7 @@ function StepEditor({
             <select
               value={step.specialist}
               onChange={(e) => updateStep(idx, { specialist: e.target.value })}
-              className="focus:brand-border flex-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none"
+              className="focus:brand-border flex-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
               {SPECIALISTS.map((s) => (
                 <option key={s.value} value={s.value}>
@@ -164,7 +164,7 @@ function StepEditor({
                     depends_on: e.target.value ? Number(e.target.value) : undefined,
                   })
                 }
-                className="focus:brand-border w-28 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none"
+                className="focus:brand-border w-28 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 title="Abhängigkeit von vorherigem Step"
               >
                 <option value="">Parallel</option>
@@ -202,7 +202,7 @@ function StepEditor({
             onChange={(e) => updateStep(idx, { prompt: e.target.value })}
             placeholder="Prompt für diesen Step..."
             rows={2}
-            className="focus:brand-border w-full resize-y rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
+            className="focus:brand-border w-full resize-y rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
         </div>
       ))}
@@ -245,8 +245,17 @@ function TemplateCard({
   return (
     <div
       onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      role="button"
+      tabIndex={0}
       className={cn(
-        "w-full cursor-pointer rounded-lg border p-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        "w-full cursor-pointer rounded-lg border p-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none",
         isSelected
           ? "brand-soft brand-border"
           : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
@@ -268,6 +277,7 @@ function TemplateCard({
             disabled={isRunning}
             className="brand-soft brand-text brand-border hover:brand-bg/30 rounded-md border p-1.5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-40"
             title="Agent ausführen"
+            aria-label="Agent ausführen"
           >
             {isRunning ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
           </button>
@@ -278,6 +288,7 @@ function TemplateCard({
             }}
             className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             title="Bearbeiten"
+            aria-label="Bearbeiten"
           >
             <Edit3 size={13} />
           </button>
@@ -288,6 +299,7 @@ function TemplateCard({
             }}
             className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             title="Duplizieren"
+            aria-label="Duplizieren"
           >
             <Copy size={13} />
           </button>
@@ -300,6 +312,7 @@ function TemplateCard({
               }}
               className="rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-1.5 text-[color:var(--ds-danger-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
               title="Wirklich löschen"
+              aria-label="Wirklich löschen"
             >
               <Trash2 size={13} />
             </button>
@@ -311,6 +324,7 @@ function TemplateCard({
               }}
               className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
               title="Löschen"
+              aria-label="Löschen"
             >
               <Trash2 size={13} />
             </button>
@@ -368,19 +382,76 @@ function RunDialog({
 }) {
   const [input, setInput] = useState("");
 
+  // A11y: self-contained modal behavior (autofocus on open, Escape to close,
+  // Tab focus trap, focus restoration on close) — this component mounts only
+  // while the dialog is open.
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const frame = requestAnimationFrame(() => inputRef.current?.focus());
+    return () => {
+      cancelAnimationFrame(frame);
+      previouslyFocused?.focus();
+    };
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Backdrop click-to-close; keyboard users close via Escape or the close button.
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-      onClick={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="agent-run-dialog-title"
         className="w-full max-w-lg space-y-4 rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Play size={18} className="brand-text" />
-            <h3 className="text-base font-semibold text-[color:var(--ds-text)]">Agent starten</h3>
+            <h3
+              id="agent-run-dialog-title"
+              className="text-base font-semibold text-[color:var(--ds-text)]"
+            >
+              Agent starten
+            </h3>
           </div>
           <button
             onClick={onClose}
@@ -396,11 +467,12 @@ function RunDialog({
           wird.
         </p>
         <textarea
+          ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Optionale Eingabe für den Agenten..."
           rows={4}
-          className="focus:brand-border w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
+          className="focus:brand-border w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         />
         <div className="flex items-center justify-end gap-2">
           <button
@@ -611,7 +683,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Suchen..."
-              className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] py-1.5 pr-3 pl-8 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
+              className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] py-1.5 pr-3 pl-8 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
           </div>
         </div>
@@ -619,7 +691,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
         {/* Template List */}
         <div className="flex-1 space-y-1.5 overflow-y-auto p-2">
           {templatesQuery.isLoading && templates.length === 0 && (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-8" role="status" aria-live="polite">
               <Loader2 size={20} className="brand-text animate-spin" />
             </div>
           )}
@@ -795,7 +867,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="z.B. Vertrags-Review Agent"
-                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
+                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
               </div>
 
@@ -808,7 +880,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="Kurze Beschreibung des Agenten..."
-                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
+                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
               </div>
 
@@ -820,7 +892,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                 <select
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value as AgentRole | "" })}
-                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none"
+                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 >
                   <option value="">{t("builder.role_auto")}</option>
                   {AGENT_ROLES.map((r) => (
@@ -842,7 +914,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                 <select
                   value={form.model}
                   onChange={(e) => setForm({ ...form, model: e.target.value })}
-                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none"
+                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 >
                   {MODEL_OPTIONS.map((m) => (
                     <option key={m.value} value={m.value}>
@@ -862,7 +934,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                   onChange={(e) => setForm({ ...form, prompt_template: e.target.value })}
                   placeholder="Du bist ein Legal AI Agent. Deine Aufgabe ist es..."
                   rows={8}
-                  className="focus:brand-border w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 font-mono text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
+                  className="focus:brand-border w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 font-mono text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
                   Der Prompt wird an den Supervisor gesendet. Verwende Variablen wie {"{{eingabe}}"}{" "}
@@ -933,7 +1005,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                     value={form.playbook_ref}
                     onChange={(e) => setForm({ ...form, playbook_ref: e.target.value })}
                     placeholder="z.B. playbooks/vertrags-review"
-                    className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-8 font-mono text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
+                    className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-8 font-mono text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                   />
                 </div>
                 <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">

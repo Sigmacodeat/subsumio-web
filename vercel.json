@@ -25,6 +25,7 @@
     { "path": "/api/cron/time-suggestions", "schedule": "0 19 * * *" },
     { "path": "/api/cron/outlook-sync", "schedule": "*/15 * * * *" },
     { "path": "/api/cron/deadline-alerts", "schedule": "*/30 * * * *" },
-    { "path": "/api/cron/time-tracking/inactivity-check", "schedule": "0 * * * *" }
+    { "path": "/api/cron/time-tracking/inactivity-check", "schedule": "0 * * * *" },
+    { "path": "/api/billing/auto-reload-cron", "schedule": "0 */2 * * *" }
   ]
 }

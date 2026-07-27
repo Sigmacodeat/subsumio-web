@@ -14,6 +14,7 @@ export const POST = createEngineProxy({
   enginePath: "/api/legal/deep-analysis",
   body: deepAnalysisSchema,
   quota: "queries",
+  credits: "subsumption",
   citationGate: true,
   label: "deep-analysis",
   transformBody: (b) => ({

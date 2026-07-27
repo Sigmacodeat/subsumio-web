@@ -79,7 +79,7 @@ export default function KollisionspruefungPage() {
         title={t("conflict.title")}
         description={t("conflict.description")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("conflict.breadcrumb") },
         ]}
       />

@@ -341,6 +341,23 @@ CREATE TABLE IF NOT EXISTS content_chunks (
   token_count           INTEGER,
   embedded_at           TIMESTAMPTZ,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+  -- v0.43.0 (INDUSTRIENIVEAU legal corpus): structured legal metadata for
+  -- precise §/article/paragraph filtering, citation normalization, and
+  -- Poly-Vector label generation. These columns enable metadata-filtered
+  -- retrieval exactly as Lex, vLex, and Harvey do for statutes/cases.
+  document_type         TEXT,                        -- 'statute' | 'decision' | 'literature'
+  statute_abbr          TEXT,                        -- e.g. 'ABGB', 'StGB', 'BGB'
+  paragraph_ref         TEXT,                        -- e.g. '433', '1a', '5'
+  absatz                TEXT,                        -- e.g. '1', '2a'
+  ziffer                TEXT,                        -- e.g. '1', '2'
+  literal               TEXT,                        -- e.g. 'a', 'b'
+  chunk_role            TEXT,                        -- 'full' | 'absatz' | 'ziffer' | 'literal' | 'remainder' | 'preamble'
+  court                 TEXT,                        -- 'OGH', 'VfGH', 'VwGH'
+  case_number           TEXT,                        -- Aktenzeichen
+  ecli                  TEXT,                        -- European Case Law Identifier
+  decision_date         TEXT,                        -- ISO date (YYYY-MM-DD)
+  legal_area            TEXT,                        -- 'Zivilrecht', 'Strafrecht'
+  canonical_label       TEXT,                        -- e.g. 'ABGB § 433 Abs. 1'
   -- v0.19.0: code chunk metadata. Nullable — markdown chunks leave these NULL.
   -- Powers `query --lang`, `code-def <symbol>`, and `code-refs <symbol>`.
   language              TEXT,
@@ -367,7 +384,21 @@ CREATE TABLE IF NOT EXISTS content_chunks (
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_chunks_page_index ON content_chunks(page_id, chunk_index);
 CREATE INDEX IF NOT EXISTS idx_chunks_page ON content_chunks(page_id);
-CREATE INDEX IF NOT EXISTS idx_chunks_embedding ON content_chunks USING hnsw (embedding vector_cosine_ops);
+-- HNSW construction on a populated multi-million-row corpus can exhaust the
+-- database container and crash Postgres. Bootstrap may create it only while
+-- the table is empty; production rebuilds must use the explicit operational
+-- index command (CONCURRENTLY, with monitored memory/work_mem settings).
+DO $block$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE schemaname = current_schema()
+      AND indexname IN ('idx_chunks_embedding', 'idx_chunks_embedding_hnsw')
+  ) AND NOT EXISTS (SELECT 1 FROM content_chunks LIMIT 1) THEN
+    EXECUTE 'CREATE INDEX idx_chunks_embedding ON content_chunks USING hnsw (embedding vector_cosine_ops)';
+  END IF;
+END
+$block$;
 -- v0.19.0: partial indexes — only code chunks populate these columns.
 CREATE INDEX IF NOT EXISTS idx_chunks_symbol_name ON content_chunks(symbol_name) WHERE symbol_name IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_chunks_language ON content_chunks(language) WHERE language IS NOT NULL;
@@ -387,6 +418,38 @@ CREATE INDEX IF NOT EXISTS idx_chunks_symbol_qualified
 -- uses idx_pages_updated_at_desc; inner partial uses this index.
 CREATE INDEX IF NOT EXISTS content_chunks_stale_idx
   ON content_chunks(page_id, chunk_index) WHERE embedding IS NULL;
+
+-- v0.43.0 (INDUSTRIENIVEAU): legal metadata B-tree indexes for exact-match
+-- filtering on jurisdiction/court/paragraph and label lookup.
+CREATE INDEX IF NOT EXISTS idx_chunks_statute_abbr ON content_chunks(statute_abbr) WHERE statute_abbr IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_paragraph_ref ON content_chunks(paragraph_ref) WHERE paragraph_ref IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_absatz ON content_chunks(absatz) WHERE absatz IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_court ON content_chunks(court) WHERE court IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_case_number ON content_chunks(case_number) WHERE case_number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_ecli ON content_chunks(ecli) WHERE ecli IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chunks_canonical_label ON content_chunks(canonical_label) WHERE canonical_label IS NOT NULL;
+
+-- v0.43.0 (INDUSTRIENIVEAU Poly-Vector Retrieval): separate label embeddings.
+-- Each content chunk can carry multiple canonical labels (statute+§, §+Abs,
+-- ECLI, court+case). Each label has its own embedding so referential queries
+-- ("Was sagt § 433 ABGB?") retrieve exactly the authoritative chunk, while
+-- semantic queries still use the content embedding. See arXiv:2504.10508.
+CREATE TABLE IF NOT EXISTS content_chunk_labels (
+  id              SERIAL PRIMARY KEY,
+  chunk_id        INTEGER NOT NULL REFERENCES content_chunks(id) ON DELETE CASCADE,
+  label_type      TEXT    NOT NULL,        -- 'statute', 'paragraph', 'absatz', 'ecli', 'court_case'
+  label_text      TEXT    NOT NULL,        -- canonical text to embed, e.g. "ABGB § 433 Abs. 1"
+  label_display   TEXT    NOT NULL,        -- human readable citation
+  embedding       vector(1536),
+  model           TEXT    NOT NULL DEFAULT 'text-embedding-3-large',
+  embedded_at     TIMESTAMPTZ,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(chunk_id, label_type, label_text)
+);
+CREATE INDEX IF NOT EXISTS idx_chunk_labels_chunk_id ON content_chunk_labels(chunk_id);
+CREATE INDEX IF NOT EXISTS idx_chunk_labels_lookup ON content_chunk_labels(label_type, label_text);
+CREATE INDEX IF NOT EXISTS idx_chunk_labels_embedding_hnsw
+  ON content_chunk_labels USING hnsw (embedding vector_cosine_ops);
 
 -- v0.20.0 Cathedral II: chunk-grain FTS trigger.
 -- Weight 'A' on doc_comment + symbol_name_qualified; weight 'B' on chunk_text.
@@ -521,21 +584,23 @@ CREATE TABLE IF NOT EXISTS links (
   -- superseded_by = id of the newer link row that replaced this one
   valid_from     TIMESTAMPTZ NOT NULL DEFAULT now(),
   valid_to       TIMESTAMPTZ,
-  superseded_by  INTEGER REFERENCES links(id) ON DELETE SET NULL,
-  -- NULLS NOT DISTINCT (PG15+) so two rows with link_source IS NULL or
-  -- origin_page_id IS NULL collide as expected. Without this, every row with
-  -- NULL origin_page_id (markdown/manual edges) would be treated as unique.
-  CONSTRAINT links_from_to_type_source_origin_unique
-    UNIQUE NULLS NOT DISTINCT (from_page_id, to_page_id, link_type, link_source, origin_page_id)
-    WHERE valid_to IS NULL
+  superseded_by  INTEGER REFERENCES links(id) ON DELETE SET NULL
+  -- Partial unique index below enforces uniqueness for current edges only.
+  -- Historical edges (valid_to IS NOT NULL) can repeat the same (from, to,
+  -- type, source, origin) tuple, so no table-level unique constraint.
 );
 
 CREATE INDEX IF NOT EXISTS idx_links_from ON links(from_page_id);
 CREATE INDEX IF NOT EXISTS idx_links_to ON links(to_page_id);
 CREATE INDEX IF NOT EXISTS idx_links_source ON links(link_source);
 CREATE INDEX IF NOT EXISTS idx_links_origin ON links(origin_page_id);
--- v0.43.0: partial index for current bi-temporal edges (valid_to IS NULL)
-CREATE INDEX IF NOT EXISTS idx_links_current ON links(from_page_id, to_page_id, link_type) WHERE valid_to IS NULL;
+-- v0.43.0: partial unique index for current bi-temporal edges (valid_to IS NULL).
+-- COALESCE turns NULL link_source/origin_page_id into distinctable sentinel
+-- values so the unique check behaves like NULLS NOT DISTINCT within the
+-- current-edge subset.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_links_current_unique
+  ON links (from_page_id, to_page_id, link_type, COALESCE(link_source, ''), COALESCE(origin_page_id, -1))
+  WHERE valid_to IS NULL;
 -- v0.43.0: index for historical link lookups
 CREATE INDEX IF NOT EXISTS idx_links_history ON links(from_page_id, valid_from, valid_to);
 

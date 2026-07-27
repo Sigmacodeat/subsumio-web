@@ -19,6 +19,8 @@ import type { ObligationExtractionResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
 const URGENCY_STYLES: Record<string, string> = {
   low: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)] border-[color:var(--ds-info-border)]",
@@ -49,6 +51,11 @@ export default function ObligationTrackingPage() {
   const [result, setResult] = useState<ObligationExtractionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const {
+    grounding: summaryGrounding,
+    isGrounding: isGroundingSummary,
+    groundAnswer: groundSummary,
+  } = useGroundedAnswer();
 
   async function run() {
     setLoading(true);
@@ -60,6 +67,12 @@ export default function ObligationTrackingPage() {
         jurisdiction,
       });
       setResult(res);
+      const groundingText = [
+        res.summary ?? "",
+        ...res.obligations.map((o) => o.description),
+        ...res.warnings,
+      ].join("\n\n");
+      groundSummary(groundingText).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : t("obligations.error_failed"));
     } finally {
@@ -75,7 +88,7 @@ export default function ObligationTrackingPage() {
         title={t("obligations.title")}
         description={t("obligations.description")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("obligations.breadcrumb") },
         ]}
       />
@@ -119,7 +132,7 @@ export default function ObligationTrackingPage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={t("obligations.placeholder_contract_text")}
-            className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none"
+            className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
         )}
 
@@ -167,6 +180,17 @@ export default function ObligationTrackingPage() {
           {result.summary && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <p className="text-sm text-[color:var(--ds-text)]">{result.summary}</p>
+              <div className="mt-4">
+                <CitationPanel
+                  data={
+                    {
+                      grounding: summaryGrounding ?? null,
+                      isStreaming: isGroundingSummary,
+                    } satisfies CitationPanelData
+                  }
+                  compact
+                />
+              </div>
             </div>
           )}
 

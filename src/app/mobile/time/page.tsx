@@ -3,7 +3,7 @@
 /**
  * Mobile: Zeiterfassung (Time Entry)
  * Start/stop timer, manual entry, select matter, save to brain.
- * Integrates with /api/timetracking if available, falls back to brain pages.
+ * Saves via POST /api/time when a matter is selected, falls back to brain pages.
  */
 
 import { useState, useEffect, useRef } from "react";
@@ -19,6 +19,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { csrfFetch } from "@/lib/csrf";
 import { isOnline, enqueueMutation } from "@/lib/offline-store";
 
 function formatDuration(seconds: number): string {
@@ -86,22 +87,26 @@ export default function MobileTimePage() {
     const durationHours = durationSecs / 3600;
     const now = new Date();
     try {
-      // Try dedicated timetracking API first
-      const ttRes = await fetch("/api/timetracking", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          matter_slug: matter || undefined,
-          description: description || "Zeiteintrag",
-          duration_hours: durationHours,
-          date: now.toISOString().split("T")[0],
-          started_at: startTime?.toISOString() ?? now.toISOString(),
-        }),
-        signal: AbortSignal.timeout(15_000),
-      });
+      // Primary: dedicated time API (POST /api/time). Requires a selected matter —
+      // case_slug is mandatory server-side. csrfFetch attaches the CSRF header.
+      let savedViaApi = false;
+      if (matter) {
+        const ttRes = await csrfFetch("/api/time", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            case_slug: matter,
+            description: description || "Zeiteintrag",
+            minutes: Math.max(1, Math.round(durationSecs / 60)),
+            date: now.toISOString().split("T")[0],
+          }),
+          signal: AbortSignal.timeout(15_000),
+        });
+        savedViaApi = ttRes.ok;
+      }
 
       // Fallback: save as brain page
-      if (!ttRes.ok) {
+      if (!savedViaApi) {
         await api.brain.createPage({
           slug: `time-${Date.now()}`,
           title: `Zeit ${now.toLocaleDateString("de-AT")} — ${description || "Zeiteintrag"}`,

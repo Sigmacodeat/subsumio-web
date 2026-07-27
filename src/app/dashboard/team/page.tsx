@@ -92,7 +92,11 @@ export default function TeamPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 p-6 text-sm text-[color:var(--ds-text-muted)]">
+      <div
+        className="flex items-center gap-2 p-6 text-sm text-[color:var(--ds-text-muted)]"
+        role="status"
+        aria-live="polite"
+      >
         <Loader2 size={14} className="animate-spin" aria-hidden /> {t("team.loading")}
       </div>
     );

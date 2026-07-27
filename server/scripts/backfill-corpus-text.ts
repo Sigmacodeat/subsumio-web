@@ -13,11 +13,30 @@
  *   bun scripts/backfill-corpus-text.ts --dir law-corpus/eu/regulations --concurrency 20
  */
 
-import { readFileSync, writeFileSync, readdirSync, existsSync, renameSync } from "fs";
+import { readFileSync, writeFileSync, readdirSync, existsSync, renameSync, unlinkSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
-import { hasProxies, proxyFetchOptions, getUserAgent, recommendedConcurrency, PROXY_DELAY_MS, logProxyConfig, reportProxyFailure } from "./ris-proxy";
+import {
+  hasProxies,
+  proxyFetchOptions,
+  getUserAgent,
+  recommendedConcurrency,
+  PROXY_DELAY_MS,
+  logProxyConfig,
+  reportProxyFailure,
+} from "./ris-proxy";
+import {
+  stripHtmlComplete,
+  risXmlToText,
+  decodeEntities,
+  contentMatchesDocument as contentMatchesDocumentUtil,
+  validateFetchedText,
+  validateLegalStructure,
+  countSections,
+  contentHash,
+  atomicWrite as atomicWriteUtil,
+} from "./backfill-utils";
 
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 1000;
@@ -30,12 +49,15 @@ const limitIdx = args.indexOf("--limit");
 const offHoursOnly = args.includes("--off-hours-only");
 const noLock = args.includes("--no-lock");
 const noScan = args.includes("--no-scan");
+const fileListIdx = args.indexOf("--file-list");
+const forceReFetch = args.includes("--force-refetch");
 
 const TARGET_DIR = dirIdx >= 0 ? args[dirIdx + 1] : "law-corpus/at-judikatur-vfgh";
 // RIS OGD requires single connection — default concurrency is 1.
 // For non-RIS sources (EU), higher concurrency is safe.
 const isRIS = TARGET_DIR.includes("judikatur");
-const CONCURRENCY = concIdx >= 0 ? parseInt(args[concIdx + 1], 10) : isRIS ? recommendedConcurrency() : 5;
+const CONCURRENCY =
+  concIdx >= 0 ? parseInt(args[concIdx + 1], 10) : isRIS ? recommendedConcurrency() : 5;
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : 0;
 const RATE_LIMIT_MS = isRIS ? (hasProxies() ? PROXY_DELAY_MS : 1500) : 500; // RIS: 1.5s (or proxy delay), EU: 500ms
 
@@ -51,7 +73,8 @@ function isRisOffHours(): boolean {
 }
 
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
-const ABS_DIR = join(_scriptDir, "..", "..", TARGET_DIR);
+const _corpusRoot = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
+const ABS_DIR = join(_corpusRoot, TARGET_DIR.replace(/^law-corpus\//, ""));
 
 async function fetchWithRetry(
   url: string,
@@ -84,64 +107,11 @@ async function fetchWithRetry(
   return null;
 }
 
+// stripHtml, decodeEntities, risXmlToText now imported from backfill-utils
+// stripHtmlComplete replaces the old stripHtml with a more thorough version
+// that removes RIS chrome, pagination headers, metadata blocks, and all entities.
 function stripHtml(html: string): string {
-  return html
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n\n")
-    .replace(/<\/div>/gi, "\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&auml;/g, "ä")
-    .replace(/&ouml;/g, "ö")
-    .replace(/&uuml;/g, "ü")
-    .replace(/&szlig;/g, "ß")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
-/** Decode numeric (&#252; / &#xFC;) and the common named HTML entities. */
-function decodeEntities(s: string): string {
-  return s
-    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(parseInt(n, 10)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'");
-}
-
-/**
- * RIS OGD XML (risdok) → plain text. The XML is the cleanest representation
- * RIS offers: real content lives in <nutzdaten> as <ueberschrift> (section
- * titles: Gericht, Geschäftszahl, Leitsatz, Rechtssatz, ...) and <absatz>
- * paragraphs. <kzinhalt>/<fzinhalt> are print page header/footer chrome
- * ("www.ris.bka.gv.at Seite 1 von 6") and are dropped. The HTML variant of
- * the same document ships the full ris.bka.gv.at site navigation — useless
- * for embeddings — which is why XML is the primary format.
- */
-function risXmlToText(xml: string): string {
-  const nutz = xml.match(/<nutzdaten>([\s\S]*?)<\/nutzdaten>/);
-  if (!nutz) return "";
-  let t = nutz[1];
-  t = t.replace(/<kzinhalt[^>]*>[\s\S]*?<\/kzinhalt>/g, "");
-  t = t.replace(/<fzinhalt[^>]*>[\s\S]*?<\/fzinhalt>/g, "");
-  t = t.replace(/<ueberschrift[^>]*>([\s\S]*?)<\/ueberschrift>/g, "\n## $1\n");
-  t = t.replace(/<absatz[^>]*>/g, "\n").replace(/<\/absatz>/g, "\n");
-  t = t.replace(/<[^>]+>/g, "");
-  t = decodeEntities(t);
-  return t
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return stripHtmlComplete(html);
 }
 
 function parseFrontmatter(content: string): { fm: string; body: string; fmEnd: number } {
@@ -200,37 +170,18 @@ function extractEcli(fm: string): string {
  * files.
  */
 function contentMatchesDocument(text: string, fm: string): boolean {
-  const caseNum = extractCaseNumber(fm);
-  const ecli = extractEcli(fm);
-  const celex = extractCelex(fm);
-  const normalize = (s: string) => s.replace(/\s+/g, "").toLowerCase();
-  const normText = normalize(text);
-  if (caseNum && normText.includes(normalize(caseNum))) return true;
-  if (ecli && normText.includes(normalize(ecli))) return true;
-  // EU CELEX check: CELEX numbers are unique identifiers for EU legislation.
-  // They appear in fetched content either as the raw number or embedded in
-  // URLs (e.g. CELEX:32024R0199). We check both the raw form and a partial
-  // match on the numeric core (year+type+number, e.g. 32024R0199).
-  if (celex) {
-    const normCelex = normalize(celex);
-    if (normText.includes(normCelex)) return true;
-    // Also check without the leading country code digit (3 = EU legislation)
-    // since EUR-Lex pages sometimes reference CELEX without the leading digit
-    const celexCore = normCelex.replace(/^3/, "");
-    if (celexCore.length > 4 && normText.includes(celexCore)) return true;
-  }
-  // No case number, no ECLI, and no CELEX in frontmatter to check against —
-  // can't validate either way, so don't block on it (rare; mostly non-judikatur
-  // and non-EU sources that never call this function anyway).
-  if (!caseNum && !ecli && !celex) return true;
-  return false;
+  return contentMatchesDocumentUtil(text, {
+    case_number: extractCaseNumber(fm),
+    ecli: extractEcli(fm),
+    celex: extractCelex(fm),
+  });
 }
 
 async function backfillFile(filepath: string): Promise<"ok" | "skip" | "fail"> {
   const content = readFileSync(filepath, "utf-8");
   const { fm, body } = parseFrontmatter(content);
 
-  if (!isPlaceholder(body)) return "skip";
+  if (!isPlaceholder(body) && !forceReFetch) return "skip";
 
   // Skip files marked as not_digitalized — these are pre-digital-era EU
   // documents that only exist in printed OJ. No online source has them.
@@ -337,7 +288,34 @@ async function backfillFile(filepath: string): Promise<"ok" | "skip" | "fail"> {
       }
     }
 
-    if (text.length < 50) return "fail";
+    if (text.length < 50) {
+      // All Cellar strategies failed. Try EUR-Lex legal-content as last resort.
+      const celex = extractCelex(fm);
+      if (celex) {
+        const eurlexUrl = `https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX:${celex}`;
+        const eurlexRes = await fetchWithRetry(eurlexUrl, {
+          "Accept-Language": "de",
+        });
+        if (eurlexRes && eurlexRes.ok && eurlexRes.status === 200) {
+          const html = await eurlexRes.text();
+          if (html.length > 100) {
+            text = stripHtml(html);
+          }
+        }
+      }
+    }
+
+    if (text.length < 50) {
+      // All strategies failed — mark as not_digitalized so future runs skip it
+      const updatedFm = fm.includes("not_digitalized:")
+        ? fm.replace(/not_digitalized:\s*\S*/, "not_digitalized: true")
+        : `${fm}\nnot_digitalized: true`;
+      const newContent = `---\n${updatedFm}\n---\n${body}`;
+      try {
+        atomicWriteUtil(filepath, newContent);
+      } catch {}
+      return "skip";
+    }
 
     // EU identity check: For PDF-extracted text, the CELEX number may not
     // appear in the body text (it's in the OJ header which PDF extraction
@@ -370,7 +348,6 @@ async function backfillFile(filepath: string): Promise<"ok" | "skip" | "fail"> {
     const abfrage = abfrageMatch?.[1] || directPathMatch?.[1] || "";
     const dokNr = dokNrMatch?.[1] || directPathMatch?.[2] || "";
     if (abfrage && dokNr) {
-
       // Primary: deterministic XML document URL — structured nutzdaten, no
       // site chrome, no search round-trip.
       const xmlUrl = `https://www.ris.bka.gv.at/Dokumente/${abfrage}/${dokNr}/${dokNr}.xml`;
@@ -460,6 +437,33 @@ async function backfillFile(filepath: string): Promise<"ok" | "skip" | "fail"> {
 
   if (text.length < 50) return "fail";
 
+  // Final validation gate: reject text with encoding artifacts, HTML residue, or RIS chrome
+  const validation = validateFetchedText(text);
+  if (!validation.valid) {
+    console.error(`  ⚠️ validation failed for ${filepath}: ${validation.reason}`);
+    return "fail";
+  }
+  text = validation.cleanedText;
+
+  // Re-check identity after cleaning (stripHtmlComplete may have removed chrome
+  // that contained the case number — but the case number should be in the body)
+  if (!contentMatchesDocument(text, fm)) {
+    console.error(`  ⚠️ identity check failed for ${filepath} after validation`);
+    return "fail";
+  }
+
+  // Structure validation: ensure the fetched text has the expected legal structure
+  // (§-headings for laws, section headings for decisions)
+  const docType = fm.match(/^type:\s*(\S+)/m)?.[1] ?? "";
+  const structResult = validateLegalStructure(text, docType);
+  if (!structResult.valid) {
+    console.error(`  ⚠️ structure validation failed for ${filepath}: ${structResult.reason}`);
+    return "fail";
+  }
+
+  // Compute content hash for post-backfill verification
+  const hash = contentHash(text);
+
   // Rebuild file: keep frontmatter, replace body
   const titleMatch = body.match(/^#\s+(.+)$/m);
   const title = titleMatch ? titleMatch[1] : "";
@@ -467,14 +471,22 @@ async function backfillFile(filepath: string): Promise<"ok" | "skip" | "fail"> {
   const sourceSuffix = sourceLine ? sourceLine[0] : "";
 
   const newBody = `# ${title}\n\n${text}\n\n${sourceSuffix}`;
-  const newContent = `---\n${fm}\n---\n\n${newBody}\n`;
+  // Inject content_hash into frontmatter for provenance tracking
+  const fmWithHash = fm.includes("content_hash:")
+    ? fm.replace(/content_hash:\s*"\?[^"]*\"?/, `content_hash: "${hash}"`)
+    : `${fm}\ncontent_hash: "${hash}"`;
+  const newContent = `---\n${fmWithHash}\n---\n\n${newBody}\n`;
 
-  // Atomic write: write to temp file then rename. Prevents corrupt
-  // half-written files if the process is killed mid-write (OOM, kill -9,
-  // power loss). rename() is atomic on POSIX filesystems.
-  const tmpPath = filepath + ".tmp";
-  writeFileSync(tmpPath, newContent, "utf-8");
-  renameSync(tmpPath, filepath);
+  // Atomic write via shared utility
+  try {
+    atomicWriteUtil(filepath, newContent);
+  } catch (e: any) {
+    if (e?.message?.includes("too long")) {
+      console.error(`  ⚠️ filename too long, skipping: ${filepath.slice(-80)}...`);
+      return "skip";
+    }
+    throw e;
+  }
   return "ok";
 }
 
@@ -511,17 +523,29 @@ async function main() {
     console.log("✅ RIS no-lock mode — caller manages rate limiting across processes.");
   }
 
-  const allFiles = readdirSync(ABS_DIR)
-    .filter((f) => f.endsWith(".md"))
-    .map((f) => join(ABS_DIR, f));
+  let allFiles: string[];
+  if (fileListIdx >= 0) {
+    // Use pre-filtered file list (e.g. from grep -rl)
+    const listPath = args[fileListIdx + 1];
+    allFiles = readFileSync(listPath, "utf-8")
+      .trim()
+      .split("\n")
+      .filter((l) => l.trim().length > 0);
+    console.log(`  Using file list: ${listPath} (${allFiles.length} files)`);
+  } else {
+    allFiles = readdirSync(ABS_DIR)
+      .filter((f) => f.endsWith(".md"))
+      .map((f) => join(ABS_DIR, f));
+  }
 
   // Quick-filter to only files that need backfill (skip if --no-scan for speed)
-  const needBackfill = noScan
-    ? allFiles
-    : allFiles.filter((f) => {
-        const content = readFileSync(f, "utf-8");
-        return isPlaceholder(content);
-      });
+  const needBackfill =
+    noScan || forceReFetch
+      ? allFiles
+      : allFiles.filter((f) => {
+          const content = readFileSync(f, "utf-8");
+          return isPlaceholder(content);
+        });
 
   console.log(`\n═══════════════════════════════════════════════════════════`);
   console.log(`  Backfill Text — ${TARGET_DIR}`);
@@ -584,10 +608,12 @@ async function main() {
   console.log(`═══════════════════════════════════════════════════════════`);
 }
 
-main().then(() => {
-  if (isRIS && !hasProxies() && !noLock) releaseRisLock();
-}).catch((err) => {
-  console.error("Fatal:", err);
-  if (isRIS && !hasProxies() && !noLock) releaseRisLock();
-  process.exit(1);
-});
+main()
+  .then(() => {
+    if (isRIS && !hasProxies() && !noLock) releaseRisLock();
+  })
+  .catch((err) => {
+    console.error("Fatal:", err);
+    if (isRIS && !hasProxies() && !noLock) releaseRisLock();
+    process.exit(1);
+  });

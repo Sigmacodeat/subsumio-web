@@ -47,24 +47,28 @@ services:
     # clamd stays on the private compose network; no host port is published.
 
   db:
-    image: pgvector/pgvector:pg16
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    image: subsumio-engine-db:latest
     restart: unless-stopped
-    shm_size: 4gb
+    shm_size: 1gb
     command: >
       postgres
-      -c shared_buffers=2GB
-      -c effective_cache_size=6GB
-      -c work_mem=32MB
-      -c maintenance_work_mem=2GB
+      -c shared_buffers=512MB
+      -c effective_cache_size=2GB
+      -c work_mem=16MB
+      -c maintenance_work_mem=512MB
       -c effective_io_concurrency=200
       -c wal_buffers=16MB
       -c checkpoint_completion_target=0.9
       -c random_page_cost=1.1
-      -c max_parallel_workers=4
-      -c max_parallel_workers_per_gather=2
-      -c max_parallel_maintenance_workers=4
+      -c max_parallel_workers=2
+      -c max_parallel_workers_per_gather=1
+      -c max_parallel_maintenance_workers=2
       -c autovacuum=on
       -c autovacuum_naptime=30s
+      -c shared_preload_libraries=pg_search
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-subsumio}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
@@ -100,6 +104,8 @@ services:
       LAW_CORPUS_ROOT: /law-corpus
     volumes:
       - engine-data:/data # uploaded files / vault on durable volume
+      # Law corpus — bind mount to host directory where fetch scripts placed files
+      - /opt/subsumio/law-corpus:/law-corpus:ro
       # Read-only ADVOKAT export/document mirror. Point the host side at an
       # SMB/CIFS mount or scheduled ADVOKAT export directory.
       - ${ADVOKAT_IMPORT_HOST_PATH:-./imports/advokat}:/imports/advokat:ro

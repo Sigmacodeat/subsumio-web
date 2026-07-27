@@ -1953,6 +1953,8 @@ export interface HybridSearchOpts extends SearchOpts {
   keywordWeight?: number;
   /** Override vector weight in RRF fusion (default: from intent classifier). Higher = vector results contribute more. */
   vectorWeight?: number;
+  /** Skip vector search entirely — keyword-only fallback path with post-fusion boosts + reranker still applied. */
+  skipVector?: boolean;
   /** Override dedup pipeline parameters. */
   dedupOpts?: {
     cosineThreshold?: number;
@@ -2150,16 +2152,21 @@ export async function applyLLMReranker(
 
   if (head.length <= 1) return results;
 
-  const SNIPPET_LEN = 300;
+  const SNIPPET_LEN = 500;
   const snippets = head.map((r, i) => {
     const text = (r.chunk_text || r.title || "").slice(0, SNIPPET_LEN).replace(/\n/g, " ");
-    return `[${i}] ${r.slug}\n${text}`;
+    const slugParts = r.slug.split("/");
+    const lawRef =
+      slugParts.length >= 2
+        ? `${slugParts[slugParts.length - 2].toUpperCase()} ${slugParts[slugParts.length - 1].replace(/^p-/, "§ ")}`
+        : r.slug;
+    return `[${i}] ${lawRef}\n${text}`;
   });
 
   const system =
-    "Du bist ein juristischer Re-Ranker. Ordne die folgenden Gesetzestext-Snippets nach Relevanz für die gestellte Frage. Antworte NUR mit einer kommagetrennten Liste von Indizes (0-basiert), relevanteste zuerst. Keine Erklärung.";
+    "Du bist ein juristischer Re-Ranker für österreichisches und deutsches Recht. Deine Aufgabe ist es, die Gesetzestext-Snippets nach ihrer direkten Relevanz für die gestellte Rechtsfrage zu ordnen.\n\nKriterien für die Relevanz:\n1. Beantwortet der Paragraph die Rechtsfrage DIREKT (nicht nur am Rande erwähnt)?\n2. Ist der Paragraph die SPEZIFISCHE Norm (enge Ausnahme > allgemeine Regel)?\n3. Enthält der Paragraph die zentralen Rechtsbegriffe der Frage?\n\nGib NUR eine kommagetrennte Liste von Indizes (0-basiert) aus, relevanteste zuerst. Keine Erklärung.";
 
-  const user = `Frage: ${query}\n\nSnippets:\n${snippets.join("\n\n")}\n\nAntworte mit einer kommagetrennten Liste von Indizes (0-basiert), relevanteste zuerst:`;
+  const user = `Rechtsfrage: ${query}\n\nGefundene Gesetzestexte:\n${snippets.join("\n\n")}\n\nOrdne die Indizes nach direkter Relevanz für die Rechtsfrage (0-basiert, kommagetrennt):`;
 
   let response: string;
   try {
@@ -2169,7 +2176,7 @@ export async function applyLLMReranker(
       const result = await gatewayChat({
         system,
         messages: [{ role: "user", content: user }],
-        maxTokens: 256,
+        maxTokens: 512,
         model,
         abortSignal: ctrl.signal,
       });
@@ -2190,6 +2197,13 @@ export async function applyLLMReranker(
 
   if (indices.length === 0) return results;
 
+  // Position-floor guard: prevent the reranker from pushing top raw-retrieval
+  // results too far down. If a result was in the top-3 of raw retrieval, its
+  // final position cannot be worse than position 4 (0-indexed), guaranteeing
+  // it stays in the top-5.
+  const POSITION_FLOOR_RANK = 2; // raw rank 0-2 gets floor protection
+  const POSITION_FLOOR_MAX = 4; // can't be pushed below index 4
+
   const seen = new Set<number>();
   const reorderedHead: SearchResult[] = [];
   for (const idx of indices) {
@@ -2202,6 +2216,17 @@ export async function applyLLMReranker(
   }
   for (let i = 0; i < head.length; i++) {
     if (!seen.has(i)) reorderedHead.push(head[i]!);
+  }
+
+  // Apply position floor: bubble protected items up if they were pushed too far.
+  for (let rawRank = POSITION_FLOOR_RANK; rawRank >= 0; rawRank--) {
+    const item = head[rawRank];
+    if (!item) continue;
+    const currentPos = reorderedHead.indexOf(item);
+    if (currentPos > POSITION_FLOOR_MAX) {
+      reorderedHead.splice(currentPos, 1);
+      reorderedHead.splice(POSITION_FLOOR_MAX, 0, item);
+    }
   }
 
   return [...reorderedHead, ...tail];
@@ -2271,7 +2296,13 @@ export async function hybridSearch(
 
   const limit = opts?.limit || resolvedMode.searchLimit;
   const offset = opts?.offset || 0;
-  const innerLimit = Math.min(opts?.innerLimit ?? limit * 2, MAX_SEARCH_LIMIT);
+  // v0.49 — Legal queries need a wider candidate pool for effective RRF fusion
+  // and LLM reranking. Default innerLimit is limit*2 (e.g. 16 for top-8), which
+  // is too narrow for 27K+ legal chunks. Auto-raise to 50 for legal queries
+  // when the caller hasn't explicitly set innerLimit.
+  const isLegalQuery = opts?.jurisdiction || isLikelyLegalQuery(query);
+  const defaultInnerLimit = isLegalQuery ? 50 : limit * 2;
+  const innerLimit = Math.min(opts?.innerLimit ?? defaultInnerLimit, MAX_SEARCH_LIMIT);
 
   // v0.32.x search-lite: classify intent once up front. Drives BOTH the
   // legacy auto-detail / salience / recency suggestions AND the new
@@ -2405,8 +2436,18 @@ export async function hybridSearch(
     opts?.crossModal && opts.crossModal !== "auto"
       ? opts.crossModal
       : (suggestions.suggestedModality ?? "text");
+  // v0.49 — BM25 keyword search via ParadeDB pg_search when available.
+  // Auto-enable for legal queries (jurisdiction set or query looks legal).
+  // Falls back to ts_rank searchKeyword if the engine doesn't expose BM25.
+  const useBM25 = opts?.useBM25 ?? (isLegalQuery && typeof engine.searchKeywordBM25 === "function");
+  const keywordSearchFn = (q: string, o?: SearchOpts): Promise<SearchResult[]> => {
+    if (useBM25 && typeof engine.searchKeywordBM25 === "function") {
+      return engine.searchKeywordBM25(q, o);
+    }
+    return engine.searchKeyword(q, o);
+  };
   let keywordResults: SearchResult[] =
-    earlyModality === "image" ? [] : await engine.searchKeyword(legalExpanded, searchOpts);
+    earlyModality === "image" ? [] : await keywordSearchFn(legalExpanded, searchOpts);
   if (
     earlyModality !== "image" &&
     (opts?.jurisdiction || isLikelyLegalQuery(query)) &&
@@ -2414,7 +2455,7 @@ export async function hybridSearch(
   ) {
     const relaxedQuery = buildRelaxedLegalKeywordQuery(legalExpanded);
     if (relaxedQuery) {
-      const relaxedResults = await engine.searchKeyword(relaxedQuery, searchOpts);
+      const relaxedResults = await keywordSearchFn(relaxedQuery, searchOpts);
       const merged = new Map<string, SearchResult>();
       for (const result of [...keywordResults, ...relaxedResults]) {
         const key = `${result.source_id ?? "default"}:${result.slug}:${result.chunk_index ?? 0}`;
@@ -2762,6 +2803,10 @@ export async function hybridSearch(
   if (unifiedDone) {
     // Unified routing already populated vectorLists + queryEmbedding;
     // skip the dual-column branching.
+  } else if (opts?.skipVector) {
+    // Keyword-only mode: skip vector search entirely, fall through to
+    // the keyword-only fallback path (line ~2826) which still applies
+    // post-fusion boosts, reranker, and alias-hop.
   } else if (effectiveModality === "image" && imageVectorList !== null) {
     // Image-only path: results come entirely from the image column.
     vectorLists = [imageVectorList];
@@ -2805,7 +2850,7 @@ export async function hybridSearch(
     }
   }
 
-  if (vectorLists.length === 0) {
+  if (vectorLists.length === 0 && !opts?.skipVector) {
     // Embed/vector failed silently; record that vector did not run.
     // v0.29.1 codex pass-2 #4: this is the third return path. Apply
     // post-fusion stages here too — without it, salience='on' silently

@@ -17,6 +17,7 @@
  */
 
 import type { BlockchainType } from "./rciid-client";
+import { validateAddress, type AddressValidationResult } from "./crypto-checksum";
 
 export interface FoundWallet {
   address: string;
@@ -26,6 +27,8 @@ export interface FoundWallet {
   context?: string;
   detected_by: "regex";
   confidence: number;
+  checksumValid?: boolean;
+  checksumError?: string;
 }
 
 // ── Regex Patterns ──────────────────────────────────────────────────────────
@@ -252,6 +255,34 @@ export function detectWallets(text: string): FoundWallet[] {
  */
 export function detectWalletAddresses(text: string): string[] {
   return detectWallets(text).map((w) => w.address);
+}
+
+/**
+ * Detect wallets and validate their checksums.
+ * Returns wallets with checksumValid field populated.
+ */
+export function detectAndValidateWallets(text: string): FoundWallet[] {
+  const wallets = detectWallets(text);
+  return wallets.map((w) => {
+    const validation = validateAddress(w.address, w.blockchain);
+    return {
+      ...w,
+      checksumValid: validation.valid,
+      checksumError: validation.error,
+      confidence: validation.valid ? w.confidence : Math.min(w.confidence, 0.3),
+    };
+  });
+}
+
+/**
+ * Validate a wallet address checksum.
+ * Returns the validation result including format and checksum status.
+ */
+export function validateWalletAddress(
+  address: string,
+  blockchain: BlockchainType
+): AddressValidationResult {
+  return validateAddress(address, blockchain);
 }
 
 /**

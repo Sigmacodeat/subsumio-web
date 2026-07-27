@@ -27,7 +27,8 @@ const limitIdx = args.indexOf("--limit");
 const LIMIT = limitIdx !== -1 ? parseInt(args[limitIdx + 1]) : 0;
 
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
-const CORPUS_DIR = join(_scriptDir, "..", "..", "law-corpus", "at");
+const _corpusRoot = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
+const CORPUS_DIR = join(_corpusRoot, "at");
 const RETRIEVED_AT = new Date().toISOString().slice(0, 10);
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -48,13 +49,18 @@ interface CorpusEntry {
 // ── Helpers ────────────────────────────────────────────────────────────
 
 function normalize(s: string): string {
-  return s.replace(/\u00A0/g, " ").replace(/\s+/g, " ").trim();
+  return s
+    .replace(/\u00A0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function slugify(s: string): string {
   return s
     .toLowerCase()
-    .replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u")
+    .replace(/ä/g, "a")
+    .replace(/ö/g, "o")
+    .replace(/ü/g, "u")
     .replace(/ß/g, "ss")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
@@ -137,7 +143,8 @@ function isInCorpus(law: RisLaw, corpus: Map<string, CorpusEntry>): boolean {
     // title-based keys are normalized like "abgb — allgemeines bürgerliches gesetzbuch"
     if (key.includes(normalizedTitle) || normalizedTitle.includes(key)) return true;
     // Also check by abbreviation
-    if (entry.abbr && normalizedTitle.includes(entry.abbr.toLowerCase().replace(/-at$/, ""))) return true;
+    if (entry.abbr && normalizedTitle.includes(entry.abbr.toLowerCase().replace(/-at$/, "")))
+      return true;
   }
 
   return false;
@@ -149,7 +156,7 @@ async function discoverAllLaws(): Promise<RisLaw[]> {
   const all: RisLaw[] = [];
   const seen = new Set<string>();
 
-  for (let pageNo = 1; pageNo <= 200; pageNo++) {
+  for (let pageNo = 1; pageNo <= 5000; pageNo++) {
     const url = `${RIS_API}?Applikation=BrKons&DokumenteProSeite=OneHundred&Seitennummer=${pageNo}`;
     process.stdout.write(`  RIS API page ${pageNo}...`);
 
@@ -180,8 +187,9 @@ async function discoverAllLaws(): Promise<RisLaw[]> {
         const bund = meta?.Bundesrecht as Record<string, unknown> | undefined;
         if (!bund) continue;
 
-        const gnr = (bund.BrKons as Record<string, unknown> | undefined)?.Gesetzesnummer
-          ?? bund.Gesetzesnummer as string | undefined;
+        const gnr =
+          (bund.BrKons as Record<string, unknown> | undefined)?.Gesetzesnummer ??
+          (bund.Gesetzesnummer as string | undefined);
         if (typeof gnr !== "string" || !/^\d+$/.test(gnr)) continue;
         if (seen.has(gnr)) continue;
         seen.add(gnr);
@@ -215,7 +223,9 @@ async function discoverAllLaws(): Promise<RisLaw[]> {
 
 // ── Fetch a single law via GeltendeFassung ─────────────────────────────
 
-async function fetchLawText(law: RisLaw): Promise<{ markdown: string; versionDate: string } | null> {
+async function fetchLawText(
+  law: RisLaw
+): Promise<{ markdown: string; versionDate: string } | null> {
   const nr = law.gesetzesnummer;
 
   // Try GeltendeFassung PDF first
@@ -271,7 +281,9 @@ async function fetchLawText(law: RisLaw): Promise<{ markdown: string; versionDat
   return await fetchLawViaOgd(law);
 }
 
-async function fetchLawViaOgd(law: RisLaw): Promise<{ markdown: string; versionDate: string } | null> {
+async function fetchLawViaOgd(
+  law: RisLaw
+): Promise<{ markdown: string; versionDate: string } | null> {
   const allText: string[] = [];
   const versionDate = RETRIEVED_AT;
 

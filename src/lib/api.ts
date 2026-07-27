@@ -18,6 +18,10 @@ import type {
   RecentQuery,
   SearchResult,
   TabularReviewResponse,
+  TabularReviewRetryResponse,
+  TabularReviewRun,
+  TabularReviewStartRequest,
+  TabularReviewStartResponse,
 } from "./types";
 import type { SourceRegistryResponse } from "./source-registry";
 import type { QueryMode } from "./matter-context-types";
@@ -670,6 +674,27 @@ export const api = {
       return request("/api/legal/tabular-review", {
         method: "POST",
         body: JSON.stringify(input),
+      });
+    },
+
+    /** Async tabular review: start a run and get back run_slug + estimate. */
+    tabularReviewStart(input: TabularReviewStartRequest): Promise<TabularReviewStartResponse> {
+      return request("/api/legal/tabular-review/start", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+
+    /** Async tabular review: poll the status/result of a run. */
+    tabularReviewRun(slug: string): Promise<TabularReviewRun> {
+      return request(`/api/legal/tabular-review/${encodeURIComponent(slug)}`);
+    },
+
+    /** Async tabular review: retry failed rows (default: all error rows). */
+    tabularReviewRetry(slug: string, slugs?: string[]): Promise<TabularReviewRetryResponse> {
+      return request(`/api/legal/tabular-review/${encodeURIComponent(slug)}/retry`, {
+        method: "POST",
+        body: JSON.stringify(slugs?.length ? { slugs } : {}),
       });
     },
 
@@ -3431,6 +3456,37 @@ export const api = {
       description?: string;
       priority?: "low" | "medium" | "high" | "urgent";
       webhookUrl?: string;
+      // Structured case context
+      caseContext?: {
+        summary: string;
+        timeline: Array<{ date: string; event: string }>;
+      };
+      targetAddresses?: Array<{
+        address: string;
+        label?: string;
+        amount_btc?: number;
+      }>;
+      victimDeposits?: Array<{
+        address: string;
+        amount_btc: number;
+        date: string;
+        txid?: string;
+      }>;
+      knownRecipients?: Array<{
+        address: string;
+        label: string;
+        source?: string;
+      }>;
+      exchangeLinks?: Array<{
+        address: string;
+        exchange: string;
+        account_hint?: string;
+      }>;
+      evidenceRefs?: Array<{
+        type: string;
+        description: string;
+        extracted_addresses?: string[];
+      }>;
     }): Promise<{
       ok: boolean;
       caseId: string;
@@ -3438,6 +3494,7 @@ export const api = {
       pricing?: { amount: number; currency: string; type: "flat" | "hourly" };
       estimatedCompletionDays?: number;
       webhookRegistered?: boolean;
+      invalidAddressCount?: number;
     }> {
       return request("/api/rciid/submit", {
         method: "POST",
@@ -3493,12 +3550,75 @@ export const api = {
         confidence: number;
         context?: string;
         isKnownFraud: boolean;
+        checksumValid?: boolean;
+        checksumError?: string;
       }>;
       count: number;
     }> {
       return request("/api/rciid/detect-wallets", {
         method: "POST",
         body: JSON.stringify(input),
+      });
+    },
+
+    validateAddress(input: { address: string; blockchain: string }): Promise<{
+      ok: boolean;
+      valid: boolean;
+      checksumValid: boolean;
+      format: string;
+      blockchain: string;
+      error?: string;
+    }> {
+      return request("/api/rciid/detect-wallets", {
+        method: "PUT",
+        body: JSON.stringify(input),
+      });
+    },
+
+    scanCase(caseSlug: string): Promise<{
+      ok: boolean;
+      wallets: Array<{
+        address: string;
+        blockchain: string;
+        confidence: number;
+        context?: string;
+        checksumValid?: boolean;
+        checksumError?: string;
+        documentSlug?: string;
+        documentTitle?: string;
+        isKnownFraud?: boolean;
+      }>;
+      documentsScanned: number;
+      totalAddressesFound: number;
+      validAddressesFound: number;
+      suggestions: Array<{
+        address: string;
+        blockchain: string;
+        documentSlug: string;
+        documentTitle: string;
+        context: string;
+        checksumValid: boolean;
+      }>;
+      shouldSuggestForensics: boolean;
+      summary: string;
+    }> {
+      return request("/api/rciid/scan-case", {
+        method: "POST",
+        body: JSON.stringify({ caseSlug }),
+      });
+    },
+
+    getFeedback(rciidCaseId: string): Promise<{
+      ok: boolean;
+      caseId: string;
+      score?: number;
+      missingData?: string[];
+      suggestions?: string[];
+      automatablePercentage?: number;
+    }> {
+      return request("/api/rciid/feedback", {
+        method: "POST",
+        body: JSON.stringify({ rciidCaseId }),
       });
     },
 
@@ -3510,6 +3630,12 @@ export const api = {
         progress_percent: number;
         current_phase: string;
         updated_at?: string;
+        data_quality?: {
+          score: number;
+          missing_data: string[];
+          suggestions: string[];
+          automatable_percentage: number;
+        };
       }>;
       total?: number;
     }> {

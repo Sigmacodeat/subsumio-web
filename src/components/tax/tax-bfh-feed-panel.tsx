@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,8 @@ import {
   BookMarked,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
 interface BfhFeedResult {
   decisions: Array<{
@@ -48,6 +50,7 @@ export function TaxBfhFeedPanel() {
   const [result, setResult] = useState<BfhFeedResult | null>(null);
   const [topic, setTopic] = useState("");
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
 
   async function loadFeed() {
     setLoading(true);
@@ -67,6 +70,23 @@ export function TaxBfhFeedPanel() {
   }
 
   const locale = lang === "en" ? "en-GB" : "de-DE";
+
+  useEffect(() => {
+    if (!result) return;
+    const groundingText = [
+      result.topic_summary,
+      ...result.decisions.map((d) =>
+        [
+          `${d.court} ${d.file_number} (${d.date})`,
+          d.summary,
+          ...d.key_holdings,
+          ...d.legal_basis,
+        ].join(" — ")
+      ),
+    ].join("\n\n");
+    groundAnswer(groundingText).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   return (
     <Card className="p-5">
@@ -224,6 +244,17 @@ export function TaxBfhFeedPanel() {
               ))}
             </div>
           )}
+
+          <CitationPanel
+            data={
+              {
+                grounding: grounding ?? null,
+                citations: [],
+                isStreaming: isGrounding,
+              } satisfies CitationPanelData
+            }
+            compact
+          />
         </div>
       )}
     </Card>

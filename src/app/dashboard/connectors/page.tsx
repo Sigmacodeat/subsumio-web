@@ -182,7 +182,7 @@ export default function ConnectorsPage() {
         title={t("connectors.title")}
         description={t("connectors.description")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("connectors.breadcrumb") },
         ]}
       />

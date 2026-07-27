@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
-  Play,
   Save,
   ArrowLeft,
   Plus,
@@ -331,6 +330,7 @@ export default function WorkflowBuilderPage() {
           <input
             value={meta.name}
             onChange={(e) => setMeta((m) => ({ ...m, name: e.target.value }))}
+            aria-label={t("builder.workflow_name")}
             style={{
               background: "none",
               border: "none",
@@ -340,11 +340,12 @@ export default function WorkflowBuilderPage() {
               outline: "none",
               minWidth: 200,
             }}
-            placeholder="Workflow-Name"
+            placeholder={t("workflows.builder.ph_name")}
           />
           <input
             value={meta.description}
             onChange={(e) => setMeta((m) => ({ ...m, description: e.target.value }))}
+            aria-label={t("builder.workflow_description")}
             style={{
               background: "none",
               border: "none",
@@ -353,16 +354,20 @@ export default function WorkflowBuilderPage() {
               outline: "none",
               flex: 1,
             }}
-            placeholder="Beschreibung (optional)"
+            placeholder={t("workflows.builder.ph_desc")}
           />
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <Button variant="outline" size="sm" onClick={save} disabled={saving} style={{ gap: 4 }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={save}
+            disabled={saving}
+            aria-label={t("builder.save")}
+            style={{ gap: 4 }}
+          >
             <Save size={14} />
             {saving ? "Speichern…" : saveStatus === "saved" ? "Gespeichert ✓" : "Speichern"}
-          </Button>
-          <Button size="sm" style={{ gap: 4, background: "var(--accent-premium)" }}>
-            <Play size={14} /> Test
           </Button>
         </div>
       </div>
@@ -422,6 +427,7 @@ export default function WorkflowBuilderPage() {
         </div>
 
         {/* Canvas */}
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Pointer-driven drag-and-drop canvas; clicking empty canvas only clears the selection (steps remain editable via the inspector). */}
         <div
           ref={canvasRef}
           style={{
@@ -487,6 +493,16 @@ export default function WorkflowBuilderPage() {
             return (
               <div
                 key={step.id}
+                role="button"
+                tabIndex={0}
+                className="focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelectedStep(step.id);
+                  }
+                }}
                 onMouseDown={(e) => onMouseDown(e, step.id)}
                 style={{
                   position: "absolute",
@@ -523,6 +539,7 @@ export default function WorkflowBuilderPage() {
                       e.stopPropagation();
                       deleteStep(step.id);
                     }}
+                    aria-label={t("builder.delete_step")}
                     style={{
                       background: "none",
                       border: "none",
@@ -530,7 +547,9 @@ export default function WorkflowBuilderPage() {
                       color: "var(--ds-danger-text)",
                       padding: 2,
                       display: "flex",
+                      borderRadius: 4,
                     }}
+                    className="focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
                   >
                     <Trash2 size={11} />
                   </button>
@@ -601,12 +620,15 @@ export default function WorkflowBuilderPage() {
               </div>
               <button
                 onClick={() => setSelectedStep(null)}
+                aria-label={t("builder.close_inspector")}
                 style={{
                   background: "none",
                   border: "none",
                   cursor: "pointer",
                   color: "var(--ds-text-subtle)",
+                  borderRadius: 4,
                 }}
+                className="focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
               >
                 <X size={14} />
               </button>
@@ -744,6 +766,8 @@ export default function WorkflowBuilderPage() {
 
             <button
               onClick={() => deleteStep(selected.id)}
+              aria-label={t("builder.delete_step")}
+              className="focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
               style={{
                 width: "100%",
                 padding: "8px",

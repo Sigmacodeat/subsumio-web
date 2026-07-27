@@ -127,7 +127,7 @@ export default function LiveDemo({
               rows={2}
               placeholder={t.placeholder}
               aria-label={t.placeholder}
-              className="flex-1 resize-none bg-transparent text-sm leading-relaxed [color:var(--mk-text)] placeholder:[color:var(--mk-text-subtle)] focus:outline-none"
+              className="flex-1 resize-none bg-transparent text-sm leading-relaxed [color:var(--mk-text)] placeholder:[color:var(--mk-text-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             />
             <button
               onClick={ask}

@@ -116,11 +116,12 @@ export default function CommentThread({
           onChange={(e) => setNewText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
           placeholder="Kommentar hinzufügen…"
-          className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-xs [color:var(--mk-text)] [background:var(--mk-bg)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+          className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-xs [color:var(--mk-text)] [background:var(--mk-bg)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         />
         <button
           onClick={submit}
           disabled={sending || !newText.trim()}
+          aria-label="Kommentar senden"
           className="brand-bg brand-bg flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Send size={12} />

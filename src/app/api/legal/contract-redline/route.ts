@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
-import { createHandler, apiStream, apiError, recordQuota } from "@/lib/api-handler";
+import {
+  createHandler,
+  apiStream,
+  apiError,
+  recordQuota,
+  recordCreditConsumption,
+} from "@/lib/api-handler";
 import { groundRedlineCitations } from "@/lib/citation-gate";
 import { createCitationGateStream } from "@/lib/citation-gate";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
@@ -25,6 +31,7 @@ export const POST = createHandler(
     action: "legal.redline",
     rateTier: "heavy",
     quota: "queries",
+    credits: "subsumption",
     body: contractRedlineSchema,
     audit: (_ctx, b) => ({
       action: "legal.redline" as const,
@@ -39,6 +46,7 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, _req) => {
     void recordQuota(ctx, "queries");
+    void recordCreditConsumption(ctx, "subsumption", body.case_slug);
 
     const payload = sanitizeObjectStrings({
       original_text: body.original_text,

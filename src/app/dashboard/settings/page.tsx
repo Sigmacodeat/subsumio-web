@@ -135,7 +135,7 @@ function MaskedInput({
         value={value || ""}
         placeholder={placeholder}
         onChange={(e) => onChange?.(e.target.value)}
-        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 pr-20 font-mono text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 pr-20 font-mono text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
       />
       <div className="absolute right-2 flex items-center gap-1">
         <button
@@ -164,16 +164,24 @@ function MaskedInput({
 function Field({
   label,
   desc,
+  id,
   children,
 }: {
   label: string;
   desc?: string;
+  id?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="grid grid-cols-1 items-start gap-4 border-b border-[color:var(--ds-border)] py-4 last:border-0 sm:grid-cols-3">
       <div>
-        <p className="text-sm font-medium text-[color:var(--ds-text)]">{label}</p>
+        {id ? (
+          <label htmlFor={id} className="text-sm font-medium text-[color:var(--ds-text)]">
+            {label}
+          </label>
+        ) : (
+          <p className="text-sm font-medium text-[color:var(--ds-text)]">{label}</p>
+        )}
         {desc && (
           <p className="mt-0.5 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">{desc}</p>
         )}
@@ -262,7 +270,7 @@ function SettingsPageInner() {
       iban: "",
       bic: "",
       zahlungszielTage: "14",
-      rechnungFooter: "Bitte überweisen Sie den Betrag unter Angabe der Rechnungsnummer.",
+      rechnungFooter: t("settings.invoice_footer_default"),
       tarifModell: "custom",
       datevKontenrahmen: "SKR03",
       datevBeraterNr: "",
@@ -782,60 +790,84 @@ function SettingsPageInner() {
                 </p>
               </div>
               <div className="divide-y divide-[color:var(--ds-border)] px-6">
-                <Field label={t("settings.kanzlei_name")} desc={t("settings.kanzlei_name_desc")}>
+                <Field
+                  id="settings-kanzlei-name"
+                  label={t("settings.kanzlei_name")}
+                  desc={t("settings.kanzlei_name_desc")}
+                >
                   <Input
+                    id="settings-kanzlei-name"
+                    error={kanzleiForm.formState.errors.kanzleiName?.message}
                     {...kanzleiForm.register("kanzleiName")}
-                    placeholder="Muster Rechtsanwälte Partnerschaft mbB"
+                    placeholder={t("settings.firm_name_placeholder")}
                   />
-                  {kanzleiForm.formState.errors.kanzleiName && (
-                    <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
-                      {kanzleiForm.formState.errors.kanzleiName.message}
-                    </p>
-                  )}
-                </Field>
-
-                <Field label={t("settings.anwalt_name")} desc={t("settings.anwalt_name_desc")}>
-                  <Input
-                    {...kanzleiForm.register("anwaltName")}
-                    placeholder="Dr. Max Mustermann, Rechtsanwalt"
-                  />
-                  {kanzleiForm.formState.errors.anwaltName && (
-                    <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]">
-                      {kanzleiForm.formState.errors.anwaltName.message}
-                    </p>
-                  )}
                 </Field>
 
                 <Field
+                  id="settings-anwalt-name"
+                  label={t("settings.anwalt_name")}
+                  desc={t("settings.anwalt_name_desc")}
+                >
+                  <Input
+                    id="settings-anwalt-name"
+                    error={kanzleiForm.formState.errors.anwaltName?.message}
+                    {...kanzleiForm.register("anwaltName")}
+                    placeholder={t("settings.signatory_placeholder")}
+                  />
+                </Field>
+
+                <Field
+                  id="settings-kanzlei-adresse"
                   label={t("settings.kanzlei_address")}
                   desc={t("settings.kanzlei_address_desc")}
                 >
                   <textarea
+                    id="settings-kanzlei-adresse"
                     {...kanzleiForm.register("kanzleiAdresse")}
-                    placeholder={"Musterstraße 1\n1010 Wien"}
+                    placeholder={t("settings.address_placeholder")}
                     rows={3}
-                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                   />
                 </Field>
 
                 <Field label={t("settings.contact")} desc={t("settings.contact_desc")}>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                     <Input
+                      id="settings-kanzlei-email"
+                      aria-label={t("settings.aria_email")}
                       {...kanzleiForm.register("kanzleiEmail")}
                       placeholder="kanzlei@example.com"
                     />
-                    <Input {...kanzleiForm.register("kanzleiTelefon")} placeholder="+43 ..." />
-                    <Input {...kanzleiForm.register("kammerNummer")} placeholder="RAK / Register" />
+                    <Input
+                      id="settings-kanzlei-telefon"
+                      aria-label={t("settings.aria_phone")}
+                      {...kanzleiForm.register("kanzleiTelefon")}
+                      placeholder="+43 ..."
+                    />
+                    <Input
+                      id="settings-kammer-nummer"
+                      aria-label={t("settings.aria_chamber")}
+                      {...kanzleiForm.register("kammerNummer")}
+                      placeholder={t("settings.ph_rak_register")}
+                    />
                   </div>
                 </Field>
 
-                <Field label={t("settings.ust_id")} desc={t("settings.ust_id_desc")}>
-                  <Input {...kanzleiForm.register("ustId")} placeholder="DEXXXXXXXXX" />
+                <Field
+                  id="settings-ust-id"
+                  label={t("settings.ust_id")}
+                  desc={t("settings.ust_id_desc")}
+                >
+                  <Input
+                    id="settings-ust-id"
+                    {...kanzleiForm.register("ustId")}
+                    placeholder="DEXXXXXXXXX"
+                  />
                 </Field>
 
                 <Field
-                  label="Kleinunternehmer (§ 19 UStG)"
-                  desc="Keine USt-Ausweisung auf Rechnungen — relevant für E-Rechnung"
+                  label={t("settings.small_business")}
+                  desc={t("settings.small_business_desc")}
                 >
                   <label className="flex items-center gap-2 text-sm">
                     <input
@@ -849,7 +881,10 @@ function SettingsPageInner() {
                   </label>
                 </Field>
 
-                <Field label="E-Rechnung Profil" desc="Standard-Profil für ZUGFeRD-Generierung">
+                <Field
+                  label={t("settings.einvoice_profile")}
+                  desc={t("settings.einvoice_profile_desc")}
+                >
                   <div className="flex gap-2">
                     {(["BASIC", "COMFORT", "EXTENDED"] as const).map((prof) => (
                       <button
@@ -940,7 +975,7 @@ function SettingsPageInner() {
                                 };
                                 kanzleiForm.setValue("rechtsgebietSaetze", updated);
                               }}
-                              className="w-24 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                              className="w-24 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                             />
                             <span className="text-xs text-[color:var(--ds-text-muted)]">
                               {t("settings.per_hour_short")}
@@ -970,15 +1005,35 @@ function SettingsPageInner() {
 
                 <Field label={t("settings.bank_details")} desc={t("settings.bank_details_desc")}>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                    <Input {...kanzleiForm.register("bankName")} placeholder="Bank" />
-                    <Input {...kanzleiForm.register("iban")} placeholder="IBAN" />
-                    <Input {...kanzleiForm.register("bic")} placeholder="BIC" />
+                    <Input
+                      id="settings-bank-name"
+                      aria-label={t("settings.aria_bank")}
+                      {...kanzleiForm.register("bankName")}
+                      placeholder={t("settings.bank_placeholder")}
+                    />
+                    <Input
+                      id="settings-iban"
+                      aria-label={t("settings.aria_iban")}
+                      {...kanzleiForm.register("iban")}
+                      placeholder="IBAN"
+                    />
+                    <Input
+                      id="settings-bic"
+                      aria-label={t("settings.aria_bic")}
+                      {...kanzleiForm.register("bic")}
+                      placeholder="BIC"
+                    />
                   </div>
                 </Field>
 
-                <Field label={t("settings.payment_terms")} desc={t("settings.payment_terms_desc")}>
+                <Field
+                  id="settings-zahlungsziel-tage"
+                  label={t("settings.payment_terms")}
+                  desc={t("settings.payment_terms_desc")}
+                >
                   <div className="flex items-center gap-2">
                     <Input
+                      id="settings-zahlungsziel-tage"
                       type="number"
                       {...kanzleiForm.register("zahlungszielTage")}
                       placeholder="14"
@@ -997,7 +1052,7 @@ function SettingsPageInner() {
                   <textarea
                     {...kanzleiForm.register("rechnungFooter")}
                     rows={3}
-                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                   />
                 </Field>
 
@@ -1027,24 +1082,41 @@ function SettingsPageInner() {
                 </Field>
 
                 <Field
+                  id="settings-datev-berater-nr"
                   label={t("settings.datev_consultant")}
                   desc={t("settings.datev_consultant_desc")}
                 >
-                  <Input {...kanzleiForm.register("datevBeraterNr")} placeholder="12345" />
+                  <Input
+                    id="settings-datev-berater-nr"
+                    {...kanzleiForm.register("datevBeraterNr")}
+                    placeholder="12345"
+                  />
                 </Field>
 
-                <Field label={t("settings.datev_client")} desc={t("settings.datev_client_desc")}>
-                  <Input {...kanzleiForm.register("datevMandantenNr")} placeholder="67890" />
+                <Field
+                  id="settings-datev-mandanten-nr"
+                  label={t("settings.datev_client")}
+                  desc={t("settings.datev_client_desc")}
+                >
+                  <Input
+                    id="settings-datev-mandanten-nr"
+                    {...kanzleiForm.register("datevMandantenNr")}
+                    placeholder="67890"
+                  />
                 </Field>
 
                 <Field label={t("settings.smtp_server")} desc={t("settings.smtp_server_desc")}>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
                     <Input
+                      id="settings-smtp-host"
+                      aria-label={t("settings.aria_smtp_host")}
                       {...kanzleiForm.register("smtpHost")}
                       placeholder="mail.example.com"
                       className="sm:col-span-2"
                     />
                     <Input
+                      id="settings-smtp-port"
+                      aria-label={t("settings.aria_smtp_port")}
                       {...kanzleiForm.register("smtpPort")}
                       placeholder="587"
                       className="w-24"
@@ -1060,20 +1132,41 @@ function SettingsPageInner() {
                   </div>
                 </Field>
 
-                <Field label={t("settings.smtp_user")} desc={t("settings.smtp_user_desc")}>
-                  <Input {...kanzleiForm.register("smtpUser")} placeholder="kanzlei@example.com" />
+                <Field
+                  id="settings-smtp-user"
+                  label={t("settings.smtp_user")}
+                  desc={t("settings.smtp_user_desc")}
+                >
+                  <Input
+                    id="settings-smtp-user"
+                    {...kanzleiForm.register("smtpUser")}
+                    placeholder="kanzlei@example.com"
+                  />
                 </Field>
 
-                <Field label={t("settings.smtp_password")} desc={t("settings.smtp_password_desc")}>
+                <Field
+                  id="settings-smtp-password"
+                  label={t("settings.smtp_password")}
+                  desc={t("settings.smtp_password_desc")}
+                >
                   <Input
+                    id="settings-smtp-password"
                     type="password"
                     {...kanzleiForm.register("smtpPassword")}
                     placeholder="••••••"
                   />
                 </Field>
 
-                <Field label={t("settings.email_from")} desc={t("settings.email_from_desc")}>
-                  <Input {...kanzleiForm.register("emailFrom")} placeholder="kanzlei@example.com" />
+                <Field
+                  id="settings-email-from"
+                  label={t("settings.email_from")}
+                  desc={t("settings.email_from_desc")}
+                >
+                  <Input
+                    id="settings-email-from"
+                    {...kanzleiForm.register("emailFrom")}
+                    placeholder="kanzlei@example.com"
+                  />
                 </Field>
               </div>
               <div className="border-t border-[color:var(--ds-border)] p-6">
@@ -1148,7 +1241,7 @@ function SettingsPageInner() {
                             );
                           }
                         }}
-                        className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+                        className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                       >
                         <option value="admin">{t("settings.role_admin")}</option>
                         <option value="lawyer">{t("settings.role_lawyer")}</option>

@@ -116,7 +116,11 @@ export function CopilotExplanationPanel({ query, answer, onClose }: CopilotExpla
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+      <div
+        className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3"
+        role="status"
+        aria-live="polite"
+      >
         <Loader2 size={14} className="animate-spin text-[color:var(--brand-primary)]" />
         <span className="text-xs text-[color:var(--ds-text-muted)]">
           {isEn ? "Analyzing reasoning..." : "Analysiere Begründung..."}

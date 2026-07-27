@@ -81,11 +81,14 @@ export default function CalendarPage() {
     mutationFn: api.outlook.calendar.create,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["calendar-outlook"] });
-      addToast({ type: "success", title: "Outlook-Termin erstellt" });
+      addToast({ type: "success", title: t("calendar.outlook_created") });
       setShowOutlookDialog(false);
     },
     onError: (e) => {
-      addToast({ type: "error", title: e instanceof Error ? e.message : "Fehler beim Erstellen" });
+      addToast({
+        type: "error",
+        title: e instanceof Error ? e.message : t("calendar.create_error"),
+      });
     },
   });
 
@@ -331,6 +334,7 @@ function OutlookEventDialog({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const { t } = useLang();
   const [subject, setSubject] = useState("");
   const [startDate, setStartDate] = useState("");
   const [startTime, setStartTime] = useState("09:00");
@@ -358,24 +362,24 @@ function OutlookEventDialog({
       onSubmit={handleSubmit}
     >
       <h2 className="text-sm font-semibold text-[color:var(--ds-info-text)]">
-        Outlook-Termin erstellen
+        {t("calendar.outlook_title")}
       </h2>
       <div className="space-y-1">
         <Label htmlFor="outlook-subject" className="text-xs text-[color:var(--ds-text-muted)]">
-          Betreff
+          {t("calendar.subject")}
         </Label>
         <Input
           id="outlook-subject"
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
-          placeholder="Termin mit Mandant Müller"
+          placeholder={t("calendar.subject_placeholder")}
           required
         />
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="space-y-1">
           <Label htmlFor="outlook-date" className="text-xs text-[color:var(--ds-text-muted)]">
-            Datum
+            {t("calendar.date")}
           </Label>
           <Input
             id="outlook-date"
@@ -387,7 +391,7 @@ function OutlookEventDialog({
         </div>
         <div className="space-y-1">
           <Label htmlFor="outlook-start" className="text-xs text-[color:var(--ds-text-muted)]">
-            Start
+            {t("calendar.start")}
           </Label>
           <Input
             id="outlook-start"
@@ -399,7 +403,7 @@ function OutlookEventDialog({
         </div>
         <div className="space-y-1">
           <Label htmlFor="outlook-end" className="text-xs text-[color:var(--ds-text-muted)]">
-            Ende
+            {t("calendar.end")}
           </Label>
           <Input
             id="outlook-end"
@@ -412,26 +416,26 @@ function OutlookEventDialog({
       </div>
       <div className="space-y-1">
         <Label htmlFor="outlook-location" className="text-xs text-[color:var(--ds-text-muted)]">
-          Ort (optional)
+          {t("calendar.location")} ({t("common.optional")})
         </Label>
         <Input
           id="outlook-location"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          placeholder="Kanzlei, Konferenzraum 1"
+          placeholder={t("calendar.location_placeholder")}
         />
       </div>
       <div className="space-y-1">
         <Label htmlFor="outlook-body" className="text-xs text-[color:var(--ds-text-muted)]">
-          Beschreibung (optional)
+          {t("calendar.desc_optional")}
         </Label>
         <textarea
           id="outlook-body"
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={3}
-          className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-info-border)] focus:outline-none"
-          placeholder="Agenda, Notizen…"
+          className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-info-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+          placeholder={t("calendar.description_placeholder")}
         />
       </div>
       <div className="flex items-center gap-2">
@@ -442,10 +446,10 @@ function OutlookEventDialog({
           className="gap-2 bg-[color:var(--ds-info-solid)] text-sm text-white hover:bg-[color:var(--ds-info-solid)]"
         >
           {isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-          Erstellen
+          {t("calendar.create")}
         </Button>
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-          Abbrechen
+          {t("calendar.cancel")}
         </Button>
       </div>
     </form>

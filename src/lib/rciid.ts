@@ -63,6 +63,58 @@ export interface RciidCaseSubmission {
   metadata?: Record<string, unknown>;
 }
 
+// ── Structured Case Context (Rich JSON Payload) ──────────────────────────────
+
+export interface RciidTimelineEntry {
+  date: string;
+  event: string;
+}
+
+export interface RciidCaseContext {
+  summary: string;
+  timeline: RciidTimelineEntry[];
+}
+
+export interface RciidTargetAddress {
+  address: string;
+  label?: string;
+  amount_btc?: number;
+}
+
+export interface RciidVictimDeposit {
+  address: string;
+  amount_btc: number;
+  date: string;
+  txid?: string;
+}
+
+export interface RciidKnownRecipient {
+  address: string;
+  label: string;
+  source?: string;
+}
+
+export interface RciidExchangeLink {
+  address: string;
+  exchange: string;
+  account_hint?: string;
+}
+
+export interface RciidEvidenceRef {
+  type: string;
+  description: string;
+  extracted_addresses?: string[];
+}
+
+export interface RciidCaseContextSubmission extends RciidCaseSubmission {
+  case_context?: RciidCaseContext;
+  target_addresses?: RciidTargetAddress[];
+  victim_deposits?: RciidVictimDeposit[];
+  known_recipients?: RciidKnownRecipient[];
+  exchange_links?: RciidExchangeLink[];
+  evidence_refs?: RciidEvidenceRef[];
+}
+
 export interface RciidPricing {
   amount: number;
   currency: string;
@@ -95,6 +147,18 @@ export interface RciidCaseStatusResponse {
   pricing?: RciidPricing;
   timeline?: RciidTimelineEvent[];
   updated_at?: string;
+  data_quality?: RciidQualityFeedback;
+}
+
+// ── Data Quality Score + Feedback ────────────────────────────────────────────
+
+export type RciidDataQualityScore = 1 | 2 | 3 | 4 | 5;
+
+export interface RciidQualityFeedback {
+  score: RciidDataQualityScore;
+  missing_data: string[];
+  suggestions: string[];
+  automatable_percentage: number;
 }
 
 export interface RciidReport {
@@ -116,7 +180,12 @@ export interface RciidReport {
 export interface RciidWebhookEvent {
   event_id: string;
   case_id: string;
-  event_type: "status_changed" | "phase_completed" | "report_ready" | "case_rejected";
+  event_type:
+    | "status_changed"
+    | "phase_completed"
+    | "report_ready"
+    | "case_rejected"
+    | "quality_feedback";
   status: RciidCaseStatus;
   progress_percent?: number;
   current_phase?: string;
@@ -253,6 +322,53 @@ export async function submitCase(input: RciidCaseSubmission): Promise<RciidCase>
   }
 
   log.info("Case submitted to RCIID", { caseId: data.case_id, status: data.status });
+  return data;
+}
+
+/**
+ * Submit a new crypto forensics case with structured case context to RCIID.
+ * Includes target_addresses, victim_deposits, known_recipients, exchange_links, evidence_refs.
+ */
+export async function submitCaseWithContext(input: RciidCaseContextSubmission): Promise<RciidCase> {
+  if (!isConfigured()) {
+    throw new RciidError("RCIID nicht konfiguriert: RCIID_API_KEY fehlt.", {
+      code: "RCIID_NOT_CONFIGURED",
+    });
+  }
+
+  log.info("Submitting case with context to RCIID", {
+    externalCaseId: input.external_case_id,
+    walletCount: input.wallets.length,
+    hasCaseContext: Boolean(input.case_context),
+    targetAddressCount: input.target_addresses?.length ?? 0,
+    victimDepositCount: input.victim_deposits?.length ?? 0,
+    knownRecipientCount: input.known_recipients?.length ?? 0,
+    exchangeLinkCount: input.exchange_links?.length ?? 0,
+    evidenceRefCount: input.evidence_refs?.length ?? 0,
+  });
+
+  const res = await withRetry(() =>
+    fetch(`${API_URL}/cases`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(input),
+      signal: externalFetchTimeout(30_000),
+    })
+  );
+
+  const data = (await res.json().catch(() => ({}))) as RciidCase & {
+    error?: string;
+    message?: string;
+  };
+
+  if (!res.ok) {
+    throw new RciidError(
+      data.message || data.error || `RCIID Case-Submission fehlgeschlagen: HTTP ${res.status}`,
+      { code: "RCIID_SUBMIT_FAILED", details: { status: res.status, response: data } }
+    );
+  }
+
+  log.info("Case with context submitted to RCIID", { caseId: data.case_id, status: data.status });
   return data;
 }
 

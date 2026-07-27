@@ -76,7 +76,7 @@ export default function RvgDialog() {
                   value={streitwert}
                   onChange={(e) => setStreitwert(e.target.value)}
                   placeholder="Streitwert in €"
-                  className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-bg)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--ds-success-border)] focus:outline-none"
+                  className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-bg)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--ds-success-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                   onKeyDown={(e) => e.key === "Enter" && compute()}
                 />
                 <Button

@@ -35,6 +35,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -103,6 +104,7 @@ const VERDICT_COLORS: Record<string, string> = {
 // ── Page ──────────────────────────────────────────────────────────────
 
 export default function FeedbackTriagePage() {
+  const { t } = useLang();
   const queryClient = useQueryClient();
   const [filterState, setFilterState] = useState<string>("candidate");
   const [selectedEntry, setSelectedEntry] = useState<TriageEntry | null>(null);
@@ -212,10 +214,10 @@ export default function FeedbackTriagePage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Feedback-Triage"
-        description="Nutzerfeedback → Kandidat → Jurist bestätigt Fehlerklasse, Korrektur & Root Cause"
+        title={t("admin.feedback.title")}
+        description={t("admin.feedback.desc")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: "Admin", href: "/dashboard/admin" },
           { label: "Feedback-Triage" },
         ]}
@@ -276,7 +278,7 @@ export default function FeedbackTriagePage() {
         <Filter className="text-muted-foreground h-4 w-4" />
         <Select value={filterState} onValueChange={setFilterState}>
           <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Filter nach Status" />
+            <SelectValue placeholder={t("admin.feedback.filter_status")} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Alle</SelectItem>
@@ -299,7 +301,7 @@ export default function FeedbackTriagePage() {
       {/* Queue */}
       <div className="space-y-3">
         {queueLoading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
             <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
           </div>
         ) : entries.length === 0 ? (
@@ -437,7 +439,7 @@ export default function FeedbackTriagePage() {
                       <label className="text-xs font-medium">Fehlerklasse</label>
                       <Select value={errorClass} onValueChange={setErrorClass}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Wählen..." />
+                          <SelectValue placeholder={t("admin.feedback.choose")} />
                         </SelectTrigger>
                         <SelectContent>
                           {Object.entries(labels.error_classes).map(([key, label]) => (
@@ -452,7 +454,7 @@ export default function FeedbackTriagePage() {
                       <label className="text-xs font-medium">Root Cause</label>
                       <Select value={rootCause} onValueChange={setRootCause}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Wählen..." />
+                          <SelectValue placeholder={t("admin.feedback.choose")} />
                         </SelectTrigger>
                         <SelectContent>
                           {Object.entries(labels.root_causes).map(([key, label]) => (
@@ -467,7 +469,7 @@ export default function FeedbackTriagePage() {
                       <label className="text-xs font-medium">Severity</label>
                       <Select value={severity} onValueChange={setSeverity}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Wählen..." />
+                          <SelectValue placeholder={t("admin.feedback.choose")} />
                         </SelectTrigger>
                         <SelectContent>
                           {Object.entries(labels.severities).map(([key, label]) => (
@@ -484,7 +486,7 @@ export default function FeedbackTriagePage() {
                     <Textarea
                       value={correction}
                       onChange={(e) => setCorrection(e.target.value)}
-                      placeholder="Was hätte die AI antworten sollen?"
+                      placeholder={t("admin.feedback.correct_placeholder")}
                       rows={3}
                     />
                   </div>
@@ -496,7 +498,7 @@ export default function FeedbackTriagePage() {
                 <Textarea
                   value={reviewNotes}
                   onChange={(e) => setReviewNotes(e.target.value)}
-                  placeholder="Optionale Notizen..."
+                  placeholder={t("admin.feedback.notes_placeholder")}
                   rows={2}
                 />
               </div>
@@ -505,7 +507,7 @@ export default function FeedbackTriagePage() {
                 <p className="text-sm text-red-600">
                   {decideMutation.error instanceof Error
                     ? decideMutation.error.message
-                    : "Fehler aufgetreten"}
+                    : t("admin.feedback.error_occurred")}
                 </p>
               )}
             </div>

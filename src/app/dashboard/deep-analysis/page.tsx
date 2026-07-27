@@ -20,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { csrfFetch } from "@/lib/csrf";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
 interface DeepAnalysisCitation {
   slug: string;
@@ -67,6 +69,11 @@ export default function DeepAnalysisPage() {
   const [slugs, setSlugs] = useState("");
   const [prompt, setPrompt] = useState("");
   const [expandedFindings, setExpandedFindings] = useState<Set<number>>(new Set());
+  const {
+    grounding: reportGrounding,
+    isGrounding: isGroundingReport,
+    groundAnswer: groundReport,
+  } = useGroundedAnswer();
 
   const run = async () => {
     const slugList = slugs
@@ -92,7 +99,14 @@ export default function DeepAnalysisPage() {
         throw new Error(err.error ?? `HTTP ${res.status}`);
       }
       const json = await res.json();
-      setReport(json.data ?? json);
+      const data = json.data ?? json;
+      setReport(data);
+      const groundingText = [
+        data.executive_summary,
+        ...data.findings.map((f: DeepAnalysisFinding) => f.description),
+        ...data.cross_document_patterns,
+      ].join("\n\n");
+      groundReport(groundingText).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unbekannter Fehler");
     } finally {
@@ -115,7 +129,7 @@ export default function DeepAnalysisPage() {
         title={t("deep_analysis.title")}
         description={t("deep_analysis.description")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("deep_analysis.title") },
         ]}
       />
@@ -131,7 +145,7 @@ export default function DeepAnalysisPage() {
               value={slugs}
               onChange={(e) => setSlugs(e.target.value)}
               placeholder="legal/contracts/vertrag-1, legal/contracts/vertrag-2, ..."
-              className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm focus:border-[color:var(--ds-border-strong)] focus:outline-none"
+              className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm focus:border-[color:var(--ds-border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               rows={3}
               disabled={loading}
             />
@@ -215,6 +229,20 @@ export default function DeepAnalysisPage() {
                 Anwaltliche Prüfung erforderlich
               </div>
             )}
+            <div className="mt-4">
+              <CitationPanel
+                data={
+                  {
+                    grounding: reportGrounding ?? null,
+                    citations: report.findings.flatMap((f) =>
+                      f.citations.map((c) => ({ slug: c.slug, title: c.title || c.slug }))
+                    ),
+                    isStreaming: isGroundingReport,
+                  } satisfies CitationPanelData
+                }
+                compact
+              />
+            </div>
           </Card>
 
           {/* Cross-Document Patterns */}

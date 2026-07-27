@@ -122,7 +122,10 @@ export default function TimeSuggestionsPage() {
       <PageHeader
         title={t("time_sugg.title")}
         description={t("time_sugg.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("time_sugg.title") }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("time_sugg.title") },
+        ]}
       />
 
       <div className="flex items-center justify-between rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -171,7 +174,7 @@ export default function TimeSuggestionsPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-20">
+        <div className="flex justify-center py-20" role="status" aria-live="polite">
           <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : suggestions.length === 0 ? (

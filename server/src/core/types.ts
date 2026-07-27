@@ -684,6 +684,25 @@ export interface ChunkInput {
   parent_symbol_path?: string[];
   doc_comment?: string;
   symbol_name_qualified?: string;
+  /**
+   * v0.43.0 (INDUSTRIENIVEAU legal corpus): legal metadata persisted to
+   * content_chunks and used to generate Poly-Vector label embeddings.
+   */
+  document_type?: "statute" | "decision" | "literature";
+  statute_abbr?: string;
+  paragraph_ref?: string;
+  absatz?: string;
+  ziffer?: string;
+  literal?: string;
+  chunk_role?: string;
+  court?: string;
+  case_number?: string;
+  ecli?: string;
+  decision_date?: string;
+  legal_area?: string;
+  canonical_label?: string;
+  /** Labels for Poly-Vector retrieval: each label gets its own embedding. */
+  labels?: { type: string; text: string; display: string; embedding?: Float32Array }[];
 }
 
 // Search
@@ -1290,6 +1309,14 @@ export interface SearchOpts {
   decisionDateFrom?: string;
   /** Filter court decisions: only include decisions on or before this date (YYYY-MM-DD). */
   decisionDateTo?: string;
+  /**
+   * v0.49 — Use ParadeDB pg_search BM25 scoring instead of PostgreSQL ts_rank
+   * for keyword search. BM25 provides IDF weighting, term saturation, and length
+   * normalization — critical for legal retrieval where rare legal terms should
+   * score higher than common words. Falls back to ts_rank if pg_search extension
+   * is not available.
+   */
+  useBM25?: boolean;
 }
 
 /**

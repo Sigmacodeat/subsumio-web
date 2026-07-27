@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Mic, MicOff, Loader2, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useVoiceInput } from "@/lib/use-voice-input";
@@ -52,6 +52,56 @@ export function VoiceToPromptButton({ onTranscript, className, lang }: VoiceToPr
     setShowModal(false);
   }, [voice]);
 
+  // A11y for the voice modal: autofocus on open, focus restoration on close.
+  // Self-contained — the global dashboard focus trap only covers
+  // layout-registered overlays.
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const sendButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!showModal) return;
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const frame = requestAnimationFrame(() => sendButtonRef.current?.focus());
+    return () => {
+      cancelAnimationFrame(frame);
+      previouslyFocused?.focus();
+    };
+  }, [showModal]);
+
+  // Keyboard handling for the voice modal: Escape closes, Tab cycles focus
+  // within the dialog.
+  useEffect(() => {
+    if (!showModal) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        handleClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [showModal, handleClose]);
+
   if (!voice.isSupported) return null;
 
   const fullText = (voice.transcript + " " + voice.interimTranscript).trim();
@@ -69,16 +119,25 @@ export function VoiceToPromptButton({ onTranscript, className, lang }: VoiceToPr
       </Button>
 
       {showModal && (
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Backdrop click-to-close; keyboard users close via Escape or the close button.
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={handleClose}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleClose();
+          }}
         >
           <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="voice-input-title"
             className="mx-4 w-full max-w-md rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-text)]">
+              <h3
+                id="voice-input-title"
+                className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-text)]"
+              >
                 <Mic size={16} />
                 {appLang === "en" ? "Voice Input" : "Spracheingabe"}
               </h3>
@@ -145,6 +204,7 @@ export function VoiceToPromptButton({ onTranscript, className, lang }: VoiceToPr
                 {appLang === "en" ? "Cancel" : "Abbrechen"}
               </Button>
               <Button
+                ref={sendButtonRef}
                 variant="primary"
                 size="sm"
                 className="brand-bg gap-1.5 text-white"

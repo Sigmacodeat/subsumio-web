@@ -105,10 +105,10 @@ export default function LitigationAnalyticsPage() {
       try {
         await api.legal.analytics.delete(slug);
         setOutcomes((prev) => prev.filter((o) => o.slug !== slug));
-        addToast({ type: "success", description: "Eintrag gelöscht" });
+        addToast({ type: "success", description: t("litigation.entry_deleted") });
       } catch (e) {
         setError(e instanceof Error ? e.message : "Delete failed");
-        addToast({ type: "error", description: "Löschen fehlgeschlagen" });
+        addToast({ type: "error", description: t("litigation.delete_failed") });
       }
       setDeleting(null);
     },
@@ -310,7 +310,7 @@ export default function LitigationAnalyticsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("analytics.search")}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
         </div>
         <select
@@ -365,7 +365,7 @@ export default function LitigationAnalyticsPage() {
 
       {/* Table */}
       {loading ? (
-        <div className="py-20 text-center">
+        <div className="py-20 text-center" role="status" aria-live="polite">
           <Loader2 size={24} className="mx-auto animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : filtered.length === 0 ? (
@@ -597,25 +597,25 @@ function CreateOutcomeModal({
         notes: form.notes || undefined,
       });
       onCreated();
-      addToast({ type: "success", description: "Eintrag erstellt" });
+      addToast({ type: "success", description: t("litigation.entry_created") });
     } catch {
-      addToast({ type: "error", description: "Erstellen fehlgeschlagen" });
+      addToast({ type: "error", description: t("litigation.create_failed") });
       setCreating(false);
     }
   };
 
   const inputClass =
-    "w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none";
+    "w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1";
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Backdrop click-to-close; keyboard users close via the dialog's close button.
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      onClick={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div
-        className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-base font-semibold text-[color:var(--ds-text)]">
             {t("analytics.new")}

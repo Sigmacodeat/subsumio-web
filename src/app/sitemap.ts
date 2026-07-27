@@ -12,6 +12,8 @@ const PAGES = [
   "/superbrain",
   "/features",
   "/pricing",
+  "/privat",
+  "/kanzlei",
   "/security",
   "/partners",
   "/download",

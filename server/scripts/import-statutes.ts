@@ -118,11 +118,15 @@ async function importPage(filePath: string): Promise<ImportResult> {
   const para = fm.paragraph || "";
 
   // Build a deterministic, URL-safe slug using forward slashes (not path.join!)
-  const slug =
-    fm.slug || `law/${jur}/${abbr.toLowerCase()}/${para.replace(/[^a-z0-9]/gi, "").toLowerCase()}`;
+  // Canonical pattern: legal/statutes/{jur}/{abbr}/p-{N} (matches existing DB pages)
+  const paraClean = para.replace(/[^a-z0-9]/gi, "").toLowerCase();
+  const slug = fm.slug || `legal/statutes/${jur}/${abbr.toLowerCase()}/p-${paraClean}`;
 
   const title = fm.title || `${abbr} ${para}`.trim();
-  const effectiveSource = SOURCE === "law-all" ? LEGAL_SOURCE_BY_JURISDICTION[jur as keyof typeof LEGAL_SOURCE_BY_JURISDICTION] ?? "" : SOURCE;
+  const effectiveSource =
+    SOURCE === "law-all"
+      ? (LEGAL_SOURCE_BY_JURISDICTION[jur as keyof typeof LEGAL_SOURCE_BY_JURISDICTION] ?? "")
+      : SOURCE;
   assertLegalSourceJurisdiction(jur, effectiveSource, slug);
 
   // Extract body (everything after frontmatter)
@@ -191,7 +195,9 @@ async function ensureSource(sourceId: string): Promise<void> {
   if (BRAIN) headers["x-subsumio-source"] = BRAIN;
 
   try {
-    const jurisdiction = Object.entries(LEGAL_SOURCE_BY_JURISDICTION).find(([, id]) => id === sourceId)?.[0];
+    const jurisdiction = Object.entries(LEGAL_SOURCE_BY_JURISDICTION).find(
+      ([, id]) => id === sourceId
+    )?.[0];
     const res = await fetch(`${ENGINE}/api/sources`, {
       method: "POST",
       headers,

@@ -217,6 +217,7 @@ export default function MobileDocumentPage() {
             <button
               onClick={share}
               disabled={sharing}
+              aria-label="Dokument teilen"
               style={{
                 background: "var(--ds-border)",
                 border: "none",

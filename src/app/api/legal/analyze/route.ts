@@ -34,6 +34,7 @@ export const POST = createHandler(
     action: "legal.document_review",
     rateTier: "heavy",
     quota: "queries",
+    credits: "document_analysis",
     body: analyzeSchema,
     maxDuration: 120,
     allowInternal: true,

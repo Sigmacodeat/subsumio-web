@@ -662,7 +662,10 @@ export default function CasesPage() {
       <PageHeader
         title={t("cases.title")}
         description={`${cases.length} ${t("cases.count")}`}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("cases.title") }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("cases.title") },
+        ]}
         actions={
           <Button variant="glow" className="gap-2" onClick={() => setQuickCreateOpen(true)}>
             <Plus size={16} />

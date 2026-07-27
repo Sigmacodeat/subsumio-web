@@ -110,7 +110,11 @@ export default function SecuritySettingsPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto flex max-w-2xl items-center justify-center p-6 py-20">
+      <div
+        className="mx-auto flex max-w-2xl items-center justify-center p-6 py-20"
+        role="status"
+        aria-live="polite"
+      >
         <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );
@@ -232,13 +236,13 @@ export default function SecuritySettingsPage() {
               </div>
               <input
                 type="password"
-                placeholder="Passwort"
+                placeholder={t("settings.security.ph_password")}
                 value={disablePassword}
                 onChange={(e) => setDisablePassword(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") disable2FA();
                 }}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:ring-2 focus:ring-red-500/30 focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:ring-2 focus:ring-red-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 autoFocus
               />
               <div className="flex justify-end gap-2">
@@ -309,7 +313,7 @@ export default function SecuritySettingsPage() {
                   onChange={(e) => setToken(e.target.value)}
                   placeholder="6-stelliger Code"
                   maxLength={6}
-                  className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-center text-sm tracking-widest text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-warning-border)] focus:outline-none"
+                  className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-center text-sm tracking-widest text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-warning-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 <Button
                   variant="primary"
@@ -349,7 +353,11 @@ export default function SecuritySettingsPage() {
         </div>
 
         {ipAllowlistLoading ? (
-          <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+          <div
+            className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]"
+            role="status"
+            aria-live="polite"
+          >
             <Loader2 size={12} className="animate-spin" />
             Loading...
           </div>

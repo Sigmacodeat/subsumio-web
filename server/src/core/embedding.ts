@@ -13,6 +13,7 @@ import {
   getEmbeddingDimensions as gatewayGetDims,
 } from "./ai/gateway.ts";
 import { lookupEmbeddingPrice } from "./embedding-pricing.ts";
+import { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from "./ai/defaults.ts";
 
 // v0.27.1: re-export multimodal embedding so callers can pull both text and
 // image embedding APIs from `src/core/embedding`. import-image-file consumes
@@ -111,7 +112,10 @@ export async function embedBatch(
 
 /** Currently-configured embedding model (short form without provider prefix). */
 export function getEmbeddingModelName(): string {
-  return gatewayGetModel().split(":").slice(1).join(":") || "text-embedding-3-large";
+  return (
+    gatewayGetModel().split(":").slice(1).join(":") ||
+    DEFAULT_EMBEDDING_MODEL.split(":").slice(1).join(":")
+  );
 }
 
 /** Currently-configured embedding dimensions. */
@@ -120,8 +124,11 @@ export function getEmbeddingDimensions(): number {
 }
 
 // Back-compat exports for tests that imported these from v0.13.
-export const EMBEDDING_MODEL = "text-embedding-3-large";
-export const EMBEDDING_DIMENSIONS = 1536;
+// v0.43: aligned with actual defaults from ai/defaults.ts instead of
+// hardcoding the stale 'text-embedding-3-large' / 1536 values that
+// no longer match the real gateway default (zeroentropyai:zembed-1 / 1280).
+export { DEFAULT_EMBEDDING_MODEL as EMBEDDING_MODEL } from "./ai/defaults.ts";
+export { DEFAULT_EMBEDDING_DIMENSIONS as EMBEDDING_DIMENSIONS } from "./ai/defaults.ts";
 
 /**
  * USD cost per 1k tokens for text-embedding-3-large. Retained for back-compat
@@ -175,7 +182,7 @@ export function currentEmbeddingSignature(): string {
   try {
     return `${gatewayGetModel()}:${gatewayGetDims()}`;
   } catch {
-    return `${EMBEDDING_MODEL}:${EMBEDDING_DIMENSIONS}`;
+    return `${DEFAULT_EMBEDDING_MODEL}:${DEFAULT_EMBEDDING_DIMENSIONS}`;
   }
 }
 

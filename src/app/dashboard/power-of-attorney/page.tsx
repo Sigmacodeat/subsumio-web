@@ -115,7 +115,10 @@ export default function PowerOfAttorneyPage() {
       <PageHeader
         title={t("poa.title")}
         description={t("poa.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("poa.title") }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("poa.title") },
+        ]}
         actions={
           <Button onClick={() => setShowCreate(!showCreate)} className="brand-bg gap-2 text-white">
             <Plus size={16} /> Vollmacht
@@ -211,7 +214,7 @@ export default function PowerOfAttorneyPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-20">
+        <div className="flex justify-center py-20" role="status" aria-live="polite">
           <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : poas.length === 0 ? (

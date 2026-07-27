@@ -76,7 +76,10 @@ export default function DocumentInterviewsPage() {
       <PageHeader
         title={t("interview.title")}
         description={t("interview.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Interviews" }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: "Interviews" },
+        ]}
         actions={
           <Button onClick={() => setShowCreate(!showCreate)}>
             <Plus className="mr-2 h-4 w-4" />
@@ -139,7 +142,7 @@ export default function DocumentInterviewsPage() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
           <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : interviews.length === 0 ? (

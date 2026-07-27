@@ -16,16 +16,9 @@
 
 import type { Pool } from "pg";
 import { createHash } from "node:crypto";
-import {
-  SnapshotStore,
-  hashParagraph,
-  type CorpusAmendment,
-} from "./snapshot-store.ts";
+import { SnapshotStore, hashParagraph, type CorpusAmendment } from "./snapshot-store.ts";
 import { DependencyGraphStore } from "./dependency-graph.ts";
-import {
-  type CorpusReceipt,
-  type Jurisdiction,
-} from "./corpus-receipt.ts";
+import { type CorpusReceipt, type Jurisdiction } from "./corpus-receipt.ts";
 import {
   fetchAtStatute,
   fetchDeStatute,
@@ -54,6 +47,8 @@ export interface NovellaReport {
   detected_at: string;
   /** Announcement date from the official source (BGBl-Datum) */
   announcement_date?: string;
+  /** Official source URL the statute was fetched from, if known */
+  source_url?: string;
   /** Error if the check failed */
   error?: string;
 }
@@ -141,6 +136,7 @@ export async function detectNovella(
       dependencies_marked: 0,
       detected_at: new Date().toISOString(),
       announcement_date: receipt.announcement_date,
+      source_url: receipt.source_url,
     };
   }
 
@@ -157,11 +153,7 @@ export async function detectNovella(
     const amendmentId = await getLatestAmendmentId(pool, slug, amendment.paragraph);
 
     if (amendmentId) {
-      const count = await depStore.markForReVerification(
-        slug,
-        amendmentId,
-        amendment.paragraph
-      );
+      const count = await depStore.markForReVerification(slug, amendmentId, amendment.paragraph);
       dependenciesMarked += count;
     }
 
@@ -185,6 +177,7 @@ export async function detectNovella(
     dependencies_marked: dependenciesMarked,
     detected_at: new Date().toISOString(),
     announcement_date: receipt.announcement_date,
+    source_url: receipt.source_url,
   };
 }
 
@@ -282,11 +275,11 @@ export async function getSnapshotParagraphPreview(
  * Extract a text preview for a paragraph from statute text.
  * Returns the first 200 characters of the paragraph section.
  */
-export function extractParagraphPreview(
-  fullText: string,
-  paragraph: string
-): string | null {
-  const sectionRegex = new RegExp(`^##\\s*§\\s*${paragraph.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gm");
+export function extractParagraphPreview(fullText: string, paragraph: string): string | null {
+  const sectionRegex = new RegExp(
+    `^##\\s*§\\s*${paragraph.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+    "gm"
+  );
   const match = sectionRegex.exec(fullText);
   if (!match) return null;
 

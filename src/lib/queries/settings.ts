@@ -79,8 +79,13 @@ export function useCreateApiKey() {
 export function useDeleteApiKey() {
   const qc = useQueryClient();
   return useMutation({
+    // Server expects the id in the request body (see src/app/api/api-keys/route.ts DELETE).
     mutationFn: (id: string) =>
-      csrfFetch(`/api/api-keys/${id}`, { method: "DELETE" }).then((r) => r.json()),
+      csrfFetch("/api/api-keys", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      }).then((r) => r.json()),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["settings", "api-keys"] }),
   });
 }
@@ -106,27 +111,8 @@ export function useTeam() {
   });
 }
 
-export function useInviteMember() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (input: { email: string; role?: string }) =>
-      csrfFetch("/api/team", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      }).then((r) => r.json()),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["team"] }),
-  });
-}
-
-export function useRemoveMember() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (userId: string) =>
-      csrfFetch(`/api/team/${userId}`, { method: "DELETE" }).then((r) => r.json()),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["team"] }),
-  });
-}
+// Member invite/removal lives in the org endpoints — see useInviteMemberOrg /
+// useRemoveMemberOrg below (POST /api/org/invite, DELETE /api/org/member).
 
 export function useUpdateTeamRole() {
   const qc = useQueryClient();

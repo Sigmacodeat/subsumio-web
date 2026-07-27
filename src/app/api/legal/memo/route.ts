@@ -18,6 +18,7 @@ export const POST = createEngineProxy({
   enginePath: "/api/legal/memo",
   body: memoSchema,
   quota: "queries",
+  credits: "agent",
   stream: true,
   citationGate: true,
   receiptProductType: "memo",

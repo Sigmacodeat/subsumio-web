@@ -13,6 +13,8 @@ export default function PeerBenchmarkPage() {
   const tr = (key: string) => t(key as DashboardKey);
   const [metrics, setMetrics] = useState<BenchmarkMetric[]>([]);
   const [min, setMin] = useState(5);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     firm_id: "",
     legal_area: "",
@@ -32,24 +34,36 @@ export default function PeerBenchmarkPage() {
     void load();
   }, []);
   async function submit() {
-    await csrfFetch("/api/peer-benchmark", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...form,
-        total_cases: Number(form.total_cases),
-        won_cases: Number(form.won_cases),
-        durations: form.durations.split(",").map(Number).filter(Number.isFinite),
-      }),
-    });
-    await load();
+    if (submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await csrfFetch("/api/peer-benchmark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          total_cases: Number(form.total_cases),
+          won_cases: Number(form.won_cases),
+          durations: form.durations.split(",").map(Number).filter(Number.isFinite),
+        }),
+      });
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fehler beim Senden");
+    } finally {
+      setSubmitting(false);
+    }
   }
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
         title={tr("workspace.benchmark.title")}
         description={`${tr("workspace.benchmark.description")} (k ≥ ${min})`}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Benchmark" }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: "Benchmark" },
+        ]}
       />
       <section className="space-y-3 rounded-xl border p-5">
         <h2 className="font-semibold">{tr("workspace.benchmark.contribute")}</h2>
@@ -73,7 +87,14 @@ export default function PeerBenchmarkPage() {
             </div>
           ))}
         </div>
-        <Button onClick={() => void submit()}>{tr("workspace.benchmark.submit")}</Button>
+        <Button onClick={() => void submit()} disabled={submitting} loading={submitting}>
+          {tr("workspace.benchmark.submit")}
+        </Button>
+        {error && (
+          <p className="text-sm text-[color:var(--ds-danger-text)]" role="alert">
+            {error}
+          </p>
+        )}
       </section>
       <section className="rounded-xl border p-5">
         <h2 className="mb-3 font-semibold">{tr("workspace.benchmark.groups")}</h2>

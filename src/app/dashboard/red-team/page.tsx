@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, Shield, AlertTriangle, FileText, Send } from "lucide-react";
+import { Loader2, Shield, AlertTriangle, FileText, Send, Scale } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import type { RedTeamResult, RedTeamAnnotation } from "@/lib/red-team-agent";
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -88,7 +90,10 @@ export default function RedTeamPage() {
       <PageHeader
         title={t("redteam.title")}
         description={t("redteam.description")}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Red-Team" }]}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: "Red-Team" },
+        ]}
       />
 
       <section className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
@@ -119,7 +124,7 @@ export default function RedTeamPage() {
               rows={3}
               value={form.case_context}
               onChange={(e) => setForm({ ...form, case_context: e.target.value })}
-              placeholder="Kurze Zusammenfassung des Falls..."
+              placeholder={t("redteam.ph_summary")}
             />
           </div>
           <div>
@@ -129,7 +134,7 @@ export default function RedTeamPage() {
               rows={6}
               value={form.draft_text}
               onChange={(e) => setForm({ ...form, draft_text: e.target.value })}
-              placeholder="Schriftsatz hier einfügen..."
+              placeholder={t("redteam.ph_pleading")}
             />
           </div>
           <Button onClick={submit} disabled={analyzing}>
@@ -147,7 +152,7 @@ export default function RedTeamPage() {
       </section>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
           <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       ) : results.length === 0 ? (
@@ -158,51 +163,79 @@ export default function RedTeamPage() {
       ) : (
         <div className="space-y-4">
           {results.map((result) => (
-            <div
-              key={result.id}
-              className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm font-medium">{result.case_slug}</span>
-                  <span className="ml-2 text-xs text-[color:var(--ds-text-muted)]">
-                    {new Date(result.created_at).toLocaleString("de-DE")}
-                  </span>
-                </div>
-                <Badge className={SEVERITY_COLORS[result.overall_risk] ?? ""}>
-                  Risiko: {result.overall_risk}
-                </Badge>
-              </div>
-              <p className="text-xs text-[color:var(--ds-text-muted)]">{result.summary}</p>
-              <div className="space-y-2">
-                {result.annotations.map((ann: RedTeamAnnotation, idx: number) => (
-                  <div
-                    key={idx}
-                    className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Badge className={SEVERITY_COLORS[ann.severity] ?? ""}>{ann.severity}</Badge>
-                      <span className="text-xs font-medium">
-                        {TYPE_LABELS[ann.type] ?? ann.type}
-                      </span>
-                      <span className="text-xs text-[color:var(--ds-text-muted)]">
-                        · {ann.section}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-sm">{ann.annotation}</p>
-                    {ann.suggestion && (
-                      <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                        <AlertTriangle className="mr-1 inline h-3 w-3" />
-                        {ann.suggestion}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <RedTeamResultCard key={result.id} result={result} />
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function RedTeamResultCard({ result }: { result: RedTeamResult }) {
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
+
+  useEffect(() => {
+    const groundingText = [
+      result.summary,
+      ...result.annotations.map((ann) =>
+        [ann.annotation, ann.suggestion, ann.grounded_in].filter(Boolean).join(" — ")
+      ),
+    ].join("\n\n");
+    groundAnswer(groundingText).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result.id]);
+
+  return (
+    <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <span className="text-sm font-medium">{result.case_slug}</span>
+          <span className="ml-2 text-xs text-[color:var(--ds-text-muted)]">
+            {new Date(result.created_at).toLocaleString("de-DE")}
+          </span>
+        </div>
+        <Badge className={SEVERITY_COLORS[result.overall_risk] ?? ""}>
+          Risiko: {result.overall_risk}
+        </Badge>
+      </div>
+      <p className="text-xs text-[color:var(--ds-text-muted)]">{result.summary}</p>
+      <div className="space-y-2">
+        {result.annotations.map((ann: RedTeamAnnotation, idx: number) => (
+          <div
+            key={idx}
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3"
+          >
+            <div className="flex items-center gap-2">
+              <Badge className={SEVERITY_COLORS[ann.severity] ?? ""}>{ann.severity}</Badge>
+              <span className="text-xs font-medium">{TYPE_LABELS[ann.type] ?? ann.type}</span>
+              <span className="text-xs text-[color:var(--ds-text-muted)]">· {ann.section}</span>
+            </div>
+            <p className="mt-1 text-sm">{ann.annotation}</p>
+            {ann.suggestion && (
+              <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                <AlertTriangle className="mr-1 inline h-3 w-3" />
+                {ann.suggestion}
+              </p>
+            )}
+            {ann.grounded_in && (
+              <p className="mt-1 flex items-start gap-1 text-xs text-[color:var(--ds-text-muted)]">
+                <Scale className="mt-0.5 h-3 w-3 shrink-0" />
+                {ann.grounded_in}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+      <CitationPanel
+        data={
+          {
+            grounding: grounding ?? null,
+            citations: [],
+            isStreaming: isGrounding,
+          } satisfies CitationPanelData
+        }
+        compact
+      />
     </div>
   );
 }

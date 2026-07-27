@@ -371,7 +371,7 @@ export default function PortalPage() {
         data-tone="dark"
         className="flex min-h-screen items-center justify-center [background:var(--mk-bg)]"
       >
-        <div className="space-y-3 text-center">
+        <div className="space-y-3 text-center" role="status" aria-live="polite">
           <Loader2 size={32} className="mx-auto animate-spin text-violet-400" />
           <p className="text-sm [color:var(--mk-text-muted)]">{t("portal.loading")}</p>
         </div>
@@ -736,7 +736,7 @@ export default function PortalPage() {
                     if (e.key === "Enter" && !sendingMessage) void sendMessage(caseData.slug);
                   }}
                   placeholder={t("portal.message_placeholder")}
-                  className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-violet-500/50 focus:outline-none"
+                  className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-violet-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 />
                 <button
                   onClick={() => void sendMessage(caseData.slug)}
@@ -774,7 +774,11 @@ export default function PortalPage() {
                 ))}
                 {chatLoading && (
                   <div className="flex justify-start">
-                    <div className="rounded-xl border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]">
+                    <div
+                      className="rounded-xl border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"
+                      role="status"
+                      aria-live="polite"
+                    >
                       <Loader2 size={14} className="animate-spin" />
                     </div>
                   </div>
@@ -795,7 +799,7 @@ export default function PortalPage() {
                   if (e.key === "Enter" && !chatLoading) void sendChatMessage();
                 }}
                 placeholder={t("portal.chat_placeholder")}
-                className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-violet-500/50 focus:outline-none"
+                className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-violet-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
               <button
                 onClick={() => void sendChatMessage()}

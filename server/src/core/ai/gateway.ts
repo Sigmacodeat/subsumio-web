@@ -449,13 +449,35 @@ export async function reconfigureGatewayWithEngine(engine: BrainEngine): Promise
   // may not have embedding_model set (it's stored in the brain_config
   // table), so without this the gateway falls back to the default
   // (zeroentropyai:zembed-1) which fails when only OPENAI_API_KEY is set.
-  const newEmbedding = await resolveModel(engine, {
-    configKey: "embedding_model",
-    tier: "utility",
-    fallback: cfg.embedding_model ?? DEFAULT_EMBEDDING_MODEL,
-  });
-  const newEmbeddingDimsRaw = await engine.getConfig("embedding_dimensions");
-  const newEmbeddingDims = newEmbeddingDimsRaw != null ? Number(newEmbeddingDimsRaw) : undefined;
+  //
+  // v0.43 Embedding-Lock: SUBSUMIO_EMBEDDING_MODEL / GBRAIN_EMBEDDING_MODEL
+  // env vars take ABSOLUTE precedence over DB config for the embedding model.
+  // This prevents silent model mixing: if the DB has a different model than
+  // the env var (e.g. from a manual `gbrain config set`), the env var wins.
+  // The embedding model is a schema-level commitment (vector column width);
+  // letting DB config override it mid-session creates a mixed index where
+  // cosine similarity is meaningless across model boundaries.
+  const envEmbeddingModel =
+    process.env.SUBSUMIO_EMBEDDING_MODEL ?? process.env.GBRAIN_EMBEDDING_MODEL;
+  const envEmbeddingDims =
+    process.env.SUBSUMIO_EMBEDDING_DIMENSIONS ?? process.env.GBRAIN_EMBEDDING_DIMENSIONS;
+
+  let newEmbedding: string;
+  let newEmbeddingDims: number | undefined;
+
+  if (envEmbeddingModel) {
+    // Env var is authoritative — skip DB resolution entirely.
+    newEmbedding = envEmbeddingModel;
+    newEmbeddingDims = envEmbeddingDims ? parseInt(envEmbeddingDims, 10) : undefined;
+  } else {
+    newEmbedding = await resolveModel(engine, {
+      configKey: "embedding_model",
+      tier: "utility",
+      fallback: cfg.embedding_model ?? DEFAULT_EMBEDDING_MODEL,
+    });
+    const newEmbeddingDimsRaw = await engine.getConfig("embedding_dimensions");
+    newEmbeddingDims = newEmbeddingDimsRaw != null ? Number(newEmbeddingDimsRaw) : undefined;
+  }
   const newExpansion = await resolveModel(engine, {
     configKey: "models.expansion",
     tier: "utility",

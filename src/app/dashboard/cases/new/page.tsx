@@ -904,7 +904,7 @@ export default function NewCasePage() {
                 <Input
                   value={newOpponentName}
                   onChange={(e) => setNewOpponentName(e.target.value)}
-                  placeholder="Name des weiteren Gegners"
+                  placeholder={t("cases.new.ph_opponent_name")}
                   className="text-sm"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -950,7 +950,7 @@ export default function NewCasePage() {
                 <Input
                   value={newOpponentGrund}
                   onChange={(e) => setNewOpponentGrund(e.target.value)}
-                  placeholder="Haftungsgrund (optional)"
+                  placeholder={t("cases.new.ph_liability")}
                   className="text-sm"
                 />
               </div>
@@ -1057,7 +1057,7 @@ export default function NewCasePage() {
                 {...register("facts")}
                 rows={6}
                 placeholder={t("cases.new.placeholder_facts")}
-                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] transition-colors duration-150 placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)]/20 focus:outline-none"
+                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] transition-colors duration-150 placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
               />
             </div>
 

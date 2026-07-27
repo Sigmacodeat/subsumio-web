@@ -31,23 +31,25 @@ import type { Lang } from "@/content/site";
 import type { BrainStats } from "@/lib/types";
 import { StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
 
-const WidgetBoard = dynamic(() =>
-  import("@/components/dashboard/widget-board").then((m) => m.WidgetBoard)
+const WidgetBoard = dynamic(
+  () => import("@/components/dashboard/widget-board").then((m) => m.WidgetBoard),
+  { loading: () => <PageSkeleton /> }
 );
-const TaxWidgetBoard = dynamic(() =>
-  import("@/components/dashboard/tax-widget-board").then((m) => m.TaxWidgetBoard)
+const TaxWidgetBoard = dynamic(
+  () => import("@/components/dashboard/tax-widget-board").then((m) => m.TaxWidgetBoard),
+  { loading: () => <PageSkeleton /> }
 );
 const MorningBriefing = dynamic(
   () => import("@/components/dashboard/morning-briefing").then((m) => m.MorningBriefing),
-  { ssr: false }
+  { ssr: false, loading: () => <PageSkeleton /> }
 );
 const TodayView = dynamic(
   () => import("@/components/dashboard/today-view").then((m) => m.TodayView),
-  { ssr: false }
+  { ssr: false, loading: () => <PageSkeleton /> }
 );
 const WeeklyReview = dynamic(
   () => import("@/components/dashboard/weekly-review").then((m) => m.WeeklyReview),
-  { ssr: false }
+  { ssr: false, loading: () => <PageSkeleton /> }
 );
 
 type Greeting = {
@@ -153,12 +155,13 @@ function CalmGreeting({ name }: { name: string | null }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t("cockpit.ask_placeholder")}
-          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-9 pl-9 text-[13px] text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
+          aria-label={t("cockpit.ask_placeholder")}
+          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-9 pl-9 text-[13px] text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
         />
         <button
           type="submit"
           className="absolute top-1/2 right-2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
-          aria-label="Send"
+          aria-label={t("aria.send")}
         >
           <ArrowRight size={14} />
         </button>
@@ -230,7 +233,7 @@ function ProactiveActionBanner() {
     const sigCount = cockpit.pendingSignatures.length;
     if (sigCount > 0) {
       items.push({
-        href: "/dashboard/docusign",
+        href: "/dashboard/signature",
         icon: PenSquare,
         label: t("cockpit.stat_signatures"),
         count: sigCount,
@@ -395,6 +398,26 @@ export default function DashboardPage() {
     localStorage.setItem("subsumio:dashboard-view", view);
   };
 
+  // APG tabs with automatic activation: Arrow keys / Home / End move focus
+  // and activate the tab (the view switch is local state).
+  const handleDashboardViewTabKeyDown = (
+    e: React.KeyboardEvent<HTMLButtonElement>,
+    view: "today" | "dashboard"
+  ) => {
+    const order = ["today", "dashboard"] as const;
+    const idx = order.indexOf(view);
+    let nextIdx: number | null = null;
+    if (e.key === "ArrowRight") nextIdx = (idx + 1) % order.length;
+    else if (e.key === "ArrowLeft") nextIdx = (idx - 1 + order.length) % order.length;
+    else if (e.key === "Home") nextIdx = 0;
+    else if (e.key === "End") nextIdx = order.length - 1;
+    if (nextIdx === null) return;
+    e.preventDefault();
+    const next = order[nextIdx];
+    selectDashboardView(next);
+    document.getElementById(`dashboard-view-tab-${next}`)?.focus();
+  };
+
   if (loading) {
     return <PageSkeleton />;
   }
@@ -464,8 +487,12 @@ export default function DashboardPage() {
             key={view}
             type="button"
             role="tab"
+            id={`dashboard-view-tab-${view}`}
             aria-selected={dashboardView === view}
+            aria-controls={`dashboard-view-panel-${view}`}
+            tabIndex={dashboardView === view ? 0 : -1}
             onClick={() => selectDashboardView(view)}
+            onKeyDown={(e) => handleDashboardViewTabKeyDown(e, view)}
             className={
               dashboardView === view
                 ? "rounded-md bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm font-medium text-[color:var(--ds-text)]"
@@ -479,7 +506,22 @@ export default function DashboardPage() {
 
       {!isFirstTime && <MorningBriefing />}
 
-      {dashboardView === "today" ? <TodayView /> : isTax ? <TaxWidgetBoard /> : <WidgetBoard />}
+      <div
+        role="tabpanel"
+        id="dashboard-view-panel-today"
+        aria-labelledby="dashboard-view-tab-today"
+        hidden={dashboardView !== "today"}
+      >
+        {dashboardView === "today" && <TodayView />}
+      </div>
+      <div
+        role="tabpanel"
+        id="dashboard-view-panel-dashboard"
+        aria-labelledby="dashboard-view-tab-dashboard"
+        hidden={dashboardView !== "dashboard"}
+      >
+        {dashboardView === "dashboard" && (isTax ? <TaxWidgetBoard /> : <WidgetBoard />)}
+      </div>
     </div>
   );
 }

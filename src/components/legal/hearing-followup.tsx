@@ -146,7 +146,7 @@ export function HearingFollowupWorkflow() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-8">
+      <div className="flex justify-center py-8" role="status" aria-live="polite">
         <Loader2 size={20} className="animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );

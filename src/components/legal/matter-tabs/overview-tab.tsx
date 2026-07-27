@@ -51,12 +51,30 @@ import type { DashboardKey } from "@/content/dashboard";
 import type { CaseDetail } from "@/lib/matter-detail-types";
 import { MatterWorkflowCockpit } from "@/components/legal/MatterWorkflowCockpit";
 import { VerjaehrungPanel } from "@/components/legal/VerjaehrungPanel";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
 export function OverviewTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
   const moreActionsRef = useRef<HTMLDivElement>(null);
+  const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
+  const strategy = ctx.caseData?.strategy;
+
+  useEffect(() => {
+    if (!strategy) return;
+    const groundingText = [
+      strategy.summary,
+      strategy.recommended,
+      strategy.recommendedApproach,
+      ...(strategy.risks ?? []).map((r) => r.description),
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    groundAnswer(groundingText).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [strategy]);
 
   // Close "More actions" on outside click
   useEffect(() => {
@@ -504,7 +522,7 @@ export function OverviewTab() {
                   clientName: updated.clientName,
                 });
               }}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
               <option value="">{t("cases.detail_select_placeholder")}</option>
               {ctx.contacts
@@ -552,7 +570,7 @@ export function OverviewTab() {
                   opponentName: updated.opponentName,
                 });
               }}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
               <option value="">{t("cases.detail_select_placeholder")}</option>
               {ctx.contacts
@@ -596,7 +614,7 @@ export function OverviewTab() {
                 ctx.setCaseData(updated);
                 ctx.saveCaseUpdate({ courtSlug: updated.courtSlug, courtName: updated.courtName });
               }}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
               <option value="">{t("cases.detail_select_placeholder")}</option>
               {ctx.contacts
@@ -810,6 +828,18 @@ export function OverviewTab() {
                 </ul>
               </div>
             )}
+            <div className="mt-3">
+              <CitationPanel
+                data={
+                  {
+                    grounding: grounding ?? null,
+                    citations: [],
+                    isStreaming: isGrounding,
+                  } satisfies CitationPanelData
+                }
+                compact
+              />
+            </div>
           </>
         ) : (
           <p className="text-sm text-[color:var(--ds-text-muted)]">
@@ -829,7 +859,7 @@ export function OverviewTab() {
             {...ctx.expenseForm.register("description")}
             placeholder={t("cases.detail_exp_desc_ph")}
             aria-label={t("cases.expense")}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
           <input
             {...ctx.expenseForm.register("amount")}
@@ -837,7 +867,7 @@ export function OverviewTab() {
             step="0.01"
             placeholder={t("cases.detail_exp_amount_ph")}
             aria-label={t("cases.amount")}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
           <label className="flex items-center gap-2 text-sm whitespace-nowrap text-[color:var(--ds-text-muted)]">
             <input
@@ -1211,7 +1241,11 @@ function VerjaehrungsScanCard({ caseSlug, lang }: { caseSlug: string; lang: "de"
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm text-[color:var(--ds-text-muted)]">
+      <div
+        className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm text-[color:var(--ds-text-muted)]"
+        role="status"
+        aria-live="polite"
+      >
         <Loader2 size={14} className="animate-spin" />
         {lang === "en" ? "Loading limitation scan..." : "Verjährungs-Scan wird geladen..."}
       </div>
@@ -1472,7 +1506,11 @@ function InstitutionChecklistCard({ caseSlug, lang }: { caseSlug: string; lang: 
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm text-[color:var(--ds-text-muted)]">
+      <div
+        className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm text-[color:var(--ds-text-muted)]"
+        role="status"
+        aria-live="polite"
+      >
         <Loader2 size={14} className="animate-spin" />
         {lang === "en"
           ? "Loading institution checklist..."

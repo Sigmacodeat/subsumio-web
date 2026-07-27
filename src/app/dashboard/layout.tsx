@@ -37,7 +37,14 @@ const TaxQuickCreateDialog = dynamic(() =>
 );
 const CopilotSidebar = dynamic(
   () => import("@/components/chat/copilot-sidebar").then((m) => m.CopilotSidebar),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center p-8" role="status" aria-live="polite">
+        <span className="text-xs text-[color:var(--ds-text-muted)]">Copilot wird geladen…</span>
+      </div>
+    ),
+  }
 );
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar, type Theme } from "@/components/dashboard/topbar";
@@ -258,12 +265,14 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("subsumio:copilot:open", openCopilot);
   }, [setCopilotOpen]);
   const drawerRef = useRef<HTMLElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
   const touchStartX = useRef<number | null>(null);
   const touchCurrentX = useRef<number | null>(null);
   const { t } = useLang();
   const pathname = usePathname();
   const router = useRouter();
   const { reduceMotion, panelTransition: overlayTransition } = useDashboardMotion();
+  const [routeAnnouncement, setRouteAnnouncement] = useState("");
 
   const onboardingCompleted = meQuery.data?.user?.onboardingCompletedAt;
   const isOnboardingPage = pathname === "/dashboard/onboarding";
@@ -302,6 +311,15 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       router.replace(redirect);
     }
   }, [pathname, industry, meQuery.isLoading, meQuery.data?.user, router]);
+
+  // Route change: move focus to <main> and announce page change for screen readers
+  useEffect(() => {
+    if (!pathname) return;
+    const segment = pathname.split("/").filter(Boolean).pop() || "Dashboard";
+    const label = segment.charAt(0).toUpperCase() + segment.slice(1);
+    setRouteAnnouncement(`${label} geladen`);
+    mainRef.current?.focus({ preventScroll: true });
+  }, [pathname]);
 
   const pages = statsQuery.data?.total_pages ?? 0;
   const entities = statsQuery.data?.total_entities ?? 0;
@@ -608,7 +626,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     >
       {/* Prevent search engines from indexing authenticated dashboard pages.
           Defense-in-depth: robots.txt already blocks /dashboard, but this
-          meta tag ensures noindex even if robots.txt is bypassed or removed. */}
+          data attribute ensures noindex intent is documented. The actual
+          meta tag is set via Next.js metadata API in the page exports. */}
       <meta name="robots" content="noindex, nofollow" />
       <Script src="/theme-init.js" strategy="beforeInteractive" />
       {/* Skip-to-content link for keyboard users */}
@@ -669,10 +688,15 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           onCmdOpen={() => setCmdOpen(true)}
         />
 
+        {/* Visually-hidden live region for screen reader route announcements */}
+        <div aria-live="assertive" aria-atomic="true" className="sr-only">
+          {routeAnnouncement}
+        </div>
         <main
           id="main-content"
-          role="main"
-          className="dashboard-main-scroll flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip overflow-y-auto pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0"
+          tabIndex={-1}
+          ref={mainRef}
+          className="dashboard-main-scroll flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip overflow-y-auto pb-[calc(3.75rem+env(safe-area-inset-bottom))] focus:outline-none md:pb-0"
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div

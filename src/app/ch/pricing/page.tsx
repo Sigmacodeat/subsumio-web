@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import PricingPage from "@/components/marketing/pricing-page";
 import { JsonLd, softwareApplicationLd, breadcrumbLd } from "@/components/seo/jsonld";
-import { PRICING } from "@/content/site";
+import { professionalPricing } from "@/content/audiences";
 
 export const metadata: Metadata = {
-  title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer",
+  title: "Subsumio Preise — Privat, Solo, Kanzlei und Enterprise",
   description:
-    "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Gehostete Pläne ab 890 €/Nutzer/Mon. jährlich — EU-Cloud oder On-Premise, 14 Tage volle Testversion, keine Überraschungsrechnung, kein Lock-in. DATEV-Export, Kollisionsprüfung, Fristenkontrolle inklusive.",
+    "Getrennte Preise für Privatpersonen und professionelle Aktenarbeit. Solo CHF 179/Monat, Kanzlei CHF 999/Monat inklusive 5 Nutzern, monatlich kündbar.",
   alternates: {
     canonical: "/ch/pricing",
     languages: {
@@ -17,22 +17,23 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer",
+    title: "Subsumio Preise — Privat, Solo, Kanzlei und Enterprise",
     description:
-      "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Gehostete Pläne ab 890 €/Nutzer/Mon. — EU-Cloud oder On-Premise, 14 Tage volle Testversion, keine Überraschungsrechnung.",
+      "Getrennte Preise für Privatpersonen und professionelle Aktenarbeit. Solo CHF 179/Monat, monatlich kündbar.",
     url: "/ch/pricing",
     type: "website",
   },
 };
 
 export default function Page() {
-  const offers = PRICING.ch.tiers
+  const pricing = professionalPricing("ch");
+  const offers = pricing.tiers
     .filter((t) => t.id !== "ent")
     .map((t) => ({
       "@type": "Offer" as const,
       name: t.name,
       price: t.price.replace(/[^\d.]/g, ""),
-      priceCurrency: "EUR",
+      priceCurrency: "CHF",
       description: t.blurb,
     }));
 
@@ -48,9 +49,9 @@ export default function Page() {
               name: "Enterprise",
               priceSpecification: {
                 "@type": "PriceSpecification",
-                priceCurrency: "EUR",
+                priceCurrency: "CHF",
               },
-              description: PRICING.ch.tiers.find((t) => t.id === "ent")?.blurb,
+              description: pricing.tiers.find((t) => t.id === "ent")?.blurb,
             },
           ],
         }}

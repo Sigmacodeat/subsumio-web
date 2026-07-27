@@ -104,6 +104,9 @@ export type AuditAction =
   | "settings.update"
   | "settings.jurisdiction"
   | "billing.upgrade"
+  | "billing.credit_purchase"
+  | "billing.credit_consumption"
+  | "billing.credit_refund"
   | "onboarding.complete"
   | "team.invite"
   | "team.remove"
@@ -172,6 +175,9 @@ export type AuditAction =
   | "rciid.report_downloaded"
   | "rciid.billing_auto"
   | "rciid.wallet_detected"
+  | "rciid.case_scanned"
+  | "rciid.quality_feedback"
+  | "rciid.suggestion_accepted"
   | "submission.review"
   | "ai.injection_detected"
   | "ai.injection_blocked"
@@ -237,6 +243,9 @@ const ACTION_LABELS: Record<string, string> = {
   "settings.update": "Einstellungen geändert",
   "settings.jurisdiction": "Rechtsraum geändert",
   "billing.upgrade": "Plan geändert",
+  "billing.credit_purchase": "Credits gekauft",
+  "billing.credit_consumption": "Credits verbraucht",
+  "billing.credit_refund": "Credits erstattet",
   "onboarding.complete": "Onboarding abgeschlossen",
   "team.invite": "Team-Einladung",
   "team.remove": "Team-Mitglied entfernt",
@@ -284,6 +293,9 @@ const ACTION_LABELS: Record<string, string> = {
   "rciid.report_downloaded": "RCIID Bericht heruntergeladen",
   "rciid.billing_auto": "RCIID Forensik automatisch abgerechnet",
   "rciid.wallet_detected": "Krypto-Wallet in Fall erkannt",
+  "rciid.case_scanned": "Fall nach Krypto-Adressen gescannt",
+  "rciid.quality_feedback": "RCIID Datenqualitäts-Feedback empfangen",
+  "rciid.suggestion_accepted": "Krypto-Forensik-Vorschlag akzeptiert",
   "litigation.phase_advance": "Phase gewechselt",
   "litigation.step_update": "Schritt aktualisiert",
   "legal.commentary_synthesize": "Kommentierung synthetisiert",

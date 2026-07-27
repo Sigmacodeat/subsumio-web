@@ -303,7 +303,11 @@ export default function DatevExportPage() {
       <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">{t("datev.bookings")}</h2>
         {loading ? (
-          <div className="py-10 text-center text-[color:var(--ds-text-muted)]">
+          <div
+            className="py-10 text-center text-[color:var(--ds-text-muted)]"
+            role="status"
+            aria-live="polite"
+          >
             <Loader2 size={20} className="mx-auto mb-2 animate-spin" />
             {t("datev.loading")}
           </div>

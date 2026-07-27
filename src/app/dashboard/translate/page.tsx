@@ -12,17 +12,17 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 
 const LANGUAGES = [
-  { code: "de", label: "Deutsch" },
-  { code: "en", label: "Englisch" },
-  { code: "fr", label: "Französisch" },
-  { code: "it", label: "Italienisch" },
-  { code: "es", label: "Spanisch" },
-  { code: "nl", label: "Niederländisch" },
-  { code: "pl", label: "Polnisch" },
-  { code: "tr", label: "Türkisch" },
-  { code: "ru", label: "Russisch" },
-  { code: "zh", label: "Chinesisch" },
-];
+  { code: "de", labelKey: "translate.lang_de" },
+  { code: "en", labelKey: "translate.lang_en" },
+  { code: "fr", labelKey: "translate.lang_fr" },
+  { code: "it", labelKey: "translate.lang_it" },
+  { code: "es", labelKey: "translate.lang_es" },
+  { code: "nl", labelKey: "translate.lang_nl" },
+  { code: "pl", labelKey: "translate.lang_pl" },
+  { code: "tr", labelKey: "translate.lang_tr" },
+  { code: "ru", labelKey: "translate.lang_ru" },
+  { code: "zh", labelKey: "translate.lang_zh" },
+] as const;
 
 export default function TranslatePage() {
   const { t } = useLang();
@@ -73,7 +73,7 @@ export default function TranslatePage() {
         title={t("translate.title")}
         description={t("translate.description")}
         breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("translate.breadcrumb") },
         ]}
       />
@@ -93,7 +93,7 @@ export default function TranslatePage() {
               <option value="auto">{t("translate.auto_detect")}</option>
               {LANGUAGES.map((l) => (
                 <option key={l.code} value={l.code}>
-                  {l.label}
+                  {t(l.labelKey as never)}
                 </option>
               ))}
             </select>
@@ -112,7 +112,7 @@ export default function TranslatePage() {
             >
               {LANGUAGES.map((l) => (
                 <option key={l.code} value={l.code}>
-                  {l.label}
+                  {t(l.labelKey as never)}
                 </option>
               ))}
             </select>
@@ -178,7 +178,7 @@ export default function TranslatePage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={t("translate.placeholder_text")}
-            className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none"
+            className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--ds-success-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
           />
         )}
 
