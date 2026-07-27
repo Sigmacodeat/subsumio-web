@@ -363,8 +363,10 @@ CREATE TABLE IF NOT EXISTS links (
   -- v0.43.0: bi-temporal edge support (pbrain v0.3.0 port)
   valid_from     TIMESTAMPTZ NOT NULL DEFAULT now(),
   valid_to       TIMESTAMPTZ,
-  superseded_by  INTEGER REFERENCES links(id) ON DELETE SET NULL,
+  superseded_by  INTEGER REFERENCES links(id) ON DELETE SET NULL
   -- Partial unique index below enforces uniqueness for current edges only.
+  -- Historical edges (valid_to IS NOT NULL) can repeat the same (from, to,
+  -- type, source, origin) tuple, so no table-level unique constraint.
 );
 
 CREATE INDEX IF NOT EXISTS idx_links_from ON links(from_page_id);
