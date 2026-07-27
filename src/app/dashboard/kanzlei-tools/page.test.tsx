@@ -14,7 +14,7 @@ describe("KanzleiTools", () => {
     expect(screen.getByText("GKG-Rechner")).toBeInTheDocument();
     expect(screen.getByText("Gerichtsverzeichnis")).toBeInTheDocument();
     expect(screen.getByText("Vollmachten")).toBeInTheDocument();
-    expect(screen.getByText("DATEV Direct")).toBeInTheDocument();
+    expect(screen.getByText("DATEV-Direktanbindung")).toBeInTheDocument();
     expect(screen.getByText("RSV / drebis").closest("a")).toHaveAttribute(
       "href",
       "/dashboard/legal-insurance"
