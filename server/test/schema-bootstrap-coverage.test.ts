@@ -184,6 +184,22 @@ test("applyForwardReferenceBootstrap covers every forward reference declared in 
       ALTER TABLE pages DROP CONSTRAINT IF EXISTS pages_source_slug_key;
       ALTER TABLE pages ADD CONSTRAINT pages_slug_key UNIQUE (slug);
       DROP INDEX IF EXISTS idx_pages_source_id;
+      -- Two more indexes lead with source_id, so Postgres refuses the DROP
+      -- COLUMN below while either exists ("cannot drop column source_id ...
+      -- other objects depend on it"):
+      --   pages_links_extracted_at_idx  ON pages (source_id, links_extracted_at)
+      --   pages_dedup_idx               created by migration v95, not the
+      --                                 schema blob — initSchema() runs
+      --                                 migrations, so it is present here too.
+      DROP INDEX IF EXISTS pages_links_extracted_at_idx;
+      DROP INDEX IF EXISTS pages_dedup_idx;
+      -- ...and the FK to sources. The DROP TABLE sources CASCADE below would
+      -- take it out, but that runs after the column drop, so it has to go first.
+      ALTER TABLE pages DROP CONSTRAINT IF EXISTS pages_source_id_fkey;
+      -- statute_source_jurisdiction_trg is declared BEFORE INSERT OR UPDATE OF
+      -- source_id, slug, which registers a column-level dependency (pg_depend
+      -- deptype='n') that blocks the drop just like an index would.
+      DROP TRIGGER IF EXISTS statute_source_jurisdiction_trg ON pages;
       ALTER TABLE pages DROP COLUMN IF EXISTS source_id;
       DROP TABLE IF EXISTS sources CASCADE;
 
@@ -305,6 +321,22 @@ test("after bootstrap, PGLITE_SCHEMA_SQL replays without crashing on missing for
       ALTER TABLE pages DROP CONSTRAINT IF EXISTS pages_source_slug_key;
       ALTER TABLE pages ADD CONSTRAINT pages_slug_key UNIQUE (slug);
       DROP INDEX IF EXISTS idx_pages_source_id;
+      -- Two more indexes lead with source_id, so Postgres refuses the DROP
+      -- COLUMN below while either exists ("cannot drop column source_id ...
+      -- other objects depend on it"):
+      --   pages_links_extracted_at_idx  ON pages (source_id, links_extracted_at)
+      --   pages_dedup_idx               created by migration v95, not the
+      --                                 schema blob — initSchema() runs
+      --                                 migrations, so it is present here too.
+      DROP INDEX IF EXISTS pages_links_extracted_at_idx;
+      DROP INDEX IF EXISTS pages_dedup_idx;
+      -- ...and the FK to sources. The DROP TABLE sources CASCADE below would
+      -- take it out, but that runs after the column drop, so it has to go first.
+      ALTER TABLE pages DROP CONSTRAINT IF EXISTS pages_source_id_fkey;
+      -- statute_source_jurisdiction_trg is declared BEFORE INSERT OR UPDATE OF
+      -- source_id, slug, which registers a column-level dependency (pg_depend
+      -- deptype='n') that blocks the drop just like an index would.
+      DROP TRIGGER IF EXISTS statute_source_jurisdiction_trg ON pages;
       ALTER TABLE pages DROP COLUMN IF EXISTS source_id;
       DROP TABLE IF EXISTS sources CASCADE;
       DROP INDEX IF EXISTS idx_links_source;
@@ -499,9 +531,24 @@ function parseIndexColumnReferences(sql: string): Array<{ table: string; column:
       // the column is the LAST identifier before a close paren.
       let col: string | null = null;
       if (partClean.includes("(")) {
-        // Function-wrapped: `lower(col)` → grab the last identifier inside.
-        const fnMatch = partClean.match(/(\w+)\s*\)\s*$/);
-        if (fnMatch) col = fnMatch[1];
+        // Function-wrapped: `lower(col)` → the column is the last identifier
+        // inside. Two literal shapes occupy that trailing slot and must not be
+        // mistaken for a column:
+        //   `COALESCE(origin_page_id, -1)`  → numeric literal, would yield `1`
+        //   `(config->>'github_repo')`      → JSONB key, would yield the key
+        //                                     name instead of the real column
+        //                                     `config`
+        // So: drop quoted literals outright, then take the last remaining
+        // identifier that isn't a bare number. Yields `slug` for lower(slug),
+        // `origin_page_id` for the COALESCE form, and `config` for the JSONB
+        // expression index.
+        const idents = partClean.replace(/'[^']*'/g, " ").match(/\w+/g) ?? [];
+        for (let k = idents.length - 1; k >= 0; k--) {
+          if (!/^\d+$/.test(idents[k])) {
+            col = idents[k];
+            break;
+          }
+        }
       } else {
         // Plain or operator-class-suffixed: leading identifier wins.
         const leadMatch = partClean.match(/^["`]?(\w+)["`]?/);
@@ -731,6 +778,21 @@ const COLUMN_EXEMPTIONS = new Set<string>([
   // brains is invisible to them). Migration is column-only, no FK,
   // no index — bootstrap probe would be pure overhead.
   "facts.event_type",
+  // v0.45 (migration v119) — cognitive-memory columns (engram maturation +
+  // reconsolidation). Same precedent as facts.claim_metric et al: the two
+  // indexes that read them (idx_facts_activation_silent, idx_facts_labile)
+  // are co-defined in that same migration, so PGLITE_SCHEMA_SQL never
+  // forward-references them. Old brains stay correct without backfill —
+  // activation_strength and reconsolidation_count are NOT NULL with safe
+  // defaults (0.0 / 0), the three timestamps are nullable, and the
+  // engram_maturation cycle phase backfills activation_strength on first
+  // run. Column-only additions, no FK — a bootstrap probe would be pure
+  // overhead.
+  "facts.activation_strength",
+  "facts.matured_at",
+  "facts.labile_until",
+  "facts.reconsolidation_count",
+  "facts.last_accessed_at",
   // v0.39.1.0 (migration v88) — schema-pack provenance per-source captured as
   // inline canonical closure snapshot on every eval_candidates row. NULL by
   // default; no index in PGLITE_SCHEMA_SQL references it. Migration handles
