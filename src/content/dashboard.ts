@@ -5363,7 +5363,7 @@ export const D = {
     en: "Set current run as baseline",
   },
   "rag_eval.baseline_label": { de: "Baseline:", en: "Baseline:" },
-  "rag_eval.human_review": { de: "Human Review Feedback", en: "Human Review Feedback" },
+  "rag_eval.human_review": { de: "Manuelle Bewertung", en: "Human Review Feedback" },
   "rag_eval.reviews_total": { de: "Reviews gesamt", en: "Total reviews" },
   "rag_eval.correct": { de: "Korrekt", en: "Correct" },
   "rag_eval.incorrect": { de: "Falsch", en: "Incorrect" },
@@ -7428,7 +7428,7 @@ export const D = {
 
   // ── Defensible Review Sets ───────────────────────────────────────────
   "nav.review_sets": { de: "Review-Sets", en: "Review Sets" },
-  "review_sets.title": { de: "Defensible Review Sets", en: "Defensible Review Sets" },
+  "review_sets.title": { de: "Nachweisbare Prüfsätze", en: "Defensible Review Sets" },
   "review_sets.description": {
     de: "Strukturierte Dokumenten-Review-Sets mit Privilege Log und Production Export",
     en: "Structured document review sets with privilege log and production export",
@@ -10011,7 +10011,7 @@ export const D = {
   "vhist.case_delete": { de: "Gelöscht", en: "Deleted" },
   "vhist.doc_delete": { de: "Gelöscht", en: "Deleted" },
   "vhist.doc_upload": { de: "Hochgeladen", en: "Uploaded" },
-  "vhist.doc_review": { de: "Review", en: "Review" },
+  "vhist.doc_review": { de: "Prüfung", en: "Review" },
 
   // ── Signature page strings ──
   "sig.err_load": {
@@ -10166,7 +10166,7 @@ export const D = {
   },
 
   // ── Adoption Analytics ──
-  "adoption.title": { de: "Adoption Analytics", en: "Adoption Analytics" },
+  "adoption.title": { de: "Nutzungsanalyse", en: "Adoption Analytics" },
   "adoption.desc": {
     de: "Platform-Nutzung: Wer nutzt was, wie oft und woran — das Subsumio Command Center",
     en: "Platform usage: Who uses what, how often and what for — the Subsumio Command Center",
@@ -10240,6 +10240,7 @@ export const D = {
     de: "Haftungsgrund (optional)",
     en: "Ground for liability (optional)",
   },
+  "workflows.builder.open": { de: "Ablauf-Baukasten", en: "Workflow builder" },
   "workflows.builder.ph_name": { de: "Workflow-Name", en: "Workflow name" },
   "workflows.builder.ph_desc": { de: "Beschreibung (optional)", en: "Description (optional)" },
   "time.ph_search": { de: "Suche...", en: "Search..." },

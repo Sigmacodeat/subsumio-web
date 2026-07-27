@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHandler, type HandlerContext } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
  * Lists autonomous tasks with optional status filter.
  */
 async function listTasksHandler(
-  _ctx: HandlerContext,
+  ctx: HandlerContext,
   _body: undefined,
   _query: Record<string, string>,
   req: NextRequest
@@ -18,8 +18,12 @@ async function listTasksHandler(
   const url = new URL(req.url);
   const status = url.searchParams.get("status");
   const limit = url.searchParams.get("limit") || "50";
-  const brainId = "system"; // TODO: Resolve actual brainId from context
-  const headers = engineHeadersForBrain(brainId);
+  // Scope to the caller's own brain (org brain for team members, personal
+  // otherwise). autonomous-queue.ts writes every task under its owning
+  // brain_id, so reading from a hardcoded brain returned another tenant's
+  // queue — or, more commonly, an empty list while the firm's own tasks
+  // stayed invisible.
+  const headers = ctx.headers;
 
   const params = new URLSearchParams({
     type: "autonomous_task",

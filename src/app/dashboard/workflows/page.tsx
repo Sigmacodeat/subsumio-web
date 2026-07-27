@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 import { useLang } from "@/lib/use-lang";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -21,6 +22,7 @@ import {
   ChevronRight,
   Info,
   Plus,
+  Settings2,
   Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -199,10 +201,18 @@ export default function WorkflowsPage() {
           { label: t("workflows.breadcrumb") },
         ]}
         actions={
-          <Button onClick={() => setSelectedTemplate("due_diligence")}>
-            <Plus size={16} />
-            {t("workflows.new")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link href="/dashboard/workflows/builder">
+              <Button variant="outline" className="gap-2">
+                <Settings2 size={16} />
+                {t("workflows.builder.open")}
+              </Button>
+            </Link>
+            <Button onClick={() => setSelectedTemplate("due_diligence")}>
+              <Plus size={16} />
+              {t("workflows.new")}
+            </Button>
+          </div>
         }
       />
 

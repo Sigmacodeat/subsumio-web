@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createHandler } from "@/lib/api-handler";
+import { createHandler, type HandlerContext } from "@/lib/api-handler";
 import { getQueueStats } from "@/lib/autonomous-queue";
 
 export const dynamic = "force-dynamic";
@@ -9,10 +9,9 @@ export const dynamic = "force-dynamic";
  *
  * Returns statistics about the autonomous task queue.
  */
-async function queueStatsHandler() {
-  // Use system brain for now — TODO: Resolve actual brainId from context
-  const brainId = "system";
-  const stats = await getQueueStats(brainId);
+async function queueStatsHandler(ctx: HandlerContext) {
+  // Scope to the caller's own brain — see the note in ../tasks/route.ts.
+  const stats = await getQueueStats(ctx.brainId);
   return NextResponse.json(stats);
 }
 
