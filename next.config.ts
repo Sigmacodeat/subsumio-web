@@ -100,12 +100,11 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ["pg", "isomorphic-dompurify", "ioredis"],
   // The legal corpus lives in the repo but is only ever ingested into Postgres —
-  // no route reads it from disk at runtime. Without these excludes Next's output
-  // file tracing walks all ~772k files (18 GB) under law-corpus/ and the build
-  // dies with "Reached heap limit Allocation failed - JavaScript heap out of
-  // memory" (native frame: node::fs::AfterScanDir), even at
-  // --max-old-space-size=8192. server/ and the eval corpora are excluded for the
-  // same reason: large, build-irrelevant trees.
+  // no route reads it from disk at runtime. File tracing is therefore disabled
+  // to avoid scanning the ~772k files (18 GB) under law-corpus/ and server/,
+  // which OOMs at 8 GB (node::fs::AfterScanDir). Re-enable with `output: 'standalone'`
+  // and validated `outputFileTracingExcludes` once the deployment setup requires it.
+  outputFileTracing: false,
   outputFileTracingExcludes: {
     "*": [
       "./law-corpus/**",
