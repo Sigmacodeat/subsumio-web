@@ -8,12 +8,6 @@ const withBundleAnalyzer = bundleAnalyzer({
 const nextConfig: NextConfig = {
   // Allows CI/verification jobs to build concurrently without corrupting .next.
   distDir: process.env.NEXT_DIST_DIR || ".next",
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   images: {
     remotePatterns: [],
     formats: ["image/avif", "image/webp"],
@@ -99,6 +93,34 @@ const nextConfig: NextConfig = {
     middlewareClientMaxBodySize: "1gb",
   },
   serverExternalPackages: ["pg", "isomorphic-dompurify", "ioredis"],
+  // The legal corpus lives in the repo but is only ever ingested into Postgres —
+  // no route reads it from disk at runtime. Without these excludes Next's output
+  // file tracing walks all ~772k files (18 GB) under law-corpus/ and the build
+  // dies with "Reached heap limit Allocation failed - JavaScript heap out of
+  // memory" (native frame: node::fs::AfterScanDir), even at
+  // --max-old-space-size=8192. server/ and the eval corpora are excluded for the
+  // same reason: large, build-irrelevant trees.
+  outputFileTracingExcludes: {
+    "*": [
+      "./law-corpus/**",
+      "./server/**",
+      "./.source-registry-diff/**",
+      "./evals/**",
+      "./research/**",
+      "./.claude/**",
+      "./.git/**",
+      "./tests/**",
+      "./test-results/**",
+      "./docs/**",
+      "./scripts/**",
+      "./tools/**",
+      "./outlook-addin/**",
+      "./word-addin/**",
+      "./mobile/**",
+      "./plugins/**",
+      "./tmp/**",
+    ],
+  },
   webpack: (config) => {
     config.resolve = config.resolve || {};
     config.resolve.alias = config.resolve.alias || {};
