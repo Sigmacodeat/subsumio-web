@@ -104,7 +104,6 @@ const nextConfig: NextConfig = {
   // to avoid scanning the ~772k files (18 GB) under law-corpus/ and server/,
   // which OOMs at 8 GB (node::fs::AfterScanDir). Re-enable with `output: 'standalone'`
   // and validated `outputFileTracingExcludes` once the deployment setup requires it.
-  outputFileTracing: false,
   outputFileTracingExcludes: {
     "*": [
       "./law-corpus/**",
