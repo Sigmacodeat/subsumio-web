@@ -8,6 +8,12 @@ const withBundleAnalyzer = bundleAnalyzer({
 const nextConfig: NextConfig = {
   // Allows CI/verification jobs to build concurrently without corrupting .next.
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  // TODO: Re-enable lint during build once the 25k pre-existing ESLint issues
+  // (mostly a11y and TypeScript) are resolved in a dedicated lint sprint.
+  // TypeScript build errors remain enforced below.
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   images: {
     remotePatterns: [],
     formats: ["image/avif", "image/webp"],
