@@ -14,6 +14,8 @@
  *   gbk              — server/law-corpus/at-judikatur-gbk/ → source law-at-judikatur-gbk
  *   pvak             — server/law-corpus/at-judikatur-pvak/ → source law-at-judikatur-pvak
  *   dok              — server/law-corpus/at-judikatur-dok/ → source law-at-judikatur-dok
+ *   ubas             — server/law-corpus/at-judikatur-ubas/ → source law-at-judikatur-ubas
+ *   umse             — server/law-corpus/at-judikatur-umse/ → source law-at-judikatur-umse
  *
  * Two writes per decision:
  *   1. The decision itself as a page (`legal/judikatur/at/[court]/<file-slug>`),
@@ -122,6 +124,18 @@ const SOURCE_CONFIGS: Record<string, SourceConfig> = {
     sourceId: "law-at-judikatur-dok",
     slugPrefix: "legal/judikatur/at/dok",
     label: "DOK",
+  },
+  ubas: {
+    dir: "at-judikatur-ubas",
+    sourceId: "law-at-judikatur-ubas",
+    slugPrefix: "legal/judikatur/at/ubas",
+    label: "UBAS",
+  },
+  umse: {
+    dir: "at-judikatur-umse",
+    sourceId: "law-at-judikatur-umse",
+    slugPrefix: "legal/judikatur/at/umse",
+    label: "UMSE",
   },
   de: {
     dir: "de-judikatur",
