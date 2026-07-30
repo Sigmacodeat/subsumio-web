@@ -8,7 +8,7 @@ import { Check, Shield, Clock, Globe, CreditCard, Coins, Zap } from "lucide-reac
 import { useState } from "react";
 import { professionalPricing, privateOffers, type Audience } from "@/content/audiences";
 import { PRICING_FAQ, VALUE_PROPS, UI_STRINGS, p, type Lang } from "@/content/site";
-import { CREDIT_PACKS, CREDIT_COSTS, type CreditOperation } from "@/lib/billing/credits";
+import { CREDIT_PACKS, CREDIT_COSTS, type CreditOperation } from "@/lib/billing/credit-constants";
 import { SectionHeading, CTASection, PageHero, Section } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { PricingGrid } from "./pricing-grid";

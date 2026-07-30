@@ -131,6 +131,10 @@ const nextConfig: NextConfig = {
     // ioredis is an optional dynamic import for Redis presence.
     // Mark it as externals so webpack doesn't try to bundle it.
     config.externals = [...(config.externals || []), { ioredis: "ioredis" }];
+    // pg is a Node.js-only module that should never end up in the client bundle.
+    // If a client component accidentally imports a server module that imports pg,
+    // this prevents webpack from trying to resolve fs/dns/net/tls in the browser.
+    config.externals = [...(config.externals || []), { pg: "pg" }];
     return config;
   },
 };

@@ -16,80 +16,23 @@ import { env } from "@/lib/env";
 import { createSchemaInit } from "@/lib/schema-init";
 import { logger } from "@/lib/logger";
 
+// Re-export client-safe constants (no Node.js deps) for backward compatibility.
+// Client components should import from credit-constants.ts directly.
+export {
+  type CreditOperation,
+  CREDIT_COSTS,
+  type CreditPack,
+  CREDIT_PACKS,
+  getCreditPack,
+} from "@/lib/billing/credit-constants";
+
+import type { CreditOperation, CreditPack } from "@/lib/billing/credit-constants";
+import { CREDIT_PACKS } from "@/lib/billing/credit-constants";
+
 const log = logger("credits");
 
 const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const CREDITS_FILE = path.join(DATA_DIR, "credits.json");
-
-// ── Credit Costs per Operation ──────────────────────────────────────────
-
-export type CreditOperation =
-  | "think"
-  | "document_analysis"
-  | "subsumption"
-  | "agent"
-  | "deadline_detect"
-  | "frist_engine";
-
-export const CREDIT_COSTS: Record<CreditOperation, number> = {
-  think: 1,
-  document_analysis: 2,
-  subsumption: 3,
-  agent: 5,
-  deadline_detect: 1,
-  frist_engine: 0,
-};
-
-// ── Credit Packs ────────────────────────────────────────────────────────
-
-export interface CreditPack {
-  id: string;
-  name: string;
-  credits: number;
-  priceEur: number;
-  /** Env var holding the Stripe price ID for this pack. */
-  stripePriceEnv: string;
-  savingsPct: number;
-}
-
-export const CREDIT_PACKS: CreditPack[] = [
-  {
-    id: "starter",
-    name: "Starter",
-    credits: 50,
-    priceEur: 49,
-    stripePriceEnv: "STRIPE_PRICE_CREDITS_50",
-    savingsPct: 2,
-  },
-  {
-    id: "standard",
-    name: "Standard",
-    credits: 100,
-    priceEur: 89,
-    stripePriceEnv: "STRIPE_PRICE_CREDITS_100",
-    savingsPct: 11,
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    credits: 500,
-    priceEur: 399,
-    stripePriceEnv: "STRIPE_PRICE_CREDITS_500",
-    savingsPct: 20,
-  },
-  {
-    id: "firm",
-    name: "Firm",
-    credits: 2000,
-    priceEur: 1499,
-    stripePriceEnv: "STRIPE_PRICE_CREDITS_2000",
-    savingsPct: 25,
-  },
-];
-
-export function getCreditPack(packId: string): CreditPack | undefined {
-  return CREDIT_PACKS.find((p) => p.id === packId);
-}
 
 export function creditPackByPriceId(priceId: string): CreditPack | undefined {
   for (const pack of CREDIT_PACKS) {
