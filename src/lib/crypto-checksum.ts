@@ -6,10 +6,9 @@
  *   - Bitcoin Bech32 / Bech32m (SegWit): CRC32 checksum
  *   - Ethereum EIP-55: Mixed-case checksum via Keccak-256
  *
- * Pattern: pure TypeScript, zero external deps (uses node:crypto)
+ * Pattern: pure TypeScript, zero external deps (uses Web Crypto API)
  */
 
-import { createHash } from "node:crypto";
 import type { BlockchainType } from "./rciid-client";
 
 // ── Base58 Alphabet ──────────────────────────────────────────────────────────
@@ -61,12 +60,11 @@ function base58Decode(input: string): Uint8Array | null {
   return result;
 }
 
-// ── SHA256 ───────────────────────────────────────────────────────────────────
+// ── SHA256 (Web Crypto API — works in browser + Node.js) ─────────────────────
 
-function sha256(data: Uint8Array): Uint8Array {
-  const hash = createHash("sha256");
-  hash.update(Buffer.from(data));
-  return new Uint8Array(hash.digest());
+async function sha256(data: Uint8Array): Promise<Uint8Array> {
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return new Uint8Array(hashBuffer);
 }
 
 // ── Base58Check Validation (BTC Legacy + P2SH) ───────────────────────────────
@@ -75,7 +73,7 @@ function sha256(data: Uint8Array): Uint8Array {
  * Validate a Bitcoin Base58Check address (Legacy P2PKH starting with '1' or P2SH starting with '3').
  * Checks: version byte + payload + 4-byte SHA256(SHA256(version+payload)) checksum.
  */
-export function validateBase58Check(address: string): boolean {
+export async function validateBase58Check(address: string): Promise<boolean> {
   if (!address) return false;
 
   // Quick format check
@@ -89,7 +87,7 @@ export function validateBase58Check(address: string): boolean {
   const checksum = decoded.subarray(decoded.length - 4);
 
   // Checksum = first 4 bytes of SHA256(SHA256(payload))
-  const hash = sha256(sha256(payload));
+  const hash = await sha256(await sha256(payload));
   const expectedChecksum = hash.subarray(0, 4);
 
   // Constant-time comparison
@@ -409,10 +407,10 @@ export interface AddressValidationResult {
  * Validate a crypto address with full checksum verification.
  * Returns detailed validation result including format and checksum status.
  */
-export function validateAddress(
+export async function validateAddress(
   address: string,
   blockchain: BlockchainType
-): AddressValidationResult {
+): Promise<AddressValidationResult> {
   const addr = address.trim();
 
   switch (blockchain) {
@@ -430,7 +428,7 @@ export function validateAddress(
       }
       // Base58Check (1... or 3...)
       if (/^[13]/.test(addr)) {
-        const valid = validateBase58Check(addr);
+        const valid = await validateBase58Check(addr);
         return {
           valid,
           checksumValid: valid,
@@ -463,7 +461,7 @@ export function validateAddress(
     case "TRX": {
       // Tron addresses are Base58Check with version byte 0x41
       if (/^T/.test(addr)) {
-        const valid = validateBase58Check(addr);
+        const valid = await validateBase58Check(addr);
         return {
           valid,
           checksumValid: valid,
@@ -484,7 +482,7 @@ export function validateAddress(
     case "LTC": {
       // Litecoin: L/M prefix, Base58Check
       if (/^[LM]/.test(addr)) {
-        const valid = validateBase58Check(addr);
+        const valid = await validateBase58Check(addr);
         return {
           valid,
           checksumValid: valid,
@@ -558,37 +556,40 @@ export function validateAddress(
 /**
  * Quick boolean check — is the address checksum-valid?
  */
-export function isAddressValid(address: string, blockchain: BlockchainType): boolean {
-  return validateAddress(address, blockchain).valid;
+export async function isAddressValid(
+  address: string,
+  blockchain: BlockchainType
+): Promise<boolean> {
+  return (await validateAddress(address, blockchain)).valid;
 }
 
 /**
  * Validate and auto-detect blockchain from address format.
  * Returns the validated blockchain or null if invalid.
  */
-export function validateAndDetectBlockchain(
+export async function validateAndDetectBlockchain(
   address: string
-): { blockchain: BlockchainType; valid: boolean } | null {
+): Promise<{ blockchain: BlockchainType; valid: boolean } | null> {
   const addr = address.trim();
 
   // Try each blockchain
   if (/^bc1/i.test(addr) || /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(addr)) {
-    const result = validateAddress(addr, "BTC");
+    const result = await validateAddress(addr, "BTC");
     if (result.valid) return { blockchain: "BTC", valid: true };
   }
 
   if (/^0x[a-fA-F0-9]{40}$/.test(addr)) {
-    const result = validateAddress(addr, "ETH");
+    const result = await validateAddress(addr, "ETH");
     if (result.valid) return { blockchain: "ETH", valid: true };
   }
 
   if (/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(addr)) {
-    const result = validateAddress(addr, "TRX");
+    const result = await validateAddress(addr, "TRX");
     if (result.valid) return { blockchain: "TRX", valid: true };
   }
 
   if (/^[LM][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(addr)) {
-    const result = validateAddress(addr, "LTC");
+    const result = await validateAddress(addr, "LTC");
     if (result.valid) return { blockchain: "LTC", valid: true };
   }
 

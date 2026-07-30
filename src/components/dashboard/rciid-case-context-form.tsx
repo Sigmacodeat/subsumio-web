@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -110,10 +110,20 @@ function AddressInput({
 }) {
   const [addr, setAddr] = useState(value);
   const [bc, setBc] = useState(blockchain);
+  const [valid, setValid] = useState<boolean | null>(null);
 
-  const valid = useMemo(() => {
-    if (!addr || addr.length < 20) return null;
-    return isAddressValid(addr, bc);
+  useEffect(() => {
+    if (!addr || addr.length < 20) {
+      setValid(null);
+      return;
+    }
+    let cancelled = false;
+    isAddressValid(addr, bc).then((result) => {
+      if (!cancelled) setValid(result);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [addr, bc]);
 
   return (

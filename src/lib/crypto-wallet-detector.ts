@@ -261,27 +261,30 @@ export function detectWalletAddresses(text: string): string[] {
  * Detect wallets and validate their checksums.
  * Returns wallets with checksumValid field populated.
  */
-export function detectAndValidateWallets(text: string): FoundWallet[] {
+export async function detectAndValidateWallets(text: string): Promise<FoundWallet[]> {
   const wallets = detectWallets(text);
-  return wallets.map((w) => {
-    const validation = validateAddress(w.address, w.blockchain);
-    return {
-      ...w,
-      checksumValid: validation.valid,
-      checksumError: validation.error,
-      confidence: validation.valid ? w.confidence : Math.min(w.confidence, 0.3),
-    };
-  });
+  const results = await Promise.all(
+    wallets.map(async (w) => {
+      const validation = await validateAddress(w.address, w.blockchain);
+      return {
+        ...w,
+        checksumValid: validation.valid,
+        checksumError: validation.error,
+        confidence: validation.valid ? w.confidence : Math.min(w.confidence, 0.3),
+      };
+    })
+  );
+  return results;
 }
 
 /**
  * Validate a wallet address checksum.
  * Returns the validation result including format and checksum status.
  */
-export function validateWalletAddress(
+export async function validateWalletAddress(
   address: string,
   blockchain: BlockchainType
-): AddressValidationResult {
+): Promise<AddressValidationResult> {
   return validateAddress(address, blockchain);
 }
 

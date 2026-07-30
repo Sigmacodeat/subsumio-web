@@ -111,7 +111,7 @@ export const POST = createHandler(
     // Validate checksums for all wallet addresses
     const invalidAddresses: string[] = [];
     for (const w of body.wallets) {
-      if (!isAddressValid(w.address, w.blockchain)) {
+      if (!(await isAddressValid(w.address, w.blockchain))) {
         invalidAddresses.push(w.address);
       }
     }

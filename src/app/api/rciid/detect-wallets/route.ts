@@ -37,7 +37,7 @@ export const POST = createHandler(
   },
   async (_ctx, body) => {
     if (body.text) {
-      const wallets = detectAndValidateWallets(body.text);
+      const wallets = await detectAndValidateWallets(body.text);
       return apiSuccess({
         ok: true,
         wallets: wallets.map((w) => ({
@@ -90,7 +90,7 @@ export const PUT = createHandler(
     body: validateSchema,
   },
   async (_ctx, body) => {
-    const result = validateWalletAddress(body.address, body.blockchain);
+    const result = await validateWalletAddress(body.address, body.blockchain);
     return apiSuccess({
       ok: true,
       ...result,

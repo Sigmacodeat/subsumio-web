@@ -108,7 +108,7 @@ export async function scanCaseForWallets(
 
   // Scan case body
   if (caseBody.length > 0) {
-    const found = detectAndValidateWallets(caseBody);
+    const found = await detectAndValidateWallets(caseBody);
     if (found.length > 0) {
       allWallets.push(...found);
       for (const w of found) {
@@ -132,7 +132,7 @@ export async function scanCaseForWallets(
       const content = await fetchDocumentContent(headers, doc.slug);
       if (!content || content.length === 0) continue;
 
-      const found = detectAndValidateWallets(content);
+      const found = await detectAndValidateWallets(content);
       if (found.length > 0) {
         allWallets.push(...found);
         for (const w of found) {
@@ -192,7 +192,7 @@ export function shouldSuggestForensics(result: CaseScanResult): boolean {
  * Extract wallets from a text with checksum validation.
  * Convenience wrapper around detectAndValidateWallets.
  */
-export function extractWalletsFromText(text: string): FoundWallet[] {
+export async function extractWalletsFromText(text: string): Promise<FoundWallet[]> {
   return detectAndValidateWallets(text);
 }
 

@@ -12,30 +12,30 @@ describe("crypto-checksum", () => {
   // ── Base58Check ──────────────────────────────────────────────────────────
 
   describe("validateBase58Check", () => {
-    it("accepts valid BTC Legacy address", () => {
+    it("accepts valid BTC Legacy address", async () => {
       // Well-known valid address (Genesis block related)
-      expect(validateBase58Check("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa")).toBe(true);
+      expect(await validateBase58Check("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa")).toBe(true);
     });
 
-    it("accepts valid BTC P2SH address", () => {
-      expect(validateBase58Check("3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy")).toBe(true);
+    it("accepts valid BTC P2SH address", async () => {
+      expect(await validateBase58Check("3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy")).toBe(true);
     });
 
-    it("rejects invalid checksum", () => {
+    it("rejects invalid checksum", async () => {
       // Corrupted address — last char changed
-      expect(validateBase58Check("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNb")).toBe(false);
+      expect(await validateBase58Check("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNb")).toBe(false);
     });
 
-    it("rejects empty string", () => {
-      expect(validateBase58Check("")).toBe(false);
+    it("rejects empty string", async () => {
+      expect(await validateBase58Check("")).toBe(false);
     });
 
-    it("rejects non-base58 characters", () => {
-      expect(validateBase58Check("1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf0O")).toBe(false);
+    it("rejects non-base58 characters", async () => {
+      expect(await validateBase58Check("1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf0O")).toBe(false);
     });
 
-    it("rejects too short address", () => {
-      expect(validateBase58Check("1A1z")).toBe(false);
+    it("rejects too short address", async () => {
+      expect(await validateBase58Check("1A1z")).toBe(false);
     });
   });
 
@@ -101,41 +101,41 @@ describe("crypto-checksum", () => {
   // ── Unified validateAddress ──────────────────────────────────────────────
 
   describe("validateAddress", () => {
-    it("validates BTC Bech32 address", () => {
-      const result = validateAddress("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4", "BTC");
+    it("validates BTC Bech32 address", async () => {
+      const result = await validateAddress("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4", "BTC");
       expect(result.valid).toBe(true);
       expect(result.checksumValid).toBe(true);
       expect(result.blockchain).toBe("BTC");
     });
 
-    it("validates BTC Legacy address", () => {
-      const result = validateAddress("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa", "BTC");
+    it("validates BTC Legacy address", async () => {
+      const result = await validateAddress("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa", "BTC");
       expect(result.valid).toBe(true);
       expect(result.checksumValid).toBe(true);
       expect(result.format).toBe("base58check");
     });
 
-    it("validates ETH address", () => {
-      const result = validateAddress("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed", "ETH");
+    it("validates ETH address", async () => {
+      const result = await validateAddress("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed", "ETH");
       expect(result.valid).toBe(true);
       expect(result.blockchain).toBe("ETH");
     });
 
-    it("returns error for invalid BTC address", () => {
-      const result = validateAddress("invalid-address", "BTC");
+    it("returns error for invalid BTC address", async () => {
+      const result = await validateAddress("invalid-address", "BTC");
       expect(result.valid).toBe(false);
       expect(result.error).toBeDefined();
     });
 
-    it("returns error for wrong prefix", () => {
-      const result = validateAddress("xx1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4", "BTC");
+    it("returns error for wrong prefix", async () => {
+      const result = await validateAddress("xx1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4", "BTC");
       expect(result.valid).toBe(false);
     });
 
-    it("validates TRX address format", () => {
+    it("validates TRX address format", async () => {
       // TRX addresses start with T and are Base58Check
       // Using a known TRX address format
-      const result = validateAddress("TUEbTSchS4yLZ7X7BwLjKw7fz3Yw3wYwYw", "TRX");
+      const result = await validateAddress("TUEbTSchS4yLZ7X7BwLjKw7fz3Yw3wYwYw", "TRX");
       // May or may not be checksum-valid, but format should be recognized
       expect(result.blockchain).toBe("TRX");
     });
@@ -144,38 +144,42 @@ describe("crypto-checksum", () => {
   // ── isAddressValid ───────────────────────────────────────────────────────
 
   describe("isAddressValid", () => {
-    it("returns true for valid BTC address", () => {
-      expect(isAddressValid("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4", "BTC")).toBe(true);
+    it("returns true for valid BTC address", async () => {
+      expect(await isAddressValid("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4", "BTC")).toBe(true);
     });
 
-    it("returns false for invalid address", () => {
-      expect(isAddressValid("invalid", "BTC")).toBe(false);
+    it("returns false for invalid address", async () => {
+      expect(await isAddressValid("invalid", "BTC")).toBe(false);
     });
   });
 
   // ── validateAndDetectBlockchain ──────────────────────────────────────────
 
   describe("validateAndDetectBlockchain", () => {
-    it("detects BTC from Bech32 address", () => {
-      const result = validateAndDetectBlockchain("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4");
+    it("detects BTC from Bech32 address", async () => {
+      const result = await validateAndDetectBlockchain(
+        "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
+      );
       expect(result?.blockchain).toBe("BTC");
       expect(result?.valid).toBe(true);
     });
 
-    it("detects BTC from Legacy address", () => {
-      const result = validateAndDetectBlockchain("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
+    it("detects BTC from Legacy address", async () => {
+      const result = await validateAndDetectBlockchain("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
       expect(result?.blockchain).toBe("BTC");
       expect(result?.valid).toBe(true);
     });
 
-    it("detects ETH from 0x address", () => {
-      const result = validateAndDetectBlockchain("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed");
+    it("detects ETH from 0x address", async () => {
+      const result = await validateAndDetectBlockchain(
+        "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed"
+      );
       expect(result?.blockchain).toBe("ETH");
       expect(result?.valid).toBe(true);
     });
 
-    it("returns null for unrecognized format", () => {
-      expect(validateAndDetectBlockchain("not-an-address")).toBeNull();
+    it("returns null for unrecognized format", async () => {
+      expect(await validateAndDetectBlockchain("not-an-address")).toBeNull();
     });
   });
 });
