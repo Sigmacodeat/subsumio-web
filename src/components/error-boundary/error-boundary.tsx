@@ -53,8 +53,8 @@ function DefaultFallback({ error, onReset }: { error?: Error; onReset: () => voi
   return (
     <div className="flex min-h-screen items-center justify-center px-6">
       <div className="max-w-md text-center">
-        <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-2xl border border-red-500/30 bg-red-500/20">
-          <AlertTriangle size={26} className="text-red-400" />
+        <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-2xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]">
+          <AlertTriangle size={26} className="text-[color:var(--ds-danger-text)]" />
         </div>
         <h1 className="mb-3 text-2xl font-bold text-[color:var(--ds-text)]">
           Etwas ist schiefgelaufen
@@ -64,7 +64,7 @@ function DefaultFallback({ error, onReset }: { error?: Error; onReset: () => voi
           erneut.
         </p>
         {error && process.env.NODE_ENV === "development" && (
-          <pre className="mb-6 overflow-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left text-xs text-red-300">
+          <pre className="mb-6 overflow-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left text-xs text-[color:var(--ds-danger-text)]">
             {error.stack || error.message}
           </pre>
         )}

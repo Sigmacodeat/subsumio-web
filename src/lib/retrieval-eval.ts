@@ -645,11 +645,7 @@ function evaluateQuery(
   }
 
   const negativeAuthorityRecall =
-    negativeAuthorities.length > 0
-      ? negativeAuthorityHits.length === 0
-        ? 1.0
-        : 1.0 - negativeAuthorityHits.length / Math.min(negativeAuthorities.length, topK.length)
-      : 1.0; // If no negative authorities specified, default to 1.0
+    negativeAuthorities.length > 0 ? (negativeAuthorityHits.length === 0 ? 1.0 : 0.0) : 1.0; // If no negative authorities specified, default to 1.0
 
   // ── Overall pass ─────────────────────────────────────────────────────
   const pass =

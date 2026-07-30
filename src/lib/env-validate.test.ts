@@ -11,8 +11,6 @@ const REQUIRED = [
   "SUBSUMIO_API_URL",
   "SUBSUMIO_WEB_API_KEY",
   "SUBSUMIO_INTERNAL_SECRET",
-  "UPSTASH_REDIS_REST_URL",
-  "UPSTASH_REDIS_REST_TOKEN",
 ];
 
 describe("validateEnv", () => {

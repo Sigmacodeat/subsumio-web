@@ -12,7 +12,8 @@ export function register() {
         "[env] Missing required environment variables in production:\n  - " +
           env.missing.join("\n  - ")
       );
-      console.error("[env] Server will continue but features requiring these vars will fail.");
+      console.error("[env] Aborting server startup — fix the above environment variables.");
+      process.exit(1);
     }
     if (env.warnings.length > 0 && process.env.NODE_ENV !== "production") {
       for (const w of env.warnings) console.warn(`[env] ${w}`);

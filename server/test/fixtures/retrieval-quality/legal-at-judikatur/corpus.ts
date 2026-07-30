@@ -14,18 +14,20 @@
  * Purity: all results must be from jurisdiction=at (no DE statutes leaking).
  */
 
-import { readFileSync, existsSync } from "fs";
-import { join } from "path";
+import { readFileSync, existsSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { BrainEngine } from "../../../../src/core/engine.ts";
 import type { ChunkInput } from "../../../../src/core/types.ts";
 import type { NamedThingQuestion } from "../../../../src/eval/retrieval-quality/harness.ts";
 
-const CORPUS_DIR = join(import.meta.dir, "..", "..", "..", "..", "law-corpus", "at-judikatur");
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const CORPUS_DIR = join(__dirname, "..", "..", "..", "..", "law-corpus", "at-judikatur");
 
 /** A judikatur file reference. */
 interface JudgementRef {
-  file: string;   // filename without .md
-  gz: string;     // Geschäftszahl (case number)
+  file: string; // filename without .md
+  gz: string; // Geschäftszahl (case number)
 }
 
 const slugOf = (r: JudgementRef) => `legal/judikatur/at/${r.file}`;
@@ -164,7 +166,7 @@ function readDecision(r: JudgementRef): string {
   if (!existsSync(path)) {
     throw new Error(
       `judikatur gold set drift: ${r.file}.md not found in at-judikatur/. ` +
-      `Fix the corpus or the gold reference — a gold answer must exist.`
+        `Fix the corpus or the gold reference — a gold answer must exist.`
     );
   }
   return readFileSync(path, "utf-8");
@@ -193,27 +195,35 @@ export async function seedJudikaturCorpus(engine: BrainEngine): Promise<void> {
     const body = readDecision(g.ref);
     const title = `OGH — ${g.ref.gz}`;
 
-    await engine.putPage(slug, {
-      type: "court_decision" as never,
-      title,
-      compiled_truth: body,
-      timeline: "",
-      frontmatter: {
-        jurisdiction: "at",
-        court: "OGH",
-        case_number: g.ref.gz,
-        legal_area: g.legal_area,
-      },
-    }, { sourceId });
-
-    await engine.upsertChunks(slug, [
+    await engine.putPage(
+      slug,
       {
-        chunk_index: 0,
-        chunk_text: body,
-        chunk_source: "compiled_truth",
-        token_count: body.split(/\s+/).length,
+        type: "court_decision" as never,
+        title,
+        compiled_truth: body,
+        timeline: "",
+        frontmatter: {
+          jurisdiction: "at",
+          court: "OGH",
+          case_number: g.ref.gz,
+          legal_area: g.legal_area,
+        },
       },
-    ] satisfies ChunkInput[], { sourceId });
+      { sourceId }
+    );
+
+    await engine.upsertChunks(
+      slug,
+      [
+        {
+          chunk_index: 0,
+          chunk_text: body,
+          chunk_source: "compiled_truth",
+          token_count: body.split(/\s+/).length,
+        },
+      ] satisfies ChunkInput[],
+      { sourceId }
+    );
   }
 }
 
@@ -250,21 +260,33 @@ export async function seedDeDistractors(engine: BrainEngine): Promise<void> {
   ];
 
   for (const d of distractors) {
-    await engine.putPage(d.slug, {
-      type: "law" as never,
-      title: d.title,
-      compiled_truth: d.body,
-      timeline: "",
-      frontmatter: { jurisdiction: "de", abbreviation: d.title.split(" ")[1], paragraph: d.title.split(" ")[0].replace("§", "") },
-    }, { sourceId });
-
-    await engine.upsertChunks(d.slug, [
+    await engine.putPage(
+      d.slug,
       {
-        chunk_index: 0,
-        chunk_text: d.body,
-        chunk_source: "compiled_truth",
-        token_count: d.body.split(/\s+/).length,
+        type: "law" as never,
+        title: d.title,
+        compiled_truth: d.body,
+        timeline: "",
+        frontmatter: {
+          jurisdiction: "de",
+          abbreviation: d.title.split(" ")[1],
+          paragraph: d.title.split(" ")[0].replace("§", ""),
+        },
       },
-    ] satisfies ChunkInput[], { sourceId });
+      { sourceId }
+    );
+
+    await engine.upsertChunks(
+      d.slug,
+      [
+        {
+          chunk_index: 0,
+          chunk_text: d.body,
+          chunk_source: "compiled_truth",
+          token_count: d.body.split(/\s+/).length,
+        },
+      ] satisfies ChunkInput[],
+      { sourceId }
+    );
   }
 }

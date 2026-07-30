@@ -10,7 +10,7 @@
  * These tests pin the check against the REAL production slug shape.
  */
 
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vitest";
 import { checkJurisdictionCorrect, type CheckContext } from "./automated-checks.ts";
 
 const AT_OUTPUT =

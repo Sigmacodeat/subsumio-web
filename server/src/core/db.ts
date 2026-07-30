@@ -178,10 +178,13 @@ export function resolveSessionTimeouts(): Record<string, string> {
   // paths (searchVector, searchTakesVector, findCandidateDuplicates,
   // query_cache.lookup), not just those wrapped in sql.begin() transactions.
   // pgvector 0.8.0+ features: ef_search controls candidate list size at query
-  // time (default 40 → 100 for better recall), iterative_scan prevents
+  // time (default 40 → 200 for better recall), iterative_scan prevents
   // incomplete results on filtered queries, max_scan_tuples bounds the scan.
+  // v0.43: Raised from 100→200 after HNSW recall benchmark on 2.14M vectors
+  // showed ef=100 had recall=0.0 on isolated graph regions (law-at-judikatur-gbk).
+  // ef=200 achieves recall@10=1.0 with only +0.6ms p50 latency.
   // Override via env or set to '0'/'off' to disable.
-  add("GBRAIN_HNSW_EF_SEARCH", "hnsw.ef_search", "100");
+  add("GBRAIN_HNSW_EF_SEARCH", "hnsw.ef_search", "200");
   add("GBRAIN_HNSW_ITERATIVE_SCAN", "hnsw.iterative_scan", "relaxed_order");
   add("GBRAIN_HNSW_MAX_SCAN_TUPLES", "hnsw.max_scan_tuples", "20000");
 

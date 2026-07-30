@@ -232,7 +232,7 @@ async function main() {
       // HNSW approximate search
       const t0Hnsw = performance.now();
       const hnswRows = await sql.begin(async (tx: any) => {
-        await tx`SET LOCAL hnsw.ef_search = 100`;
+        await tx`SET LOCAL hnsw.ef_search = 200`;
         await tx`SET LOCAL hnsw.iterative_scan = 'relaxed_order'`;
         await tx`SET LOCAL hnsw.max_scan_tuples = 20000`;
         return await tx`
@@ -323,7 +323,7 @@ async function main() {
         // HNSW with filter + iterative_scan
         const t0Hnsw = performance.now();
         const hnswRows = await sql.begin(async (tx: any) => {
-          await tx`SET LOCAL hnsw.ef_search = 100`;
+          await tx`SET LOCAL hnsw.ef_search = 200`;
           await tx`SET LOCAL hnsw.iterative_scan = 'relaxed_order'`;
           await tx`SET LOCAL hnsw.max_scan_tuples = 20000`;
           return await tx`

@@ -19,14 +19,16 @@
  * seeder's existence check keeps every addition honest.
  */
 
-import { readFileSync } from "fs";
-import { join } from "path";
+import { readFileSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { splitStatute } from "../../../../src/core/legal/split-statute.ts";
 import type { BrainEngine } from "../../../../src/core/engine.ts";
 import type { ChunkInput } from "../../../../src/core/types.ts";
 import type { NamedThingQuestion } from "../../../../src/eval/retrieval-quality/harness.ts";
 
-const CORPUS = join(import.meta.dir, "..", "..", "..", "..", "..", "law-corpus");
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const CORPUS = join(__dirname, "..", "..", "..", "..", "..", "law-corpus");
 
 /** A statute reference resolvable to a real corpus §. */
 interface Ref {
@@ -204,20 +206,28 @@ export async function seedLegalAtCorpus(engine: BrainEngine): Promise<void> {
     const slug = slugOf(r);
     const sourceId = `law-${r.jur}`;
     const body = sectionBody(r);
-    await engine.putPage(slug, {
-      type: "law" as never,
-      title: slug,
-      compiled_truth: body,
-      timeline: "",
-      frontmatter: { jurisdiction: r.jur, abbreviation: r.abbr, paragraph: r.ref },
-    }, { sourceId });
-    await engine.upsertChunks(slug, [
+    await engine.putPage(
+      slug,
       {
-        chunk_index: 0,
-        chunk_text: body,
-        chunk_source: "compiled_truth",
-        token_count: body.split(/\s+/).length,
+        type: "law" as never,
+        title: slug,
+        compiled_truth: body,
+        timeline: "",
+        frontmatter: { jurisdiction: r.jur, abbreviation: r.abbr, paragraph: r.ref },
       },
-    ] satisfies ChunkInput[], { sourceId });
+      { sourceId }
+    );
+    await engine.upsertChunks(
+      slug,
+      [
+        {
+          chunk_index: 0,
+          chunk_text: body,
+          chunk_source: "compiled_truth",
+          token_count: body.split(/\s+/).length,
+        },
+      ] satisfies ChunkInput[],
+      { sourceId }
+    );
   }
 }

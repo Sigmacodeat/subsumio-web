@@ -30,10 +30,15 @@ const ENV_SPECS: EnvVarSpec[] = [
   },
   {
     name: "UPSTASH_REDIS_REST_URL",
-    required: true,
-    description: "Upstash Redis REST URL for rate limiting",
+    required: false,
+    description:
+      "Upstash Redis REST URL for rate limiting (optional — in-memory fallback available)",
   },
-  { name: "UPSTASH_REDIS_REST_TOKEN", required: true, description: "Upstash Redis REST token" },
+  {
+    name: "UPSTASH_REDIS_REST_TOKEN",
+    required: false,
+    description: "Upstash Redis REST token (optional — in-memory fallback available)",
+  },
   {
     name: "RESEND_API_KEY",
     required: false,

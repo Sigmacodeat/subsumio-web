@@ -34,7 +34,8 @@ export type HarnessId =
   | "legal_rag"
   | "skillopt_judge"
   | "skillopt_reflect"
-  | "retrieval_t25";
+  | "retrieval_t25"
+  | "claim_eval";
 
 export type HarnessStatus = "pass" | "warn" | "fail" | "not_run" | "skipped";
 
@@ -185,6 +186,15 @@ export const HARNESS_REGISTRY: HarnessDefinition[] = [
     description: "Self-Reflection Eval für Skill-Routing-Optimierung",
     source: "evals/skillopt-reflect/",
     enabled: false,
+    blocking: false,
+  },
+  {
+    id: "claim_eval",
+    name: "Claim-Level Evaluation",
+    description:
+      "Atomic Claim Extraction & Verification — Claim Precision, Misgrounding Rate, Claim Recall, Hallucination Detection",
+    source: "server/src/eval/claim-evaluation.ts",
+    enabled: true,
     blocking: false,
   },
 ];
@@ -392,6 +402,57 @@ export function buildReleaseGateResult(
     metrics: {
       gate_status: gateStatus,
     },
+    breaches: breaches.length > 0 ? breaches : undefined,
+  };
+}
+
+export interface ClaimEvalSummary {
+  total_answers: number;
+  total_claims: number;
+  supported_claims: number;
+  unsupported_claims: number;
+  claim_precision: number;
+  misgrounding_rate: number;
+  claim_recall: number;
+  pass_rate: number;
+  hallucinated_claims: number;
+}
+
+export function buildClaimEvalResult(
+  summary: ClaimEvalSummary,
+  thresholds?: { min_precision?: number; min_recall?: number; max_misgrounding?: number }
+): HarnessResult {
+  const breaches: string[] = [];
+  const metrics: Record<string, number | string> = {
+    claim_precision: summary.claim_precision,
+    misgrounding_rate: summary.misgrounding_rate,
+    claim_recall: summary.claim_recall,
+    unsupported_claim_rate: summary.misgrounding_rate,
+    total_claims: summary.total_claims,
+    hallucinated_claims: summary.hallucinated_claims,
+    pass_rate: summary.pass_rate,
+  };
+
+  if (thresholds?.min_precision && summary.claim_precision < thresholds.min_precision) {
+    breaches.push(
+      `Claim precision ${summary.claim_precision.toFixed(3)} < ${thresholds.min_precision}`
+    );
+  }
+  if (thresholds?.min_recall && summary.claim_recall < thresholds.min_recall) {
+    breaches.push(`Claim recall ${summary.claim_recall.toFixed(3)} < ${thresholds.min_recall}`);
+  }
+  if (thresholds?.max_misgrounding && summary.misgrounding_rate > thresholds.max_misgrounding) {
+    breaches.push(
+      `Misgrounding rate ${summary.misgrounding_rate.toFixed(3)} > ${thresholds.max_misgrounding}`
+    );
+  }
+
+  return {
+    harness_id: "claim_eval",
+    name: "Claim-Level Evaluation",
+    description: "Atomic Claim Extraction & Verification",
+    status: breaches.length > 0 ? "fail" : "pass",
+    metrics,
     breaches: breaches.length > 0 ? breaches : undefined,
   };
 }

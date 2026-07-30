@@ -544,22 +544,53 @@ describe("CI-Guard: No Holdout Cleartext in Repo", () => {
   const REPO_ROOT = join(import.meta.dirname, "../../../..");
   const HOLDOUT_DIR = join(import.meta.dirname, "holdout");
 
-  function scanDirForHoldoutTasks(dir: string, results: { file: string; line: number; content: string }[]) {
+  function scanDirForHoldoutTasks(
+    dir: string,
+    results: { file: string; line: number; content: string }[]
+  ) {
     const entries = readdirSync(dir);
     for (const entry of entries) {
       const fullPath = join(dir, entry);
       const stat = statSync(fullPath);
       if (stat.isDirectory()) {
-        if (entry === "node_modules" || entry === ".git" || entry === "dist" || entry === ".next") continue;
+        if (
+          entry === "node_modules" ||
+          entry === ".git" ||
+          entry === "dist" ||
+          entry === ".next" ||
+          entry === ".bun" ||
+          entry === ".claude" ||
+          entry === ".windsurf" ||
+          entry === "target" ||
+          entry === "law-corpus" ||
+          entry === ".turbo" ||
+          entry === "coverage" ||
+          entry === ".cache" ||
+          entry === "build" ||
+          entry === ".svelte-kit" ||
+          entry === ".astro"
+        )
+          continue;
         scanDirForHoldoutTasks(fullPath, results);
-      } else if (extname(entry) === ".ts" || extname(entry) === ".tsx" || extname(entry) === ".js") {
+      } else if (
+        extname(entry) === ".ts" ||
+        extname(entry) === ".tsx" ||
+        extname(entry) === ".js"
+      ) {
         // Skip test files — they legitimately use split:'holdout' in test fixtures
         if (entry.includes(".test.") || entry.includes(".spec.")) continue;
         const content = readFileSync(fullPath, "utf-8");
         const lines = content.split("\n");
         for (let i = 0; i < lines.length; i++) {
           // Flag any file that defines a task with split: "holdout" (except the stub itself)
-          if (/split\s*:\s*["']holdout["']/.test(lines[i]) && !fullPath.includes("gold-tasks-holdout.ts")) {
+          // Skip comments (lines starting with *, //, or /*) that mention 'holdout' in prose
+          const trimmed = lines[i].trim();
+          if (trimmed.startsWith("*") || trimmed.startsWith("//") || trimmed.startsWith("/*"))
+            continue;
+          if (
+            /split\s*:\s*["']holdout["']/.test(lines[i]) &&
+            !fullPath.includes("gold-tasks-holdout.ts")
+          ) {
             results.push({ file: fullPath, line: i + 1, content: lines[i].trim() });
           }
         }
@@ -574,7 +605,7 @@ describe("CI-Guard: No Holdout Cleartext in Repo", () => {
       console.error("Holdout cleartext leakage detected:", violations);
     }
     expect(violations.length).toBe(0);
-  });
+  }, 30000); // 30s: recursive scan of large repo
 
   it("holdout stub file should not contain task prompt or reference_output content", () => {
     const stubContent = readFileSync(join(HOLDOUT_DIR, "gold-tasks-holdout.ts"), "utf-8");

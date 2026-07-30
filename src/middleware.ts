@@ -23,6 +23,16 @@ function generateCspNonce(): string {
 
 function buildCspHeader(nonce: string): string {
   const isDev = env("NODE_ENV") !== "production";
+  const engineUrl = env("SUBSUMIO_API_URL");
+  const engineOrigin = engineUrl
+    ? (() => {
+        try {
+          return new URL(engineUrl).origin;
+        } catch {
+          return "https://api.subsum.io";
+        }
+      })()
+    : "https://api.subsum.io";
   return [
     "default-src 'self'",
     isDev
@@ -31,7 +41,7 @@ function buildCspHeader(nonce: string): string {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data: https://fonts.gstatic.com",
-    "connect-src 'self' https://api.stripe.com https://*.sentry.io https://app.posthog.com https://api.subsum.io",
+    `connect-src 'self' https://api.stripe.com https://*.sentry.io https://app.posthog.com ${engineOrigin}`,
     "frame-src 'self' https://js.stripe.com https://checkout.stripe.com",
     "frame-ancestors 'none'",
     "object-src 'none'",

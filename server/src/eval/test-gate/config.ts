@@ -235,6 +235,22 @@ const subsumptionBenchmark: GateCheck = {
     "Full subsumption benchmark: 105 cases (70 DE + 35 AT), LLM generation + guardrail + keyword match",
 };
 
+const dachRetrieval: GateCheck = {
+  id: "dach-retrieval",
+  name: "DACH Legal Retrieval Benchmark (305 Q)",
+  category: "benchmark",
+  command:
+    "cd server && bun run src/eval/dach-legal-retrieval/run.ts --output /tmp/dach-retrieval-results.jsonl",
+  timeout_ms: 600_000,
+  // required: false until CI workflow includes a corpus seed/restore step.
+  // The benchmark has an empty-DB guard that exits(1) with a clear message,
+  // but we don't want that to block nightly/release until seeding exists.
+  required: false,
+  description:
+    "305-question DACH retrieval benchmark across AT/DE/CH/EU/XJ jurisdictions — Hit@1/5/8 + MRR + bootstrap CIs. Requires seeded corpus (aborts on empty DB).",
+  env: { DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/gbrain_test" },
+};
+
 const abModelComparison: GateCheck = {
   id: "ab-model-comparison",
   name: "A/B Model Comparison",
@@ -245,6 +261,29 @@ const abModelComparison: GateCheck = {
   required: false,
   description:
     "A/B comparison of model tiers on 5 legal reasoning questions (requires OPENROUTER_API_KEY)",
+};
+
+const evalUnitTests: GateCheck = {
+  id: "eval-unit-tests",
+  name: "Eval Module Unit Tests",
+  category: "unit",
+  command:
+    "cd server && bunx vitest run src/eval/claim-evaluation.test.ts src/eval/conversation-runner.test.ts src/eval/factorial-multilingual.test.ts src/eval/abstention-fixtures.test.ts",
+  timeout_ms: 120_000,
+  required: true,
+  description:
+    "Unit tests for claim-eval, conversation-runner, factorial-harness, multilingual-fixtures, abstention-fixtures",
+};
+
+const abstentionEval: GateCheck = {
+  id: "abstention-eval",
+  name: "Abstention Evaluation (16 Fixtures)",
+  category: "quality",
+  command: "cd server && bunx vitest run src/eval/abstention-fixtures.test.ts",
+  timeout_ms: 60_000,
+  required: false,
+  description:
+    "Tests system's ability to abstain on unanswerable legal questions (missing law, wrong jurisdiction, hypothetical, legal advice)",
 };
 
 // ─── Gate tier definitions ────────────────────────────────────────────────
@@ -262,12 +301,14 @@ export const GATE_CONFIG: Record<GateTier, GateCheck[]> = {
     unitKeyTests,
     unitFullFrontend,
     unitFullServer,
+    evalUnitTests,
     fristenBenchmark,
     legalCorpusGate,
     workflowSimulation,
     releaseGateEval,
     aktenRetrieval,
     e2ePipeline,
+    dachRetrieval,
   ],
 
   // ── Release: ~30min, test-set + security/isolation ──
@@ -279,12 +320,14 @@ export const GATE_CONFIG: Record<GateTier, GateCheck[]> = {
     unitKeyTests,
     unitFullFrontend,
     unitFullServer,
+    evalUnitTests,
     fristenBenchmark,
     legalCorpusGate,
     workflowSimulation,
     releaseGateEval,
     aktenRetrieval,
     e2ePipeline,
+    dachRetrieval,
     buildVerification,
     serverVerify,
     playwrightFull,
@@ -302,12 +345,14 @@ export const GATE_CONFIG: Record<GateTier, GateCheck[]> = {
     unitKeyTests,
     unitFullFrontend,
     unitFullServer,
+    evalUnitTests,
     fristenBenchmark,
     legalCorpusGate,
     workflowSimulation,
     releaseGateEval,
     aktenRetrieval,
     e2ePipeline,
+    dachRetrieval,
     buildVerification,
     serverVerify,
     playwrightFull,
@@ -316,6 +361,7 @@ export const GATE_CONFIG: Record<GateTier, GateCheck[]> = {
     heavyTests,
     subsumptionBenchmark,
     abModelComparison,
+    abstentionEval,
   ],
 };
 

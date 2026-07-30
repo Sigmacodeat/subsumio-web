@@ -2322,8 +2322,12 @@ export class PostgresEngine implements BrainEngine {
     // v0.42: Adaptive ef_search — filtered queries need higher ef to maintain
     // recall when HNSW traverses a subset of the graph. Unfiltered queries can
     // use a lower ef for speed.
+    // v0.43: Raised unfiltered ef from 100→200 after HNSW recall benchmark on
+    // 2.14M vectors showed ef=100 had recall=0.0 on isolated graph regions
+    // (law-at-judikatur-gbk, 6.9k chunks). ef=200 achieves recall@10=1.0,
+    // recall@50=0.9992, recall@100=0.9984 with only +0.6ms p50 latency.
     const hasSourceFilter = !!(opts?.sourceIds?.length || opts?.sourceId);
-    const efSearch = hasSourceFilter ? 1000 : 100;
+    const efSearch = hasSourceFilter ? 1000 : 200;
 
     const rows = await sql.begin(async (sql) => {
       await sql.unsafe("SET LOCAL statement_timeout = '15s'", []);

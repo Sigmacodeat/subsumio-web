@@ -22,7 +22,24 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html lang="en">
+    <html lang="de">
+      <head>
+        <style>{`
+          :root {
+            --ge-bg: hsl(225, 20%, 7%);
+            --ge-surface: hsl(225, 16%, 12%);
+            --ge-text: hsl(220, 10%, 94%);
+            --ge-text-muted: hsl(220, 8%, 78%);
+            --ge-text-subtle: hsl(220, 8%, 74%);
+            --ge-danger: hsl(0, 60%, 65%);
+            --ge-danger-border: hsla(0, 60%, 65%, 0.3);
+            --ge-danger-bg: hsla(0, 60%, 65%, 0.15);
+            --ge-brand: hsl(230, 45%, 55%);
+            --ge-border: hsl(225, 12%, 24%);
+            --ge-radius: 0.625rem;
+          }
+        `}</style>
+      </head>
       <body
         style={{
           margin: 0,
@@ -31,8 +48,8 @@ export default function GlobalError({
           alignItems: "center",
           justifyContent: "center",
           padding: "1rem",
-          background: "#06060f",
-          color: "#e8e8f0",
+          background: "var(--ge-bg)",
+          color: "var(--ge-text)",
           fontFamily: "system-ui, -apple-system, sans-serif",
         }}
       >
@@ -46,21 +63,21 @@ export default function GlobalError({
               alignItems: "center",
               justifyContent: "center",
               borderRadius: "1rem",
-              border: "1px solid rgba(244,63,94,0.3)",
-              background: "rgba(244,63,94,0.2)",
+              border: "1px solid var(--ge-danger-border)",
+              background: "var(--ge-danger-bg)",
             }}
           >
-            <AlertCircle size={26} color="#fb7185" />
+            <AlertCircle size={26} color="var(--ge-danger)" />
           </div>
           <p
             style={{
               marginBottom: "0.75rem",
               fontFamily: "monospace",
               fontSize: "0.75rem",
-              color: "#fb7185",
+              color: "var(--ge-danger)",
             }}
           >
-            Critical Error
+            Kritischer Fehler
           </p>
           <h1
             style={{
@@ -71,30 +88,47 @@ export default function GlobalError({
               lineHeight: 1.12,
             }}
           >
-            Something went wrong.
+            Es ist ein Fehler aufgetreten.
           </h1>
           <p
             style={{
               marginBottom: "0.75rem",
               fontSize: "0.875rem",
               lineHeight: 1.6,
-              color: "#8888aa",
+              color: "var(--ge-text-muted)",
             }}
           >
-            An unexpected error occurred. Try again — or head back to safety.
+            Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut oder kehren Sie
+            zur Startseite zurück.
           </p>
-          <p style={{ marginBottom: "2.5rem", fontSize: "0.75rem", color: "#8282a6" }}>
-            Ein Fehler ist aufgetreten. Zurück zur Startseite?
-          </p>
-          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center" }}>
+          {error.digest && (
+            <p
+              style={{
+                marginBottom: "2.5rem",
+                fontSize: "0.75rem",
+                color: "var(--ge-text-subtle)",
+                fontFamily: "monospace",
+              }}
+            >
+              Fehler-ID: {error.digest}
+            </p>
+          )}
+          <div
+            style={{
+              display: "flex",
+              gap: "0.75rem",
+              justifyContent: "center",
+              marginTop: error.digest ? 0 : "2.5rem",
+            }}
+          >
             <button
               onClick={reset}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "0.5rem",
-                borderRadius: "0.5rem",
-                background: "#2f6bff",
+                borderRadius: "var(--ge-radius)",
+                background: "var(--ge-brand)",
                 padding: "0.75rem 1.5rem",
                 fontSize: "0.875rem",
                 fontWeight: 500,
@@ -103,7 +137,7 @@ export default function GlobalError({
                 cursor: "pointer",
               }}
             >
-              Try again
+              Erneut versuchen
             </button>
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- global-error renders own <html>, Link is not available */}
             <a
@@ -112,15 +146,15 @@ export default function GlobalError({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "0.5rem",
-                borderRadius: "0.5rem",
-                border: "1px solid #1e1e3a",
+                borderRadius: "var(--ge-radius)",
+                border: "1px solid var(--ge-border)",
                 padding: "0.75rem 1.5rem",
                 fontSize: "0.875rem",
-                color: "#8888aa",
+                color: "var(--ge-text-muted)",
                 textDecoration: "none",
               }}
             >
-              <ArrowLeft size={14} /> Home
+              <ArrowLeft size={14} /> Zur Startseite
             </a>
           </div>
         </div>

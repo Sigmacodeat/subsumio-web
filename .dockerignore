@@ -11,7 +11,10 @@ coverage
 server/.env
 server/deploy/hetzner/.env
 *.log
-tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Agent workspace artifacts (4.9GB+ worktrees)
+.claude/
 
 # Heavy server dirs not needed by the Next.js web build
 server/node_modules/
@@ -21,3 +24,19 @@ server/.pglite/
 
 # Law corpus is only needed by the engine container, not the web build
 law-corpus/
+
+# Build-irrelevant directories
+docs/
+scripts/
+tests/
+test/
+test-results/
+evals/
+outlook-addin/
+word-addin/
+mobile/
+plugins/
+research/
+tmp/
+0
+*.bak

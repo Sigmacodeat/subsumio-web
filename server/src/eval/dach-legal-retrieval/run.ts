@@ -17,6 +17,7 @@
  */
 
 import { readFileSync, existsSync, writeFileSync, appendFileSync } from "fs";
+import { bootstrapCI, bootstrapMeanCI, latencyPercentiles, formatCI } from "../stats.ts";
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -40,6 +41,7 @@ interface QuestionResult {
   legal_area: string;
   question_type: string;
   expected: string;
+  matching_level: "paragraph" | "law";
   rank: number;
   hit_at_1: boolean;
   hit_at_3: boolean;
@@ -75,6 +77,24 @@ interface BenchmarkReport {
     hit_at_5: number;
     hit_at_8: number;
     mrr: number;
+  };
+  law_level: {
+    hit_at_1: number;
+    hit_at_3: number;
+    hit_at_5: number;
+    hit_at_8: number;
+    mrr: number;
+  };
+  confidence_intervals: {
+    hit_at_5: { lower: number; upper: number; point: number; n: number };
+    hit_at_1: { lower: number; upper: number; point: number; n: number };
+    mrr: { lower: number; upper: number; point: number; n: number };
+  };
+  latency: {
+    p50_ms: number;
+    p95_ms: number;
+    p99_ms: number;
+    avg_ms: number;
   };
   questions: QuestionResult[];
 }
@@ -187,44 +207,107 @@ export function loadAllQuestions(jurisdictionFilter?: string): LegalQuestion[] {
 // ─── Matching ────────────────────────────────────────────────────────────
 
 /**
+ * Parse a section string like "§ 1", "§ 1 Abs 2", "§ 104a", "Art. 62"
+ * and convert it to the slug suffix used in the pages table.
+ * - § N → "p-N"  (DE, AT)
+ * - Art. N → "art-N"  (CH, EU)
+ * Returns null if the section cannot be parsed.
+ */
+function sectionToSlugSuffix(section: string): string | null {
+  // § N [Abs M] [lit X] → p-N
+  const paraMatch = section.match(/§\s*([0-9]+[a-z]?)/i);
+  if (paraMatch) return `p-${paraMatch[1]}`;
+  // Art. N → art-N
+  const artMatch = section.match(/Art\.?\s*([0-9]+[a-z]?)/i);
+  if (artMatch) return `art-${artMatch[1]}`;
+  return null;
+}
+
+/**
+ * Build the expected full slug for a question, using expected_section
+ * to achieve paragraph-level matching. Falls back to law-level if no
+ * section is available.
+ */
+function buildExpectedSlug(q: LegalQuestion): string {
+  const jur = q.jurisdiction;
+  const law = q.answer_slug;
+  if (!law) return q.expected_slug ?? "";
+  const base = `legal/statutes/${jur}/${law}/`;
+  if (q.expected_section) {
+    const suffix = sectionToSlugSuffix(q.expected_section);
+    if (suffix) return `${base}${suffix}`;
+  }
+  return base;
+}
+
+/**
+ * Law-level matching: any paragraph from the correct law counts as a hit.
+ * Used for the law-level fallback metric and for dual-level reporting.
+ */
+function lawLevelSlugMatches(resultSlug: string, q: LegalQuestion): boolean {
+  if (q.expected_slug) {
+    // AT: strip the last segment (p-N) and match the law prefix
+    const lawPrefix = q.expected_slug.replace(/\/[^/]+$/, "/");
+    return resultSlug.startsWith(lawPrefix);
+  }
+  if (q.answer_slug) {
+    const jur = q.jurisdiction;
+    return (
+      resultSlug.startsWith(`legal/statutes/${jur}/${q.answer_slug}/`) ||
+      resultSlug.startsWith(`law/${jur}/${q.answer_slug}`)
+    );
+  }
+  return false;
+}
+
+/**
  * Determine whether a search result slug matches the expected answer.
- * - AT: exact slug match or prefix match on expected_slug
- * - DE/CH/EU: prefix match on `legal/statutes/<jur>/<answer_slug>/`
- * - Cross-jurisdictional: uses the appropriate jurisdiction format
+ * - If expected_slug is set (AT): exact or prefix match on the full slug
+ * - If expected_section is set (DE/CH/EU): paragraph-level match via slug suffix
+ * - Falls back to law-level matching if no section is available
  */
 export function slugMatches(resultSlug: string, q: LegalQuestion): boolean {
   // AT format: expected_slug is a full slug like "legal/statutes/at/abgb/p-1295"
   if (q.expected_slug) {
-    // Exact match or prefix match (for paragraph-level)
     return resultSlug === q.expected_slug || resultSlug.startsWith(q.expected_slug);
   }
-  // DE/CH/EU format: answer_slug is a law abbreviation like "bgb", "or", "dsgvo"
+  // DE/CH/EU format: try paragraph-level matching
+  if (q.answer_slug && q.expected_section) {
+    const suffix = sectionToSlugSuffix(q.expected_section);
+    if (suffix) {
+      // Paragraph-level match only — NO law-level fallback when section is specified
+      const jur = q.jurisdiction;
+      const expectedFull = `legal/statutes/${jur}/${q.answer_slug}/${suffix}`;
+      if (resultSlug === expectedFull) return true;
+      // Also check law/ format (legacy)
+      const legacyFull = `law/${jur}/${q.answer_slug}/${suffix}`;
+      if (resultSlug === legacyFull) return true;
+      return false;
+    }
+    // If suffix parsing fails, fall through to law-level
+  }
+  // Law-level fallback (only when no expected_section or unparseable section)
   if (q.answer_slug) {
-    const jur = q.jurisdiction;
-    if (jur === "de") {
-      return (
-        resultSlug.startsWith(`legal/statutes/de/${q.answer_slug}/`) ||
-        resultSlug.startsWith(`law/de/${q.answer_slug}`)
-      );
+    return lawLevelSlugMatches(resultSlug, q);
+  }
+  return false;
+}
+
+/**
+ * Paragraph-level only matching (strict). Returns false if no
+ * expected_section/expected_slug is available.
+ */
+export function slugMatchesParagraph(resultSlug: string, q: LegalQuestion): boolean {
+  if (q.expected_slug) {
+    return resultSlug === q.expected_slug || resultSlug.startsWith(q.expected_slug);
+  }
+  if (q.answer_slug && q.expected_section) {
+    const suffix = sectionToSlugSuffix(q.expected_section);
+    if (suffix) {
+      const jur = q.jurisdiction;
+      const expectedFull = `legal/statutes/${jur}/${q.answer_slug}/${suffix}`;
+      return resultSlug === expectedFull || resultSlug === `law/${jur}/${q.answer_slug}/${suffix}`;
     }
-    if (jur === "ch") {
-      return (
-        resultSlug.startsWith(`legal/statutes/ch/${q.answer_slug}/`) ||
-        resultSlug.startsWith(`law/ch/${q.answer_slug}`)
-      );
-    }
-    if (jur === "eu") {
-      return (
-        resultSlug.startsWith(`legal/statutes/eu/${q.answer_slug}/`) ||
-        resultSlug.startsWith(`law/eu/${q.answer_slug}`)
-      );
-    }
-    // Cross-jurisdictional: use the jurisdiction field to determine prefix
-    if (jur === "at") {
-      return resultSlug.startsWith(`legal/statutes/at/${q.answer_slug}/`);
-    }
-    // Fallback: check all statute prefix patterns
-    return resultSlug.includes(`/${q.answer_slug}/`);
   }
   return false;
 }
@@ -335,19 +418,57 @@ async function main() {
     // Non-fatal
   }
 
+  // ── Empty-DB Guard ──────────────────────────────────────────────────
+  // A benchmark that reports Hit@5=0 against an empty DB is indistinguishable
+  // from a broken retrieval pipeline. Abort early with a clear message instead.
+  const allSlugs = await engine.getAllSlugs();
+  let legalPageCount = 0;
+  for (const slug of allSlugs) {
+    if (slug.startsWith("legal/statutes/")) legalPageCount++;
+  }
+  if (legalPageCount === 0) {
+    const msg = `[dach-v2] ABORT: Database has 0 legal/statutes/ pages. The benchmark cannot run against an empty corpus. Ensure the database is seeded before running this benchmark.`;
+    process.stderr.write(msg + "\n");
+    if (opts.outputPath) {
+      writeFileSync(
+        opts.outputPath,
+        JSON.stringify({ error: "empty_database", message: msg }) + "\n"
+      );
+    }
+    process.exit(1);
+  }
+  process.stderr.write(`[dach-v2] corpus check: ${legalPageCount} legal/statutes/ pages found\n`);
+
   const results: QuestionResult[] = [];
+  // Dual-level: track both paragraph-level and law-level hits
+  const lawLevelHits = { h1: 0, h3: 0, h5: 0, h8: 0, rr: 0 };
   let qIdx = 0;
   for (const q of questions) {
     qIdx++;
     try {
       const searchOpts = getSearchOpts(q, opts.topK, opts.llmRerank);
+      const t0Query = performance.now();
       const searchResults = await hybridSearch(engine, q.question, searchOpts);
+      const latencyMs = performance.now() - t0Query;
 
       const rankedSlugs = searchResults.map((r) => r.slug);
+      // Paragraph-level match (strict)
       const firstHit = rankedSlugs.findIndex((s) => slugMatches(s, q));
       const hitAt = (k: number) => firstHit >= 0 && firstHit < k;
 
-      const expected = q.expected_slug ?? `legal/statutes/${q.jurisdiction}/${q.answer_slug}/`;
+      // Law-level match (any paragraph from correct law)
+      const firstLawHit = rankedSlugs.findIndex((s) => lawLevelSlugMatches(s, q));
+      if (firstLawHit >= 0) {
+        lawLevelHits.rr += 1 / (firstLawHit + 1);
+        if (firstLawHit < 1) lawLevelHits.h1++;
+        if (firstLawHit < 3) lawLevelHits.h3++;
+        if (firstLawHit < 5) lawLevelHits.h5++;
+        if (firstLawHit < 8) lawLevelHits.h8++;
+      }
+
+      const expected = buildExpectedSlug(q);
+      const hasSection = !!(q.expected_section || q.expected_slug);
+      const matchingLevel: "paragraph" | "law" = hasSection ? "paragraph" : "law";
 
       const result: QuestionResult = {
         question_id: q.question_id,
@@ -356,6 +477,7 @@ async function main() {
         legal_area: q.legal_area,
         question_type: q.question_type,
         expected,
+        matching_level: matchingLevel,
         rank: firstHit >= 0 ? firstHit + 1 : 0,
         hit_at_1: hitAt(1),
         hit_at_3: hitAt(3),
@@ -364,15 +486,17 @@ async function main() {
         reciprocal_rank: firstHit >= 0 ? 1 / (firstHit + 1) : 0,
         top_slugs: rankedSlugs.slice(0, 8),
       };
+      (result as any).latency_ms = Math.round(latencyMs * 100) / 100;
       results.push(result);
 
       const pct = Math.round((qIdx / questions.length) * 100);
       const hit = firstHit >= 0 ? "✓" : "✗";
+      const lawHit = firstLawHit >= 0 ? "✓" : "✗";
       process.stderr.write(
-        `[dach-v2] ${qIdx}/${questions.length} (${pct}%) ${hit} ${q.question_id} [${q.jurisdiction}]\n`
+        `[dach-v2] ${qIdx}/${questions.length} (${pct}%) para:${hit} law:${lawHit} ${q.question_id} [${q.jurisdiction}] ${Math.round(latencyMs)}ms\n`
       );
     } catch (err: any) {
-      const expected = q.expected_slug ?? `legal/statutes/${q.jurisdiction}/${q.answer_slug}/`;
+      const expected = buildExpectedSlug(q);
       results.push({
         question_id: q.question_id,
         question: q.question,
@@ -380,6 +504,7 @@ async function main() {
         legal_area: q.legal_area,
         question_type: q.question_type,
         expected,
+        matching_level: "paragraph",
         rank: 0,
         hit_at_1: false,
         hit_at_3: false,
@@ -400,6 +525,18 @@ async function main() {
   const byArea = groupResults(results, (r) => r.legal_area);
   const byType = groupResults(results, (r) => r.question_type);
 
+  // Latency percentiles
+  const latencies = results.map((r) => (r as any).latency_ms ?? 0).filter((v) => v > 0);
+  const lat = latencyPercentiles(latencies);
+
+  // Bootstrap confidence intervals (2000 resamples, 95% CI)
+  const hit1Values = results.map((r) => (r.hit_at_1 ? 1 : 0));
+  const hit5Values = results.map((r) => (r.hit_at_5 ? 1 : 0));
+  const mrrValues = results.map((r) => r.reciprocal_rank);
+  const ciHit5 = bootstrapCI(hit5Values);
+  const ciHit1 = bootstrapCI(hit1Values);
+  const ciMrr = bootstrapMeanCI(mrrValues);
+
   const report: BenchmarkReport = {
     schema_version: 2,
     benchmark: "dach-legal-retrieval-v2",
@@ -416,13 +553,40 @@ async function main() {
       hit_at_8: results.filter((r) => r.hit_at_8).length / n,
       mrr: results.reduce((s, r) => s + r.reciprocal_rank, 0) / n,
     },
+    law_level: {
+      hit_at_1: lawLevelHits.h1 / n,
+      hit_at_3: lawLevelHits.h3 / n,
+      hit_at_5: lawLevelHits.h5 / n,
+      hit_at_8: lawLevelHits.h8 / n,
+      mrr: lawLevelHits.rr / n,
+    },
+    confidence_intervals: {
+      hit_at_5: ciHit5,
+      hit_at_1: ciHit1,
+      mrr: ciMrr,
+    },
+    latency: {
+      p50_ms: lat.p50,
+      p95_ms: lat.p95,
+      p99_ms: lat.p99,
+      avg_ms: lat.avg,
+    },
     questions: results,
   };
 
   // Print summary
   process.stderr.write(`\n[dach-v2] RESULTS (${n} questions, top-k=${opts.topK})\n`);
   process.stderr.write(
-    `  Aggregate: Hit@1=${(report.aggregate.hit_at_1 * 100).toFixed(1)}% Hit@3=${(report.aggregate.hit_at_3 * 100).toFixed(1)}% Hit@5=${(report.aggregate.hit_at_5 * 100).toFixed(1)}% Hit@8=${(report.aggregate.hit_at_8 * 100).toFixed(1)}% MRR=${report.aggregate.mrr.toFixed(3)}\n`
+    `  Paragraph-level: Hit@1=${(report.aggregate.hit_at_1 * 100).toFixed(1)}% Hit@3=${(report.aggregate.hit_at_3 * 100).toFixed(1)}% Hit@5=${(report.aggregate.hit_at_5 * 100).toFixed(1)}% Hit@8=${(report.aggregate.hit_at_8 * 100).toFixed(1)}% MRR=${report.aggregate.mrr.toFixed(3)}\n`
+  );
+  process.stderr.write(
+    `  Law-level:       Hit@1=${(report.law_level.hit_at_1 * 100).toFixed(1)}% Hit@3=${(report.law_level.hit_at_3 * 100).toFixed(1)}% Hit@5=${(report.law_level.hit_at_5 * 100).toFixed(1)}% Hit@8=${(report.law_level.hit_at_8 * 100).toFixed(1)}% MRR=${report.law_level.mrr.toFixed(3)}\n`
+  );
+  process.stderr.write(
+    `  95% Bootstrap CI: Hit@5=${formatCI(report.confidence_intervals.hit_at_5)} Hit@1=${formatCI(report.confidence_intervals.hit_at_1)} MRR=${report.confidence_intervals.mrr.point.toFixed(3)} [${report.confidence_intervals.mrr.lower.toFixed(3)}–${report.confidence_intervals.mrr.upper.toFixed(3)}]\n`
+  );
+  process.stderr.write(
+    `  Latency: p50=${report.latency.p50_ms}ms p95=${report.latency.p95_ms}ms p99=${report.latency.p99_ms}ms avg=${Math.round(report.latency.avg_ms)}ms\n`
   );
 
   process.stderr.write(`\n  By Jurisdiction:\n`);

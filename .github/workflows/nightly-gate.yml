@@ -64,6 +64,12 @@ jobs:
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
 
+      - name: Seed CI corpus
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gbrain_test
+        working-directory: server
+        run: bun run src/eval/seed-ci-corpus.ts
+
       - name: Run Nightly Gate
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gbrain_test
