@@ -6,12 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import {
   Database, HardDrive, Zap, AlertTriangle, CheckCircle2, XCircle,
   RefreshCw, Pause, Play, Activity, FileText, Layers, ShieldCheck,
   ArrowRight, Inbox, TrendingUp, Archive, Globe,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 
@@ -163,7 +165,17 @@ function CoverageIndicator({ coveragePct }: { coveragePct: number }) {
 
 function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: CorpusSyncRow[]; totals: CommandCenterData["sync"]["totals"]; onSelectCorpus?: (sourceId: string) => void; onRefresh?: () => void }) {
   const { addToast } = useToast();
-  const [hideComplete, setHideComplete] = useState(true);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // 3-state filter: "incomplete" (default, war hideComplete=true), "all", "complete"
+  const filterMode = (searchParams.get("filter") as "all" | "incomplete" | "complete" | null) ?? "incomplete";
+  const setFilterMode = (mode: "all" | "incomplete" | "complete") => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (mode === "incomplete") params.delete("filter"); // default = kein Param
+    else params.set("filter", mode);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
 
   const fetchMissing = useMutation({
     mutationFn: async (payload: { action: string; source_key: string }) => {
@@ -188,12 +200,21 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
   });
 
   const completeCount = rows.filter((r) => r.fullyComplete).length;
-  const displayRows = rows
-    .filter((r) => !hideComplete || !r.fullyComplete)
-    .sort((a, b) => {
+  const incompleteCount = rows.length - completeCount;
+
+  const displayRows = useMemo(() => {
+    const filtered = rows.filter((r) => {
+      if (filterMode === "complete") return r.fullyComplete;
+      if (filterMode === "incomplete") return !r.fullyComplete;
+      return true; // "all"
+    });
+    return filtered.sort((a, b) => {
       if (a.fullyComplete === b.fullyComplete) return 0;
       return a.fullyComplete ? 1 : -1;
     });
+  }, [rows, filterMode]);
+
+  const filterLabel = filterMode === "all" ? "Alle" : filterMode === "complete" ? "Vollständig" : "Unvollständig";
 
   return (
     <div className="space-y-4">
@@ -269,23 +290,47 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
       {/* Per-Corpus Table */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <CardTitle className="text-sm flex items-center gap-2">
               <Layers className="h-4 w-4" />
               Sync-Status pro Korpus
             </CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setHideComplete(!hideComplete)}
-              disabled={completeCount === 0}
-              title={hideComplete ? "Vollständige Corpora werden ausgeblendet" : "Vollständige Corpora werden angezeigt"}
-              className="h-8 text-xs"
-            >
-              <Archive className="h-3.5 w-3.5 mr-1.5" />
-              {hideComplete ? `${completeCount} fertige anzeigen` : "Fertige ausblenden"}
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Active-Filter Badge (visuell sichtbar — Modern Pattern) */}
+              <Badge
+                variant={filterMode === "complete" ? "success" : filterMode === "incomplete" ? "warning" : "default"}
+                className="text-[10px] gap-1"
+                aria-label={`Aktiver Filter: ${filterLabel}, ${displayRows.length} Corpora`}
+              >
+                {filterLabel} · {fmt(displayRows.length)}
+              </Badge>
+              {/* 3-Option Select Dropdown */}
+              <Select
+                value={filterMode}
+                onValueChange={(v) => setFilterMode(v as "all" | "incomplete" | "complete")}
+              >
+                <SelectTrigger
+                  className="h-8 w-[180px] text-xs"
+                  aria-label="Corpus-Vollständigkeit filtern"
+                >
+                  <SelectValue placeholder="Filter wählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle ({fmt(rows.length)})</SelectItem>
+                  <SelectItem value="incomplete" disabled={incompleteCount === 0}>
+                    Unvollständig ({fmt(incompleteCount)})
+                  </SelectItem>
+                  <SelectItem value="complete" disabled={completeCount === 0}>
+                    Vollständig ({fmt(completeCount)})
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+          {/* aria-live announcement für Screen-Reader (WCAG 4.1.3) */}
+          <p className="sr-only" aria-live="polite" role="status">
+            {displayRows.length} Corpora angezeigt — Filter: {filterLabel}
+          </p>
         </CardHeader>
         <CardContent>
           <div className="space-y-1.5">
@@ -395,7 +440,23 @@ function SyncStatusSection({ rows, totals, onSelectCorpus, onRefresh }: { rows: 
               );
             })}
             {displayRows.length === 0 && (
-              <p className="text-xs text-[color:var(--ds-text-subtle)] text-center py-4">Alle Corpora sind vollständig.</p>
+              <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
+                {filterMode === "incomplete" ? (
+                  <>
+                    <CheckCircle2 className="h-8 w-8 text-[color:var(--ds-success-text)]" />
+                    <p className="text-sm font-medium text-[color:var(--ds-text)]">Alle Corpora sind vollständig!</p>
+                    <p className="text-xs text-[color:var(--ds-text-subtle)]">Keine offenen Lücken mehr. Wechsle zu „Alle" um die Übersicht zu sehen.</p>
+                  </>
+                ) : filterMode === "complete" ? (
+                  <>
+                    <Archive className="h-8 w-8 text-[color:var(--ds-text-subtle)]" />
+                    <p className="text-sm font-medium text-[color:var(--ds-text)]">Noch keine vollständigen Corpora</p>
+                    <p className="text-xs text-[color:var(--ds-text-subtle)]">Sobald ein Corpus 100% Coverage erreicht, erscheint er hier.</p>
+                  </>
+                ) : (
+                  <p className="text-xs text-[color:var(--ds-text-subtle)]">Keine Corpora gefunden.</p>
+                )}
+              </div>
             )}
           </div>
         </CardContent>
@@ -1207,7 +1268,11 @@ export function CorpusCommandCenter({ onSelectCorpus }: { onSelectCorpus?: (sour
       </div>
 
       {/* Section Content */}
-      {section === "sync" && <SyncStatusSection rows={data.sync.rows} totals={data.sync.totals} onSelectCorpus={onSelectCorpus} onRefresh={refetch} />}
+      {section === "sync" && (
+        <Suspense fallback={<div className="space-y-4"><div className="h-32 animate-pulse rounded-lg bg-[color:var(--ds-surface-2)]" /></div>}>
+          <SyncStatusSection rows={data.sync.rows} totals={data.sync.totals} onSelectCorpus={onSelectCorpus} onRefresh={refetch} />
+        </Suspense>
+      )}
       {section === "work" && (
         <WorkQueueSection
           items={data.workQueue.items}

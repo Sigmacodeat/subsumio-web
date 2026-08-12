@@ -102,6 +102,14 @@ vi.mock("@/components/ui/toast", () => ({
   }),
 }));
 
+// Mock next/navigation: useSearchParams + useRouter für URL-State Filter
+const mockSearchParams = new URLSearchParams();
+const mockRouterReplace = vi.fn();
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => mockSearchParams,
+  useRouter: () => ({ replace: mockRouterReplace }),
+}));
+
 // ── Tests ───────────────────────────────────────────────────────────────
 
 describe("CorpusCommandCenter: Loading-State", () => {
@@ -246,6 +254,8 @@ describe("CorpusCommandCenter: Sync-Status Tabelle", () => {
 describe("CorpusCommandCenter: Empty-State", () => {
   beforeEach(() => {
     mockFetch.mockReset();
+    // Reset URL params
+    mockSearchParams.delete("filter");
   });
 
   it("zeigt 'Alle Corpora sind vollständig' wenn alle fullyComplete", async () => {
@@ -259,6 +269,66 @@ describe("CorpusCommandCenter: Empty-State", () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ data: emptyData }),
+    });
+    withQueryClient(<CorpusCommandCenter />);
+    await waitFor(() => {
+      expect(screen.getByText(/Alle Corpora sind vollständig/i)).toBeInTheDocument();
+    });
+  });
+});
+
+describe("CorpusCommandCenter: Filter-Dropdown (alle/unvollständig/vollständig)", () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+    mockSearchParams.delete("filter");
+    mockRouterReplace.mockClear();
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ data: MOCK_DATA }),
+    });
+  });
+
+  it("zeigt Select-Dropdown mit 3 Optionen und Counts", async () => {
+    withQueryClient(<CorpusCommandCenter />);
+    await waitFor(() => {
+      expect(screen.getByText("law-at")).toBeInTheDocument();
+    });
+    // Select-Trigger ist vorhanden
+    expect(screen.getByRole("combobox", { name: /Corpus-Vollständigkeit filtern/i })).toBeInTheDocument();
+  });
+
+  it("filtert default auf 'Unvollständig' — zeigt nur nicht-fullyComplete Rows", async () => {
+    withQueryClient(<CorpusCommandCenter />);
+    await waitFor(() => {
+      // law-at (unvollständig) sichtbar
+      expect(screen.getByText("law-at")).toBeInTheDocument();
+    });
+    // law-at-judikatur (fullyComplete=true) sollte ausgeblendet sein
+    expect(screen.queryByText("law-at-judikatur")).not.toBeInTheDocument();
+  });
+
+  it("zeigt aktiven Filter als Badge mit Count", async () => {
+    withQueryClient(<CorpusCommandCenter />);
+    await waitFor(() => {
+      expect(screen.getByText("law-at")).toBeInTheDocument();
+    });
+    // Badge "Unvollständig · 1" (nur law-at ist unvollständig in MOCK_DATA)
+    // Das Badge hat aria-label mit dem aktiven Filter
+    const badge = screen.getByLabelText(/Aktiver Filter: Unvollständig, 1 Corpora/i);
+    expect(badge).toBeInTheDocument();
+  });
+
+  it("zeigt Empty-State 'Alle Corpora sind vollständig' wenn Filter=unvollständig und alle complete", async () => {
+    const allCompleteData = {
+      ...MOCK_DATA,
+      sync: {
+        ...MOCK_DATA.sync,
+        rows: MOCK_DATA.sync.rows.map((r) => ({ ...r, fullyComplete: true })),
+      },
+    };
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ data: allCompleteData }),
     });
     withQueryClient(<CorpusCommandCenter />);
     await waitFor(() => {
