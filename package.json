@@ -23,6 +23,7 @@
     "verify": "tsc --noEmit && npx tsx scripts/check-route-actions.ts && npx tsx scripts/check-design-tokens.ts",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
+    "test:scripts": "npx vitest run --config vitest.config.scripts.ts",
     "test:lab": "npx vitest run --config vitest.config.lab.ts",
     "test:identity": "npx vitest run --config vitest.config.identity.ts",
     "test:e2e": "playwright test",

@@ -188,7 +188,7 @@ async function fetchDeltaPage(
 
 // ── Metadaten-Extraktion ───────────────────────────────────────────────
 
-interface ParsedRef {
+export interface ParsedRef {
   id: string;
   changedAt: string;
   dokumentUrl: string;
@@ -200,6 +200,8 @@ interface ParsedRef {
   geschaeftszahl: string | null;
   artikelParagraphAnlage: string | null;
   changeType: "new" | "changed";
+  inkrafttreten: string | null;
+  ausserkrafttreten: string | null;
 }
 
 /**
@@ -208,7 +210,7 @@ interface ParsedRef {
  * Die RIS-API liefert `OgdDocumentReference` als Array ODER als einzelnes
  * Objekt — wir normalisieren das im Caller. Hier bekommen wir ein einzelnes.
  */
-function parseRef(ref: Record<string, unknown>, applikation: string): ParsedRef | null {
+export function parseRef(ref: Record<string, unknown>, applikation: string): ParsedRef | null {
   const data = ref?.Data as Record<string, unknown> | undefined;
   if (!data) return null;
 

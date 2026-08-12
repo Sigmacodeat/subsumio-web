@@ -181,7 +181,7 @@ async function fetchXml(url: string): Promise<string | null> {
   return res.text();
 }
 
-function slugify(s: string): string {
+export function slugify(s: string): string {
   return s
     .toLowerCase()
     .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
@@ -190,7 +190,7 @@ function slugify(s: string): string {
     .slice(0, 80);
 }
 
-function normKey(apa: string | null): string | null {
+export function normKey(apa: string | null): string | null {
   if (!apa) return null;
   const s = apa.trim();
   if (/^§+\s*0\s*$/.test(s)) return null;
@@ -214,7 +214,7 @@ function esc(s: string): string {
  * Baut das Markdown für ein Bundesrecht-Dokument (Norm).
  * Folgt demselben Frontmatter-Schema wie ris-xml-fetch-normen.ts.
  */
-function buildStatuteMarkdown(doc: DeltaDocument, xmlText: string): string {
+export function buildStatuteMarkdown(doc: DeltaDocument, xmlText: string): string {
   const text = risXmlToText(xmlText);
   const titel = doc.kurztitel || doc.id;
   const apa = doc.artikelParagraphAnlage || "";
@@ -246,7 +246,7 @@ function buildStatuteMarkdown(doc: DeltaDocument, xmlText: string): string {
  * Baut das Markdown für ein Judikatur-Dokument (Entscheidung).
  * Folgt demselben Frontmatter-Schema wie fetch-all-at-judikatur.ts.
  */
-function buildJudikaturMarkdown(doc: DeltaDocument, xmlText: string): string {
+export function buildJudikaturMarkdown(doc: DeltaDocument, xmlText: string): string {
   const text = risXmlToText(xmlText) || "*Volltext nicht abrufbar — siehe Quelle.*";
   const az = doc.geschaeftszahl || doc.id;
   const title = `${doc.applikation} — ${az}`;
@@ -277,7 +277,7 @@ function buildJudikaturMarkdown(doc: DeltaDocument, xmlText: string): string {
 /**
  * Baut das Markdown für ein Landesrecht-Dokument.
  */
-function buildLandesrechtMarkdown(doc: DeltaDocument, xmlText: string): string {
+export function buildLandesrechtMarkdown(doc: DeltaDocument, xmlText: string): string {
   const text = risXmlToText(xmlText);
   const titel = doc.kurztitel || doc.id;
   const apa = doc.artikelParagraphAnlage || "";
@@ -311,7 +311,7 @@ function buildLandesrechtMarkdown(doc: DeltaDocument, xmlText: string): string {
  * Für Judikatur: <corpusDir>/<changedAt>-<slug>.md
  * Für Landesrecht: <corpusDir>/<slug-or-gnr>/<key>.md
  */
-function docFilePath(app: DeltaApplikation, doc: DeltaDocument): string {
+export function docFilePath(app: DeltaApplikation, doc: DeltaDocument): string {
   const corpusDir = join(CORPUS_ROOT, app.corpusDir);
 
   if (app.endpoint === "Judikatur") {
