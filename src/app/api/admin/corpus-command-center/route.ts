@@ -218,6 +218,13 @@ export const GET = createHandler(
       "law-at-judikatur-umse": "jud-umse",
       "law-at-staatsvertraege": "staatsvertraege",
       "law-at-literatur": "literatur-at",
+      "law-de": "statutes-de",
+      "law-ch": "statutes-ch",
+      "law-de-literatur": "literatur-de",
+      "law-ch-literatur": "literatur-ch",
+      "law-de-materialien": "materialien-de",
+      "law-eu": "eu-regulations",
+      "law-eu-directives": "eu-directives",
     };
 
     // Pipeline-State Lookup-Map: source_key → { diskCount, dbPages, risTotal }
